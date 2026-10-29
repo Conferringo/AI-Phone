@@ -35,6 +35,12 @@ pub async fn request(
     if !response.status().is_success() {
         // Inspect only bounded error codes; never expose provider messages or echoed input.
         let status = response.status().as_u16();
+        if status == 400 {
+            return Err(
+                "模型拒绝请求（HTTP 400）；请核对协议、工具往返与上下文格式。配置和任务已保留"
+                    .into(),
+            );
+        }
         if status == 429 {
             let mut stream = response.bytes_stream();
             let mut bytes = Vec::new();
@@ -219,6 +225,7 @@ async fn tool_probe(config: &ModelConfig) -> wire::CapabilityCheck {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[tokio::test]
     async fn cancellation_interrupts_a_stalled_rate_limit_body() {
         use axum::{Router, body::Body, http::StatusCode, routing::post};

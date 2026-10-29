@@ -40,42 +40,11 @@ pub async fn observe(
  .bind(value["observation_id"].as_str().unwrap()).bind(run).bind(app_id).bind(event).bind(after_action).bind(value["device_id"].as_str().unwrap_or("phone-local-01")).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(())
 }
-async fn cooldown(app: &App, run: Uuid) -> Result<Option<String>, String> {
-    let rows=sqlx::query("SELECT (SELECT o.app_id FROM app_learning_observations o WHERE o.run_id=r.id AND o.app_id NOT ILIKE '%launcher%' GROUP BY o.app_id ORDER BY count(*) FILTER(WHERE o.after_action) DESC,count(*) DESC LIMIT 1) app FROM runs r WHERE r.device_id=(SELECT device_id FROM runs WHERE id=$1) AND r.origin IN ('exploration','desktop-exploration') AND r.status='succeeded' AND r.id<>$1 ORDER BY r.created_at DESC LIMIT 2")
- .bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    let apps: Vec<String> = rows
-        .iter()
-        .filter_map(|r| r.get::<Option<String>, _>("app"))
-        .collect();
-    Ok((apps.len() == 2 && apps[0] == apps[1]).then(|| apps[0].clone()))
-}
-pub async fn guard(app: &App, run: Uuid, name: &str) -> Result<(), String> {
-    if !["phone_scroll", "phone_swipe"].contains(&name) {
-        return Ok(());
-    }
-    let origin: String = sqlx::query_scalar("SELECT origin FROM runs WHERE id=$1")
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
-    if !["exploration", "desktop-exploration"].contains(&origin.as_str()) {
-        return Ok(());
-    }
-    if let Some(avoid) = cooldown(app, run).await? {
-        let current:Option<String>=sqlx::query_scalar("SELECT app_id FROM app_learning_observations WHERE run_id=$1 ORDER BY observed_at DESC LIMIT 1").bind(run).fetch_optional(&app.db).await.map_err(|e|e.to_string())?;
-        if current.as_deref() == Some(&avoid) {
-            return Err(format!(
-                "本次滑动未执行：{avoid} 已连续占用两轮自主探索。请返回桌面选择其他已安装应用或公开资料；本轮不要继续刷该应用。通知和用户明确任务不受此探索冷却影响。"
-            ));
-        }
-    }
-    Ok(())
-}
 pub async fn context(app: &App, run: Uuid) -> Result<String, String> {
     let visits=sqlx::query("SELECT app_id,count(DISTINCT run_id) rounds,count(*) FILTER(WHERE after_action) actions FROM app_learning_observations WHERE device_id=(SELECT device_id FROM runs WHERE id=$1) GROUP BY app_id ORDER BY max(observed_at) DESC LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     let skills=sqlx::query("SELECT name,enabled FROM runtime_skills WHERE name LIKE 'app-experience-%' AND deleted_at IS NULL LIMIT 24").fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    Ok(format!("先读取autonomous-learning。自由探索不是延续历史用户的单一App刷内容任务。每轮先观察桌面/已安装应用，自选一个尚不熟悉的应用或不同能力（搜索、筛选、表单、文件、导航、内容理解等）；不固定任何App。不把反复刷信息流当成能力进展。先skill_list/read复用已有经验，实践后用app_experience_save记录能复现的步骤、真实观察ID、失败边界；没有新发现不要硬写。同名心得修订会取代本轮旧草稿；不要保留已证伪的候选。经验先进入本轮审计，通过后才发布为可复用Skill。下次先验证旧方法仍有效，失效时更新边界。用户明确任务和新通知优先。只有一个应用可用时如实记录阻碍后结束，不编造跨App进展。最近实际应用经历：{}。本轮需暂避连续刷的App：{}。已有经验Skill：{}。",
- json!(visits.iter().map(|r|json!({"app":r.get::<String,_>("app_id"),"rounds":r.get::<i64,_>("rounds"),"actions":r.get::<i64,_>("actions")})).collect::<Vec<_>>()),cooldown(app,run).await?.unwrap_or_default(),json!(skills.iter().map(|r|json!({"name":r.get::<String,_>("name"),"enabled":r.get::<bool,_>("enabled")})).collect::<Vec<_>>())))
+    Ok(format!("近期真实应用经历（仅供记忆参考，不是轮换清单或探索目标）：{}。已有经验Skill：{}。",
+ json!(visits.iter().map(|r|json!({"app":r.get::<String,_>("app_id"),"rounds":r.get::<i64,_>("rounds"),"actions":r.get::<i64,_>("actions")})).collect::<Vec<_>>()),json!(skills.iter().map(|r|json!({"name":r.get::<String,_>("name"),"enabled":r.get::<bool,_>("enabled")})).collect::<Vec<_>>())))
 }
 pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
     let text = |key: &str| args[key].as_str().unwrap_or("").trim().to_string();
@@ -208,7 +177,7 @@ mod database_tests {
     use std::{panic::AssertUnwindSafe, str::FromStr};
     #[tokio::test]
     #[ignore = "requires AI_PHONE_TEST_DATABASE_URL; isolated fixtures, no model/device invocation"]
-    async fn evidence_gate_cooldown_and_skill_promotion() {
+    async fn repeated_app_experience_preserves_evidence_and_skill_promotion() {
         let url = std::env::var("AI_PHONE_TEST_DATABASE_URL").unwrap();
         let name = format!("aiphone_learning_{}", Uuid::new_v4().simple());
         let mut admin = sqlx::PgConnection::connect(&url).await.unwrap();
@@ -245,7 +214,7 @@ mod database_tests {
    observe(&app,run,event,i==1,&json!([{"type":"input_text","text":json!({"observation_id":format!("{run}-{i}"),"foreground_app":"com.example.reader/.Home"}).to_string()}])).await.unwrap();
   }
  }
- let run=runs[2];assert!(guard(&app,run,"phone_scroll").await.is_err());assert!(guard(&app,run,"phone_key").await.is_ok());
+ let run=runs[2];
  let args=json!({"app_id":"com.example.reader","title":"打开搜索入口","procedure":"在当前版本点击可见搜索图标，检查出现搜索输入框。","outcome":"verified","limitations":"只验证当前版本界面，不代表其他版本相同。","observation_ids":[format!("{run}-0"),format!("{run}-1")]});
  let mut invalid=args.clone();invalid["observation_ids"]=json!([format!("{}-0",runs[0])]);assert!(save(&app,run,&invalid).await.is_err());
  invalid["observation_ids"]=json!([format!("{run}-0")]);assert!(save(&app,run,&invalid).await.is_err());
@@ -259,7 +228,7 @@ mod database_tests {
  sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,finished_at) VALUES($1,$2,$3,'audit','fixture approval','completed',now())").bind(Uuid::now_v7()).bind(run).bind(message).execute(&db).await.unwrap();promote(&app,run).await.unwrap();
  sqlx::query("UPDATE runtime_skills SET content=content||E'\\n手动补充应当保留',enabled=false WHERE name LIKE 'app-experience-%'").execute(&db).await.unwrap();promote(&app,run).await.unwrap();
  let skill=sqlx::query("SELECT content,enabled FROM runtime_skills WHERE name LIKE 'app-experience-%'").fetch_one(&db).await.unwrap();assert!(skill.get::<String,_>("content").contains("手动补充应当保留"));assert!(!skill.get::<bool,_>("enabled"));
- sqlx::query("UPDATE runs SET origin='user' WHERE id=$1").bind(run).execute(&db).await.unwrap();assert!(guard(&app,run,"phone_scroll").await.is_ok());
+ sqlx::query("UPDATE runs SET origin='user' WHERE id=$1").bind(run).execute(&db).await.unwrap();
  assert!(context(&app,run).await.unwrap().contains("com.example.reader"));
  }).catch_unwind().await;
         db.close().await;

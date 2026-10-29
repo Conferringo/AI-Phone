@@ -4,6 +4,11 @@ use sha2::{Digest, Sha256};
 
 pub const SLICE_TURNS: i32 = 8;
 pub const ARCHIVED_OBSERVATION: &str = "AI_PHONE_VALIDATED_OBSERVATION_ARCHIVED:";
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ExplorationWindow {
+    first_step: i32,
+    started_at_ms: u64,
+}
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LoopState {
@@ -13,8 +18,23 @@ pub struct LoopState {
     pub recent_results: Vec<String>,
     pub last_issue: String,
     pub plan: Option<Value>,
+    pub exploration_window: Option<ExplorationWindow>,
 }
 impl LoopState {
+    pub fn exploration_yield_due(&mut self, now: u64, step: i32) -> bool {
+        let window = self.exploration_window.get_or_insert(ExplorationWindow {
+            first_step: step,
+            started_at_ms: now,
+        });
+        if step.saturating_sub(window.first_step) < 40
+            && now.saturating_sub(window.started_at_ms) < 600_000
+        {
+            return false;
+        }
+        // Start the next window on wake, not before its potentially long wait.
+        self.exploration_window = None;
+        true
+    }
     pub fn no_progress(&mut self, reason: &str) -> bool {
         self.stalls = self.stalls.saturating_add(1);
         self.last_issue = reason.chars().take(1000).collect();
@@ -147,6 +167,28 @@ pub fn compact_observations(context: &mut [Value]) {
 mod tests {
     use super::*;
     use serde_json::json;
+    #[test]
+    fn exploration_windows_preserve_activity_and_errors_across_restart_and_long_waits() {
+        let mut state = LoopState {
+            plan: Some(json!({"goal":"self-chosen"})),
+            ..Default::default()
+        };
+        state.no_progress("actual failure");
+        assert!(!state.exploration_yield_due(1000, 100));
+        let mut resumed: LoopState =
+            serde_json::from_value(serde_json::to_value(&state).unwrap()).unwrap();
+        assert!(!resumed.exploration_yield_due(2000, 139));
+        assert!(resumed.exploration_yield_due(3000, 140));
+        assert_eq!(resumed.plan, state.plan);
+        assert_eq!(resumed.stalls, 1);
+        let mut resumed: LoopState =
+            serde_json::from_value(serde_json::to_value(&resumed).unwrap()).unwrap();
+        assert!(!resumed.exploration_yield_due(3_600_000, 140));
+        assert!(resumed.exploration_yield_due(4_200_000, 141));
+        let legacy: LoopState = serde_json::from_value(json!({"stalls":2})).unwrap();
+        assert!(legacy.exploration_window.is_none());
+        assert_eq!(legacy.stalls, 2);
+    }
     #[test]
     fn transient_model_errors_retry_without_replaying_tools() {
         assert_eq!(model_retry_delay("模型服务返回 HTTP 429", 1), Some(2000));

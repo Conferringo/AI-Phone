@@ -41,3 +41,7 @@ The default local single-owner profile uses one Enter button and preserves exist
 Both guest creation flows install native Clash apps. Import subscriptions and manage nodes, VPN/TUN and startup inside each guest. The web configuration center does not manage guest networks. No developer subscription is distributed.
 
 Installation now has private durable per-phase checkpoints and a process lock. Rerunning install verifies source inputs and artifacts before reusing completed work; start resumes missing owned services and preserves running tasks. It is not an automatic updater or whole-install transaction rollback. See [task recovery and retry behavior](task-recovery.md).
+
+## Self-directed exploration (development runtime)
+
+Enable exploration for a configured device to let its Agent choose activities without an App or goal preset. Reply/install settings still apply. A paused older owner task is retained separately; stopping exploration does not delete its history. Reusable Skill capture is optional and evidence-checked. See [self-directed exploration](autonomous-exploration.md) and [notification-driven work](notification-workflows.md). These runtime source changes do not replace the published connection-client preview assets.
