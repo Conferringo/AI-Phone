@@ -150,13 +150,15 @@ pub async fn route(
             sqlx::query("SELECT id FROM conversations WHERE owner_id='local-user' AND device_id='phone-local-01' FOR UPDATE").fetch_one(&mut *tx).await?;
             let old=sqlx::query("SELECT exploring,autonomous_reply,autonomous_install,wechat_watch FROM proactive_state FOR UPDATE").fetch_one(&mut *tx).await?;
             let watch=input.wechat_watch.unwrap_or_else(||old.get("wechat_watch"));
-            let policy_changed=watch!=old.get::<bool,_>("wechat_watch")||old.get::<bool,_>("exploring")!=input.exploring||old.get::<bool,_>("autonomous_reply")!=input.autonomous_reply||old.get::<bool,_>("autonomous_install")!=input.autonomous_install;
+            let exploration_changed=old.get::<bool,_>("exploring")!=input.exploring;
+            let permissions_changed=old.get::<bool,_>("autonomous_reply")!=input.autonomous_reply||old.get::<bool,_>("autonomous_install")!=input.autonomous_install;
+            let watch_changed=watch!=old.get::<bool,_>("wechat_watch");
             let changed=sqlx::query("UPDATE proactive_state SET revision=revision+1,exploring=$2,notifications_enabled=$3,forward_notifications=$4,autonomous_reply=$5,autonomous_install=$6,interval_seconds=$7,next_cycle_at=CASE WHEN $2 AND NOT exploring THEN now() ELSE next_cycle_at END,notifications_since=CASE WHEN $3 AND NOT notifications_enabled THEN now() ELSE notifications_since END,control_epoch=CASE WHEN $2 AND NOT exploring THEN $8 ELSE control_epoch END,last_error='',failure_streak=0,wechat_watch=$9 WHERE owner_id='local-user' AND revision=$1")
                 .bind(input.expected_revision as i64).bind(input.exploring).bind(input.notifications_enabled).bind(input.forward_notifications).bind(input.autonomous_reply).bind(input.autonomous_install).bind(input.interval_seconds as i32).bind(observed.map(|v|v.control_epoch as i64).unwrap_or(0)).bind(watch).execute(&mut *tx).await?.rows_affected()==1;
             if changed {
                 sqlx::query("UPDATE runs SET status='canceled',error='模式已暂停',finished_at=now(),next_wake_at=NULL WHERE status IN ('queued','running','paused') AND ((origin='exploration' AND NOT $1) OR (origin='notification' AND NOT $2))").bind(input.exploring).bind(input.notifications_enabled).execute(&mut *tx).await?;
-                if policy_changed {
-                    sqlx::query("UPDATE runs SET status='canceled',error='自主权限已改变，本轮停止',finished_at=now(),next_wake_at=NULL WHERE origin IN ('exploration','notification') AND status IN ('queued','running','paused')").execute(&mut *tx).await?;
+                if exploration_changed || permissions_changed || watch_changed {
+                    sqlx::query("UPDATE runs SET status='canceled',error='自主设置已改变，本轮停止',background_finalized=CASE WHEN origin='desktop-exploration' THEN true ELSE background_finalized END,finished_at=now(),next_wake_at=NULL WHERE status IN ('queued','running','paused') AND ((origin='exploration' AND ($1 OR $2)) OR (origin='notification' AND ($2 OR $3)) OR (origin='desktop-exploration' AND $2))").bind(exploration_changed).bind(permissions_changed).bind(watch_changed).execute(&mut *tx).await?;
                     if input.notifications_enabled {sqlx::query("UPDATE phone_notifications SET status='pending-summary' WHERE status='assigned' AND run_id IN(SELECT id FROM runs WHERE status='canceled' AND NOT background_finalized)").execute(&mut *tx).await?;}
                 }
                 if !input.notifications_enabled {sqlx::query("UPDATE phone_notifications SET status='ignored' WHERE status IN ('pending','pending-summary')").execute(&mut *tx).await?;}
@@ -1004,6 +1006,26 @@ mod tests {
             }).await.expect("mode updates and scheduling must use the same lock order");
             crate::desktop_explore::tick(&app).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs WHERE device_id=$1 AND origin='desktop-exploration' AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap(),1,"concurrent enable/tick cannot duplicate exploration");
+            let event=wire::PhoneNotification{event_id:"5".repeat(64),notification_key:"independent-notification".into(),package_name:"test.app".into(),app_name:"Test".into(),title:"Independent event".into(),text:"fixture".into(),posted_at_ms:now+1000};
+            ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![event],..Default::default()}).await.unwrap();
+            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds' WHERE event_id=$1").bind("5".repeat(64)).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET next_wake_at=now()+interval '60 seconds' WHERE origin='exploration' AND status='queued'").execute(&app.db).await.unwrap();
+            schedule(&app).await.unwrap();
+            let independent:Uuid=sqlx::query_scalar("SELECT run_id FROM phone_notifications WHERE event_id=$1").bind("5".repeat(64)).fetch_one(&app.db).await.unwrap();
+            let current=state(&app).await.unwrap();let mut h=HeaderMap::new();h.insert("authorization","Bearer test".parse().unwrap());h.insert("content-type",MEDIA.parse().unwrap());
+            let stop=wire::ProactiveUpdateRequest{expected_revision:current.revision,exploring:false,notifications_enabled:current.notifications_enabled,forward_notifications:current.forward_notifications,autonomous_reply:current.autonomous_reply,autonomous_install:current.autonomous_install,interval_seconds:current.interval_seconds,wechat_watch:Some(current.wechat_watch)};
+            assert_eq!(route(State(app.clone()),Path("update".into()),h,Ok(Bytes::from(stop.encode_to_vec()))).await.status(),StatusCode::OK);
+            assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM runs WHERE id=$1").bind(independent).fetch_one(&app.db).await.unwrap(),"queued","stopping exploration must not cancel independently enabled notification work");
+            let pc_active:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE device_id=$1 AND origin='desktop-exploration' AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap();
+            let current=state(&app).await.unwrap();let mut h=HeaderMap::new();h.insert("authorization","Bearer test".parse().unwrap());h.insert("content-type",MEDIA.parse().unwrap());
+            let mut permissions = stop;
+            permissions.expected_revision = current.revision;
+            permissions.autonomous_install = !current.autonomous_install;
+            assert_eq!(route(State(app.clone()),Path("update".into()),h,Ok(Bytes::from(permissions.encode_to_vec()))).await.status(),StatusCode::OK);
+            assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM runs WHERE id=$1").bind(pc_active).fetch_one(&app.db).await.unwrap(),"canceled","shared permission changes revoke stale desktop policy too");
+            assert!(sqlx::query_scalar::<_,bool>("SELECT enabled FROM desktop_exploration WHERE device_id=$1").bind(desktop).fetch_one(&app.db).await.unwrap(),"a permission refresh must not turn off desktop exploration");
+
+
 
 
 
