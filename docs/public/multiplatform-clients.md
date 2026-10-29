@@ -26,7 +26,7 @@ Windows ARM64, Linux x64 binaries, macOS Intel, AppImage and RPM are not present
 
 ## Reproduction / 复现
 
-Use Python3.11+, Node22 and Rust1.96.0. Install the pinned client CLI with `npm install --prefix apps/client --ignore-scripts --package-lock=false --no-audit`, or use the project Bun bootstrap. Then run:
+Use Python3.11+, Node22 and Rust1.96.0. Install the pinned client CLI with `python3 scripts/bootstrap_bun.py --dependencies`, or use the project Bun bootstrap. Then run:
 
 ```sh
 python3 scripts/build_client.py --platform macos

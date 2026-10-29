@@ -58,9 +58,9 @@ DESKTOP
 cat > /usr/local/bin/ai-phone-browser <<'BROWSER'
 #!/bin/sh
 if [ -n "${HTTPS_PROXY:-}" ]; then
-  exec chromium --no-sandbox --disable-dev-shm-usage --proxy-server="$HTTPS_PROXY" "$@"
+  exec chromium --user-data-dir=/home/ai/.config/ai-phone-browser --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --no-sandbox --disable-dev-shm-usage --proxy-server="$HTTPS_PROXY" "$@"
 fi
-exec chromium --no-sandbox --disable-dev-shm-usage "$@"
+exec chromium --user-data-dir=/home/ai/.config/ai-phone-browser --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --no-sandbox --disable-dev-shm-usage "$@"
 BROWSER
 cat > /home/ai/Desktop/Clash.desktop <<'DESKTOP'
 [Desktop Entry]
@@ -81,4 +81,5 @@ export XDG_RUNTIME_DIR=/tmp/ai-runtime
 export XDG_CACHE_HOME=/tmp/ai-cache
 export PULSE_SERVER=unix:/tmp/ai-runtime/pulse/native
 (for attempt in $(seq 1 60); do [ -s /tmp/ai-runtime/dbus-address ] && break; sleep .25; done; /usr/local/bin/ai-phone-clash --autostart >/tmp/clash-autostart.log 2>&1) &
+runuser -u ai -- bun /usr/local/lib/ai-phone/location.js --watch >/tmp/ai-location.log 2>&1 &
 exec runuser -u ai -- dbus-run-session sh -c 'printf "%s" "$DBUS_SESSION_BUS_ADDRESS" > /tmp/ai-runtime/dbus-address; dunst -config /etc/xdg/dunst/dunstrc >/tmp/ai-notifications.log 2>&1 & python3 /usr/local/lib/ai-phone/audio-service.py >/tmp/ai-audio.log 2>&1 & openbox & xsetroot -solid "#e7ebef"; tint2 & pcmanfm --desktop & wait'

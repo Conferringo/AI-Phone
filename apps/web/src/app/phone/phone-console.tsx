@@ -58,6 +58,8 @@ import {useWorkbenchMotion} from "@/components/workbench-motion";
 import {DeviceCableLine} from "@/components/device-cable-line";
 import {focusGroups} from "@/lib/device-focus";
 import { SkillsWindow } from "@/components/skills-window";
+import {MapPin} from "lucide-react";
+import {LocationWindow} from "@/components/location-window";
 import { KnowledgeWindow } from "@/components/knowledge-window";
 import { WorkspaceWindow } from "@/components/workspace-window";
 import { ExecutionTrace } from "@/components/execution-trace";
@@ -112,6 +114,7 @@ function DeviceWorkbench(){
  const {t}=useI18n();
 
  const [registry,setRegistry]=useState<Registry|null>(null),[focus,setFocus]=useState<string[]>(['phone-local-01']),[current,setCurrent]=useState('phone-local-01');
+ const [locationEnabled,setLocationEnabled]=useState(false);
  const [feature,setFeature]=useState(''),[states,setStates]=useState<Record<string,SessionState>>({}),[horizontal,setHorizontal]=useState<Record<string,boolean>>({}),[linked,setLinked]=useState<string[]>([]);
  const scene=useRef<HTMLElement>(null),refreshers=useRef<Record<string,()=>void>>({}),orientations=useRef<Record<string,boolean>>({});
  const devices=registry?.devices??[],groups=focusGroups(devices,focus,current,states),solo=focus.length===1,wide=!solo||!!horizontal[focus[0]]||devices.find(d=>d.id===focus[0])?.kind==='desktop';
@@ -131,6 +134,7 @@ function DeviceWorkbench(){
   <header className="workbench-navigation">
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>
     <WindowTrigger label={t("Skill管理")} open={feature==='skills'} onOpen={()=>setFeature('skills')}><Wrench size={18}/></WindowTrigger>
+    <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("工作文件")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("配置中心")} open={feature==='settings'} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
@@ -143,6 +147,7 @@ function DeviceWorkbench(){
   <DeviceCableLine root={scene} devices={devices} linked={linked}/>
   <RegistryWindow open={feature==='settings'} onClose={()=>close('settings')} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
   <DeviceCable devices={devices} current={current} open={feature===`cable:${current}`} onClose={()=>close(`cable:${current}`)} onLinks={receiveLinks}/>
+  <LocationWindow open={feature==='location'} onClose={()=>close('location')} onEnabled={setLocationEnabled}/>
   <SkillsWindow open={feature==='skills'} onClose={()=>close('skills')}/><KnowledgeWindow open={feature==='knowledge'} onClose={()=>close('knowledge')}/><WorkspaceWindow open={feature==='files'} onClose={()=>close('files')}/>
  </main>;
 }

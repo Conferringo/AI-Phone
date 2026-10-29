@@ -79,6 +79,6 @@ def main():
  env={'AI_PHONE_PROJECT_ROOT':str(ROOT),'ANDROID_USER_HOME':ENV['ANDROID_USER_HOME'],'AI_PHONE_DEVICE_ID':a.device_id,'AI_PHONE_SERIAL':'emulator-5566','AI_PHONE_RUNNER_DIR':str(runner),'AI_PHONE_RUNNER_PORT':'17872','AI_PHONE_MEDIA_URL':'http://127.0.0.1:17875','AI_PHONE_MEDIA_PORT':'17875','AI_PHONE_GRPC_PORT':'8559'}
  stage('连接独立画面和控制服务')
  job('dev.aiphone.runner.second',[ROOT/'target/debug/ai-phone-runner'],env,runner/'runner.log')
- job('dev.aiphone.media.second',[ROOT/'.tools/node_modules/.bin/bun',ROOT/'apps/device-stream/server.ts'],env,BASE/'media.log')
+ job('dev.aiphone.media.second',[ROOT/'.tools/bin/bun',ROOT/'apps/device-stream/server.ts'],env,BASE/'media.log')
  stage('系统已启动')
 if __name__=='__main__':main()

@@ -248,3 +248,9 @@
 .registry-steps>button:not(.field-select)>span {border-color:ButtonText
 }
 }
+
+/* Content-sized onboarding shares the same form rhythm as the native installer. */
+.floating-window[data-window-id=configuration-center] .registry-center{max-height:calc(100dvh - 160px)}
+.floating-window[data-window-id=configuration-center] .registry-layout[data-single-setup=true] .registry-scroll{flex:0 1 auto;max-height:calc(100dvh - 320px);min-height:100px}
+.registry-layout[data-single-setup=true] .registry-save{margin-top:auto}
+@media(max-height:580px){.registry-scroll,.registry-scoped{padding-block:16px}.registry-form fieldset{gap:14px}.registry-layout[data-single-setup=true] .registry-scroll{padding-inline:20px!important}}

@@ -6,7 +6,7 @@ if [ -f "$ANDROID_AVD_HOME/ai_phone_p2.ini" ]; then
   echo "AI Phone AVD already exists; preserving its data."
   exit 0
 fi
-printf 'no\n' | avdmanager create avd --name ai_phone_p2 \
+printf 'no\n' | python3 "$AI_PHONE_PROJECT_ROOT/scripts/android_sdk.py" avdmanager create avd --name ai_phone_p2 \
   --package 'system-images;android-35;default;arm64-v8a' \
   --device pixel_7 --path "$ANDROID_AVD_HOME/phone-local-01.avd"
 python3 - "$ANDROID_AVD_HOME/phone-local-01.avd/config.ini" <<'PY'

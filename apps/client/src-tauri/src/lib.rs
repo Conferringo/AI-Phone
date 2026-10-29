@@ -9,6 +9,7 @@ use std::{
     time::Duration,
 };
 use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
+mod bootstrap;
 
 #[cfg(any(desktop, test))]
 const DEFAULT_SERVER: &str = "http://127.0.0.1:17860";
@@ -165,9 +166,9 @@ fn show_connection(app: &tauri::AppHandle) -> Result<(), String> {
     #[cfg(mobile)]
     let handle = app.clone();
     WebviewWindowBuilder::new(app, "connection", WebviewUrl::App("index.html".into()))
-        .title("AI Phone · Connection")
-        .inner_size(480., 300.)
-        .min_inner_size(360., 300.)
+        .title("AI Phone")
+        .inner_size(680., 620.)
+        .min_inner_size(360., 260.)
         .resizable(true)
         .on_navigation(move |url| {
             #[cfg(mobile)]
@@ -265,6 +266,39 @@ fn require_local_window(window: &tauri::WebviewWindow) -> Result<(), String> {
     Ok(())
 }
 
+// Only the local setup asset may request content-sized native chrome.
+#[tauri::command]
+fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
+    require_local_window(&window)?;
+    #[cfg(mobile)]
+    let _ = height;
+    #[cfg(desktop)]
+    if height.is_finite()
+        && !window.is_maximized().unwrap_or(false)
+        && !window.is_fullscreen().unwrap_or(false)
+    {
+        let scale = window.scale_factor().map_err(|e| e.to_string())?;
+        let size = window
+            .inner_size()
+            .map_err(|e| e.to_string())?
+            .to_logical::<f64>(scale);
+        let maximum = window
+            .current_monitor()
+            .ok()
+            .flatten()
+            .map(|m| m.work_area().size.height as f64 / m.scale_factor() - 80.)
+            .unwrap_or(800.)
+            .max(260.);
+        let height = height.clamp(260., maximum);
+        if (size.height - height).abs() > 2. {
+            window
+                .set_size(tauri::LogicalSize::new(size.width, height))
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn current_server(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<String, String> {
     require_local_window(&window)?;
@@ -277,6 +311,41 @@ fn current_server(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result
         Err(error) if error == "Server not configured" => Ok(String::new()),
         Err(error) => Err(error),
     }
+}
+
+#[tauri::command]
+fn deployment_status(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<bootstrap::Snapshot, String> {
+    require_local_window(&window)?;
+    app.state::<Navigation>()
+        .startup_cancelled
+        .store(true, Ordering::SeqCst);
+    bootstrap::snapshot(&app)
+}
+#[tauri::command]
+fn start_deployment(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    request: bootstrap::Request,
+) -> Result<(), String> {
+    require_local_window(&window)?;
+    bootstrap::start(app, request)
+}
+#[tauri::command]
+fn cancel_deployment(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
+    require_local_window(&window)?;
+    bootstrap::cancel(&app);
+    Ok(())
+}
+#[tauri::command]
+fn accept_deployment_license(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<(), String> {
+    require_local_window(&window)?;
+    bootstrap::accept_license(&app)
 }
 
 #[tauri::command]
@@ -306,18 +375,48 @@ async fn connect_server(
     result
 }
 
+async fn resume_local_host(app: &tauri::AppHandle) -> Option<Url> {
+    if !bootstrap::resume_installed(app).unwrap_or(false) {
+        return None;
+    }
+    let setup = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        let _ = show_connection(&setup);
+    });
+    let waiting = app.clone();
+    tauri::async_runtime::spawn_blocking(move || bootstrap::wait_until_idle(&waiting))
+        .await
+        .ok()?;
+    if !bootstrap::ready(app) {
+        return None;
+    }
+    let url = server_origin("http://127.0.0.1:17860").ok()?;
+    probe(&url).await.ok()?;
+    save_connection(app, &url).ok()?;
+    Some(url)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
         .manage(Connecting(AtomicBool::new(false)))
         .manage(Navigation::default())
-        .invoke_handler(tauri::generate_handler![current_server, connect_server])
+        .manage(bootstrap::Bootstrap::default())
+        .invoke_handler(tauri::generate_handler![
+            fit_setup,
+            current_server,
+            connect_server,
+            deployment_status,
+            start_deployment,
+            cancel_deployment,
+            accept_deployment_license
+        ])
         .setup(|app| {
             #[cfg(desktop)]
             {
                 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
                 let connection =
-                    MenuItem::with_id(app, "connection", "Connection…", true, Some("CmdOrCtrl+,"))?;
+                    MenuItem::with_id(app, "connection", "Setup…", true, Some("CmdOrCtrl+,"))?;
                 let app_menu = Submenu::with_items(
                     app,
                     "AI Phone",
@@ -346,10 +445,13 @@ pub fn run() {
             }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let reachable = match load_connection(&handle) {
+                let mut reachable = match load_connection(&handle) {
                     Ok(url) if probe(&url).await.is_ok() => Some(url),
                     _ => None,
                 };
+                if reachable.is_none() {
+                    reachable = resume_local_host(&handle).await;
+                }
                 let ui = handle.clone();
                 // Commit on the UI thread: opening Connection while probing wins.
                 let _ = handle.run_on_main_thread(move || {
@@ -381,8 +483,21 @@ pub fn run() {
         }
     });
     builder
-        .run(tauri::generate_context!())
-        .expect("Unable to launch AI Phone client");
+        .build(tauri::generate_context!())
+        .expect("Unable to launch AI Phone client")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event
+                && bootstrap::is_running(app)
+            {
+                api.prevent_exit();
+                bootstrap::cancel(app);
+                let app = app.clone();
+                std::thread::spawn(move || {
+                    bootstrap::wait_until_idle(&app);
+                    app.exit(0);
+                });
+            }
+        });
 }
 
 #[cfg(test)]

@@ -29,6 +29,7 @@ mod action_store;
 mod cursor;
 mod gestures;
 mod grounding;
+mod location;
 
 const OWNER: &str = "local-user";
 const MEDIA: &str = "application/x-protobuf";
@@ -648,6 +649,7 @@ async fn action(
         Some(Action::Gesture(v)) => ("gesture", vec![v.paths.len() as u32, v.duration_ms]),
         Some(Action::Motion(v)) => ("motion", vec![v.duration_ms]),
         Some(Action::Input(_)) => ("input", vec![]),
+        Some(Action::Location(_)) => ("location", vec![]),
         Some(Action::Shell(_)) => ("shell", vec![]),
         Some(Action::Key(_)) => ("key", vec![]),
         Some(Action::Orientation(value)) => (
@@ -672,6 +674,9 @@ async fn action(
     let cursor_state = cursor::accepted(&request, width, height);
     let mut is_input = false;
     let command = match request.action {
+        Some(Action::Location(v)) if location::command(&v).is_some() => {
+            location::command(&v).unwrap()
+        }
         Some(Action::Gesture(v)) if gestures::valid(&v, width, height) => vec![],
         Some(Action::Motion(v)) if gestures::motion(&v) => vec![],
         Some(Action::Orientation(value)) if value.rotation <= 3 => {
@@ -787,7 +792,9 @@ async fn action(
             );
         }
     };
-    ledger.revision = ledger.revision.saturating_add(1);
+    if kind != "location" {
+        ledger.revision = ledger.revision.saturating_add(1);
+    }
     ledger.actions.insert(
         request.action_id.clone(),
         Record {
@@ -807,7 +814,9 @@ async fn action(
     if let Err(e) = save(&runner, &ledger) {
         return err(StatusCode::INTERNAL_SERVER_ERROR, "persistence_failed", &e);
     }
-    *runner.cursor.lock().await = cursor_state;
+    if kind != "location" {
+        *runner.cursor.lock().await = cursor_state;
+    }
     let execution = async {
         if is_input {
             let (ok, selected, _) = adb(
@@ -865,7 +874,9 @@ async fn action(
         }
         Err(message) => (false, message, true),
     };
-    runner.cursor.lock().await.status = if success { "completed" } else { "unknown" }.into();
+    if kind != "location" {
+        runner.cursor.lock().await.status = if success { "completed" } else { "unknown" }.into();
+    }
     grounding::record_scroll(&runner, scroll_attempt, success && !unknown).await;
     let record = ledger.actions.get_mut(&request.action_id).unwrap();
     record.completed = true;
@@ -1054,6 +1065,64 @@ mod observation_tests {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[tokio::test]
+    async fn location_updates_keep_screen_grounding_and_touch_cursor_and_are_idempotent() {
+        let fixture = Fixture::new();
+        let calls = fixture.0.join("location-calls");
+        let mut device = fixture.runner(&format!(
+            "#!/bin/sh\nprintf 'call\\n' >> '{}'\nprintf 'location-applied'\n",
+            calls.display()
+        ));
+        device.media_url = "http://127.0.0.1:0".into();
+        let runner = Arc::new(device);
+        runner.ledger.lock().await.revision = 42;
+        runner.cursor.lock().await.kind = "tap".into();
+        runner.cursor.lock().await.status = "completed".into();
+        let request = wire::DeviceActionRequest {
+            phone_id: "phone-local-01".into(),
+            owner_id: OWNER.into(),
+            run_id: "location-test".into(),
+            action_id: Uuid::new_v4().to_string(),
+            control_epoch: 1,
+            controller: "manual".into(),
+            action: Some(wire::device_action_request::Action::Location(
+                wire::LocationFix {
+                    enabled: true,
+                    point: Some(wire::GeoPoint {
+                        latitude: 31.,
+                        longitude: 121.,
+                        accuracy_m: 5.,
+                    }),
+                    ..Default::default()
+                },
+            )),
+            ..Default::default()
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert("authorization", "Bearer test-only".parse().unwrap());
+        headers.insert("content-type", MEDIA.parse().unwrap());
+        for replayed in [false, true] {
+            let response = action(
+                State(runner.clone()),
+                headers.clone(),
+                Ok(Bytes::from(request.encode_to_vec())),
+            )
+            .await;
+            assert_eq!(response.status(), StatusCode::OK);
+            let bytes = axum::body::to_bytes(response.into_body(), 10000)
+                .await
+                .unwrap();
+            let result = wire::DeviceActionResponse::decode(bytes).unwrap();
+            assert!(result.success);
+            assert_eq!(result.replayed, replayed);
+        }
+        assert_eq!(runner.ledger.lock().await.revision, 42);
+        assert_eq!(runner.cursor.lock().await.kind, "tap");
+        assert_eq!(runner.cursor.lock().await.status, "completed");
+        // Only the first action executes ADB; replay returns the durable receipt.
+        assert_eq!(std::fs::read_to_string(calls).unwrap().lines().count(), 1);
     }
 
     #[tokio::test]

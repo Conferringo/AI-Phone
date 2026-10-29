@@ -18,6 +18,7 @@ data/
 
 # Real-device screenshots and local audit logs can contain private conversations.
 /docs/evidence/
+/docs/project-tracker.md
 
 # Persistent state and device/credential artifacts never belong in source history.
 user/

@@ -2,6 +2,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let root = "../../packages/protocol/proto";
     let files = [
         format!("{root}/ai_phone/v1/system.proto"),
+        format!("{root}/ai_phone/v1/location.proto"),
         format!("{root}/ai_phone/v1/workspace.proto"),
         format!("{root}/ai_phone/v1/phone_runtime.proto"),
         format!("{root}/ai_phone/v1/assistant.proto"),

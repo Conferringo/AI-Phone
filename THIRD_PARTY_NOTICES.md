@@ -7,6 +7,8 @@ Original AI Phone code is licensed under **Apache-2.0**, selected by the maintai
 | Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 321 JavaScript packages across the server and native client, licence metadata and notice-file hashes. No missing licence metadata; redistribution/source-offer review remains open |
 | Knowledge motion + native app icon | Original AI Phone TypeScript/SVG implementations, Apache-2.0; hashes in config/source-assets.json | The forest/welcome page has been removed. No EPIC renderer code is shipped. Complete knowledge-motion visual acceptance remains pending. |
 | Android SDK/emulator/system image | Google's SDK packages | Download via sdkmanager after the user's licence acceptance; not bundled in the source archive |
+| mise 2026.10.22 | [Official source / MIT](https://github.com/jdx/mise/tree/v2026.10.22) | Managed-host development downloads the pinned executable separately; not bundled in the client. Retain upstream notices in the installed tool distribution |
+| Lima 2.2.1 and container-host image | [Lima source / Apache-2.0](https://github.com/lima-vm/lima/tree/v2.2.1), [Ubuntu cloud images](https://cloud-images.ubuntu.com/) | Downloaded separately for the optional private macOS container host; not bundled in clients/source. Guest OS packages retain their own licenses and source obligations |
 | Clash Meta for Android 2.11.36 | [Official source / GPLv3](https://github.com/MetaCubeX/ClashMetaForAndroid/tree/v2.11.36); APK SHA256 and signature pin in config/clash-apps.json | Downloaded separately; not included in source archive. Preserve notices and corresponding-source obligations in binary distributions |
 | Clash Party 2.0.4 | [Official source / GPLv3](https://github.com/mihomo-party-org/clash-party/tree/v2.0.4); deb pin in config/clash-apps.json | Unmodified package in Linux guest image; retain upstream licences and fulfil corresponding-source requirements before redistributing images |
 | Extra Android apps | Separately installed APKs | No APK redistribution in source bundles; pin source, version, signature and licence before automating downloads |
@@ -39,3 +41,7 @@ Preview clients include these texts. Unsigned clients and untested installations
 ## Rust standard-library runtime
 
 The clients are built with Rust 1.96.0. Its standard-library copyright collection and 13 accompanying licence/attribution files are pinned in config/rust-runtime-notices.json, verified against the installed official component manifest and supplied in the native notice collection. The full compiler is not bundled. Changing the preview toolchain requires a runtime-notice review.
+
+### Location interface
+
+The map uses Leaflet 1.9.4 under BSD-2-Clause. Its full [copyright and license](docs/public/licenses/javascript/leaflet/LICENSE) are retained. OpenStreetMap map data is attributed in the map and governed by [ODbL](https://www.openstreetmap.org/copyright); hosted tiles follow the provider's [tile usage policy](https://operations.osmfoundation.org/policies/tiles/). Tiles and the optional network-location lookup are contacted only after simulated location is enabled. No FakeLocation source or application binary is bundled.

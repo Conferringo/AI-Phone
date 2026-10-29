@@ -58,6 +58,8 @@ def prepare(root=ROOT):
     # AGP 8 needs these explicitly, including enum.values() used by Jackson.
     if 'getDefaultProguardFile(' not in text:
         text = text.replace('proguardFiles(', 'proguardFiles(\n                getDefaultProguardFile("proguard-android-optimize.txt"),')
+    marker="// AI_PHONE_REVIEWED_RESOURCES"
+    text=text.split(marker)[0]
     app.write_text(text)
     properties = generated/'gradle.properties'
     text = '\n'.join(line for line in properties.read_text().splitlines()

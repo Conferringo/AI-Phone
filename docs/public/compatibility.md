@@ -45,7 +45,7 @@ Knowledge, memory editors, autonomous settings, detailed traces and many backend
 
 | Platform | Published client | Independent local host |
 | --- | --- | --- |
-| macOS Apple Silicon | Connection client | Source CLI exists; integrated first-run installer remains in development, fresh-host acceptance pending |
+| macOS Apple Silicon | Managed setup + connection client | Experimental managed client installer and source CLI; fresh-host acceptance pending |
 | Windows x64 | Connection client | WHPX/WSL2 host adapter and service lifecycle not implemented |
 | Linux x64 / ARM64 | Connection client | KVM/user-service host adapter and macOS vision replacement not implemented |
 | Android ARM64 | Connection client | Privileged AVF/KVM and software-emulation research; ordinary APK dual-guest hosting is not promised |

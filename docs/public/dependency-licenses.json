@@ -4,8 +4,8 @@
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
     "Cargo.lock": "5fe896d9077e52c80d67835d7d4b2937ee86a174e3006f90b1c9e50faa27f137",
-    "bun.lock": "698f7f13a76986ecfad5e5dc69b21c8f862550f18cb5f3c5e2e03e67682ff2b1",
-    "apps/client/src-tauri/Cargo.lock": "d30bcc1393a56530c03de4b01d1e7c223ebae688e3c9a5ad9bf25668911faa29"
+    "bun.lock": "7c657e901eb4c9594e5b2ef32a1cd83968fe79c836b0bea23079ea81eb9d6904",
+    "apps/client/src-tauri/Cargo.lock": "dd7bcd3e618ee8438d96eb5453a51e6202f41ae6dc70ad7f5294529198e46c7c"
   },
   "rust": [
     {
@@ -11486,8 +11486,32 @@
       ]
     },
     {
+      "name": "@types/geojson",
+      "version": "7946.0.16",
+      "license": "MIT",
+      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ]
+    },
+    {
       "name": "@types/hast",
       "version": "3.0.5",
+      "license": "MIT",
+      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ]
+    },
+    {
+      "name": "@types/leaflet",
+      "version": "1.9.21",
       "license": "MIT",
       "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
       "notices": [
@@ -12484,6 +12508,18 @@
         {
           "file": "LICENSE",
           "sha256": "46231df5a7733c3f52f11b71f3df61813007745b62b09031acfb45fb42d75082"
+        }
+      ]
+    },
+    {
+      "name": "leaflet",
+      "version": "1.9.4",
+      "license": "BSD-2-Clause",
+      "repository": "git://github.com/Leaflet/Leaflet.git",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "53e8dc25862014e4324741ca18fbe3611e11d42ef69f59f86ea8c5389647d4cb"
         }
       ]
     },

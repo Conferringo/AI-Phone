@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-preview.1",
+  "version": "0.1.0-preview.2",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,
@@ -32,7 +32,7 @@
   },
   "binary_preview": {
     "publication_authorized": true,
-    "release_tag": "v0.1.0-preview.1",
+    "release_tag": "v0.1.0-preview.2",
     "channel": "prerelease",
     "server_included": false,
     "physical_installation_tested": false,

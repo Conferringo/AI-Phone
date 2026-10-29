@@ -21,8 +21,10 @@ def fingerprint(root,paths,values=None):
     return h.hexdigest()
 
 class InstallState:
-    def __init__(self,root):
-        self.root=Path(root);self.folder=self.root/'data/deployment';self.path=self.folder/'install-state.json';self.lock=None
+    def __init__(self,root,observer=None):
+        self.root=Path(root);self.folder=self.root/'data/deployment';self.path=self.folder/'install-state.json';self.lock=None;self.observer=observer
+    def notify(self,name,state):
+        if self.observer:self.observer(name,state)
     def __enter__(self):
         self.folder.mkdir(parents=True,exist_ok=True,mode=0o700);self.folder.chmod(0o700)
         fd=os.open(self.folder/'install.lock',os.O_RDWR|os.O_CREAT,0o600);os.fchmod(fd,0o600)
@@ -43,14 +45,14 @@ class InstallState:
         if reuse and old.get('state')=='completed' and old.get('input_sha256')==input_hash:
             try:valid=verify()
             except (ValueError,OSError):valid=False
-            if valid and old.get('artifact')==valid:print('Verified existing '+name,flush=True);return False
+            if valid and old.get('artifact')==valid:print('Verified existing '+name,flush=True);self.notify(name,'completed');return False
         current={'state':'running','input_sha256':input_hash,'attempt':old.get('attempt',0)+1,'started_at':int(time.time())}
-        self.state['phases'][name]=current;self.save();print('Installing '+name,flush=True)
+        self.state['phases'][name]=current;self.save();print('Installing '+name,flush=True);self.notify(name,'running')
         try:
             action()
             artifact=verify()
             if not artifact:raise ValueError('Installation artifact verification failed: '+name)
         except BaseException as error:
             current.update(state='interrupted' if isinstance(error,(KeyboardInterrupt,SystemExit)) else 'failed',finished_at=int(time.time()),error='Phase did not complete; correct the failure and rerun install')
-            self.save();raise
-        current.update(state='completed',finished_at=int(time.time()),artifact=artifact);self.save();return True
+            self.save();self.notify(name,current['state']);raise
+        current.update(state='completed',finished_at=int(time.time()),artifact=artifact);self.save();self.notify(name,'completed');return True

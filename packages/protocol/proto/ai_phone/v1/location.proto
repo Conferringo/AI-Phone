@@ -1,0 +1,42 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message GeoPoint { double latitude = 1; double longitude = 2; double accuracy_m = 3; }
+message LocationRequest {}
+message LocationUpdate {
+  uint64 expected_revision = 1;
+  string request_id = 2;
+  bool enabled = 3;
+  bool use_host = 4;
+  GeoPoint point = 5;
+  repeated GeoPoint route = 6;
+  double speed_kph = 7;
+  bool moving = 8;
+  bool repeat = 9;
+}
+message LocationDevice {
+  string device_id = 1;
+  string kind = 2;
+  string status = 3;
+  string error = 4;
+  uint64 applied_at_ms = 5;
+}
+message LocationState {
+  uint64 revision = 1;
+  bool enabled = 2;
+  GeoPoint point = 3;
+  GeoPoint host = 4;
+  string source = 5;
+  repeated GeoPoint route = 6;
+  double speed_kph = 7;
+  bool moving = 8;
+  bool repeat = 9;
+  double distance_m = 10;
+  uint64 updated_at_ms = 11;
+  repeated LocationDevice devices = 12;
+  string error = 13;
+  string request_id = 14;
+  bytes request_hash = 15;
+}
+// Private host-to-guest command. Guest receipts use LocationDevice.
+message LocationFix { bool enabled = 1; GeoPoint point = 2; double speed_mps = 3; }

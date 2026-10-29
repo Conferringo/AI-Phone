@@ -14,7 +14,8 @@
     "proto:check": "buf lint && buf build",
     "proto:generate": "buf generate",
     "smoke:protocol": "bun scripts/smoke-protocol.ts",
-    "check": "bun run proto:check && bun run typecheck && cargo check --workspace --locked"
+    "check": "bun run proto:check && bun run typecheck && cargo check --workspace --locked",
+    "location:generate": "bun build infra/desktop/location.ts --target=bun --outfile=infra/desktop/location.js"
   },
   "devDependencies": {
     "@bufbuild/protobuf": "2.16.0",

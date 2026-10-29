@@ -1,5 +1,6 @@
 syntax = "proto3";
 package ai_phone.v1;
+import "ai_phone/v1/location.proto";
 
 // Routing envelope: decode ONLY the common field; other request tags have different types.
 message PhoneScope { string phone_id = 1; }
@@ -94,6 +95,7 @@ message DeviceActionRequest {
     ElementScrollAction scroll_element = 16;
     GestureAction gesture = 18;
     MotionAction motion = 19;
+    LocationFix location = 20;
   }
   // Required for agent coordinate fallback when the observation has grounded targets.
   string observation_id = 17;

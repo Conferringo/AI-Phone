@@ -103,14 +103,14 @@ def configure(root=ROOT, source=None):
     print(CATALOGS[value['locale']]['saved'])
 
 
-def doctor(root=ROOT):
+def doctor(root=ROOT, *, minimum_free_gb=35):
     env = runtime_env(root)
     checks = []
     def check(name, passed, fix):
         checks.append(dict(name=name, passed=bool(passed), fix='' if passed else fix))
     check('host', platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Preview supports macOS Apple Silicon only')
     check('python-version', sys.version_info >= (3,11), 'Python 3.11+ required')
-    for executable, hint in [('node', 'Install Node.js 22+'), ('npm', 'Install npm with Node.js'), ('cargo', 'Install Rust via rustup'), ('docker', 'Install and start Docker Desktop'), ('swiftc', 'Install Xcode Command Line Tools: xcode-select --install')]:
+    for executable, hint in [('node', 'Install Node.js 22+'), ('cargo', 'Install Rust via rustup'), ('docker', 'Install and start Docker Desktop'), ('swiftc', 'Install Xcode Command Line Tools: xcode-select --install')]:
         check(executable, shutil.which(executable), hint)
     if shutil.which('node'):
         node = subprocess.run(['node', '-p', 'Number(process.versions.node.split(".")[0])>=22'], capture_output=True, text=True)
@@ -138,7 +138,7 @@ def doctor(root=ROOT):
     if shutil.which('sysctl'):
         memory = subprocess.check_output(['sysctl', '-n', 'hw.memsize'], text=True).strip()
         check('memory-budget', int(memory) >= 12 * 1024**3, '12 GB host RAM minimum; 16 GB+ recommended for phone + desktop')
-    check('free-disk', shutil.disk_usage(root).free >= 35 * 1024**3, 'Keep at least 35 GB free for SDK, images and builds')
+    check('free-disk', shutil.disk_usage(root).free >= minimum_free_gb * 1024**3, f'Keep at least {minimum_free_gb} GB free for SDK, images and builds')
     return checks
 
 
@@ -146,10 +146,11 @@ def environment(root=ROOT):
     return {**os.environ, **runtime_env(root), 'NEXT_TELEMETRY_DISABLED': '1'}
 
 
-def install():
+def install(*, observer=None, license_action=None, launch_client=True, minimum_free_gb=35):
     from install_state import InstallState,fingerprint
+    from android_sdk import command as sdk_command
     if not (ROOT / PROFILE).exists(): configure()
-    checks = doctor()
+    checks = doctor(minimum_free_gb=minimum_free_gb)
     for c in checks: print(('OK  ' if c['passed'] else 'FAIL ') + c['name'] + (': ' + c['fix'] if c['fix'] else ''))
     downloadable={'sdk/platform-tools/adb','sdk/emulator/emulator'}
     if not all(c['passed'] or c['name'] in downloadable for c in checks):
@@ -161,33 +162,40 @@ def install():
         return result.stdout.strip() if result.returncode==0 else ''
     def native_apps(download=False):
         operation='download' if download else 'verify'
-        result=subprocess.run([str(ROOT/'.tools/node_modules/.bin/bun'),str(ROOT/'apps/device-network/native-apps.ts')],input=json.dumps({'operation':operation}),text=True,cwd=ROOT,env=env,capture_output=True)
+        result=subprocess.run([str(ROOT/'.tools/bin/bun'),str(ROOT/'apps/device-network/native-apps.ts')],input=json.dumps({'operation':operation}),text=True,cwd=ROOT,env=env,capture_output=True)
         if download and result.returncode:raise ValueError('Clash application download failed; check the installation network or AI_PHONE_BOOTSTRAP_PROXY')
         return result.returncode==0
     def bootstrap_valid():
-        if not (ROOT/'.tools/node_modules/.bin/bun').is_file() or not (ROOT/'apps/web/node_modules/next/package.json').is_file():return False
-        result=subprocess.run([ROOT/'.tools/node_modules/.bin/bun','--version'],capture_output=True,text=True)
+        if not (ROOT/'.tools/bin/bun').is_file() or not (ROOT/'apps/web/node_modules/next/package.json').is_file():return False
+        result=subprocess.run([ROOT/'.tools/bin/bun','--version'],capture_output=True,text=True)
         return result.returncode==0 and result.stdout.strip()=='1.4.4' and (ROOT/'packages/protocol/src/gen/ai_phone/v1/system_pb.ts').is_file()
-    with InstallState(ROOT) as state:
-        # Licence acceptance remains the SDK's interactive prompt; never automated.
+    with InstallState(ROOT,observer=observer) as state:
+        # CLI uses the SDK prompt; the native client displays each actual license.
         licenses=lambda:all((sdk/'licenses'/name).is_file() for name in ['android-sdk-license'])
-        state.phase('sdk-licenses',fingerprint(ROOT,[],{'sdk':str(sdk)}),lambda:run([sdkmanager,'--licenses'],env=env),licenses)
-        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':'arm64-v8a'}),lambda:run([sdkmanager,'platform-tools','emulator','platforms;android-35','build-tools;35.0.0','system-images;android-35;default;arm64-v8a'],env=env),lambda:all((sdk/name).is_file() for name in required))
+        state.phase('sdk-licenses',fingerprint(ROOT,[],{'sdk':str(sdk)}),lambda:license_action(sdkmanager,env) if license_action else run(sdk_command(sdkmanager,env,['--licenses']),env=env),licenses)
+        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':'arm64-v8a'}),lambda:run(sdk_command(sdkmanager,env,['platform-tools','emulator','platforms;android-35','build-tools;35.0.0','system-images;android-35;default;arm64-v8a']),env=env),lambda:all((sdk/name).is_file() for name in required))
         state.phase('dependencies',fingerprint(ROOT,['scripts/bootstrap.sh','package.json','bun.lock','buf.gen.yaml','packages/protocol/proto',*[str(p.relative_to(ROOT)) for base in ('apps','packages') for p in (ROOT/base).glob('*/package.json')]]),lambda:run(['./scripts/bootstrap.sh'],env=env),bootstrap_valid)
         state.phase('native-apps',fingerprint(ROOT,['config/clash-apps.json','apps/device-network/native-apps.ts']),lambda:native_apps(True),native_apps)
         state.phase('workspace-image',fingerprint(ROOT,['infra/workspace']),lambda:run(['docker','build','--build-arg','HTTP_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'--build-arg','HTTPS_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'-t','ai-phone-workspace:20261026','-f','infra/workspace/Dockerfile','.'],env=env),lambda:image('ai-phone-workspace:20261026'))
         state.phase('desktop-image',fingerprint(ROOT,['infra/desktop','compose.desktop.yaml','config/clash-apps.json'],{'workspace_image':image('ai-phone-workspace:20261026')}),lambda:run(['docker','compose','-f','compose.desktop.yaml','build','desktop'],env=env),lambda:image('ai-phone-desktop:20261028'))
-        state.phase('services',fingerprint(ROOT,['scripts/service_start.py',PROFILE]),start,lambda:bool(service_ready('http://127.0.0.1:17860') is None),reuse=False)
+        state.phase('services',fingerprint(ROOT,['scripts/service_start.py',PROFILE]),lambda:start(launch_client=launch_client),lambda:bool(service_ready('http://127.0.0.1:17860') is None),reuse=False)
 
 
-def start():
+def start(*, launch_client=True):
     if (ROOT/'data/restore-quarantine.json').exists():
         raise ValueError('Restored state is quarantined. Verify recovery and stop the original instance before activation; see docs/public/backup-restore.zh-CN.md')
     if platform.system() != 'Darwin' or platform.machine() != 'arm64':
         raise ValueError('This preview supports macOS Apple Silicon only')
     from service_start import start_missing
     start_missing(ROOT)
-    open_client()
+    import time
+    deadline=time.monotonic()+45
+    while True:
+        try:service_ready('http://127.0.0.1:17860');break
+        except ValueError:
+            if time.monotonic()>=deadline:raise
+            time.sleep(1)
+    if launch_client:open_client()
 
 
 def service_ready(url):
