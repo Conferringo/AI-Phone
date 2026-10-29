@@ -8,11 +8,34 @@ pub fn for_chat_api(context: &[Value]) -> Vec<Value> {
         .collect()
 }
 
+// A provider closes a native tool turn at the next user/system input.
+// Interrupted calls remain evidence records; they must never be replayed.
+fn completed_native_calls(context: &[Value]) -> HashSet<&str> {
+    context
+        .iter()
+        .enumerate()
+        .filter_map(|(index, item)| {
+            let id = item["call_id"].as_str()?;
+            if item["type"] != "function_call" {
+                return None;
+            }
+            context[index + 1..]
+                .iter()
+                .take_while(|next| {
+                    !matches!(next["role"].as_str(), Some("user" | "system" | "developer"))
+                })
+                .any(|next| next["type"] == "function_call_output" && next["call_id"] == id)
+                .then_some(id)
+        })
+        .collect()
+}
+
 // Protocol-only projection. The persisted context and public execution ledger stay unchanged.
 // Real reasoning is passed back verbatim to the same model, never fabricated or rendered.
 pub fn for_api(context: &[Value]) -> Vec<Value> {
     let compacted = bounded_history(context);
     let context = compacted.as_slice();
+    let native_calls = completed_native_calls(context);
     let mut result = Vec::with_capacity(context.len());
     let mut response_has_reasoning = false;
     let mut preserved_ids = HashSet::<String>::new();
@@ -29,7 +52,7 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
             result.push(item.clone());
         } else if kind == "function_call" {
             let id = item["call_id"].as_str().unwrap_or("").to_string();
-            if response_has_reasoning && !id.is_empty() {
+            if response_has_reasoning && native_calls.contains(id.as_str()) {
                 preserved_ids.insert(id);
                 result.push(item.clone());
             } else {
@@ -196,6 +219,39 @@ fn append_parts(destination: &mut Vec<Value>, value: Option<&Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn steering_between_call_and_result_archives_only_the_interrupted_turn() {
+        let original = vec![
+            json!({"type":"reasoning","content":[{"type":"reasoning_text","text":"actual provider reasoning"}]}),
+            json!({"type":"function_call","call_id":"interrupted","name":"knowledge_search","arguments":"{}"}),
+            json!({"role":"system","content":[{"type":"input_text","text":"New steering; previous action was interrupted"}]}),
+            json!({"role":"user","content":[{"type":"input_text","text":"Continue with a different task"}]}),
+            json!({"type":"function_call_output","call_id":"interrupted","output":"not_executed"}),
+            json!({"type":"reasoning","content":[{"type":"reasoning_text","text":"next real reasoning"}]}),
+            json!({"type":"function_call","call_id":"complete","name":"phone_observe","arguments":"{}"}),
+            json!({"type":"function_call_output","call_id":"complete","output":"actual observation"}),
+        ];
+        let saved = original.clone();
+        let projected = for_api(&original);
+        assert_eq!(original, saved);
+        assert!(
+            !projected
+                .iter()
+                .any(|item| item["call_id"] == "interrupted")
+        );
+        assert!(
+            projected
+                .iter()
+                .any(|item| item["call_id"] == "complete" && item["type"] == "function_call")
+        );
+        assert!(projected.iter().any(|item| item["call_id"] == "complete" && item["type"] == "function_call_output"));
+        assert!(
+            projected
+                .iter()
+                .any(|item| item.to_string().contains("not_executed"))
+        );
+        assert_eq!(projected[1], saved[2]);
+    }
     #[test]
     fn large_history_compacts_old_material_and_keeps_recent_tool_pairs() {
         let mut original = vec![
