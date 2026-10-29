@@ -343,7 +343,7 @@ fn focused_window(output: &str) -> Option<&str> {
     }
     None
 }
-fn popup_foreground(displays: &str, windows: &str) -> Option<String> {
+fn focused_surface_foreground(displays: &str, windows: &str) -> Option<String> {
     let focus = focused_window(displays)?;
     let mut matching = false;
     let mut section = String::new();
@@ -359,21 +359,28 @@ fn popup_foreground(displays: &str, windows: &str) -> Option<String> {
             section.push('\n');
         }
     }
-    if !section.contains("mDisplayId=0 ")
-        || !section.contains("isVisible=true")
-        || ![
-            "ty=APPLICATION_PANEL",
-            "ty=APPLICATION_SUB_PANEL",
-            "ty=APPLICATION_ATTACHED_DIALOG",
-        ]
-        .iter()
-        .any(|kind| section.contains(kind))
-    {
+    if !section.contains("mDisplayId=0 ") || !section.contains("isVisible=true") {
         return None;
     }
     let package = section
         .split_whitespace()
         .find_map(|word| word.strip_prefix("package="))?;
+    // The shade has no Activity component. Resolve its actual focused,
+    // visible window owner rather than borrowing the obscured application's
+    // identity or accepting an app-controlled title as a system surface.
+    if section.contains("ty=NOTIFICATION_SHADE") && package == "com.android.systemui" {
+        return Some("com.android.systemui/NotificationShade".into());
+    }
+    if ![
+        "ty=APPLICATION_PANEL",
+        "ty=APPLICATION_SUB_PANEL",
+        "ty=APPLICATION_ATTACHED_DIALOG",
+    ]
+    .iter()
+    .any(|kind| section.contains(kind))
+    {
+        return None;
+    }
     if package.is_empty() || !package.contains('.') {
         return None;
     }
@@ -412,7 +419,8 @@ async fn foreground(runner: &Runner) -> Result<String, String> {
             .await
             .map_err(|_| "弹出窗口读取超时")??;
             if windows.0
-                && let Some(app) = popup_foreground(&displays, &String::from_utf8_lossy(&windows.1))
+                && let Some(app) =
+                    focused_surface_foreground(&displays, &String::from_utf8_lossy(&windows.1))
             {
                 return Ok(app);
             }
@@ -751,15 +759,33 @@ pub async fn record_scroll(runner: &Runner, attempt: Option<ScrollAttempt>, succ
 mod tests {
     use super::*;
     #[test]
+    fn notification_shade_is_observable_only_with_the_exact_system_window_owner() {
+        let displays = "Display: mDisplayId=0 (organized)\n mCurrentFocus=Window{abc u0 NotificationShade}\n mFocusedApp=ActivityRecord{xyz u0 other.app/.Hidden}";
+        let windows = " Window #3 Window{abc u0 NotificationShade}:\n mDisplayId=0 rootTaskId=1\n mOwnerUid=10122 package=com.android.systemui appop=NONE\n mAttrs={ty=NOTIFICATION_SHADE fmt=TRANSLUCENT}\n isVisible=true\n Window #4 Window{def u0 StatusBar}:\n package=com.android.systemui";
+        assert_eq!(
+            focused_surface_foreground(displays, windows).as_deref(),
+            Some("com.android.systemui/NotificationShade")
+        );
+        for invalid in [
+            windows.replace("package=com.android.systemui", "package=other.app"),
+            windows.replace("NOTIFICATION_SHADE", "APPLICATION_OVERLAY"),
+            windows.replace("isVisible=true", "isVisible=false"),
+            windows.replace("mDisplayId=0", "mDisplayId=2"),
+            windows.replace("Window{abc", "Window{different"),
+        ] {
+            assert!(focused_surface_foreground(displays, &invalid).is_none());
+        }
+    }
+    #[test]
     fn popup_focus_requires_exact_visible_primary_application_panel_owner() {
         let displays = "Display: mDisplayId=2\n mCurrentFocus=null\n Display: mDisplayId=0 (organized)\n mCurrentFocus=Window{abc u0 PopupWindow:123}\n mFocusedApp=ActivityRecord{x u0 other.app/.Main}";
         let windows = " Window #1 Window{abc u0 PopupWindow:123}:\n mDisplayId=0 rootTaskId=77\n mOwnerUid=10157 package=com.tencent.mm appop=NONE\n mAttrs={ty=APPLICATION_PANEL}\n isVisible=true\n Window #2 Window{def u0 InputMethod}:\n package=keyboard.app";
         assert_eq!(
-            popup_foreground(displays, windows).as_deref(),
+            focused_surface_foreground(displays, windows).as_deref(),
             Some("com.tencent.mm/PopupWindow:123")
         );
         assert_eq!(
-            popup_foreground(
+            focused_surface_foreground(
                 displays,
                 &windows.replace("APPLICATION_PANEL", "APPLICATION_SUB_PANEL")
             )
@@ -767,7 +793,7 @@ mod tests {
             Some("com.tencent.mm/PopupWindow:123")
         );
         assert_eq!(
-            popup_foreground(
+            focused_surface_foreground(
                 displays,
                 &windows.replace("APPLICATION_PANEL", "APPLICATION_ATTACHED_DIALOG")
             )
@@ -780,10 +806,10 @@ mod tests {
             windows.replace("APPLICATION_PANEL", "APPLICATION_OVERLAY"),
             windows.replace("{abc", "{other"),
         ] {
-            assert!(popup_foreground(displays, &invalid).is_none());
+            assert!(focused_surface_foreground(displays, &invalid).is_none());
         }
         assert!(
-            popup_foreground(
+            focused_surface_foreground(
                 &displays.replace("Window{abc u0 PopupWindow:123}", "null"),
                 windows
             )
@@ -796,20 +822,22 @@ mod tests {
             "Display: mDisplayId=0 (organized)\n mCurrentFocus=Window{fa697a9 u0 弹出式窗口}";
         let windows = " Window #7 Window{fa697a9 u0 弹出式窗口}:\n mDisplayId=0 rootTaskId=98\n mOwnerUid=1000 package=com.android.settings appop=NONE\n mAttrs={ty=APPLICATION_SUB_PANEL}\n isVisible=true\n Window #8 Window{bc87985 u0 com.android.settings/.Main}:\n package=com.android.settings";
         assert_eq!(
-            popup_foreground(displays, windows).as_deref(),
+            focused_surface_foreground(displays, windows).as_deref(),
             Some("com.android.settings/PopupWindow:fa697a9")
         );
         assert_eq!(
-            popup_foreground(
+            focused_surface_foreground(
                 &displays.replace("弹出式窗口", "Custom menu title"),
                 &windows.replace("弹出式窗口", "Custom menu title")
             )
             .as_deref(),
             Some("com.android.settings/PopupWindow:fa697a9")
         );
-        assert!(popup_foreground(displays, &windows.replace("fa697a9", "fffffff")).is_none());
         assert!(
-            popup_foreground(
+            focused_surface_foreground(displays, &windows.replace("fa697a9", "fffffff")).is_none()
+        );
+        assert!(
+            focused_surface_foreground(
                 displays,
                 &windows.replace("APPLICATION_SUB_PANEL", "APPLICATION_OVERLAY")
             )
