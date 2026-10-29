@@ -113,8 +113,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 6659,
-      "sha256": "71909296291d4fef2b4a5ad15743134a3284e30e59b6a96520af9e4b84c748a1"
+      "size": 6687,
+      "sha256": "21503fe384fa1bff758b1fae5d6a42d69807982bb32341b1a46d034b124d823a"
     },
     {
       "path": "ai-phone",
@@ -3423,8 +3423,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 6573,
-      "sha256": "54fb3aca356a01b70197906004d701cbe4e9cc3404ae48439bf3478efa801d4e"
+      "size": 6737,
+      "sha256": "4c282f8bdd6b7bc71d695e99d4b257dc9ac95b8b7cdbc09d5b90a4795ecc69a3"
     },
     {
       "path": "scripts/bun",

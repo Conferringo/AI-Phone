@@ -53,8 +53,10 @@ def build_other(target, package_only=False):
         from android_notices import verify
         env={**prepare(), 'CARGO_ENCODED_RUSTFLAGS':env['CARGO_ENCODED_RUSTFLAGS']}
         if not package_only:
-            verify(ROOT,env)
             subprocess.run(command+['android','build','--apk','--target','aarch64','--ci','--','--locked'],cwd=client,env=env,check=True)
+        # Tauri's build creates plugin settings/includes absent after a fresh init.
+        # Check the resolved graph before accepting/signing the resulting artifact.
+        verify(ROOT,env)
         source=native/'gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk'
         destination=dist/f'AI-Phone-{version}-android-arm64.apk'
         sign(source,destination)

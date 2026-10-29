@@ -27,7 +27,7 @@ Native-client notice supplements now cover 40 locked crates: exact VCS grants, v
 
 ## Android Java/Kotlin runtime
 
-`docs/public/android-client-licenses.txt` includes all 79 resolved runtime/BOM coordinates, Apache-2.0 terms and upstream embedded LICENSE/NOTICE attributions (including shaded FastDoubleParser notices). POM/notice files and hashes are in `config/android-dependency-notices.json` and `docs/public/licenses/android/`. Packaging compares the resolved release graph before building. Android system/WebView binaries are supplied by the device and are not included.
+`docs/public/android-client-licenses.txt` includes all 79 resolved runtime/BOM coordinates, Apache-2.0 terms and upstream embedded LICENSE/NOTICE attributions (including shaded FastDoubleParser notices). POM/notice files and hashes are in `config/android-dependency-notices.json` and `docs/public/licenses/android/`. Packaging compares the resolved release graph before accepting/signing the built artifact. Android system/WebView binaries are supplied by the device and are not included.
 
 ## Source availability and Linux system libraries
 
