@@ -15,6 +15,7 @@ use tauri::Manager;
 mod checkpoint;
 mod download;
 mod process;
+mod toolchain;
 use download::{hash, mise as download_mise};
 use process::execute;
 
@@ -280,9 +281,9 @@ fn prepare_folder(folder: &Path) -> Result<(), String> {
 }
 
 fn prepare_runtime(manager: &ManagerState, folder: &Path) -> Result<PathBuf, String> {
-    let tools = folder.join("tools");
-    fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
-    let mise = tools.join("mise");
+    let layout = toolchain::Toolchain::new(folder);
+    layout.prepare()?;
+    let mise = layout.binary;
     let policy: serde_json::Value = serde_json::from_str(POLICY).map_err(|e| e.to_string())?;
     manager.set(folder, "runtime", "running", "")?;
     tauri::async_runtime::block_on(download_mise(
@@ -313,7 +314,7 @@ fn run(
     )
     .map_err(|e| e.to_string())?;
     let mise = prepare_runtime(manager, &folder)?;
-    let tools = folder.join("tools");
+    let layout = toolchain::Toolchain::new(&folder);
     let mut command = Command::new(&mise);
     command
         .current_dir(&folder)
@@ -327,15 +328,7 @@ fn run(
         .arg(request_path)
         .arg("--mise")
         .arg(&mise);
-    for (key, suffix) in [
-        ("MISE_DATA_DIR", "mise/data"),
-        ("MISE_CACHE_DIR", "mise/cache"),
-        ("MISE_CONFIG_DIR", "mise/config"),
-        ("CARGO_HOME", "cargo"),
-        ("RUSTUP_HOME", "rustup"),
-    ] {
-        command.env(key, tools.join(suffix));
-    }
+    layout.apply(&mut command);
     command
         .env("MISE_YES", "1")
         .env("MISE_SELF_UPDATE_AVAILABLE", "false")

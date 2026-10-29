@@ -587,9 +587,14 @@
       "sha256": "b001dc53cdf762228a0f440ff91d1dc685186b6b6d3e93348f8f1e26061bc692"
     },
     {
+      "path": "apps/client/src-tauri/src/bootstrap/toolchain.rs",
+      "size": 3902,
+      "sha256": "3401cded925cf570f8a88ee6d10cd9e6eab4ede9193a173ccb35eb1fcbcbab37"
+    },
+    {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 21789,
-      "sha256": "5421a3d90159ee25728b7af635122295774c444fd9716d2615e86979fa6a6a48"
+      "size": 21542,
+      "sha256": "443f40c0bdf3b81a9a83c44ceceaaf5881e164eadea9892f63f3e48d7d1fda7f"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
