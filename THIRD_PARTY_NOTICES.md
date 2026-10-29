@@ -21,6 +21,16 @@ The Apache-2.0 project licence does not override third-party, copyleft, trademar
 GSAP 3.15.0 uses its own [Standard No Charge licence](https://gsap.com/community/standard-license/), not Apache/MIT or an OSI-approved project licence. The source depends on the separately installed package and preserves its notices. Its restrictions on competing visual animation builders remain applicable. Native libvips (LGPL), lightningcss/@vercel/og (MPL), caniuse-lite data (CC BY) and mixed-licence packages remain identified in the inventory.
 
 
-The native client bundles collected licence texts in `docs/public/native-client-licenses.txt`. Some upstream crate archives omit full texts; those gaps are not cleared by having SPDX metadata. Final binary redistribution review remains open.
+The native client bundles collected licence texts in `docs/public/native-client-licenses.txt`. Complete text references and upstream grants for omitted crate notices are pinned in config/native-notice-supplements.json. The current client inventory reports no missing notice files. Source grants, full terms, copyright attributions and source availability remain distinct from a blanket legal certification.
 
-Native-client notice supplements: 14 locked crates omitted licence files from their release archives. Exact files from their published VCS revisions are included in `docs/public/licenses/native/`, with source URLs/commit and hashes in `config/native-notice-supplements.json`. The generated notice collection includes these texts; 26 packages still lack complete text evidence. In particular, objc2's upstream licensing overview is not treated as a full licence grant or an Apple SDK redistribution clearance. Final per-platform distribution review remains open.
+Native-client notice supplements now cover 40 locked crates: exact VCS grants, verified published-archive grants, and full terms linked by upstream grants. Paths, source URLs, revisions/archive checksums and SHA256 are recorded in `config/native-notice-supplements.json`; no missing client notice files remain. The objc2 upstream grant/Apple-SDK caveat is preserved alongside the full MIT text and author attribution; this is not a claim to relicense Apple SDKs. SDKs, operating-system frameworks, WebView runtimes and guest applications are not redistributed in these client installers.
+
+## Android Java/Kotlin runtime
+
+`docs/public/android-client-licenses.txt` includes all 79 resolved runtime/BOM coordinates, Apache-2.0 terms and upstream embedded LICENSE/NOTICE attributions (including shaded FastDoubleParser notices). POM/notice files and hashes are in `config/android-dependency-notices.json` and `docs/public/licenses/android/`. Packaging compares the resolved release graph before building. Android system/WebView binaries are supplied by the device and are not included.
+
+## Source availability and Linux system libraries
+
+For MPL-2.0 client dependencies such as selectors/cssparser, exact crate versions and public source URLs are retained in the notice collection and Cargo.lock. selectors corresponding source is https://crates.io/api/v1/crates/selectors/0.36.1/download (checksum in the supplement record). The unmodified source can be downloaded and rebuilt; any in-repository native patch is separately preserved with its upstream license/source under apps/client/src-tauri/vendor. Linux installers dynamically use the distribution GTK/WebKit/system libraries rather than bundling their binaries; install those through the distribution package manager.
+
+Preview clients include these texts. Unsigned clients and untested installations are explicitly labeled; no guest image/server binary is uploaded with them. Component terms and copyright notices continue to apply independently of Apache-2.0.

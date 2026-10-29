@@ -44,3 +44,5 @@
 - [首配与窗口审查](release-ux-audit-2026-10-29.md)
 - [SOLID审计与欠账](solid-audit.md)
 - [声音与恢复](release-stability-2026-10-29.md)
+
+[Preview clients, installation limits and release process / 预览客户端下载与限制](preview-release.md)

@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import os
 import argparse
+import tomllib
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -12,7 +13,7 @@ def checksum(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def notices(folder):
     items=[]
     for path in sorted(folder.iterdir()):
-        if path.is_file() and path.name.upper().startswith(('LICENSE','LICENCE','COPYING','NOTICE')):
+        if path.is_file() and path.name.upper().startswith(('LICENSE','LICENCE','COPYING','NOTICE','COPYRIGHT')):
             items.append({'file':path.name,'sha256':checksum(path)})
     return items
 
@@ -22,9 +23,21 @@ def supplemental_notices(root, package, folder):
     key = package['name']+'@'+package['version']
     match = next((row for row in json.loads(config.read_text())['packages'] if row['package']==key), None)
     if not match: return []
-    vcs = json.loads((folder/'.cargo_vcs_info.json').read_text())
-    if vcs['git']['sha1']!=match['commit'] or package.get('repository')!=match['repository']:
-        raise ValueError('Supplemental notice source mismatch: '+key)
+    if package.get('repository')!=match['repository']:
+        raise ValueError('Supplemental notice repository mismatch: '+key)
+    if match.get('commit'):
+        vcs = json.loads((folder/'.cargo_vcs_info.json').read_text())
+        if vcs['git']['sha1']!=match['commit']:
+            raise ValueError('Supplemental notice source mismatch: '+key)
+    else:
+        locked=tomllib.loads((root/'apps/client/src-tauri/Cargo.lock').read_text())['package']
+        archive=next((p.get('checksum') for p in locked if p['name']==package['name'] and p['version']==package['version']),None)
+        if not archive or archive!=match.get('archive_sha256'):
+            raise ValueError('Supplemental notice archive mismatch: '+key)
+        for item in match['grant_files']:
+            path=(folder/item['file']).resolve()
+            if not path.is_relative_to(folder.resolve()) or checksum(path)!=item['sha256']:
+                raise ValueError('Supplemental notice grant mismatch: '+key)
     paths=[]
     for item in match['files']:
         path=(root/item['file']).resolve()
@@ -73,11 +86,11 @@ def client_notices(root=ROOT):
         if package.get('license_file'):
             path=Path(package['license_file']);path=path if path.is_absolute() else folder/path
             if path.is_file() and path not in paths:paths.append(path)
-        supplement=supplemental_notices(root,package,folder) if not paths else []
+        supplement=supplemental_notices(root,package,folder)
         if not paths and not supplement:missing.append(package['name']+'@'+package['version'])
-        blocks.append('\n'+'='*72+'\n'+package['name']+' '+package['version']+'\nSPDX: '+(package.get('license') or 'see licence file')+'\nSource: '+(package.get('repository') or 'https://crates.io/crates/'+package['name'])+'\n')
+        blocks.append('\n'+'='*72+'\n'+package['name']+' '+package['version']+'\nSPDX: '+(package.get('license') or 'see licence file')+'\nSource: '+(package.get('repository') or 'https://crates.io/crates/'+package['name'])+'\nAttribution: '+(', '.join(package.get('authors',[])) or 'See retained upstream grant/source')+'\n')
         for path in paths:blocks.append('\n--- '+path.name+' ---\n'+path.read_text())
-        for path,url in supplement:blocks.append('\n--- '+path.name+' (exact upstream revision) ---\n'+url+'\n'+path.read_text())
+        for path,url in supplement:blocks.append('\n--- '+path.name+' (pinned grant or linked full licence text) ---\n'+url+'\n'+path.read_text())
     return '\n'.join(blocks),missing
 
 if __name__=='__main__':

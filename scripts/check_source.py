@@ -30,8 +30,9 @@ def check(root=ROOT,require_license=True):
             for name,expected in entries:
                 if name not in names or hashlib.sha256((root/name).read_bytes()).hexdigest()!=expected:
                     issues.append({'file':name,'rule':'asset-provenance-hash'})
-    supplements=root/'config/native-notice-supplements.json'
-    if supplements.is_file():
+    for supplement_name in ['native-notice-supplements.json','android-dependency-notices.json']:
+        supplements=root/'config'/supplement_name
+        if not supplements.is_file():continue
         for package in json.loads(supplements.read_text()).get('packages',[]):
             for item in package['files']:
                 name=item['file']

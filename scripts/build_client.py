@@ -8,7 +8,7 @@ import subprocess
 import os
 import argparse
 from native_bundle import inspect_macos_bundle
-from client_artifacts import inspect_apk, inspect_deb, inspect_windows, record
+from client_artifacts import inspect_apk, inspect_deb, inspect_windows, record, notice_manifest
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -32,6 +32,8 @@ def build_macos():
     destination.with_suffix('.dmg.sha256').write_text(digest+'  '+destination.name+'\n')
     manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'server_included':False,'remote_upload':False,'server_requirement':'An already configured local/LAN deployment','source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
     manifest['bundle']=inspected
+    manifest['third_party_notices']=notice_manifest(ROOT)
+    manifest['source_commit']=os.environ.get('GITHUB_SHA','')
     destination.with_suffix('.dmg.manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':False,'remote_upload':False}))
 
@@ -48,8 +50,10 @@ def build_other(target, package_only=False):
     if target=='android':
         from prepare_android_client import prepare
         from sign_android_preview import sign
+        from android_notices import verify
         env={**prepare(), 'CARGO_ENCODED_RUSTFLAGS':env['CARGO_ENCODED_RUSTFLAGS']}
         if not package_only:
+            verify(ROOT,env)
             subprocess.run(command+['android','build','--apk','--target','aarch64','--ci','--','--locked'],cwd=client,env=env,check=True)
         source=native/'gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk'
         destination=dist/f'AI-Phone-{version}-android-arm64.apk'
@@ -88,6 +92,9 @@ if __name__=='__main__':
     parser.add_argument('--platform',choices=['macos','windows','linux','android'],default='macos')
     parser.add_argument('--package-only',action='store_true',help='Inspect and package an existing build; does not claim it is current')
     args=parser.parse_args()
+    from check_source import check
+    check(ROOT)
+    notice_manifest(ROOT)
     if args.platform=='macos':
         if args.package_only:parser.error('--package-only is not supported for macOS')
         build_macos()

@@ -4,16 +4,16 @@
 
 ## Download and install
 
-The source is open under Apache-2.0. Four client targets have local builds; installers have not been formally released. Clients connect to a deployment owned by the user. The full server currently targets macOS Apple Silicon first; Windows/Linux host management remains in development. Android initially acts as a connection client.
+The source is open under Apache-2.0. Preview client downloads are listed below; they are not stable releases. Clients connect to a deployment owned by the user. The full server currently targets macOS Apple Silicon first; Windows/Linux host management remains in development. Android initially acts as a connection client.
 
 | System | Client format | Status / instructions |
 |---|---|---|
-| macOS Apple Silicon | DMG | Locally built and native connection checked; unsigned/unnotarized. [Install/build](docs/public/native-client.en.md) |
-| Windows x64 | EXE / NSIS | Cross-built; physical installation and signing pending. [Platform evidence](docs/public/multiplatform-clients.md) |
-| Linux ARM64 | DEB | Built; full desktop/media acceptance pending. [Platform evidence](docs/public/multiplatform-clients.md) |
-| Android ARM64 | APK | Connection client built; touch/background recovery pending. [Platform evidence](docs/public/multiplatform-clients.md) |
+| macOS Apple Silicon | [DMG](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-macos-arm64.dmg) | Unsigned/unnotarized; installer untested |
+| Windows x64 | [EXE / NSIS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-windows-x64-setup.exe) | Unsigned; installation/runtime untested |
+| Linux amd64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-arm64.deb) | Ubuntu 24.04 builds; desktop/media untested |
+| Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-android-arm64.apk) | Preview certificate; touch/background untested |
 
-Installers will be added to [Releases](https://github.com/Conferringo/AI-Phone/releases) after licence review, with explicit signing and platform-test status. There are no placeholder binary download links. See the [delivery contract](docs/public/release-contract.en.md).
+[Releases](https://github.com/Conferringo/AI-Phone/releases) include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
 
 Source deployment requires Python 3.11+, Node.js 22+, npm, Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
 

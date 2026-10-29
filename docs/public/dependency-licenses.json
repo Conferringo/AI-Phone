@@ -5,7 +5,7 @@
   "locks": {
     "Cargo.lock": "5fe896d9077e52c80d67835d7d4b2937ee86a174e3006f90b1c9e50faa27f137",
     "bun.lock": "698f7f13a76986ecfad5e5dc69b21c8f862550f18cb5f3c5e2e03e67682ff2b1",
-    "apps/client/src-tauri/Cargo.lock": "9cd8a3505a6e6db672c21f32520483f18e5a5ff0f04139b50a1cd545d48f6ecc"
+    "apps/client/src-tauri/Cargo.lock": "d30bcc1393a56530c03de4b01d1e7c223ebae688e3c9a5ad9bf25668911faa29"
   },
   "rust": [
     {
@@ -159,6 +159,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk3-rs",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -615,6 +619,10 @@
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
         }
@@ -731,7 +739,12 @@
       "version": "1.1.0",
       "license": "Apache-2.0/MIT",
       "repository": "https://github.com/emk/cesu8-rs",
-      "notices": [],
+      "notices": [
+        {
+          "file": "COPYRIGHT-RUST.txt",
+          "sha256": "5ca77347e58205d3b543c04a9c5bdd11d20a9f3108a7b246640edffa999b5f35"
+        }
+      ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
       ]
@@ -942,6 +955,10 @@
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/servo/core-foundation-rs",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "ec82b96487e9e778ee610c7ab245162464782cfa1f555c2299333f8dbe5c036a"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
@@ -1743,6 +1760,10 @@
       "repository": "https://github.com/hsivonen/encoding_rs",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         },
@@ -2321,6 +2342,10 @@
       "repository": "https://github.com/gtk-rs/gtk3-rs",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
         }
@@ -2335,6 +2360,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -2395,6 +2424,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk3-rs",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -2501,6 +2534,10 @@
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
         }
@@ -2531,6 +2568,10 @@
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
         }
@@ -2545,6 +2586,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -2610,6 +2655,10 @@
       "repository": "https://github.com/gtk-rs/gtk3-rs",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
+        {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
         }
@@ -2639,6 +2688,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk3-rs",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -3764,6 +3817,10 @@
       "repository": "https://github.com/sunfishcode/linux-raw-sys",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "3290ae0fbc9ddb77d2239121d710f0bb9d31b3b4744e6d97fe01e652b4c1870b"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
         },
@@ -4120,6 +4177,10 @@
       "license": "Apache-2.0 OR MIT",
       "repository": "https://github.com/hsivonen/multiversion_no_op",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "d2a809eafabba137f508bea16a1b93d8ff24df7da6f38129d830db9bc118bdfe"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
@@ -4536,6 +4597,10 @@
       "license": "MIT",
       "repository": "https://github.com/gtk-rs/gtk-rs-core",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
+        },
         {
           "file": "LICENSE",
           "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
@@ -5439,6 +5504,10 @@
       "repository": "https://github.com/rust-random/rand",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
         },
@@ -5459,6 +5528,10 @@
       "repository": "https://github.com/rust-random/rand",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
         },
@@ -5478,6 +5551,10 @@
       "repository": "https://github.com/rust-random/rand",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "aaff376532ea30a0cd5330b9502ad4a4c8bf769c539c87ffe78819d188a18ebf"
         },
@@ -5496,6 +5573,10 @@
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/rust-random/rand_core",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "92b81db30f7ab6d693e0af5661a40d273ca1947e891123ed823924192c10cbc7"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
@@ -5517,6 +5598,10 @@
       "repository": "https://github.com/rust-random/rand",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
         },
@@ -5535,6 +5620,10 @@
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/rust-random/rngs",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
@@ -5862,6 +5951,10 @@
       "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
       "repository": "https://github.com/bytecodealliance/rustix",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "377c2e7c53250cc5905c0b0532d35973392af16ffb9596a41d99d202cf3617c9"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
@@ -8102,6 +8195,10 @@
       "repository": "https://github.com/servo/unicode-bidi",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "edb20b474f6cbd4f4db066b54a9e0f687d0009d309412a63431189b59b8e2a07"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
         },
@@ -8145,6 +8242,10 @@
       "repository": "https://github.com/unicode-rs/unicode-normalization",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
         },
@@ -8168,6 +8269,10 @@
       "repository": "https://github.com/unicode-rs/unicode-properties",
       "notices": [
         {
+          "file": "COPYRIGHT",
+          "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d"
+        },
+        {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
         },
@@ -8186,6 +8291,10 @@
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/unicode-rs/unicode-segmentation",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
@@ -8256,6 +8365,10 @@
       "license": "Apache-2.0 OR MIT",
       "repository": "https://github.com/hsivonen/utf8_iter",
       "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "c30152c94a6d75e021adbc52b3a52470366a46edb917e17deae3259251af244c"
+        },
         {
           "file": "LICENSE-APACHE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
@@ -13638,6 +13751,10 @@
       "repository": "https://github.com/Microsoft/tslib.git",
       "notices": [
         {
+          "file": "CopyrightNotice.txt",
+          "sha256": "da16ddb65f8ca390998fb99223d0112498b56b45784d00afd77ff8ce1ac4de8b"
+        },
+        {
           "file": "LICENSE.txt",
           "sha256": "210b19e543130388c68654b7497e967119ce17145f66ab7d85688fbd70f08751"
         }
@@ -13876,32 +13993,5 @@
     "rust": [],
     "javascript": []
   },
-  "native_client_missing_notice_files": [
-    "block2@0.6.2",
-    "cesu8@1.1.0",
-    "dispatch2@0.3.1",
-    "libappindicator-sys@0.9.0",
-    "objc2@0.6.5",
-    "objc2-app-kit@0.3.2",
-    "objc2-cloud-kit@0.3.2",
-    "objc2-core-data@0.3.2",
-    "objc2-core-foundation@0.3.2",
-    "objc2-core-graphics@0.3.2",
-    "objc2-core-image@0.3.2",
-    "objc2-core-location@0.3.2",
-    "objc2-core-text@0.3.2",
-    "objc2-encode@4.1.0",
-    "objc2-exception-helper@0.1.1",
-    "objc2-foundation@0.3.2",
-    "objc2-io-surface@0.3.2",
-    "objc2-quartz-core@0.3.2",
-    "objc2-ui-kit@0.3.2",
-    "objc2-user-notifications@0.3.2",
-    "objc2-web-kit@0.3.2",
-    "r-efi@5.3.0",
-    "r-efi@6.0.0",
-    "selectors@0.36.1",
-    "winapi-i686-pc-windows-gnu@0.4.0",
-    "winapi-x86_64-pc-windows-gnu@0.4.0"
-  ]
+  "native_client_missing_notice_files": []
 }

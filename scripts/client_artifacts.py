@@ -9,9 +9,23 @@ import subprocess
 import tempfile
 import tomllib
 import zipfile
+import os
 from release_package import SECRET
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def notice_manifest(root=ROOT):
+    inventory=json.loads((root/'docs/public/dependency-licenses.json').read_text())
+    missing=inventory.get('native_client_missing_notice_files')
+    if missing!=[]:
+        raise ValueError('Native dependency notice evidence is incomplete')
+    android=json.loads((root/'config/android-dependency-notices.json').read_text())
+    if not android['packages']:
+        raise ValueError('Android dependency notices are empty')
+    texts={name:hashlib.sha256((root/'docs/public'/name).read_bytes()).hexdigest()
+           for name in ['native-client-licenses.txt','android-client-licenses.txt']}
+    return {'rust_missing_files':missing,'android_runtime_modules':len(android['packages']),'texts':texts}
 
 
 def inspect_payload(files, root=ROOT):
@@ -87,6 +101,7 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
         'kind': 'native-client-preview', 'os': os_name, 'arch': arch, 'sha256': digest,
         'signing': signing, 'runtime_acceptance': runtime, 'server_included': False,
         'dependencies_license_review_complete': False, 'remote_upload': False,
+        'third_party_notices': notice_manifest(root), 'source_commit': os.environ.get('GITHUB_SHA',''),
         'source_locks': {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
                          for name in ['bun.lock', 'apps/client/src-tauri/Cargo.lock']},
         'payload': inspection}

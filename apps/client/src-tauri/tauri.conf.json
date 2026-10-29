@@ -44,7 +44,8 @@
       "../../../PRIVACY.md": "legal/PRIVACY.md",
       "../../../DISCLAIMER.md": "legal/DISCLAIMER.md",
       "../../../THIRD_PARTY_NOTICES.md": "legal/THIRD_PARTY_NOTICES.md",
-      "../../../docs/public/native-client-licenses.txt": "legal/native-client-licenses.txt"
+      "../../../docs/public/native-client-licenses.txt": "legal/native-client-licenses.txt",
+      "../../../docs/public/android-client-licenses.txt": "legal/android-client-licenses.txt"
     },
     "macOS": {
       "minimumSystemVersion": "14.4"

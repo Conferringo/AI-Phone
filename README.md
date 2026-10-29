@@ -4,16 +4,16 @@
 
 ## 下载与安装
 
-源码按 Apache-2.0 公开；四平台客户端已有本地构建，安装包尚未正式发布。客户端需要连接用户已部署的服务。完整本机服务器首先支持 macOS Apple Silicon，Windows/Linux 宿主管理仍在开发，Android 首版为连接客户端。
+源码按 Apache-2.0 公开；四平台预览客户端下载见下表；预览不等于稳定版。客户端需要连接用户已部署的服务。完整本机服务器首先支持 macOS Apple Silicon，Windows/Linux 宿主管理仍在开发，Android 首版为连接客户端。
 
 | 系统 | 客户端格式 | 当前状态 / 安装说明 |
 |---|---|---|
-| macOS Apple Silicon | DMG | 本地构建与原生连接已验证；未签名/公证，[安装与构建](docs/public/native-client.zh-CN.md) |
-| Windows x64 | EXE / NSIS | 已交叉构建；实机、签名待验，[平台记录](docs/public/multiplatform-clients.md) |
-| Linux ARM64 | DEB | 已构建；完整桌面/媒体待验，[平台记录](docs/public/multiplatform-clients.md) |
-| Android ARM64 | APK | 已构建连接客户端；触屏/后台恢复待验，[平台记录](docs/public/multiplatform-clients.md) |
+| macOS Apple Silicon | [DMG](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-macos-arm64.dmg) | 未签名/公证；未做安装验收 |
+| Windows x64 | [EXE / NSIS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-windows-x64-setup.exe) | 未签名；未做安装/运行验收 |
+| Linux x64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-arm64.deb) | Ubuntu 24.04构建；未做安装/媒体验收 |
+| Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-android-arm64.apk) | 预览证书；未做触屏/后台验收 |
 
-安装包补齐许可并明确签名与实测范围后才会加入 [Releases](https://github.com/Conferringo/AI-Phone/releases)，这里不提供未上传的下载链接。维护者选择不再等待独立设备安装验收后公开源码，未实测项目按原状披露，请通过 [Issue](https://github.com/Conferringo/AI-Phone/issues/new/choose) 反馈（勿附密钥或私人聊天）。已有包与待发行包的范围见[交付标准](docs/public/release-contract.zh-CN.md)。
+安装包、校验和、来源清单及第三方声明见 [Releases](https://github.com/Conferringo/AI-Phone/releases)。[预览范围与已知限制](docs/public/preview-release.md)。维护者暂不做实机安装验收，未实测项目按原状披露；请通过 [Issue](https://github.com/Conferringo/AI-Phone/issues/new/choose) 反馈（勿附密钥或私人聊天）。
 
 从源码部署需要 Python 3.11+、Node.js 22+、npm、Rust 1.88+、Java 17、Android 命令行工具、Xcode Command Line Tools 和 Docker Desktop。建议16GB内存，新安装预留35GiB磁盘。
 

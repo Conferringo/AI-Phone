@@ -5,9 +5,20 @@ import re
 import shutil
 import subprocess
 import tomllib
+import json
 from runtime_config import runtime_env
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def patch_build_task(path, cli):
+    text=path.read_text()
+    executable,count=re.subn(r'val executable = .*?;', 'val executable = "node";', text)
+    command='val args = listOf('+json.dumps(str(cli)).replace('$', r'\$')+', "android", "android-studio-script");'
+    patched,args_count=re.subn(r'val args = listOf\([^\n]*\);', lambda _:command, executable)
+    if count!=1 or args_count!=1:
+        raise ValueError('Unrecognized Android build task template')
+    path.write_text(patched)
 
 
 def android_environment(root=ROOT):
@@ -31,6 +42,8 @@ def prepare(root=ROOT):
                         'android', 'init', '--ci', '--skip-targets-install'],
                        cwd=root/'apps/client', env=env, check=True)
     # Use the installed stable API/toolchain; generated files remain disposable.
+    patch_build_task(generated/'buildSrc/src/main/java/dev/aiphone/client/kotlin/BuildTask.kt',
+                     root/'apps/client/node_modules/@tauri-apps/cli/tauri.js')
     for relative in ['build.gradle.kts', 'buildSrc/build.gradle.kts']:
         path = generated/relative
         text = re.sub(r'com.android.tools.build:gradle:[0-9.]+', 'com.android.tools.build:gradle:8.11.1', path.read_text())

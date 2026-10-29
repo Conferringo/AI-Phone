@@ -1,5 +1,7 @@
 # Release status / 发行状态
 
+2026-10-29 预览安装包批次：[下载范围、平台限制与发布过程](preview-release.md)。源码CI与macOS/Linux构建已取得首轮通过，Android回调路径已修复并进入复跑准备。原26项Rust notice缺口已关闭，Android79项依赖声明已加入；不包含设备盘/服务器/SDK镜像。实机安装按维护者决定不做，状态保持未实测。远端最终CI与Release资产以实际页面为准。
+
 2026-10-29 在线源码：[Conferringo/AI-Phone](https://github.com/Conferringo/AI-Phone)，实验性技术预览；[CI实际状态](https://github.com/Conferringo/AI-Phone/actions)。私密漏洞报告已启用，无安装包Release。
 
 2026-10-29 最新决定：[CSS与源码预览审查](css-review-2026-10-29.md)。维护者授权实验性源码公开，不再等待独立设备安装测试，未实测平台留给社区 Issue 反馈。`clean_host_install` 仍为 false，并在策略中记录豁免，不能写成通过。完整产品仍有 UI/平台、许可及长时恢复缺口；本次只提交白名单源码与文档，不上传安装包或用户状态。
