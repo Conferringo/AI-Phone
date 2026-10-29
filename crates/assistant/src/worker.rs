@@ -1947,6 +1947,10 @@ async fn execute(
     let mut step: i32 = row.get("step");
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
+    let exploration = matches!(
+        row.get::<String, _>("origin").as_str(),
+        "exploration" | "desktop-exploration"
+    );
     let notification_run = row.get::<String, _>("origin") == "notification";
     let desktop_notification = notification_run
         && sqlx::query_scalar::<_, String>("SELECT kind FROM devices WHERE id=$1")
@@ -1968,7 +1972,30 @@ async fn execute(
         if cancel.is_cancelled() {
             return Err("canceled".into());
         }
+        if exploration && state.exploration_yield_due(now_ms(), step) {
+            let interval: i64 = sqlx::query_scalar("SELECT CASE WHEN r.origin='desktop-exploration' THEN (SELECT interval_seconds FROM desktop_exploration WHERE device_id=r.device_id) ELSE (SELECT interval_seconds FROM proactive_state) END::bigint FROM runs r WHERE r.id=$1").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+            if persist_disposition(
+                app,
+                id,
+                message,
+                Checkpoint {
+                    context: &mut context,
+                    pending: &pending,
+                    answer: &answer,
+                    step,
+                    state: &state,
+                },
+                RunDisposition::Queued,
+                Some(now_ms().saturating_add(interval as u64 * 1000)),
+            )
+            .await?
+            {
+                return Ok(RunDisposition::Queued);
+            }
+            continue;
+        }
         if background
+            && !exploration
             && (step >= if notification_run { 180 } else { 40 }
                 || elapsed.saturating_add(slice_started.elapsed().as_secs() as i64)
                     >= if notification_run { 1800 } else { 600 })
@@ -2843,7 +2870,6 @@ async fn tool(
     let arguments: Value =
         serde_json::from_str(call["arguments"].as_str().unwrap_or("{}")).unwrap_or(json!({}));
     crate::proactive::guard_tool(app, run, name).await?;
-    crate::app_learning::guard(app, run, name).await?;
     if name == "app_experience_withdraw" {
         let value = crate::app_learning::withdraw(app, run, &arguments).await?;
         return Ok(json!([{"type":"input_text","text":value.to_string()}]));
@@ -4212,6 +4238,20 @@ mod loop_persistence_tests {
             state.no_progress("同一失败");state.no_progress("同一失败");assert!(state.no_progress("同一失败"));
             assert!(persist_disposition(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: "连续失败，请补充实际信息", step: 56, state: &state }, RunDisposition::Paused, None).await.unwrap());
             let row=sqlx::query("SELECT status,error,loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(row.get::<String,_>("status"),"paused");assert!(row.get::<String,_>("error").starts_with("需要补充："));assert!(!row.get::<String,_>("error").contains("手动接管"));assert_eq!(row.get::<Value,_>("loop_state")["stalls"],3);
+            let continuing_context=vec![input("自由探索，没有指定应用或目标")];
+            let continuing_pending=vec![call("workspace_list",json!({}))];
+            let continuing_state=json!({"stalls":2,"model_retries":2,"plan":{"goal":"agent-chosen-interest"},"exploration_window":{"first_step":100,"started_at_ms":1}});
+            sqlx::query("UPDATE proactive_state SET exploring=true").execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET origin='exploration',status='running',context=$2,pending_tools=$3,step=140,loop_state=$4,created_at=now()-interval '11 minutes',finished_at=NULL,error='' WHERE id=$1").bind(run).bind(json!(continuing_context)).bind(json!(continuing_pending)).bind(&continuing_state).execute(&app.db).await.unwrap();
+            let disposition=execute(&app,run,&cancel).await;
+            assert!(matches!(disposition,Ok(RunDisposition::Queued)),"an exploration budget yields the same run instead of canceling its chosen activity: {disposition:?}");
+            let saved=sqlx::query("SELECT status,context,pending_tools,step,loop_state,next_wake_at>now() sleeping FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            assert_eq!(saved.get::<String,_>("status"),"queued");assert!(saved.get::<bool,_>("sleeping"));
+            assert_eq!(saved.get::<Value,_>("context"),json!(continuing_context));
+            assert_eq!(saved.get::<Value,_>("pending_tools"),json!(continuing_pending));
+            assert_eq!(saved.get::<i32,_>("step"),140);
+            let loaded:Value=saved.get("loop_state");assert_eq!(loaded["plan"],continuing_state["plan"]);assert_eq!(loaded["stalls"],2);assert_eq!(loaded["model_retries"],2);
+
         }).catch_unwind().await;
         drop(app);
         test_db.close().await;

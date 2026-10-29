@@ -51,3 +51,7 @@ Knowledge, memory editors, autonomous settings, detailed traces and many backend
 | Android ARM64 | Connection client | Privileged AVF/KVM and software-emulation research; ordinary APK dual-guest hosting is not promised |
 
 Five built installer artifacts do not establish four standalone hosts. [Release gates and priorities](release-status.md) are the current completion record. Physical-install acceptance was waived for the experimental preview and remains untested, not passed.
+
+## Development runtime: exploration and notifications
+
+The source runtime now has [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. These are source changes; preview.1 installer bytes and their source revision remain unchanged. They do not certify standalone hosts, every model protocol or real-account attachment delivery.

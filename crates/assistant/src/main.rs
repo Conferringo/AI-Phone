@@ -26,6 +26,7 @@ mod desktop;
 mod desktop_explore;
 mod device_exchange;
 mod device_network;
+mod exploration_policy;
 mod http;
 mod model_adapter;
 mod model_context;
