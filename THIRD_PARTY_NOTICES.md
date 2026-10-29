@@ -34,3 +34,7 @@ Native-client notice supplements now cover 40 locked crates: exact VCS grants, v
 For MPL-2.0 client dependencies such as selectors/cssparser, exact crate versions and public source URLs are retained in the notice collection and Cargo.lock. selectors corresponding source is https://crates.io/api/v1/crates/selectors/0.36.1/download (checksum in the supplement record). The unmodified source can be downloaded and rebuilt; any in-repository native patch is separately preserved with its upstream license/source under apps/client/src-tauri/vendor. Linux installers dynamically use the distribution GTK/WebKit/system libraries rather than bundling their binaries; install those through the distribution package manager.
 
 Preview clients include these texts. Unsigned clients and untested installations are explicitly labeled; no guest image/server binary is uploaded with them. Component terms and copyright notices continue to apply independently of Apache-2.0.
+
+## Rust standard-library runtime
+
+The clients are built with Rust 1.96.0. Its standard-library copyright collection and 13 accompanying licence/attribution files are pinned in config/rust-runtime-notices.json, verified against the installed official component manifest and supplied in the native notice collection. The full compiler is not bundled. Changing the preview toolchain requires a runtime-notice review.

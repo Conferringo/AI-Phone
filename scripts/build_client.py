@@ -97,6 +97,8 @@ if __name__=='__main__':
     from check_source import check
     check(ROOT)
     notice_manifest(ROOT)
+    if subprocess.check_output(['rustc','--version'],text=True).split()[1]!='1.96.0':
+        raise ValueError('Build preview clients with Rust 1.96.0; review runtime notices before changing toolchains')
     if args.platform=='macos':
         if args.package_only:parser.error('--package-only is not supported for macOS')
         build_macos()

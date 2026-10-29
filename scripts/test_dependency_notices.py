@@ -3,13 +3,21 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from dependency_inventory import notices, supplemental_notices
+from dependency_inventory import notices, supplemental_notices, runtime_notice_blocks
 
 class NoticeTests(unittest.TestCase):
     def test_copyright_attribution_is_kept(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d);(p/'COPYRIGHT-RUST.txt').write_text('Published copyright grant')
             self.assertEqual([x['file'] for x in notices(p)],['COPYRIGHT-RUST.txt'])
+    def test_runtime_notice_preserves_text_and_rejects_tampering(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);self.assertEqual(runtime_notice_blocks(root),[])
+            (root/'config').mkdir();text=root/'runtime.txt';text.write_text('Copyright holder\nFull licence terms\n')
+            (root/'config/rust-runtime-notices.json').write_text(json.dumps({'packages':[{'package':'Rust@1','files':[{'file':'runtime.txt','url':'https://example.org/runtime','sha256':hashlib.sha256(text.read_bytes()).hexdigest()}]}]}))
+            self.assertIn(text.read_text(),''.join(runtime_notice_blocks(root)))
+            text.write_text('changed')
+            with self.assertRaisesRegex(ValueError,'hash mismatch'):runtime_notice_blocks(root)
     def fixture(self, root):
         (root/'config').mkdir();(root/'docs/public/licenses/native').mkdir(parents=True)
         source=root/'crate';source.mkdir();(source/'Cargo.toml').write_text('license="MIT"')

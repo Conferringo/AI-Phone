@@ -113,8 +113,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 6687,
-      "sha256": "21503fe384fa1bff758b1fae5d6a42d69807982bb32341b1a46d034b124d823a"
+      "size": 7102,
+      "sha256": "a03760f3801a8eb369786f0fb1c86a782e478fb9444a4ec80f31f0fc2c3bbc17"
     },
     {
       "path": "ai-phone",
@@ -1862,6 +1862,11 @@
       "sha256": "c9ee2fdfdf9185d03d539d9414a8ca4da24cf0514757d083a8c9c82c80ba4f0c"
     },
     {
+      "path": "config/rust-runtime-notices.json",
+      "size": 5099,
+      "sha256": "f89ea11c2e8d406064ea78249dcf8a1c0fadfc6739324a3568671ba09fdc8ba6"
+    },
+    {
       "path": "config/source-assets.json",
       "size": 1404,
       "sha256": "ce5ae64d63545340e7a01727e3b803f33dbca0bb613039914b4721fecad226e0"
@@ -2962,6 +2967,71 @@
       "sha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7"
     },
     {
+      "path": "docs/public/licenses/rust-runtime/COPYRIGHT-library.html",
+      "size": 425651,
+      "sha256": "78c163fcec50e64bfd85fedb850c273595602fafa2b41f30f75d4e410b80ee83"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/Apache-2.0.txt",
+      "size": 10280,
+      "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/BSD-2-Clause.txt",
+      "size": 1267,
+      "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/CC-BY-SA-4.0.txt",
+      "size": 20137,
+      "sha256": "23ee78c8bae49cf08ea2f0c84945c66b987ebe4520881fb51b3dad4fb43d07c2"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/GCC-exception-3.1.txt",
+      "size": 3320,
+      "sha256": "a3966c9410ef94a1efbfa9ec04e9c1994026a70623fbf0885ce36737bfba3b54"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/GPL-2.0-only.txt",
+      "size": 17642,
+      "sha256": "54b212ba1f97f6948fa5486239ab505dd820b02e50cbfd296b4062c8609a70af"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/GPL-3.0-or-later.txt",
+      "size": 34795,
+      "sha256": "05315fce6c35f79b8a35454828995fa26336f235895ac64557abc028f4ffcea2"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/ISC.txt",
+      "size": 730,
+      "sha256": "0ff61769b238634e042ab759dddfd104a8e69d091e3600ae3410e401a6164381"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/LLVM-exception.txt",
+      "size": 919,
+      "sha256": "e34c58338bd89d43e709e226610d8f32b3e3c47f4ad9a99a8dc1d4ac7842488e"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/MIT.txt",
+      "size": 1078,
+      "sha256": "b85dcd3e453d05982552c52b5fc9e0bdd6d23c6f8e844b984a88af32570b0cc0"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/NCSA.txt",
+      "size": 1676,
+      "sha256": "39cb0234065c92b9e6cee3830cbb52b1aa289aa8fe9ba2e66730fec5cf05c630"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/OFL-1.1.txt",
+      "size": 4016,
+      "sha256": "8eea8287e5876b539670cadb82e99f9a7afddec6f6730811be1daf25d2e9bcfd"
+    },
+    {
+      "path": "docs/public/licenses/rust-runtime/licenses/Unicode-3.0.txt",
+      "size": 1995,
+      "sha256": "f5062c9a188d81dfe66b56db4182dcf9e4b17c0d9b0d311a8e20b3a1b075c443"
+    },
+    {
       "path": "docs/public/multiplatform-clients.md",
       "size": 7024,
       "sha256": "47605cfc8aa6d92a96aeba1723393fca20b0ecddccfbd69af113b3479effbf80"
@@ -2973,8 +3043,8 @@
     },
     {
       "path": "docs/public/native-client-licenses.txt",
-      "size": 3987627,
-      "sha256": "013efa370ce16084884aaa7acaed0ffd1e78c68a7e500cfb4804321a89219a08"
+      "size": 4512681,
+      "sha256": "b8db6a01148bd18c2fc51cb8eefe24b3e049524df7d89d9b451a7c79dcaaeb20"
     },
     {
       "path": "docs/public/native-client.en.md",
@@ -3423,8 +3493,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 6737,
-      "sha256": "4c282f8bdd6b7bc71d695e99d4b257dc9ac95b8b7cdbc09d5b90a4795ecc69a3"
+      "size": 6941,
+      "sha256": "8d98b3a77eebad73a0020ed2780dd7b006bc345b9e6145ad40956509386e171a"
     },
     {
       "path": "scripts/bun",
@@ -3448,8 +3518,8 @@
     },
     {
       "path": "scripts/check_source.py",
-      "size": 2982,
-      "sha256": "2fbf4ba3a617fbad53921539220ed914c7679e68563f13fef17e723aec4fcdea"
+      "size": 3010,
+      "sha256": "61e6a3ef412ef28c49796a2e99cc7f30957394a0da3beab760b7042d297a679a"
     },
     {
       "path": "scripts/ci_integration.py",
@@ -3483,8 +3553,8 @@
     },
     {
       "path": "scripts/dependency_inventory.py",
-      "size": 7104,
-      "sha256": "0124a2f5506b81e4101bb3cf2a9a34138296f09e811a599040004bdc075d45a0"
+      "size": 7781,
+      "sha256": "ea43acbdd0bb28a3b9fb9f9fb2247d3189ba3d0fcc4b008f5060fdc4b6c87bcd"
     },
     {
       "path": "scripts/device-focus.test.ts",
@@ -3693,8 +3763,8 @@
     },
     {
       "path": "scripts/test_dependency_notices.py",
-      "size": 2320,
-      "sha256": "d63617f83f164c21188a403ede3f86b3113c644a1b29b78a9227aabf8645ffcb"
+      "size": 3110,
+      "sha256": "58bdb15897685e81590b950bc40895ba1904226ad3cd3695eae4636d2ed5146e"
     },
     {
       "path": "scripts/test_desktop_media.py",
