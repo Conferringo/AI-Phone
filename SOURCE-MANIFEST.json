@@ -38,8 +38,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 4296,
-      "sha256": "015671b17801423fb989828cb8815f2ff79544657f575c2465c7e72c30abc87c"
+      "size": 4535,
+      "sha256": "e0a063014d7c8a82cce233fb9e57783abdccd6e283106b56b1720be19b3c6aa8"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -103,8 +103,8 @@
     },
     {
       "path": "SECURITY.md",
-      "size": 1472,
-      "sha256": "8c0fbf58e76ca9652f08de3abc4decc615379cefa8dba4b36536109f61cfcb58"
+      "size": 1453,
+      "sha256": "438189db955a97db515df56784cf46c6c7e9243d036cbbe66f09a8ea3b713416"
     },
     {
       "path": "Start AI Phone.command",
@@ -1848,8 +1848,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 1036,
-      "sha256": "fb8cd1fdfdbbd0be2a00b66bb0d0cdcc330279ec70c595d15cfc1dc761f1abc2"
+      "size": 1035,
+      "sha256": "9d5dbe573a96b171482ee85bd55fb16b3c73564c76ab660cc576c1c12fbab418"
     },
     {
       "path": "config/source-assets.json",
@@ -2248,8 +2248,8 @@
     },
     {
       "path": "docs/public/css-review-2026-10-29.md",
-      "size": 4342,
-      "sha256": "711169945ea81f8fa5063fde95cb0a507dbb3891d09950621d2b287b0826ad7e"
+      "size": 5376,
+      "sha256": "052304388a2c1bc9a338147fef1c85edaaa5eaa4ad5fad442d65cd534fdb2fe8"
     },
     {
       "path": "docs/public/database-roles.md",
@@ -2408,8 +2408,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 8764,
-      "sha256": "51f28894d98b00e62f390e254b8b2829cf13fab34a137a358372d737b73a7a2a"
+      "size": 9002,
+      "sha256": "971c9f1a44f8b65763b0c97b6b6bbbdd101ef971da08f0c0fe13fe37f8405670"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",

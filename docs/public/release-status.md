@@ -1,5 +1,7 @@
 # Release status / 发行状态
 
+2026-10-29 在线源码：[Conferringo/AI-Phone](https://github.com/Conferringo/AI-Phone)，实验性技术预览；[CI实际状态](https://github.com/Conferringo/AI-Phone/actions)。私密漏洞报告已启用，无安装包Release。
+
 2026-10-29 最新决定：[CSS与源码预览审查](css-review-2026-10-29.md)。维护者授权实验性源码公开，不再等待独立设备安装测试，未实测平台留给社区 Issue 反馈。`clean_host_install` 仍为 false，并在策略中记录豁免，不能写成通过。完整产品仍有 UI/平台、许可及长时恢复缺口；本次只提交白名单源码与文档，不上传安装包或用户状态。
 
 2026-10-29：[本体收敛与安装语言](core-retirement-2026-10-29.md)：桌宠从本体退役，素材及浏览器旧偏好清理，后端/数据库无专属对象；安装第一项选语言，原生到工作台偏好传递；生产下拉统一自绘与控件高度。以下为当批历史记录；最新状态以上方记录为准。

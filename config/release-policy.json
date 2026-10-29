@@ -14,7 +14,7 @@
     "delivery": "public-source-preview",
     "remote_publication_authorized": true,
     "workflow_prepared": true,
-    "workflow_remote_run": false,
+    "workflow_remote_run": true,
     "known_visual_acceptance_pending": [
       "platform-media-input",
       "eight-language-window-matrix",

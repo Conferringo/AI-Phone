@@ -32,3 +32,9 @@ Product acceptance remains distinct: language/platform completeness, long-runnin
 - 48 Python tests passed with 11 explicit fixture/platform skips; these skips are not new integration passes. Five source-export tests distinguish source authorization from product acceptance.
 - Four TypeScript projects, Next production build, native strict Clippy and 12 CSS parses passed.
 - The source allowlist contains 625 files before generated contributor instructions/manifest. Exact private-credential comparison found no matches. README/index links resolve and Git ignore excludes private state, build products and signing artifacts while retaining `.env.example`.
+
+## Online source
+
+Published to [Conferringo/AI-Phone](https://github.com/Conferringo/AI-Phone) as an experimental source preview. The first remote tree was checked against every local Git blob (627 files including contributor instructions and the source manifest). Issue forms and private vulnerability reporting are enabled. Read-only source/native checks were triggered; their current results are visible in [Actions](https://github.com/Conferringo/AI-Phone/actions). A running workflow is not a completed check. No installer Release or user state was uploaded.
+
+The first Android CI run exposed `sdkmanager: command not found` before compilation. The workflow now calls the SDK manager by its explicit runner SDK path and exports Java/SDK variables for the current step and later steps, following the [runner image setup](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-android-sdk.sh). This fix is included in the follow-up commit; rerun results remain distinct from physical device tests.
