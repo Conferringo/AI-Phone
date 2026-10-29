@@ -30,6 +30,7 @@ mod http;
 mod model_adapter;
 mod model_context;
 mod model_sse;
+mod notification_policy;
 mod phone_system;
 mod proactive;
 mod registry;

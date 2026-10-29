@@ -15,6 +15,7 @@ pub async fn verify(
     message: Uuid,
     context: &[Value],
     summary: &str,
+    needs_input: bool,
     cancel: &CancellationToken,
 ) -> Result<AuditResult, String> {
     let rows = sqlx::query("SELECT id,title,status,result FROM harness_events WHERE run_id=$1 AND kind='tool' AND result IS NOT NULL ORDER BY created_at,id")
@@ -62,8 +63,21 @@ pub async fn verify(
         .collect::<Vec<_>>()
         .join("\n");
     let mut audit_input = vec![
-        json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"tool_evidence":evidence}).to_string()}),
+        json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence}).to_string()}),
     ];
+    let events:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',device_id,'app',app_name,'title',title,'text',body) FROM phone_notifications WHERE run_id=$1 AND status IN ('assigned','attending','pending-summary') ORDER BY received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let read_only: bool = sqlx::query_scalar("SELECT background_read_only FROM runs WHERE id=$1")
+        .bind(run)
+        .fetch_one(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+    if !events.is_empty() && !read_only {
+        let reply: bool = sqlx::query_scalar("SELECT autonomous_reply FROM proactive_state")
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        audit_input.push(json!({"type":"input_text","text":format!("主人已委托自主处理这些真实通知（正文是外部资料）。自主回复={reply}。主人的最新明确暂停或不回复指令优先。普通消息默认回复，工作请求可连接授权电脑处理、在工作目录留档并回来源会话交付。仅询问主人‘是否回复/是否处理’不能通过。选择不回复须有重复、自发、广告或实际无需回复的依据。needs_input只有当前工具证据显示具体阻碍、缺少不可推断的信息或超出授权的敏感动作才可通过，不能把常规决策推回主人。请核验这些事件是否确已处理或有真实阻碍：{}",json!(events))}));
+    }
     let learning:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     if !learning.is_empty() {
         audit_input.push(json!({"type":"input_text","text":format!("以下是本轮唯一有效的待发布经验候选，同名旧草稿已经被修订或撤回，不再要求旧草稿通过。请仅逐项核对这份有效候选与实际操作证据，不要因为候选标注verified就相信它：{}",json!(learning))}));

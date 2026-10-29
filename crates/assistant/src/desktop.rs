@@ -116,6 +116,35 @@ async fn helper(op: &str, args: Value) -> Result<Value> {
     .await?;
     serde_json::from_slice(&out).map_err(|e| e.to_string())
 }
+pub async fn notifications(app: &App, device: &str) -> Result<wire::PhoneNotificationList> {
+    available(app, device).await?;
+    let value = helper("notifications", json!({})).await?;
+    let events = value["notifications"]
+        .as_array()
+        .ok_or("电脑通知格式无效")?;
+    Ok(wire::PhoneNotificationList {
+        connected: value["connected"].as_bool().unwrap_or(false),
+        checked_at_ms: now(),
+        notifications: events
+            .iter()
+            .rev()
+            .take(256)
+            .map(|event| {
+                let string = |name: &str| event[name].as_str().unwrap_or("").to_string();
+                wire::PhoneNotification {
+                    event_id: string("event_id"),
+                    notification_key: string("notification_key"),
+                    package_name: string("package_name"),
+                    app_name: string("app_name"),
+                    title: string("title"),
+                    text: string("text"),
+                    posted_at_ms: event["posted_at_ms"].as_u64().unwrap_or(0),
+                }
+            })
+            .collect(),
+        ..Default::default()
+    })
+}
 async fn adb(app: &App, device: &str, args: &[&str], limit: usize) -> Result<Vec<u8>> {
     adb_bounded(app, device, args, limit, 60).await
 }

@@ -34,6 +34,10 @@ try:
     if op=='snapshot':sys.stdout.buffer.write(snapshot());sys.exit(0)
     r=json.load(sys.stdin) if op!='observe' else {}
     if op=='observe':out=meta()
+    elif op=='notifications':
+        p=Path.home()/'.aiphone/notifications.json'
+        connected=subprocess.run(['pgrep','-u',str(os.getuid()),'-x','dunst'],stdout=subprocess.DEVNULL).returncode==0
+        out={'connected':connected,'notifications':json.loads(p.read_text()) if p.exists() else []}
     elif op=='zoom':
         image=Image.open(io.BytesIO(base64.b64decode(r['png'],validate=True)))
         x,y,w,h=(int(r[k]) for k in ['x','y','width','height'])

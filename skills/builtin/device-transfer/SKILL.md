@@ -3,12 +3,12 @@ name: device-transfer
 description: 通过有授权和SHA256校验的数据线在手机与Linux电脑间传文件，区分设备到达与社交应用交付。
 ---
 # 数据线与交付
-1. device_list取得本任务可用的手机和电脑ID。用户指示跨设备处理时可用device_link连接二者，不得连接未授权设备。
+1. device_list取得本任务可用的手机和电脑ID。用户指示或主人已委托的通知工作需要跨设备处理时可用device_link连接二者，不得连接未授权设备。
 2. device_files检查源文件真实路径。电脑路径相对/home/ai/Files；手机文件在/sdcard共享存储，默认下载目录。微信附件需要先通过phone-use在正确会话下载。
 3. device_transfer传输，检查status=completed、bytes、sha256与实际target_path。单文件最高64MiB；返回的新目录是防覆盖设计，不猜目标路径。重复请求查device_transfer_status，未知结果不能重新发送。
 4. 手机→电脑后用computer_run处理，并通过computer_observe/GUI打开结果文件复查；不得用输入文件改名冒充处理成果。
 5. 电脑→手机后，在真实手机里用phone-use从该target_path选择文件，交付给用户指定的会话。传输completed只表示文件到达手机，不能说已经通过微信发送，更不能说对方已读。
-6. 发送前核对会话、文件名和内容；先回一次进度再交付成果。发送结果未知时先观察消息列表，禁止重复发附件。无指定会话时说明设备文件已完成，并询问交付对象。
+6. 发送前核对会话、文件名和内容；先回一次进度再交付成果。发送结果未知时先观察消息列表，禁止重复发附件。通知工作默认交付到最初收到请求的同一会话；确实无法从原始事件与真实界面确认来源时再询问对象。
 
 ## 不同 Agent 协作
 用户在界面连接数据线后，两端 Agent 可通过 device_files/device_transfer 互通共享文件，不需要为了传文件把另一台设备的控制权也绑定给自己。断开立即撤销这项数据权限；手机仍默认 ADB，电脑仍使用 computer-use。

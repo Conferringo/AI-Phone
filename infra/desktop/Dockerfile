@@ -5,11 +5,14 @@ USER root
 RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends xvfb openbox tint2 pcmanfm xterm xdotool xclip x11-utils x11-xserver-utils dbus-x11 ffmpeg libreoffice-calc libreoffice-writer libreoffice-l10n-zh-cn fonts-noto-cjk mousepad && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1000 -s /bin/bash ai && mkdir -p /home/ai/Files /home/ai/Desktop && chown -R ai:ai /home/ai
-RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo && rm -rf /var/lib/apt/lists/*
+RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo dunst libnotify-bin && rm -rf /var/lib/apt/lists/*
 RUN printf 'ai ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/ai-phone && chmod 440 /etc/sudoers.d/ai-phone
 COPY bridge.py /usr/local/bin/desktop-bridge
 COPY start.sh /usr/local/bin/desktop-start
 COPY media-capture.py audio-service.py /usr/local/lib/ai-phone/
+COPY notification-record.py /usr/local/lib/ai-phone/
+COPY dunstrc /etc/xdg/dunst/dunstrc
+RUN chmod 755 /usr/local/lib/ai-phone/notification-record.py
 COPY pulse.pa /etc/ai-phone-pulse.pa
 RUN chmod 755 /usr/local/bin/desktop-bridge /usr/local/bin/desktop-start
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends iproute2 iptables && rm -rf /var/lib/apt/lists/*

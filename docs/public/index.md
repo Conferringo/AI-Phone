@@ -13,6 +13,7 @@
 - [功能、数据与边界 / Capabilities and data](capabilities-and-data.md)
 - [模型、消息渠道、语言 / Compatibility](compatibility.md)
 - [连续输入与任务打断 / Conversation steering](conversation-steering.md)
+- [Notification-driven work / 通知工作流](notification-workflows.md)
 - [设备内Clash与网络 / Networking](network.md)
 
 ## 架构与开发 / Architecture and development

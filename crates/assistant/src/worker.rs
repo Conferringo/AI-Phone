@@ -13,9 +13,9 @@ pub(crate) async fn recover_interrupted_runs(db: &PgPool) -> Result<(), sqlx::Er
     Ok(())
 }
 
-async fn claim_due_run(app: &App) -> Result<Option<(Uuid, Uuid)>, sqlx::Error> {
+pub(crate) async fn claim_due_run(app: &App) -> Result<Option<(Uuid, Uuid)>, sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
+    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY CASE WHEN origin='user' AND (step=0 OR jsonb_array_length(steering)>0) THEN 0 WHEN origin='notification' THEN 1 WHEN origin='user' THEN 2 ELSE 3 END,COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
     if let Some((id, _)) = row {
         sqlx::query("UPDATE runs SET status='running',heartbeat_at=now(),loop_state=CASE WHEN next_wake_at IS NOT NULL THEN jsonb_set(loop_state,'{wait_completed_at_ms}',to_jsonb(floor(extract(epoch FROM next_wake_at)*1000)::bigint)) ELSE loop_state END,next_wake_at=NULL,error='' WHERE id=$1").bind(id).execute(&mut *tx).await?;
     }
@@ -192,6 +192,7 @@ async fn initial_context(
         }
     }
     if let Some(trigger) = crate::proactive::context(app, message).await? {
+        context.push(json!({"role":"system","content":[{"type":"input_text","text":"AI_PHONE_CURRENT_TASK：以下是独立的后台任务。之前对话仅供背景参考，不重新执行已经结束的历史目标；本轮以接下来的设备事件和任务范围为准，主人的长期授权与最新明确约束继续有效。"}]}));
         context.extend(trigger);
     }
     Ok(context)
@@ -1947,6 +1948,13 @@ async fn execute(
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
     let notification_run = row.get::<String, _>("origin") == "notification";
+    let desktop_notification = notification_run
+        && sqlx::query_scalar::<_, String>("SELECT kind FROM devices WHERE id=$1")
+            .bind(row.get::<String, _>("device_id"))
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?
+            == "desktop";
     let elapsed = row.get::<i64, _>("elapsed_seconds");
     let slice_started = std::time::Instant::now();
     let mut epoch = row.get::<i64, _>("control_epoch") as u64;
@@ -1961,8 +1969,9 @@ async fn execute(
             return Err("canceled".into());
         }
         if background
-            && (step >= 40
-                || elapsed.saturating_add(slice_started.elapsed().as_secs() as i64) >= 600)
+            && (step >= if notification_run { 180 } else { 40 }
+                || elapsed.saturating_add(slice_started.elapsed().as_secs() as i64)
+                    >= if notification_run { 1800 } else { 600 })
         {
             sqlx::query("UPDATE runs SET status='canceled',error='本轮探索达到调用上限，已保存过程；尚未完成的目标不会标记为完成',finished_at=now(),next_wake_at=NULL WHERE id=$1 AND status<>'canceled'").bind(id).execute(&app.db).await.map_err(|e|e.to_string())?;
             sqlx::query("UPDATE messages SET text='本轮后台探索已保存过程并停止；尚未验证完成的目标将留待后续处理。' WHERE id=$1 AND text=''").bind(message).execute(&app.db).await.map_err(|e|e.to_string())?;
@@ -1982,6 +1991,25 @@ async fn execute(
             },
         )
         .await?;
+        if crate::proactive::should_yield(app, id).await?
+            && persist_disposition(
+                app,
+                id,
+                message,
+                Checkpoint {
+                    context: &mut context,
+                    pending: &pending,
+                    answer: &answer,
+                    step,
+                    state: &state,
+                },
+                RunDisposition::Queued,
+                Some(now_ms() + 5000),
+            )
+            .await?
+        {
+            return Ok(RunDisposition::Queued);
+        }
         crate::proactive::inject_attention(app, id, &mut context).await?;
         if consume_wait_completion(
             app,
@@ -1999,7 +2027,9 @@ async fn execute(
         {
             continue;
         }
-        if (phone_task(&context) || notification_run || wechat_task(&context))
+        if (phone_task(&context)
+            || (notification_run && !desktop_notification)
+            || wechat_task(&context))
             && !phone_skill_read(&context)
         {
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"phone-use\"}","call_id":format!("phone-use-{}",Uuid::now_v7()),"local_action_id":Uuid::now_v7().to_string()});
@@ -2021,14 +2051,19 @@ async fn execute(
             );
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
+        let notification_tool = if desktop_notification {
+            "device_notifications"
+        } else {
+            "phone_notifications"
+        };
         if notification_run
             && !context.iter().any(|v| {
                 v["type"] == "function_call"
-                    && v["name"] == "phone_notifications"
+                    && v["name"] == notification_tool
                     && tool_output(&context, v).is_some()
             })
         {
-            let call = json!({"type":"function_call","name":"phone_notifications","arguments":"{\"intent\":\"读取刚收到的真实手机通知\"}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
+            let call = json!({"type":"function_call","name":notification_tool,"arguments":"{}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
@@ -2661,6 +2696,7 @@ async fn recorded_tool(
         "device_message" => "设备间交接",
         "device_transfer_status" => "核对传输结果",
         "phone_notifications" => "读取手机通知",
+        "device_notifications" => "读取设备通知",
         "channel_notify" => "联系远端主人",
         "channel_delivery" => "核对推送送达状态",
         "phone_observe" if call["local_after_action"].is_string() => "查看操作结果",
@@ -2819,6 +2855,14 @@ async fn tool(
     if name.starts_with("phone_") {
         crate::phone_system::for_run(app, run).await?;
     }
+    if name == "device_notifications" {
+        return crate::proactive::read_device_notifications(
+            app,
+            run,
+            arguments["device_id"].as_str().unwrap_or(""),
+        )
+        .await;
+    }
     if name.starts_with("computer_") || name.starts_with("device_") {
         if name.starts_with("computer_") {
             let raw: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
@@ -2949,27 +2993,24 @@ async fn tool(
             return Err("仍有待执行工具；请先完成这些步骤，再重新task_finish".into());
         }
         if status == "completed" {
-            if let Some(reason) = finish_rejection(&current, &summary) {
-                return Err(reason);
+            let summary_only: bool = sqlx::query_scalar(
+                "SELECT origin='notification' AND background_read_only FROM runs WHERE id=$1",
+            )
+            .bind(run)
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?;
+            if summary_only
+                && !current
+                    .iter()
+                    .any(|call| call["name"] == "task_history" && successful_call(call, &current))
+            {
+                return Err(
+                    "摘要补发先读取task_history核对原始执行账本，不能猜测旧任务结果".into(),
+                );
             }
-            let audit = action_task(&current)
-                || computer_task(&current)
-                || phone_task(&current)
-                || current.iter().skip(evidence_start(&current)).any(|call| {
-                    call["name"]
-                        .as_str()
-                        .is_some_and(|name| name.starts_with("phone_"))
-                });
-            if audit {
-                let result =
-                    crate::completion_audit::verify(app, run, message, &current, &summary, cancel)
-                        .await?;
-                if !result.approved {
-                    return Err(format!(
-                        "完成审计未通过：{}。继续修正并用真实工具验证，不要结束。",
-                        result.feedback
-                    ));
-                }
+            if !summary_only && let Some(reason) = finish_rejection(&current, &summary) {
+                return Err(reason);
             }
         } else if ["是否继续", "要我继续", "需要我继续"]
             .iter()
@@ -2979,6 +3020,41 @@ async fn tool(
                 "常规下一步不需要用户确认，请继续执行；只有具体信息缺失或真实阻碍才needs_input"
                     .into(),
             );
+        }
+        let notification: bool = sqlx::query_scalar(
+            "SELECT NOT r.background_read_only AND (r.origin='notification' OR EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.status IN ('attending','pending-summary'))) FROM runs r WHERE r.id=$1",
+        )
+        .bind(run)
+        .fetch_one(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+        let audit = notification
+            || status == "completed"
+                && (action_task(&current)
+                    || computer_task(&current)
+                    || phone_task(&current)
+                    || current.iter().skip(evidence_start(&current)).any(|call| {
+                        call["name"]
+                            .as_str()
+                            .is_some_and(|name| name.starts_with("phone_"))
+                    }));
+        if audit {
+            let result = crate::completion_audit::verify(
+                app,
+                run,
+                message,
+                &current,
+                &summary,
+                status == "needs_input",
+                cancel,
+            )
+            .await?;
+            if !result.approved {
+                return Err(format!(
+                    "完成审计未通过：{}。继续修正并用真实工具验证，不要结束。",
+                    result.feedback
+                ));
+            }
         }
         if status == "completed" {
             crate::app_learning::promote(app, run).await?;
@@ -3079,7 +3155,13 @@ async fn tool(
             json!([{"type":"input_text","text":json!({"connected":feed.connected,"error":feed.error,"notifications":feed.notifications.iter().rev().take(24).map(|n|json!({"event_id":n.event_id,"source":if n.notification_key.starts_with("wechat-badge:"){"unread_badge"}else{"android_notification"},"app":n.app_name,"package":n.package_name,"title":n.title,"text":n.text,"posted_at_ms":n.posted_at_ms})).collect::<Vec<_>>()} ).to_string()}]),
         );
     }
-    let read_only_notification:bool=sqlx::query_scalar("SELECT r.origin='notification' AND (r.background_read_only OR (NOT p.exploring AND NOT p.wechat_watch)) FROM runs r CROSS JOIN proactive_state p WHERE r.id=$1").bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+    let read_only_notification: bool = sqlx::query_scalar(
+        "SELECT origin='notification' AND background_read_only FROM runs WHERE id=$1",
+    )
+    .bind(run)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     if name == "phone_observe" && read_only_notification {
         let observation: wire::DeviceObservation = phone(
             app,
