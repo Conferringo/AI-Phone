@@ -1423,8 +1423,8 @@
     },
     {
       "path": "apps/web/src/app/phone/device-workbench.css",
-      "size": 13154,
-      "sha256": "aed0b3182a91e0d2e53267fa04a7ebcb0ea77dc08d319bff4a75eb46aacf0b4d"
+      "size": 13189,
+      "sha256": "dfa453d512cbc4dc33668a2b5be4a3f1740858ceffb9536430481fdd91192f4d"
     },
     {
       "path": "apps/web/src/app/phone/error.tsx",
