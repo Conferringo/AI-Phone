@@ -26,6 +26,23 @@ fn default_protocol() -> String {
     "responses".into()
 }
 impl ModelConfig {
+    pub(crate) fn endpoint(&self) -> Result<String, String> {
+        let suffix = match self.protocol.as_str() {
+            "responses" => "/responses",
+            "chat-completions" => "/chat/completions",
+            _ => return Err("请选择 Responses 或 Chat Completions 协议".into()),
+        };
+        let base = self.base_url.trim_end_matches('/');
+        let url = reqwest::Url::parse(base).map_err(|_| "请输入完整的 http(s) 地址")?;
+        let path = url.path().trim_end_matches('/');
+        if path.ends_with(suffix) {
+            return Ok(base.into());
+        }
+        if path.ends_with("/responses") || path.ends_with("/chat/completions") {
+            return Err("API 地址的末尾与所选协议不一致".into());
+        }
+        Ok(format!("{base}{suffix}"))
+    }
     pub fn client(&self) -> Result<reqwest::Client, String> {
         let mut builder = reqwest::Client::builder()
             .no_proxy()
@@ -255,7 +272,7 @@ impl SettingsStore {
         if api_key.len() > 4096 || api_key.chars().any(char::is_control) {
             return Err("API Key 格式无效".into());
         }
-        Ok(ModelConfig {
+        let config = ModelConfig {
             api_key,
             base_url,
             model,
@@ -263,7 +280,9 @@ impl SettingsStore {
             protocol: draft.protocol,
             proxy_url,
             verified_at_ms: 0,
-        })
+        };
+        config.endpoint()?;
+        Ok(config)
     }
     fn commit(&self, expected: u64, config: ModelConfig) -> Result<u64, String> {
         let mut state = self.state.lock().expect("settings lock");
@@ -582,6 +601,54 @@ mod tests {
             api_key: "test-secret".into(),
             ..Default::default()
         }
+    }
+    #[test]
+    fn endpoint_validation_keeps_saved_addresses_and_rejects_protocol_mismatches() {
+        let (root, store) = store();
+        for (base, protocol, expected) in [
+            (
+                "https://gateway.example/v1",
+                "responses",
+                "https://gateway.example/v1/responses",
+            ),
+            (
+                "http://responses",
+                "responses",
+                "http://responses/responses",
+            ),
+            (
+                "https://gateway.example/v1/responses/",
+                "responses",
+                "https://gateway.example/v1/responses",
+            ),
+            (
+                "http://localhost:8080/api/chat/completions",
+                "chat-completions",
+                "http://localhost:8080/api/chat/completions",
+            ),
+        ] {
+            let config = store
+                .resolve(wire::ModelDraft {
+                    base_url: base.into(),
+                    protocol: protocol.into(),
+                    ..draft()
+                })
+                .unwrap();
+            let saved = config.base_url.clone();
+            assert_eq!(config.endpoint().unwrap(), expected);
+            assert_eq!(config.base_url, saved);
+        }
+        assert!(
+            store
+                .resolve(wire::ModelDraft {
+                    base_url: "https://gateway.example/v1/responses".into(),
+                    protocol: "chat-completions".into(),
+                    ..draft()
+                })
+                .is_err()
+        );
+        assert_eq!(store.current(), 0);
+        fs::remove_dir_all(root).unwrap();
     }
     #[test]
     fn revisions_require_verified_exact_config_and_pin_secrets() {

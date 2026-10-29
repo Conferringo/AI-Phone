@@ -43,6 +43,7 @@
 - [本体收敛、语言与选择控件](core-retirement-2026-10-29.md)
 - [首配与窗口审查](release-ux-audit-2026-10-29.md)
 - [SOLID审计与欠账](solid-audit.md)
+- [Model/channel/platform maturity / 模型、渠道与平台成熟度](interface-audit-2026-10-29.md)
 - [声音与恢复](release-stability-2026-10-29.md)
 
 [Preview clients, installation limits and release process / 预览客户端下载与限制](preview-release.md)

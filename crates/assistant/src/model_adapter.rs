@@ -25,15 +25,8 @@ pub async fn request(
     }
     let client = config.client()?;
     let mut request = client
-        .post(format!(
-            "{}/{}",
-            config.base_url,
-            if chat_protocol {
-                "chat/completions"
-            } else {
-                "responses"
-            }
-        ))
+        .post(config.endpoint()?)
+        .header(reqwest::header::ACCEPT, "text/event-stream")
         .json(&body);
     if !config.api_key.is_empty() {
         request = request.bearer_auth(&config.api_key);
@@ -69,6 +62,20 @@ pub async fn request(
             status
         ));
     }
+    if !response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| {
+            v.split(';')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .eq_ignore_ascii_case("text/event-stream")
+        })
+    {
+        return Err("模型未返回 text/event-stream；请检查 API 地址与协议".into());
+    }
     let mut stream = response.bytes_stream();
     let mut parser = ResponseStream::default();
     let mut chat_parser = crate::chat_completions::ChatStream::default();
@@ -91,29 +98,15 @@ pub async fn request(
 }
 #[derive(Default)]
 struct ResponseStream {
-    buffer: Vec<u8>,
-    total: usize,
+    sse: crate::model_sse::SseDecoder,
 }
 impl ResponseStream {
     fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
-        self.total = self.total.saturating_add(chunk.len());
-        if self.total > 32 * 1024 * 1024 {
-            return Err("模型输出超过限制".into());
-        }
-        self.buffer.extend_from_slice(chunk);
-        while let Some(end) = self.buffer.iter().position(|b| *b == b'\n') {
-            let line = std::str::from_utf8(&self.buffer[..end])
-                .map_err(|_| "模型流编码无效")?
-                .trim_end_matches('\r')
-                .to_string();
-            self.buffer.drain(..=end);
-            let Some(data) = line.strip_prefix("data:").map(str::trim_start) else {
-                continue;
-            };
+        for data in self.sse.feed(chunk)? {
             if data.is_empty() || data == "[DONE]" {
                 continue;
             }
-            let event: Value = serde_json::from_str(data).map_err(|_| "模型流格式无效")?;
+            let event: Value = serde_json::from_str(&data).map_err(|_| "模型流格式无效")?;
             match event["type"].as_str() {
                 Some("response.completed") => {
                     return event["response"]["output"]
@@ -127,9 +120,6 @@ impl ResponseStream {
                 }
                 _ => {}
             }
-        }
-        if self.buffer.len() > 16 * 1024 * 1024 {
-            return Err("模型流单帧超过限制".into());
         }
         Ok(None)
     }
@@ -336,17 +326,90 @@ mod tests {
         assert_eq!(p.feed(&bytes[cut..]).unwrap().unwrap()[0]["text"], "成功");
     }
     #[test]
+    fn responses_support_standard_multiline_event_data() {
+        let mut parser = ResponseStream::default();
+        let event = b": heartbeat\r\nevent: response.completed\r\ndata: {\"type\":\"response.completed\",\r\ndata: \"response\":{\"output\":[{\"type\":\"message\",\"content\":[{\"text\":\"receipt\"}]}]}}\r\n\r\n";
+        let output = parser.feed(event).unwrap().unwrap();
+        assert_eq!(output[0]["content"][0]["text"], "receipt");
+    }
+    #[tokio::test]
+    async fn successful_http_with_a_non_stream_body_is_not_model_success() {
+        use axum::{Router, routing::post};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let router = Router::new().route(
+            "/responses",
+            post(|| async {
+                (
+                    [("content-type", "application/json")],
+                    "data: {\"type\":\"response.completed\",\"response\":{\"output\":[]}}\n\n",
+                )
+            }),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        let config = ModelConfig {
+            api_key: String::new(),
+            base_url: format!("http://{address}"),
+            model: "fixture".into(),
+            provider: "compatible".into(),
+            protocol: "responses".into(),
+            proxy_url: String::new(),
+            verified_at_ms: 0,
+        };
+        let result = request(&config, json!({"input":[]}), &CancellationToken::new()).await;
+        server.abort();
+        assert!(result.unwrap_err().contains("text/event-stream"));
+    }
+    #[tokio::test]
+    async fn full_endpoint_addresses_are_not_appended_twice() {
+        use axum::{Router, routing::post};
+        for (protocol, suffix, body) in [
+            (
+                "responses",
+                "responses",
+                "data: {\"type\":\"response.completed\",\"response\":{\"output\":[{\"type\":\"message\",\"content\":[{\"text\":\"receipt\"}]}]}}\n\n",
+            ),
+            (
+                "chat-completions",
+                "chat/completions",
+                "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"receipt\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n",
+            ),
+        ] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let router = Router::new().route(
+                &format!("/v1/{suffix}"),
+                post(move || async move {
+                    ([("content-type", "text/event-stream; charset=utf-8")], body)
+                }),
+            );
+            let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+            let config = ModelConfig {
+                api_key: String::new(),
+                base_url: format!("http://{address}/v1/{suffix}"),
+                model: "fixture".into(),
+                provider: "compatible".into(),
+                protocol: protocol.into(),
+                proxy_url: String::new(),
+                verified_at_ms: 0,
+            };
+            let output = request(&config, json!({"input":[]}), &CancellationToken::new()).await;
+            server.abort();
+            assert_eq!(text(&output.unwrap()), "receipt");
+        }
+    }
+    #[test]
     fn partial_and_failed_streams_never_produce_tools() {
         let mut p = ResponseStream::default();
         assert!(
             p.feed(
-                b"data: {\"type\":\"response.function_call_arguments.delta\",\"delta\":\"{}\"}\n"
+                b"data: {\"type\":\"response.function_call_arguments.delta\",\"delta\":\"{}\"}\n\n"
             )
             .unwrap()
             .is_none()
         );
         assert!(
-            p.feed(b"data: {\"type\":\"response.incomplete\"}\n")
+            p.feed(b"data: {\"type\":\"response.incomplete\"}\n\n")
                 .is_err()
         );
     }
