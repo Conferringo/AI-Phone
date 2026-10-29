@@ -2148,8 +2148,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 66230,
-      "sha256": "6dab27bc7a46da1f48fcbfeafff229ee08cfc325d669f7b9cda3b315cb348222"
+      "size": 69618,
+      "sha256": "3fc4d2c915e429c9232fc7bc6f0234a9e70abbaacabf014646e6113ab9199e0c"
     },
     {
       "path": "crates/assistant/src/registry.rs",
@@ -2248,8 +2248,8 @@
     },
     {
       "path": "docs/public/autonomous-exploration.md",
-      "size": 3586,
-      "sha256": "f98dda730fb71c4460d398f28ba51aa4a2dd65120a7462d8b52f543d7c5b6e6e"
+      "size": 3775,
+      "sha256": "de5a6ead432780e968f64dda6cc67dc289d9f40c0317b7d5d010245a4305e480"
     },
     {
       "path": "docs/public/backup-restore.en.md",
