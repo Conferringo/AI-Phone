@@ -21,22 +21,6 @@ def patch_build_task(path, cli):
     path.write_text(patched)
 
 
-def resource_task(root):
-    config=json.loads((root/'apps/client/src-tauri/tauri.conf.json').read_text())
-    lines=['val syncAiPhoneResources by tasks.registering(Copy::class) {']
-    for source,destination in config['bundle']['resources'].items():
-        src=(root/'apps/client/src-tauri'/source).resolve()
-        if not src.is_file():raise ValueError('Missing configured client resource: '+destination)
-        target=Path(destination)
-        # The built-in Copy task is configuration-cache compatible and owns its inputs.
-        lines += ['    from('+json.dumps(str(src)).replace('$', r'\$')+') {',
-                  '        into('+json.dumps(target.parent.as_posix())+')',
-                  '        rename("^.*$", '+json.dumps(target.name)+')', '    }']
-    lines += ['    into("src/main/assets")','}',
-              'tasks.configureEach { if ((name.startsWith("merge") && name.endsWith("Assets")) || name.contains("lint", ignoreCase = true)) dependsOn(syncAiPhoneResources) }']
-    return '\n'.join(lines)+'\n'
-
-
 def android_environment(root=ROOT):
     config = runtime_env(root)
     sdk = Path(os.environ.get('ANDROID_HOME') or config['AI_PHONE_SDK_ROOT'])
@@ -75,7 +59,7 @@ def prepare(root=ROOT):
     if 'getDefaultProguardFile(' not in text:
         text = text.replace('proguardFiles(', 'proguardFiles(\n                getDefaultProguardFile("proguard-android-optimize.txt"),')
     marker="// AI_PHONE_REVIEWED_RESOURCES"
-    text=text.split(marker)[0]+"\n"+marker+"\n"+resource_task(root)
+    text=text.split(marker)[0]
     app.write_text(text)
     properties = generated/'gradle.properties'
     text = '\n'.join(line for line in properties.read_text().splitlines()

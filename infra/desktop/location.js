@@ -3185,8 +3185,34 @@ var LocationDeviceSchema = /* @__PURE__ */ messageDesc(file_ai_phone_v1_location
 var LocationFixSchema = /* @__PURE__ */ messageDesc(file_ai_phone_v1_location, 5);
 
 // infra/desktop/location.ts
+import { mkdir, rename, writeFile } from "fs/promises";
 var folder = "/home/ai/.config/ai-phone-location";
 var file = folder + "/state.pb";
+var endpoint = "http://127.0.0.1:17867/fix";
+function receipt(status, error = "") {
+  return toBinary(LocationDeviceSchema, create(LocationDeviceSchema, {
+    kind: "desktop",
+    status,
+    error,
+    appliedAtMs: BigInt(Date.now())
+  }));
+}
+function bounded(value, low, high) {
+  return Number.isFinite(value) && value >= low && value <= high;
+}
+function validPoint(point) {
+  return !!point && bounded(point.latitude, -90, 90) && bounded(point.longitude, -180, 180) && bounded(point.accuracyM, 0, 1e5);
+}
+function checked(bytes) {
+  if (bytes.length > 4096)
+    throw Error("invalid_location");
+  const fix = fromBinary(LocationFixSchema, bytes);
+  if (fix.enabled && !validPoint(fix.point))
+    throw Error("invalid_location");
+  if (!bounded(fix.speedMps, 0, 500 / 3.6))
+    throw Error("invalid_location");
+  return fix;
+}
 async function targets() {
   const r = await fetch("http://127.0.0.1:9222/json/list", {
     proxy: "",
@@ -3196,79 +3222,180 @@ async function targets() {
     throw Error("browser_unavailable");
   return (await r.json()).filter((t) => t.type === "page" && t.webSocketDebuggerUrl);
 }
-async function override(url, fix) {
-  await new Promise((resolve, reject) => {
-    const socket = new WebSocket(url), timer = setTimeout(() => {
-      socket.close();
-      reject(Error("browser_timeout"));
-    }, 2000);
-    const finish = (error) => {
-      clearTimeout(timer);
-      socket.close();
-      error ? reject(error) : resolve();
+
+class Session {
+  socket;
+  sequence = 0;
+  pending = new Map;
+  opened;
+  constructor(url) {
+    this.socket = new WebSocket(url);
+    this.opened = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.close();
+        reject(Error("browser_timeout"));
+      }, 2500);
+      this.socket.onopen = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      this.socket.onerror = () => {
+        clearTimeout(timer);
+        reject(Error("browser_unavailable"));
+      };
+    });
+    this.socket.onmessage = (e) => {
+      const result = JSON.parse(String(e.data)), call = this.pending.get(result.id);
+      if (!call)
+        return;
+      clearTimeout(call.timer);
+      this.pending.delete(result.id);
+      result.error ? call.reject(Error("browser_rejected")) : call.resolve();
     };
-    socket.onopen = () => socket.send(JSON.stringify({
-      id: 1,
-      method: fix.enabled ? "Emulation.setGeolocationOverride" : "Emulation.clearGeolocationOverride",
-      params: fix.enabled ? {
+    this.socket.onclose = () => {
+      for (const call of this.pending.values()) {
+        clearTimeout(call.timer);
+        call.reject(Error("browser_closed"));
+      }
+      this.pending.clear();
+    };
+  }
+  get closed() {
+    return this.socket.readyState >= WebSocket.CLOSING;
+  }
+  async command(method, params = {}) {
+    await this.opened;
+    const id = ++this.sequence;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(Error("browser_timeout"));
+      }, 2500);
+      this.pending.set(id, { resolve, reject, timer });
+      this.socket.send(JSON.stringify({ id, method, params }));
+    });
+  }
+  close() {
+    this.socket.close();
+  }
+}
+
+class LocationBrowser {
+  listTargets;
+  constructor(listTargets = targets) {
+    this.listTargets = listTargets;
+  }
+  sessions = new Map;
+  async apply(fix) {
+    if (!fix.enabled) {
+      await this.clear();
+      return;
+    }
+    const pages = await this.listTargets();
+    if (!pages.length)
+      throw Error("browser_unavailable");
+    const alive = new Set(pages.map((p) => p.id));
+    for (const [id, session] of this.sessions)
+      if (!alive.has(id) || session.closed) {
+        session.close();
+        this.sessions.delete(id);
+      }
+    for (const page of pages) {
+      let session = this.sessions.get(page.id);
+      if (!session) {
+        session = new Session(page.webSocketDebuggerUrl);
+        this.sessions.set(page.id, session);
+      }
+      await session.command("Emulation.setGeolocationOverride", {
         latitude: fix.point.latitude,
         longitude: fix.point.longitude,
         accuracy: Math.max(1, fix.point.accuracyM),
         speed: fix.speedMps
-      } : {}
-    }));
-    socket.onmessage = (e) => {
-      try {
-        const value = JSON.parse(String(e.data));
-        if (value.id === 1)
-          finish(value.error ? Error("browser_rejected") : undefined);
-      } catch {
-        finish(Error("browser_response"));
-      }
-    };
-    socket.onerror = () => finish(Error("browser_unavailable"));
-  });
-}
-async function apply(fix) {
-  let pages;
-  try {
-    pages = await targets();
-  } catch {
-    if (!fix.enabled)
-      return;
-    throw Error("browser_unavailable");
+      });
+    }
   }
-  if (fix.enabled && !pages.length)
-    throw Error("browser_unavailable");
-  for (const page of pages)
-    await override(page.webSocketDebuggerUrl, fix);
-}
-if (process.argv.includes("--watch")) {
-  let wasEnabled = false;
-  while (true) {
-    try {
-      const f = Bun.file(file);
-      if (await f.exists()) {
-        const fix = fromBinary(LocationFixSchema, new Uint8Array(await f.arrayBuffer()));
-        if (fix.enabled || wasEnabled)
-          await apply(fix);
-        wasEnabled = fix.enabled;
-      }
-    } catch {}
-    await Bun.sleep(1000);
+  async clear() {
+    for (const session of this.sessions.values()) {
+      await session.command("Emulation.clearGeolocationOverride").catch(() => {});
+      session.close();
+    }
+    this.sessions.clear();
   }
-} else {
-  const bytes = new Uint8Array(await Bun.stdin.arrayBuffer()), fix = fromBinary(LocationFixSchema, bytes);
-  if (fix.enabled && (!fix.point || !Number.isFinite(fix.point.latitude) || Math.abs(fix.point.latitude) > 90 || !Number.isFinite(fix.point.longitude) || Math.abs(fix.point.longitude) > 180))
-    throw Error("invalid_location");
-  const { mkdir, rename } = await import("fs/promises");
+}
+function message(error) {
+  return error instanceof Error && error.message === "invalid_location" ? "\u4F4D\u7F6E\u5750\u6807\u65E0\u6548" : "\u8BF7\u6253\u5F00\u7535\u8111\u6D4F\u89C8\u5668\u540E\u91CD\u8BD5\uFF0C\u5B9A\u4F4D\u4EC5\u5E94\u7528\u4E8E\u5185\u7F6E\u6D4F\u89C8\u5668";
+}
+async function remember(bytes) {
   await mkdir(folder, { recursive: true, mode: 448 });
-  await Bun.write(file + ".tmp", bytes, { mode: 384 });
+  await writeFile(file + ".tmp", bytes, { mode: 384 });
   await rename(file + ".tmp", file);
-  await apply(fix);
-  await Bun.write(Bun.stdout, toBinary(LocationDeviceSchema, create(LocationDeviceSchema, {
-    kind: "desktop",
-    status: fix.enabled ? "applied" : "disabled",
-    appliedAtMs: BigInt(Date.now())
-  })));
 }
+async function daemon() {
+  const browser = new LocationBrowser;
+  let fix = create(LocationFixSchema), chain = Promise.resolve(), pending = 0;
+  const serial = (work) => {
+    pending++;
+    const result = chain.then(work).finally(() => {
+      pending--;
+    });
+    chain = result.catch(() => {});
+    return result;
+  };
+  const saved = Bun.file(file);
+  if (await saved.exists())
+    fix = checked(new Uint8Array(await saved.arrayBuffer()));
+  Bun.serve({
+    hostname: "127.0.0.1",
+    port: 17867,
+    async fetch(request) {
+      if (request.method !== "POST" || new URL(request.url).pathname !== "/fix")
+        return new Response(null, { status: 404 });
+      try {
+        const bytes = new Uint8Array(await request.arrayBuffer()), next = checked(bytes);
+        await serial(async () => {
+          await remember(bytes);
+          fix = next;
+          await browser.apply(fix);
+        });
+        return new Response(receipt(fix.enabled ? "applied" : "disabled"), {
+          headers: { "content-type": "application/x-protobuf" }
+        });
+      } catch (error) {
+        return new Response(receipt("failed", message(error)), {
+          headers: { "content-type": "application/x-protobuf" }
+        });
+      }
+    }
+  });
+  setInterval(() => {
+    if (fix.enabled && pending === 0)
+      serial(() => browser.apply(fix)).catch(() => {});
+  }, 1000);
+}
+async function client() {
+  try {
+    const bytes = new Uint8Array(await Bun.stdin.arrayBuffer());
+    checked(bytes);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      proxy: "",
+      headers: { "content-type": "application/x-protobuf" },
+      body: bytes,
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!response.ok)
+      throw Error("location_daemon");
+    await Bun.write(Bun.stdout, new Uint8Array(await response.arrayBuffer()));
+  } catch (error) {
+    await Bun.write(Bun.stdout, receipt("failed", message(error)));
+  }
+}
+if (import.meta.main) {
+  if (process.argv.includes("--watch"))
+    await daemon();
+  else
+    await client();
+}
+export {
+  LocationBrowser
+};

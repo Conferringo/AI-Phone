@@ -183,7 +183,7 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 fn verify_resources(folder: &Path) -> Result<(), String> {
     let expected: std::collections::BTreeMap<String, String> =
         serde_json::from_str(INTEGRITY).map_err(|e| e.to_string())?;
-    for name in ["source.tar.gz", "entry.py"] {
+    for name in ["source.payload", "entry.py"] {
         if hash(&folder.join(name))? != *expected.get(name).ok_or("invalid_payload")? {
             return Err("invalid_payload".into());
         }
@@ -329,7 +329,7 @@ fn run(
         .args(["exec", "-y", "python@3.13.5", "--", "python"])
         .arg(resource.join("entry.py"))
         .arg("--payload")
-        .arg(resource.join("source.tar.gz"))
+        .arg(resource.join("source.payload"))
         .arg("--home")
         .arg(&folder)
         .arg("--request")

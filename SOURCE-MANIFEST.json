@@ -578,13 +578,13 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 22611,
-      "sha256": "57855402e996201392d0dc33171c2e7919a4e399479bb96537723663e80068d0"
+      "size": 22613,
+      "sha256": "2dfbb535e1b1eeab5cd19e5355b9a5eed541704ca9a432561d2dab45a5f4c15d"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/checkpoint.rs",
-      "size": 5653,
-      "sha256": "4146b07e199451c7b158c6963b692e4b2881fd29d968bea136d5a9b6d977be48"
+      "size": 5654,
+      "sha256": "c9f51343c21e68987088b9021c0e8ce1673f776416135b116856803b09e57eb3"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/download.rs",
@@ -618,8 +618,8 @@
     },
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
-      "size": 1864,
-      "sha256": "976b07cef6be0c974114131fab5152819e870c38a113b8f17eb671a9a44a29aa"
+      "size": 1866,
+      "sha256": "f84598aa84a62de2f730a4b6d7f921bde4f586d9c687f57bcdc9cd21ae638d03"
     },
     {
       "path": "apps/client/src-tauri/tauri.linux.conf.json",
@@ -1638,8 +1638,8 @@
     },
     {
       "path": "apps/web/src/components/location-window.tsx",
-      "size": 8422,
-      "sha256": "d5d80e631b2ebb8ed3442a2692aa34d6f9490410fcd6711b2b22dcc3adbf5e39"
+      "size": 8730,
+      "sha256": "6f04fc656ad890c3620a7bf1ee81348733d5d9536cb0baa5928d86b52bdfdcf0"
     },
     {
       "path": "apps/web/src/components/memory-window.tsx",
@@ -1833,38 +1833,38 @@
     },
     {
       "path": "apps/web/src/locales/de.json",
-      "size": 15714,
-      "sha256": "6bddd726a5ef4469be94a4f4e701cc1f011e40f8d2bc9ae7d9741b544daeb1be"
+      "size": 15761,
+      "sha256": "b949af72063693e93b3af1bf3c6f06744fcd12cd79d1372dea1fb26c15e96da3"
     },
     {
       "path": "apps/web/src/locales/en.json",
-      "size": 14220,
-      "sha256": "a6f521937ffc59377b330f8b3f412f72a951d8fd67fcfa2544490b6ebe550b6e"
+      "size": 14259,
+      "sha256": "7b87ceb655a0ca738fd07d1a48edf4284adf9ceaaf649e8a20ffaa21b340ea50"
     },
     {
       "path": "apps/web/src/locales/es.json",
-      "size": 15781,
-      "sha256": "28d622c0c28f2485a158cb02513974e3e6d6eb69a64ebe58784fa0bfc25f3c92"
+      "size": 15824,
+      "sha256": "77992d478be7240f03f833afa66036ec00e936e2888984171f430d9f496719a9"
     },
     {
       "path": "apps/web/src/locales/fr.json",
-      "size": 16293,
-      "sha256": "86679cf7d2e98e4c9a1dcaff44bc66e74e03ef7a64c29fc37505ffa981c52ce7"
+      "size": 16343,
+      "sha256": "b77d771903b60e4fbc24bc145c97a54935dd81218df241fac1e5ad7e8dd98033"
     },
     {
       "path": "apps/web/src/locales/ja.json",
-      "size": 17222,
-      "sha256": "5b8dbe10f3d258d8563002b7a13ae513bf35b6228f0760ab5c289c83829a5e59"
+      "size": 17265,
+      "sha256": "dd0d21f6ec1ec8107ae0bbb228240a3bd6522faebb1e062d4ef78d4f8b2cf425"
     },
     {
       "path": "apps/web/src/locales/ko.json",
-      "size": 15376,
-      "sha256": "51dbe388ea8d1080da512dea1860adbb32ffdd6b6c365485feb0fb1c0badbfc6"
+      "size": 15418,
+      "sha256": "03a3a4b2daf7ef8e50e456793d9f30aed53fbb1bc86b4bb7fdf64b447ad8f830"
     },
     {
       "path": "apps/web/src/locales/zh-TW.json",
-      "size": 13831,
-      "sha256": "c3a75fdf6535282d5f4f89134e3cc28388bd3e7c841d6ced2151a8230939170b"
+      "size": 13865,
+      "sha256": "a209428a96c1e4cca444475c47cd72e320af84bf8d4edc5317ed3f36871952b5"
     },
     {
       "path": "apps/web/src/proxy.ts",
@@ -3298,13 +3298,13 @@
     },
     {
       "path": "docs/public/simulated-location.md",
-      "size": 3396,
-      "sha256": "d0cd4996766428f440a04b01bcfdf01c6321ad0644ae9e6176fb52f4f162490c"
+      "size": 3523,
+      "sha256": "fe01c24c885d0a5091a90ece1477cec8a792bfbde9423e655a3a8310ccd5df38"
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 14893,
-      "sha256": "0fd82e6457b14d081c2ea9eb4d773fb2931bff7a197c6e04a29421a47dff56e1"
+      "size": 15481,
+      "sha256": "e6d08e568eafaa64625c49f2cc6c416a81f07abbdfb25e473e52976e7edec2eb"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3353,13 +3353,13 @@
     },
     {
       "path": "infra/desktop/location.js",
-      "size": 133380,
-      "sha256": "2af80cba5951fd0079c6dd39c9c940fd1ac71e47899b2940a7b4fbb084b883e0"
+      "size": 137028,
+      "sha256": "48fbf79c8fdb7d7e041e53dd0610bddd4e44e613fdd06981929eb6b8c6c7c0d2"
     },
     {
       "path": "infra/desktop/location.ts",
-      "size": 3785,
-      "sha256": "32714aafdb012d703bfbc0fcf7297e75d6b43ba6bce4c805728caa3036f2037a"
+      "size": 7484,
+      "sha256": "725725d5e4daec1bbaf896cfc00f797ffa8f9f9181db0e66a5bdb2e52c2e1bc4"
     },
     {
       "path": "infra/desktop/media-capture.py",
@@ -3857,6 +3857,11 @@
       "sha256": "80c720aef4cbca335f9fed40f31c410e15bbf9157a90d91e500ff1456d566924"
     },
     {
+      "path": "scripts/location-browser.test.ts",
+      "size": 2185,
+      "sha256": "e586b4d2e73c2a5d7d7c32ca6ccf2b273ea095a894f1e4045d35549219a41290"
+    },
+    {
       "path": "scripts/location-state.test.ts",
       "size": 3154,
       "sha256": "f9b053443426e052786a8ae2b5c6e80eb0e6bc04cd9c6a193059316f7237dc71"
@@ -3923,13 +3928,13 @@
     },
     {
       "path": "scripts/prepare_android_client.py",
-      "size": 6168,
-      "sha256": "ff6a538c5d53afb8c2748c7b3b8e8e330c158f9b5b647663cea4ebddbec226a5"
+      "size": 5105,
+      "sha256": "7dc46ea46eb4f5a21c3fa7ff1adb3b1b87b95ede450e67df94758654ccc26f0f"
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 1502,
-      "sha256": "4c4ad6bfe2022ad5949d9d7cbfcef141c516bbcc163d3aefc9882f2ed0fec3f2"
+      "size": 1504,
+      "sha256": "1971b3647f096d4451d1e60a33b5fd8a82ae5717e5062d8a8eefe0b4c8fa1a85"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -3993,8 +3998,8 @@
     },
     {
       "path": "scripts/test_android_build_task.py",
-      "size": 2073,
-      "sha256": "d1c376f0ea70d6b94b80f623aaef7993819741d47c668a7357d8271473f09796"
+      "size": 1158,
+      "sha256": "1de9029b02007c10edccfdd9aeeb403055149564f7ec9f92555221cda8518713"
     },
     {
       "path": "scripts/test_android_notices.py",
@@ -4008,8 +4013,8 @@
     },
     {
       "path": "scripts/test_client_artifacts.py",
-      "size": 2123,
-      "sha256": "6a33407f482d0c82dfafd06fe58dd886fc15d8ba33e01c8e433fd6e021127d8b"
+      "size": 3101,
+      "sha256": "055c69ce0422ab52d1ac2e0d482f4fb5868942b487862cff9ea4c0cca7ea9a05"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -4018,8 +4023,8 @@
     },
     {
       "path": "scripts/test_client_payload.py",
-      "size": 3517,
-      "sha256": "222a009dcf1eda9108ac7e9cdfe732bb28ea5b9b388ca459cae3e969be1b81e1"
+      "size": 4195,
+      "sha256": "edb9645b0e1fe02dc151cd66573445be148ee1af5b894a6f9814120df9fa0f51"
     },
     {
       "path": "scripts/test_database.py",

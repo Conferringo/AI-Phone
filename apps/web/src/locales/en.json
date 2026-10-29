@@ -366,5 +366,6 @@
   "部分设备未应用；运动已暂停": "Some devices failed to update. Movement paused.",
   "网络定位不可用，请在地图选点": "Network location unavailable. Select a map point.",
   "位置已被更新，请刷新后重试": "Location changed. Refresh and retry.",
-  "请打开电脑浏览器后重试，定位仅应用于内置浏览器": "Open the computer browser and retry. Location applies to the built-in browser."
+  "请打开电脑浏览器后重试，定位仅应用于内置浏览器": "Open the computer browser and retry. Location applies to the built-in browser.",
+  "重试关闭": "Retry turning off"
 }

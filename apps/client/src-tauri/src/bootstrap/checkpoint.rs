@@ -13,7 +13,7 @@ struct Checkpoint {
 fn payload() -> Result<String, String> {
     let integrity: serde_json::Value =
         serde_json::from_str(INTEGRITY).map_err(|_| "invalid_payload")?;
-    integrity["source.tar.gz"]
+    integrity["source.payload"]
         .as_str()
         .map(str::to_owned)
         .ok_or_else(|| "invalid_payload".into())

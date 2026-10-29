@@ -256,6 +256,15 @@ function LocationContent({ control }: { control: LocationController }) {
       >
         {t("开启")}
       </Button>
+      {snapshot.devices.some((device) => device.status === "failed") && (
+        <Button
+          variant="secondary"
+          disabled={control.view.pending}
+          onClick={() => void control.save({ enabled: false, moving: false })}
+        >
+          {t("重试关闭")}
+        </Button>
+      )}
     </div>
   );
 }

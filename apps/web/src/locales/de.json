@@ -366,5 +366,6 @@
   "部分设备未应用；运动已暂停": "Einige Geräte wurden nicht aktualisiert. Bewegung pausiert.",
   "网络定位不可用，请在地图选点": "Netzwerkstandort nicht verfügbar. Kartenpunkt wählen.",
   "位置已被更新，请刷新后重试": "Standort geändert. Neu laden und erneut versuchen.",
-  "请打开电脑浏览器后重试，定位仅应用于内置浏览器": "Integrierten Computer-Browser öffnen und erneut versuchen."
+  "请打开电脑浏览器后重试，定位仅应用于内置浏览器": "Integrierten Computer-Browser öffnen und erneut versuchen.",
+  "重试关闭": "Deaktivierung wiederholen"
 }

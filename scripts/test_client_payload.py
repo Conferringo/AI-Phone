@@ -10,17 +10,27 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).parent))
 from client_host_entry import stage_source
+from prepare_client_host import prepare
 
 
 class ClientPayloadTests(unittest.TestCase):
     def bundle(self, folder, files):
-        archive = folder / 'source.tar.gz'
+        archive = folder / 'source.payload'
         manifest = {'format': 1, 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=0o644) for name, data in files]}
         with tarfile.open(archive, 'w:gz') as target:
             for name, data in files + [('HOST-MANIFEST.json', json.dumps(manifest).encode())]:
                 entry = tarfile.TarInfo(name); entry.size = len(data)
                 target.addfile(entry, io.BytesIO(data))
         return archive
+
+    def test_native_payload_has_an_opaque_name_and_exact_compressed_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);(root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture entry')
+            digests=prepare(root)
+            self.assertIn('source.payload',digests)
+            archive=root/'apps/client/src-tauri/gen/host/source.payload'
+            self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(),digests['source.payload'])
+            with tarfile.open(archive,'r:gz') as source:self.assertIn('scripts/client_host_entry.py',source.getnames())
 
     def test_retry_reuses_immutable_source_and_preserves_user_state(self):
         with tempfile.TemporaryDirectory() as temp:
