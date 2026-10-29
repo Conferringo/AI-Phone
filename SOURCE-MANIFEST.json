@@ -1628,8 +1628,8 @@
     },
     {
       "path": "apps/web/src/components/location-state.ts",
-      "size": 6804,
-      "sha256": "90910685ec0f57c4d5f8f57de1135bca04e8c6813f2bbaafd884f93675cd5de6"
+      "size": 7054,
+      "sha256": "9bb97e0e50cfb3aafaf9d21352fb85fcd7a8da2ccf37d3f7089800a9e896d60b"
     },
     {
       "path": "apps/web/src/components/location-window.css",
@@ -1638,8 +1638,8 @@
     },
     {
       "path": "apps/web/src/components/location-window.tsx",
-      "size": 8404,
-      "sha256": "630b7e9e38cb7fae9657c4607c18870107f2d46b57880744db58bac4d2a203e6"
+      "size": 8422,
+      "sha256": "d5d80e631b2ebb8ed3442a2692aa34d6f9490410fcd6711b2b22dcc3adbf5e39"
     },
     {
       "path": "apps/web/src/components/memory-window.tsx",
@@ -3858,8 +3858,8 @@
     },
     {
       "path": "scripts/location-state.test.ts",
-      "size": 2668,
-      "sha256": "34817603190ae30a4eb78b6c51db354fe5334828d220bcc88559bd459aba0beb"
+      "size": 3154,
+      "sha256": "f9b053443426e052786a8ae2b5c6e80eb0e6bc04cd9c6a193059316f7237dc71"
     },
     {
       "path": "scripts/media-relay.test.ts",
@@ -3923,8 +3923,8 @@
     },
     {
       "path": "scripts/prepare_android_client.py",
-      "size": 6166,
-      "sha256": "e28f97c5a1ddda87fee0cb1dbbf6c52fef3c1ecc57a26cad5cc1cba2f3c49b88"
+      "size": 6168,
+      "sha256": "ff6a538c5d53afb8c2748c7b3b8e8e330c158f9b5b647663cea4ebddbec226a5"
     },
     {
       "path": "scripts/prepare_client_host.py",
@@ -3993,8 +3993,8 @@
     },
     {
       "path": "scripts/test_android_build_task.py",
-      "size": 2071,
-      "sha256": "b1292940155b6b447f0fd9adbd67098087a262f4c56048f2cffb0163a393e441"
+      "size": 2073,
+      "sha256": "d1c376f0ea70d6b94b80f623aaef7993819741d47c668a7357d8271473f09796"
     },
     {
       "path": "scripts/test_android_notices.py",

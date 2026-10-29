@@ -19,7 +19,7 @@ class AndroidBuildTaskTests(unittest.TestCase):
             (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'host/source.tar.gz':'host/source.tar.gz'}}}))
             task=resource_task(root)
             self.assertIn('Copy::class',task);self.assertIn('from(',task);self.assertIn('into("host")',task)
-            self.assertIn('rename(".*", "source.tar.gz")',task);self.assertIn('dependsOn(syncAiPhoneResources)',task)
+            self.assertIn('rename("^.*$", "source.tar.gz")',task);self.assertIn('dependsOn(syncAiPhoneResources)',task)
             payload.unlink()
             with self.assertRaisesRegex(ValueError,'Missing configured'):resource_task(root)
 

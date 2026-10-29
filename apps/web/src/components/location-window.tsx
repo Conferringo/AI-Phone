@@ -64,7 +64,7 @@ function Coordinates({
         </label>
       ))}
       <Button
-        disabled={!draft.dirty || pending || state.moving}
+        disabled={(!draft.dirty && !state.error) || pending || state.moving}
         onClick={() => void save()}
       >
         {t("应用")}

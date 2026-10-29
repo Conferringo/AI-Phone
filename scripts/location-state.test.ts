@@ -80,3 +80,18 @@ test("turning off does not parse unfinished input or request host lookup; enabli
   });
   expect(enabled.useHost).toBe(true);
 });
+
+test("retrying a network-derived fix keeps its declared accuracy until coordinates actually change", () => {
+  const snapshot = {
+    ...state(),
+    point: create(GeoPointSchema, {
+      latitude: 31,
+      longitude: 121,
+      accuracyM: 50000,
+    }),
+  };
+  const draft = draftFrom(snapshot);
+  expect(requestFrom(snapshot, draft, {}).point?.accuracyM).toBe(50000);
+  draft.coordinates.latitude = "31.001";
+  expect(requestFrom(snapshot, draft, {}).point?.accuracyM).toBe(5);
+});

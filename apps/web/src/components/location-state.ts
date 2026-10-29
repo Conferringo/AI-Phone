@@ -120,6 +120,11 @@ export function reducer(view: View, action: Action): View {
       return { ...view, loadError: action.value };
   }
 }
+function coordinateAccuracy(point: Point, latitude: number, longitude: number) {
+  return point.latitude === latitude && point.longitude === longitude
+    ? point.accuracyM
+    : 5;
+}
 function selectedPoint(draft: Draft): Point | undefined {
   if (!draft.point) return undefined;
   const latitude = Number(draft.coordinates.latitude),
@@ -133,7 +138,11 @@ function selectedPoint(draft: Draft): Point | undefined {
     Math.abs(longitude) > 180
   )
     throw Error("请输入有效的经纬度");
-  return create(GeoPointSchema, { latitude, longitude, accuracyM: 5 });
+  return create(GeoPointSchema, {
+    latitude,
+    longitude,
+    accuracyM: coordinateAccuracy(draft.point, latitude, longitude),
+  });
 }
 export function requestFrom(
   snapshot: LocationState,

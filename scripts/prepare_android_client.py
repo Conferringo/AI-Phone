@@ -31,7 +31,7 @@ def resource_task(root):
         # The built-in Copy task is configuration-cache compatible and owns its inputs.
         lines += ['    from('+json.dumps(str(src)).replace('$', r'\$')+') {',
                   '        into('+json.dumps(target.parent.as_posix())+')',
-                  '        rename(".*", '+json.dumps(target.name)+')', '    }']
+                  '        rename("^.*$", '+json.dumps(target.name)+')', '    }']
     lines += ['    into("src/main/assets")','}',
               'tasks.configureEach { if ((name.startsWith("merge") && name.endsWith("Assets")) || name.contains("lint", ignoreCase = true)) dependsOn(syncAiPhoneResources) }']
     return '\n'.join(lines)+'\n'
