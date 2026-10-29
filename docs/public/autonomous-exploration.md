@@ -10,6 +10,8 @@ Phone and desktop exploration use one policy. Existing reply/install settings, d
 
 Normal execution yields in bounded slices. After 40 decision steps or ten minutes in an exploration window, the same run checkpoints its context, pending tools, plan and error counters, waits the configured interval, then continues. This resource window does not cancel the activity or demand a different App. Its next clock begins on wake, so long waits do not cause an endless yield loop. Model-chosen natural stopping points can finish a cycle; the enabled scheduler can start another.
 
+Long runs also compact the model request rather than deleting the conversation. Older tool and assistant material has a bounded excerpt archive; owner/system constraints, each Skill's latest successful read and recent complete tool pairs remain. Failed Skill reads do not replace valid instructions. Omitted records are explicitly marked as archived, never treated as current-screen evidence. The saved execution ledger and chat remain intact. This limits accumulated tool material; it is not a guarantee that arbitrarily large owner inputs fit every model's context.
+
 A paused owner task remains intact while explicitly enabled exploration gets its own scheduling lane. An unrelated notification's platform restriction does not disable exploration. Re-enabling desktop exploration retires its old paused cycle while retaining all action receipts. Mode changes and scheduling lock the conversation, mode and runs in the same order. Stopping the mode cancels its active execution token while independently enabled notification work continues. Changing shared reply/install permissions revokes stale autonomous policy on both devices without switching off desktop exploration.
 
 ## Learning

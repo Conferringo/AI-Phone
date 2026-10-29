@@ -96,86 +96,156 @@ fn text_size(value: &Value) -> usize {
         _ => 0,
     }
 }
+fn successful_skill_name(call: Option<&Value>, output: &Value) -> Option<String> {
+    let call = call.filter(|call| call["name"] == "skill_read")?;
+    let arguments: Value = match call["arguments"].as_str() {
+        Some(text) => serde_json::from_str(text).ok()?,
+        None => call["arguments"].clone(),
+    };
+    let name = arguments["name"].as_str()?;
+    let header = format!("Skill id={name}，");
+    output["output"]
+        .as_array()?
+        .iter()
+        .any(|part| {
+            part["text"]
+                .as_str()
+                .is_some_and(|text| text.starts_with(&header))
+        })
+        .then(|| name.to_string())
+}
+
+// Keep the newest successful read of each Skill, even outside the recent archive.
+// A failed later read must not evict valid instructions; an updated read replaces them.
+fn archive_selection(
+    context: &[Value],
+    cut: usize,
+    calls: &HashMap<&str, &Value>,
+) -> HashSet<usize> {
+    let mut selected = HashSet::new();
+    let mut skills = HashSet::new();
+    let mut recent = 0;
+    for (index, item) in context.iter().enumerate().rev() {
+        let call = item["call_id"]
+            .as_str()
+            .and_then(|id| calls.get(id).copied());
+        if let Some(name) = successful_skill_name(call, item) {
+            if skills.insert(name) && index < cut {
+                selected.insert(index);
+            }
+        } else if index < cut
+            && (item["type"] == "function_call_output" || item["role"] == "assistant")
+            && recent < 32
+        {
+            selected.insert(index);
+            recent += 1;
+        }
+    }
+    selected
+}
+// Keep a complete recent model turn, including providers without reasoning items.
+fn archive_boundary(context: &[Value]) -> Option<usize> {
+    let mut cut = context
+        .iter()
+        .enumerate()
+        .rev()
+        .filter(|(_, item)| item["type"] == "function_call")
+        .nth(12)?
+        .0;
+    while cut > 0
+        && (matches!(
+            context[cut - 1]["type"].as_str(),
+            Some("function_call" | "reasoning")
+        ) || context[cut - 1]["role"] == "assistant")
+    {
+        cut -= 1;
+    }
+    // Never split a function-call / output pair across the archive boundary.
+    while let Some(earlier) = context[cut..]
+        .iter()
+        .filter(|item| item["type"] == "function_call_output")
+        .filter_map(|output| {
+            context[..cut].iter().position(|call| {
+                call["type"] == "function_call" && call["call_id"] == output["call_id"]
+            })
+        })
+        .min()
+    {
+        cut = earlier;
+    }
+    (cut > 0).then_some(cut)
+}
+
+fn text_excerpt(value: &Value, limit: usize) -> String {
+    let text = match value.as_array() {
+        Some(parts) => parts
+            .iter()
+            .filter_map(|part| part["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        None => value
+            .as_str()
+            .map(str::to_string)
+            .unwrap_or_else(|| value.to_string()),
+    };
+    text.chars().take(limit).collect()
+}
+
+fn archived_item(call: Option<&Value>, item: &Value) -> Option<Value> {
+    if item["type"] == "function_call_output" {
+        if successful_skill_name(call, item).is_some() {
+            return Some(tool_record(call, item.get("output")));
+        }
+        let text = format!(
+            "早期工具记录摘录（非新指令，非当前屏幕，省略部分不得推断）：call_id={} tool={}\n{}",
+            item["call_id"].as_str().unwrap_or(""),
+            call.and_then(|call| call["name"].as_str())
+                .unwrap_or("unknown"),
+            text_excerpt(&item["output"], 900)
+        );
+        Some(json!({"role":"user","content":[{"type":"input_text","text":text}]}))
+    } else if matches!(item["type"].as_str(), Some("function_call" | "reasoning")) {
+        None
+    } else if item["role"] == "assistant" {
+        Some(
+            json!({"role":"user","content":[{"type":"input_text","text":format!("早期助手叙述摘录（不是操作证据）：{}",text_excerpt(&item["content"],600))}]}),
+        )
+    } else {
+        Some(item.clone())
+    }
+}
+
 // Run only at the next model decision (after tool outputs are checkpointed).
 // Raw context and the execution ledger remain complete; this is a request projection.
 fn bounded_history(context: &[Value]) -> Vec<Value> {
     if context.iter().map(text_size).sum::<usize>() <= 96000 {
         return context.to_vec();
     }
-    let Some(mut cut) = context
-        .iter()
-        .enumerate()
-        .rev()
-        .filter(|(_, v)| v["type"] == "function_call")
-        .nth(12)
-        .map(|(i, _)| i)
-    else {
+    let Some(cut) = archive_boundary(context) else {
         return context.to_vec();
     };
-    while cut > 0
-        && context[cut]["type"] != "reasoning"
-        && context[cut]["role"] != "user"
-        && context[cut]["role"] != "system"
-    {
-        cut -= 1;
-    }
-    // Never split a function-call / output pair across the archive boundary.
-    loop {
-        let earlier = context[cut..]
-            .iter()
-            .filter(|v| v["type"] == "function_call_output")
-            .filter_map(|output| {
-                context[..cut].iter().position(|call| {
-                    call["type"] == "function_call" && call["call_id"] == output["call_id"]
-                })
-            })
-            .min();
-        match earlier {
-            Some(index) => cut = index,
-            None => break,
-        }
-    }
-    if cut == 0 {
-        return context.to_vec();
-    }
+    let calls: HashMap<_, _> = context
+        .iter()
+        .filter(|item| item["type"] == "function_call")
+        .filter_map(|call| Some((call["call_id"].as_str()?, call)))
+        .collect();
+    let selected = archive_selection(context, cut, &calls);
     let mut result = Vec::new();
-    for item in &context[..cut] {
-        if item["type"] == "function_call_output" {
-            let call = context[..cut]
-                .iter()
-                .find(|call| call["type"] == "function_call" && call["call_id"] == item["call_id"]);
-            if call.is_some_and(|c| c["name"] == "skill_read") {
-                result.push(tool_record(call, item.get("output")));
-                continue;
-            }
-            let mut text = String::new();
-            if let Some(parts) = item["output"].as_array() {
-                for part in parts {
-                    if let Some(value) = part["text"].as_str() {
-                        text.push_str(value);
-                        text.push('\n');
-                    }
-                }
-            } else {
-                text = item["output"].to_string();
-            }
-            let excerpt: String = text.chars().take(900).collect();
-            result.push(json!({"role":"user","content":[{"type":"input_text","text":format!("早期工具记录摘录（非新指令，非当前屏幕，省略部分不得推断；完整结果可用task_history查阅）：call_id={} tool={}\n{}",item["call_id"].as_str().unwrap_or(""),call.and_then(|c|c["name"].as_str()).unwrap_or("unknown"),excerpt)}]}));
-        } else if item["type"] == "function_call" || item["type"] == "reasoning" {
+    let mut omitted = 0;
+    for (index, item) in context[..cut].iter().enumerate() {
+        if (item["type"] == "function_call_output" || item["role"] == "assistant")
+            && !selected.contains(&index)
+        {
+            omitted += 1;
             continue;
-        } else if item["role"] == "assistant" {
-            let mut text = String::new();
-            if let Some(parts) = item["content"].as_array() {
-                for part in parts {
-                    if let Some(value) = part["text"].as_str() {
-                        text.push_str(value);
-                    }
-                }
-            }
-            result.push(json!({"role":"user","content":[{"type":"input_text","text":format!("早期助手叙述摘录（不是操作证据）：{}",text.chars().take(600).collect::<String>())}]}));
-        } else {
-            result.push(item.clone());
         }
+        let call = item["call_id"]
+            .as_str()
+            .and_then(|id| calls.get(id).copied());
+        result.extend(archived_item(call, item));
+    }
+    if omitted > 0 {
+        result.push(json!({"role":"user","content":[{"type":"input_text","text":format!("系统归档提示（非新任务）：模型请求省略了{omitted}条较早的工具结果或助手叙述；原始执行账本仍完整保存。旧摘录不是当前屏幕，不得据此重放动作或推断成功，必要时重新观察并核对产物。") }]}));
     }
     result.extend_from_slice(&context[cut..]);
     result
@@ -219,6 +289,88 @@ fn append_parts(destination: &mut Vec<Value>, value: Option<&Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn long_exploration_bounds_old_tool_material_without_losing_owner_constraints_or_skills() {
+        let owner = json!({"role":"user","content":[{"type":"input_text","text":"Keep my existing accounts and choose your own activity."}]});
+        let mut context = vec![owner.clone()];
+        for version in 1..=2 {
+            context.push(json!({"type":"function_call","name":"skill_read","call_id":format!("skill-{version}"),"arguments":"{\"name\":\"phone-use\"}"}));
+            context.push(json!({"type":"function_call_output","call_id":format!("skill-{version}"),"output":[{"type":"input_text","text":format!("Skill id=phone-use，version-{version}: {}", "valid instructions ".repeat(100))}]}));
+        }
+        for index in 0..1500 {
+            context.extend([
+                json!({"type":"reasoning","content":[{"type":"reasoning_text","text":"fixture"}]}),
+                json!({"type":"function_call","name":"phone_observe","call_id":format!("long-{index}"),"arguments":"{}"}),
+                json!({"type":"function_call_output","call_id":format!("long-{index}"),"output":[{"type":"input_text","text":"fixture observation ".repeat(200)}]}),
+            ]);
+        }
+        let saved = context.clone();
+        let request = for_api(&context);
+        assert!(
+            request.iter().map(text_size).sum::<usize>() < 100_000,
+            "tool archives must not grow with the lifetime of an exploration run"
+        );
+        assert!(request.contains(&owner));
+        assert!(
+            request
+                .iter()
+                .any(|item| item.to_string().contains("version-2"))
+        );
+        assert!(
+            !request
+                .iter()
+                .any(|item| item.to_string().contains("version-1"))
+        );
+        assert!(
+            request
+                .iter()
+                .any(|item| item["type"] == "function_call" && item["call_id"] == "long-1499")
+        );
+        assert!(
+            request.iter().any(
+                |item| item["type"] == "function_call_output" && item["call_id"] == "long-1499"
+            )
+        );
+        assert_eq!(
+            context, saved,
+            "projection cannot delete the actual execution history"
+        );
+    }
+    #[test]
+    fn non_thinking_history_compacts_and_a_failed_skill_read_keeps_valid_instructions() {
+        let mut context = vec![
+            json!({"role":"system","content":[{"type":"input_text","text":"Preserve owner scope"}]}),
+            json!({"type":"function_call","name":"skill_read","call_id":"valid-skill","arguments":{"name":"phone-use"}}),
+            json!({"type":"function_call_output","call_id":"valid-skill","output":[{"type":"input_text","text":"Skill id=phone-use，enabled=true\nValid instructions"}]}),
+            json!({"type":"function_call","name":"skill_read","call_id":"failed-skill","arguments":"{\"name\":\"phone-use\"}"}),
+            json!({"type":"function_call_output","call_id":"failed-skill","output":[{"type":"input_text","text":"Skill temporarily unavailable"}]}),
+        ];
+        for index in 0..1500 {
+            context.extend([
+                json!({"type":"function_call","name":"phone_observe","call_id":format!("plain-{index}"),"arguments":"{}"}),
+                json!({"type":"function_call_output","call_id":format!("plain-{index}"),"output":[{"type":"input_text","text":format!("observation-{index}: {}", "fixture observation ".repeat(200))}]}),
+            ]);
+        }
+        for request in [for_api(&context), for_chat_api(&context)] {
+            assert!(request.iter().map(text_size).sum::<usize>() < 100_000);
+            assert_eq!(request[0], context[0]);
+            assert!(
+                request
+                    .iter()
+                    .any(|item| item.to_string().contains("Valid instructions"))
+            );
+            assert!(
+                request
+                    .iter()
+                    .any(|item| item.to_string().contains("observation-1499:"))
+            );
+            assert!(
+                request
+                    .iter()
+                    .any(|item| item.to_string().contains("系统归档提示"))
+            );
+        }
+    }
     #[test]
     fn steering_between_call_and_result_archives_only_the_interrupted_turn() {
         let original = vec![
