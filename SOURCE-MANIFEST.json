@@ -28,8 +28,13 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/bug.yml",
-      "size": 890,
-      "sha256": "c43e4d90615e6288be9817282f13a9bfa4f18c204ad3a5b372721bfc645ecdb5"
+      "size": 1569,
+      "sha256": "d7cb6e7131db63d48169d573ba4a8b9bf85746dcb3aa50d7195b39f4d4457332"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "size": 331,
+      "sha256": "ffd16119cc50e1e28bfc532227bcfb1f9130360b3293b6ca15bccbc02bc643da"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/feature.yml",
@@ -55,6 +60,11 @@
       "path": ".gitignore",
       "size": 684,
       "sha256": "25109a1d01e6a7450ed8d9f09872e79fa3f24c73dce3ee85424548848036a9aa"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 1605,
+      "sha256": "e1088973e00926c0b40d4c95e9652c79c34fc2729f8a5d3d9f1481b8b723aeae"
     },
     {
       "path": "CHANGELOG.md",
@@ -1127,6 +1137,11 @@
       "sha256": "023503c632375ce1f3196fa1249e1b7a79aedfa28b458036657ea0b389064b05"
     },
     {
+      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
+      "size": 590,
+      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
+    },
+    {
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/01-auto-send-sync.rs",
       "size": 615,
       "sha256": "8ff975b8f4b5c94c4cb823f27668446e3f8da5c0cf359e1bd8ac6a86334d1aa4"
@@ -1175,11 +1190,6 @@
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/06-no-auto-send-sync-with-non-send-sync-ffi-parent.stderr",
       "size": 2887,
       "sha256": "808ac199325749e28e4c5ea6a459463d87c375443dc73c143a8fc1032575895f"
-    },
-    {
-      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
-      "size": 590,
-      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
     },
     {
       "path": "apps/client/src-tauri/vendor/glib/tests/value.rs",
@@ -1367,6 +1377,11 @@
       "sha256": "569e597d382b1b126783b2732ef04c694b1c30874cdf485fe8cd39b17bfe8b21"
     },
     {
+      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
+      "size": 248,
+      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
+    },
+    {
       "path": "apps/web/src/app/api/phone/[operation]/route.ts",
       "size": 2442,
       "sha256": "b49cf856843d05ca90e15bf0b19fa8eb182f3e78ccf9428c5bf0b0abd7648217"
@@ -1375,11 +1390,6 @@
       "path": "apps/web/src/app/api/phone/media/[kind]/route.ts",
       "size": 1279,
       "sha256": "c68779f38c663de44d3f5495035655a8c7f6e79bf8590675e1fb78ca8a8fb9ad"
-    },
-    {
-      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
-      "size": 248,
-      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
     },
     {
       "path": "apps/web/src/app/api/proactive/[operation]/route.ts",
@@ -1522,21 +1532,6 @@
       "sha256": "f55ddf1357a6fc19cb925644ec607275506c002608e7a2d8621cac5a2539896f"
     },
     {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.d.ts",
-      "size": 316,
-      "sha256": "e7130e46ec7e3bae6a3c1a6b7064d8ca0e13384accd032f4e48e9ad329ba1126"
-    },
-    {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.js",
-      "size": 2496,
-      "sha256": "f6bc70fd8d2abad85ae685ea0b81692868755de37e48801c177a561aa92f8b13"
-    },
-    {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphMotion.ts",
-      "size": 7724,
-      "sha256": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
-    },
-    {
       "path": "apps/web/src/components/knowledge-network.tsx",
       "size": 5082,
       "sha256": "1e75dd4b1317830ad623e65fca09e1a5dbe79c40e34021a7703ea7b065f4ba40"
@@ -1550,6 +1545,21 @@
       "path": "apps/web/src/components/knowledge-window.tsx",
       "size": 10122,
       "sha256": "92f6f9f6970eec538a9e6e71e2f677b00221d87173b897225da3cc9efaa94eef"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.d.ts",
+      "size": 316,
+      "sha256": "e7130e46ec7e3bae6a3c1a6b7064d8ca0e13384accd032f4e48e9ad329ba1126"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.js",
+      "size": 2496,
+      "sha256": "f6bc70fd8d2abad85ae685ea0b81692868755de37e48801c177a561aa92f8b13"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphMotion.ts",
+      "size": 7724,
+      "sha256": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
     },
     {
       "path": "apps/web/src/components/locale-provider.tsx",
@@ -2053,8 +2063,8 @@
     },
     {
       "path": "crates/assistant/src/chat_completions.rs",
-      "size": 12151,
-      "sha256": "1956fda5ef3c18356d8f3854b8402b6b9478563f5f132a2596c258b4efda05b0"
+      "size": 12045,
+      "sha256": "808c11ccebe1263d8ec9401b35cb7a831dcd32bba8bd01fca0e26d913e1eab69"
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
@@ -2093,18 +2103,23 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 8698,
-      "sha256": "dd37847108fbe8eefa066373a739f8c072f225a58be0f46bfe98fc2015aed8b2"
+      "size": 8713,
+      "sha256": "9b4cae071d8587b87677b0e8eec286f35b8e2d1dc6f3e7424d6d38bc7c7bbda1"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
-      "size": 16550,
-      "sha256": "64e50d1617f3584d4081c994b674efad29c24f350c7f1f4f8e70c8b1636c37a3"
+      "size": 19528,
+      "sha256": "80ea621c53fcf450c3de8f83bb4aa8e535f552ea48021301da3f54f3095d780a"
     },
     {
       "path": "crates/assistant/src/model_context.rs",
       "size": 13037,
       "sha256": "cf231339ef4a32cd4964188b20e057ef44b7d8a514877a92556e7c22455e70d9"
+    },
+    {
+      "path": "crates/assistant/src/model_sse.rs",
+      "size": 4744,
+      "sha256": "5879c9d503cfec7cb179017440b6473e7cfd970b3f6acd8e69d435961753b4b8"
     },
     {
       "path": "crates/assistant/src/persistence_tests.rs",
@@ -2128,8 +2143,8 @@
     },
     {
       "path": "crates/assistant/src/settings.rs",
-      "size": 31288,
-      "sha256": "b836296d13b5f6d4cc3d8ea79ffe8b1ff1a504a4c8977f411a371da35844ae16"
+      "size": 33800,
+      "sha256": "1e77b1393bb86afa96d99bd3ac87c8441115246090377337f53dc266bb31c637"
     },
     {
       "path": "crates/assistant/src/setup.rs",
@@ -2253,8 +2268,8 @@
     },
     {
       "path": "docs/public/compatibility.md",
-      "size": 4239,
-      "sha256": "cbb4139ba748bd28b96515223c0b70ad81974ce85c186b1528f2c03f60be54f3"
+      "size": 7016,
+      "sha256": "d794e9c3da458170f4dddd43f1fa8af2f51428d497e6087a9a929327710381a8"
     },
     {
       "path": "docs/public/contributor-agents.md",
@@ -2318,8 +2333,13 @@
     },
     {
       "path": "docs/public/index.md",
-      "size": 2517,
-      "sha256": "3953f64d3980572f6d2b93db45bad3f337ee8007737424f7e349a1b83bef99de"
+      "size": 2620,
+      "sha256": "aac77207acdb48123b1caa625f7e6a2ff23804eecdfe4c2262b1331463cde914"
+    },
+    {
+      "path": "docs/public/interface-audit-2026-10-29.md",
+      "size": 6110,
+      "sha256": "6f964d24d5543f0888bb3f2b2b6d0dc1f33dfb9ce871392b6cfc15a3b675f8eb"
     },
     {
       "path": "docs/public/languages.md",
@@ -3103,8 +3123,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 9441,
-      "sha256": "4fd780606b54932ed2785a7d96a76a5f520414fb020d8e6418f5831019071308"
+      "size": 6572,
+      "sha256": "1e21aedc20ffe9f680baaa622cb33def87621d3dedd03f11c65dcc663a941bf5"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3865,11 +3885,6 @@
       "path": "skills/builtin/wechat/SKILL.md",
       "size": 7652,
       "sha256": "0761bc806214ded24bfe683fdbbc901e7dc1d7b82ab4cd39bfd786e14d284eae"
-    },
-    {
-      "path": "AGENTS.md",
-      "size": 1605,
-      "sha256": "e1088973e00926c0b40d4c95e9652c79c34fc2729f8a5d3d9f1481b8b723aeae"
     }
   ]
 }

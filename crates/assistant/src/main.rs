@@ -29,6 +29,7 @@ mod device_network;
 mod http;
 mod model_adapter;
 mod model_context;
+mod model_sse;
 mod phone_system;
 mod proactive;
 mod registry;

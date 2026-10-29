@@ -2,6 +2,18 @@ name: Bug / 缺陷
 description: Report a reproducible problem / 可复现问题
 title: '[Bug] '
 body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / 问题范围
+      options:
+        - Model API / 模型接口
+        - Messaging / 消息渠道
+        - Local deployment / 本机部署
+        - Device or media / 设备与声音画面
+        - Interface or language / 界面与语言
+    validations:
+      required: true
   - type: input
     id: version
     attributes:
@@ -25,6 +37,12 @@ body:
     id: expected
     attributes:
       label: Expected behavior / 预期行为
+  - type: input
+    id: protocol
+    attributes:
+      label: Model or channel / 模型或渠道
+      placeholder: Provider, model ID, Responses or Chat Completions; or bot platform
+      description: No API keys, bot tokens, private endpoint URLs or pairing codes. / 不填写密钥、机器人凭据、私有地址或配对码。
   - type: textarea
     id: logs
     attributes:

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Compatibility and known limits / 兼容范围与已知缺口
+    url: https://github.com/Conferringo/AI-Phone/blob/main/docs/public/compatibility.md
+    about: Check model, channel and platform status before reporting. / 提交前核对模型、渠道和平台的实际状态。

@@ -112,28 +112,15 @@ struct Call {
 }
 #[derive(Default)]
 pub struct ChatStream {
-    buffer: Vec<u8>,
-    total: usize,
+    sse: crate::model_sse::SseDecoder,
     text: String,
     calls: BTreeMap<u64, Call>,
     finish: Option<String>,
 }
 impl ChatStream {
     pub fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
-        self.total = self.total.saturating_add(chunk.len());
-        if self.total > 32 * 1024 * 1024 {
-            return Err("模型输出超过限制".into());
-        }
-        self.buffer.extend_from_slice(chunk);
-        while let Some(end) = self.buffer.iter().position(|b| *b == b'\n') {
-            let line = std::str::from_utf8(&self.buffer[..end])
-                .map_err(|_| "模型流编码无效")?
-                .trim_end_matches('\r')
-                .to_string();
-            self.buffer.drain(..=end);
-            let Some(data) = line.strip_prefix("data:").map(str::trim) else {
-                continue;
-            };
+        for data in self.sse.feed(chunk)? {
+            let data = data.trim();
             if data.is_empty() {
                 continue;
             }
@@ -180,9 +167,6 @@ impl ChatStream {
                     self.finish = Some(reason.to_string());
                 }
             }
-        }
-        if self.buffer.len() > 16 * 1024 * 1024 {
-            return Err("模型流单帧超过限制".into());
         }
         Ok(None)
     }
@@ -237,26 +221,26 @@ mod tests {
     #[test]
     fn requires_terminal_marker_and_valid_complete_arguments() {
         let mut p = ChatStream::default();
-        assert!(p.feed(b"data: {\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call\",\"function\":{\"name\":\"phone_tap\",\"arguments\":\"{\"}}]},\"finish_reason\":null}]}\n").unwrap().is_none());
-        assert!(p.feed(b"data: {\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}\n").unwrap().is_none());
+        assert!(p.feed(b"data: {\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call\",\"function\":{\"name\":\"phone_tap\",\"arguments\":\"{\"}}]},\"finish_reason\":null}]}\n\n").unwrap().is_none());
+        assert!(p.feed(b"data: {\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}\n\n").unwrap().is_none());
         assert_eq!(
-            p.feed(b"data: [DONE]\n").unwrap().unwrap()[0]["call_id"],
+            p.feed(b"data: [DONE]\n\n").unwrap().unwrap()[0]["call_id"],
             "call"
         );
         let mut q = ChatStream::default();
         assert!(
             q.feed(
-                b"data: {\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"length\"}]}\n"
+                b"data: {\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"length\"}]}\n\n"
             )
             .is_err()
         );
         let mut q = ChatStream::default();
-        assert!(q.feed(b"data: [DONE]\n").is_err());
+        assert!(q.feed(b"data: [DONE]\n\n").is_err());
     }
     #[test]
     fn fragmented_unicode_and_forced_tool_are_translated() {
         let mut p = ChatStream::default();
-        let bytes="data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"成功\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n".as_bytes();
+        let bytes="data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"成功\"},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n".as_bytes();
         let cut = bytes.iter().position(|b| *b > 127).unwrap() + 1;
         assert!(p.feed(&bytes[..cut]).unwrap().is_none());
         assert_eq!(
@@ -265,5 +249,13 @@ mod tests {
         );
         let value=request_body(&json!({"input":[],"tools":[{"type":"function","name":"phone_observe","parameters":{"type":"object"}}],"tool_choice":{"type":"function","name":"phone_observe"}})).unwrap();
         assert_eq!(value["tool_choice"]["function"]["name"], "phone_observe");
+    }
+    #[test]
+    fn multiline_sse_preserves_complete_tools_and_the_terminal_marker() {
+        let mut parser = ChatStream::default();
+        let data = b": heartbeat\ndata: {\"choices\":[{\"index\":0,\ndata: \"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"receipt\",\"function\":{\"name\":\"phone_observe\",\"arguments\":\"{}\"}}]},\ndata: \"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]\n\n";
+        let output = parser.feed(data).unwrap().unwrap();
+        assert_eq!(output[0]["call_id"], "receipt");
+        assert_eq!(output[0]["arguments"], "{}");
     }
 }
