@@ -108,13 +108,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7840,
-      "sha256": "8e3b609686264efead66a5d22ebc84b27857a82029b4352a559210c78c674cec"
+      "size": 8044,
+      "sha256": "2162eb5ef6cc9de4d20b03c43748446b3605f6e93f5a87cc4415d6fb2b75a906"
     },
     {
       "path": "README.md",
-      "size": 6981,
-      "sha256": "f547bcc07bc1209ece50ab986e8ad007e041c43baecd92430c052100b9109bb8"
+      "size": 15054,
+      "sha256": "741351df44ab97e7746dbd93f038ded41789df23b51f640c68738e81d4a1a103"
     },
     {
       "path": "SECURITY.md",

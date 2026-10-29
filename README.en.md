@@ -1,10 +1,10 @@
 # AI Phone
 
-[简体中文](README.md) · Apache-2.0 · **0.1.0-preview.1 experimental source preview**
+English · [简体中文](README.md#简体中文) · Apache-2.0 · **0.1.0-preview.1 experimental preview**
 
 ## Download and install
 
-The source is open under Apache-2.0. Preview client downloads are listed below; they are not stable releases. Clients connect to a deployment owned by the user. The full server currently targets macOS Apple Silicon first; Windows/Linux host management remains in development. Android initially acts as a connection client.
+Download a preview client for your platform. **The current installers connect to an existing local/LAN server.** Client-managed deployment is in development. The complete source host currently targets macOS Apple Silicon; Windows/Linux host management and Android independent hosting remain unfinished. See the [current release status](docs/public/release-status.md).
 
 | System | Client format | Status / instructions |
 |---|---|---|
@@ -13,7 +13,7 @@ The source is open under Apache-2.0. Preview client downloads are listed below; 
 | Linux amd64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-linux-arm64.deb) | Ubuntu 24.04 builds; desktop/media untested |
 | Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/AI-Phone-0.1.0-preview.1-android-arm64.apk) | Preview certificate; touch/background untested |
 
-[Releases](https://github.com/Conferringo/AI-Phone/releases) include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
+[Open the release](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) · [SHA256SUMS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.1/SHA256SUMS). Releases include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
 
 Source deployment requires Python 3.11+, Node.js 22+, npm, Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
 
