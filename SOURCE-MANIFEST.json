@@ -22,6 +22,11 @@
       "sha256": "0bb0c0b5658a30e940e5d95eabbe7300d9a3cff54dc33b54bec604ab874a5bcc"
     },
     {
+      "path": ".gitattributes",
+      "size": 166,
+      "sha256": "81bade5b6b8f30ecbfbbcac5442137ae81b3a5b38c4ed54f259deb63d661d0a7"
+    },
+    {
       "path": ".github/ISSUE_TEMPLATE/bug.yml",
       "size": 890,
       "sha256": "c43e4d90615e6288be9817282f13a9bfa4f18c204ad3a5b372721bfc645ecdb5"
@@ -38,8 +43,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 5789,
-      "sha256": "36849c6c4aa73dfcf979010a0fad8bc1639044955955156cff7b1f71efe9f25e"
+      "size": 5881,
+      "sha256": "f58946c384d57d92b0ce52ac4c248738634e88eef7a2d7c4ee66f347ae1f025a"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -3688,8 +3693,8 @@
     },
     {
       "path": "scripts/release_package.py",
-      "size": 4910,
-      "sha256": "63cd5cf3b3978deb765331692f84330a490c940d3bf9d3d968d5f17542b8764c"
+      "size": 5456,
+      "sha256": "48e5d47e00a28a72f6431c5f0d6297cd50f9f8d05b6984658fac32ceebcec982"
     },
     {
       "path": "scripts/release_stage.py",
@@ -3800,6 +3805,11 @@
       "path": "scripts/test_release.py",
       "size": 7646,
       "sha256": "ca40ef30285da4c91eab0f72a9f0403d9f23c481073048a6c80560c800fbfa91"
+    },
+    {
+      "path": "scripts/test_release_portability.py",
+      "size": 2414,
+      "sha256": "47a07ecd42ef1e12954b9e07e559710f75af3049d497ff21fe476503a1d3979d"
     },
     {
       "path": "scripts/test_source_export.py",

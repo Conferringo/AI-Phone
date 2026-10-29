@@ -91,7 +91,9 @@ jobs:
       - name: Native tests
         run: cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked --release
       - name: Verify vendored upstream patch and packaging guards
-        run: python -m unittest discover -s scripts -p test_native_backports.py
+        run: |
+          python -m unittest discover -s scripts -p test_native_backports.py
+          python -m unittest discover -s scripts -p test_release_portability.py
       - name: Build and inspect local preview
         run: python scripts/build_client.py --platform ${{ matrix.platform }}
       - name: Retain inspected preview for release review
