@@ -23,18 +23,17 @@ def patch_build_task(path, cli):
 
 def resource_task(root):
     config=json.loads((root/'apps/client/src-tauri/tauri.conf.json').read_text())
-    lines=['val syncAiPhoneResources by tasks.registering {']
+    lines=['val syncAiPhoneResources by tasks.registering(Copy::class) {']
     for source,destination in config['bundle']['resources'].items():
         src=(root/'apps/client/src-tauri'/source).resolve()
         if not src.is_file():raise ValueError('Missing configured client resource: '+destination)
-        target='src/main/assets/'+destination
-        lines += ['    inputs.file('+json.dumps(str(src)).replace('$', r'\$')+')',
-                  '    outputs.file('+json.dumps(target)+')']
-    lines += ['    doLast {']
-    for source,destination in config['bundle']['resources'].items():
-        src=(root/'apps/client/src-tauri'/source).resolve()
-        lines += ['        file('+json.dumps('src/main/assets/'+destination)+').apply { parentFile.mkdirs(); file('+json.dumps(str(src)).replace('$', r'\$')+').copyTo(this, overwrite = true) }']
-    lines += ['    }','}', 'tasks.configureEach { if (name.startsWith("merge") && name.endsWith("Assets")) dependsOn(syncAiPhoneResources) }']
+        target=Path(destination)
+        # The built-in Copy task is configuration-cache compatible and owns its inputs.
+        lines += ['    from('+json.dumps(str(src)).replace('$', r'\$')+') {',
+                  '        into('+json.dumps(target.parent.as_posix())+')',
+                  '        rename(".*", '+json.dumps(target.name)+')', '    }']
+    lines += ['    into("src/main/assets")','}',
+              'tasks.configureEach { if ((name.startsWith("merge") && name.endsWith("Assets")) || name.contains("lint", ignoreCase = true)) dependsOn(syncAiPhoneResources) }']
     return '\n'.join(lines)+'\n'
 
 

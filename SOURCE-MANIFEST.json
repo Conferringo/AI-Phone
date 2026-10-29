@@ -2338,8 +2338,8 @@
     },
     {
       "path": "crates/phone-runner/src/location.rs",
-      "size": 2794,
-      "sha256": "643d94680de305e64ad4b1e3e422ff86eef77bae35ee337f0cd443c0198a70c4"
+      "size": 7973,
+      "sha256": "aa74eda37ca270186afadaaba625ae3be6259f09bcd7213a7e848b490902a7c9"
     },
     {
       "path": "crates/phone-runner/src/main.rs",
@@ -3923,8 +3923,8 @@
     },
     {
       "path": "scripts/prepare_android_client.py",
-      "size": 6261,
-      "sha256": "bc8bcb993460c9406416b5af50d56827253573325459556482fb4747039a1756"
+      "size": 6166,
+      "sha256": "e28f97c5a1ddda87fee0cb1dbbf6c52fef3c1ecc57a26cad5cc1cba2f3c49b88"
     },
     {
       "path": "scripts/prepare_client_host.py",
@@ -3993,8 +3993,8 @@
     },
     {
       "path": "scripts/test_android_build_task.py",
-      "size": 2083,
-      "sha256": "0a3be29762cb6670916b4dd06a2109ba99bb692609714980d80be30ecdf959c4"
+      "size": 2071,
+      "sha256": "b1292940155b6b447f0fd9adbd67098087a262f4c56048f2cffb0163a393e441"
     },
     {
       "path": "scripts/test_android_notices.py",
