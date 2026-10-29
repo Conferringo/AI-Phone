@@ -1,0 +1,26 @@
+# Third-party sources and licence status
+
+Original AI Phone code is licensed under **Apache-2.0**, selected by the maintainer. Third-party packages/assets retain their own licences. This document does not relicense dependencies. This experimental source preview excludes third-party binaries and guest images; binary redistribution review remains separate.
+
+| Component | Source / licence evidence | Release action |
+| --- | --- | --- |
+| Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 321 JavaScript packages across the server and native client, licence metadata and notice-file hashes. No missing licence metadata; redistribution/source-offer review remains open |
+| Knowledge motion + native app icon | Original AI Phone TypeScript/SVG implementations, Apache-2.0; hashes in config/source-assets.json | The forest/welcome page has been removed. No EPIC renderer code is shipped. Complete knowledge-motion visual acceptance remains pending. |
+| Android SDK/emulator/system image | Google's SDK packages | Download via sdkmanager after the user's licence acceptance; not bundled in the source archive |
+| Clash Meta for Android 2.11.36 | [Official source / GPLv3](https://github.com/MetaCubeX/ClashMetaForAndroid/tree/v2.11.36); APK SHA256 and signature pin in config/clash-apps.json | Downloaded separately; not included in source archive. Preserve notices and corresponding-source obligations in binary distributions |
+| Clash Party 2.0.4 | [Official source / GPLv3](https://github.com/mihomo-party-org/clash-party/tree/v2.0.4); deb pin in config/clash-apps.json | Unmodified package in Linux guest image; retain upstream licences and fulfil corresponding-source requirements before redistributing images |
+| Extra Android apps | Separately installed APKs | No APK redistribution in source bundles; pin source, version, signature and licence before automating downloads |
+| Docker images and guest packages | Pinned bases / Debian and package-manager dependencies | Preserve package notices and redistribution obligations in binary/image releases |
+| Redis 8 Compose image | [Redis licence options](https://redis.io/legal/licenses/): AGPLv3, RSALv2 or SSPLv1, not the historic BSD terms | Optional service, not the Agent queue. Record the applicable option and exact image/source obligations before binary/image distribution; package-manager inventory does not cover this image |
+| Docker Desktop prerequisite | [Docker Subscription Service Agreement overview](https://docs.docker.com/subscription-billing/desktop-license/) | Not bundled or relicensed by this project. User eligibility/acceptance is separate from Apache-2.0; the installer must not imply unrestricted free enterprise use |
+| Mihomo v1.19.33 | [Corresponding source and GPLv3 licence](https://github.com/MetaCubeX/mihomo/tree/v1.19.33); hashes in config/mihomo-release.json | Installed from verified official releases; unmodified core, generated private configuration. Binaries are excluded from source archives. Binary/image releases must include required notices and corresponding-source access |
+| GeoIP routing data | [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat), immutable commit and hash in config/mihomo-release.json | Downloaded separately, excluded from source archives; retain upstream licence and data-source obligations in binary distribution |
+
+The Apache-2.0 project licence does not override third-party, copyleft, trademark or asset obligations. SDKs, clients, guest images and installed packages are not bundled with the source archive. Binary/image redistribution needs its own notices and corresponding-source review. Generated assets and model names do not imply official affiliation.
+
+GSAP 3.15.0 uses its own [Standard No Charge licence](https://gsap.com/community/standard-license/), not Apache/MIT or an OSI-approved project licence. The source depends on the separately installed package and preserves its notices. Its restrictions on competing visual animation builders remain applicable. Native libvips (LGPL), lightningcss/@vercel/og (MPL), caniuse-lite data (CC BY) and mixed-licence packages remain identified in the inventory.
+
+
+The native client bundles collected licence texts in `docs/public/native-client-licenses.txt`. Some upstream crate archives omit full texts; those gaps are not cleared by having SPDX metadata. Final binary redistribution review remains open.
+
+Native-client notice supplements: 14 locked crates omitted licence files from their release archives. Exact files from their published VCS revisions are included in `docs/public/licenses/native/`, with source URLs/commit and hashes in `config/native-notice-supplements.json`. The generated notice collection includes these texts; 26 packages still lack complete text evidence. In particular, objc2's upstream licensing overview is not treated as a full licence grant or an Apple SDK redistribution clearance. Final per-platform distribution review remains open.

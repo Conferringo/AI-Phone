@@ -1,0 +1,35 @@
+{
+  "name": "@ai-phone/web",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "next dev --turbopack --hostname 127.0.0.1 --port 17860",
+    "build": "next build --turbopack",
+    "start": "next start --hostname 127.0.0.1 --port 17860",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-phone/protocol": "workspace:*",
+    "@bufbuild/protobuf": "2.16.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "gsap": "^3.15.0",
+    "lucide-react": "^1.61.0",
+    "next": "16.4.3",
+    "radix-ui": "^1.8.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,42 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message ChannelListRequest { string agent_id = 1; }
+message ChannelBinding {
+  string provider = 1;
+  string app_id = 2;
+  reserved 3;
+  string status = 4;
+  string error = 5;
+  bool configured = 6;
+  bool paired = 7;
+  string pairing_command = 8;
+  uint64 pairing_expires_at_ms = 9;
+}
+message ChannelListResponse { repeated ChannelBinding bindings = 1; }
+message ChannelBindRequest {
+  string provider = 1;
+  string app_id = 2;
+  string secret = 3;
+  reserved 4;
+  string agent_id = 5;
+}
+message ChannelUnbindRequest { string provider = 1; string agent_id = 2; }
+message ChannelPairRequest { string provider = 1; string agent_id = 2; }
+
+// Internal-only owner-paired push. No caller-provided arbitrary recipient.
+message ChannelPushRequest {
+  string request_id = 1;
+  string text = 2;
+  bytes png = 3;
+  repeated string providers = 4;
+  string agent_id = 5;
+}
+message ChannelDelivery { string provider = 1; string status = 2; string error = 3; }
+message ChannelPushResult { repeated ChannelDelivery deliveries = 1; }
+
+// Internal delivery lookup. Recipients always come from the paired owner configuration.
+message ChannelPushStatusRequest {
+  string request_id = 1;
+  string agent_id = 2;
+}

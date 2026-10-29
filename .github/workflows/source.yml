@@ -1,0 +1,53 @@
+name: Source checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: source-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Rust stable with formatting
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt
+          rustup default stable
+      - name: Fixed Bun and locked dependencies
+        run: |
+          ./scripts/bootstrap.sh
+          git diff --exit-code -- packages/protocol/src/gen
+      - name: Source privacy and licence metadata
+        run: python3 scripts/check_source.py
+      - name: protobuf, TypeScript and Rust
+        run: ./scripts/bun run check
+      - name: Isolated UI and adapter tests
+        run: ./scripts/bun test ./apps/channels ./apps/device-network ./scripts/*.test.ts
+      - name: Installer and archive tests
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Rust tests
+        run: |
+          cargo fmt --all --check
+          cargo test --workspace --locked
+      - name: Production web build
+        run: ./scripts/bun run build
+      - name: Isolated PostgreSQL integration
+        run: |
+          docker run -d --name aiphone-ci-pg --label dev.aiphone.test=permissions --memory 512m -p 127.0.0.1:55500:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+          python3 scripts/ci_integration.py --container aiphone-ci-pg --port 55500
+      - name: Remove disposable PostgreSQL
+        if: always()
+        run: docker rm -fv aiphone-ci-pg 2>/dev/null || true

@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package ai_phone.v1;
+
+// Draft data contracts. These messages do not imply implemented endpoints.
+enum PhoneState {
+  PHONE_STATE_UNSPECIFIED = 0;
+  PHONE_STATE_PROVISIONING = 1;
+  PHONE_STATE_STOPPED = 2;
+  PHONE_STATE_BOOTING = 3;
+  PHONE_STATE_READY = 4;
+  PHONE_STATE_ERROR = 5;
+}
+
+enum RunState {
+  RUN_STATE_UNSPECIFIED = 0;
+  RUN_STATE_QUEUED = 1;
+  RUN_STATE_RUNNING = 2;
+  RUN_STATE_WAITING_USER = 3;
+  RUN_STATE_PAUSED = 4;
+  RUN_STATE_SUCCEEDED = 5;
+  RUN_STATE_FAILED = 6;
+  RUN_STATE_CANCELED = 7;
+  RUN_STATE_RECOVERING = 8;
+}
+
+message Phone {
+  string id = 1;
+  string name = 2;
+  PhoneState state = 3;
+  uint32 screen_width = 4;
+  uint32 screen_height = 5;
+  bool root_requested = 6;
+  bool root_verified = 7;
+}
+
+message Attachment {
+  string id = 1;
+  string filename = 2;
+  string media_type = 3;
+  uint64 size_bytes = 4;
+  string processing_state = 5;
+}
+
+message SkillDescriptor {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  repeated string granted_tools = 5;
+  bool enabled = 6;
+}
+
+// Server allocates monotonically increasing sequence per run in PostgreSQL.
+// Deltas are flushed as durable chunks before broadcast; reconnect uses after_seq.
+message RunEvent {
+  string run_id = 1;
+  uint64 sequence = 2;
+  oneof payload {
+    string text_delta = 3;
+    RunState state = 4;
+    ToolAction tool_action = 5;
+    Attachment attachment = 6;
+  }
+}
+
+message ToolAction {
+  string action_id = 1;
+  string phone_id = 2;
+  string tool = 3;
+  uint64 control_epoch = 4;
+  string state = 5;
+  // Sensitive arguments are not placed in generic UI event payloads.
+  string display_summary = 6;
+}
+

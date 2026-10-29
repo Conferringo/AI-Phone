@@ -1,0 +1,34 @@
+@property --exploration-reveal {syntax:'<percentage>';inherits:false;initial-value:110%;}
+.proactive-dock{display:flex;align-items:center;margin-right:auto;gap:2px}
+.exploration-toggle{display:flex;align-items:center;gap:7px;height:34px;padding:0 10px;border:0;border-radius:18px;background:transparent;font-size:12px;color:#656a78;cursor:pointer;transition:background 180ms,color 180ms}
+.exploration-toggle:hover{background:#77718a0b;color:#262337}
+.exploration-toggle:focus-visible{outline:2px solid #7c76c9;outline-offset:2px}
+.exploration-toggle:disabled{opacity:.5;cursor:wait}
+.proactive-dock[data-exploring=true] .exploration-toggle{color:#514b8a;background:linear-gradient(115deg,#b0dffb30,#e2bffb30,#ffd4bb30)}
+.proactive-inline-error{position:absolute;bottom:8px;font-size:12px;color:#a34453}
+.proactive-options{padding:0;display:flex;flex-direction:column;gap:18px}
+.proactive-status{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:5px}
+.proactive-indicator{width:7px;height:7px;border-radius:50%;background:#a8abb5}
+.proactive-indicator[data-live=true]{background:#9182d9;box-shadow:0 0 12px #b2a1e85c}
+.proactive-options label{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:13px}
+.proactive-options input{accent-color:#7b71b4;width:16px;height:16px;cursor:pointer}
+.proactive-divider{height:1px;background:#756c9012;margin:1px 0}
+.proactive-problem{font-size:12px;color:#995064;margin:0;line-height:1.6}
+.proactive-delivery{font-size:12px;color:#696779;line-height:1.65}
+.proactive-delivery summary{cursor:pointer}
+/* EPIC conversationAura: the same palette, edge reveal and orbit; read-only design reference. */
+.exploration-aura{--exploration-palette:conic-gradient(from 30deg,#63d9ec,#7783f5 18%,#b078e9 35%,#ed98bf 52%,#ffc293 68%,#71ddce 84%,#63d9ec);position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden;contain:layout paint;clip-path:inset(0);animation:exploration-enter 1400ms ease;transition:opacity 700ms ease}
+.exploration-aura[data-enabled=false]{opacity:0}
+.exploration-aura>span,.exploration-edge>span{position:absolute;inset:0;overflow:hidden}
+.exploration-halo::before,.exploration-rim::before{content:'';position:absolute;left:50%;top:50%;width:142vmax;height:142vmax;background:var(--exploration-palette);translate:-50% -50%;transform-origin:center;animation:exploration-orbit 14s linear infinite}
+.exploration-edge{mask-image:radial-gradient(farthest-corner at 100% 100%,#000 max(0%,calc(var(--exploration-reveal,110%) - 10%)),transparent var(--exploration-reveal,110%));animation:exploration-unfurl 1800ms cubic-bezier(.22,.7,.25,1) both}
+.exploration-halo{mask-image:linear-gradient(90deg,#000,#0007 16px,#0002 40px,transparent 76px,transparent calc(100% - 76px),#0002 calc(100% - 40px),#0007 calc(100% - 16px),#000),linear-gradient(#000,#0007 16px,#0002 40px,transparent 76px,transparent calc(100% - 76px),#0002 calc(100% - 40px),#0007 calc(100% - 16px),#000);opacity:.6}
+.exploration-rim{padding:1.5px;opacity:.85;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude}
+.exploration-rim::before{background:conic-gradient(from 30deg,#ffffffa6,transparent 16%,transparent 82%,#ffffffa6),var(--exploration-palette)}
+/* Pause only the orbit. Pausing the entrance at 0% made an enabled aura invisible. */
+.exploration-aura[data-paused=true] span::before{animation-play-state:paused}
+@keyframes exploration-orbit{to{transform:rotate(360deg)}}
+@keyframes exploration-unfurl{from{--exploration-reveal:0%}to{--exploration-reveal:110%}}
+@keyframes exploration-enter{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.exploration-aura,.exploration-aura span,.exploration-aura span::before{animation:none}}
+@media(max-width:400px){.exploration-toggle{padding:0 7px;gap:5px}.proactive-dock{gap:0}}

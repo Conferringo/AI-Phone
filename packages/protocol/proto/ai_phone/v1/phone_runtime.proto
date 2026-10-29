@@ -1,0 +1,167 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+// Routing envelope: decode ONLY the common field; other request tags have different types.
+message PhoneScope { string phone_id = 1; }
+// Accepted execution telemetry; never contains typed text, keys or model reasoning.
+message DeviceCursor {
+  string device_id = 1;
+  string action_id = 2;
+  string kind = 3;
+  string status = 4;
+  uint64 started_at_ms = 5;
+  uint32 duration_ms = 6;
+  uint32 width = 7;
+  uint32 height = 8;
+  repeated FingerPath paths = 9;
+  string actor = 10;
+  bool input_confirmed = 11;
+  uint64 reported_at_ms = 12;
+}
+
+// P2 local runner. Authentication and one local owner's scope are checked by runner.
+message DeviceRequest {
+  string phone_id = 1;
+  string owner_id = 2;
+  bool include_ui_tree = 3;
+  bool metadata_only = 4;
+  bool include_elements = 5;
+  // "auto" (default), "always" (supplement native nodes), "only" (OCR diagnostics).
+  string ocr_mode = 6;
+}
+
+message DeviceObservation {
+  string phone_id = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  bytes png = 4;
+  string ui_tree = 5;
+  uint64 screen_sequence = 6;
+  uint64 control_epoch = 7;
+  string controller = 8;
+  string root_identity = 9;
+  string observation_id = 10;
+  repeated PhoneElement elements = 11;
+  string foreground_app = 12;
+  string grounding_note = 13;
+  string scroll_feedback = 14;
+}
+
+message PhoneBounds { uint32 left = 1; uint32 top = 2; uint32 right = 3; uint32 bottom = 4; }
+message PhoneElement {
+  string id = 1;
+  string text = 2;
+  string resource_id = 3;
+  string class_name = 4;
+  PhoneBounds bounds = 5;
+  bool clickable = 6;
+  bool scrollable = 7;
+  bool editable = 8;
+  string source = 9;
+  float confidence = 10;
+}
+message ElementTapAction { string observation_id = 1; string element_id = 2; }
+// Direction describes content traversal: down reveals lower content (finger moves up).
+message ElementScrollAction { string observation_id = 1; string element_id = 2; string direction = 3; float distance = 4; uint32 duration_ms = 5; }
+
+message TapAction { uint32 x = 1; uint32 y = 2; }
+message SwipeAction { uint32 x1 = 1; uint32 y1 = 2; uint32 x2 = 3; uint32 y2 = 4; uint32 duration_ms = 5; }
+message LongPressAction { uint32 x = 1; uint32 y = 2; uint32 duration_ms = 3; }
+message DragAction { uint32 x1 = 1; uint32 y1 = 2; uint32 x2 = 3; uint32 y2 = 4; uint32 duration_ms = 5; }
+message InputAction { string text = 1; }
+message KeyAction { string key = 1; }
+message ShellAction { string script = 1; }
+// Rotation policy, also returned by POST /v1/orientation with DeviceRequest.
+message OrientationAction { bool automatic = 1; uint32 rotation = 2; }
+
+message DeviceActionRequest {
+  string phone_id = 1;
+  string owner_id = 2;
+  string run_id = 3;
+  string action_id = 4;
+  uint64 control_epoch = 5;
+  string controller = 6;
+  oneof action {
+    TapAction tap = 7;
+    SwipeAction swipe = 8;
+    InputAction input = 9;
+    KeyAction key = 10;
+    ShellAction shell = 11;
+    LongPressAction long_press = 12;
+    DragAction drag = 13;
+    OrientationAction orientation = 14;
+    ElementTapAction tap_element = 15;
+    ElementScrollAction scroll_element = 16;
+    GestureAction gesture = 18;
+    MotionAction motion = 19;
+  }
+  // Required for agent coordinate fallback when the observation has grounded targets.
+  string observation_id = 17;
+}
+
+message DeviceActionResponse {
+  string action_id = 1;
+  bool success = 2;
+  string output = 3;
+  bool replayed = 4;
+  bool result_unknown = 5;
+}
+
+message TakeControlRequest {
+  string phone_id = 1;
+  string owner_id = 2;
+  string controller = 3;
+}
+
+message ControlState {
+  string phone_id = 1;
+  uint64 control_epoch = 2;
+  string controller = 3;
+}
+
+message PhoneNotification {
+  string event_id = 1;
+  string notification_key = 2;
+  string package_name = 3;
+  string app_name = 4;
+  string title = 5;
+  string text = 6;
+  uint64 posted_at_ms = 7;
+}
+message PhoneNotificationList {
+  bool connected = 1;
+  uint64 checked_at_ms = 2;
+  repeated PhoneNotification notifications = 3;
+  string error = 4;
+  bool attention_connected = 5;
+}
+
+message PhoneProvisionRequest {
+  string device_id = 1;
+  string request_id = 2;
+  string template_id = 3;
+  uint32 cpus = 4;
+  uint32 memory_mb = 5;
+  uint32 storage_gb = 6;
+  string identity_profile = 7;
+}
+message PhoneProvisionJob {
+  string id = 1;
+  string device_id = 2;
+  string status = 3;
+  string stage = 4;
+  string error = 5;
+  string template_id = 6;
+  uint32 cpus = 7;
+  uint32 memory_mb = 8;
+  uint32 storage_gb = 9;
+  string identity_profile = 10;
+}
+message PhoneProvisionState { repeated PhoneProvisionJob jobs = 1; }
+
+// Coordinates refer to the latest displayed screenshot, not host CSS pixels.
+message GesturePoint { uint32 x = 1; uint32 y = 2; uint32 at_ms = 3; }
+message FingerPath { uint32 pointer_id = 1; repeated GesturePoint points = 2; }
+message GestureAction { repeated FingerPath paths = 1; uint32 duration_ms = 2; float pressure = 3; }
+// acceleration in m/s², oscillation in Hz; returns sensors to their prior state.
+message MotionAction { string kind = 1; float amplitude = 2; float frequency_hz = 3; uint32 duration_ms = 4; }

@@ -1,0 +1,1 @@
+export type Node={id:string;title:string;x:number;y:number}; export type Link={source_id:string;target_id:string}; export type Model={nodes:Node[];links:Link[]}; export function knowledgeLayout(nodes:{id:string;title:string}[],links:Link[]):Model; export function linkedIds(id:string|null,links:Link[]):Set<string>;

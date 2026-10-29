@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0-preview.1",
+  "publication_gates": {
+    "ui_acceptance": false,
+    "asset_and_source_license_review": false,
+    "action_ledger_retention": true,
+    "long_running_recovery": false,
+    "database_runtime_role": true,
+    "clean_host_install": false,
+    "backup_restore": true
+  },
+  "source_preview": {
+    "license": "Apache-2.0",
+    "delivery": "public-source-preview",
+    "remote_publication_authorized": true,
+    "workflow_prepared": true,
+    "workflow_remote_run": false,
+    "known_visual_acceptance_pending": [
+      "platform-media-input",
+      "eight-language-window-matrix",
+      "mobile-keyboard-safe-area"
+    ],
+    "remote_review_authorized": true,
+    "repository": "https://github.com/Conferringo/AI-Phone"
+  },
+  "acceptance_waivers": {
+    "clean_host_install": {
+      "date": "2026-10-29",
+      "scope": "source-preview",
+      "decision": "Maintainer requests publication with untested platforms documented and community issue feedback. Not a passed installation check."
+    }
+  }
+}

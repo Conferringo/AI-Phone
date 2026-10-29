@@ -1,0 +1,61 @@
+syntax = "proto3";
+package ai_phone.v1;
+message DesktopRequest { string device_id = 1; }
+message DesktopObservation {
+  string device_id = 1;
+  string observation_id = 2;
+  uint64 epoch = 3;
+  uint64 captured_at_ms = 4;
+  uint32 width = 5;
+  uint32 height = 6;
+  string title = 7;
+  bytes png = 8;
+}
+message DesktopActionRequest {
+  string device_id = 1;
+  string action_id = 2;
+  string observation_id = 3;
+  uint64 epoch = 4;
+  string kind = 5;
+  sint32 x = 6;
+  sint32 y = 7;
+  sint32 to_x = 8;
+  sint32 to_y = 9;
+  sint32 amount = 10;
+  uint32 button = 11;
+  uint32 clicks = 12;
+  string key = 13;
+  string text = 14;
+}
+message DeviceFilesRequest { string device_id = 1; string path = 2; }
+message DeviceFile { string name = 1; string path = 2; bool directory = 3; uint64 bytes = 4; }
+message DeviceFiles { repeated DeviceFile files = 1; }
+message DeviceLinkRequest { string source_device_id = 1; string target_device_id = 2; bool connected = 3; }
+message DeviceLink { string id = 1; string source_device_id = 2; string target_device_id = 3; bool connected = 4; uint64 revision = 5; }
+message TransferRequest {
+  string request_id = 1;
+  string source_device_id = 2;
+  string target_device_id = 3;
+  string source_path = 4;
+  string target_name = 5;
+}
+message DeviceTransfer {
+  string id = 1;
+  string source_device_id = 2;
+  string target_device_id = 3;
+  string source_path = 4;
+  string target_path = 5;
+  string name = 6;
+  uint64 bytes = 7;
+  string sha256 = 8;
+  string status = 9;
+  string error = 10;
+  uint64 created_at_ms = 11;
+}
+message DeviceLinkState { repeated DeviceLink links = 1; repeated DeviceTransfer transfers = 2; repeated DesktopProvisionJob jobs = 3; repeated DeviceMessage messages = 4; }
+message DesktopProvisionRequest { string device_id = 1; string request_id = 2; uint32 cpus = 3; uint32 memory_mb = 4; string template_id = 5; }
+message DesktopProvisionJob { string id = 1; string device_id = 2; string status = 3; string stage = 4; string error = 5; uint32 cpus = 6; uint32 memory_mb = 7; string template_id = 8; }
+message DesktopExploreState { string device_id = 1; bool enabled = 2; uint32 interval_seconds = 3; string last_error = 4; uint64 next_wake_at_ms = 5; string run_id = 6; }
+message DesktopExploreUpdate { string device_id = 1; bool enabled = 2; uint32 interval_seconds = 3; }
+message DeviceMessageRequest { string request_id = 1; string source_device_id = 2; string target_device_id = 3; string text = 4; }
+message DeviceMessage { string id = 1; string source_device_id = 2; string target_device_id = 3; string text = 4; string status = 5; string run_id = 6; string error = 7; uint64 created_at_ms = 8; }

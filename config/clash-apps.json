@@ -1,0 +1,19 @@
+{
+  "android": {
+    "version": "v2.11.36",
+    "source": "https://github.com/MetaCubeX/ClashMetaForAndroid",
+    "url": "https://github.com/MetaCubeX/ClashMetaForAndroid/releases/download/v2.11.36/cmfa-2.11.36-meta-arm64-v8a-release.apk",
+    "sha256": "7da3083c16af676f9a3e478e3f42098b91803cbd7cb637bff4117d4d50360f95",
+    "file": "cmfa-2.11.36-meta-arm64-v8a-release.apk",
+    "size_bytes": 47623688,
+    "signer_sha256": "5f5571af767fe0f611292aa088b445a05f725fb8262fb80a13b69e4d809ae1f1"
+  },
+  "linux": {
+    "version": "v2.0.4",
+    "source": "https://github.com/mihomo-party-org/clash-party",
+    "url": "https://github.com/mihomo-party-org/clash-party/releases/download/v2.0.4/clash-party-linux-2.0.4-arm64.deb",
+    "file": "clash-party-linux-2.0.4-arm64.deb",
+    "sha256": "cc1f38075a2c4d223d80f679699b7004279e63efa12828e0e18026578731452c",
+    "size_bytes": 187146692
+  }
+}

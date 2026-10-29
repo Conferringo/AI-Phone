@@ -1,0 +1,33 @@
+name: ai-phone
+services:
+  desktop:
+    image: ai-phone-desktop:20261028
+    build:
+      context: ./infra/desktop
+      additional_contexts:
+        clash_apps: ./.tools/clash-apps/linux
+      args:
+        HTTP_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
+        HTTPS_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
+    container_name: ai-phone-desktop
+    hostname: ai-phone-desktop
+    init: true
+    restart: unless-stopped
+    mem_limit: ${AI_PHONE_DESKTOP_MEMORY:-2560m}
+    cpus: ${AI_PHONE_DESKTOP_CPUS:-2}
+    shm_size: 256m
+    cap_add: [NET_ADMIN]
+    volumes:
+      - ./data/desktop/home:/home/ai
+      - ./data/device-network/desktop:/etc/ai-phone-network
+      - ./.tools/mihomo/linux-arm64:/opt/ai-phone/network-core:ro
+    environment:
+      HTTP_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
+      HTTPS_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
+      NO_PROXY: localhost,127.0.0.1,host.docker.internal
+    healthcheck:
+      test: ["CMD-SHELL", "xdpyinfo -display :0 >/dev/null && runuser -u ai -- pactl info >/dev/null"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    # No host ports or Docker socket: media/control are authenticated by AI Phone.

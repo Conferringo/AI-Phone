@@ -1,0 +1,53 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message SettingsRequest {}
+message ModelProfile {
+  uint64 revision = 1;
+  string provider = 2;
+  string protocol = 3;
+  string base_url = 4;
+  string model = 5;
+  string proxy_url = 6;
+  bool has_api_key = 7;
+  uint64 verified_at_ms = 8;
+}
+// Write draft. Credentials are readable only through the dedicated authenticated endpoint.
+message ModelDraft {
+  string provider = 1;
+  string protocol = 2;
+  string base_url = 3;
+  string model = 4;
+  string proxy_url = 5;
+  string api_key = 6;
+  bool use_saved_key = 7;
+}
+message ModelCredentialRequest { uint64 expected_revision = 1; }
+message ModelCredential { uint64 revision = 1; string api_key = 2; }
+message SettingsState {
+  bool configured = 1;
+  uint64 revision = 2;
+  ModelProfile model = 3;
+  repeated ModelProfile previous = 4;
+}
+message CapabilityCheck {
+  string name = 1;
+  bool passed = 2;
+  string detail = 3;
+  uint64 duration_ms = 4;
+}
+message ModelTestRequest { ModelDraft draft = 1; }
+message ModelTestResult {
+  bool ready = 1;
+  repeated CapabilityCheck checks = 2;
+  string verification_id = 3;
+}
+message SettingsSaveRequest {
+  ModelDraft draft = 1;
+  uint64 expected_revision = 2;
+  string verification_id = 3;
+}
+message SettingsRollbackRequest { uint64 revision = 1; uint64 expected_revision = 2; }
+message SetupState { bool owner_created = 1; bool model_configured = 2; }
+message SetupOwnerRequest { string setup_code = 1; string password = 2; }
+message RuntimeStatus { repeated CapabilityCheck checks = 1; }

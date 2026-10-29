@@ -1,0 +1,5 @@
+package dev.aiphone.diagnostics;
+import android.app.Activity;import android.os.Bundle;import android.media.*;
+public final class AudioProof extends Activity {
+ @Override public void onCreate(Bundle b){super.onCreate(b);new Thread(()->{AudioTrack t=null;try{int count=48000*6;short[] pcm=new short[count*2];for(int i=0;i<count;i++){short s=(short)(Math.sin(2*Math.PI*880*i/48000)*12000);pcm[2*i]=s;pcm[2*i+1]=s;}t=new AudioTrack.Builder().setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()).setAudioFormat(new AudioFormat.Builder().setSampleRate(48000).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build()).setBufferSizeInBytes(48000).setTransferMode(AudioTrack.MODE_STREAM).build();t.play();t.write(pcm,0,pcm.length);Thread.sleep(500);}catch(Exception e){android.util.Log.e("AIPhoneProof","audio",e);}finally{if(t!=null){t.stop();t.release();}runOnUiThread(this::finish);}}).start(); }
+}

@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+. "$(dirname -- "$0")/android-env.sh"
+exec "$ANDROID_HOME/platform-tools/adb" -P 15037 -s "${AI_PHONE_SERIAL:-emulator-5564}" "$@"
+

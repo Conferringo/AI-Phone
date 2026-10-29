@@ -1,0 +1,4 @@
+import {authenticated} from "@/lib/session-server";
+import {assistantError,assistantToken} from "@/lib/assistant-server";
+export const runtime="nodejs";
+export async function GET(request:Request){const session=await authenticated(request);if(session!==true)return assistantError(session===false?401:503,"unavailable","请先登录");try{const url=new URL(request.url),response=await fetch("http://127.0.0.1:17863/v1/workbench/file?path="+encodeURIComponent(url.searchParams.get("path")||""),{headers:{authorization:"Bearer "+await assistantToken()},cache:"no-store"});return new Response(response.body,{status:response.status,headers:{"content-type":response.headers.get("content-type")||"application/octet-stream","content-disposition":response.headers.get("content-disposition")||"attachment","cache-control":"private,no-store","x-content-type-options":"nosniff"}});}catch{return assistantError(503,"unavailable","文件暂不可用");}}

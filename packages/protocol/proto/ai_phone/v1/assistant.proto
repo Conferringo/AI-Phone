@@ -1,0 +1,42 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message ChatAttachment {
+  string id = 1;
+  string name = 2;
+  string media_type = 3;
+  uint64 size_bytes = 4;
+}
+message ChatMessage {
+  string id = 1;
+  string role = 2;
+  string text = 3;
+  repeated ChatAttachment attachments = 4;
+  string run_id = 5;
+  string request_id = 6;
+  uint64 ordinal = 7;
+  bool active = 8;
+  bool has_activity = 9;
+}
+message ChatHistoryRequest { string conversation_id = 1; string device_id = 2; }
+message ChatState {
+  string conversation_id = 1;
+  repeated ChatMessage messages = 2;
+  string run_id = 3;
+  string run_status = 4;
+  string error = 5;
+  int64 next_wake_at_ms = 6;
+  string agent_id = 7;
+  string agent_name = 8;
+  string device_id = 9;
+  uint64 revision = 10;
+}
+message ChatSendRequest {
+  string conversation_id = 1;
+  string text = 2;
+  repeated string attachment_ids = 3;
+  string request_id = 4;
+  string device_id = 5;
+  string agent_id = 6;
+}
+message ChatRunRequest { string run_id = 1; }

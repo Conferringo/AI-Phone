@@ -1,0 +1,20 @@
+name: Feature / 功能
+description: Describe a problem and a useful change / 描述问题与改进
+title: '[Feature] '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / 问题
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior / 期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Devices, platforms and limits / 设备、平台与边界

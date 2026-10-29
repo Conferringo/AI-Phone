@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+@import "../styles/entry.css";
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-body);line-height:1.6}
+p{overflow-wrap:anywhere}
+.preparation{max-width:760px;min-height:100dvh;margin-inline:auto;padding:clamp(24px,7vw,96px) var(--space-6)}
+.eyebrow{font-size:var(--text-caption);letter-spacing:.12em;color:var(--muted-foreground)}
+h1{font-size:var(--text-title);line-height:1.3;font-weight:600;margin-block:var(--space-4)}
+dl{margin-block:var(--space-6)}dl>div{display:grid;grid-template-columns:80px minmax(0,1fr);gap:var(--space-4);padding-block:var(--space-3)}dt{color:var(--muted-foreground)}dd{margin:0}
+.language-select{height:var(--control-height);max-width:140px;flex-shrink:0}
+.language-select:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.floating-window input:not([type=checkbox]):not([type=range]):not([type=file]):not([role=switch]){height:var(--control-height);min-height:var(--control-height);padding-block:0;line-height:1.4}
+@media(max-width:700px){.preparation{padding-inline:var(--space-4)}}
+@media(pointer:coarse){:root{--control-height:44px}}
