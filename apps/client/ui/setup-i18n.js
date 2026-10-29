@@ -25,3 +25,6 @@ for(const [locale,values] of Object.entries(recovery))Object.assign(setupLabels[
 
 const phaseNames={en:['Installation incomplete','Stopped','Developer tools'],'zh-CN':['安装未完成','已停止','开发工具'],'zh-TW':['安裝未完成','已停止','開發工具'],ja:['インストール未完了','停止','開発ツール'],ko:['설치 미완료','중지됨','개발 도구'],de:['Installation unvollständig','Gestoppt','Entwicklertools'],fr:['Installation incomplète','Arrêtée','Outils de développement'],es:['Instalación incompleta','Detenida','Herramientas de desarrollo']};
 for(const [locale,values] of Object.entries(phaseNames))Object.assign(setupLabels[locale],Object.fromEntries(['installFailed','stopped','system-tools'].map((key,index)=>[key,values[index]])));
+
+const ownership={en:'An existing installation owns the services. Choose “Use an existing deployment” to keep using it.','zh-CN':'本机已有部署正在使用这些服务，请选择“使用已有部署”。','zh-TW':'本機已有部署正在使用這些服務，請選擇「使用現有部署」。',ja:'既存の環境がサービスを使用中です。「既存の環境を使う」を選んでください。',ko:'기존 설치가 서비스를 사용 중입니다. “기존 배포 사용”을 선택하세요.',de:'Eine vorhandene Installation nutzt die Dienste. „Vorhandene Installation verwenden“ wählen.',fr:'Une installation existante utilise les services. Choisissez « Utiliser un déploiement existant ».',es:'Una instalación existente usa los servicios. Elige « Usar un despliegue existente ».'};
+for(const [locale,text] of Object.entries(ownership))setupLabels[locale].foreignInstallation=text;

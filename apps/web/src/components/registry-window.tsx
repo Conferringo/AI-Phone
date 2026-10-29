@@ -71,7 +71,7 @@ export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceI
   }catch(e){if(mounted.current)setError(e instanceof Error?e.message:t("保存失败"));}finally{pending.current=false;if(mounted.current)setBusy('');}}
  const rows=state?[...state[tab].map(v=>({id:v.id,name:v.name})),...Object.entries(drafts).filter(([k,v])=>k.startsWith(`${tab}:`)&&v.revision===0n&&!state[tab].some(x=>x.id===v.id)).map(([,v])=>({id:v.id,name:v.name||t("未命名")}))]:[];
  const device=state?.devices.find(d=>d.id===id);
- return <FloatingWindow id="configuration-center" title={t("配置中心")} open={open} onClose={onClose} width={780} height={650}>
+ return <FloatingWindow fitContent={onboarding} id="configuration-center" title={t("配置中心")} open={open} onClose={onClose} width={780} height={650}>
   <div className="registry-center" aria-busy={!!busy}>
    {onboarding&&state&&<SetupSteps state={state} step={step} busy={!!busy} onStep={goStep}/>}
    <nav className="registry-tabs" hidden={onboarding} aria-label={t("配置分类")}><button hidden={onboarding} type="button" aria-pressed={tab==='devices'} disabled={!!busy} onClick={()=>choose('devices')}><Monitor size={16}/>{t("设备")}</button><button hidden={onboarding} type="button" aria-pressed={tab==='agents'} disabled={!!busy} onClick={()=>choose('agents')}><Sparkles size={16}/>Agent</button><LanguageSelect/><button type="button" className="registry-reload" aria-label={t("重新载入配置")} title={t("重新载入配置")} disabled={!!busy} onClick={()=>void load()}><RefreshCw size={15}/></button></nav>

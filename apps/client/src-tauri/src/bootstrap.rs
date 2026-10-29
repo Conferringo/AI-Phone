@@ -163,6 +163,14 @@ impl ManagerState {
             Ok(())
         }
     }
+    fn process_error(&self) -> String {
+        self.progress
+            .lock()
+            .ok()
+            .filter(|progress| progress.state == "failed" && !progress.error.is_empty())
+            .map(|progress| progress.error.clone())
+            .unwrap_or_else(|| "installation_failed".into())
+    }
 }
 
 fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -427,6 +435,22 @@ mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
     use std::io::Read;
+    #[test]
+    #[cfg(unix)]
+    fn installer_failure_reason_survives_the_process_boundary() {
+        let folder = std::env::temp_dir().join(format!("ai-phone-reason-{}", std::process::id()));
+        fs::create_dir_all(&folder).unwrap();
+        let manager = Arc::new(ManagerState::default());
+        let mut command = Command::new("/bin/sh");
+        command.args(["-c","printf '%s\\n' 'AI_PHONE_SETUP {\"phase\":\"failed\",\"state\":\"failed\",\"error\":\"foreign_installation\"}'; exit 1"]);
+        let result = execute(&manager, command, &folder);
+        fs::remove_dir_all(folder).unwrap();
+        assert_eq!(
+            result,
+            Err("foreign_installation".into()),
+            "the UI needs the actual recovery reason"
+        );
+    }
     #[test]
     fn stopping_a_download_interrupts_both_headers_and_a_stalled_body() {
         for headers in [false, true] {

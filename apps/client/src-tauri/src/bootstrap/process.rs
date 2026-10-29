@@ -141,7 +141,14 @@ pub(super) fn execute(
     let result = wait_for_installer(manager, &mut child, &errors);
     let completed = reader.join().map_err(|_| "process_output_unavailable");
     *manager.input.lock().map_err(|_| "installer_state")? = None;
-    result?;
+    if let Err(error) = result {
+        return Err(if error == "installation_failed" {
+            completed??;
+            manager.process_error()
+        } else {
+            error
+        });
+    }
     // A ready line alone is not a successful installer exit.
     if let Some(progress) = completed?? {
         manager.publish(folder, progress)?;

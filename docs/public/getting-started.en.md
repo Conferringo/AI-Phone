@@ -8,7 +8,7 @@ The preview.2 client can acquire its local dependencies, install the phone/deskt
 
 ## Source alternative: prerequisites
 
-The verified server is macOS Apple Silicon, with native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, npm, Rust 1.88+, Python 3.11+, Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds. Other server hosts are not verified.
+The verified server is macOS Apple Silicon, with native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, Bun (project bootstrap), Rust 1.88+, Python 3.11+, Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds. Other server hosts are not verified.
 
 ## First run
 

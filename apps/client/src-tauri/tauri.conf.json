@@ -22,7 +22,8 @@
             "allow-deployment-status",
             "allow-start-deployment",
             "allow-cancel-deployment",
-            "allow-accept-deployment-license"
+            "allow-accept-deployment-license",
+            "allow-fit-setup"
           ]
         }
       ]

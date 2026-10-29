@@ -15,7 +15,7 @@ Download a preview client for your platform. **The macOS Apple Silicon client in
 
 [Open the release](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) · [SHA256SUMS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/SHA256SUMS). Releases include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
 
-Source deployment requires Python 3.11+, Node.js 22+, npm, Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
+Source deployment requires Python 3.11+, Node.js 22+, Bun (project bootstrap), Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
 
 ```sh
 ./ai-phone doctor

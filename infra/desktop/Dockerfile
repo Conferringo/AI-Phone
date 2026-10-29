@@ -7,6 +7,7 @@ RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-g
 RUN useradd -m -u 1000 -s /bin/bash ai && mkdir -p /home/ai/Files /home/ai/Desktop && chown -R ai:ai /home/ai
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo dunst libnotify-bin && rm -rf /var/lib/apt/lists/*
 RUN printf 'ai ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/ai-phone && chmod 440 /etc/sudoers.d/ai-phone
+COPY location.js /usr/local/lib/ai-phone/location.js
 COPY bridge.py /usr/local/bin/desktop-bridge
 COPY start.sh /usr/local/bin/desktop-start
 COPY media-capture.py audio-service.py /usr/local/lib/ai-phone/

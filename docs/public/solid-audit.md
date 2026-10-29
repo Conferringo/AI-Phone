@@ -94,3 +94,9 @@ This repository-wide audit found and repaired inconsistent knowledge links, unsa
 ## Preview.2 installer ownership increment — 2026-10-29
 
 The native installer now separates checkpoint persistence, pinned download/cancellation and child-process supervision. Completed installation is tied to an exact payload and successful process exit; it never substitutes for a live service probe. Recovery uses the same owned source/user directories and does not force-restart live jobs. Changed functions have scoped native/process/HTTP and isolated Python tests; coverage/CRAP remains unavailable, so cyclomatic-complexity results do not certify full repository cleanliness. Fresh-host and whole-system lifecycle acceptance remain open.
+
+## Location and setup increment — 2026-10-29
+
+Location policy, distance interpolation, guest adapters, protobuf persistence and map lifecycle have separate owners. UI snapshots and drafts use one reducer: stale polls cannot replace saved state, pending saves reject poll merges, validation errors survive polling, and unchanged routes are not redrawn. Scoped complexity-only analysis reports changed location functions at CC 1–9 after splitting the map lifecycle and draft admission. Coverage and CRAP are unavailable; this is not repository-wide certification. No duplicate backend candidates met the 0.8 threshold. Six selected Bun checksum/ZIP-boundary mutations were killed; broader mutation coverage remains open.
+
+Static fixes, route advance, pause and clearing were checked against the existing Android and Linux Chromium guests. Location updates preserve screen grounding and cursor state and use durable phone action receipts. Generic Linux application location, cross-platform fresh-host setup and long-running location acceptance remain unverified.

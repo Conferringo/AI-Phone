@@ -8,7 +8,7 @@ root=Path(sys.argv[1]);folder=root/'data/device-stream';folder.mkdir(parents=Tru
 sys.path.insert(0,str(root/'scripts'))
 from runtime_config import runtime_env
 runtime=runtime_env(root)
-config={'Label':'dev.aiphone.device-stream','ProgramArguments':[str(root/'.tools/node_modules/.bin/bun'),str(root/'apps/device-stream/server.ts')],'WorkingDirectory':str(root),'RunAtLoad':True,'KeepAlive':True,'ThrottleInterval':5,'EnvironmentVariables':{**runtime,'AI_PHONE_PROJECT_ROOT':str(root)},'StandardOutPath':str(folder/'service.log'),'StandardErrorPath':str(folder/'service.log')}
+config={'Label':'dev.aiphone.device-stream','ProgramArguments':[str(root/'.tools/bin/bun'),str(root/'apps/device-stream/server.ts')],'WorkingDirectory':str(root),'RunAtLoad':True,'KeepAlive':True,'ThrottleInterval':5,'EnvironmentVariables':{**runtime,'AI_PHONE_PROJECT_ROOT':str(root)},'StandardOutPath':str(folder/'service.log'),'StandardErrorPath':str(folder/'service.log')}
 source=folder/'service.plist';source.write_bytes(plistlib.dumps(config));source.chmod(0o600)
 dest=Path.home()/'Library/LaunchAgents/dev.aiphone.device-stream.plist';dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(plistlib.dumps(config));dest.chmod(0o600)
 domain=f'gui/{os.getuid()}';target=domain+'/'+config['Label']

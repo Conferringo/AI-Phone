@@ -29,7 +29,7 @@ jobs:
       - name: Fixed Bun and locked dependencies
         run: |
           ./scripts/bootstrap.sh
-          git diff --exit-code -- packages/protocol/src/gen
+          git diff --exit-code -- packages/protocol/src/gen infra/desktop/location.js
       - name: Source privacy and licence metadata
         run: python3 scripts/check_source.py
       - name: protobuf, TypeScript and Rust

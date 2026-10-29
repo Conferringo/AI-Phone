@@ -130,7 +130,8 @@ def verify_container_ownership(root, query=None):
             continue
         labels = json.loads(result.stdout)
         if not isinstance(labels, dict) or labels.get('com.docker.compose.project') != 'ai-phone' or Path(labels.get('com.docker.compose.project.working_dir', '')).resolve() != root.resolve():
-            raise ValueError('Another installation owns existing AI Phone containers; no containers or data were changed')
+            from service_start import OwnershipConflict
+            raise OwnershipConflict('Another installation owns existing AI Phone containers; no containers or data were changed')
 
 
 def installation_reserve(root, home, config):

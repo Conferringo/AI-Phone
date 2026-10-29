@@ -6,7 +6,7 @@ let savedLanguage='';try{savedLanguage=localStorage.getItem('connection-language
 let locale=connectionLocale(savedLanguage||navigator.language),mode='local',edited=false,busy=false,lastError='',hostError='',snapshot=null,disposed=false,loadedResources=false,currentView='',transition=null;
 const resources={phone:{cpus:2,memory_mb:2048,storage_gb:16},desktop:{cpus:2,memory_mb:2560}},pickers=[];
 const errorKeys=['Cannot reach the server. Start your deployment, then retry.','Invalid server address','Use an HTTP(S) server address without credentials or a path','This preview connects only to localhost or a private LAN address','Connection already in progress'];
-const errors={host_resources:'hostResources',host_backend_pending:'hostPending',installation_cancelled:'cancelled',command_line_tools:'commandLineTools',invalid_payload:'invalidPayload',download_failed:'downloadFailed',download_checksum:'invalidPayload',installation_interrupted:'interrupted',invalid_install_checkpoint:'invalidCheckpoint',checkpoint_write_failed:'checkpointFailed'};
+const errors={host_resources:'hostResources',host_backend_pending:'hostPending',installation_cancelled:'cancelled',command_line_tools:'commandLineTools',invalid_payload:'invalidPayload',download_failed:'downloadFailed',download_checksum:'invalidPayload',installation_interrupted:'interrupted',invalid_install_checkpoint:'invalidCheckpoint',checkpoint_write_failed:'checkpointFailed',foreign_installation:'foreignInstallation'};
 function label(key){return setupLabels[locale][key]||setupLabels.en[key]||key;}
 function showPanel(){
  const view=mode==='connection'?'connection':snapshot?.progress.state?'progress':'local-setup';
@@ -28,7 +28,7 @@ function render(){
  else if(checks.some(check=>!check.passed)&&!active&&!progress.error){$('host-error').textContent=label('hostResources');$('host-error').hidden=false;}
  $('install').disabled=!host.implemented||checks.some(check=>!check.passed)||busy;
  $('local-setup').hidden=shown;$('progress').hidden=!shown;$('phase').textContent=label(progress.phase==='failed'?(progress.state==='cancelled'?'stopped':'installFailed'):progress.phase);
- $('progress').classList.toggle('working',active);$('progress-error').hidden=!['failed','blocked'].includes(progress.state);$('progress-error').textContent=label(errors[progress.error]||(progress.state==='cancelled'?'stopped':'installFailed'));
+ $('progress').classList.toggle('working',active);$('progress-error').hidden=!['failed','blocked'].includes(progress.state);$('progress-error').textContent=label(errors[progress.error]||(progress.state==='cancelled'?'cancelled':'failed'));
  $('license').hidden=progress.state!=='license';const license=$('license').querySelector('pre');if(license.textContent!==(progress.license||''))license.textContent=progress.license||'';$('accept').disabled=busy;
  $('retry').hidden=!['failed','blocked','cancelled','interrupted','installed'].includes(progress.state);$('retry').textContent=label(progress.state==='installed'?'start':'retry');$('cancel').hidden=!active;$('enter').hidden=progress.state!=='ready';$('existing').hidden=active;
  pickers.forEach(picker=>picker.button.disabled=active);
@@ -57,3 +57,9 @@ $('enter').addEventListener('click',async()=>{await connect('http://127.0.0.1:17
 async function refresh(){try{snapshot=await invoke('deployment_status');if(!loadedResources){loadedResources=true;if(snapshot.previous_request){for(const section of ['phone','desktop'])Object.assign(resources[section],snapshot.previous_request[section]);pickers.forEach(({control,section,key})=>control.update(resources[section][key]));}}}catch(error){hostError=String(error);}render();}
 async function poll(){await refresh();if(!disposed)setTimeout(poll,['running','license'].includes(snapshot?.progress.state)?800:3000);}
 window.addEventListener('pagehide',()=>{disposed=true;});render();void poll();
+
+// Measure content rather than the viewport to avoid a resize feedback loop.
+let fitFrame=0;
+const fit=()=>{cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{const panel=document.querySelector('.setup'),main=document.querySelector('main'),style=getComputedStyle(main);const height=Math.ceil(panel.getBoundingClientRect().height+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom));void invoke('fit_setup',{height}).catch(()=>{});});};
+const sizeObserver=new ResizeObserver(fit);sizeObserver.observe(document.querySelector('.setup'));
+window.addEventListener('pagehide',()=>{sizeObserver.disconnect();cancelAnimationFrame(fitFrame);});

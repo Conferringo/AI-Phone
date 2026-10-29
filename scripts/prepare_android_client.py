@@ -21,6 +21,23 @@ def patch_build_task(path, cli):
     path.write_text(patched)
 
 
+def resource_task(root):
+    config=json.loads((root/'apps/client/src-tauri/tauri.conf.json').read_text())
+    lines=['val syncAiPhoneResources by tasks.registering {']
+    for source,destination in config['bundle']['resources'].items():
+        src=(root/'apps/client/src-tauri'/source).resolve()
+        if not src.is_file():raise ValueError('Missing configured client resource: '+destination)
+        target='src/main/assets/'+destination
+        lines += ['    inputs.file('+json.dumps(str(src)).replace('$', r'\$')+')',
+                  '    outputs.file('+json.dumps(target)+')']
+    lines += ['    doLast {']
+    for source,destination in config['bundle']['resources'].items():
+        src=(root/'apps/client/src-tauri'/source).resolve()
+        lines += ['        file('+json.dumps('src/main/assets/'+destination)+').apply { parentFile.mkdirs(); file('+json.dumps(str(src)).replace('$', r'\$')+').copyTo(this, overwrite = true) }']
+    lines += ['    }','}', 'tasks.configureEach { if (name.startsWith("merge") && name.endsWith("Assets")) dependsOn(syncAiPhoneResources) }']
+    return '\n'.join(lines)+'\n'
+
+
 def android_environment(root=ROOT):
     config = runtime_env(root)
     sdk = Path(os.environ.get('ANDROID_HOME') or config['AI_PHONE_SDK_ROOT'])
@@ -58,6 +75,8 @@ def prepare(root=ROOT):
     # AGP 8 needs these explicitly, including enum.values() used by Jackson.
     if 'getDefaultProguardFile(' not in text:
         text = text.replace('proguardFiles(', 'proguardFiles(\n                getDefaultProguardFile("proguard-android-optimize.txt"),')
+    marker="// AI_PHONE_REVIEWED_RESOURCES"
+    text=text.split(marker)[0]+"\n"+marker+"\n"+resource_task(root)
     app.write_text(text)
     properties = generated/'gradle.properties'
     text = '\n'.join(line for line in properties.read_text().splitlines()

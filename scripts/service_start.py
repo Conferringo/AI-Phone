@@ -8,6 +8,9 @@ from runtime_config import runtime_env
 
 SERVICES=[('dev.aiphone.emulator.p2','android-start.sh'),('dev.aiphone.runner.p2','phone-runner-start.sh'),('dev.aiphone.device-stream','device-stream-start.sh'),('dev.aiphone.assistant','assistant-start.sh'),('dev.aiphone.channels','channels-start.sh'),('dev.aiphone.web.p2','phone-web-start.sh'),('dev.aiphone.lan','lan-start.sh')]
 
+class OwnershipConflict(ValueError):
+    install_code = 'foreign_installation'
+
 def owned_jobs(root,query=None):
     root=Path(root).resolve();jobs={}
     for label,_ in SERVICES:
@@ -15,7 +18,7 @@ def owned_jobs(root,query=None):
         if result.returncode:continue
         match=re.search(r'^\s*working directory = (.+)$',result.stdout,re.M)
         if not match or Path(match[1]).resolve() not in (root,root/'apps/web'):
-            raise ValueError('Another checkout owns '+label+'; no services were changed')
+            raise OwnershipConflict('Another checkout owns '+label+'; no services were changed')
         state=re.search(r'^\s*state = (\S+)',result.stdout,re.M)
         jobs[label]=bool(state and state[1]=='running')
     return jobs

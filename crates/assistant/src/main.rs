@@ -28,6 +28,9 @@ mod device_exchange;
 mod device_network;
 mod exploration_policy;
 mod http;
+mod location;
+mod location_devices;
+mod location_motion;
 mod model_adapter;
 mod model_context;
 mod model_sse;
@@ -206,11 +209,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     phone_system::recover(app.clone()).await;
     tokio::spawn(worker::work(app.clone()));
     tokio::spawn(proactive::work(app.clone()));
+    tokio::spawn(location::work(app.clone()));
     tokio::spawn(desktop_explore::work(app.clone()));
     tokio::spawn(device_exchange::work(app.clone()));
     tokio::spawn(device_network::recover(app.clone()));
     let routes = Router::new()
         .route("/v1/registry/{operation}", post(registry::route))
+        .route("/v1/location/{operation}", post(location::route))
         .route(
             "/v1/device-network/{operation}",
             post(device_network::route),

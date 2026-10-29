@@ -91,5 +91,5 @@ if __name__ == '__main__':
     except (ValueError, OSError) as error:
         # Detailed subprocess output goes to the private native installer log.
         print(str(error), file=sys.stderr)
-        emit('failed', 'failed', error='installation_failed')
+        emit('failed', 'failed', error=getattr(error, 'install_code', 'installation_failed'))
         sys.exit(1)

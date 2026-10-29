@@ -110,7 +110,7 @@ def doctor(root=ROOT, *, minimum_free_gb=35):
         checks.append(dict(name=name, passed=bool(passed), fix='' if passed else fix))
     check('host', platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Preview supports macOS Apple Silicon only')
     check('python-version', sys.version_info >= (3,11), 'Python 3.11+ required')
-    for executable, hint in [('node', 'Install Node.js 22+'), ('npm', 'Install npm with Node.js'), ('cargo', 'Install Rust via rustup'), ('docker', 'Install and start Docker Desktop'), ('swiftc', 'Install Xcode Command Line Tools: xcode-select --install')]:
+    for executable, hint in [('node', 'Install Node.js 22+'), ('cargo', 'Install Rust via rustup'), ('docker', 'Install and start Docker Desktop'), ('swiftc', 'Install Xcode Command Line Tools: xcode-select --install')]:
         check(executable, shutil.which(executable), hint)
     if shutil.which('node'):
         node = subprocess.run(['node', '-p', 'Number(process.versions.node.split(".")[0])>=22'], capture_output=True, text=True)
@@ -162,12 +162,12 @@ def install(*, observer=None, license_action=None, launch_client=True, minimum_f
         return result.stdout.strip() if result.returncode==0 else ''
     def native_apps(download=False):
         operation='download' if download else 'verify'
-        result=subprocess.run([str(ROOT/'.tools/node_modules/.bin/bun'),str(ROOT/'apps/device-network/native-apps.ts')],input=json.dumps({'operation':operation}),text=True,cwd=ROOT,env=env,capture_output=True)
+        result=subprocess.run([str(ROOT/'.tools/bin/bun'),str(ROOT/'apps/device-network/native-apps.ts')],input=json.dumps({'operation':operation}),text=True,cwd=ROOT,env=env,capture_output=True)
         if download and result.returncode:raise ValueError('Clash application download failed; check the installation network or AI_PHONE_BOOTSTRAP_PROXY')
         return result.returncode==0
     def bootstrap_valid():
-        if not (ROOT/'.tools/node_modules/.bin/bun').is_file() or not (ROOT/'apps/web/node_modules/next/package.json').is_file():return False
-        result=subprocess.run([ROOT/'.tools/node_modules/.bin/bun','--version'],capture_output=True,text=True)
+        if not (ROOT/'.tools/bin/bun').is_file() or not (ROOT/'apps/web/node_modules/next/package.json').is_file():return False
+        result=subprocess.run([ROOT/'.tools/bin/bun','--version'],capture_output=True,text=True)
         return result.returncode==0 and result.stdout.strip()=='1.4.4' and (ROOT/'packages/protocol/src/gen/ai_phone/v1/system_pb.ts').is_file()
     with InstallState(ROOT,observer=observer) as state:
         # CLI uses the SDK prompt; the native client displays each actual license.

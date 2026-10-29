@@ -13,6 +13,7 @@ fn main() {
         );
     }
     let manifest = tauri_build::AppManifest::new().commands(&[
+        "fit_setup",
         "current_server",
         "connect_server",
         "deployment_status",

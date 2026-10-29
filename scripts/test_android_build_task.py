@@ -1,7 +1,8 @@
 from pathlib import Path
 import tempfile
 import unittest
-from prepare_android_client import patch_build_task
+from prepare_android_client import patch_build_task, resource_task
+import json
 
 class AndroidBuildTaskTests(unittest.TestCase):
     def test_gradle_calls_actual_cli_file_and_preserves_build_flags(self):
@@ -11,6 +12,17 @@ class AndroidBuildTaskTests(unittest.TestCase):
             patch_build_task(task,cli)
             text=task.read_text();self.assertIn(str(cli),text);self.assertNotIn('listOf("tauri",',text);self.assertIn('args("--release")',text)
             patch_build_task(task,cli);self.assertEqual(task.read_text(),text)
+    def test_all_configured_resources_are_explicit_gradle_inputs_and_outputs(self):
+        with tempfile.TemporaryDirectory(prefix='android resources ') as d:
+            root=Path(d);native=root/'apps/client/src-tauri';native.mkdir(parents=True)
+            payload=native/'host/source.tar.gz';payload.parent.mkdir();payload.write_bytes(b'reviewed source archive')
+            (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'host/source.tar.gz':'host/source.tar.gz'}}}))
+            task=resource_task(root)
+            self.assertIn('inputs.file(',task);self.assertIn('outputs.file("src/main/assets/host/source.tar.gz")',task)
+            self.assertIn('copyTo(this, overwrite = true)',task);self.assertIn('dependsOn(syncAiPhoneResources)',task)
+            payload.unlink()
+            with self.assertRaisesRegex(ValueError,'Missing configured'):resource_task(root)
+
     def test_unknown_generator_template_fails_before_packaging(self):
         with tempfile.TemporaryDirectory() as d:
             task=Path(d)/'BuildTask.kt';task.write_text('unrecognized template')

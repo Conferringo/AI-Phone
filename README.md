@@ -15,7 +15,7 @@ Download a preview client for your platform. **The macOS Apple Silicon client in
 
 [Open the release](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) · [SHA256SUMS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/SHA256SUMS). Releases include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
 
-Source deployment requires Python 3.11+, Node.js 22+, npm, Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
+Source deployment requires Python 3.11+, Node.js 22+, Bun (project bootstrap), Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
 
 ```sh
 ./ai-phone doctor
@@ -97,7 +97,7 @@ The maintainer elected to publish this experimental source preview without waiti
 
 安装包、校验和、来源清单及第三方声明见 [Releases](https://github.com/Conferringo/AI-Phone/releases)。[预览范围与已知限制](docs/public/preview-release.md)。维护者暂不做实机安装验收，未实测项目按原状披露；请通过 [Issue](https://github.com/Conferringo/AI-Phone/issues/new/choose) 反馈（勿附密钥或私人聊天）。
 
-从源码部署需要 Python 3.11+、Node.js 22+、npm、Rust 1.88+、Java 17、Android 命令行工具、Xcode Command Line Tools 和 Docker Desktop。建议16GB内存，新安装预留35GiB磁盘。
+从源码部署需要 Python 3.11+、Node.js 22+、Bun（项目自动安装）、Rust 1.88+、Java 17、Android 命令行工具、Xcode Command Line Tools 和 Docker Desktop。建议16GB内存，新安装预留35GiB磁盘。
 
 ```sh
 ./ai-phone doctor

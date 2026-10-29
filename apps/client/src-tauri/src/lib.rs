@@ -168,7 +168,7 @@ fn show_connection(app: &tauri::AppHandle) -> Result<(), String> {
     WebviewWindowBuilder::new(app, "connection", WebviewUrl::App("index.html".into()))
         .title("AI Phone")
         .inner_size(680., 620.)
-        .min_inner_size(360., 520.)
+        .min_inner_size(360., 260.)
         .resizable(true)
         .on_navigation(move |url| {
             #[cfg(mobile)]
@@ -262,6 +262,39 @@ fn require_local_window(window: &tauri::WebviewWindow) -> Result<(), String> {
     let url = window.url().map_err(|e| e.to_string())?;
     if window.label() != "connection" || !local_connection_url(&url) {
         return Err("Native configuration is available only in the local connection window".into());
+    }
+    Ok(())
+}
+
+// Only the local setup asset may request content-sized native chrome.
+#[tauri::command]
+fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
+    require_local_window(&window)?;
+    #[cfg(mobile)]
+    let _ = height;
+    #[cfg(desktop)]
+    if height.is_finite()
+        && !window.is_maximized().unwrap_or(false)
+        && !window.is_fullscreen().unwrap_or(false)
+    {
+        let scale = window.scale_factor().map_err(|e| e.to_string())?;
+        let size = window
+            .inner_size()
+            .map_err(|e| e.to_string())?
+            .to_logical::<f64>(scale);
+        let maximum = window
+            .current_monitor()
+            .ok()
+            .flatten()
+            .map(|m| m.work_area().size.height as f64 / m.scale_factor() - 80.)
+            .unwrap_or(800.)
+            .max(260.);
+        let height = height.clamp(260., maximum);
+        if (size.height - height).abs() > 2. {
+            window
+                .set_size(tauri::LogicalSize::new(size.width, height))
+                .map_err(|e| e.to_string())?;
+        }
     }
     Ok(())
 }
@@ -370,6 +403,7 @@ pub fn run() {
         .manage(Navigation::default())
         .manage(bootstrap::Bootstrap::default())
         .invoke_handler(tauri::generate_handler![
+            fit_setup,
             current_server,
             connect_server,
             deployment_status,

@@ -10,7 +10,7 @@ Preview.2客户端可选择语言与设备资源，准备本机依赖、手机�
 
 服务器：macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux电脑使用Docker内的Debian 13/Openbox。Windows/Linux服务器与原生客户端正在发行路线中，不能用本机验证代替其他平台验收。
 
-安装器要求已有Node.js 22+、npm、Rust 1.88+、Python 3.11+、Java 17、Docker Desktop、Xcode命令行工具，以及包含sdkmanager的Android SDK。可从各项目官方渠道安装。默认检测 `~/Library/Android/sdk`，兼容旧Homebrew路径；不要求相同用户名或固定局域网IP。全新镜像/编译预留35GiB磁盘，内存建议16GB以上。
+安装器要求已有Node.js 22+、Bun（项目自动安装）、Rust 1.88+、Python 3.11+、Java 17、Docker Desktop、Xcode命令行工具，以及包含sdkmanager的Android SDK。可从各项目官方渠道安装。默认检测 `~/Library/Android/sdk`，兼容旧Homebrew路径；不要求相同用户名或固定局域网IP。全新镜像/编译预留35GiB磁盘，内存建议16GB以上。
 
 ## 首次安装
 
