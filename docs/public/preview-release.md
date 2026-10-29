@@ -1,14 +1,14 @@
 # Preview clients / 预览客户端
 
-[Downloads / 下载](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[Downloads / 下载](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
-These packages are **connection clients**, not complete server appliances. Deploy your own server first; the complete host runtime currently targets macOS Apple Silicon. Android/Linux guests, Clash apps, Docker images, accounts and user files are not included in the client installers.
+Preview.2 adds experimental **managed local setup on macOS Apple Silicon**. The client acquires tools and builds services/devices from its verified bundled source; users then configure a model in the workbench. Fresh-host dual-device installation remains untested. Windows/Linux/Android remain connection clients. Guest images, toolchains, Docker images, accounts and user files are not embedded in the installer. See [client-managed deployment](integrated-hosts.md).
 
-这些包用于连接自己部署的服务，不包含完整服务器。完整宿主运行环境目前以 macOS Apple Silicon 为目标；Windows/Linux 宿主管理仍在开发。先部署服务，再在客户端填写本机/局域网地址。
+macOS Apple Silicon 已加入实验性本机安装，不再只提供连接入口。工具与客体在安装时下载/构建；全新宿主安装仍未实测。Windows/Linux/Android 安装包继续连接已有服务，独立宿主适配未完成。
 
 | Package | Target | Build/inspection | Installation/runtime |
 |---|---|---|---|
-| macOS DMG | Apple Silicon; macOS 14.4+ | Native CI build; expanded resources/privacy checked | No clean installer test; earlier native connection/UI checks only. No Developer ID signing/notarization |
+| macOS DMG | Apple Silicon; macOS 14.4+ | Native CI build; expanded resources/privacy checked | Native setup/recovery and real existing-service/frame checks; no clean-host installation test. No Developer ID signing/notarization |
 | Windows EXE | x64; WebView2 required | Native Windows CI build; NSIS payload/PE inspected | Not installed or runtime-tested; unsigned, SmartScreen warnings possible |
 | Linux DEB | amd64 and arm64; built on Ubuntu 24.04 | Native CI build; expanded DEB/architecture inspected | Not installed or desktop/media-tested; other distributions unverified |
 | Android APK | arm64-v8a; Android 9+ | Release build; native ELF/legal payload inspected; signature checked | Not installed or touch/background-tested; private preview certificate, not a store identity |

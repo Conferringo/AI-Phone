@@ -74,6 +74,8 @@ S01–S04 的复现、修复与回归可信度高。S07 是结构风险，S10 �
 
 ## 下一批验收顺序
 
+2026-10-29新增客户端本机部署边界：Native仅负责本地IPC、资源校验与进程生命周期；`client_host_entry.py`负责解包与单进程锁；`client_host.py`负责macOS依赖/宿主适配；已有`InstallState`继续拥有安装检查点，业务设备创建复用现有protobuf接口。隔离的取消、路径完整性、许可证、外来容器拒绝与数据保留验证通过。全新双设备安装、跨平台supervisor、升级激活/回滚仍未通过，不能据此新增“全仓完全SOLID”或“四平台已可发行”的结论。
+
 1. Skill 提交/物化恢复与共享集群恢复保护；先写故障回归，不动既有用户资料。
 2. Run 的检查点/暂停/恢复状态收敛成领域对象，拆执行策略与工具执行；严格 Clippy 已关闭，继续领域边界拆分。每批复跑进程崩溃恢复。
 3. PhoneWorkspace、RegistryWindow、FloatingWindow 分职责拆分；逐窗口验收输入、失败、焦点、窄屏、减少动效和设备不中断。
@@ -88,3 +90,7 @@ S01–S04 的复现、修复与回归可信度高。S07 是结构风险，S10 �
 ## English summary
 
 This repository-wide audit found and repaired inconsistent knowledge links, unsafe file-transfer transaction boundaries, duplicated media lifecycle ownership, and cancellation during stalled HTTP 429 responses. Tool declarations were separated from execution without changing their schema. Isolated database, backup/restore and crash-recovery suites passed. The media relay passed all 15 generated mutation tests and scored CRAP 1–8 with measured coverage. This is not a whole-repository SOLID certification: large UI/execution modules and broader architecture work remain. The 2026-10-29 follow-up closes Skill materialization recovery, shared-cluster restore protection and all seven strict Clippy findings; see [stability audit](release-stability-2026-10-29.md). No private user state was exported and no public repository was created.
+
+## Preview.2 installer ownership increment — 2026-10-29
+
+The native installer now separates checkpoint persistence, pinned download/cancellation and child-process supervision. Completed installation is tied to an exact payload and successful process exit; it never substitutes for a live service probe. Recovery uses the same owned source/user directories and does not force-restart live jobs. Changed functions have scoped native/process/HTTP and isolated Python tests; coverage/CRAP remains unavailable, so cyclomatic-complexity results do not certify full repository cleanliness. Fresh-host and whole-system lifecycle acceptance remain open.

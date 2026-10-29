@@ -2,7 +2,11 @@
 
 [简体中文](getting-started.zh-CN.md) · Source installer preview, 2026-10-28
 
-## Prerequisites
+## Client setup on macOS Apple Silicon
+
+The preview.2 client can acquire its local dependencies, install the phone/desktop and hand off to model configuration. Choose language and resources in the client; no manual server commands are required for that path. Full clean-host acceptance remains untested. Other platforms remain connection clients. Read [managed-host scope and recovery](integrated-hosts.md).
+
+## Source alternative: prerequisites
 
 The verified server is macOS Apple Silicon, with native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, npm, Rust 1.88+, Python 3.11+, Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds. Other server hosts are not verified.
 
@@ -29,14 +33,14 @@ Use `start`, `open` and `stop` for normal operation. Repeated start preserves ex
 
 ```sh
 ./ai-phone package
-./ai-phone stage --archive dist/ai-phone-0.1.0-preview.1-source.tar.gz --destination /path/to/AIPhone
+./ai-phone stage --archive dist/ai-phone-0.1.0-preview.2-source.tar.gz --destination /path/to/AIPhone
 ```
 
-Bundles contain allowlisted source, a manifest and SHA256, excluding private state. Current bundles are internal/not for publication. Staging verifies files and keeps persistent user data separate. Only the first installation receives a current link; subsequent versions are staged without live activation. Checksums are not publisher signatures. See [distribution and updates](distribution.en.md).
+Bundles contain allowlisted source, a manifest and SHA256, excluding private state. Allowlisted source previews are public; user data and private evidence remain excluded. Staging verifies files and keeps persistent user data separate. Only the first installation receives a current link; subsequent versions are staged without live activation. Checksums are not publisher signatures. See [distribution and updates](distribution.en.md).
 
 ## Personal entry and guest apps
 
-The default local single-owner profile uses one Enter button and preserves existing credentials/sessions. Clients able to reach this trusted-LAN deployment can enter as its owner. This is not multi-user authentication. Set `local_entry` to false in the private deployment profile to disable this entry endpoint; existing authentication APIs remain available. Configure the first Agent model in Configuration.
+The default local single-owner profile opens the workbench directly and preserves existing credentials/sessions. Clients able to reach this trusted-LAN deployment can enter as its owner. This is not multi-user authentication. Set `local_entry` to false in the private deployment profile to disable this entry endpoint; existing authentication APIs remain available. Configure the first Agent model in Configuration.
 
 Both guest creation flows install native Clash apps. Import subscriptions and manage nodes, VPN/TUN and startup inside each guest. The web configuration center does not manage guest networks. No developer subscription is distributed.
 

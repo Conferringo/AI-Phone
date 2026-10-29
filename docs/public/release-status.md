@@ -4,10 +4,10 @@ Updated 2026-10-29. **Public experimental preview; not a finished four-platform 
 
 ## Published preview / 当前下载
 
-- [v0.1.0-preview.1](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) is a prerelease with 21 assets: five client installers plus checksums, manifests, source and notices. The clients connect to an existing local/LAN server; they do not install a complete standalone host.
-- Platforms: macOS ARM64 DMG, Windows x64 NSIS, Linux amd64/ARM64 DEB, Android ARM64 APK. macOS/Windows are unsigned; Android uses a preview certificate. Physical installation acceptance was waived and remains **untested**, not passed.
-- The release source is `ef878d4d8183f0f49866b9094ab819f8388ea268`. Its [Source CI](https://github.com/Conferringo/AI-Phone/actions/runs/40819827876) and [Native CI](https://github.com/Conferringo/AI-Phone/actions/runs/40819827901) passed. New source commits do not replace those installer bytes or certify new behavior in old packages.
-- There is no stable release. GitHub's `/releases/latest` endpoint excludes prereleases; its 404 does not mean the preview is missing. Use the explicit release tag above.
+- [v0.1.0-preview.2](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) introduces experimental client-managed installation on macOS Apple Silicon: device resources, owned tools, Android licenses, service preparation, desktop provisioning, install recovery and model configuration handoff. **Full fresh-host dual-device installation remains untested.**
+- Windows x64 NSIS, Linux amd64/ARM64 DEB and Android ARM64 APK remain connection clients. Their independent host adapters are unfinished. macOS/Windows are unsigned; Android uses a preview certificate. Physical installation acceptance remains waived and untested.
+- [preview.1](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) is retained unchanged as the earlier connection-client release. New source does not rewrite its tags or installer bytes.
+- There is no stable release. `/releases/latest` excludes prereleases; use the explicit tag. Artifact manifests record build source, hashes, notices and limitations.
 
 ## Capability maturity / 实际成熟度
 
@@ -16,7 +16,7 @@ Updated 2026-10-29. **Public experimental preview; not a finished four-platform 
 | Device workbench | Real Android and Linux screens/input, per-device conversations, file exchange, grounded action checks | Full platform/audio/touch/accessibility matrix and long-running multi-device soak |
 | Model transport | Responses and Chat Completions, image/tool conversion, configuration probes, cancellation | DeepSeek Chat thinking/tool continuity, discovery, provider-specific policies, native Anthropic/Gemini |
 | Channels | QQ, WeCom, Feishu and Telegram adapter code, per-Agent pairing and delivery state | Real-account send/receive/notification/image acceptance; incoming attachments; more platforms |
-| Local deployment | macOS ARM64 source CLI; integrated client setup is in development | Complete fresh-host first run; Windows/Linux host adapters; Android host feasibility |
+| Local deployment | macOS ARM64 managed client setup + source CLI, durable installer progress and owned-service resume | Complete fresh-host first run; Windows/Linux host adapters; Android host feasibility |
 | State and recovery | Scoped action ledger, runtime/migration DB roles, isolated backup/recovery and failure tests | Signed update activation/rollback, real host sleep/reboot/power-loss and prolonged operation |
 | UI and language | Shared controls and eight language catalogs | Large component ownership, complete window/language/error/localization acceptance |
 
@@ -39,7 +39,7 @@ Updated 2026-10-29. **Public experimental preview; not a finished four-platform 
 
 Model transport now shares one bounded SSE framing implementation, supports standard multiline events and CR/LF boundaries, refuses non-SSE HTTP success, accepts matching complete endpoint URLs once, and rejects endpoint/protocol mismatches. Configuration files, credentials, chat records and protobuf contracts remain unchanged. This does not close M01/M02 or certify a new public provider.
 
-Local verification: assistant tests **67 passed / 30 explicitly ignored**, including loopback HTTP and parser regressions; strict assistant Clippy passed. Ignored database/provider/process tests are not passed tests. The before/after regressions reproduce multiline stream failures, double-appended endpoint 404s and acceptance of an invalid response MIME type. Broader product/runtime acceptance remains open.
+Runtime verification: assistant tests **71 passed / 30 explicitly ignored**, including loopback HTTP and parser regressions; strict assistant Clippy passed. Ignored database/provider/process tests are not passed tests. The before/after regressions reproduce multiline stream failures, double-appended endpoint 404s and acceptance of an invalid response MIME type. Broader product/runtime acceptance remains open.
 
 ## Gates and evidence / 门槛与证据
 
@@ -53,3 +53,9 @@ Local verification: assistant tests **67 passed / 30 explicitly ignored**, inclu
 - [Release contract](release-contract.en.md), [中文交付标准](release-contract.zh-CN.md)
 
 Dated audits retain their original scope and historical findings; this page owns the current summary. No live keys, accounts, conversations, guest disks or private screenshots belong in repository evidence or Issues.
+
+## Preview.2 managed-host increment
+
+Native deployment progress is persisted atomically and tied to the bundled payload. A saved completed install is not live readiness: startup resumes owned services and probes before opening. Failed child processes cannot authorize auto-resume via a ready line. Stage completion cannot strand the UI in a false terminal state. Pending licenses are never auto-accepted after restart. Stop interrupts stalled HTTP headers/body without repeating requests, and registered stopped services can start without force-killing live tasks.
+
+Local native regression tests and isolated installer/source-staging tests cover these contracts. Real existing-environment verification retained all seven running service PIDs and returned a genuine desktop frame. This is meaningful H01 implementation evidence, while the fresh-host and independent-platform exit criteria remain open. See [managed-host scope](integrated-hosts.md). No maturity percentage is assigned.

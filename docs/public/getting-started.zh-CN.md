@@ -2,7 +2,11 @@
 
 [English](getting-started.en.md) · 源码安装预览，2026-10-28
 
-## 支持范围
+## macOS 客户端安装
+
+Preview.2客户端可选择语言与设备资源，准备本机依赖、手机和电脑，再进入模型配置；这条路径不要求手动部署服务。全新宿主仍未实测，其他平台仍为连接客户端。见[受管安装与恢复](integrated-hosts.md)。
+
+## 源码安装的支持范围
 
 服务器：macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux电脑使用Docker内的Debian 13/Openbox。Windows/Linux服务器与原生客户端正在发行路线中，不能用本机验证代替其他平台验收。
 
@@ -35,7 +39,7 @@ LAN地址见私有 `data/deployment.json`，只选私有网络接口。后端、
 
 ```sh
 ./ai-phone package
-./ai-phone stage --archive dist/ai-phone-0.1.0-preview.1-source.tar.gz --destination /path/to/AIPhone
+./ai-phone stage --archive dist/ai-phone-0.1.0-preview.2-source.tar.gz --destination /path/to/AIPhone
 ```
 
 打包采用源码白名单、排除私有数据、检查明显凭据，生成清单与SHA256；当前为带禁止公开标记的内部包。stage验证内容后放入版本目录，第一次创建current入口；后续版本只暂存，不热切换。user目录跨版本复用。SHA256不是发布者签名。见[发行设计](distribution.zh-CN.md)。

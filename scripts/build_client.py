@@ -31,6 +31,9 @@ def build_macos():
     digest=hashlib.sha256(destination.read_bytes()).hexdigest()
     destination.with_suffix('.dmg.sha256').write_text(digest+'  '+destination.name+'\n')
     manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'server_included':False,'remote_upload':False,'server_requirement':'An already configured local/LAN deployment','source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
+    manifest['source_payload_included']=True
+    manifest['local_bootstrap']={'implemented_on':['macos-arm64'],'fresh_install_acceptance':'pending','user_state_bundled':False}
+    manifest['server_requirement']='Client-managed local source deployment, or an existing local/LAN deployment'
     manifest['bundle']=inspected
     manifest['third_party_notices']=notice_manifest(ROOT)
     manifest['source_commit']=os.environ.get('GITHUB_SHA','')
@@ -96,6 +99,8 @@ if __name__=='__main__':
     args=parser.parse_args()
     from check_source import check
     check(ROOT)
+    from prepare_client_host import prepare
+    prepare(ROOT)
     notice_manifest(ROOT)
     if subprocess.check_output(['rustc','--version'],text=True).split()[1]!='1.96.0':
         raise ValueError('Build preview clients with Rust 1.96.0; review runtime notices before changing toolchains')

@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "minimum_ram_gb": 12,
+  "minimum_free_gb": 35,
+  "minimum_resume_free_gb": 2,
+  "tools": ["python@3.13.5", "node@22.21.1", "rust@1.96.0", "java@temurin-17.0.17+10"],
+  "mise": {
+    "version": "2026.10.22",
+    "macos-arm64": {"url": "https://github.com/jdx/mise/releases/download/v2026.10.22/mise-v2026.10.22-macos-arm64", "sha256": "8065ac0e64b5ba155945bf006b7e58d1fa35fc44d53a3576b1a8396f7209de8f"}
+  },
+  "lima": {"url": "https://github.com/lima-vm/lima/releases/download/v2.2.1/lima-2.2.1-Darwin-arm64.tar.gz", "sha256": "9e9eacce88f37e185c346bad73aa6136f738d8cdf8c3bb23cd42b071824bc66e"},
+  "sdk": {"url": "https://dl.google.com/android/repository/commandlinetools-mac-13114758_latest.zip", "sha256": "5673201e6f3869f418eeed3b5cb6c4be7401502bd0aae1b12a29d164d647a54e"},
+  "container_host": {"url": "https://cloud-images.ubuntu.com/releases/resolute/release-20260927/ubuntu-26.04-server-cloudimg-arm64.img", "sha256": "63a93bd5a8d76e33b15ceb5daa3657bd79be804748051ab178e643b0f5da22e7"}
+}

@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from install_state import InstallState,fingerprint
 from service_start import SERVICES,start_missing
 from service_stop import stop_owned
@@ -79,16 +80,27 @@ with InstallState(root) as state:
                     self.assertNotIn('fixture secret',(root/'data/deployment/install-state.json').read_text())
 
 class ServiceResumeTests(unittest.TestCase):
+    def test_loaded_but_stopped_job_is_started_without_killing_live_work(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);calls=[]
+            def query(label):
+                state='waiting' if label=='dev.aiphone.web.p2' else 'running'
+                return subprocess.CompletedProcess([],0,stdout=f'working directory = {root}\nstate = {state}\n')
+            with patch('service_start.subprocess.run') as native:
+                result=start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True)
+            self.assertEqual(result,['dev.aiphone.web.p2'])
+            self.assertEqual(calls,[], 'a registered stopped job needs no rebuild or new configuration')
+            native.assert_called_once_with(['launchctl','kickstart',f'gui/{os.getuid()}/dev.aiphone.web.p2'],check=True)
     def test_partial_install_only_starts_missing_jobs_and_missing_app(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[];missing={'dev.aiphone.web.p2','dev.aiphone.lan'}
-            def query(label):return subprocess.CompletedProcess([],1 if label in missing else 0,stdout='working directory = '+str(root)+'\n')
+            def query(label):return subprocess.CompletedProcess([],1 if label in missing else 0,stdout='working directory = '+str(root)+'\nstate = running\n')
             result=start_missing(root,query=query,execute=calls.append,package_installed=lambda package:package!='dev.aiphone.input')
             self.assertEqual(calls,['android-ready.sh','android-install-input.sh','phone-web-start.sh','lan-start.sh']);self.assertEqual(set(result),missing)
     def test_existing_instance_is_not_restarted_and_foreign_instance_refused_first(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[]
-            query=lambda label:subprocess.CompletedProcess([],0,stdout='working directory = '+str(root)+'\n')
+            query=lambda label:subprocess.CompletedProcess([],0,stdout='working directory = '+str(root)+'\nstate = running\n')
             self.assertEqual(start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True),[]);self.assertEqual(calls,[])
             foreign=lambda label:subprocess.CompletedProcess([],0,stdout='working directory = '+str(root)+'-other\n')
             with self.assertRaisesRegex(ValueError,'Another checkout'):start_missing(root,query=foreign,execute=calls.append)

@@ -8,21 +8,28 @@ from runtime_config import runtime_env
 
 SERVICES=[('dev.aiphone.emulator.p2','android-start.sh'),('dev.aiphone.runner.p2','phone-runner-start.sh'),('dev.aiphone.device-stream','device-stream-start.sh'),('dev.aiphone.assistant','assistant-start.sh'),('dev.aiphone.channels','channels-start.sh'),('dev.aiphone.web.p2','phone-web-start.sh'),('dev.aiphone.lan','lan-start.sh')]
 
-def running_jobs(root,query=None):
-    root=Path(root).resolve();jobs=set()
+def owned_jobs(root,query=None):
+    root=Path(root).resolve();jobs={}
     for label,_ in SERVICES:
         result=query(label) if query else subprocess.run(['launchctl','print',f'gui/{os.getuid()}/'+label],capture_output=True,text=True)
         if result.returncode:continue
         match=re.search(r'^\s*working directory = (.+)$',result.stdout,re.M)
         if not match or Path(match[1]).resolve() not in (root,root/'apps/web'):
             raise ValueError('Another checkout owns '+label+'; no services were changed')
-        jobs.add(label)
+        state=re.search(r'^\s*state = (\S+)',result.stdout,re.M)
+        jobs[label]=bool(state and state[1]=='running')
     return jobs
 
 def _start_missing(root,query=None,execute=None,package_installed=None):
     root=Path(root).resolve()
     if (root/'data/restore-quarantine.json').exists():raise ValueError('Restored state is quarantined; no services started')
-    jobs=running_jobs(root,query);env={**os.environ,**runtime_env(root),'NEXT_TELEMETRY_DISABLED':'1'}
+    jobs=owned_jobs(root,query);env={**os.environ,**runtime_env(root),'NEXT_TELEMETRY_DISABLED':'1'}
+    started=[]
+    for label,running in jobs.items():
+        if not running:
+            # No -k: if launchd started it since our observation, preserve that process.
+            subprocess.run(['launchctl','kickstart',f'gui/{os.getuid()}/'+label],check=True)
+            started.append(label)
     def run(script):
         if execute:execute(script)
         else:subprocess.run([root/'scripts'/script],cwd=root,env=env,check=True)
@@ -39,7 +46,6 @@ def _start_missing(root,query=None,execute=None,package_installed=None):
         if not installed(package):
             if not ready:run('android-ready.sh');ready=True
             if not installed(package):run(script)
-    started=[]
     for label,script in SERVICES:
         if label.endswith('emulator.p2') or label in jobs:continue
         run(script);started.append(label)
