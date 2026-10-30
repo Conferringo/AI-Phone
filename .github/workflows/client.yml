@@ -146,10 +146,12 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
           rustup default 1.96.0
           rustup target add aarch64-linux-android
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.0.12077973'
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.0.12077973'
           python scripts/bootstrap_bun.py --dependencies
+      - name: Build and verify phone control applications
+        run: python3 scripts/prebuilt_phone.py --build
       - name: Release APK and unpacked payload inspection
-        run: python3 scripts/build_client.py --platform android
+        run: python3 scripts/build_client.py --platform android --with-phone-apps
       - name: Retain development artifact only on explicit request
         if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

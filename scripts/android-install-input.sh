@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 . "$(dirname -- "$0")/android-env.sh"
-"$AI_PHONE_PROJECT_ROOT/scripts/android-build-input.sh"
-adb -P 15037 -s "${AI_PHONE_SERIAL:-emulator-5564}" install -r "$AI_PHONE_PROJECT_ROOT/data/android/input/ai-phone-input.apk"
+apk=$(python3 "$AI_PHONE_PROJECT_ROOT/scripts/prebuilt_phone.py" --root "$AI_PHONE_PROJECT_ROOT" --app input)
+adb -P 15037 -s "${AI_PHONE_SERIAL:-emulator-5564}" install -r "$apk"
 # Updating an IME package can reset the selected keyboard, so select after install.
 adb -P 15037 -s "${AI_PHONE_SERIAL:-emulator-5564}" shell ime enable dev.aiphone.input/.UnicodeIme
 adb -P 15037 -s "${AI_PHONE_SERIAL:-emulator-5564}" shell ime set dev.aiphone.input/.UnicodeIme

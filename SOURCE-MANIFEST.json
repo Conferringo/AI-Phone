@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 6905,
-      "sha256": "7521847b3cdc9089a4f001a7a7e15d859103b5b7815c4c43e248f4de114ef558"
+      "size": 7080,
+      "sha256": "d4e126fa918ede3620431754cc689adf1afb3baa28fbfa2e069ca00a44761858"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -2554,18 +2554,18 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4783,
-      "sha256": "ef206eb6762ea944d053ed53fd2831358a474758a28cda93d968f5a2c50a454f"
+      "size": 4878,
+      "sha256": "0ac3fce2f4674875ebce64fbb1c06eac695d25aca959ae8a31059b89a0d72be8"
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 955,
-      "sha256": "74cf8db44702aae7e966e27ca4349cbfbee724ee588a39f3df7ae15c1e49373f"
+      "size": 1001,
+      "sha256": "6230c771bce91c2dc2ed924ff58d78f088b11958604198576546e56bca66eb63"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 6924,
-      "sha256": "fccb3e8f6411e14250a61994ed4d9a8ab8b1802a854600cdad614770fc89050c"
+      "size": 6982,
+      "sha256": "116adedef66d05e1ffcee01352c512f439d8c4b58b188a1b6cba0e064918edf8"
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
@@ -2576,6 +2576,11 @@
       "path": "docs/public/engineering/native-runtime-20261030.md",
       "size": 4557,
       "sha256": "3cc1f5143c6945fa64e353c9644f43fbda0e79bceb99b50a38f40b51c3ba59f0"
+    },
+    {
+      "path": "docs/public/engineering/phone-apps.md",
+      "size": 3847,
+      "sha256": "851b1871d1d900a67b34680fd2972b03719db65715067f9926d05365537b295f"
     },
     {
       "path": "docs/public/engineering/runtime-audit-20261030.md",
@@ -3474,8 +3479,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4378,
-      "sha256": "a3264259ba67aa2789c094e703de881b0a9ec43bde3283372ae66bce1eca5e3b"
+      "size": 4615,
+      "sha256": "447e10fbd67020240b42ed1a23efccd6c2fe68476b7e2a1dacb5dcab30d2ddee"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3489,8 +3494,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 6141,
-      "sha256": "6171a9c7a0b14c019829d8b98f785706a58f4786b329ce1896d40d1ee387a2a8"
+      "size": 6614,
+      "sha256": "9a347572561c5868d48c6542d9a21cfe278afdb5dd085573802172ce41ca4df2"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3829,13 +3834,13 @@
     },
     {
       "path": "scripts/android-install-home.sh",
-      "size": 449,
-      "sha256": "7278e73cfbdf14dd04122576da68f2646c974b3d6497ea83080b55d5f2a848e0"
+      "size": 444,
+      "sha256": "1d7cf5b3a3410bab0fa918e0a721708baefc2b5ba5fca909fca42277b2f0874b"
     },
     {
       "path": "scripts/android-install-input.sh",
-      "size": 1433,
-      "sha256": "2f5d2dc6a5fdb4597bab2c8a0fcfb26cb1b1b7503bae18ee65d6843bd2343ea4"
+      "size": 1431,
+      "sha256": "fbe52bdee3bdac61b93d48fd0f4fb2a1dd72a79a34d7cd1d72de1a04dc6696ee"
     },
     {
       "path": "scripts/android-network/DataUsageWarnings.java",
@@ -3934,8 +3939,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 10318,
-      "sha256": "5e43b65acca14595c9891cc05869d55de9a472695dc0c82ada431fb7501afc58"
+      "size": 10612,
+      "sha256": "736928b044f2b376da4fdb5ce248e99022413af06938c7a568c4032c17ab358e"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4014,13 +4019,13 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 14473,
-      "sha256": "b10db12c7bccb1e760457f4ea1f38ce05542aa7281c1d519b06a934f76ae4e14"
+      "size": 14777,
+      "sha256": "765f7134b35eb1cea068b3cd15221e59022bbc0d0a0aa47e1046158e8044b119"
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 13144,
-      "sha256": "7b61fb332fe65f88470635c90dea857bccb59ab184256ca04f5aee02b989af6a"
+      "size": 13347,
+      "sha256": "28f1f7a52b075a3610f8c3cc9719ced1fe1bb9b344f486b6ad19a15bf1cba527"
     },
     {
       "path": "scripts/client_resources.py",
@@ -4218,6 +4223,11 @@
       "sha256": "a1d81b11afa02bd86365bc515bde4979c710fec229cfa383cccb19d507df30ef"
     },
     {
+      "path": "scripts/prebuilt_phone.py",
+      "size": 7208,
+      "sha256": "ba65595747f41d4d3d286725cf4efe6c3c1a4d85d65a3465518c50b7fd8bd8a8"
+    },
+    {
       "path": "scripts/prebuilt_services.py",
       "size": 4434,
       "sha256": "3abf3649afcc21efcba0e68b907158020f4f319a61a100641ca383b0a9b8f061"
@@ -4234,8 +4244,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 6640,
-      "sha256": "780e03853878754f4c0b710cd1e862a50a0b8eb51f9b650463b7f4b2e63aee7f"
+      "size": 6925,
+      "sha256": "68dcaa0108ae9ab99b56f821f05b3a5955a4a84b17c7d25a461bd706deaa7884"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -4319,8 +4329,8 @@
     },
     {
       "path": "scripts/test_android_runtime.py",
-      "size": 15056,
-      "sha256": "3a569af4ef3ad9bb99dac689742edcee13c8019b2be1eb53fdd1ef8804340e64"
+      "size": 15064,
+      "sha256": "532fa3ffd8df40624a8930de8cc0e48ff265cfea12ea6a5161b0879d8de911de"
     },
     {
       "path": "scripts/test_bootstrap_bun.py",
@@ -4334,8 +4344,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 6807,
-      "sha256": "ac6a7b3ec5df6fba19b735d88cbb421cfc947bffe76123c8004933f441ee6b50"
+      "size": 6812,
+      "sha256": "129db9fa8fd19e64ac632caa110031bc2f7e419d3226d0569526e7006cd586e8"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4416,6 +4426,11 @@
       "path": "scripts/test_native_services.py",
       "size": 29097,
       "sha256": "419d9b666f52b4fd62c4e8923b98387798fa41d73a7c9d59a72ae8b6e4708bad"
+    },
+    {
+      "path": "scripts/test_prebuilt_phone.py",
+      "size": 12936,
+      "sha256": "592a8fd4cbf7a5b05bc1c576a3b880ca52cc8a86fbf1959a5b2bca125c4f1a3a"
     },
     {
       "path": "scripts/test_prebuilt_web.py",

@@ -4,7 +4,7 @@ AI Phone separates its Android system/runtime from its small source archive. An 
 
 The component contains emulator executables, platform tools and an Android factory image. It never includes an existing AVD, account, application database, chat or ADB identity. The image archive is checked before packaging; file sizes, SHA-256 digests, executable permissions and host/ABI are bound by its manifest. Extraction accepts regular, inventoried files only, with separate limits of 20,000 files, 4 GiB per file and 8 GiB total, plus a 4 GiB recovery reserve. The source archive's existing limits remain unchanged.
 
-Initialization uses the selected CPU, memory and storage presets to create an AVD offline. A complete existing AVD is preserved; an incomplete one stops creation for recovery. A bundled SDK bypasses SDK Manager, AVD Manager and Java installation. This does **not** yet make every service, Linux image, application, browser or platform runtime independent of downloads.
+Initialization uses the selected CPU, memory and storage presets to create an AVD offline. A complete existing AVD is preserved; an incomplete one stops creation for recovery. A bundled SDK bypasses SDK Manager and AVD Manager. Java is omitted only when the [prebuilt control applications](phone-apps.md) are also included. This does **not** yet make every service, Linux image, application, browser or platform runtime independent of downloads.
 
 ## Engineering workflow
 
@@ -18,7 +18,7 @@ python3 scripts/android_runtime.py build \
   --output /path/to/android.payload
 
 python3 scripts/build_client.py --platform macos \
-  --with-web-runtime --with-service-runtime \
+  --with-web-runtime --with-service-runtime --with-phone-apps \
   --android-runtime /path/to/android.payload
 ```
 

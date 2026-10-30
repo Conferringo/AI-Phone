@@ -4,13 +4,14 @@ AI Phone separates versioned application code, clean device baselines and persis
 
 ## Package format
 
-`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive, its standalone staging entry and an integrity record. Format 1 contains reviewed source. Format 2 declares an ordered component set: `web`, `native-services`, or both. Source-only resources remain readable for contributors and stored-format compatibility.
+`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive, its standalone staging entry and an integrity record. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
 
 | Component | Contents | Launch requirement |
 |---|---|---|
 | Web | Next.js standalone output, static/public assets, pinned host-matched Bun | Installed file hashes and contained dependency aliases must match |
 | Native services | Release Rust assistant and phone runner, OCR helper, generated OCR fixture | Host, hashes, inventory and executable permissions must match |
 | Installer tools | Portable Python and Node in a separate native resource group | Compiled manifest digest, host, complete inventory and immutable activation must match |
+| Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | macOS OCR | Apple Vision helper with the client's minimum deployment target | macOS system frameworks |
 | Linux OCR | Tesseract adapter | Python/Pillow, Tesseract and English/Chinese language data; these dependencies still need a complete offline payload |
 
@@ -19,6 +20,8 @@ Each component manifest records file sizes, SHA-256 hashes and permissions. Nati
 ## Installation and startup
 
 The optional [portable installer tools](engineering/installer-tools.md) start the worker without a host interpreter. Native activation places verified tools in an immutable private component directory before source staging; service launchers retain those paths across restarts. Complete guest and service dependencies remain separate requirements.
+
+The optional [phone control applications](engineering/phone-apps.md) remove first-run APK compilation. Supplying an Android runtime without these applications is rejected before device creation. Source contributor installations retain the compiler-based path.
 
 The staging entry validates bounded archive headers and inventory before writing an immutable release directory. Duplicate entries, malformed paths, private paths, escaping aliases, unlisted files, changed bytes and occupied destinations are rejected. The version's `data` and `.env` link to the persistent `user` directory; staging a new version does not activate it or replace existing devices, credentials or conversations.
 

@@ -22,7 +22,7 @@ python3 scripts/installer_tools.py \
   --output /path/to/new-tool-component
 
 python3 scripts/build_client.py --platform macos \
-  --with-web-runtime --with-service-runtime \
+  --with-web-runtime --with-service-runtime --with-phone-apps \
   --android-runtime /path/to/android.payload \
   --images-runtime /path/to/images.payload \
   --installer-tools /path/to/new-tool-component
@@ -42,7 +42,7 @@ The development baseline is Python 3.13.18 and Node 22.23.4. The macOS ARM64 com
 
 The Python component boundary passed the local complexity/coverage gate (CC ≤9, CRAP <10), with no duplication candidates at similarity ≥0.8. Targeted mutation checks detected 162 of 164 changes; the two survivors change JSON key sorting. The native module has CC ≤9; native coverage and CRAP were not measured. Cancellation, changed sources, directory depth, exclusive staging and competing publication have regression tests. These results apply to this boundary, not the whole repository.
 
-The matching Linux x64 factory archive pins are recorded; complete platform runtime acceptance is tracked separately. Windows and privileged Android independent hosts remain incomplete. Fresh phone provisioning still requires prebuilt input/launcher applications; container supervision, media and channel components also remain separate completion gates.
+The matching Linux x64 factory archive pins are recorded; complete platform runtime acceptance is tracked separately. Windows and privileged Android independent hosts remain incomplete. The optional [input/launcher application component](phone-apps.md) supplies prebuilt APKs; fresh-device installation, container supervision, media and channel components also remain separate completion gates.
 
 Primary sources: [Python portable distributions](https://docs.astral.sh/python-build-standalone/distributions/), [upstream release](https://github.com/astral-sh/python-build-standalone/releases/tag/20261026), [Node release checksums](https://nodejs.org/dist/v22.23.4/SHASUMS256.txt).
 

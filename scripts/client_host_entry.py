@@ -8,6 +8,8 @@ import tarfile
 import tempfile
 import re
 
+COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json'}
+
 def canonical_name(name):
     if not isinstance(name, str):
         raise ValueError('Invalid payload path')
@@ -23,7 +25,7 @@ def canonical_name(name):
 def runtime_name(path, enabled):
     if not enabled:
         return False
-    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services'))
+    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps'))
 
 def source_name(name, runtime=False):
     path = canonical_name(name)
@@ -137,7 +139,7 @@ def manifest_components(manifest):
     if not isinstance(manifest, dict):
         raise ValueError('Invalid source manifest')
     components = manifest.get('components', [])
-    runtime = manifest.get('format') == 2 and components in (['web'], ['native-services'], ['web', 'native-services'])
+    runtime = manifest.get('format') == 2 and isinstance(components,list) and bool(components) and components==[name for name in COMPONENT_MANIFESTS if name in components]
     if type(manifest.get('format')) is not int or not (manifest['format'] == 1 or runtime):
         raise ValueError('Invalid source manifest')
     return components, runtime
@@ -156,12 +158,11 @@ def payload_records(manifest, entries):
     return (records, runtime)
 
 def component_inventory(records, components):
-    manifests = {'web': 'runtime/manifest.json', 'native-services': 'runtime/services/manifest.json'}
-    if not {manifests[name] for name in components}.issubset(records):
+    if not {COMPONENT_MANIFESTS[name] for name in components}.issubset(records):
         raise ValueError('Runtime component manifest is missing')
     for name in records:
         if name.startswith('runtime/'):
-            owner = 'native-services' if name.startswith('runtime/services/') else 'web'
+            owner = next((role for prefix,role in [('runtime/services/','native-services'),('runtime/phone-apps/','phone-apps')] if name.startswith(prefix)), 'web')
             if owner not in components:
                 raise ValueError('Runtime file belongs to an undeclared component')
 

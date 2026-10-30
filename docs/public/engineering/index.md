@@ -6,6 +6,7 @@ These records support contributor review. Dated results apply to their recorded 
 - [Android runtime component](android-runtime.md)
 - [Linux desktop and service image component](linux-image-runtime.md)
 - [Portable installer tools](installer-tools.md)
+- [Phone control applications](phone-apps.md)
 - [Runtime packaging review](runtime-audit-20261030.md)
 - [SOLID audit and remaining boundaries](../solid-audit.md)
 - [CSS and hosted review](../css-review-2026-10-29.md)

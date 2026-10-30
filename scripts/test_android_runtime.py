@@ -102,7 +102,7 @@ class AndroidRuntimeTests(unittest.TestCase):
                 run.assert_not_called()
             self.assertEqual(phases,[('sdk-packages',True)])
             tools=['python@3.13.5','node@22','rust@1.96.0','java@17']
-            self.assertEqual(selected_tools(tools,True,True),tools[:2])
+            self.assertEqual(selected_tools(tools,True,True,(),True),tools[:2])
             request={'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2560}}
             host={'phone_template':'android35-arm64' if manifest['abi']=='arm64-v8a' else 'android35-x86_64'}
             with patch.dict('os.environ',{'JAVA_HOME':''}):prepare_profile(root,root,request,host,sdk)

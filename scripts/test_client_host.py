@@ -20,7 +20,7 @@ def python_command(path, source):
 class NativeHostTests(unittest.TestCase):
     def test_complete_bundled_toolchain_does_not_run_a_package_manager(self):
         from client_host import selected_tools,install_tools
-        tools=selected_tools(['python@3.13.18','node@22.23.4','rust@1.96.0','java@temurin-17'],True,True,('python','node'))
+        tools=selected_tools(['python@3.13.18','node@22.23.4','rust@1.96.0','java@temurin-17'],True,True,('python','node'),True)
         self.assertEqual(tools,[])
         with patch('client_host.execute') as execute:
             install_tools(Path('/isolated'),None,tools,lambda *_:self.fail('No tool installation is needed'))
