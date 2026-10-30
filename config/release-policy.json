@@ -7,7 +7,8 @@
     "long_running_recovery": false,
     "database_runtime_role": true,
     "clean_host_install": false,
-    "backup_restore": true
+    "backup_restore": true,
+    "self_contained_device_bundle": false
   },
   "source_preview": {
     "license": "Apache-2.0",
@@ -31,8 +32,8 @@
     }
   },
   "binary_preview": {
-    "publication_authorized": true,
-    "release_tag": "v0.1.0-preview.2",
+    "publication_authorized": false,
+    "release_tag": null,
     "channel": "prerelease",
     "server_included": false,
     "physical_installation_tested": false,
@@ -45,5 +46,22 @@
       "sha256"
     ],
     "signing": "macOS/Windows unsigned; Android private preview certificate; no store distribution"
+  },
+  "distribution": {
+    "delivery": "complete-local-device-bundle",
+    "required_components": [
+      "android-system",
+      "linux-system",
+      "emulator",
+      "prebuilt-services",
+      "client",
+      "third-party-notices",
+      "corresponding-source"
+    ],
+    "user_prepares_images": false,
+    "user_compiles_services": false,
+    "user_state_included": false,
+    "android_host": "root-and-kvm",
+    "status": "not-ready"
   }
 }

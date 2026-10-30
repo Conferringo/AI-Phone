@@ -1,4 +1,6 @@
-# Client-managed local deployment
+# Developer bootstrap and host runtime
+
+**Development reference only. Product downloads are withdrawn. The next distribution must contain images, emulator and prebuilt services; see [requirements](preview-release.md). The online source bootstrap below is not that distribution.**
 
 Preview.2 introduces an experimental managed installer for **macOS Apple Silicon**. It acquires private tools, prepares the Android phone and Debian/Openbox desktop, starts services and then opens model configuration. Users do not need to run server deployment commands for this path. It still downloads dependencies and builds services; it is not an offline appliance. **Fresh-host dual-device installation remains untested.**
 
@@ -39,7 +41,7 @@ Windows/Linux managed hosts, Android privileged hosting, full install/upgrade ro
 
 ---
 
-# 客户端本机部署
+# 研发引导与宿主运行时
 
 Preview.2 为 macOS Apple Silicon 提供实验性受管安装：在客户端选语言与设备资源，准备工具、Android、服务和 Linux 桌面，再进入模型配置，不必手动部署服务。全新宿主创建双设备仍未实测。Windows、Linux、Android 安装包继续用于连接已有服务，没有冒充四个平台均已支持独立运行。
 

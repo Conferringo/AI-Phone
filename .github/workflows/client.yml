@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      development_artifacts:
+        description: Retain development-only build artifacts for maintainer inspection
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -39,7 +44,8 @@ jobs:
           python3 scripts/audit_dependencies.py --target aarch64-apple-darwin --output audit.json
       - name: Local unsigned bundle and privacy checks
         run: python3 scripts/build_client.py
-      - name: Retain inspected preview for release review
+      - name: Retain development artifact only on explicit request
+        if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: client-macos-arm64
@@ -96,7 +102,8 @@ jobs:
           python -m unittest discover -s scripts -p test_release_portability.py
       - name: Build and inspect local preview
         run: python scripts/build_client.py --platform ${{ matrix.platform }}
-      - name: Retain inspected preview for release review
+      - name: Retain development artifact only on explicit request
+        if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: client-${{ matrix.platform }}-${{ matrix.arch }}
@@ -134,7 +141,8 @@ jobs:
           python scripts/bootstrap_bun.py --dependencies
       - name: Release APK and unpacked payload inspection
         run: python3 scripts/build_client.py --platform android
-      - name: Retain inspected preview for release review
+      - name: Retain development artifact only on explicit request
+        if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: client-android-arm64

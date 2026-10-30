@@ -13,7 +13,8 @@
     "long_running_recovery": false,
     "database_runtime_role": true,
     "clean_host_install": false,
-    "backup_restore": true
+    "backup_restore": true,
+    "self_contained_device_bundle": false
   },
   "files": [
     {
@@ -48,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 5811,
-      "sha256": "a4e3306346d303d66d22bce263f31f43540f6b146d9fbab1f9e93610d05154f3"
+      "size": 6266,
+      "sha256": "bdf85134ae718c184add9046d15556c1dc359a085aa8a7e0f86a0ec37f0a9895"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -62,14 +63,9 @@
       "sha256": "1fd505e208dd1beb4240ec1f6a45874180cc4597a719087518f9f5111c945a6f"
     },
     {
-      "path": "AGENTS.md",
-      "size": 1605,
-      "sha256": "e1088973e00926c0b40d4c95e9652c79c34fc2729f8a5d3d9f1481b8b723aeae"
-    },
-    {
       "path": "CHANGELOG.md",
-      "size": 2550,
-      "sha256": "a12da669cafe2c776d2cfe64dfcb4f5ccd592b7b5bece67322821102cf209142"
+      "size": 218,
+      "sha256": "bbc49e5040de194aaa26178b72ad1aa80c32404c45840113b739589c696430a6"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -108,13 +104,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 8282,
-      "sha256": "63e68a64e2f5db2bd984e62727888f3882dfd1a2dedbf4cc61f8eef7e72607e8"
+      "size": 6909,
+      "sha256": "bf577304f291f29630516940fa477d1176e3b201f6cb99505e1085f386295289"
     },
     {
       "path": "README.md",
-      "size": 15434,
-      "sha256": "bae147d423a716c512dc9da5685ecd6634bc93725fdd8bab7bc3e97832425e89"
+      "size": 12341,
+      "sha256": "bf83a7d5a706ddbe2b4755f4b79cd0a8b14055d0f670685a91b33ab55740f434"
     },
     {
       "path": "SECURITY.md",
@@ -577,11 +573,6 @@
       "sha256": "74c41c166cfa42d43b4f66685069cf00c49f4089d914fc9186806b4bd58dbb57"
     },
     {
-      "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 22613,
-      "sha256": "2dfbb535e1b1eeab5cd19e5355b9a5eed541704ca9a432561d2dab45a5f4c15d"
-    },
-    {
       "path": "apps/client/src-tauri/src/bootstrap/checkpoint.rs",
       "size": 5654,
       "sha256": "c9f51343c21e68987088b9021c0e8ce1673f776416135b116856803b09e57eb3"
@@ -600,6 +591,11 @@
       "path": "apps/client/src-tauri/src/bootstrap/toolchain.rs",
       "size": 3902,
       "sha256": "3401cded925cf570f8a88ee6d10cd9e6eab4ede9193a173ccb35eb1fcbcbab37"
+    },
+    {
+      "path": "apps/client/src-tauri/src/bootstrap.rs",
+      "size": 22613,
+      "sha256": "2dfbb535e1b1eeab5cd19e5355b9a5eed541704ca9a432561d2dab45a5f4c15d"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -1182,11 +1178,6 @@
       "sha256": "023503c632375ce1f3196fa1249e1b7a79aedfa28b458036657ea0b389064b05"
     },
     {
-      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
-      "size": 590,
-      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
-    },
-    {
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/01-auto-send-sync.rs",
       "size": 615,
       "sha256": "8ff975b8f4b5c94c4cb823f27668446e3f8da5c0cf359e1bd8ac6a86334d1aa4"
@@ -1235,6 +1226,11 @@
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/06-no-auto-send-sync-with-non-send-sync-ffi-parent.stderr",
       "size": 2887,
       "sha256": "808ac199325749e28e4c5ea6a459463d87c375443dc73c143a8fc1032575895f"
+    },
+    {
+      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
+      "size": 590,
+      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
     },
     {
       "path": "apps/client/src-tauri/vendor/glib/tests/value.rs",
@@ -1432,11 +1428,6 @@
       "sha256": "3596710fa9ea4a6cf838371b8822383ee6c41fc6264768ade95438a58b319886"
     },
     {
-      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
-      "size": 248,
-      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
-    },
-    {
       "path": "apps/web/src/app/api/phone/[operation]/route.ts",
       "size": 2442,
       "sha256": "b49cf856843d05ca90e15bf0b19fa8eb182f3e78ccf9428c5bf0b0abd7648217"
@@ -1445,6 +1436,11 @@
       "path": "apps/web/src/app/api/phone/media/[kind]/route.ts",
       "size": 1279,
       "sha256": "c68779f38c663de44d3f5495035655a8c7f6e79bf8590675e1fb78ca8a8fb9ad"
+    },
+    {
+      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
+      "size": 248,
+      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
     },
     {
       "path": "apps/web/src/app/api/proactive/[operation]/route.ts",
@@ -1587,21 +1583,6 @@
       "sha256": "f55ddf1357a6fc19cb925644ec607275506c002608e7a2d8621cac5a2539896f"
     },
     {
-      "path": "apps/web/src/components/knowledge-network.tsx",
-      "size": 5082,
-      "sha256": "1e75dd4b1317830ad623e65fca09e1a5dbe79c40e34021a7703ea7b065f4ba40"
-    },
-    {
-      "path": "apps/web/src/components/knowledge-relations.tsx",
-      "size": 3128,
-      "sha256": "6ac047082b9ae3080bbcea45f4701d0d71deec8fdb41e218a5f74fbd357bd15e"
-    },
-    {
-      "path": "apps/web/src/components/knowledge-window.tsx",
-      "size": 10122,
-      "sha256": "92f6f9f6970eec538a9e6e71e2f677b00221d87173b897225da3cc9efaa94eef"
-    },
-    {
       "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.d.ts",
       "size": 316,
       "sha256": "e7130e46ec7e3bae6a3c1a6b7064d8ca0e13384accd032f4e48e9ad329ba1126"
@@ -1615,6 +1596,21 @@
       "path": "apps/web/src/components/knowledge/knowledgeGraphMotion.ts",
       "size": 7724,
       "sha256": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
+    },
+    {
+      "path": "apps/web/src/components/knowledge-network.tsx",
+      "size": 5082,
+      "sha256": "1e75dd4b1317830ad623e65fca09e1a5dbe79c40e34021a7703ea7b065f4ba40"
+    },
+    {
+      "path": "apps/web/src/components/knowledge-relations.tsx",
+      "size": 3128,
+      "sha256": "6ac047082b9ae3080bbcea45f4701d0d71deec8fdb41e218a5f74fbd357bd15e"
+    },
+    {
+      "path": "apps/web/src/components/knowledge-window.tsx",
+      "size": 10122,
+      "sha256": "92f6f9f6970eec538a9e6e71e2f677b00221d87173b897225da3cc9efaa94eef"
     },
     {
       "path": "apps/web/src/components/locale-provider.tsx",
@@ -1963,8 +1959,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 1642,
-      "sha256": "0a2940608a66e3099b6f293e6296ce78ef6f8a8ee31f45c44476977962805bba"
+      "size": 2114,
+      "sha256": "46328aa127bbf9133b3973132d13fe57717d68133031185047b475d5e369df9a"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2478,8 +2474,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 6252,
-      "sha256": "a0092b6f4a1c88b696f424ca52069953d7db435f4d71eb714af2d0a9fd997cc3"
+      "size": 6507,
+      "sha256": "a77542f6fbf4acd360bf42b385adb30feaab56703a2b2dd417a498b5a8a5a0ad"
     },
     {
       "path": "docs/public/interface-audit-2026-10-29.md",
@@ -3223,13 +3219,13 @@
     },
     {
       "path": "docs/public/native-client.en.md",
-      "size": 2308,
-      "sha256": "105df5ac7ddf59d6c711a106b555b3f6777067c2bc3fdc48e5075f310cb8e58c"
+      "size": 2136,
+      "sha256": "4e8903e912cb8873314b90ca3a70d259cb707346018f40b89f2a32db0d422318"
     },
     {
       "path": "docs/public/native-client.zh-CN.md",
-      "size": 1794,
-      "sha256": "87b7fe1ec10b1bc0ca3f059e31a98bf138030038ec7ea9abe4cbfeb9724275dc"
+      "size": 1585,
+      "sha256": "40e5f0743005882699fa20e9ee515f3a6acd1b2c41e191bf3969a78216171f69"
     },
     {
       "path": "docs/public/network.md",
@@ -3243,8 +3239,8 @@
     },
     {
       "path": "docs/public/preview-release.md",
-      "size": 3891,
-      "sha256": "788275a5ab5eb006750d551ea16ae4b9feff29d483050a69f363e06b7e3ef0cd"
+      "size": 2820,
+      "sha256": "e8af70f9474e907b5fb757aed38b27777b775f882a4900b5dd9b6860da1f3a9f"
     },
     {
       "path": "docs/public/protocol-boundaries.md",
@@ -3283,8 +3279,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 7563,
-      "sha256": "42502bc670bc011d40205d94e6d4739052e33e2195e1830012feb38dce91b2b9"
+      "size": 2601,
+      "sha256": "34a6f7f10036a7d5280ae220de06fa2fdebf9807f0a2d06513e2930354ea8118"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -4140,6 +4136,11 @@
       "path": "skills/builtin/wechat/SKILL.md",
       "size": 9430,
       "sha256": "e13b27c0a17147830d12c729a8b9fe0938bc5b22dfa45035b4590ff8d82abf28"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 1605,
+      "sha256": "e1088973e00926c0b40d4c95e9652c79c34fc2729f8a5d3d9f1481b8b723aeae"
     }
   ]
 }
