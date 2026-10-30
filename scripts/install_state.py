@@ -1,11 +1,10 @@
 """Private installation checkpoints. Skip work only when inputs and artifacts match."""
-import fcntl
 import hashlib
 import json
-import os
 from pathlib import Path
 import time
-from database import atomic_json
+from private_files import atomic_json, protect
+from installer_lock import acquire
 
 
 def fingerprint(root,paths,values=None):
@@ -26,11 +25,9 @@ class InstallState:
     def notify(self,name,state):
         if self.observer:self.observer(name,state)
     def __enter__(self):
-        self.folder.mkdir(parents=True,exist_ok=True,mode=0o700);self.folder.chmod(0o700)
-        fd=os.open(self.folder/'install.lock',os.O_RDWR|os.O_CREAT,0o600);os.fchmod(fd,0o600)
-        self.lock=os.fdopen(fd,'a+')
-        try:fcntl.flock(self.lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        except BlockingIOError:self.lock.close();self.lock=None;raise ValueError('Another installer is running for this user directory')
+        self.folder.mkdir(parents=True,exist_ok=True,mode=0o700);protect(self.folder,directory=True)
+        try:self.lock=acquire(self.folder/'install.lock')
+        except BlockingIOError:raise ValueError('Another installer is running for this user directory') from None
         try:
             self.state=json.loads(self.path.read_text()) if self.path.exists() else {'format':1,'phases':{}}
             if self.state.get('format')!=1 or not isinstance(self.state.get('phases'),dict):raise ValueError('Invalid installation checkpoint; existing user data was not changed')

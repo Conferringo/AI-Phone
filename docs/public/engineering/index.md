@@ -16,3 +16,5 @@ These records support contributor review. Dated results apply to their recorded 
 - [Audio and recovery review](../release-stability-2026-10-29.md)
 
 - [Offline JavaScript services](js-runtime.md): source-bound media/channel dependencies, role selection, provenance and real relocated execution.
+
+- [Private installation state](private-install-state.md): platform file ownership, atomic publication and nonblocking checkpoint locks.

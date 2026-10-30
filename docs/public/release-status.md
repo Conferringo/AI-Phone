@@ -22,6 +22,8 @@ The required user experience is: install the distribution, configure phone/compu
 
 The optional [portable installer tool component](engineering/installer-tools.md) now executes Python/Node directly instead of downloading those interpreters. Native staging, source extraction and runtime-path restoration passed in a network-denied macOS sandbox. This component is not yet a rebuilt complete installer; phone applications and the container host have separate component evidence, while full assembly and browser/application resources remain distribution work.
 
+[Private installation state](engineering/private-install-state.md) now separates checkpoint policy from platform file locks and private atomic writes. Windows native acceptance is tracked independently from its still-incomplete full host; a client build is not a two-device installation result.
+
 Copilot continuous voice is [specified](copilot-voice.md), not implemented: concurrent exploration, 1.5-second commits, corrections and spoken/guest-audio feedback remain upcoming development.
 
 ---
@@ -32,4 +34,4 @@ Copilot continuous voice is [specified](copilot-voice.md), not implemented: conc
 
 二进制发布要求“完整设备包”门槛通过；当前仍有待完成的组件。Android 以 root＋KVM 为宿主范围。四平台运行组件、镜像/模拟器再分发依据、完整包校验与初始化验收都必须明确，不用编译通过、页面入口或文档代替运行事实。
 
-随包 Python/Node 已完成 macOS 系统禁网环境下的原生复制、源码展开与运行路径恢复，尚未重建为完整产品安装包；手机应用、容器宿主及媒体/渠道运行组件继续补齐。
+随包 Python/Node 已完成 macOS 系统禁网环境下的原生复制、源码展开与运行路径恢复，尚未重建为完整产品安装包；手机应用、容器宿主及媒体/渠道已有组件运行证据，完整装配仍需验收。私有检查点与文件权限已拆分为平台适配，Windows 原生行为以匹配 CI 为准。

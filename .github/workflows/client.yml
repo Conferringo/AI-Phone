@@ -91,7 +91,7 @@ jobs:
       - name: Relocated dependency and archive regressions
         env:
           PYTHONPATH: scripts
-        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web test_native_services test_js_dependencies test_js_vendor test_prebuilt_js
+        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web test_native_services test_js_dependencies test_js_vendor test_prebuilt_js test_private_files test_windows_private test_database.DatabaseUnitTests
       - name: Linux native libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim

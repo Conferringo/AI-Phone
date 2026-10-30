@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import uuid
 from database import prepare, credentials, env_values, MARKER, literal, password_matches
+from private_files import is_private
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -17,7 +18,8 @@ class DatabaseUnitTests(unittest.TestCase):
             first=credentials(root);second=credentials(root)
             self.assertEqual(first,second);self.assertNotEqual(first['runtime']['password'],first['migration']['password'])
             self.assertEqual((root/'.env').read_text(),env)
-            self.assertEqual((root/'data/database/credentials.json').stat().st_mode&0o777,0o600)
+            self.assertTrue(is_private(root/'data/database/credentials.json'))
+            if os.name!='nt':self.assertEqual((root/'data/database/credentials.json').stat().st_mode&0o777,0o600)
             first['database']='other';(root/'data/database/credentials.json').write_text(json.dumps(first))
             with self.assertRaises(ValueError):credentials(root)
 

@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7190,
-      "sha256": "d1c3e5e68038b008b988912c96be3a7af69a9f13eb96283810c2f1fe041fbcfd"
+      "size": 7262,
+      "sha256": "d9b5ddae72aca981d90190a7b4ac7b2497e6ef8fb2f0d5502df2ae76a291fb75"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -2579,8 +2579,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1148,
-      "sha256": "e940b453837f3266bfca72cffbcf95e8bedb5ec40c465dbb6eca8cee0f55acea"
+      "size": 1285,
+      "sha256": "474349fff185528120cb4109722a836507c700b5c2bbe47e1fb84ec1cc2efe35"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -2606,6 +2606,11 @@
       "path": "docs/public/engineering/phone-apps.md",
       "size": 3847,
       "sha256": "851b1871d1d900a67b34680fd2972b03719db65715067f9926d05365537b295f"
+    },
+    {
+      "path": "docs/public/engineering/private-install-state.md",
+      "size": 4543,
+      "sha256": "fc973accb1a3deea7461d2aae8bf6b900bc465fc670e1249fd9d5c0e99575497"
     },
     {
       "path": "docs/public/engineering/runtime-audit-20261030.md",
@@ -3504,8 +3509,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5243,
-      "sha256": "0b1bae19160c87c431874b12ed67ba3a61874e61c3583e3ab7ef109363caf943"
+      "size": 5665,
+      "sha256": "e1f29744e2c91ebf82160098158ec5e28975970050b65e6d358814391e126de1"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -4069,8 +4074,8 @@
     },
     {
       "path": "scripts/database.py",
-      "size": 11527,
-      "sha256": "607058a04efaff776a1f7c37f94a2d86c64cd38376cdbd3b648e7a3c1d92a6d1"
+      "size": 10957,
+      "sha256": "453fe2efb6bb3f65c1810d01cbe98ffc39681f18c0da4e2195268f551c21ffce"
     },
     {
       "path": "scripts/dependency_inventory.py",
@@ -4119,8 +4124,13 @@
     },
     {
       "path": "scripts/install_state.py",
-      "size": 3437,
-      "sha256": "d6f4f8a703a22e59fc4fb276b318b65e1e9821919d626c39b3270461d1e6a4c6"
+      "size": 3315,
+      "sha256": "8e313667e035108f8824ee06187b657d25f52ec72f8e38594b834645b0018e0e"
+    },
+    {
+      "path": "scripts/installer_lock.py",
+      "size": 1189,
+      "sha256": "c7f757c34349b0c7e5ddd2ab5abbed6c359bcbee810d55c093fe072b3272c738"
     },
     {
       "path": "scripts/installer_tools.py",
@@ -4303,6 +4313,11 @@
       "sha256": "5c663a0735fed13cae0b1b6a12f21f7ce9c88e7c948e07e872d8f27869738c26"
     },
     {
+      "path": "scripts/private_files.py",
+      "size": 1948,
+      "sha256": "61bb423e9b1c21fcd9b6bfcaa3dd70448ef4bd15ad2214631f0853a8074e5054"
+    },
+    {
       "path": "scripts/registry-setup.test.ts",
       "size": 4796,
       "sha256": "2e42f18ec5d9aac2b92bf6e1c39c307affa43684fbc5889bb85dcf8a1f9ee1ce"
@@ -4424,8 +4439,8 @@
     },
     {
       "path": "scripts/test_database.py",
-      "size": 6872,
-      "sha256": "ba2367d7b63197b1fccfd68c192ad0e6b9d50c3f07a2e8e19f0d87ac22aeb50e"
+      "size": 7005,
+      "sha256": "755677c3d099ff3f8281e13b63436572ff40ffe018b9c85e508b519b007d5ec8"
     },
     {
       "path": "scripts/test_dependency_audit.py",
@@ -4528,6 +4543,11 @@
       "sha256": "5efdb36155f7c092bd93d8a773af150677eb1376adfc3aecb2d7746baeadf769"
     },
     {
+      "path": "scripts/test_private_files.py",
+      "size": 7568,
+      "sha256": "4745e8b88832575bd6091e3b547c8f8f270bffff406d3d3eeb2bcfd5bd6dc4d7"
+    },
+    {
       "path": "scripts/test_release.py",
       "size": 17276,
       "sha256": "98d219c08ab7f8098d7a4d318d94a6ed49b8148ae1fcc604f48a43cba38fbe2d"
@@ -4558,6 +4578,11 @@
       "sha256": "4f4285b74f8ad48277ddead5b1368e9b5ac88ef3817b882fdb1b7c195353e5a8"
     },
     {
+      "path": "scripts/test_windows_private.py",
+      "size": 7455,
+      "sha256": "3f9923da469b07da33f7e81b067e91590f6259d666ccc693cceb37e2c1ea6405"
+    },
+    {
       "path": "scripts/verify_source_install.py",
       "size": 4604,
       "sha256": "998a47427568d26b9f543c4e13d16903f732558035c807ae4e4f996ed8d8e4a0"
@@ -4566,6 +4591,11 @@
       "path": "scripts/verify_task_recovery.py",
       "size": 15919,
       "sha256": "7682cc12300a4ad8e8cefeea859cf93a57f4db80e1d886fbe3025d19c5aff431"
+    },
+    {
+      "path": "scripts/windows_private.py",
+      "size": 5519,
+      "sha256": "c2ba2a2bcb3391b96e8bfb47d3823b1e3e9546f15651854d08f6cea88ae6f928"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",

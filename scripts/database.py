@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import secrets
 import subprocess
-import tempfile
+from private_files import atomic_json, is_private
 
 RUNTIME = 'ai_phone_runtime'
 MIGRATION = 'ai_phone_migrator'
@@ -23,20 +23,6 @@ def env_values(root):
     if not all(values.get(key) for key in ['POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD']):
         raise ValueError('Private PostgreSQL bootstrap configuration is incomplete')
     return values
-
-def atomic_json(path, value):
-    path = Path(path); path.parent.mkdir(parents=True, exist_ok=True, mode=0o700); path.parent.chmod(0o700)
-    fd, temp = tempfile.mkstemp(dir=path.parent, prefix='.credentials-')
-    try:
-        os.fchmod(fd, 0o600)
-        with os.fdopen(fd, 'w') as file:
-            json.dump(value, file, indent=2); file.write('\n'); file.flush(); os.fsync(file.fileno())
-        os.replace(temp, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try: os.fsync(directory)
-        finally: os.close(directory)
-    finally:
-        if os.path.exists(temp): os.unlink(temp)
 
 def identifier(value):
     if not value or '\x00' in value: raise ValueError('Invalid PostgreSQL identifier')
@@ -55,7 +41,7 @@ def credentials(root):
         for name, role in [('runtime', RUNTIME), ('migration', MIGRATION)]:
             if value.get(name, {}).get('username') != role or len(value[name].get('password', '')) < 32:
                 raise ValueError('Invalid private database role configuration')
-        if path.stat().st_mode & 0o077: raise ValueError('Database credentials must be private (0600)')
+        if not is_private(path): raise ValueError('Database credentials must be private to the current user')
         return value
     value = {'schema_version': 1, 'database': env['POSTGRES_DB'],
              'runtime': {'username': RUNTIME, 'password': secrets.token_hex(32)},
