@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 12294,
-      "sha256": "79a8f910de4e84c69b12808617aef75e9260eaa83792d982dbdc95cb7ed3a323"
+      "size": 13017,
+      "sha256": "05bdedc2c8b6fe63a834e7bd90aacbe00dbc6f6345fe357bfce30cce405eca3d"
     },
     {
       "path": "ai-phone",
@@ -1313,6 +1313,11 @@
       "sha256": "a54bc8c985fa31eb1d0a627996bce7adcba6df8e1e42b48b64ee301c7202c6c6"
     },
     {
+      "path": "apps/device-network/app-assets.ts",
+      "size": 2151,
+      "sha256": "f0161c6d24b0995a4acf9ea1b061a58fcd9828590422dcfe03fc28bc16579fe4"
+    },
+    {
       "path": "apps/device-network/config.test.ts",
       "size": 7171,
       "sha256": "e144def8ef43bb44a54217efb795f82c9a5823b9a90b17094e3636a348621a0b"
@@ -1324,13 +1329,13 @@
     },
     {
       "path": "apps/device-network/control.ts",
-      "size": 17660,
-      "sha256": "c3c07a3199fd9f78075dc32be4cfcb77de287da5588429a08f0079276f6a2e6a"
+      "size": 17675,
+      "sha256": "cad69bef49356842014b0c29f3d95130ebe896b86c74ce11d186412fb7fe9f6e"
     },
     {
       "path": "apps/device-network/native-apps.ts",
-      "size": 4515,
-      "sha256": "7e0f5788ba4d397d9fcfe6d8c4c1be1f6fef4502f6ceb3f99e71e17feb8e1cf0"
+      "size": 4999,
+      "sha256": "7fbfe49808113f289030a25eaa9d685099af7b613d02a6f46db0fcc666185481"
     },
     {
       "path": "apps/device-network/package.json",
@@ -2583,9 +2588,14 @@
       "sha256": "0ac3fce2f4674875ebce64fbb1c06eac695d25aca959ae8a31059b89a0d72be8"
     },
     {
+      "path": "docs/public/engineering/guest-apps.md",
+      "size": 4089,
+      "sha256": "af9bf90867bff40c4a4057f7e262f0ede900da18c80ddb76c2c749db4b3f751c"
+    },
+    {
       "path": "docs/public/engineering/index.md",
-      "size": 1285,
-      "sha256": "474349fff185528120cb4109722a836507c700b5c2bbe47e1fb84ec1cc2efe35"
+      "size": 1332,
+      "sha256": "944fd16b2eefd54038ed986ec8e883ef1502609e81bef942d2831ca4ac4c0a0f"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -3514,8 +3524,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5909,
-      "sha256": "17f9138ebed27a3784ed4b632635dc930808a3265029b730e5465d979fa3a879"
+      "size": 6312,
+      "sha256": "28cb9b50f1f55866a00a785f6d4eee9f42449d3d6a17574ef1069abd3c6f06f9"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3529,8 +3539,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 7340,
-      "sha256": "c185591233214d9a23b9017d45e79eada088c2d4ef00818ba10a27df08a23d63"
+      "size": 7552,
+      "sha256": "1bdde4c9283d37e6fb0466ca205493ff7a07ae22eaeeb164cc59571ce40636c5"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3539,8 +3549,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 17993,
-      "sha256": "2a66faa30a7ac193387c312b4cc40f9c8097927e8ed99f3ae9a9cdcc27de34d2"
+      "size": 19651,
+      "sha256": "0c45bb2c992e6e75376a230f6d5d1d28c4cdb012cac87632400ffae6e6245239"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3561,6 +3571,11 @@
       "path": "docs/public/ui-system.md",
       "size": 4497,
       "sha256": "f75be368608ca87b79f6ba760013cfbc7f91b98762f92d5f3e9c860c5cb9a60a"
+    },
+    {
+      "path": "docs/public/vendor/clash-meta-license.txt",
+      "size": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -3933,6 +3948,16 @@
       "sha256": "bfcdd3507ae528f2aa7f2aa53849f05435b30527d56ae66abc39d22b576b538f"
     },
     {
+      "path": "scripts/apk_review.py",
+      "size": 690,
+      "sha256": "414340356eea9791457d1a8fb013caab7959e441df1a79373c99f9a13d198577"
+    },
+    {
+      "path": "scripts/app-assets.test.ts",
+      "size": 3176,
+      "sha256": "aa71857c427f628b53224abc16cd91d9cb491f53477f8f1f224b2cf77621569a"
+    },
+    {
       "path": "scripts/artifact_io.py",
       "size": 245,
       "sha256": "14ce1baae364fc42a967e5487d35ca2f0d9842816eb60786f3a87d2a157d9d33"
@@ -3974,8 +3999,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11396,
-      "sha256": "1df2d18efe9f5b2ec9006071fe3559d862e99f45c3fa6a66556c47118a1c3105"
+      "size": 11688,
+      "sha256": "56f219ddb3e36936e17c4211b71d15b0b62c5ac0afee8cb1e9f5852be231b23b"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4059,8 +4084,8 @@
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 14087,
-      "sha256": "3157ae7cf07e85a6a5ca5821bfe6d34ad5819bb798afed9101590d22d7b30f77"
+      "size": 14149,
+      "sha256": "7070ea0cbe268db77e9441897b16c5641ac4996f37cbaa2084165918bcf0a2ad"
     },
     {
       "path": "scripts/client_resources.py",
@@ -4223,9 +4248,14 @@
       "sha256": "b2dea08acb2e8f156d46679b81ba84707bc6f70335f42da39600a70725702527"
     },
     {
+      "path": "scripts/native-apps-core.test.ts",
+      "size": 6459,
+      "sha256": "3860991adc74d01474da8c3710ebe27abd3edadce56cbafe7c67ce760a15d4eb"
+    },
+    {
       "path": "scripts/native-clash.test.ts",
-      "size": 2774,
-      "sha256": "723113e13ae1cb1c1008953ce8a6894a2f849d7500e1db3054a89f445dc1a1e2"
+      "size": 4888,
+      "sha256": "9c69abd27bb8ae09304e3d8f7bea7690bbcf0b50aee9da01d0ad424b7b2d03ea"
     },
     {
       "path": "scripts/native_backports.py",
@@ -4293,14 +4323,19 @@
       "sha256": "a1d81b11afa02bd86365bc515bde4979c710fec229cfa383cccb19d507df30ef"
     },
     {
+      "path": "scripts/prebuilt_guest_apps.py",
+      "size": 7954,
+      "sha256": "6754332fe6627f647be62f4c673ad30e94f89d3f21f4db6d69edee28ead8b602"
+    },
+    {
       "path": "scripts/prebuilt_js.py",
       "size": 14827,
       "sha256": "2571596e45a9bea7eb88bc82c403d8236b64cc4a86234d8bbcd5629a16d7f7ad"
     },
     {
       "path": "scripts/prebuilt_phone.py",
-      "size": 7208,
-      "sha256": "ba65595747f41d4d3d286725cf4efe6c3c1a4d85d65a3465518c50b7fd8bd8a8"
+      "size": 6767,
+      "sha256": "3eec2f85fc5562c65ad533e64710ce28aff84cef3663579644b2ae8080f90636"
     },
     {
       "path": "scripts/prebuilt_services.py",
@@ -4319,8 +4354,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 7542,
-      "sha256": "5c663a0735fed13cae0b1b6a12f21f7ce9c88e7c948e07e872d8f27869738c26"
+      "size": 7928,
+      "sha256": "1b4ad243db125b468f58efc76340544fe2fab20e0d005480110bc43fbf29d9af"
     },
     {
       "path": "scripts/private_files.py",
@@ -4334,8 +4369,8 @@
     },
     {
       "path": "scripts/release.py",
-      "size": 23506,
-      "sha256": "491450ba5d6e5a2a1296c9886f166cebc55a3ca0cca03f1387e3fdf2673fc267"
+      "size": 23542,
+      "sha256": "7b384f87c51a7c1f5a37d844c8bbe2f3c21f33db1304fa0e4117b89c54118ae9"
     },
     {
       "path": "scripts/release_package.py",
@@ -4359,8 +4394,8 @@
     },
     {
       "path": "scripts/runtime_config.py",
-      "size": 3693,
-      "sha256": "38cee9a48d45dea919e1a621a9aac501b4124aa5291e4fd3a2bdb839bb6c5956"
+      "size": 3840,
+      "sha256": "34d78cdc2cf5822fbcd17780915da1e9a1f05235b270198ece93e13d8506c9b4"
     },
     {
       "path": "scripts/runtime_verification.py",
@@ -4529,8 +4564,13 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 29199,
-      "sha256": "af40f67810596da928a38b753a785c8fe0f67de659d4609ad1f96285ede30337"
+      "size": 29240,
+      "sha256": "16920a8245c58e5c2b40ff5daad9f46dc6cbd99995f142780f4cc09593ea85d1"
+    },
+    {
+      "path": "scripts/test_prebuilt_guest_apps.py",
+      "size": 15270,
+      "sha256": "f8daf7806fb011e00b9226a8bc0123a4c75ee3240fd675014ef997b417533fcb"
     },
     {
       "path": "scripts/test_prebuilt_js.py",

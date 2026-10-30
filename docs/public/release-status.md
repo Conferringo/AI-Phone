@@ -22,6 +22,8 @@ The required user experience is: install the distribution, configure phone/compu
 
 The optional [portable installer tool component](engineering/installer-tools.md) now executes Python/Node directly instead of downloading those interpreters. Native staging, source extraction and runtime-path restoration passed in a network-denied macOS sandbox. This component is not yet a rebuilt complete installer; phone applications and the container host have separate component evidence, while full assembly and browser/application resources remain distribution work.
 
+The [guest application component](engineering/guest-apps.md) now supplies pinned Clash Meta APKs for ARM64 and x86_64 guests. Official APK size/hash, signer, package/version, ABI and privacy checks have local macOS evidence. Bundle selection avoids initialization downloads and reuses the desktop image's existing Clash Party application. Corresponding-source and complete-assembly review remain open.
+
 [Private installation state](engineering/private-install-state.md) now separates checkpoint policy from platform file locks and private atomic writes. Windows native acceptance is tracked independently from its still-incomplete full host; a client build is not a two-device installation result.
 
 Copilot has a [recorded-event input core](copilot-voice.md): audio-based endpointing, draft/correction revisions, stable handoff retries and bounded retention have local regression evidence. Continuous voice is not available yet; actual capture, speech providers, wire integration, UI and spoken/guest-audio feedback remain upcoming development. Copilot and exploration are designed to coexist, with spoken instructions taking priority.

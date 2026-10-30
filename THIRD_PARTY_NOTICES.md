@@ -63,3 +63,7 @@ Desktop development packages can embed Next standalone output and the pinned Bun
 ## Media and channel runtime component
 
 The optional offline JavaScript service component retains locked production package files, including their upstream licence texts, and uses the pinned Bun runtime. Unlike the web component's unused image optimizer, media capture uses Sharp and libvips at runtime. Full native library dependency notices and applicable corresponding-source delivery remain binary publication requirements. An exact registry-provenance record in `config/js-runtime-vendor.json` accounts for upstream build-path strings in one macOS libvips resource; it does not waive licence or credential checks. Chromium and guest Clash assets are separate resources. See the [component format and verification scope](docs/public/engineering/js-runtime.md).
+
+## Guest Clash application resources
+
+The optional guest application component uses the official Clash Meta for Android v2.11.36 ARM64 and x86_64 APKs from MetaCubeX/ClashMetaForAndroid, commit `043a6072225405b285a73e3d7b7e53431ccfc04c`. Its upstream GPL-3.0 text is preserved in [the vendor license](docs/public/vendor/clash-meta-license.txt); original third-party terms apply separately from AI Phone's Apache-2.0 source license. Pinned artifacts, maintainer verification and the pending corresponding-source/transitive review are described in [guest application resources](docs/public/engineering/guest-apps.md). The APKs are not part of a source export; binary promotion remains gated on complete distribution review.

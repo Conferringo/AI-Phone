@@ -153,7 +153,7 @@ export async function apply(value:any){
  }
 }
 export async function execute(value:any){
- if(value.operation==='install-apps'){const {downloadApps}=await import('./native-apps');return downloadApps();}
+ if(value.operation==='install-apps'){const {NativeApps}=await import('./native-apps');return new NativeApps(root).download();}
  if(value.operation==='install')return install();
  if(value.operation==='prepare')return prepare(value);
  if(value.operation==='state')return state(value);

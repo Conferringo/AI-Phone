@@ -107,6 +107,7 @@ if __name__=='__main__':
     parser.add_argument('--with-phone-apps',action='store_true',help='Include verified prebuilt phone input and launcher applications')
     parser.add_argument('--with-container-host',action='store_true',help='Include a matched Lima/ISO/offline engine component')
     parser.add_argument('--with-js-services',action='store_true',help='Include prebuilt media/channel services and their production dependencies')
+    parser.add_argument('--with-guest-apps',action='store_true',help='Include pinned Android Clash applications for both guest ABIs')
     args=parser.parse_args()
     from check_source import check
     check(ROOT)
@@ -114,6 +115,7 @@ if __name__=='__main__':
     if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
     if args.with_service_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Native service component requires a matching macOS/Linux build')
     if args.with_phone_apps and args.package_only:parser.error('Phone applications must be supplied before compilation')
+    if args.with_guest_apps and args.package_only:parser.error('Guest applications must be supplied before compilation')
     if args.with_container_host and (args.platform!='macos' or args.package_only):parser.error('The reviewed container-host component currently targets macOS ARM64')
     if args.with_js_services and (not args.with_web_runtime or args.package_only):parser.error('JS services require the matching prebuilt web/Bun runtime')
     if args.images_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Image capsule requires a matching desktop host build')
@@ -130,7 +132,7 @@ if __name__=='__main__':
     if args.with_js_services:
         from prebuilt_js import build as build_js
         build_js(ROOT)
-    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
+    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,with_guest_apps=args.with_guest_apps,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
     if args.with_web_runtime:
         from prepare_client_host import verify_prepared_web
         print(json.dumps({'prebuilt_web':verify_prepared_web(ROOT)}))

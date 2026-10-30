@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import re
 
-COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json','container-host':'runtime/container-host/manifest.json','js-services':'runtime/js-services/manifest.json'}
+COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json','container-host':'runtime/container-host/manifest.json','js-services':'runtime/js-services/manifest.json','guest-apps':'runtime/guest-apps/manifest.json'}
 
 def canonical_name(name):
     if not isinstance(name, str):
@@ -25,7 +25,7 @@ def canonical_name(name):
 def runtime_name(path, enabled):
     if not enabled:
         return False
-    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps', 'container-host', 'js-services'))
+    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps', 'container-host', 'js-services', 'guest-apps'))
 
 def source_name(name, runtime=False):
     path = canonical_name(name)

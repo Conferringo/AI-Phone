@@ -35,10 +35,12 @@ def runtime_env(root):
     host_proxy = value.get('host_proxy', legacy.get('HOST_HTTP_PROXY', ''))
     container_proxy = value.get('container_proxy', legacy.get('CONTAINER_HTTP_PROXY', ''))
     from container_images import image_environment
+    from prebuilt_guest_apps import environment as guest_apps_environment
     return {
         **tools,
         **managed,
         **image_environment(root),
+        **guest_apps_environment(root,'x86_64' if x64 else 'arm64-v8a'),
         'PATH': os.pathsep.join(filter(None,[managed.get('AI_PHONE_MANAGED_BIN',os.environ.get('AI_PHONE_MANAGED_BIN')),tools.get('PATH',base_path)])),
         'AI_PHONE_DEFAULT_LOCALE': value.get('locale', ''),
         'AI_PHONE_LOCAL_ENTRY': '1' if value.get('local_entry', legacy.get('AI_PHONE_LOCAL_ENTRY')=='1') else '0',

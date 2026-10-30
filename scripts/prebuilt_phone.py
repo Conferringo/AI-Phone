@@ -9,7 +9,8 @@ import subprocess
 import sys
 import tempfile
 from client_host_entry import checked_record, verify_file
-from release_package import select_files, SECRET
+from release_package import select_files
+from apk_review import inspect_apk
 
 APPS={'input':'dev.aiphone.input','home':'dev.aiphone.home'}
 PREFIX='runtime/phone-apps/'
@@ -17,7 +18,7 @@ PREFIX='runtime/phone-apps/'
 
 def source_fingerprint(root):
     records=[[name,hashlib.sha256(data).hexdigest()] for name,data,_ in select_files(root)
-             if name.startswith(('apps/android-input/','apps/android-home/')) or name=='scripts/prebuilt_phone.py']
+             if name.startswith(('apps/android-input/','apps/android-home/')) or name in ('scripts/prebuilt_phone.py','scripts/apk_review.py')]
     return hashlib.sha256(json.dumps(records,separators=(',',':')).encode()).hexdigest()
 
 
@@ -77,17 +78,6 @@ def prepare_apps(root):
     root=Path(root).resolve();folder=root/'.tools/phone-apps';verify(root,folder)
     for role in APPS:inspect_apk(folder/(role+'.apk'))
     return [(PREFIX+path.name,path.read_bytes(),0o644) for path in sorted(folder.iterdir())]
-
-
-def inspect_apk(path):
-    import zipfile
-    with zipfile.ZipFile(path) as apk:
-        entries=apk.infolist()
-        if len(entries)>256 or sum(e.file_size for e in entries)>32*1024**2:raise ValueError('Phone APK exceeds its review budget')
-        for entry in entries:
-            data=apk.read(entry)
-            if SECRET.search(data) or SECRET.search(data.replace(b'\0',b'')) or (str(Path.home())+'/').encode() in data:
-                raise ValueError('Private material in phone APK')
 
 
 def check_apk(path,role,tools,env):

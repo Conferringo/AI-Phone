@@ -255,7 +255,7 @@ def install_source_components(state, root, env):
               *[str(p.relative_to(root)) for base in ('apps', 'packages') for p in (root/base).glob('*/package.json')]]
     prepare = (lambda: private_bun(root, create=True)) if available(root) else (lambda: run(['./scripts/bootstrap.sh'], env=env, root=root))
     state.phase('dependencies', fingerprint(root, inputs), prepare, lambda: bootstrap_valid(root))
-    state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'apps/device-network/native-apps.ts']),
+    state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'apps/device-network/native-apps.ts','apps/device-network/app-assets.ts']),
                 lambda: native_apps(root, env, True), lambda: native_apps(root, env))
     # No upstream Chromium snapshot for Linux ARM; do not record absent bytes as installed.
     if platform.system() == 'Linux' and platform.machine().lower() in ('aarch64', 'arm64') and not env.get('AI_PHONE_WHATSAPP_CHROMIUM'):

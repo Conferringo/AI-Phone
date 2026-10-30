@@ -4,7 +4,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 
 ## Package format
 
-`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive, its standalone staging entry and an integrity record. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `js-services`. Source-only resources remain readable for contributors and stored-format compatibility.
+`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive, its standalone staging entry and an integrity record. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `js-services`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
 
 | Component | Contents | Launch requirement |
 |---|---|---|
@@ -14,6 +14,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages | Matching ARM64 macOS runtime, ownership and persisted selection must match |
 | JavaScript services | Media, channels and setup helpers with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
+| Guest applications | Pinned Clash Meta APKs for ARM64 and x86_64 guests | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | macOS OCR | Apple Vision helper with the client's minimum deployment target | macOS system frameworks |
 | Linux OCR | Tesseract adapter | Python/Pillow, Tesseract and English/Chinese language data; these dependencies still need a complete offline payload |
 

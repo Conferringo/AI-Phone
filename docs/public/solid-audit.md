@@ -117,3 +117,11 @@ Linux location was additionally checked through the real browser navigator API. 
 ## Native runtime increment — 2026-10-30
 
 [Native runtime review](engineering/native-runtime-20261030.md) records host-matched release binaries, OCR, archive admission, explicit-root installation, Linux service reuse, isolated migration/role execution and scoped mutation evidence. Full distribution, large CLI/container/UI boundaries and complete architecture acceptance remain open.
+## 2026-10-31 Guest application boundary
+
+The guest application component separates source pins, bounded APK review, immutable component publication and runtime selection. The phone-control and vendor APK builders share one privacy-review policy. `NativeApps` owns its root, environment snapshot and ADB dependency; the existing CLI and `install-apps` consumer use that same implementation. Existing guest applications, source configuration and handoff markers are preserved.
+
+Scoped executable-line evidence (Python stdlib tracing and Bun LCOV) gives the new component/selection functions CC ≤9 and CRAP ≤9. This is line coverage, not branch coverage or a whole-repository result. The duplicate review at 0.8 found no candidates in these selected modules. Producer mutation testing killed 85/89 sites; the four survivors concern explicit text flags already implied by encoding, an unnecessary parent-creation flag and manifest key ordering. Consumer mutation testing killed 58/60 sites: the 300 MiB boundary is unreachable with the current smaller source pins; the default ADB process-path mutation remains a coverage gap because unit installation tests inject that device dependency. A native phone first-install test remains required before qualifying that path.
+
+The actual official APKs passed hash/signature/package/version/ABI and privacy checks. The compiled consumer selected both ABIs in a network/home-source/SDK-denied macOS sandbox. This proves the offline component path, not complete guest creation or all-platform installation. Repository-wide complexity, coverage, domain-boundary, provider/channel and UI acceptance debts remain open.
+
