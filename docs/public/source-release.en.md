@@ -12,7 +12,7 @@ Developer Git history, keys, subscriptions, accounts, chats, disks, attachments,
 
 ## Start from source
 
-The verified server platform is macOS Apple Silicon. Install Node 22+, Bun (project bootstrap), Rust 1.88+, Python 3.11+, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve 35 GiB for a full first install and a default 16 GB phone.
+The verified server platform is macOS Apple Silicon. Install Node 22+, Bun (project bootstrap), Rust 1.96.0, Python 3.11+, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve 35 GiB for a full first install and a default 16 GB phone.
 
 ```sh
 ./ai-phone doctor

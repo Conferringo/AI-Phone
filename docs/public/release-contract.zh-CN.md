@@ -1,5 +1,7 @@
 # 发行交付标准与差距审计
 
+> 历史设计基线（2026-10-28）。完整包要求以[发行要求](preview-release.md)为准，最新结果见[发行状态](release-status.md)和[路线](release-roadmap.zh-CN.md)。下文当时的平台、公开状态与声明缺口数字保留为审查背景，不是当前下载或支持清单。
+
 [English](release-contract.en.md) · 2026-10-28 · 对照既有需求，不代表已完成发行。
 
 ## 结论

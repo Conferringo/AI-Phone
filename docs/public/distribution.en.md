@@ -1,30 +1,45 @@
-# Clients, servers, user data and updates
+# Clients, runtimes, user data and updates
 
-[简体中文](distribution.zh-CN.md) · Source packaging and verified staging exist; a macOS native-client preview exists; full host installers and automatic updates remain open.
+[简体中文](distribution.zh-CN.md) · Updated 2026-10-30
 
-| Platform | Client target | Server target | Current status |
-| --- | --- | --- | --- |
-| macOS | Signed/notarized DMG | Native ARM64 Android + Docker services/desktop | Source preview and native .app/DMG for an existing deployment; no Developer ID signing/notarization |
-| Windows | Signed MSI/NSIS | Native Android + WSL2/Docker adapter | Paths, ADB ownership, OCR and virtualization need implementation |
-| Linux | AppImage/deb/rpm | KVM Android + Docker + systemd | Next server target; guest discovery, OCR and unattended operation need work |
-| Android | APK connecting to the user's server | Full server on an ordinary unrooted phone is not promised | No APK built; on-phone hosting is a separate experimental target |
+The product is an application that deploys its own devices and services. Users configure resources and models in the client; an existing-server connection remains an optional development/remote path. Complete installers are not yet available. The source and documentation are [public](https://github.com/Conferringo/AI-Phone); incomplete preview downloads have been withdrawn.
 
-A shared lightweight client shell should offer Local deployment or Connect to server and reuse the Web UI. Remote pages must not acquire arbitrary native execution privileges. [Tauri supports distribution workflows across these platforms](https://v2.tauri.app/distribute/); a working macOS ARM64 preview now exists in apps/client; other clients and full host installation are not accepted. TLS/trusted-certificate onboarding and client/server protocol compatibility are release requirements. Every user owns their server/model/device/proxy/channel settings; there is no default connection to the developer's host.
+| Target | Build/runtime evidence | Remaining independent-host work |
+|---|---|---|
+| macOS ARM64 | Existing native Android/Linux operation, client setup and native bundles | Complete clean offline payload, first run and update activation |
+| Windows x64 | Native client builds; each revision also checks relocated web resources | Device/backend supervision, paths, permissions, OCR and virtualization |
+| Linux x64 | Native builds and managed KVM/systemd installation code | Complete payload and first-run acceptance |
+| Linux ARM64 | Native client and prebuilt web builds | Reviewed matching Android runtime and complete host integration |
+| Android ARM64 root/KVM | Client APK builds | Privileged host checks, matching runtime and both independent devices |
 
-## Storage layout
+Non-macOS physical installation is waived by the maintainer; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
 
-Managed staging creates `app/releases/<version>/`, `current`, and persistent `user/.env` plus `user/data/`. A release's data and .env are links into user storage. Initial staging creates current; subsequent releases are staged without live activation. The existing development directory is not migrated automatically.
+## Implemented storage boundaries
 
-PostgreSQL still uses a Docker named volume: copying user alone is **not a complete backup**. Existing backup/restore covers the database, Android state, Linux rootfs/home and private files; isolated restore and restored guest boots passed. Automatic update/activation remains open. Built-in Skills belong to the application version; private knowledge, memory, learned experience, user Skills and disabled-Skill preferences must survive updates. System/resource changes are separate operations, never incidental effects of a UI update.
+Native setup uses Tauri's application data directory, with an owned `host` subdirectory:
 
-## Update lifecycle
+```text
+host/
+  deployment.json             setup checkpoint
+  tools/                      owned development bootstrap tools
+  releases/<payload-sha256>/  verified versioned code and runtime component
+    data -> host/user/data
+    .env -> host/user/.env
+  user/
+    .env                      private database environment
+    data/                     guests, account/model/channel state, files
+```
 
-Do not run git pull inside the active installation. The intended update action checks a signed release manifest, presents changes/compatibility/disk requirements, waits for task checkpoints, backs up data, verifies the downloaded signature/hashes, stages a version, runs explicit migrations and health checks, switches current atomically and keeps recovery points.
+`scripts/client_host_entry.py` validates and stages this hash-addressed layout. Existing bytes, aliases and persistent links are checked on retry; occupied or changed code is rejected. It does not replace existing user state. The prebuilt [web component](runtime-bundles.md) contains Next standalone and pinned Bun; the remaining full-runtime components are still required.
 
-Application rollback and database restore are different. An irreversible migration requires restoring compatible data, not just selecting an old binary. Unknown device actions or message deliveries must not be replayed blindly after restart.
+The contributor CLI's `scripts/release_stage.py` is a separate, version-addressed layout: `app/releases/<version>`, an initial `current` pointer and persistent `user`. Later stages do not activate a running version. Its layout is not silently converted to native setup's layout. The existing development checkout also stays in place; installing a client does not migrate its guests automatically.
 
-Current stage supports local archive checks, bounded extraction and version staging. It does **not** provide publisher authentication, remote version discovery/download, migrations, live activation or one-click restore. An update button will be added only when connected to that working lifecycle. Git remains a developer workflow; public release packages may later use GitHub Releases, never upload user data. No public repository/release has been published in this work.
+PostgreSQL uses a Docker named volume. **Copying `user` alone is not a complete backup.** Backup/recovery covers the database, Android state, desktop rootfs/home and private files. Recovery goes to an empty target and stays quarantined until explicit validation/activation. Built-in Skills belong to the code version; user Skills, learned experience, memory, knowledge, attachments and disabled-Skill preferences must survive updates. Device resizing and system replacement are separate operations from application updates.
 
-Delivery sequence: clean-host macOS source preview and backup/restore; Linux server support and full network recovery coverage; unified four-platform signed clients and real installation/update tests. Compiling four client shells would not establish four server platforms.
+## Update contract
 
-Recovery remains quarantined, with an offline `recover-desktop` validation command. See [backup and recovery](backup-restore.en.md) and the [release contract](release-contract.en.md).
+The intended update sequence is signed version discovery → compatibility/capacity check → task checkpoint → consistent backup → signature/hash verification → staging → explicit migrations and health checks → activation or rollback. A failed backup prevents activation. Application rollback and database recovery are distinct; irreversible migrations need compatible restored data. Unknown device actions or message deliveries are observed before retrying.
+
+Current code supplies local integrity checks, staging and recovery tools. It does not yet provide authenticated remote update discovery, automatic live activation or one-click upgrade rollback. No disconnected update button is offered. A direct `git pull` over user state is not an updater; Git remains a contributor workflow.
+
+Full packages must contain clean Android/Linux baselines, emulator, prebuilt services and matched runtime components, with provenance, notices and applicable corresponding source. Device/account data is never part of these baselines. See [distribution requirements](preview-release.md), [release status](release-status.md), [backup/recovery](backup-restore.en.md) and the [original design baseline](release-contract.en.md).

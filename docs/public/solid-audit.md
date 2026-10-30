@@ -74,6 +74,8 @@ S01–S04 的复现、修复与回归可信度高。S07 是结构风险，S10 �
 
 工具固定提交：crapper `6fd92c4c9bcc56efb64a2f8743d5a2993bcfd42d`；dryer `66ff6d21a42c04afcad89c78a80066176d1294b0`；mutator `a5a0cb803b66e0cdb8bf471b3b08af701d424a41`。工具与测试副本只在忽略的审计目录中，不加入产品依赖或发布包。
 
+2026-10-30解包审查补充：原生客户端已改为逐头预算检查；贡献者CLI的 `scripts/release_stage.py` 仍采用先枚举目录再检查预算。它只处理显式本地源码包，不是远端更新入口；后续需单独固定其格式/目录契约并补早停回归，不能把原生解包结果外推给该路径。
+
 ## 下一批验收顺序
 
 2026-10-29新增客户端本机部署边界：Native仅负责本地IPC、资源校验与进程生命周期；`client_host_entry.py`负责解包与单进程锁；`client_host.py`负责macOS依赖/宿主适配；已有`InstallState`继续拥有安装检查点，业务设备创建复用现有protobuf接口。隔离的取消、路径完整性、许可证、外来容器拒绝与数据保留验证通过。全新双设备安装、跨平台supervisor、升级激活/回滚仍未通过，不能据此新增“全仓完全SOLID”或“四平台已可发行”的结论。
@@ -91,7 +93,7 @@ S01–S04 的复现、修复与回归可信度高。S07 是结构风险，S10 �
 
 ## English summary
 
-This repository-wide audit found and repaired inconsistent knowledge links, unsafe file-transfer transaction boundaries, duplicated media lifecycle ownership, and cancellation during stalled HTTP 429 responses. Tool declarations were separated from execution without changing their schema. Isolated database, backup/restore and crash-recovery suites passed. The media relay passed all 15 generated mutation tests and scored CRAP 1–8 with measured coverage. This is not a whole-repository SOLID certification: large UI/execution modules and broader architecture work remain. The 2026-10-29 follow-up closes Skill materialization recovery, shared-cluster restore protection and all seven strict Clippy findings; see [stability audit](release-stability-2026-10-29.md). No private user state was exported and no public repository was created.
+This repository-wide audit found and repaired inconsistent knowledge links, unsafe file-transfer transaction boundaries, duplicated media lifecycle ownership, and cancellation during stalled HTTP 429 responses. Tool declarations were separated from execution without changing their schema. Isolated database, backup/restore and crash-recovery suites passed. The media relay passed all 15 generated mutation tests and scored CRAP 1–8 with measured coverage. This is not a whole-repository SOLID certification: large UI/execution modules and broader architecture work remain. The 2026-10-29 follow-up closes Skill materialization recovery, shared-cluster restore protection and all seven strict Clippy findings; see [stability audit](release-stability-2026-10-29.md). No private user state was exported. That dated audit preceded public source publication; current publication and acceptance are tracked separately.
 
 ## Preview.2 installer ownership increment — 2026-10-29
 

@@ -2524,13 +2524,13 @@
     },
     {
       "path": "docs/public/distribution.en.md",
-      "size": 4002,
-      "sha256": "d0ca122a4e03ee06c9b2257a973d0ff6864dd3c00b5b7eb22fd58d6264dbe26f"
+      "size": 4622,
+      "sha256": "d03a3b06638e4dc5d2cfa3b0f8cb53b58b799915ca79c1178ead5ea008fd6677"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
-      "size": 5002,
-      "sha256": "0de4fe47eaec8b81e6abdfa1fbd52842eeadd464944bbfc41b6005af665d0202"
+      "size": 3866,
+      "sha256": "d92401556af08e53dc2c2c283355624987dd51d2abcd5c3e74568707ad15e1bd"
     },
     {
       "path": "docs/public/getting-started.en.md",
@@ -3304,8 +3304,8 @@
     },
     {
       "path": "docs/public/multiplatform-clients.md",
-      "size": 6990,
-      "sha256": "b37d05c58ce00b156b793b6029be7aa2710caa9053986dc8b480f21162e1633c"
+      "size": 7944,
+      "sha256": "d7b8701df349a3855c4fae5cdf60188ead0e92f3570d620a0ed51e3fbba63d06"
     },
     {
       "path": "docs/public/native-backports.md",
@@ -3394,23 +3394,23 @@
     },
     {
       "path": "docs/public/release-contract.en.md",
-      "size": 10231,
-      "sha256": "217f9bfab351bba2f4ee7da3b549219bd45d369888c7c72553c75503fc23c256"
+      "size": 10582,
+      "sha256": "07c0bfce54449c69a472197b46365ba47daede5a488b244bba71749f1bfcd34f"
     },
     {
       "path": "docs/public/release-contract.zh-CN.md",
-      "size": 10490,
-      "sha256": "7b974e73508ebf5d772507c597f0216478c5e60f49b42564b00e63470151eabb"
+      "size": 10797,
+      "sha256": "e389f27137f4e577b0867c568f3e80a88e7c2e939e87c8adca0cbdd6e06762e7"
     },
     {
       "path": "docs/public/release-roadmap.en.md",
-      "size": 4997,
-      "sha256": "6f75e68b9fefd8617d53ba0dc7f49a82826d072dec2faf19c6b782158230fcab"
+      "size": 5714,
+      "sha256": "9bb04a478c860bbac714ccc729346476dd3012ea4b3a62d3cb298f248ae7e91f"
     },
     {
       "path": "docs/public/release-roadmap.zh-CN.md",
-      "size": 6139,
-      "sha256": "9d110e60a0b5aeb100aa312290b0d471659f6601485b3e65d8f9278be5e7cf4b"
+      "size": 6496,
+      "sha256": "0a54fee0cb5cfc73a1bee2f7e0e816a6db4eeb8b7fcb71b81c6d4d621df9e2eb"
     },
     {
       "path": "docs/public/release-stability-2026-10-29.md",
@@ -3434,8 +3434,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 11734,
-      "sha256": "d8609a3dab28965007f7725b8c495852b1fb8eeb102fcf300a8c7482b4925652"
+      "size": 12773,
+      "sha256": "a82782ba8f95494111afc8e87fb02820c8ec84992e1fbf879dd714ad4e172c65"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3444,18 +3444,18 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 15825,
-      "sha256": "a813eb6b80d1a971975cafec54e0038e9db134e3beab69659f5b88e7f3df4ff6"
+      "size": 16238,
+      "sha256": "b0d372c6fbb01a4ed911ec759de916b62ae5c8ac45cce14adf79de2afde8dbea"
     },
     {
       "path": "docs/public/source-release.en.md",
-      "size": 4940,
-      "sha256": "a9cd8c69b3ef5323b4f0748e5dd73fc9c694a093dd8cf2f515d329a40c417a15"
+      "size": 4941,
+      "sha256": "8b33b12ebbee9115faace818528ddbc8c3c99f17a111d1b56796885bae596113"
     },
     {
       "path": "docs/public/source-release.zh-CN.md",
-      "size": 4763,
-      "sha256": "a47cd100f4f464f8eb32c436e52a73f3076c22bcf0df1bf9b1db4f4f03b23299"
+      "size": 4764,
+      "sha256": "5ca65eefc8f3cbc95ba94cebb2d26aefa4a5829a79b304eb69a0bbf60a8e27b6"
     },
     {
       "path": "docs/public/task-recovery.md",

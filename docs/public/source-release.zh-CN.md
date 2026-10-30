@@ -14,7 +14,7 @@ Next.js工作台、Rust执行引擎、Android桥接、Linux桌面配方、protob
 
 ## 从包启动
 
-服务器当前验证平台为macOS Apple Silicon；先安装Node 22+、Bun（项目自动安装）、Rust 1.88+、Python 3.11+、Java 17、Android命令行工具、Xcode命令行工具和Docker Desktop。默认新手机16GB，完整首次安装预留35GiB磁盘。
+服务器当前验证平台为macOS Apple Silicon；先安装Node 22+、Bun（项目自动安装）、Rust 1.96.0、Python 3.11+、Java 17、Android命令行工具、Xcode命令行工具和Docker Desktop。默认新手机16GB，完整首次安装预留35GiB磁盘。
 
 ```sh
 ./ai-phone doctor

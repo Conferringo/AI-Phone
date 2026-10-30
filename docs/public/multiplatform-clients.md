@@ -1,5 +1,11 @@
 # Multi-platform client evidence / 多平台客户端验收
 
+Current status (2026-10-30): source is public; complete installers are not available. Native CI has compiled macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64. Matching [web-component checks](runtime-bundles.md) now verify relocated desktop runtime bytes. This does not prove independent two-device hosting. Android hosting targets root/KVM devices. Non-macOS physical installation is waived and remains unverified. See [release status](release-status.md) and [current Actions](https://github.com/Conferringo/AI-Phone/actions).
+
+## Historical runtime checks — 2026-10-28
+
+The following records preserve the original preview's failures and runtime evidence. Those downloads were withdrawn; their tests are not complete-product acceptance. Later notices and host decisions are owned by the documents above.
+
 2026-10-28 · `0.1.0-preview.1` · Local previews only / 仅本地预览
 
 The client and server are separate deliverables. These installers open an existing local/LAN deployment; they contain no guest disks, server runtime, API keys, accounts, conversations or signing keys. Four client artifacts do **not** mean four complete server installers.
@@ -41,12 +47,12 @@ The DEB declares glibc2.39+, GTK3.24+ and WebKitGTK2.40+ prerequisites. The insp
 
 ## Distribution boundary / 发行边界
 
-All files remain local. Windows is unsigned; macOS lacks Developer ID signing/notarization; Android uses an isolated local preview certificate. The Android key/password remain in ignored `data/client-signing` and must never be uploaded. A production signing identity and upgrade migration from preview builds require separate preparation. SHA256 is integrity evidence, not publisher identity.
+At the dated review, artifacts remained local. Windows was unsigned; macOS lacks Developer ID signing/notarization; Android uses an isolated local preview certificate. The Android key/password remain in ignored `data/client-signing` and must never be uploaded. A production signing identity and upgrade migration from preview builds require separate preparation. SHA256 is integrity evidence, not publisher identity.
 
 Each artifact has a `.sha256` and `.manifest.json` containing architecture, signing/runtime limits, source-lock hashes and unpacked file hashes. Do not distribute the whole `dist` directory: it may also hold private local evidence or review trees. Release only individually approved artifacts after their gates pass.
 
 LAN HTTP also exposed direct `crypto.randomUUID()` calls in desktop controls, transfers, provisioning and registry creation. These now use the existing cryptographic fallback, with 1,000 unique action IDs covered by regression checks.
 
-The prepared native CI runs tests and builds on macOS/Windows/Linux and builds Android; it does not publish artifacts/releases. It has not run on GitHub. Remaining product gates include independent clean-host installation, long-duration host recovery, complete UI/language/media acceptance, 26 upstream notice-text gaps, platform signing and update activation/rollback. The current result is a multi-platform **client preview**, not a stable global release.
+The prepared native CI runs tests and builds on macOS/Windows/Linux and builds Android; it does not publish artifacts/releases. At this 2026-10-28 review it had not yet run on GitHub and 26 notice-text gaps remained; both facts are superseded by the current CI and notice inventory. Remaining product gates include complete payloads, clean-host installation, long-duration recovery, UI/language/media acceptance, full runtime redistribution, signing and update activation/rollback. The current result is a multi-platform **client preview**, not a stable global release.
 
 Android media note: one repeated-start test showed the desktop stream stalled while the phone stream remained live. Re-entering the workbench restored both streams. Diagnostic codes were added without frame/user content, but the original stall is not yet attributed to a proven cause; long-duration acceptance remains open. / Android复验曾出现仅电脑画面断流，重新进入后恢复；已加无内容诊断，但根因未充分证实，不把它写成已修复。

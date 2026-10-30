@@ -1,5 +1,7 @@
 # Release contract and gap audit
 
+> Historical design baseline (2026-10-28). Current complete-package requirements are maintained in [distribution requirements](preview-release.md), with [current acceptance](release-status.md) and the [roadmap](release-roadmap.en.md). The dated platform/publication/notice counts below describe the original review, not current downloads or support.
+
 [简体中文](release-contract.zh-CN.md) · 2026-10-28 · Requirements, not a claim of release readiness.
 
 ## Decision
