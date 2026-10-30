@@ -1818,6 +1818,11 @@
       "sha256": "0f8c389375cb3a841d7e8fba901725965547caeba753556d1f0d57a8238e1354"
     },
     {
+      "path": "apps/web/src/lib/copilot-input.ts",
+      "size": 7253,
+      "sha256": "271430dad0c8b8070a76048ef72a8fa2ae3147516b8188bd6c3ba1213170144d"
+    },
+    {
       "path": "apps/web/src/lib/device-defaults-server.ts",
       "size": 1148,
       "sha256": "d452fc427248dc4c4ded6a662f49fa2a893f5dcef13d0e0e406cdd8a243109a9"
@@ -2534,8 +2539,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 13293,
-      "sha256": "301dc34706295933de10b19394462567796f9430219d04d45a979c21577c4541"
+      "size": 16418,
+      "sha256": "381dbbb8a38517bd8cfbdad9c2e482449304d97c59bcd8a4dfeb05b773e7e43e"
     },
     {
       "path": "docs/public/core-retirement-2026-10-29.md",
@@ -3509,8 +3514,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5665,
-      "sha256": "e1f29744e2c91ebf82160098158ec5e28975970050b65e6d358814391e126de1"
+      "size": 5909,
+      "sha256": "17f9138ebed27a3784ed4b632635dc930808a3265029b730e5465d979fa3a879"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -4073,6 +4078,11 @@
       "sha256": "e3c7835e12064c8c95b5e81895a4bb7edd0d502b8b176a5cd589545fe681613d"
     },
     {
+      "path": "scripts/copilot-input.test.ts",
+      "size": 15061,
+      "sha256": "6dbe852a46abef384dbb6c76fe83b4636db810fb05bc6ed513c72d13531f55f7"
+    },
+    {
       "path": "scripts/database.py",
       "size": 10957,
       "sha256": "453fe2efb6bb3f65c1810d01cbe98ffc39681f18c0da4e2195268f551c21ffce"
@@ -4139,8 +4149,8 @@
     },
     {
       "path": "scripts/js_dependencies.py",
-      "size": 5925,
-      "sha256": "6779f0602ec4851dc88cf36422a842addcac164a1c23ab2c6936244829110dc1"
+      "size": 5941,
+      "sha256": "725fdc507d9fffe4cbe4bfe9b625feacc23e09b9275c4ca8caa3a0ef49e7d325"
     },
     {
       "path": "scripts/js_vendor.py",
@@ -4484,8 +4494,8 @@
     },
     {
       "path": "scripts/test_js_dependencies.py",
-      "size": 7312,
-      "sha256": "98beaecddcc2983fdbc0d058034e4c1f18e910d64b1a0c65f1b25eb0896f8756"
+      "size": 8513,
+      "sha256": "7f9e05552890f373025165cdfdf48361b2188753a3324b5955c60cd6c96bfdd3"
     },
     {
       "path": "scripts/test_js_vendor.py",

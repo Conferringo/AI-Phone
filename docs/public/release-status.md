@@ -24,7 +24,7 @@ The optional [portable installer tool component](engineering/installer-tools.md)
 
 [Private installation state](engineering/private-install-state.md) now separates checkpoint policy from platform file locks and private atomic writes. Windows native acceptance is tracked independently from its still-incomplete full host; a client build is not a two-device installation result.
 
-Copilot continuous voice is [specified](copilot-voice.md), not implemented: concurrent exploration, 1.5-second commits, corrections and spoken/guest-audio feedback remain upcoming development.
+Copilot has a [recorded-event input core](copilot-voice.md): audio-based endpointing, draft/correction revisions, stable handoff retries and bounded retention have local regression evidence. Continuous voice is not available yet; actual capture, speech providers, wire integration, UI and spoken/guest-audio feedback remain upcoming development. Copilot and exploration are designed to coexist, with spoken instructions taking priority.
 
 ---
 

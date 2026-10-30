@@ -1,5 +1,6 @@
 """Locked package resolution preserves aliases, cycles and private native resources."""
 import json
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -7,6 +8,23 @@ from unittest.mock import patch
 
 
 class DependencyTreeTests(unittest.TestCase):
+    def test_non_ascii_package_metadata_uses_utf8_on_a_legacy_windows_locale(self):
+        from js_dependencies import collect
+        description='\u0101 - 中文 - العربية - 日本語'
+        native_open=io.open
+        def windows_open(file, mode='r', buffering=-1, encoding=None, *args, **kwargs):
+            if 'b' not in mode and encoding in (None,'locale'):
+                encoding='cp1252'
+            return native_open(file,mode,buffering,encoding,*args,**kwargs)
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve();app=root/'app';app.mkdir()
+            (app/'package.json').write_bytes(json.dumps({'description':description,'dependencies':{'sample':'1'}},ensure_ascii=False).encode('utf-8'))
+            dependency=root/'node_modules/sample';dependency.mkdir(parents=True)
+            (dependency/'package.json').write_bytes(json.dumps({'name':'sample','version':'1','description':description},ensure_ascii=False).encode('utf-8'))
+            with patch('io.open',side_effect=windows_open):
+                graph=collect(root,['app'])
+            self.assertEqual(graph.packages[dependency]['description'],description)
+
     def test_development_templates_are_not_runtime_environment_files(self):
         from js_dependencies import package_files
         with tempfile.TemporaryDirectory() as temporary:

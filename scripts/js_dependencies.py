@@ -13,7 +13,7 @@ def package_data(folder):
     path = folder / 'package.json'
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 1024**2:
         raise ValueError('Invalid dependency package metadata')
-    value = json.loads(path.read_text())
+    value = json.loads(path.read_text(encoding='utf-8'))
     if not isinstance(value, dict):
         raise ValueError('Invalid dependency package metadata')
     return value
