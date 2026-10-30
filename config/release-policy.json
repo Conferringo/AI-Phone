@@ -18,7 +18,7 @@
     "workflow_remote_run": true,
     "known_visual_acceptance_pending": [
       "platform-media-input",
-      "eight-language-window-matrix",
+      "ten-language-window-matrix",
       "mobile-keyboard-safe-area"
     ],
     "remote_review_authorized": true,
@@ -29,6 +29,11 @@
       "date": "2026-10-29",
       "scope": "source-and-client-preview",
       "decision": "Maintainer requests publication with untested platforms documented and community issue feedback. Not a passed installation check."
+    },
+    "non_macos_physical_installation": {
+      "date": "2026-10-30",
+      "scope": "complete-client-builds",
+      "decision": "Non-macOS physical installation tests are not required by the maintainer. Target compilation, payload inspection, audits and complete runtime contents remain required; untested runtime behavior is disclosed."
     }
   },
   "binary_preview": {

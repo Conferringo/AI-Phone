@@ -21,6 +21,7 @@
 
 - [架构 · 中文](architecture.zh-CN.md) / [English](architecture.en.md)
 - [代码与用户目录、升级 · 中文](distribution.zh-CN.md) / [English](distribution.en.md)
+- [预编译运行组件 / Prebuilt runtime bundles](runtime-bundles.md)
 - [数据库权限 / Database roles](database-roles.md)
 - [界面规范 / UI system](ui-system.md)
 - [贡献指南 / Contributing](../../CONTRIBUTING.md)

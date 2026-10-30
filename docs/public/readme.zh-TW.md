@@ -4,9 +4,9 @@
 
 ## 下載與現況
 
-目前沒有完整產品安裝包。不完整的預覽下載已撤回，儲存庫提供開發中原始碼。下一次發行必須自帶乾淨的 Android/Linux 系統映像、模擬器及預先建置的服務。使用者應能在客戶端配置裝置與模型後直接使用，不需要自行尋找映像、安裝 SDK 或編譯伺服器。
+完整安裝包尚未提供下載。安裝流程為：裝置資源 → 模型 → 工作台。完整套件包含 Android/Linux 基礎系統、模擬器及預先建置服務，由客戶端完成環境設定，不需要使用者尋找映像或編譯後端。
 
-目標平台為 macOS Apple Silicon、Windows x64、Linux x64/ARM64、Android ARM64。macOS 與 Linux x64 已有實驗性開發引導；Windows 獨立宿主和 Linux ARM64 的完整鏈尚未完成。Android 宿主優先支援 root 且開放 KVM 的裝置，普通未 root APK 不算獨立宿主。各平台完整離線包均未完成驗收。
+建置目標包括 macOS Apple Silicon、Windows x64、Linux x64/ARM64 與 Android ARM64。Android 宿主需要 root 與 KVM；各平台套件可用性與實測範圍見發行狀態。
 
 ## 功能與情境
 
@@ -21,7 +21,7 @@ AI Phone 將真實 Android 客體、輕量 Linux 桌面及 Agent 放在同一工
 
 ## 架構與資料
 
-`apps/web`：Next.js App Router、React、Tailwind、shadcn；`apps/client`：Tauri 2；`crates`：Rust/Axum/Tokio；`packages/protocol`：protobuf。PostgreSQL/SQLx 保存狀態，Redis 用於臨時協調。Bun/Cargo 為開發工具，Compose 承載服務。`infra`、`scripts`、`skills`、`config` 存放執行環境和內建能力。
+`apps/web`：Next.js App Router、React、Tailwind、shadcn；`apps/client`：Tauri 2；`crates`：Rust/Axum/Tokio；`packages/protocol`：protobuf。PostgreSQL/SQLx 保存狀態，Redis 預留為選用快取，非任務佇列。Bun/Cargo 為開發工具，Compose 承載服務。`infra`、`scripts`、`skills`、`config` 存放執行環境和內建能力。
 
 程式碼與使用者狀態分離。裝置磁碟、帳號、聊天、附件、金鑰及私有證據不進入公開儲存庫。更新應使用版本化產物、備份、遷移與回復，不直接在使用者資料上執行 `git pull`。
 

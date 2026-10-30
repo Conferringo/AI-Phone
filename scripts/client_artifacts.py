@@ -95,6 +95,7 @@ def inspect_windows(path, root=ROOT):
 
 
 def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runtime='pending'):
+    from prepare_client_host import payload_components
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     path.with_suffix(path.suffix+'.sha256').write_text(digest+'  '+path.name+'\n')
     manifest = {'version': json.loads((root/'config/release-policy.json').read_text())['version'],
@@ -105,6 +106,7 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
         'source_locks': {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
                          for name in ['bun.lock', 'apps/client/src-tauri/Cargo.lock']},
         'source_payload_included': True,
+        'prebuilt_components': payload_components(root), 'complete_device_bundle': False,
         'local_bootstrap': {'implemented_on': sorted(json.loads((root/'config/host-bootstrap.json').read_text())['hosts']), 'fresh_install_acceptance': 'pending', 'user_state_bundled': False},
         'payload': inspection}
     path.with_suffix(path.suffix+'.manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')

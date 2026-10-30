@@ -43,7 +43,20 @@ jobs:
           cargo fmt --all --check
           cargo test --workspace --locked
       - name: Production web build
-        run: ./scripts/bun run build
+        run: |
+          python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"
+          ./scripts/bun run build
+      - name: Isolated prebuilt web payload and cold start
+        run: python3 scripts/prepare_client_host.py --with-web-runtime --verify-web-runtime
+      - name: Remove build-only privacy sentinel
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('data/assistant/token')
+          if path.is_file() and path.read_text()=='build-only-private-path-sentinel':
+              path.unlink()
+          PY
       - name: Isolated PostgreSQL integration
         run: |
           docker run -d --name aiphone-ci-pg --label dev.aiphone.test=permissions --memory 512m -p 127.0.0.1:55500:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73

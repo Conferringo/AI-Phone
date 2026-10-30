@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 6268,
-      "sha256": "48b1606395d289a23669503e123bb525906f22b61340eb58f82f5855feaae590"
+      "size": 6306,
+      "sha256": "dd9e0b6a23455e4bb76a39f4d94535a36e3ccf253fc3411ded3baec9f0a5facf"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -59,13 +59,13 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 2133,
-      "sha256": "dfdadeefd9e88fcb80fdca9352acdd447909872aedc564a8d0cd35c35d7e6b4f"
+      "size": 2793,
+      "sha256": "a9e3a6c46b63e9ce99cece1a7ffac55b9c1c4c090b5820049516ea985e3e8cd9"
     },
     {
       "path": ".gitignore",
-      "size": 709,
-      "sha256": "1fd505e208dd1beb4240ec1f6a45874180cc4597a719087518f9f5111c945a6f"
+      "size": 719,
+      "sha256": "3cdc25648c8d65d32dede3b1cedada1519753f90bdece8c58a3416ce30bcbf61"
     },
     {
       "path": ".puppeteerrc.cjs",
@@ -114,13 +114,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7590,
-      "sha256": "5de7be0bbd452eced247c9c28369f23cdb032c25fe86e6d42f19da034d8e3a34"
+      "size": 7430,
+      "sha256": "a2a60bbf0d48ca697f7e3b636f13421df89dbadb707cb9c7c532ad2f8e44c06b"
     },
     {
       "path": "README.md",
-      "size": 13031,
-      "sha256": "d8baa8ae419dcd0cd7773c49c9affe5df50bf017e11a6a53cf083ff7a62d5873"
+      "size": 12822,
+      "sha256": "814bb1e897adf672a495c2aa910b61f367c705626837b9551beb55bd18abe49e"
     },
     {
       "path": "SECURITY.md",
@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 10087,
-      "sha256": "bf7e7099e935d8adeead9655f2f792bf4785f8eb4267946309c2ce3ca9088677"
+      "size": 10772,
+      "sha256": "fae59a80e6eccffe55b7e4b75c4d782ecf6c41ab4fd4f4b86ae779602091f13b"
     },
     {
       "path": "ai-phone",
@@ -1424,8 +1424,8 @@
     },
     {
       "path": "apps/web/next.config.ts",
-      "size": 618,
-      "sha256": "d9e6274c59efca8f0ac3544be0825549a4a9e315ad5149aa73020fb522cf3246"
+      "size": 874,
+      "sha256": "23e1aae37fe80de095d6ff05e9e06268a35bfa6bcfdaf3d010d4b3287a16a73f"
     },
     {
       "path": "apps/web/package.json",
@@ -2029,8 +2029,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2140,
-      "sha256": "629b48ff4e3a33854c31176fbeaabcba4e98d23b83625a76c0c58d00114e1c59"
+      "size": 2483,
+      "sha256": "2ab67e2c5ae88c87a60f9084933db13f4a53a6145d32f5cf22c1e92c673c5471"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2544,8 +2544,8 @@
     },
     {
       "path": "docs/public/index.md",
-      "size": 2769,
-      "sha256": "e61afcd8fa7b9a13cdbde8f64e77cf8a9441e8b6f814816a01f507a422452a97"
+      "size": 2842,
+      "sha256": "973921ff237538297f142550c396a089c8712b392509c3fffd87b83c0f64ce83"
     },
     {
       "path": "docs/public/integrated-hosts.md",
@@ -3319,8 +3319,8 @@
     },
     {
       "path": "docs/public/native-client.en.md",
-      "size": 2136,
-      "sha256": "4e8903e912cb8873314b90ca3a70d259cb707346018f40b89f2a32db0d422318"
+      "size": 2337,
+      "sha256": "76175922bb1244015603d0d417e4d95e243d64702d9505410c61e982494b72b9"
     },
     {
       "path": "docs/public/native-client.zh-CN.md",
@@ -3349,43 +3349,43 @@
     },
     {
       "path": "docs/public/readme.ar.md",
-      "size": 5375,
-      "sha256": "fc53deece36f86e6e9ae3b7e2899344ab447b30157c3b00662522f74f6419c9b"
+      "size": 5057,
+      "sha256": "1e607303424a3f8659d3c3b0862db9e98768090fafc0e3e2730791611f425d95"
     },
     {
       "path": "docs/public/readme.de.md",
-      "size": 4053,
-      "sha256": "b2158f974290c6535a4aac35c9631a07275302df6d04c9364dba29123113fa09"
+      "size": 3832,
+      "sha256": "aac6b8b97ffa224fa2e91b8e87d2ce28abfcef1230ed830a662aede74bc70675"
     },
     {
       "path": "docs/public/readme.es.md",
-      "size": 3989,
-      "sha256": "b2fb323a125ed056deec1420d3580286c94e782557fb106ee9e7753a202accc6"
+      "size": 3803,
+      "sha256": "e65da98d797d37c69d03297f498802bbc8ef9fb94c24967658c619cabced0414"
     },
     {
       "path": "docs/public/readme.fr.md",
-      "size": 4253,
-      "sha256": "fde0fc5021759e5c0fc2b11fefd68b67a49aaff1ebd52c9404f7197be3b7528b"
+      "size": 4070,
+      "sha256": "f7df603f2bc8d8709d421b08d69f8e242d1ad8ba21f1d812456a7d60980598fe"
     },
     {
       "path": "docs/public/readme.ja.md",
-      "size": 4233,
-      "sha256": "122e964ee8757270c29e107518ce311c1b9d3df4f2fd19992897b97ee07240fa"
+      "size": 4014,
+      "sha256": "30b25348f08c90d419fe9982ee30e35abf74e31a14a8488e39bfd31a1bb0f0a8"
     },
     {
       "path": "docs/public/readme.ko.md",
-      "size": 4248,
-      "sha256": "85f46140160c06c7b5b36a09c78884419b4c5735f5d6ad3935404c7c6602db3b"
+      "size": 3972,
+      "sha256": "687f8f79fb58518efdfe20845a8dfa62b56961324bd5c80a96dc76ee84012616"
     },
     {
       "path": "docs/public/readme.ru.md",
-      "size": 6746,
-      "sha256": "fa4815f2324b60bc71851b8b5fb4fac270eb9a9f93527a74212f766ffab55b97"
+      "size": 6225,
+      "sha256": "41167af18787a25388fa81d1b38142b979427375c407f670a134b77de2ba0a5f"
     },
     {
       "path": "docs/public/readme.zh-TW.md",
-      "size": 3344,
-      "sha256": "18ebcfb80c4561c4550fba04360290f693923467e4692f4c9d32efc02950ab6c"
+      "size": 3125,
+      "sha256": "7525432c9a54474fd0f28798c32de0b56381726e243604f98409cba14fbc5eb6"
     },
     {
       "path": "docs/public/release-audit-2026-10-28.md",
@@ -3419,8 +3419,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 2807,
-      "sha256": "ec7f953e0351a61c044df818c834b4eb51caea932f608f561d1ccf80232b03a8"
+      "size": 3192,
+      "sha256": "ffe95c3b7c8c2c5ed136e9d66c11024905f3bfd859f60b210059af705d3686b0"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3433,14 +3433,19 @@
       "sha256": "0a9db4160edc2b6659c16f16b3ff3889fb135c56625b392e9dad9ea8e53acb27"
     },
     {
+      "path": "docs/public/runtime-bundles.md",
+      "size": 9646,
+      "sha256": "1242b7f1b59562fa56c226ba831dbf2f7516345f77ee6148948ca4d77bc583de"
+    },
+    {
       "path": "docs/public/simulated-location.md",
       "size": 3523,
       "sha256": "fe01c24c885d0a5091a90ece1477cec8a792bfbde9423e655a3a8310ccd5df38"
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 15481,
-      "sha256": "e6d08e568eafaa64625c49f2cc6c416a81f07abbdfb25e473e52976e7edec2eb"
+      "size": 15805,
+      "sha256": "f8c8afee00e58dfe35d85adb88b45199c66fdd563be9b25f7a3e13082f40a8e6"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3859,8 +3864,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 7353,
-      "sha256": "66b457cfcf800b4e7037aa0835e82c186dbc3f92b6b013bd0f76ed8d8049554a"
+      "size": 8366,
+      "sha256": "575d540a69d741b9b9d2cec70a2cb8670060d2fd5235895ad66f9aae5a008ad8"
     },
     {
       "path": "scripts/bun",
@@ -3881,6 +3886,11 @@
       "path": "scripts/chat-snapshot.test.ts",
       "size": 1410,
       "sha256": "af1458bba355cf3e83315c78393a0b1905665594eb9a2b72671f9187519e69fd"
+    },
+    {
+      "path": "scripts/check_prebuilt_web.py",
+      "size": 4660,
+      "sha256": "6c7d7e5b1f1051562b72f0613938bf3739f54d60aed62ad38cfbb21e2d3851c4"
     },
     {
       "path": "scripts/check_source.py",
@@ -3914,8 +3924,8 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6172,
-      "sha256": "901b817575535c740d8d4ece62b70e16a8bfb65c86ede65621f6e3c3dedf85ff"
+      "size": 6317,
+      "sha256": "96fa67605b3294bde950bdf2d3113075ec5d151e3ee1a17c811976c377a940ca"
     },
     {
       "path": "scripts/client_host.py",
@@ -3924,8 +3934,8 @@
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 5672,
-      "sha256": "80d4489c3dec351421d2940e83a4723c97fdd2986d0ee9ad48f71a88a14efa29"
+      "size": 11432,
+      "sha256": "53272538c5a8488998e90590086fea9a351d454cd0c5f61b7a20e2b9ed2ad047"
     },
     {
       "path": "scripts/database.py",
@@ -3999,8 +4009,8 @@
     },
     {
       "path": "scripts/linux_host.py",
-      "size": 6512,
-      "sha256": "78165d6c84263a1aa70dee529a9ff40a0af49ea74cf724fbcccf4e4b9e206018"
+      "size": 6727,
+      "sha256": "4dccbdad75fecf737b97e74758443bb94761e38646c507b2203b5b15dd44a52b"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -4089,8 +4099,13 @@
     },
     {
       "path": "scripts/phone-web-start.sh",
-      "size": 1454,
-      "sha256": "ded02d63a5a15eb32b1eda6f7d0ad83e2a51b779b41c5914dbdfa79374950fdc"
+      "size": 1694,
+      "sha256": "a1d81b11afa02bd86365bc515bde4979c710fec229cfa383cccb19d507df30ef"
+    },
+    {
+      "path": "scripts/prebuilt_web.py",
+      "size": 8406,
+      "sha256": "b1f36136538b697d5ecabf24aa3ce4471f5d6b872680129938ed0724da7983a7"
     },
     {
       "path": "scripts/prepare_android_client.py",
@@ -4099,8 +4114,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 1504,
-      "sha256": "1971b3647f096d4451d1e60a33b5fd8a82ae5717e5062d8a8eefe0b4c8fa1a85"
+      "size": 3143,
+      "sha256": "9b78d7b8d7359b8c26967511d66e33b0b4c423ec58704512f4c6bd43365aa156"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -4194,8 +4209,8 @@
     },
     {
       "path": "scripts/test_client_payload.py",
-      "size": 4195,
-      "sha256": "edb9645b0e1fe02dc151cd66573445be148ee1af5b894a6f9814120df9fa0f51"
+      "size": 6083,
+      "sha256": "b238e471d9db90c93f2bf1583f074baf68592810797cec2fc021a9af92890947"
     },
     {
       "path": "scripts/test_database.py",
@@ -4253,6 +4268,11 @@
       "sha256": "afd3c561e722da0a8c1d6696062cbd53f8762fd616b9692a62c910010f21bba4"
     },
     {
+      "path": "scripts/test_prebuilt_web.py",
+      "size": 5685,
+      "sha256": "1d452073a1cba4cc99ad452e1779a11a49399c608d002ed55abb534ebbd7d747"
+    },
+    {
       "path": "scripts/test_preview_notices.py",
       "size": 1531,
       "sha256": "5efdb36155f7c092bd93d8a773af150677eb1376adfc3aecb2d7746baeadf769"
@@ -4266,6 +4286,11 @@
       "path": "scripts/test_release_portability.py",
       "size": 2416,
       "sha256": "a14069194a87f501c13425ce784ab1543c12ef606be29bda1b5ed0ede97413db"
+    },
+    {
+      "path": "scripts/test_runtime_integrity.py",
+      "size": 7764,
+      "sha256": "991769b609dc77a1ef47bd04a1f8654de4311dec3f692935e4967fda9eb2cedd"
     },
     {
       "path": "scripts/test_sdk_entrypoints.py",

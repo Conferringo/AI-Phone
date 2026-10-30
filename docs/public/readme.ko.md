@@ -4,9 +4,9 @@
 
 ## 다운로드와 현황
 
-완성된 제품 설치 패키지는 아직 없습니다. 불완전한 미리보기 배포는 철회했습니다. 이 저장소는 개발 중인 소스입니다. 다음 배포는 깨끗한 Android/Linux 이미지, 에뮬레이터와 미리 빌드한 서비스를 포함하여 사용자가 클라이언트에서 기기와 모델을 설정하고 바로 사용하는 것을 목표로 합니다. 이미지 검색, SDK 설치, 서버 수동 빌드를 사용자에게 요구하지 않습니다.
+완전한 설치 패키지는 아직 다운로드할 수 없습니다. 초기 설정은 기기 리소스 → 모델 → 워크벤치 순서입니다. 완전한 패키지는 Android/Linux 기본 시스템, 에뮬레이터와 사전 빌드 서비스를 포함하며 클라이언트에서 환경을 구성합니다. 사용자가 이미지를 찾거나 백엔드를 컴파일할 필요가 없습니다.
 
-대상은 macOS Apple Silicon, Windows x64, Linux x64/ARM64, Android ARM64입니다. macOS와 Linux x64에는 실험적인 개발용 설치 경로가 있습니다. Windows 독립 호스트와 Linux ARM64의 완전한 경로는 미완성입니다. Android 호스트는 root와 사용 가능한 KVM이 필요하며 일반 비루팅 APK는 독립 호스트로 지원하지 않습니다. 어느 플랫폼도 완전한 독립 패키지 검증을 마치지 않았습니다.
+빌드 대상은 macOS Apple Silicon, Windows x64, Linux x64/ARM64, Android ARM64입니다. Android 호스트에는 root와 KVM이 필요합니다. 패키지 제공 상태와 실기기 검증 범위는 릴리스 상태를 참조하세요.
 
 ## 기능과 사용 시나리오
 
@@ -21,7 +21,7 @@
 
 ## 기술과 데이터
 
-`apps/web`: Next.js App Router, React, Tailwind, shadcn. `apps/client`: Tauri 2. `crates`: Rust/Axum/Tokio. `packages/protocol`: protobuf. PostgreSQL/SQLx는 상태를 저장하고 Redis는 임시 조정에 사용합니다. Bun/Cargo로 개발하고 Compose로 서비스를 실행합니다. `infra`, `scripts`, `skills`, `config`에 실행 환경과 내장 기능이 있습니다.
+`apps/web`: Next.js App Router, React, Tailwind, shadcn. `apps/client`: Tauri 2. `crates`: Rust/Axum/Tokio. `packages/protocol`: protobuf. PostgreSQL/SQLx는 상태를 저장하고 Redis는 선택적 캐시용으로 예약되어 있으며 작업 큐가 아닙니다. Bun/Cargo로 개발하고 Compose로 서비스를 실행합니다. `infra`, `scripts`, `skills`, `config`에 실행 환경과 내장 기능이 있습니다.
 
 코드와 사용자 상태는 분리됩니다. 기기 디스크, 계정, 대화, 첨부와 키는 공개하지 않습니다. 업데이트는 버전별 배포물, 백업, 마이그레이션과 롤백을 사용해야 하며 사용자 데이터 위에서 직접 `git pull`하지 않습니다.
 

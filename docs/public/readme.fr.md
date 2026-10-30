@@ -4,9 +4,9 @@
 
 ## Téléchargements et état
 
-Aucun installateur complet du produit n’est disponible. Les aperçus incomplets ont été retirés. Ce dépôt contient du code en développement. La prochaine distribution doit embarquer les images Android/Linux propres, l’émulateur et les services précompilés. L’utilisateur doit pouvoir configurer appareils et modèle dans le client sans rechercher d’image, installer de SDK ni compiler le serveur.
+Les installateurs complets ne sont pas encore disponibles. La configuration suit le parcours ressources des appareils → modèle → espace de travail. Un paquet complet contient les systèmes Android/Linux, l’émulateur et les services précompilés. Le client prépare l’environnement ; l’utilisateur n’a pas à chercher des images ni à compiler un serveur.
 
-Plateformes visées : macOS Apple Silicon, Windows x64, Linux x64/ARM64 et Android ARM64. macOS et Linux x64 disposent de chaînes expérimentales de développement. L’hôte Windows autonome et la chaîne Linux ARM64 complète restent à terminer. Android exige root et KVM disponible ; un APK ordinaire sans root n’est pas un hôte autonome pris en charge. Aucun paquet autonome complet n’a encore été validé.
+Les cibles de compilation sont macOS Apple Silicon, Windows x64, Linux x64/ARM64 et Android ARM64. Un hôte Android nécessite root et KVM. La disponibilité des paquets et la portée des vérifications figurent dans l’état de publication.
 
 ## Fonctions et scénarios
 
@@ -21,7 +21,7 @@ Les actions sont liées à une observation, un appareil, une tâche, une époque
 
 ## Architecture et données
 
-`apps/web` : Next.js App Router, React, Tailwind, shadcn. `apps/client` : Tauri 2. `crates` : Rust/Axum/Tokio. `packages/protocol` : protobuf. PostgreSQL/SQLx conserve l’état ; Redis assure une coordination temporaire. Bun et Cargo servent au développement, Compose aux services. `infra`, `scripts`, `skills`, `config` regroupent exécution et capacités intégrées.
+`apps/web` : Next.js App Router, React, Tailwind, shadcn. `apps/client` : Tauri 2. `crates` : Rust/Axum/Tokio. `packages/protocol` : protobuf. PostgreSQL/SQLx conserve l’état ; Redis est réservé au cache optionnel et ne constitue pas la file des tâches. Bun et Cargo servent au développement, Compose aux services. `infra`, `scripts`, `skills`, `config` regroupent exécution et capacités intégrées.
 
 Code et données utilisateur sont séparés. Disques, comptes, conversations, pièces jointes et clés ne sont pas publiés. Les mises à jour doivent employer des artefacts versionnés, sauvegardes, migrations et retours arrière, sans `git pull` directement sur les données utilisateur.
 

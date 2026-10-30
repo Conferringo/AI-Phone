@@ -32,6 +32,9 @@ def build_macos():
     destination.with_suffix('.dmg.sha256').write_text(digest+'  '+destination.name+'\n')
     manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'server_included':False,'remote_upload':False,'server_requirement':'An already configured local/LAN deployment','source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
     manifest['source_payload_included']=True
+    from prepare_client_host import payload_components
+    manifest['prebuilt_components']=payload_components(ROOT)
+    manifest['complete_device_bundle']=False
     manifest['local_bootstrap']={'implemented_on':sorted(json.loads((ROOT/'config/host-bootstrap.json').read_text())['hosts']),'fresh_install_acceptance':'pending','user_state_bundled':False}
     manifest['server_requirement']='Client-managed local source deployment, or an existing local/LAN deployment'
     manifest['bundle']=inspected
@@ -96,11 +99,21 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--platform',choices=['macos','windows','linux','android'],default='macos')
     parser.add_argument('--package-only',action='store_true',help='Inspect and package an existing build; does not claim it is current')
+    parser.add_argument('--with-web-runtime',action='store_true',help='Include a matching prebuilt standalone web service and pinned Bun; other full-device components remain required')
     args=parser.parse_args()
     from check_source import check
     check(ROOT)
     from prepare_client_host import prepare
-    prepare(ROOT)
+    if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
+    if args.with_web_runtime:
+        from bootstrap_bun import bun_path
+        bun=bun_path(ROOT)
+        build_env={**os.environ,'PATH':str(bun.parent)+os.pathsep+os.environ.get('PATH','')}
+        subprocess.run([str(bun),'run','build'],cwd=ROOT,env=build_env,check=True)
+    prepare(ROOT,with_web_runtime=args.with_web_runtime)
+    if args.with_web_runtime:
+        from prepare_client_host import verify_prepared_web
+        print(json.dumps({'prebuilt_web':verify_prepared_web(ROOT)}))
     notice_manifest(ROOT)
     if subprocess.check_output(['rustc','--version'],text=True).split()[1]!='1.96.0':
         raise ValueError('Build preview clients with Rust 1.96.0; review runtime notices before changing toolchains')

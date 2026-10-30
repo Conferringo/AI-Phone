@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: path.resolve(__dirname, '../..'),
+  outputFileTracingExcludes: {
+    '/*': [
+      '../../data/**/*', '../../user/**/*', '../../.env', '../../.env.*', './.env*',
+    ],
+  },
+  images: { unoptimized: true },
   turbopack: { root: path.resolve(__dirname, "../..") },
   poweredByHeader: false,
   transpilePackages: ["@ai-phone/protocol"],

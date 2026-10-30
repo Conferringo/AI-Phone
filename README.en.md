@@ -2,24 +2,26 @@
 
 English · [简体中文](README.md#简体中文) · [繁體中文](docs/public/readme.zh-TW.md) · [日本語](docs/public/readme.ja.md) · [한국어](docs/public/readme.ko.md) · [Deutsch](docs/public/readme.de.md) · [Français](docs/public/readme.fr.md) · [Español](docs/public/readme.es.md) · [Русский](docs/public/readme.ru.md) · [العربية](docs/public/readme.ar.md)
 
-Apache-2.0 · **Development — distribution in preparation**
+An Android phone and a Linux desktop for your AI agents.
+
+Apache-2.0 · Local deployment · Ten interface languages
 
 ## Downloads
 
-There is currently **no product installer available**. Incomplete preview downloads have been withdrawn. This repository contains development source; successful client compilation is not a complete deployment.
+**Complete installers are not available yet.** Package availability and supported host configurations are listed below. Source code, architecture and configuration guides are available in this repository.
 
-The next distribution must include the matching Android/Linux system images, emulator and prebuilt runtime components. Users should configure device resources and a model in the client, then start using their devices. They should not have to find images, install an SDK, compile services or manually connect to a separately deployed backend.
+Installation flow: **device resources → model → workbench**. A complete package includes matched Android/Linux system images, emulator and prebuilt services. Device creation and runtime setup happen inside the client; users do not prepare an SDK or compile a backend.
 
-| Target | Required distribution | Current state |
+| Platform | Package | Availability |
 |---|---|---|
-| macOS Apple Silicon | Complete local device bundle and client | Integrated runtime/bundle acceptance in progress |
-| Windows x64 | Complete local device bundle and client | Native phone/backend integration unfinished |
-| Linux x64 | Complete local device bundle and client | Managed runtime under development; complete bundle unfinished |
-| Android ARM64 | Root/KVM host and matching local device bundle | Privileged runtime/image integration unfinished |
+| macOS Apple Silicon | Desktop application with local device runtime | Preparing the complete package |
+| Windows x64 | Desktop application with local device runtime | Host integration in progress |
+| Linux x64 | Desktop application with local device runtime | Preparing the complete package |
+| Android ARM64 | Root/KVM application with local device runtime | Privileged runtime integration in progress |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
-Source setup commands in the development guides are for contributors. They are not the intended product installation experience. Device disks, accounts, conversations, attachments and secrets never belong in a distributable image.
+For source builds, see the contributor guides. Distribution images contain clean system baselines; device data, accounts, conversations, attachments and credentials stay in the user directory.
 
 ## Technical overview
 
@@ -46,7 +48,7 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 | Workbench | Next.js App Router/Turbopack, React, Tailwind, shadcn/Radix | `apps/web` |
 | Native client | Tauri 2, managed macOS setup + local/LAN connection | `apps/client` |
 | Agent/device services | Rust, Axum, Tokio | `crates` |
-| Protocol/state | protobuf, PostgreSQL/SQLx; Redis for temporary coordination | `packages/protocol`, `compose.yaml` |
+| Protocol/state | protobuf, PostgreSQL/SQLx; Redis reserved for optional caching | `packages/protocol`, `compose.yaml` |
 | Runtime/images | Native ARM64 Android Emulator, Docker Compose Linux | `infra`, `scripts` |
 | Reusable capabilities | Skills, templates, version/provenance manifests | `skills`, `config` |
 | Guides and evidence | Setup, architecture, privacy, audits, release scope | `docs/public` |
@@ -73,7 +75,7 @@ Original code uses [Apache-2.0](LICENSE). Dependencies, SDKs, guest applications
 
 See [CONTRIBUTING](CONTRIBUTING.md) for development. Business APIs use protobuf; tests must be isolated and user state or live credentials must never be uploaded.
 
-The maintainer elected to publish this experimental source preview without waiting for separate-device installation acceptance. Untested platforms remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data. Binary release notices remain a separate requirement.
+Platform build and runtime evidence is documented in the compatibility matrix. Non-macOS physical installation tests are not required for this release scope and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
 
 ---
 

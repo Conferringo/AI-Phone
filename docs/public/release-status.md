@@ -16,6 +16,8 @@ The required user experience is: install the distribution, configure phone/compu
 
 `config/release-policy.json` is the promotion gate owner. Binary publication is disabled and `self_contained_device_bundle` is false. A prior waiver of physical installer tests does not waive complete package contents or redistribution requirements. Source CI and client builds continue as development checks; they are not downloadable product releases.
 
+The [prebuilt web component](runtime-bundles.md) now embeds Next standalone and the matching pinned Bun, with archive integrity checks and isolated HTTP asset verification. A macOS client containing that component was built locally. This removes the end-user web-build step only; guest images, emulator, other prebuilt services and complete host integration remain distribution work.
+
 [Thirteen model presets and local WhatsApp QR](model-and-channel-setup.md) are implemented with isolated protocol/transport fixtures and real QR-bootstrap evidence. Paid-provider and WhatsApp account-level acceptance remain pending. Channel certification, long-running recovery, signed updates and full UI/language/media acceptance remain open. See [SOLID audit](solid-audit.md), [compatibility](compatibility.md), [bundle requirements](preview-release.md) and [database recovery](backup-restore.en.md).
 
 ---

@@ -4,9 +4,9 @@
 
 ## ダウンロードと現状
 
-完成した製品インストーラーはまだありません。不完全なプレビュー配布は撤回しました。このリポジトリは開発中のソースです。次の配布にはクリーンなAndroid/Linuxイメージ、エミュレーター、ビルド済みサービスを同梱し、利用者がクライアント内で機器とモデルを設定して使える形を目指します。イメージの探索、SDKの準備、サーバーの手動ビルドを利用者に求めるものではありません。
+完全なインストーラーはまだ公開していません。初期設定は「デバイスのリソース → モデル → ワークベンチ」の順です。完全パッケージには Android/Linux の基本システム、エミュレーター、ビルド済みサービスを含め、クライアント内で環境を構成します。利用者によるイメージ探しやバックエンドのコンパイルは不要です。
 
-対象はmacOS Apple Silicon、Windows x64、Linux x64/ARM64、Android ARM64。macOSとLinux x64には実験的な開発用導入経路があります。Windows単独ホストとLinux ARM64の完全な導入経路は未完成です。Androidホストはrootと利用可能なKVMが前提で、通常の非root APKは対象外です。完全な自己完結パッケージは、どのプラットフォームも検証完了していません。
+ビルド対象は macOS Apple Silicon、Windows x64、Linux x64/ARM64、Android ARM64 です。Android ホストには root と KVM が必要です。パッケージの提供状況と実機検証範囲はリリース状況を参照してください。
 
 ## 機能と利用例
 
@@ -21,7 +21,7 @@
 
 ## 技術とデータ
 
-`apps/web`はNext.js App Router、React、Tailwind、shadcn、`apps/client`はTauri 2、`crates`はRust/Axum/Tokio、`packages/protocol`はprotobufです。PostgreSQL/SQLxが状態を保存し、Redisは一時調整に使用します。開発はBun/Cargo、サービスはCompose。`infra`、`scripts`、`skills`、`config`に実行環境と組み込み能力を配置します。
+`apps/web`はNext.js App Router、React、Tailwind、shadcn、`apps/client`はTauri 2、`crates`はRust/Axum/Tokio、`packages/protocol`はprotobufです。PostgreSQL/SQLxが状態を保存し、Redisは任意キャッシュ用の予約構成であり、タスクキューではありません。開発はBun/Cargo、サービスはCompose。`infra`、`scripts`、`skills`、`config`に実行環境と組み込み能力を配置します。
 
 ソースと利用者データは分離します。機器ディスク、アカウント、会話、添付、鍵は公開しません。更新は版管理された配布物、バックアップ、移行、ロールバックを使い、利用者データ上での直接の`git pull`を更新方式にしません。
 
