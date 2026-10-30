@@ -100,6 +100,10 @@ jobs:
         run: |
           python -m unittest discover -s scripts -p test_native_backports.py
           python -m unittest discover -s scripts -p test_release_portability.py
+      - name: Relocated dependency and archive regressions
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web
       - name: Build and inspect local preview
         run: python scripts/build_client.py --platform ${{ matrix.platform }} --with-web-runtime
       - name: Retain development artifact only on explicit request

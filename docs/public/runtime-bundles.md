@@ -60,6 +60,8 @@ Coverage follows the native builder → archive producer → standalone staging 
 
 The four scoped Python modules have measured cyclomatic complexity at most 9 and CRAP below 10. Dryer found no candidates at similarity 0.8 in that scope. A targeted mutation run executed 38 mutations in six path/integrity functions and killed all 38; it did not mutate every function or prove whole-repository cleanliness. Separate tests cover corrupt/occupied archives, dependency resolution after removing the build tree, changed installed aliases and incorrect HTTP asset bytes. Private test logs and baseline failures stay local.
 
+The first matching CI run exposed an OCR helper-start failure hidden behind a generic “not installed” error, and a Windows relocated module-resolution failure. OCR errors now retain the I/O kind; the EOF/filter regression uses an existing `cat` executable instead of generating a program and adds a real permission-denied check. Dependency aliases keep portable POSIX names in metadata and convert their targets to native paths when created. Windows/Linux CI now runs the relocated-package regressions before full packaging. The underlying first Linux spawn error cannot be recovered from the old generic message; fresh CI is required before reporting that platform passed.
+
 The repository-wide [SOLID audit](solid-audit.md), full runtime contents and platform acceptance remain open. No narrow packaging result promotes those broader gates.
 
 ---

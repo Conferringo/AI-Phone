@@ -48,7 +48,7 @@ class PrebuiltWebTests(unittest.TestCase):
             package.mkdir(parents=True);dependency.mkdir()
             (package/'index.js').write_text('module.exports=require("dependency")')
             (dependency/'index.js').write_text('module.exports="package-receipt"')
-            alias=standalone/'apps/web/node_modules/pkg';alias.parent.mkdir();alias.symlink_to('../../../node_modules/.store/pkg/node_modules/pkg',target_is_directory=True)
+            alias=standalone/'apps/web/node_modules/pkg';alias.parent.mkdir();alias.symlink_to(Path('../../../node_modules/.store/pkg/node_modules/pkg'),target_is_directory=True)
             (standalone/'apps/web/server.js').write_text('const nextConfig = {"images":{"unoptimized":true}};\nconsole.log(require("pkg"))')
             for name,content,mode in prepare_web(root,bun_path(ROOT)):
                 p=root/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(content);p.chmod(mode)

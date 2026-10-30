@@ -230,7 +230,12 @@ async fn ocr(
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(|_| "本机OCR未安装，原生控件仍可用".to_string())?;
+        .map_err(|error| {
+            format!(
+                "本机OCR启动失败（{:?}: {error}），原生控件仍可用",
+                error.kind()
+            )
+        })?;
     let mut input = child.stdin.take().ok_or("OCR input unavailable")?;
     let mut output = child
         .stdout
@@ -854,16 +859,12 @@ mod tests {
             {"text":"不可靠","confidence":0.40,"bounds":{"left":100,"top":300,"right":200,"bottom":350}},
             {"text":"越界","confidence":1.0,"bounds":{"left":100,"top":400,"right":900,"bottom":450}}
         ]});
-        std::fs::write(
-            &helper,
-            format!(
-                "#!/bin/sh\ncat >/dev/null\nprintf '%s' {}\n",
-                guest_quote(&payload.to_string())
-            ),
-        )
-        .unwrap();
-        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o700)).unwrap();
-        let runner = Runner {
+        // cat requires stdin EOF and returns exactly the bytes supplied by OCR.
+        // A pre-existing executable avoids creating and executing a test script.
+        let input = payload.to_string();
+        std::fs::write(&helper, b"non-executable fixture").unwrap();
+        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let mut runner = Runner {
             phone_id: "phone-local-01".into(),
             serial: "emulator-5564".into(),
             media_url: "http://127.0.0.1:17865".into(),
@@ -878,15 +879,21 @@ mod tests {
             width: AtomicU32::new(720),
             height: AtomicU32::new(1440),
             local: reqwest::Client::new(),
-            vision: helper,
+            vision: PathBuf::from("/bin/cat"),
             grounding: Mutex::new(GroundingState::default()),
         };
         let result = tokio::time::timeout(
             Duration::from_secs(2),
-            ocr(&runner, b"fixture bytes", 720, 1440),
+            ocr(&runner, input.as_bytes(), 720, 1440),
         )
         .await;
+        runner.vision = helper;
+        let launch_error = ocr(&runner, b"fixture bytes", 720, 1440)
+            .await
+            .err()
+            .expect("A non-executable OCR helper must fail without executing anything");
         std::fs::remove_dir_all(root).unwrap();
+        assert!(launch_error.contains("PermissionDenied"), "{launch_error}");
         let (targets, grid) = result
             .expect("OCR must see stdin EOF without waiting for timeout")
             .unwrap();

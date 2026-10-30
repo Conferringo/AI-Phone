@@ -81,7 +81,7 @@ def ensure_link(link, destination, target, create):
         raise ValueError('Runtime link was replaced')
     elif create:
         link.parent.mkdir(parents=True, exist_ok=True)
-        link.symlink_to(target, target_is_directory=destination.is_dir())
+        link.symlink_to(Path(target), target_is_directory=destination.is_dir())
     else:
         raise ValueError('Runtime link missing')
 

@@ -93,6 +93,8 @@ def verify(root):
                 raise ValueError('Prebuilt web exited during verification')
             return {'web_html': 200, 'script_assets_verified': count, 'static_png_verified': True, 'image_optimizer': False, 'runtime': 'bundled Bun', 'package_install_or_build': False, 'private_state_supplied': False}
         except Exception:
+            package = root / 'runtime/web/apps/web/node_modules/next'
+            print(json.dumps({'next_package_present': (package / 'package.json').is_file(), 'next_entry_present': (package / 'dist/server/next.js').is_file(), 'installation_path_length': len(str(root))}))
             log.seek(0)
             output = log.read().decode(errors='replace')
             if output:

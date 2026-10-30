@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 6306,
-      "sha256": "dd9e0b6a23455e4bb76a39f4d94535a36e3ccf253fc3411ded3baec9f0a5facf"
+      "size": 6501,
+      "sha256": "17c0de8bce9fafd4cce04a223372bb6b2b68352f31b7be759da32f4e3c9ba8bb"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -2409,8 +2409,8 @@
     },
     {
       "path": "crates/phone-runner/src/grounding.rs",
-      "size": 38542,
-      "sha256": "c20899846e200d270e9f5333c0224b1a93321fdd9eb37d0381097686557a5d23"
+      "size": 39028,
+      "sha256": "717b16968cfb6adc5440045903bb0038867ed49ec82b08aeac0f7bb5779d5a49"
     },
     {
       "path": "crates/phone-runner/src/location.rs",
@@ -3434,8 +3434,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 9646,
-      "sha256": "1242b7f1b59562fa56c226ba831dbf2f7516345f77ee6148948ca4d77bc583de"
+      "size": 10325,
+      "sha256": "29754bad4e42ae803d43c2a9792d9323bdb58c3d06e414e7f182116cf5870817"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3889,8 +3889,8 @@
     },
     {
       "path": "scripts/check_prebuilt_web.py",
-      "size": 4660,
-      "sha256": "6c7d7e5b1f1051562b72f0613938bf3739f54d60aed62ad38cfbb21e2d3851c4"
+      "size": 4935,
+      "sha256": "8f54fd450ec4068ec0b261b6c81c559d2eb6f916c8ff1797d5f30c28ecafb498"
     },
     {
       "path": "scripts/check_source.py",
@@ -3934,8 +3934,8 @@
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 11432,
-      "sha256": "53272538c5a8488998e90590086fea9a351d454cd0c5f61b7a20e2b9ed2ad047"
+      "size": 11438,
+      "sha256": "cae8850f8d5f8c8741099e8b213fc63ed4ad044e0d086e8801f176fd011e7f03"
     },
     {
       "path": "scripts/database.py",
@@ -4269,8 +4269,8 @@
     },
     {
       "path": "scripts/test_prebuilt_web.py",
-      "size": 5685,
-      "sha256": "1d452073a1cba4cc99ad452e1779a11a49399c608d002ed55abb534ebbd7d747"
+      "size": 5691,
+      "sha256": "e93d93eeac37985d50730761495817bea3d96a0f65b38d3cdf887de9ceb47a26"
     },
     {
       "path": "scripts/test_preview_notices.py",
