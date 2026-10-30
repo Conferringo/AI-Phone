@@ -178,10 +178,10 @@ def install(*, observer=None, license_action=None, launch_client=True, minimum_f
         result=subprocess.run([ROOT/'.tools/bin/bun','--version'],capture_output=True,text=True)
         return result.returncode==0 and result.stdout.strip()=='1.4.4' and (ROOT/'packages/protocol/src/gen/ai_phone/v1/system_pb.ts').is_file()
     with InstallState(ROOT,observer=observer) as state:
-        # CLI uses the SDK prompt; the native client displays each actual license.
-        licenses=lambda:all((sdk/'licenses'/name).is_file() for name in ['android-sdk-license'])
-        state.phase('sdk-licenses',fingerprint(ROOT,[],{'sdk':str(sdk)}),lambda:license_action(sdkmanager,env) if license_action else run(sdk_command(sdkmanager,env,['--licenses']),env=env),licenses)
-        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':abi}),lambda:run(sdk_command(sdkmanager,env,['platform-tools','emulator','platforms;android-35','build-tools;35.0.0',f'system-images;android-35;default;{abi}']),env=env),lambda:all((sdk/name).is_file() for name in required))
+        # Let SDK Manager request the terms for these actual packages. --licenses
+        # asks users to accept unrelated TV, preview and vendor SDK terms too.
+        packages=['platform-tools','emulator','platforms;android-35','build-tools;35.0.0',f'system-images;android-35;default;{abi}']
+        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':abi}),lambda:license_action(sdkmanager,env,packages) if license_action else run(sdk_command(sdkmanager,env,packages),env=env),lambda:all((sdk/name).is_file() for name in required))
         state.phase('dependencies',fingerprint(ROOT,['scripts/bootstrap.sh','package.json','bun.lock','buf.gen.yaml','packages/protocol/proto',*[str(p.relative_to(ROOT)) for base in ('apps','packages') for p in (ROOT/base).glob('*/package.json')]]),lambda:run(['./scripts/bootstrap.sh'],env=env),bootstrap_valid)
         state.phase('native-apps',fingerprint(ROOT,['config/clash-apps.json','apps/device-network/native-apps.ts']),lambda:native_apps(True),native_apps)
         state.phase('workspace-image',fingerprint(ROOT,['infra/workspace']),lambda:run(['docker','build','--build-arg','HTTP_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'--build-arg','HTTPS_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'-t','ai-phone-workspace:20261026','-f','infra/workspace/Dockerfile','.'],env=env),lambda:image('ai-phone-workspace:20261026'))

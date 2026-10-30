@@ -32,7 +32,7 @@ def build_macos():
     destination.with_suffix('.dmg.sha256').write_text(digest+'  '+destination.name+'\n')
     manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'server_included':False,'remote_upload':False,'server_requirement':'An already configured local/LAN deployment','source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
     manifest['source_payload_included']=True
-    manifest['local_bootstrap']={'implemented_on':['macos-arm64'],'fresh_install_acceptance':'pending','user_state_bundled':False}
+    manifest['local_bootstrap']={'implemented_on':sorted(json.loads((ROOT/'config/host-bootstrap.json').read_text())['hosts']),'fresh_install_acceptance':'pending','user_state_bundled':False}
     manifest['server_requirement']='Client-managed local source deployment, or an existing local/LAN deployment'
     manifest['bundle']=inspected
     manifest['third_party_notices']=notice_manifest(ROOT)

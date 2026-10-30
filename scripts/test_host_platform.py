@@ -18,6 +18,7 @@ class HostPlatformTests(unittest.TestCase):
     def test_mac_profile_still_validates_without_rewriting_devices(self):
         _,host=host_policy(ROOT,'Darwin','arm64')
         value=release.default_profile(ROOT)
+        value['java_home']='/fixture/java';value['sdk_root']='/fixture/sdk'
         value['phone']['template']=host['phone_template']
         self.assertIs(release.validate(value),value)
         value['phone']['template']='android35-x86_64'

@@ -44,10 +44,10 @@ def check_request(request):
     return request
 
 
-def sdk_licenses(manager, env, emit):
+def sdk_licenses(manager, env, emit, packages):
     """Forward each SDK prompt; never accept a license before a human response."""
     from android_sdk import command
-    argv = command(manager, env, ['--licenses']) if env else [str(manager), '--licenses']
+    argv = command(manager, env, packages) if env else [str(manager), *packages]
     child = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=0)
     try:
         text = ''
@@ -191,7 +191,7 @@ def install(root, home, request, mise, emit):
     # The initial reserve was checked before downloading tools. It is not a
     # permanently required unused reserve on every retry. Actual ENOSPC fails
     # the current checkpoint and never triggers deletion of user state.
-    release.install(observer=lambda phase, state: emit(phase, state), license_action=lambda manager, env: sdk_licenses(manager, env, emit), launch_client=False, minimum_free_gb=config['minimum_resume_free_gb'])
+    release.install(observer=lambda phase, state: emit(phase, state), license_action=lambda manager, env, packages: sdk_licenses(manager, env, emit, packages), launch_client=False, minimum_free_gb=config['minimum_resume_free_gb'])
     emit('devices')
     execute([root / 'scripts/bun', root / 'scripts/client-device-setup.ts'], cwd=root)
     emit('ready', 'ready')

@@ -16,9 +16,6 @@ from service_stop import stop_owned
 SCRIPTS=Path(__file__).resolve().parent
 
 class InstallResumeTests(unittest.TestCase):
-    def setUp(self):
-        # These fixtures exercise the launchd adapter on every CI host.
-        host=patch('platform.system',return_value='Darwin');host.start();self.addCleanup(host.stop)
     def test_reuse_requires_same_source_and_valid_artifact(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);(root/'input').write_text('v1');artifact=root/'artifact';calls=[]
@@ -82,7 +79,12 @@ with InstallState(root) as state:
                     self.assertEqual(state.state['phases']['fixture']['state'],label)
                     self.assertNotIn('fixture secret',(root/'data/deployment/install-state.json').read_text())
 
-class ServiceResumeTests(unittest.TestCase):
+class LaunchdFixture(unittest.TestCase):
+    def setUp(self):
+        # These fixtures exercise launchd contracts even on a Linux CI runner.
+        host=patch('platform.system',return_value='Darwin');host.start();self.addCleanup(host.stop)
+
+class ServiceResumeTests(LaunchdFixture):
     def test_loaded_but_stopped_job_is_started_without_killing_live_work(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[]
@@ -117,7 +119,7 @@ class ServiceResumeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'quarantined'):start_missing(root,query=query,execute=calls.append)
             self.assertEqual(calls,[])
 
-class ServiceStopTests(unittest.TestCase):
+class ServiceStopTests(LaunchdFixture):
     def test_stop_refuses_foreign_jobs_before_any_change(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[]

@@ -2454,7 +2454,7 @@
     {
       "path": "docs/public/dependency-licenses.json",
       "size": 392950,
-      "sha256": "1a6e0fabf2271a0043df35d32804e1e69098d0f1d53e7a2408c645599350209a"
+      "sha256": "2e117b29708662233b110287925ad2935a568431e813165ecb799fb5baa62209"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3738,8 +3738,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 7292,
-      "sha256": "cc36872ee4dcc98d62f945181a125027127a792e918f90f3ce98f27fdae90230"
+      "size": 7353,
+      "sha256": "66b457cfcf800b4e7037aa0835e82c186dbc3f92b6b013bd0f76ed8d8049554a"
     },
     {
       "path": "scripts/bun",
@@ -3793,13 +3793,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6111,
-      "sha256": "5ee55443b9025ad887d77476f755f6e765f6076bdce794fa7585550a2dfcc024"
+      "size": 6172,
+      "sha256": "901b817575535c740d8d4ece62b70e16a8bfb65c86ede65621f6e3c3dedf85ff"
     },
     {
       "path": "scripts/client_host.py",
-      "size": 12423,
-      "sha256": "42cdfed0581dddf539cfa6826e48638acf4602076bb7445aa1d429166d4f7087"
+      "size": 12444,
+      "sha256": "6ff5f9a88fcfea055cc0385f9078fde796790af5a412de6054f055fefdeea070"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -3988,8 +3988,8 @@
     },
     {
       "path": "scripts/release.py",
-      "size": 19185,
-      "sha256": "8853869aa41f5f9863e5ecb7106150b51e9f355f0af77a44f4d26408dbef3a7a"
+      "size": 19055,
+      "sha256": "526ea58cbd5a9e236c71dec5b77146be18510cf047bdba1342b4d3d4bf8a86fe"
     },
     {
       "path": "scripts/release_package.py",
@@ -4063,8 +4063,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 3920,
-      "sha256": "e5e3792d4b873696d84b65f2f79f3850d0e7a8c44f35f60c818a8c57e2b32180"
+      "size": 4587,
+      "sha256": "3ed10dd34dec89cb6486e4a8732dbe525ab21a6cf51772defbe18c3294dff30a"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4098,8 +4098,8 @@
     },
     {
       "path": "scripts/test_host_platform.py",
-      "size": 1347,
-      "sha256": "8f44a6c4000ac2c433ed2ab2053c592c3b11879db85acce3c95b2238d30d2c83"
+      "size": 1423,
+      "sha256": "402d48d6ce2393c8f9acaa3a26bdc1f32e65300ecff35ad7c5b91c601aa6b6da"
     },
     {
       "path": "scripts/test_install_language.py",
@@ -4108,13 +4108,13 @@
     },
     {
       "path": "scripts/test_install_state.py",
-      "size": 8786,
-      "sha256": "e1ffaa51600dbe02727c248bbd20300dd86d85f1d69011cc674ea8d99f33b429"
+      "size": 8829,
+      "sha256": "b1976285fad051059df7757defee91640a6b7442e45a5746008284ea8b8c337f"
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 3006,
-      "sha256": "409988868e4c51fc66a13cff8a57559ac6590838ce2f5682febd5978b97f12a2"
+      "size": 3055,
+      "sha256": "03701414407863741794f3d13e11c082dc175c3faf5fb52343747bc6efeb5239"
     },
     {
       "path": "scripts/test_native_backports.py",

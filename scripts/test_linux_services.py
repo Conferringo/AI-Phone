@@ -19,7 +19,7 @@ class LinuxServiceTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         (self.root/'data').mkdir()
         self.fixture = self.root/'worker.py'
-        self.fixture.write_text('import os,time\nfrom pathlib import Path\nPath("data/child").write_text(str(os.getpid()))\nwhile True:time.sleep(.05)\n')
+        self.fixture.write_text('import os,time\nfrom pathlib import Path\nPath("data/child.next").write_text(str(os.getpid()))\nos.replace("data/child.next","data/child")\nwhile True:time.sleep(.05)\n')
         self.argv = [sys.executable, str(self.fixture)]
 
     def tearDown(self):

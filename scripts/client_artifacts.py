@@ -105,7 +105,7 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
         'source_locks': {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
                          for name in ['bun.lock', 'apps/client/src-tauri/Cargo.lock']},
         'source_payload_included': True,
-        'local_bootstrap': {'implemented_on': ['macos-arm64'], 'fresh_install_acceptance': 'pending', 'user_state_bundled': False},
+        'local_bootstrap': {'implemented_on': sorted(json.loads((root/'config/host-bootstrap.json').read_text())['hosts']), 'fresh_install_acceptance': 'pending', 'user_state_bundled': False},
         'payload': inspection}
     path.with_suffix(path.suffix+'.manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     return manifest

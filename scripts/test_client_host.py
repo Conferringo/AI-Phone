@@ -37,11 +37,19 @@ class NativeHostTests(unittest.TestCase):
             manager.chmod(0o755); events=[]
             def emit(phase, state='running', **values): events.append((phase, state, values))
             with patch('sys.stdin', io.StringIO('{"accept":true}\n{"accept":true}\n')):
-                sdk_licenses(manager, None, emit)
+                sdk_licenses(manager, None, emit, ['platform-tools'])
             licenses=[values['license'] for _,state,values in events if state=='license']
             self.assertEqual(len(licenses),2);self.assertIn('Fixture license text',licenses[1])
             with patch('sys.stdin', io.StringIO('')):
-                with self.assertRaisesRegex(ValueError, 'not accepted'): sdk_licenses(manager, None, emit)
+                with self.assertRaisesRegex(ValueError, 'not accepted'): sdk_licenses(manager, None, emit, ['platform-tools'])
+
+    def test_sdk_prompts_cover_only_requested_packages(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);manager=root/'sdkmanager';receipt=root/'args'
+            manager.write_text('#!'+sys.executable+'\nimport sys,json\nfrom pathlib import Path\nPath('+repr(str(receipt))+').write_text(json.dumps(sys.argv[1:]))\n')
+            manager.chmod(0o755)
+            sdk_licenses(manager,None,lambda *_:None,['platform-tools','system-images;android-35;default;x86_64'])
+            self.assertEqual(json.loads(receipt.read_text()),['platform-tools','system-images;android-35;default;x86_64'])
 
     def test_foreign_database_is_refused_before_compose_can_change_anything(self):
         root=Path('/owned')
