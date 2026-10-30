@@ -183,7 +183,7 @@ def install_tools(home, mise, tools, emit):
     os.environ.update(json.loads(result.stdout))
 
 
-def prepare_profile(root, home, request, host):
+def prepare_profile(root, home, request, host, android_sdk=None):
     import release
     profile_path=root/'data/deployment/profile.json'
     if profile_path.exists():
@@ -192,26 +192,42 @@ def prepare_profile(root, home, request, host):
         if existing['phone']['template']!=host['phone_template']:
             raise ValueError('Existing phone architecture differs from this host; no devices were changed')
         return
-    value=dict(schema_version=1,local_entry=True,locale=request['locale'],sdk_root=str(home/'tools/android-sdk'),java_home=os.environ['JAVA_HOME'],host_proxy='',container_proxy='',
+    value=dict(schema_version=1,local_entry=True,locale=request['locale'],sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
                phone={'template':host['phone_template'],**request['phone']},desktop={'template':'debian13-openbox',**request['desktop']})
     profile=home/'request-profile.json';profile.write_text(json.dumps(value));profile.chmod(0o600)
     release.configure(root,profile)
 
 
-def install(root, home, request, mise, emit):
+def deployment_sdk(root, provided):
+    profile=root/'data/deployment/profile.json'
+    return Path(json.loads(profile.read_text())['sdk_root']) if profile.exists() else provided
+
+
+def selected_tools(tools, bundled_services, bundled_android):
+    excluded=set()
+    if bundled_services:excluded.add('rust')
+    if bundled_android:excluded.add('java')
+    return [tool for tool in tools if tool.split('@',1)[0] not in excluded]
+
+
+def install(root, home, request, mise, emit, android_sdk=None):
     request=check_request(request)
     from host_platform import host_policy
     from prebuilt_services import launch_spec
     config,host=host_policy(root)
     bundled=launch_spec(root,'assistant')['prebuilt']
     if not install_preflight(root,home,config,bundled,emit):return
-    tools=[tool for tool in config['tools'] if not (bundled and tool.startswith('rust@'))]
+    from android_runtime import bundled_sdk
+    android_sdk=deployment_sdk(root,android_sdk)
+    android_bundled=android_sdk is not None and bundled_sdk(android_sdk) is not None
+    tools=selected_tools(config['tools'],bundled,android_bundled)
     install_tools(home,mise,tools,emit)
-    prepare_profile(root,home,request,host)
+    prepare_profile(root,home,request,host,android_sdk)
     from runtime_config import runtime_env
     os.environ.update(runtime_env(root))
-    emit('sdk-tools')
-    prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
+    if not android_bundled:
+        emit('sdk-tools')
+        prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
     container_engine(root,home,config,emit)
     verify_container_ownership(root)
     import release

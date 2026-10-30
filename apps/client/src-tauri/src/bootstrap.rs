@@ -190,15 +190,20 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| e.to_string())
 }
 
-fn verify_resources(folder: &Path) -> Result<(), String> {
+fn verify_resources(folder: &Path) -> Result<bool, String> {
     let expected: std::collections::BTreeMap<String, String> =
         serde_json::from_str(INTEGRITY).map_err(|e| e.to_string())?;
-    for name in ["source.payload", "entry.py"] {
-        if hash(&folder.join(name))? != *expected.get(name).ok_or("invalid_payload")? {
+    if !expected.contains_key("source.payload") || !expected.contains_key("entry.py") {
+        return Err("invalid_payload".into());
+    }
+    for (name, digest) in &expected {
+        if !["source.payload", "entry.py", "android.payload"].contains(&name.as_str())
+            || hash(&folder.join(name))? != *digest
+        {
             return Err("invalid_payload".into());
         }
     }
-    Ok(())
+    Ok(expected.contains_key("android.payload"))
 }
 
 fn checks(path: &Path) -> Vec<Check> {
@@ -333,7 +338,7 @@ fn run(
         .resource_dir()
         .map_err(|e| e.to_string())?
         .join("host");
-    verify_resources(&resource)?;
+    let with_android = verify_resources(&resource)?;
     let request_path = folder.join("request.json");
     fs::write(
         &request_path,
@@ -355,6 +360,11 @@ fn run(
         .arg(request_path)
         .arg("--mise")
         .arg(&mise);
+    if with_android {
+        command
+            .arg("--android-runtime")
+            .arg(resource.join("android.payload"));
+    }
     layout.apply(&mut command);
     command
         .env("MISE_YES", "1")

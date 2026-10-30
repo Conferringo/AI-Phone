@@ -47,6 +47,7 @@ def validate(value):
     if value['phone']['storage_gb'] not in (16, 24, 32):
         raise ValueError('Phone storage must be 16, 24 or 32 GB')
     for key in ('sdk_root', 'java_home'):
+        if key=='java_home' and not value[key]:continue
         if not Path(value[key]).is_absolute() or any(ord(c) < 32 for c in value[key]):
             raise ValueError(f'{key} must be an absolute path')
     from urllib.parse import urlparse
@@ -136,6 +137,8 @@ def node_checks():
 
 def sdk_checks(env):
     sdk=Path(env['AI_PHONE_SDK_ROOT'])
+    from android_runtime import bundled_sdk
+    if bundled_sdk(sdk) is not None:return [check_result('android-runtime',True,'')]
     checks=[check_result('sdk/'+name,(sdk/name).is_file(),'Install Android command-line tools; configure SDK path')
             for name in ('platform-tools/adb','emulator/emulator','cmdline-tools/latest/bin/sdkmanager')]
     java=Path(env['JAVA_HOME'])/'bin/javac' if env['JAVA_HOME'] else None
@@ -224,6 +227,12 @@ def install_sdk(state, root, env, license_action):
     from install_state import fingerprint
     from android_sdk import command as sdk_command
     sdk = Path(env['AI_PHONE_SDK_ROOT']); abi = env['AI_PHONE_ANDROID_ABI']
+    from android_runtime import bundled_sdk
+    component=bundled_sdk(sdk)
+    if component is not None:
+        if component['abi']!=abi:raise ValueError('Bundled Android ABI differs from the device profile')
+        state.phase('sdk-packages', fingerprint(root, [], {'sdk':str(sdk),'files':component['files']}),lambda:None,lambda:bundled_sdk(sdk) is not None)
+        return
     manager = sdk/'cmdline-tools/latest/bin/sdkmanager'
     required = ('platform-tools/adb', 'emulator/lib/emulator_controller.proto', 'build-tools/35.0.0/d8',
                 'build-tools/35.0.0/aapt2', 'platforms/android-35/android.jar', f'system-images/android-35/default/{abi}/system.img')

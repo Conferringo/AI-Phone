@@ -58,3 +58,8 @@ desktop.ini
 *.tar
 *.tar.gz
 /runtime/
+
+# Generated runtime capsules and local coverage artifacts.
+*.payload
+.coverage*
+coverage.xml

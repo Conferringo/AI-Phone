@@ -1,0 +1,16 @@
+{
+  "format": 1,
+  "images": {
+    "android35-arm64": {
+      "api": 35,
+      "abi": "arm64-v8a",
+      "revision": 2,
+      "repository": "https://dl.google.com/android/repository/sys-img/android/sys-img2-3.xml",
+      "url": "https://dl.google.com/android/repository/sys-img/android/arm64-v8a-35_r02.zip",
+      "bytes": 769099654,
+      "sha1": "2026a06409db630b56711afdbffb457c1dbaed49",
+      "sha256": "1e6ae4fca6449c07278a333311f0ef29c5101d1e3e18ba48fbe9bd2dc5006926",
+      "redistribution_review_complete": false
+    }
+  }
+}

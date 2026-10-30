@@ -259,6 +259,7 @@ def main():
     parser.add_argument('--home', type=Path, required=True)
     parser.add_argument('--request', type=Path, required=True)
     parser.add_argument('--mise', type=Path, required=True)
+    parser.add_argument('--android-runtime',type=Path)
     args = parser.parse_args()
     import fcntl
     import signal
@@ -277,7 +278,12 @@ def main():
         root = stage_source(args.payload, args.home)
         sys.path.insert(0, str(root / 'scripts'))
         from client_host import install
-        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit)
+        android_sdk=None
+        if args.android_runtime:
+            from android_runtime import stage
+            emit('sdk-packages')
+            android_sdk=stage(args.android_runtime,args.home)
+        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit, android_sdk=android_sdk)
 if __name__ == '__main__':
     try:
         main()

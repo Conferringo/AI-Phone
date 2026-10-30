@@ -11,7 +11,7 @@ DIRECTORIES = ('apps', 'crates', 'packages', 'scripts', 'infra', 'config', 'skil
 FILES = ('ai-phone', 'Start AI Phone.command', 'README.md', 'README.en.md', 'Cargo.toml', 'Cargo.lock', 'package.json', '.puppeteerrc.cjs', 'bun.lock', 'buf.yaml', 'buf.gen.yaml', 'compose.yaml', 'compose.dev.yaml', 'compose.desktop.yaml', '.env.example', '.gitignore', '.gitattributes', 'CONTRIBUTING.md', 'SECURITY.md', 'DISCLAIMER.md', 'PRIVACY.md', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md', 'LICENSE', 'NOTICE')
 OMIT_PARTS = {'.git', '.next', 'node_modules', 'target', 'data', '.tools', '__pycache__', 'evidence', 'dist', '.AppleDouble', '__MACOSX'}
 OMIT_FILES = {'.DS_Store', 'Thumbs.db', 'desktop.ini', 'cleanup-retired-projects.py', 'persist-services.py', 'clear-requested-chat.ts', 'complete-ad-dismiss-skill.ts', 'provision-second-phone.ts', 'android-build-bridge.sh', 'android-install-bridge.sh', 'android-network-check.py', 'android-network-check.sh'}
-OMIT_SUFFIXES = {'.pyc', '.log', '.dump', '.apk', '.jks', '.keystore', '.tsbuildinfo', '.qcow2', '.img', '.tar', '.gz', '.tgz', '.zip', '.xz', '.zst', '.sqlite', '.db', '.key'}
+OMIT_SUFFIXES = {'.payload', '.pyc', '.log', '.dump', '.apk', '.jks', '.keystore', '.tsbuildinfo', '.qcow2', '.img', '.tar', '.gz', '.tgz', '.zip', '.xz', '.zst', '.sqlite', '.db', '.key'}
 SECRET = re.compile(rb'(?<![A-Za-z0-9_-])(?:sk-[A-Za-z0-9_-]{24,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,})')
 OMIT_TREES = ('apps/android-bridge', 'apps/web/src/app/lab', 'apps/client/src-tauri/gen')
 

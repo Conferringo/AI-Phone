@@ -64,8 +64,8 @@
     },
     {
       "path": ".gitignore",
-      "size": 719,
-      "sha256": "3cdc25648c8d65d32dede3b1cedada1519753f90bdece8c58a3416ce30bcbf61"
+      "size": 813,
+      "sha256": "63639262a5b116b0417006c04ce37a0cb4a2463a5af4e8646ecd6a601c8569b9"
     },
     {
       "path": ".puppeteerrc.cjs",
@@ -634,8 +634,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 23556,
-      "sha256": "f03d9809a5ab80ad7474b9f2165035ee1ca5a0911de0e945b87b813c6e8626b0"
+      "size": 23939,
+      "sha256": "87d2925c7fc50ac19849dd1d682b7792f37d4b5b88f91152ec768271b9b71c0b"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -1988,6 +1988,11 @@
       "sha256": "ec85f9e3ffa1de869763b0f18eb9405e6ff67685888948fc5f5b6baa8e90933f"
     },
     {
+      "path": "config/android-factory-images.json",
+      "size": 535,
+      "sha256": "d422bdc308deba43573ad6d46b60b38c8ed4bcb47461962cbd2cc28caa7721b8"
+    },
+    {
       "path": "config/bun-runtime.json",
       "size": 716,
       "sha256": "1466a4e3ff5f95394822a0247cd6cbc720bd9366857b7b57afc9757c552a2684"
@@ -2536,6 +2541,11 @@
       "path": "docs/public/distribution.zh-CN.md",
       "size": 3827,
       "sha256": "979ed1a2f410190da29b4e6d1eab62f07025c38c0127feb4ca09a22dc3ba24f0"
+    },
+    {
+      "path": "docs/public/engineering/android-runtime.md",
+      "size": 4783,
+      "sha256": "ef206eb6762ea944d053ed53fd2831358a474758a28cda93d968f5a2c50a454f"
     },
     {
       "path": "docs/public/engineering/index.md",
@@ -3444,8 +3454,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 3194,
-      "sha256": "cbb99d6dcdd15e523fc6bc0da275e680cecefb7ccfa5fc0d6554a59acee6ac51"
+      "size": 3568,
+      "sha256": "ffea6350f7afc61e58a49e0b267d2f75dc6901d3d348d09961be77a8f9538cee"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3469,8 +3479,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 16626,
-      "sha256": "d00fa42c91bac7bc6f41785d31423f6a765aa17af58d8718a35c3d4e88abc690"
+      "size": 17015,
+      "sha256": "8abbba298e40414b5869a4f503e8d9888329b96b7961325c82aa26842f910d81"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3729,8 +3739,8 @@
     },
     {
       "path": "scripts/android-create.sh",
-      "size": 1265,
-      "sha256": "fdce65809802ac44511f292ad4eb20891cc3aa6a39eb99274fbd29a5ca3ffc15"
+      "size": 197,
+      "sha256": "351aaca77ae35bd2573351b9c5ee6e86862b2d154c82ad00d1c9ef37834fd4dd"
     },
     {
       "path": "scripts/android-curl",
@@ -3843,9 +3853,19 @@
       "sha256": "ba59b744bfd2128d811f7d598a03c25c35ebf4b7b33cbf4289d08b81b696b75b"
     },
     {
+      "path": "scripts/android_avd.py",
+      "size": 3089,
+      "sha256": "079cef765da7e57e959fa744fd7102eb12e44d60637d344a2c3092efcc674e0f"
+    },
+    {
       "path": "scripts/android_notices.py",
       "size": 1217,
       "sha256": "0c0532633cca27476617c3e6d2a23b537094ad26c8d6d34447cb876acf1be1e1"
+    },
+    {
+      "path": "scripts/android_runtime.py",
+      "size": 11319,
+      "sha256": "5a8e2d706b9adb0e9ec9f8efaecca9f92ee143daba5f6ddd109ea4080c0acc3c"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -3889,8 +3909,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 9012,
-      "sha256": "492d6944b3c9f89609929d8cad0b341b70f38e20450dabd543d5b5eb3851e116"
+      "size": 9674,
+      "sha256": "2835d54aaededc75a0c7dea1fdd23422fc9a1bd93663c9d76954a5ca2a454e91"
     },
     {
       "path": "scripts/build_native_services.py",
@@ -3959,18 +3979,23 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6317,
-      "sha256": "96fa67605b3294bde950bdf2d3113075ec5d151e3ee1a17c811976c377a940ca"
+      "size": 6133,
+      "sha256": "c9925de44cfdd734362771eff9f55e9637b6cd25e9a445e48c8b4e955e713a91"
     },
     {
       "path": "scripts/client_host.py",
-      "size": 13051,
-      "sha256": "75f30f0abca19d681ee6983252e30ff72360bfc6a853117d196b8e65be180d82"
+      "size": 13739,
+      "sha256": "6dfabfd123a0a49edcc740a55ff04d2eb70e191bbc93eb6b2ccc7bdf2bfc9417"
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 12576,
-      "sha256": "2b17ce68bae16fc866c1ecdeb183e5ec40a016addffe6f71135e437fdf4c64e4"
+      "size": 12855,
+      "sha256": "4128a320f26a3a57fa422c509bfae1969071bd6352b6f40e3158872ef171efe0"
+    },
+    {
+      "path": "scripts/client_resources.py",
+      "size": 1995,
+      "sha256": "fbf123e389f4919964da1036277aa1ce7740c90456b5351e72c9825afb4f62bc"
     },
     {
       "path": "scripts/database.py",
@@ -4094,8 +4119,8 @@
     },
     {
       "path": "scripts/native_bundle.py",
-      "size": 2303,
-      "sha256": "9c5672b0fb2ad5bad65d97aa7d947900ec601b17a40862f8597c40491ef07021"
+      "size": 2288,
+      "sha256": "0b4fccb809513a68918406d6497e97a6951e1b816def96fa7a1526cf9fbe1efe"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -4169,8 +4194,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 4768,
-      "sha256": "7da0cbbcf97ef9975d41d4d6231cdedea2251341eae3a99330dd9cb16dd09263"
+      "size": 5721,
+      "sha256": "c16b9f49eb7aee03bbbcc7db57a5c5219be8ea36027bf0a4fdc49e94850cc1d1"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -4179,13 +4204,13 @@
     },
     {
       "path": "scripts/release.py",
-      "size": 22310,
-      "sha256": "892edb37f2795a4164af586f433906e5ec3c041e3df520c3c8cc1e6feb2e842e"
+      "size": 22872,
+      "sha256": "cdf91589b7f469bec00433741854f0da4766be02f114284db87c59c6c0e78c7e"
     },
     {
       "path": "scripts/release_package.py",
-      "size": 5476,
-      "sha256": "eaa20697793a9c04609f279a765f01f13429b4855b55e0ca9ee94b16a0ae9a66"
+      "size": 5488,
+      "sha256": "4eee8f90a6f6e3186f62bac7718e8c05c4470a6efaded9b16034f275fc3b609d"
     },
     {
       "path": "scripts/release_stage.py",
@@ -4253,6 +4278,11 @@
       "sha256": "2c4b9aed46ca2d7e5a859e7b0008cb6281576e3c551bd665a42118972c057dda"
     },
     {
+      "path": "scripts/test_android_runtime.py",
+      "size": 15056,
+      "sha256": "3a569af4ef3ad9bb99dac689742edcee13c8019b2be1eb53fdd1ef8804340e64"
+    },
+    {
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
@@ -4271,6 +4301,11 @@
       "path": "scripts/test_client_payload.py",
       "size": 6083,
       "sha256": "b238e471d9db90c93f2bf1583f074baf68592810797cec2fc021a9af92890947"
+    },
+    {
+      "path": "scripts/test_client_resources.py",
+      "size": 3185,
+      "sha256": "ae16a192313e0ada62ae8697c13f771fe3b7c84c8f0da7b8718eaeb1c15640aa"
     },
     {
       "path": "scripts/test_database.py",
