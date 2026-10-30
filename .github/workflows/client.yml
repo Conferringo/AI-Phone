@@ -87,6 +87,10 @@ jobs:
         run: rustup default 1.96.0
       - name: Locked client CLI
         run: python scripts/bootstrap_bun.py --dependencies
+      - name: Relocated dependency and archive regressions
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web
       - name: Linux native libraries
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
@@ -100,10 +104,6 @@ jobs:
         run: |
           python -m unittest discover -s scripts -p test_native_backports.py
           python -m unittest discover -s scripts -p test_release_portability.py
-      - name: Relocated dependency and archive regressions
-        env:
-          PYTHONPATH: scripts
-        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web
       - name: Build and inspect local preview
         run: python scripts/build_client.py --platform ${{ matrix.platform }} --with-web-runtime
       - name: Retain development artifact only on explicit request

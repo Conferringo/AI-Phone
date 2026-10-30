@@ -19,8 +19,8 @@ def isolated_environment(root, port):
         raise ValueError('Use an isolated runtime without existing user state')
     if (root / 'data').exists() and any((root / 'data').iterdir()):
         raise ValueError('Use an isolated runtime without existing user state')
-    allowed = ('HOME', 'USERPROFILE', 'SystemRoot', 'TEMP', 'TMP', 'TMPDIR', 'LANG')
-    environment = {k: v for k, v in os.environ.items() if k in allowed}
+    allowed = ('HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'TMPDIR', 'LANG')
+    environment = {k: v for k, v in os.environ.items() if k.upper() in allowed}
     environment.update(PATH=os.defpath, PORT=str(port), HOSTNAME='127.0.0.1', AI_PHONE_PROJECT_ROOT=str(root), AI_PHONE_LOCAL_ENTRY='1', NEXT_TELEMETRY_DISABLED='1')
     return environment
 

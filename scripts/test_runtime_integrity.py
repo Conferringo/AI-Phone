@@ -1,5 +1,6 @@
 """Untrusted runtime metadata cannot redirect execution or overwrite private state."""
 import hashlib
+import gzip
 import io
 import json
 import os
@@ -7,13 +8,37 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
-from client_host_entry import stage_source,source_name,web_links
+from client_host_entry import stage_source,source_name,web_links,archive_records,bounded_entries
 from prebuilt_web import web_command,public_runtime_file
 from host_platform import host_key
 from prepare_client_host import payload_components
 
 
 class RuntimeIntegrityTests(unittest.TestCase):
+    def test_header_budgets_stop_before_requesting_more_entries(self):
+        def header(size=0, kind=tarfile.REGTYPE):
+            entry=tarfile.TarInfo('file');entry.size=size;entry.type=kind;return entry
+        def flood():
+            yield from (header() for _ in range(20001))
+            raise AssertionError('Parser requested entries after the entry budget')
+        for source in ([],[header(-1)],[header(200*1024**2+1)],[header(kind=tarfile.SYMTYPE)],[header(200*1024**2)]*6,flood()):
+            with self.assertRaisesRegex(ValueError,'Invalid source payload entries'):
+                bounded_entries(iter(source))
+        maximum=[header(200*1024**2)]*5+[header(24*1024**2)]
+        self.assertEqual(bounded_entries(iter(maximum)),maximum)
+        with self.assertRaisesRegex(ValueError,'Invalid source payload entries'):
+            bounded_entries(iter([*maximum,header(1)]))
+        self.assertEqual(len(bounded_entries(header() for _ in range(20000))),20000)
+
+    def test_oversized_member_is_rejected_before_reading_its_body(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive=Path(temp)/'truncated.payload'
+            entry=tarfile.TarInfo('oversized');entry.size=201*1024*1024
+            with gzip.open(archive,'wb') as output:output.write(entry.tobuf()+b'\0'*1024)
+            with tarfile.open(archive,'r:gz') as source:
+                with self.assertRaisesRegex(ValueError,'Invalid source payload entries'):
+                    archive_records(source)
+
     def runtime(self, root):
         files={'runtime/bin/'+('bun.exe' if os.name=='nt' else 'bun'):b'fixture executable','runtime/web/apps/web/server.js':b'fixture server'}
         for name,data in files.items():

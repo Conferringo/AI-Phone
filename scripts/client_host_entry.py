@@ -148,14 +148,22 @@ def payload_records(manifest, entries):
         raise ValueError('Source manifest does not match payload')
     return (records, runtime)
 
+def bounded_entries(source):
+    entries = []
+    total = 0
+    for entry in source:
+        total += entry.size
+        if not entry.isfile() or not 0 <= entry.size <= 200 * 1024 * 1024:
+            raise ValueError('Invalid source payload entries')
+        if len(entries) >= 20000 or total > 1024 * 1024 * 1024:
+            raise ValueError('Invalid source payload entries')
+        entries.append(entry)
+    if not entries:
+        raise ValueError('Invalid source payload entries')
+    return entries
+
 def archive_records(source):
-    entries = source.getmembers()
-    if not 1 <= len(entries) <= 20000:
-        raise ValueError('Invalid source payload entries')
-    if any((not e.isfile() or e.size > 200 * 1024 * 1024 for e in entries)):
-        raise ValueError('Invalid source payload entries')
-    if sum((e.size for e in entries)) > 1024 * 1024 * 1024:
-        raise ValueError('Invalid source payload entries')
+    entries = bounded_entries(source)
     names = [entry.name for entry in entries]
     if len(set(names)) != len(names) or 'HOST-MANIFEST.json' not in names:
         raise ValueError('Source manifest missing or duplicated')

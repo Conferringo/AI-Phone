@@ -50,7 +50,7 @@
     {
       "path": ".github/workflows/client.yml",
       "size": 6501,
-      "sha256": "17c0de8bce9fafd4cce04a223372bb6b2b68352f31b7be759da32f4e3c9ba8bb"
+      "sha256": "4d06040cadcbb80414400d482cfdbfde0e66c437d0e45e1555e23d12835d6546"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -3434,8 +3434,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 10325,
-      "sha256": "29754bad4e42ae803d43c2a9792d9323bdb58c3d06e414e7f182116cf5870817"
+      "size": 11734,
+      "sha256": "d8609a3dab28965007f7725b8c495852b1fb8eeb102fcf300a8c7482b4925652"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3444,8 +3444,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 15805,
-      "sha256": "f8c8afee00e58dfe35d85adb88b45199c66fdd563be9b25f7a3e13082f40a8e6"
+      "size": 15825,
+      "sha256": "a813eb6b80d1a971975cafec54e0038e9db134e3beab69659f5b88e7f3df4ff6"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3889,8 +3889,8 @@
     },
     {
       "path": "scripts/check_prebuilt_web.py",
-      "size": 4935,
-      "sha256": "8f54fd450ec4068ec0b261b6c81c559d2eb6f916c8ff1797d5f30c28ecafb498"
+      "size": 4943,
+      "sha256": "265d02c60262670cdca4959f00fe44138a75bc6fc1e50e3901ed0158ef23187a"
     },
     {
       "path": "scripts/check_source.py",
@@ -3934,8 +3934,8 @@
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 11438,
-      "sha256": "cae8850f8d5f8c8741099e8b213fc63ed4ad044e0d086e8801f176fd011e7f03"
+      "size": 11596,
+      "sha256": "9a2264dd37efe78cc546277ae68e8a12eadc7e71b7aec0e37bc5e809b7f0cf78"
     },
     {
       "path": "scripts/database.py",
@@ -4269,8 +4269,8 @@
     },
     {
       "path": "scripts/test_prebuilt_web.py",
-      "size": 5691,
-      "sha256": "e93d93eeac37985d50730761495817bea3d96a0f65b38d3cdf887de9ceb47a26"
+      "size": 6308,
+      "sha256": "32dd983ca2041824396ffb9169cb7b77a04d24ff16bbd8ffa80f14980aceada3"
     },
     {
       "path": "scripts/test_preview_notices.py",
@@ -4289,8 +4289,8 @@
     },
     {
       "path": "scripts/test_runtime_integrity.py",
-      "size": 7764,
-      "sha256": "991769b609dc77a1ef47bd04a1f8654de4311dec3f692935e4967fda9eb2cedd"
+      "size": 9317,
+      "sha256": "8d3db3d4d824065e9b5062908c8eb052b6feb6bade884d4e429a7e420a54b832"
     },
     {
       "path": "scripts/test_sdk_entrypoints.py",

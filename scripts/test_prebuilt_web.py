@@ -1,18 +1,27 @@
 """Prebuilt web deployment runs without its source checkout or a package manager."""
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 from prebuilt_web import prepare_web, web_command
 from bootstrap_bun import bun_path
 from client_host_entry import web_links
-from check_prebuilt_web import verify
+from check_prebuilt_web import verify, isolated_environment
 
 ROOT=Path(__file__).resolve().parent.parent
 
 class PrebuiltWebTests(unittest.TestCase):
+    def test_isolation_keeps_windows_system_environment_without_model_credentials(self):
+        with tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,{'SYSTEMROOT':'C:/Windows','USERPROFILE':'C:/Users/fixture','DEEPSEEK_API_KEY':'fixture-model-key'},clear=True):
+            environment=isolated_environment(Path(temp),12345)
+            self.assertEqual(environment.get('SYSTEMROOT'),'C:/Windows')
+            self.assertEqual(environment.get('USERPROFILE'),'C:/Users/fixture')
+            self.assertNotIn('DEEPSEEK_API_KEY',environment)
+
     def fixture(self, root):
         (root/'config').mkdir();(root/'config/bun-runtime.json').write_bytes((ROOT/'config/bun-runtime.json').read_bytes())
         app=root/'apps/web';server=app/'.next/standalone/apps/web/server.js';server.parent.mkdir(parents=True)
