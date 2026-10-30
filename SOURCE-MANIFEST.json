@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7262,
-      "sha256": "d9b5ddae72aca981d90190a7b4ac7b2497e6ef8fb2f0d5502df2ae76a291fb75"
+      "size": 7279,
+      "sha256": "44e4ea682c694196fe231fb5c715823a95a6679a046d2ae1b206098d7367eabd"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -2609,8 +2609,8 @@
     },
     {
       "path": "docs/public/engineering/private-install-state.md",
-      "size": 4543,
-      "sha256": "fc973accb1a3deea7461d2aae8bf6b900bc465fc670e1249fd9d5c0e99575497"
+      "size": 4739,
+      "sha256": "d3c836759ce04f1936fe18ceed633fc483662065470fe6ac69b2ddca29b48644"
     },
     {
       "path": "docs/public/engineering/runtime-audit-20261030.md",
@@ -4544,8 +4544,8 @@
     },
     {
       "path": "scripts/test_private_files.py",
-      "size": 7568,
-      "sha256": "4745e8b88832575bd6091e3b547c8f8f270bffff406d3d3eeb2bcfd5bd6dc4d7"
+      "size": 8465,
+      "sha256": "2efad67c8d9a1e78d8f9aa0d083a7d838e77624775f8886f9c5fbe6b1718b67f"
     },
     {
       "path": "scripts/test_release.py",
@@ -4578,9 +4578,14 @@
       "sha256": "4f4285b74f8ad48277ddead5b1368e9b5ac88ef3817b882fdb1b7c195353e5a8"
     },
     {
+      "path": "scripts/test_windows_acl.py",
+      "size": 5748,
+      "sha256": "2217220baa84af4a961dc9cffb5b7f861379b5c3debaf1b09d37cde4164af433"
+    },
+    {
       "path": "scripts/test_windows_private.py",
-      "size": 7455,
-      "sha256": "3f9923da469b07da33f7e81b067e91590f6259d666ccc693cceb37e2c1ea6405"
+      "size": 6651,
+      "sha256": "1acbd580b88e162e55ff9d4d3febc3b82f18cb7986522eb29ce2ac042bfac378"
     },
     {
       "path": "scripts/verify_source_install.py",
@@ -4594,8 +4599,8 @@
     },
     {
       "path": "scripts/windows_private.py",
-      "size": 5519,
-      "sha256": "c2ba2a2bcb3391b96e8bfb47d3823b1e3e9546f15651854d08f6cea88ae6f928"
+      "size": 7820,
+      "sha256": "e39d1d2a0039d8422afa1facc352794d86f891deafbe110e67c82c10723b0489"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",

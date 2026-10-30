@@ -1,14 +1,27 @@
 """Current-user/SYSTEM ACLs and durable same-volume publication on Windows."""
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
+import ctypes as c
 from functools import lru_cache
 
 DACL = 4
 PROTECTED_DACL = 0x80000000
+FULL_ACCESS = 0x001f01ff
+
+
+class AclSizeInfo(c.Structure):
+    _fields_ = [('count', c.c_uint32), ('used', c.c_uint32), ('free', c.c_uint32)]
+
+
+class AceHeader(c.Structure):
+    _fields_ = [('kind', c.c_uint8), ('flags', c.c_uint8), ('size', c.c_uint16)]
+
+
+class AllowedAce(c.Structure):
+    _fields_ = [('header', AceHeader), ('mask', c.c_uint32), ('sid_start', c.c_uint32)]
 
 
 @lru_cache(maxsize=1)
 def api():
-    import ctypes as c
     from ctypes import wintypes as w
     security = c.WinDLL('advapi32', use_last_error=True)
     kernel = c.WinDLL('kernel32', use_last_error=True)
@@ -24,7 +37,12 @@ def api():
         (security.GetSecurityDescriptorDacl, [c.c_void_p, c.POINTER(w.BOOL), c.POINTER(c.c_void_p), c.POINTER(w.BOOL)], w.BOOL),
         (security.SetNamedSecurityInfoW, [w.LPWSTR, c.c_int, w.DWORD, c.c_void_p, c.c_void_p, c.c_void_p, c.c_void_p], w.DWORD),
         (security.GetNamedSecurityInfoW, [w.LPCWSTR, c.c_int, w.DWORD, c.c_void_p, c.c_void_p, c.c_void_p, c.c_void_p, c.POINTER(c.c_void_p)], w.DWORD),
-        (security.ConvertSecurityDescriptorToStringSecurityDescriptorW, [c.c_void_p, w.DWORD, w.DWORD, c.POINTER(w.LPWSTR), c.POINTER(w.DWORD)], w.BOOL),
+        (security.GetSecurityDescriptorControl, [c.c_void_p, c.POINTER(c.c_uint16), c.POINTER(c.c_uint32)], w.BOOL),
+        (security.GetAclInformation, [c.c_void_p, c.c_void_p, w.DWORD, c.c_int], w.BOOL),
+        (security.GetAce, [c.c_void_p, w.DWORD, c.POINTER(c.c_void_p)], w.BOOL),
+        (security.IsValidSid, [c.c_void_p], w.BOOL),
+        (security.EqualSid, [c.c_void_p, c.c_void_p], w.BOOL),
+        (security.ConvertStringSidToSidW, [w.LPCWSTR, c.POINTER(c.c_void_p)], w.BOOL),
     ]
     for function, arguments, result in definitions:
         function.argtypes, function.restype = arguments, result
@@ -33,18 +51,15 @@ def api():
 
 def checked(result):
     if not result:
-        import ctypes
-        raise ctypes.WinError(ctypes.get_last_error())
+        raise c.WinError(c.get_last_error())
 
 
 def checked_code(code):
     if code:
-        import ctypes
-        raise ctypes.WinError(code)
+        raise c.WinError(code)
 
 
 def query_buffer(function, *arguments):
-    import ctypes as c
     from ctypes import wintypes as w
     size = w.DWORD()
     result = function(*arguments, None, 0, c.byref(size))
@@ -59,7 +74,6 @@ def query_buffer(function, *arguments):
 
 @contextmanager
 def token():
-    import ctypes as c
     from ctypes import wintypes as w
     security, kernel = api()
     handle = w.HANDLE()
@@ -72,7 +86,6 @@ def token():
 
 @lru_cache(maxsize=1)
 def user_sid():
-    import ctypes as c
     from ctypes import wintypes as w
     security, kernel = api()
     with token() as handle:
@@ -86,13 +99,16 @@ def user_sid():
             kernel.LocalFree(c.cast(text, c.c_void_p))
 
 
+def private_sids():
+    return ('S-1-5-18', user_sid())
+
+
 def private_dacl():
-    return 'D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;' + user_sid() + ')'
+    return 'D:P' + ''.join('(A;OICI;FA;;;' + sid + ')' for sid in private_sids())
 
 
 @contextmanager
 def constructed(value):
-    import ctypes as c
     security, kernel = api()
     result = c.c_void_p()
     checked(security.ConvertStringSecurityDescriptorToSecurityDescriptorW(value, 1, c.byref(result), None))
@@ -103,20 +119,16 @@ def constructed(value):
 
 
 def protect(path):
-    import ctypes as c
-    from ctypes import wintypes as w
     security, _ = api()
     with constructed(private_dacl()) as value:
-        present, defaulted, acl = w.BOOL(), w.BOOL(), c.c_void_p()
-        checked(security.GetSecurityDescriptorDacl(value, c.byref(present), c.byref(acl), c.byref(defaulted)))
-        if not present.value or not acl.value:
+        acl = get_dacl(value)
+        if acl is None:
             raise ValueError('Private Windows DACL is missing')
         checked_code(security.SetNamedSecurityInfoW(str(path), 1, DACL | PROTECTED_DACL, None, None, acl, None))
 
 
 @contextmanager
 def descriptor(path):
-    import ctypes as c
     security, kernel = api()
     value = c.c_void_p()
     checked_code(security.GetNamedSecurityInfoW(str(path), 1, DACL, None, None, None, None, c.byref(value)))
@@ -126,26 +138,87 @@ def descriptor(path):
         kernel.LocalFree(value)
 
 
-def descriptor_text(value):
-    import ctypes as c
+def protected(value):
+    security, _ = api()
+    control, revision = c.c_uint16(), c.c_uint32()
+    checked(security.GetSecurityDescriptorControl(value, c.byref(control), c.byref(revision)))
+    return control.value & 0x1004 == 0x1004
+
+
+def get_dacl(value):
     from ctypes import wintypes as w
+    security, _ = api()
+    present, defaulted, acl = w.BOOL(), w.BOOL(), c.c_void_p()
+    checked(security.GetSecurityDescriptorDacl(value, c.byref(present), c.byref(acl), c.byref(defaulted)))
+    return acl if present.value and acl.value else None
+
+
+def ace_count(acl):
+    security, _ = api()
+    info = AclSizeInfo()
+    checked(security.GetAclInformation(acl, c.byref(info), c.sizeof(info), 2))
+    return info.count
+
+
+def applying_allow(header):
+    # Origin/child-inheritance flags do not change an ACE's grant on this object.
+    # INHERIT_ONLY, audit flags and unknown bits are not applicable grants.
+    return header.kind == 0 and not header.flags & ~0x17 and 16 <= header.size <= 76
+
+
+def ace_sid(acl, index):
+    security, _ = api()
+    pointer = c.c_void_p()
+    checked(security.GetAce(acl, index, c.byref(pointer)))
+    if not pointer.value:
+        return None
+    header = c.cast(pointer, c.POINTER(AceHeader)).contents
+    if not applying_allow(header):
+        return None
+    value = c.cast(pointer, c.POINTER(AllowedAce)).contents
+    if value.mask != FULL_ACCESS:
+        return None
+    sid = pointer.value + AllowedAce.sid_start.offset
+    count = c.c_uint8.from_address(sid + 1).value
+    if count > 15 or header.size != 16 + 4 * count:
+        return None
+    return c.c_void_p(sid) if security.IsValidSid(sid) else None
+
+
+@contextmanager
+def sid_pointer(value):
     security, kernel = api()
-    text = w.LPWSTR()
-    checked(security.ConvertSecurityDescriptorToStringSecurityDescriptorW(value, 1, DACL, c.byref(text), None))
+    pointer = c.c_void_p()
+    checked(security.ConvertStringSidToSidW(value, c.byref(pointer)))
     try:
-        return text.value
+        yield pointer
     finally:
-        kernel.LocalFree(c.cast(text, c.c_void_p))
+        kernel.LocalFree(pointer)
+
+
+def consume_sid(value, remaining):
+    security, _ = api()
+    for index, candidate in enumerate(remaining):
+        if security.EqualSid(value, candidate):
+            remaining.pop(index)
+            return True
+    return False
 
 
 def is_private(path):
     with descriptor(path) as value:
-        actual = descriptor_text(value)
-    # Let Windows normalize SID spellings (including built-in-account aliases).
-    with constructed(private_dacl()) as value:
-        expected = descriptor_text(value)
-    # AUTO_INHERITED is descriptive; PROTECTED and both exact ACEs remain mandatory.
-    return actual in (expected, 'D:PAI' + expected[3:])
+        if not protected(value):
+            return False
+        acl = get_dacl(value)
+        if acl is None or ace_count(acl) != 2:
+            return False
+        with ExitStack() as owners:
+            remaining = [owners.enter_context(sid_pointer(sid)) for sid in private_sids()]
+            for index in range(2):
+                sid = ace_sid(acl, index)
+                if sid is None or not consume_sid(sid, remaining):
+                    return False
+            return True
 
 
 def replace(source, destination):

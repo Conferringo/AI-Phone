@@ -9,6 +9,21 @@ import time
 import unittest
 
 class PrivateFileTests(unittest.TestCase):
+    def assert_private(self,path):
+        from private_files import is_private
+        private=is_private(path)
+        if not private and os.name=='nt':
+            import ctypes as c
+            import windows_private as native
+            with native.descriptor(path) as value:
+                acl=native.get_dacl(value);count=native.ace_count(acl) if acl else 0;entries=[]
+                for index in range(min(count,8)):
+                    pointer=c.c_void_p();native.checked(native.api()[0].GetAce(acl,index,c.byref(pointer)));header=c.cast(pointer,c.POINTER(native.AceHeader)).contents
+                    mask=c.cast(pointer,c.POINTER(native.AllowedAce)).contents.mask if header.size>=12 else None
+                    entries.append((header.kind,header.flags,header.size,mask))
+                self.fail(str({'protected':native.protected(value),'ace_count':count,'entries':entries}))
+        self.assertTrue(private)
+
     @unittest.skipUnless(os.name=='nt','Windows native ACL semantics')
     def test_native_windows_acl_rejects_an_extra_world_read_grant(self):
         from private_files import atomic_json,is_private
@@ -27,7 +42,7 @@ class PrivateFileTests(unittest.TestCase):
             self.assertEqual(missing.exception.winerror,2)
             dacl=windows_private.private_dacl()+'(A;OICI;FR;;;WD)'
             with patch('windows_private.private_dacl',return_value=dacl):windows_private.protect(path)
-            self.assertFalse(is_private(path));windows_private.protect(path);self.assertTrue(is_private(path))
+            self.assertFalse(is_private(path));windows_private.protect(path);self.assert_private(path)
 
     def test_private_descriptor_creation_failure_closes_its_owned_handle(self):
         from private_files import atomic_json
@@ -59,11 +74,11 @@ class PrivateFileTests(unittest.TestCase):
         from unittest.mock import patch
         with tempfile.TemporaryDirectory() as temporary:
             path=Path(temporary)/'owned'/'state.json';atomic_json(path,{'old':'retained'})
-            self.assertTrue(is_private(path));self.assertTrue(is_private(path.parent));self.assertEqual(json.loads(path.read_text()),{'old':'retained'})
+            self.assert_private(path);self.assert_private(path.parent);self.assertEqual(json.loads(path.read_text()),{'old':'retained'})
             with patch('private_files.json.dump',side_effect=OSError('fixture write failure')):
                 with self.assertRaises(OSError):atomic_json(path,{'new':'not published'})
             self.assertEqual(json.loads(path.read_text()),{'old':'retained'});self.assertEqual(list(path.parent.glob('.credentials-*')),[])
-            atomic_json(path,{'new':'committed'});self.assertEqual(json.loads(path.read_text()),{'new':'committed'});self.assertTrue(is_private(path))
+            atomic_json(path,{'new':'committed'});self.assertEqual(json.loads(path.read_text()),{'new':'committed'});self.assert_private(path)
 
     def test_real_process_lock_rejects_contention_and_releases_after_kill(self):
         from installer_lock import acquire

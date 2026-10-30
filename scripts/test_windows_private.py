@@ -39,31 +39,23 @@ class WindowsSecurityTests(unittest.TestCase):
 
     def test_sid_and_acl_strings_are_released_and_only_exact_private_acl_is_accepted(self):
         import windows_private
+        from test_windows_acl import NativeAclFixture,SYSTEM,USER,FULL
         values=[];released=[];sid='S-1-5-21-123-456-789-500'
-        def text_result(text,output):
-            buffer=c.create_unicode_buffer(text);values.append(buffer);c.cast(output,c.POINTER(w.LPWSTR))[0]=c.cast(buffer,w.LPWSTR);return True
+        def text_result(raw,output):
+            self.assertEqual(raw,42);buffer=c.create_unicode_buffer(sid);values.append(buffer);c.cast(output,c.POINTER(w.LPWSTR))[0]=c.cast(buffer,w.LPWSTR);return True
         pointer=c.c_void_p(42)
-        def get_descriptor(*args):
-            self.assertEqual(args[1],1);c.cast(args[-1],c.POINTER(c.c_void_p))[0]=123;return 0
-        canonical='D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;LA)';actual=[canonical]
-        def converted(text,revision,out,size):c.cast(out,c.POINTER(c.c_void_p))[0]=456;return True
-        def formatted(raw,revision,info,out,length):
-            if revision!=1:return False
-            return text_result(canonical if raw.value==456 else actual[0],out)
-        security=SimpleNamespace(GetTokenInformation=object(),GetNamedSecurityInfoW=get_descriptor,ConvertSidToStringSidW=lambda raw,out:text_result(sid,out) if raw==42 else False,ConvertStringSecurityDescriptorToSecurityDescriptorW=converted,ConvertSecurityDescriptorToStringSecurityDescriptorW=formatted)
+        security=SimpleNamespace(GetTokenInformation=object(),ConvertSidToStringSidW=text_result)
         kernel=SimpleNamespace(LocalFree=lambda value:released.append(value.value))
         @contextmanager
         def fixture_token():yield 1
         windows_private.user_sid.cache_clear()
         try:
             with patch('windows_private.api',return_value=(security,kernel)),patch('windows_private.token',fixture_token),patch('windows_private.query_buffer',side_effect=lambda function,handle,kind:c.string_at(c.byref(pointer),c.sizeof(pointer))+b'\0'*c.sizeof(pointer) if kind==1 else (_ for _ in ()).throw(OSError('wrong token class'))):
-                self.assertEqual(windows_private.user_sid(),sid);self.assertTrue(windows_private.is_private('fixture'))
-                actual[0]='D:PAI'+canonical[3:]
-                self.assertTrue(windows_private.is_private('fixture'))
-                actual[0]='D:(A;;FA;;;WD)'
-                self.assertFalse(windows_private.is_private('fixture'))
-            self.assertEqual(released.count(123),3);self.assertEqual(released.count(456),3);self.assertEqual(len(released),13)
+                self.assertEqual(windows_private.user_sid(),sid)
+            self.assertEqual(len(released),1)
         finally:windows_private.user_sid.cache_clear()
+        self.assertTrue(NativeAclFixture().run())
+        self.assertFalse(NativeAclFixture([(SYSTEM,FULL,0,0),(USER,FULL,0,0),('S-1-1-0',FULL,0,0)]).run())
 
     def test_publication_requests_replace_and_write_through_and_propagates_failure(self):
         from windows_private import replace
