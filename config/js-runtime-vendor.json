@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "assets": [
+    {
+      "package": "@img/sharp-libvips-darwin-arm64",
+      "version": "1.3.4",
+      "file": "lib/libvips-cpp.8.18.7.dylib",
+      "sha256": "c1a5b5633b21aeb8a229abf7d062e07e4d778c0b44ed43cd1f93362bda58c322",
+      "archive_url": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.4.tgz",
+      "archive_integrity": "sha512-5R89nBYiRdUlSWJxPhO+GVtaXzXSxKnRu/xqMn3KTA3L9EB9Oy/P+Nn2f2vlhPuUdy/Zusb2DarbyTpGCfEDuw==",
+      "archive_sha256": "e8350e62344d027995ef46cdd97a5ea1c88bc54ab82ab8c3fcb0c076d839675f",
+      "purpose": "Upstream public build paths; exact published registry bytes only"
+    }
+  ]
+}

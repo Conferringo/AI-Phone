@@ -14,3 +14,5 @@ These records support contributor review. Dated results apply to their recorded 
 - [First-run and window review](../release-ux-audit-2026-10-29.md)
 - [Model/channel/platform maturity](../interface-audit-2026-10-29.md)
 - [Audio and recovery review](../release-stability-2026-10-29.md)
+
+- [Offline JavaScript services](js-runtime.md): source-bound media/channel dependencies, role selection, provenance and real relocated execution.

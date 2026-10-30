@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import re
 
-COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json','container-host':'runtime/container-host/manifest.json'}
+COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json','container-host':'runtime/container-host/manifest.json','js-services':'runtime/js-services/manifest.json'}
 
 def canonical_name(name):
     if not isinstance(name, str):
@@ -25,7 +25,7 @@ def canonical_name(name):
 def runtime_name(path, enabled):
     if not enabled:
         return False
-    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps', 'container-host'))
+    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps', 'container-host', 'js-services'))
 
 def source_name(name, runtime=False):
     path = canonical_name(name)
@@ -40,8 +40,8 @@ def source_name(name, runtime=False):
         raise ValueError('Invalid source payload path')
     return path
 
-def link_rows(root):
-    manifest = Path(root) / 'runtime/manifest.json'
+def link_rows(root, manifest_name='runtime/manifest.json'):
+    manifest = Path(root) / manifest_name
     if manifest.stat().st_size > 4 * 1024 * 1024:
         raise ValueError('Invalid runtime link manifest')
     rows = json.loads(manifest.read_text()).get('links', [])
@@ -49,21 +49,21 @@ def link_rows(root):
         raise ValueError('Invalid runtime links')
     return rows
 
-def parse_link(row):
+def parse_link(row, component='runtime/web'):
     if not isinstance(row, dict) or set(row) != {'path', 'target'}:
         raise ValueError('Invalid runtime link record')
     if not all((isinstance(v, str) for v in row.values())):
         raise ValueError('Invalid runtime link record')
     path = source_name(row['path'], runtime=True)
     target = row['target']
-    if not row['path'].startswith('runtime/web/'):
+    if not row['path'].startswith(component + '/'):
         raise ValueError('Invalid runtime link')
     if set(target).intersection('\\:') or PurePosixPath(target).is_absolute():
         raise ValueError('Invalid runtime link')
     return (path, target)
 
-def link_destination(root, name, target):
-    component = root / 'runtime/web'
+def link_destination(root, name, target, component='runtime/web'):
+    component = root / component
     link = root / name
     parents = [link.parent, *link.parent.parents]
     if any((p.is_symlink() for p in parents if p.is_relative_to(component))):
@@ -89,14 +89,17 @@ def ensure_link(link, destination, target, create):
 
 def web_links(root, *, create=False):
     """Aliases are contained; create them only after all regular files are verified."""
+    component_links(root, 'runtime/manifest.json', 'runtime/web', create=create)
+
+def component_links(root, manifest_name, component, *, create=False):
     root = Path(root).resolve()
     seen = set()
-    for row in link_rows(root):
-        path, target = parse_link(row)
+    for row in link_rows(root, manifest_name):
+        path, target = parse_link(row, component)
         if path in seen:
             raise ValueError('Duplicate runtime link')
         seen.add(path)
-        link, destination = link_destination(root, path, target)
+        link, destination = link_destination(root, path, target, component)
         ensure_link(link, destination, target, create)
 
 def file_hash(path):
@@ -211,6 +214,8 @@ def verify_existing(destination, records, data, runtime):
     if runtime:
         if (destination / 'runtime/manifest.json').is_file():
             web_links(destination)
+        if (destination / 'runtime/js-services/manifest.json').is_file():
+            component_links(destination, 'runtime/js-services/manifest.json', 'runtime/js-services')
     for name, target in [('data', data), ('.env', data.parent / '.env')]:
         verify_persistent_link(destination / name, target)
 
@@ -245,6 +250,8 @@ def stage_source(archive, installation):
             if runtime:
                 if (work / 'runtime/manifest.json').is_file():
                     web_links(work, create=True)
+            if (work / 'runtime/js-services/manifest.json').is_file():
+                component_links(work, 'runtime/js-services/manifest.json', 'runtime/js-services', create=True)
             (work / 'data').symlink_to(data, target_is_directory=True)
             (work / '.env').symlink_to(data.parent / '.env')
             work.rename(destination)

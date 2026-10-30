@@ -99,7 +99,7 @@ class ReleaseTests(unittest.TestCase):
         import release
         import subprocess
         with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
+            root = Path(folder).resolve()
             profile = root / release.PROFILE; profile.parent.mkdir(parents=True); profile.write_text('{}')
             environment = {'AI_PHONE_SDK_ROOT': str(root/'sdk'), 'AI_PHONE_ANDROID_ABI': 'arm64-v8a', 'AI_PHONE_CONTAINER_PROXY': ''}
             phases, commands = [], []

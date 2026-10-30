@@ -46,6 +46,8 @@ jobs:
         run: |
           python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"
           ./scripts/bun run build
+      - name: Source-bound offline JS services
+        run: python3 scripts/prebuilt_js.py --build
       - name: Prebuilt native services and OCR
         run: |
           sudo apt-get update && sudo apt-get install -y python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim

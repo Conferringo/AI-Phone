@@ -9,7 +9,7 @@ import tarfile
 from release_package import select_files
 ROOT = Path(__file__).resolve().parent.parent
 
-def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, android_runtime=None, image_runtime=None, installer_tools=None):
+def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, with_js_services=False, android_runtime=None, image_runtime=None, installer_tools=None):
     folder = root / 'apps/client/src-tauri/gen/host'
     folder.mkdir(parents=True, exist_ok=True)
     files = select_files(root)
@@ -26,7 +26,10 @@ def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, wi
     if with_container_host:
         from container_host_runtime import prepare_host
         files.extend(prepare_host(root))
-    components = (['web'] if with_web_runtime else []) + (['native-services'] if with_service_runtime else []) + (['phone-apps'] if with_phone_apps else []) + (['container-host'] if with_container_host else [])
+    if with_js_services:
+        from prebuilt_js import prepare as prepare_js
+        files.extend(prepare_js(root))
+    components = (['web'] if with_web_runtime else []) + (['native-services'] if with_service_runtime else []) + (['phone-apps'] if with_phone_apps else []) + (['container-host'] if with_container_host else []) + (['js-services'] if with_js_services else [])
     manifest = {'format': 2 if components else 1, 'components': components, 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=mode) for name, data, mode in files]}
     files.append(('HOST-MANIFEST.json', json.dumps(manifest, sort_keys=True).encode(), 420))
     archive = folder / 'source.payload'
@@ -112,6 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--with-service-runtime', action='store_true')
     parser.add_argument('--with-phone-apps', action='store_true')
     parser.add_argument('--with-container-host', action='store_true')
+    parser.add_argument('--with-js-services', action='store_true')
     parser.add_argument('--android-runtime',type=Path)
     parser.add_argument('--images-runtime',type=Path)
     parser.add_argument('--installer-tools',type=Path)
@@ -126,7 +130,7 @@ if __name__ == '__main__':
         parser.error('Verification requires --with-service-runtime')
     if (args.pg_container is None) != (args.pg_port is None) or (args.pg_container is not None and not args.verify_service_runtime):
         parser.error('Database fixture requires container/port and service verification')
-    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
+    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
     if args.verify_web_runtime:
         result['web_runtime_verification'] = verify_prepared_web()
     if args.verify_service_runtime:

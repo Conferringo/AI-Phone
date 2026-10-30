@@ -200,7 +200,8 @@ def image_id(tag):
 
 def native_apps(root, env, download=False):
     operation = 'download' if download else 'verify'
-    result = subprocess.run([str(root/'.tools/bin/bun'), str(root/'apps/device-network/native-apps.ts')],
+    from prebuilt_js import launch_spec
+    result = subprocess.run(launch_spec(root, 'native-apps')['argv'],
                             input=json.dumps({'operation': operation}), text=True, cwd=root, env=env, capture_output=True)
     if download and result.returncode:
         raise ValueError('Clash application download failed; check the installation network or AI_PHONE_BOOTSTRAP_PROXY')
@@ -208,6 +209,9 @@ def native_apps(root, env, download=False):
 
 
 def bootstrap_valid(root):
+    from prebuilt_js import available, private_bun
+    if available(root):
+        return private_bun(root) is not None
     if not (root/'.tools/bin/bun').is_file() or not (root/'apps/web/node_modules/next/package.json').is_file():
         return False
     result = subprocess.run([root/'.tools/bin/bun', '--version'], capture_output=True, text=True)
@@ -216,7 +220,8 @@ def bootstrap_valid(root):
 
 def messaging_browser(root, env, download=False):
     # Contributor bootstrap. Complete distributions must include this component.
-    args = [str(root/'.tools/bin/bun'), str(root/'apps/channels/install-browser.ts')] + ([] if download else ['--verify'])
+    from prebuilt_js import launch_spec
+    args = launch_spec(root, 'messaging-browser')['argv'] + ([] if download else ['--verify'])
     result = subprocess.run(args, cwd=root, env=env, capture_output=True, text=True)
     if download and result.returncode:
         raise ValueError('WhatsApp browser component preparation failed; check the installation network or provide AI_PHONE_WHATSAPP_CHROMIUM')
@@ -245,9 +250,11 @@ def install_sdk(state, root, env, license_action):
 
 def install_source_components(state, root, env):
     from install_state import fingerprint
+    from prebuilt_js import available, private_bun
     inputs = ['scripts/bootstrap.sh', 'package.json', 'bun.lock', 'buf.gen.yaml', 'packages/protocol/proto',
               *[str(p.relative_to(root)) for base in ('apps', 'packages') for p in (root/base).glob('*/package.json')]]
-    state.phase('dependencies', fingerprint(root, inputs), lambda: run(['./scripts/bootstrap.sh'], env=env, root=root), lambda: bootstrap_valid(root))
+    prepare = (lambda: private_bun(root, create=True)) if available(root) else (lambda: run(['./scripts/bootstrap.sh'], env=env, root=root))
+    state.phase('dependencies', fingerprint(root, inputs), prepare, lambda: bootstrap_valid(root))
     state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'apps/device-network/native-apps.ts']),
                 lambda: native_apps(root, env, True), lambda: native_apps(root, env))
     # No upstream Chromium snapshot for Linux ARM; do not record absent bytes as installed.

@@ -59,3 +59,7 @@ Chromium is a separate required runtime component for this optional connection. 
 ## Prebuilt web component (development builds)
 
 Desktop development packages can embed Next standalone output and the pinned Bun executable; this is a separate binary scope from the native Rust/WebView client. The source inventory records the JavaScript packages, while complete product bundles still require full Bun/runtime third-party texts, applicable source obligations and a reviewed browser/image inventory. The unused Sharp/libvips image optimizer is excluded from this component; raw media is unchanged. These partial builds are local or CI verification artifacts and are not published as complete installers. See [runtime bundle boundaries](docs/public/runtime-bundles.md).
+
+## Media and channel runtime component
+
+The optional offline JavaScript service component retains locked production package files, including their upstream licence texts, and uses the pinned Bun runtime. Unlike the web component's unused image optimizer, media capture uses Sharp and libvips at runtime. Full native library dependency notices and applicable corresponding-source delivery remain binary publication requirements. An exact registry-provenance record in `config/js-runtime-vendor.json` accounts for upstream build-path strings in one macOS libvips resource; it does not waive licence or credential checks. Chromium and guest Clash assets are separate resources. See the [component format and verification scope](docs/public/engineering/js-runtime.md).
