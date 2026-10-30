@@ -22,10 +22,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: Rust stable with formatting
+      - name: Pinned Rust with formatting
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt
-          rustup default stable
+          rustup toolchain install 1.96.0 --profile minimal --component rustfmt
+          rustup default 1.96.0
       - name: Fixed Bun and locked dependencies
         run: |
           ./scripts/bootstrap.sh
@@ -46,8 +46,37 @@ jobs:
         run: |
           python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"
           ./scripts/bun run build
-      - name: Isolated prebuilt web payload and cold start
-        run: python3 scripts/prepare_client_host.py --with-web-runtime --verify-web-runtime
+      - name: Prebuilt native services and OCR
+        run: |
+          sudo apt-get update && sudo apt-get install -y python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          python3 scripts/build_native_services.py
+      - name: Disposable native-runtime database
+        run: |
+          docker run -d --name aiphone-native-ci --label dev.aiphone.test=native-runtime --memory 256m -p 127.0.0.1:55512:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-native-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+          python3 - <<'PY'
+          import subprocess, time
+          for _ in range(40):
+              if subprocess.run(['docker','exec','aiphone-native-ci','pg_isready','-U','ai_phone','-d','ai_phone'],capture_output=True).returncode == 0:
+                  break
+              time.sleep(.5)
+          else:
+              raise SystemExit('Native-runtime database did not become ready')
+          PY
+      - name: Isolated payload, cold start and prebuilt database roles
+        run: python3 scripts/prepare_client_host.py --with-web-runtime --with-service-runtime --verify-web-runtime --verify-service-runtime --pg-container aiphone-native-ci --pg-port 55512
+      - name: Remove native-runtime fixture
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          from sys import path
+          path.insert(0, 'scripts')
+          from check_native_services import require_test_database
+          name='aiphone-native-ci'
+          if subprocess.run(['docker','inspect',name],capture_output=True).returncode == 0:
+              require_test_database(name,55512)
+              subprocess.run(['docker','rm','-fv',name],check=True)
+          PY
       - name: Remove build-only privacy sentinel
         if: always()
         run: |

@@ -39,7 +39,7 @@ Interface and first-setup languages: all ten languages above. The language contr
 - **Reusable capability:** built-in phone-use, computer-use, transfer and application-learning Skills; linked knowledge documents; Agent-specific memory and external connections.
 - **Guest networking:** native Clash applications run inside Android and Linux; users control guest networking there. Host networking defaults to direct access.
 
-See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeCom, Telegram and local-QR WhatsApp scope. Adapter code does not establish end-to-end acceptance for every account. [Model and connection setup](docs/public/model-and-channel-setup.md) covers all 13 presets and the three API protocols. The desktop companion has been removed from the core; only a [future extension design](docs/public/companion-extension.md) remains.
+See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeCom, Telegram and local-QR WhatsApp scope. Adapter code does not establish end-to-end acceptance for every account. [Model and connection setup](docs/public/model-and-channel-setup.md) covers all 13 presets and the three API protocols.
 
 ## Architecture and directories
 
@@ -107,7 +107,7 @@ AI Phone 为 Agent 提供真实 Android 手机和轻量 Linux 桌面：查看设
 - **能力积累**：内置 phone-use、computer-use、文件传输及应用学习 Skill；知识库支持文档关联，记忆与外部连接归属 Agent。
 - **客体网络**：Android/Linux 内各自安装 Clash 图形应用，用户在设备内管理网络；宿主默认直联。
 
-QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[兼容矩阵](docs/public/compatibility.md)；存在适配器不等于每个真实账号都已完成收发验收。桌宠已退出本体，只保留[独立扩展思路](docs/public/companion-extension.md)。
+QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[兼容矩阵](docs/public/compatibility.md)；存在适配器不等于每个真实账号都已完成收发验收。
 
 ## 技术框架与目录
 

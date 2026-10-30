@@ -2,7 +2,6 @@
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import socket
@@ -13,15 +12,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from prebuilt_web import web_command
+from runtime_verification import isolated_environment as runtime_environment
 
 def isolated_environment(root, port):
-    if (root / '.env').exists():
-        raise ValueError('Use an isolated runtime without existing user state')
-    if (root / 'data').exists() and any((root / 'data').iterdir()):
-        raise ValueError('Use an isolated runtime without existing user state')
-    allowed = ('HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'TMPDIR', 'LANG')
-    environment = {k: v for k, v in os.environ.items() if k.upper() in allowed}
-    environment.update(PATH=os.defpath, PORT=str(port), HOSTNAME='127.0.0.1', AI_PHONE_PROJECT_ROOT=str(root), AI_PHONE_LOCAL_ENTRY='1', NEXT_TELEMETRY_DISABLED='1')
+    environment = runtime_environment(root)
+    environment.update(PORT=str(port), HOSTNAME='127.0.0.1', AI_PHONE_LOCAL_ENTRY='1', NEXT_TELEMETRY_DISABLED='1')
     return environment
 
 def ready_page(child, opener, origin):

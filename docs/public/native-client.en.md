@@ -4,7 +4,7 @@
 
 ## Development status
 
-Product downloads are withdrawn. The next distribution must include system images, emulator and prebuilt services; see [distribution requirements](preview-release.md). The source setup/connection implementation below is development code, not a complete product installer.
+Complete product installers are not yet available. The distribution requires system images, emulator and prebuilt services; see [distribution requirements](preview-release.md). The source setup/connection implementation below is development code, not a complete product installer.
 
 A reachable saved deployment opens directly. macOS can resume a completed installation owned by the same client payload; interrupted setup shows Retry. AI Phone → Setup (Command/Control+,) returns to setup or connection settings. Only a successful server address is saved. User files, credentials, devices and conversations are not replaced by a client installation.
 

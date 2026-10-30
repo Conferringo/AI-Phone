@@ -9,7 +9,7 @@ import tarfile
 from release_package import select_files
 ROOT = Path(__file__).resolve().parent.parent
 
-def prepare(root=ROOT, *, with_web_runtime=False):
+def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False):
     folder = root / 'apps/client/src-tauri/gen/host'
     folder.mkdir(parents=True, exist_ok=True)
     files = select_files(root)
@@ -17,7 +17,11 @@ def prepare(root=ROOT, *, with_web_runtime=False):
         from bootstrap_bun import bun_path
         from prebuilt_web import prepare_web
         files.extend(prepare_web(root, bun_path(root)))
-    manifest = {'format': 2 if with_web_runtime else 1, 'components': ['web'] if with_web_runtime else [], 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=mode) for name, data, mode in files]}
+    if with_service_runtime:
+        from prebuilt_services import prepare_services
+        files.extend(prepare_services(root))
+    components = (['web'] if with_web_runtime else []) + (['native-services'] if with_service_runtime else [])
+    manifest = {'format': 2 if components else 1, 'components': components, 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=mode) for name, data, mode in files]}
     files.append(('HOST-MANIFEST.json', json.dumps(manifest, sort_keys=True).encode(), 420))
     archive = folder / 'source.payload'
     with archive.with_suffix('.tmp').open('wb') as raw, gzip.GzipFile(fileobj=raw, mode='wb', mtime=0, filename='') as compressed, tarfile.open(fileobj=compressed, mode='w') as target:
@@ -41,6 +45,17 @@ def verify_prepared_web(root=ROOT):
         staged = stage_source(root / 'apps/client/src-tauri/gen/host/source.payload', Path(folder) / 'installation')
         return verify(staged)
 
+def verify_prepared_services(root=ROOT, *, pg_container=None, pg_port=None):
+    import tempfile
+    from client_host_entry import stage_source
+    from check_native_services import verify, database_receipt
+    with tempfile.TemporaryDirectory(prefix='aiphone-bundled-services-') as folder:
+        staged = stage_source(root / 'apps/client/src-tauri/gen/host/source.payload', Path(folder) / 'installation')
+        result = verify(staged)
+        if pg_container is not None:
+            result['database'] = database_receipt(staged, pg_container, pg_port)
+        return result
+
 def payload_components(root=ROOT):
     archive = root / 'apps/client/src-tauri/gen/host/source.payload'
     if not archive.exists():
@@ -54,11 +69,21 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--with-web-runtime', action='store_true')
+    parser.add_argument('--with-service-runtime', action='store_true')
     parser.add_argument('--verify-web-runtime', action='store_true')
+    parser.add_argument('--verify-service-runtime', action='store_true')
+    parser.add_argument('--pg-container')
+    parser.add_argument('--pg-port', type=int)
     args = parser.parse_args()
     if args.verify_web_runtime and (not args.with_web_runtime):
         parser.error('Verification requires --with-web-runtime')
-    result = prepare(with_web_runtime=args.with_web_runtime)
+    if args.verify_service_runtime and not args.with_service_runtime:
+        parser.error('Verification requires --with-service-runtime')
+    if (args.pg_container is None) != (args.pg_port is None) or (args.pg_container is not None and not args.verify_service_runtime):
+        parser.error('Database fixture requires container/port and service verification')
+    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime)
     if args.verify_web_runtime:
         result['web_runtime_verification'] = verify_prepared_web()
+    if args.verify_service_runtime:
+        result['service_runtime_verification'] = verify_prepared_services(pg_container=args.pg_container, pg_port=args.pg_port)
     print(json.dumps(result))

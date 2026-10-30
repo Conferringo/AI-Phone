@@ -158,52 +158,64 @@ def installation_reserve(root, home, config):
     return config['minimum_resume_free_gb' if resumed else 'minimum_free_gb']
 
 
-def install(root, home, request, mise, emit):
-    request = check_request(request)
-    from host_platform import host_policy
-    config,host=host_policy(root)
+def install_preflight(root, home, config, bundled_services, emit):
     if platform.system()=='Darwin':
         from service_start import owned_jobs
-        owned_jobs(root)  # Fail before installing if another checkout owns loaded jobs.
-    minimum = installation_reserve(root, home, config)
-    if shutil.disk_usage(home).free < minimum * 1024 ** 3: raise ValueError(f'At least {minimum} GiB free space is required')
-    if platform.system()=='Darwin' and subprocess.run(['xcode-select', '-p'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-        emit('system-tools', 'blocked', error='command_line_tools')
-        subprocess.run(['xcode-select', '--install'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return
+        owned_jobs(root)
+    minimum=installation_reserve(root,home,config)
+    if shutil.disk_usage(home).free<minimum*1024**3:
+        raise ValueError(f'At least {minimum} GiB free space is required')
+    if platform.system()=='Darwin' and not bundled_services:
+        if subprocess.run(['xcode-select','-p'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
+            emit('system-tools','blocked',error='command_line_tools')
+            subprocess.run(['xcode-select','--install'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            return False
     if platform.system()=='Linux':
         from linux_host import prepare_system
-        prepare_system(emit)
+        prepare_system(emit,build_tools=not bundled_services)
+    return True
+
+
+def install_tools(home, mise, tools, emit):
     emit('toolchain')
-    execute([mise, 'install', '-y', *config['tools']], cwd=home)
-    result = execute([mise, 'env', '--json', *config['tools']], cwd=home, capture_output=True, text=True)
+    execute([mise,'install','-y',*tools],cwd=home)
+    result=execute([mise,'env','--json',*tools],cwd=home,capture_output=True,text=True)
     os.environ.update(json.loads(result.stdout))
-    # Every helper subprocess, including persisted launchd jobs, inherits owned tools.
-    sdk = home / 'tools/android-sdk'
-    profile_path = root / 'data/deployment/profile.json'
+
+
+def prepare_profile(root, home, request, host):
+    import release
+    profile_path=root/'data/deployment/profile.json'
     if profile_path.exists():
-        existing = json.loads(profile_path.read_text())
-        # An upgrade may not silently change hardware or user configuration.
-        from release import validate
-        validate(existing)
-        if existing['phone']['template']!=host['phone_template']:raise ValueError('Existing phone architecture differs from this host; no devices were changed')
-    else:
-        import release
-        value = dict(schema_version=1, local_entry=True, locale=request['locale'], sdk_root=str(sdk), java_home=os.environ['JAVA_HOME'], host_proxy='', container_proxy='',
-                     phone={'template': host['phone_template'], **request['phone']}, desktop={'template': 'debian13-openbox', **request['desktop']})
-        profile = home / 'request-profile.json'; profile.write_text(json.dumps(value)); profile.chmod(0o600)
-        release.configure(root, profile)
+        existing=json.loads(profile_path.read_text())
+        release.validate(existing)
+        if existing['phone']['template']!=host['phone_template']:
+            raise ValueError('Existing phone architecture differs from this host; no devices were changed')
+        return
+    value=dict(schema_version=1,local_entry=True,locale=request['locale'],sdk_root=str(home/'tools/android-sdk'),java_home=os.environ['JAVA_HOME'],host_proxy='',container_proxy='',
+               phone={'template':host['phone_template'],**request['phone']},desktop={'template':'debian13-openbox',**request['desktop']})
+    profile=home/'request-profile.json';profile.write_text(json.dumps(value));profile.chmod(0o600)
+    release.configure(root,profile)
+
+
+def install(root, home, request, mise, emit):
+    request=check_request(request)
+    from host_platform import host_policy
+    from prebuilt_services import launch_spec
+    config,host=host_policy(root)
+    bundled=launch_spec(root,'assistant')['prebuilt']
+    if not install_preflight(root,home,config,bundled,emit):return
+    tools=[tool for tool in config['tools'] if not (bundled and tool.startswith('rust@'))]
+    install_tools(home,mise,tools,emit)
+    prepare_profile(root,home,request,host)
     from runtime_config import runtime_env
     os.environ.update(runtime_env(root))
-    emit('sdk-tools'); prepare_sdk(config['sdk_hosts'][host['sdk']], Path(os.environ['AI_PHONE_SDK_ROOT']), home / 'cache')
-    container_engine(root, home, config, emit)
+    emit('sdk-tools')
+    prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
+    container_engine(root,home,config,emit)
     verify_container_ownership(root)
     import release
-    release.ROOT = root
-    # The initial reserve was checked before downloading tools. It is not a
-    # permanently required unused reserve on every retry. Actual ENOSPC fails
-    # the current checkpoint and never triggers deletion of user state.
-    release.install(observer=lambda phase, state: emit(phase, state), license_action=lambda manager, env, packages: sdk_licenses(manager, env, emit, packages), launch_client=False, minimum_free_gb=config['minimum_resume_free_gb'])
+    release.install(root=root,observer=lambda phase,state:emit(phase,state),license_action=lambda manager,env,packages:sdk_licenses(manager,env,emit,packages),launch_client=False,minimum_free_gb=config['minimum_resume_free_gb'])
     emit('devices')
-    execute([root / 'scripts/bun', root / 'scripts/client-device-setup.ts'], cwd=root)
-    emit('ready', 'ready')
+    execute([root/'scripts/bun',root/'scripts/client-device-setup.ts'],cwd=root)
+    emit('ready','ready')

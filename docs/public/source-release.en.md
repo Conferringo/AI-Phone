@@ -1,43 +1,37 @@
-# Source technical preview
+# Source builds and contribution
 
-2026-10-29 update: the maintainer authorized an experimental public source preview and waived separate-device installation as a source-publication prerequisite. This is not a passed installation check. Only a fresh allowlisted source/documentation tree is uploaded; no local history, state, installers or private evidence. Product acceptance and binary notices remain separate.
+[简体中文](source-release.zh-CN.md) · [Repository](https://github.com/Conferringo/AI-Phone)
 
-[简体中文](source-release.zh-CN.md) · 0.1.0-preview.1 · 2026-10-28
+The source contains the Next.js workbench, Rust execution services, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and CI workflows. The default workspace has one phone and one computer, each bound to an Agent. PostgreSQL persists task checkpoints; Redis is optional caching.
 
-This batch publishes an experimental source preview and a locally reviewable source tree. Original code is [Apache-2.0](../../LICENSE); third-party packages, reference assets and guest applications retain their respective terms. See [third-party notices](../../THIRD_PARTY_NOTICES.md).
+Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest applications retain their own terms; see [third-party notices](../../THIRD_PARTY_NOTICES.md). Source builds are intended for contributors. Complete end-user installers have separate contents and acceptance requirements in [release status](release-status.md).
 
-The package includes the Next.js workbench, Rust execution engine, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and GitHub workflow definitions. Default: one phone and one computer, each bound to an Agent. PostgreSQL persists runs; Redis is optional, not the active task queue.
+## Prerequisites and startup
 
-Developer Git history, keys, subscriptions, accounts, chats, disks, attachments, private Skills and real screenshots are excluded. Export uses an allowlist, never a copy of the entire development tree. Historical one-off destructive/verification scripts, the retired validation APK and old mock device-lab route are excluded. These are retired development artifacts; the working runtime/input/notification/knowledge components remain included.
-
-## Start from source
-
-The verified server platform is macOS Apple Silicon. Install Node 22+, Bun (project bootstrap), Rust 1.96.0, Python 3.11+, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve 35 GiB for a full first install and a default 16 GB phone.
+The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinned Bun, Rust 1.96.0, Python 3.11+, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve at least 35 GiB for a new full deployment; the default phone storage is 16 GB.
 
 ```sh
 ./ai-phone doctor
 ./ai-phone install
 ```
 
-The Android SDK prompts for licence acceptance. The host defaults to direct networking; each guest has its own Clash app and the user supplies subscriptions. Enter the workbench and configure model/API/device bindings under Configuration → Agent. No developer keys or accounts are shipped. Repeated startup restores only missing services.
+The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Configure models and device bindings in Configuration → Agent. No developer credentials or accounts are supplied. Repeated startup restores missing services while retaining existing state.
 
-This source preview has prerequisites. Independent source builds, empty-database initialization and same-host full-state recovery passed; installation on another clean physical host, initial Agent setup and the complete handoff remain unverified. See [setup](getting-started.en.md), [architecture](architecture.en.md) and [recovery](backup-restore.en.md).
+See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md) and [backup/recovery](backup-restore.en.md). Non-macOS physical installer tests are outside the current acceptance scope and remain unverified; matching compilation and component checks are still required.
 
-## Prepare a local review repository
+## Source and user data
+
+Versioned code is separate from device disks, accounts, conversations, attachments and keys. Source export uses an allowlist with privacy and licence checks. Public contributor instructions come from a dedicated guide. Local environment files, private Skills, screenshots and evidence must stay outside public commits.
 
 ```sh
 python3 scripts/check_source.py
-python3 scripts/source_export.py --destination /private/ai-phone-review --git
+python3 scripts/source_export.py --destination /path/to/new-review-directory --git
 ```
 
-The exporter refuses existing destinations. It produces a manifest and a fresh local Git repository with one commit and no remote. Public agent instructions come from a dedicated guide, not the private local AGENTS.md. The draft marker is not publication approval. `package --public` remains blocked by product acceptance gates.
+Export requires a new destination and produces a source manifest and local review repository without a remote. Review the exported diff against the public checkout before committing. Ongoing contributions preserve public history. Do not update a running user's state with a direct Git checkout; use versioned artifacts, backup, migration and recovery.
 
-The pinned `.github/workflows/source.yml` has read-only repository permissions. It checks protobuf/TypeScript/Rust, isolated UI/adapters, installation/archive tests, production Web, disposable PostgreSQL integration and worker process faults. Tests that restart PostgreSQL run sequentially. It never publishes, calls paid models or operates real devices. Linux CI compilation does not establish Linux server support. Equivalent commands are tested locally; consult the repository Actions for remote results, rather than inferring success from a prepared workflow.
+## Automated checks
 
-Open work includes clean physical-host installation; host sleep/reboot/power-loss and prolonged multi-device recovery; complete language/accessibility and real-channel matrices; signed four-platform clients and automatic updates; existing-device resource migration; final binary/image redistribution notices/source obligations. The welcome/forest entry has been removed in favor of direct workbench startup. The original knowledge motion passes code/lifecycle tests; its full real-page visual acceptance remains open.
+Source CI checks protobuf, TypeScript, Rust, isolated UI/adapters, archive/installation contracts and a production web build. Prebuilt component verification stages and executes actual packaged files. Disposable PostgreSQL fixtures exercise migrations, role restrictions, backup/restore and worker recovery; restart tests run sequentially. CI does not use real devices, account credentials or paid model calls.
 
-Current source-preview evidence is separate from a stable product claim. The sequence is macOS source preview, Linux server support, updater/unified client, then native-platform signing and installation acceptance. An ordinary Android phone is not promised to host the whole server.
-
-## Published source and subsequent changes
-
-Repository: [Conferringo/AI-Phone](https://github.com/Conferringo/AI-Phone). Subsequent work should be reviewed against a checkout of that repository: generate a new allowlisted export, compare it with the checkout, then commit the reviewed changes while preserving public history. Never add the entire live deployment directory, force-replace its history or run Git-based updates over user state. Release artifacts remain separate.
+Native CI builds macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 clients on matching workers. A passing client build establishes compilation and inspected contents, not complete two-device hosting. Exact results and engineering scope belong in [review evidence](engineering/index.md); user-facing capability limits belong in [compatibility](compatibility.md).

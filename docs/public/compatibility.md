@@ -1,6 +1,6 @@
 # Compatibility / 兼容矩阵
 
-2026-10-30. **Experimental, not broad provider certification. / 实验性兼容，不代表所有服务商均已验收。** Each Agent must pass text, vision and complete tool round-trip probes before saving a changed connection. These probes do not certify every thinking mode or every long-running task. There are currently no complete product installers; withdrawn previews are not acceptance evidence.
+2026-10-30. **Experimental, not broad provider certification. / 实验性兼容，不代表所有服务商均已验收。** Each Agent must pass text, vision and complete tool round-trip probes before saving a changed connection. These probes do not certify every thinking mode or every long-running task. There are currently no complete product installers.
 
 ## Models / 模型
 
@@ -58,4 +58,4 @@ Five built installer artifacts do not establish four standalone hosts. [Release 
 
 ## Development runtime: exploration and notifications
 
-The source runtime now has [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. These are source changes; previous installers have been withdrawn. They do not certify standalone hosts, every model protocol or real-account attachment delivery.
+The source runtime now has [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. Complete installers are not yet available. They do not certify standalone hosts, every model protocol or real-account attachment delivery.

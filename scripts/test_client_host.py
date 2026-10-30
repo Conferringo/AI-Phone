@@ -3,6 +3,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import shlex
 import sys
 import tempfile
 import unittest
@@ -11,13 +12,18 @@ from client_host import check_request, sdk_licenses, verify_container_ownership,
 from install_state import InstallState
 
 
+def python_command(path, source):
+    # A POSIX shebang cannot quote an interpreter path containing spaces.
+    path.write_text('#!/bin/sh\nexec ' + shlex.quote(sys.executable) + ' -c ' + shlex.quote(source) + ' "$@"\n')
+
+
 class NativeHostTests(unittest.TestCase):
     def test_owned_vm_keeps_architecture_resources_and_quoted_arguments(self):
         import os
         with tempfile.TemporaryDirectory(prefix='owned engine ') as temp:
             home=Path(temp);lima=home/'fake lima';docker=home/'docker'
-            lima.write_text('#!'+sys.executable+'\nimport os,sys,subprocess\nsubprocess.run(sys.argv[sys.argv.index("env"):],env={"PATH":'+repr(str(home)+':/usr/bin:/bin')+'},check=True)\n')
-            docker.write_text('#!'+sys.executable+'\nimport os,json,sys\nprint(json.dumps({"arch":os.environ.get("AI_PHONE_CLASH_DESKTOP_DIR"),"cpu":os.environ.get("AI_PHONE_DESKTOP_CPUS"),"args":sys.argv[1:],"secret":os.environ.get("UNRELATED_TEST_SECRET")}))\n')
+            python_command(lima, 'import os,sys,subprocess\nsubprocess.run(sys.argv[sys.argv.index("env"):],env={"PATH":'+repr(str(home)+':/usr/bin:/bin')+'},check=True)\n')
+            python_command(docker, 'import os,json,sys\nprint(json.dumps({"arch":os.environ.get("AI_PHONE_CLASH_DESKTOP_DIR"),"cpu":os.environ.get("AI_PHONE_DESKTOP_CPUS"),"args":sys.argv[1:],"secret":os.environ.get("UNRELATED_TEST_SECRET")}))\n')
             lima.chmod(0o755);docker.chmod(0o755)
             folder=write_container_wrapper(home,home,lima)
             result=subprocess.check_output([folder/'docker','compose','path with spaces'],env={**os.environ,'AI_PHONE_CLASH_DESKTOP_DIR':'linux-amd64','AI_PHONE_DESKTOP_CPUS':'4','UNRELATED_TEST_SECRET':'fixture-only'},text=True)
@@ -43,7 +49,7 @@ class NativeHostTests(unittest.TestCase):
     def test_license_requires_each_actual_prompt_and_never_automatically_accepts(self):
         with tempfile.TemporaryDirectory() as temp:
             manager = Path(temp) / 'sdkmanager'
-            manager.write_text('#!' + sys.executable + '\nimport sys\nfor text in ["Review licenses (y/N)?", "Fixture license text. Accept? (y/N):"]:\n print(text, end="", flush=True)\n if input() != "y":sys.exit(2)\n')
+            python_command(manager, 'import sys\nfor text in ["Review licenses (y/N)?", "Fixture license text. Accept? (y/N):"]:\n print(text, end="", flush=True)\n if input() != "y":sys.exit(2)\n')
             manager.chmod(0o755); events=[]
             def emit(phase, state='running', **values): events.append((phase, state, values))
             with patch('sys.stdin', io.StringIO('{"accept":true}\n{"accept":true}\n')):
@@ -56,7 +62,7 @@ class NativeHostTests(unittest.TestCase):
     def test_sdk_prompts_cover_only_requested_packages(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);manager=root/'sdkmanager';receipt=root/'args'
-            manager.write_text('#!'+sys.executable+'\nimport sys,json\nfrom pathlib import Path\nPath('+repr(str(receipt))+').write_text(json.dumps(sys.argv[1:]))\n')
+            python_command(manager, 'import sys,json\nfrom pathlib import Path\nPath('+repr(str(receipt))+').write_text(json.dumps(sys.argv[1:]))\n')
             manager.chmod(0o755)
             sdk_licenses(manager,None,lambda *_:None,['platform-tools','system-images;android-35;default;x86_64'])
             self.assertEqual(json.loads(receipt.read_text()),['platform-tools','system-images;android-35;default;x86_64'])

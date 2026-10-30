@@ -27,7 +27,7 @@ Código y datos de usuario están separados. No se publican discos, cuentas, cha
 
 ## Futuro, responsabilidad y licencia
 
-Prioridades: paquetes completos, recuperación de instalación, actualizaciones firmadas, estabilidad del Agente, audio/entrada, validación de modelos y Skills especializados. Después, voz y telefonía experimental; llamadas reales/eSIM aún no están implementadas. La mascota de escritorio salió del núcleo y queda como idea de extensión.
+Prioridades: paquetes completos, recuperación de instalación, actualizaciones firmadas, estabilidad del Agente, audio/entrada, validación de modelos y Skills especializados. Después, voz y telefonía experimental; llamadas reales/eSIM aún no están implementadas.
 
 Interfaz y configuración inicial admiten diez idiomas. El selector a la izquierda de Skills cambia la interfaz; no traduce automáticamente el sistema invitado ni las salidas originales. El árabe usa escritura de derecha a izquierda.
 

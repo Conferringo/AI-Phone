@@ -1,0 +1,101 @@
+"""Native service component inventory and verified launch selection."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import platform
+from client_host_entry import checked_record, verify_file
+from host_platform import host_key
+from release_package import SECRET
+
+ROLES = ('assistant', 'runner', 'vision')
+FIXTURE = 'runtime/services/fixtures/ocr.png'
+
+
+def binary_path(role):
+    if role not in ROLES:
+        raise ValueError('Unknown native service')
+    return 'runtime/services/bin/' + role
+
+
+def prepare_services(root):
+    from build_native_services import cached_build, source_fingerprint
+    root = Path(root).resolve()
+    receipt = cached_build(root, source_fingerprint(root))
+    if receipt is None:
+        raise ValueError('Build the matching native services before packaging')
+    files = []
+    for role in ROLES:
+        data = (root / receipt['artifacts'][role]['path']).read_bytes()
+        if SECRET.search(data) or (str(Path.home()).rstrip('/\\') + '/').encode() in data:
+            raise ValueError('Private material in native service: ' + role)
+        files.append((binary_path(role), data, 0o755))
+    files.append((FIXTURE, (root / 'crates/assistant/fixtures/vision-probe.png').read_bytes(), 0o644))
+    records = [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'mode': mode}
+               for name, data, mode in files]
+    manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
+                'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
+                'vision': 'macos-vision' if platform.system() == 'Darwin' else 'linux-tesseract', 'files': records}
+    return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
+
+
+def read_manifest(root):
+    if platform.system() not in ('Darwin', 'Linux'):
+        raise ValueError('Native service host is not implemented on this platform')
+    path = root / 'runtime/services/manifest.json'
+    if path.is_symlink() or path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError('Invalid native service manifest')
+    value = json.loads(path.read_text())
+    if not isinstance(value, dict) or type(value.get('format')) is not int or value.get('format') != 1 or value.get('host') != host_key():
+        raise ValueError('Native services do not match this host')
+    return value
+
+
+def manifest_records(value):
+    rows = value.get('files')
+    if not isinstance(rows, list) or len(rows) != len(ROLES) + 1:
+        raise ValueError('Incomplete native service inventory')
+    records = [checked_record(row) for row in rows]
+    if {row['path'] for row in records} != {binary_path(role) for role in ROLES} | {FIXTURE}:
+        raise ValueError('Invalid native service inventory')
+    for row in records:
+        mode = 0o644 if row['path'] == FIXTURE else 0o755
+        if row['mode'] != mode:
+            raise ValueError('Invalid native service executable/data permissions')
+    return records
+
+
+def load_manifest(root):
+    value = read_manifest(root)
+    for row in manifest_records(value):
+        verify_file(root, row)
+        if (root / row['path']).stat().st_mode & 0o777 != row['mode']:
+            raise ValueError('Native service permissions changed')
+    return value
+
+
+def service_command(root, role):
+    name = binary_path(role)
+    root = Path(root).resolve()
+    load_manifest(root)
+    return [str(root / name)]
+
+
+def launch_spec(root, role):
+    if role not in ('assistant', 'runner'):
+        raise ValueError('Unknown service launch role')
+    root = Path(root).resolve()
+    folder = root / 'runtime/services'
+    if folder.exists() or folder.is_symlink():
+        command = service_command(root, role)
+        environment = {'AI_PHONE_OCR': str(root / binary_path('vision'))} if role == 'runner' else {}
+        return {'argv': command, 'environment': environment, 'prebuilt': True}
+    return {'argv': [str(root / 'target/debug' / ('ai-phone-' + role))], 'environment': {}, 'prebuilt': False}
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--service', choices=ROLES, required=True)
+    args = parser.parse_args()
+    print(service_command(args.root, args.service)[0])

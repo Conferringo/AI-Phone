@@ -27,7 +27,7 @@ Code et données utilisateur sont séparés. Disques, comptes, conversations, pi
 
 ## Suite, responsabilité et licence
 
-Priorités : paquets complets, reprise d’installation, mises à jour signées, stabilité de l’Agent, audio/saisie, vérification des modèles et Skills spécialisés. Viendront ensuite la voix et une téléphonie expérimentale ; appels réels/eSIM ne sont pas implémentés. Le compagnon de bureau a quitté le cœur et reste une idée d’extension.
+Priorités : paquets complets, reprise d’installation, mises à jour signées, stabilité de l’Agent, audio/saisie, vérification des modèles et Skills spécialisés. Viendront ensuite la voix et une téléphonie expérimentale ; appels réels/eSIM ne sont pas implémentés.
 
 Interface et première configuration couvrent dix langues. Le sélecteur à gauche de Skills change l’interface ; il ne traduit pas automatiquement les systèmes invités ni les sorties brutes. L’arabe utilise le sens droite à gauche.
 

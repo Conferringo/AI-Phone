@@ -23,7 +23,7 @@ def canonical_name(name):
 def runtime_name(path, enabled):
     if not enabled:
         return False
-    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json'))
+    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services'))
 
 def source_name(name, runtime=False):
     path = canonical_name(name)
@@ -133,12 +133,17 @@ def checked_record(row):
         raise ValueError('Invalid source record')
     return row
 
-def payload_records(manifest, entries):
+def manifest_components(manifest):
     if not isinstance(manifest, dict):
         raise ValueError('Invalid source manifest')
-    runtime = manifest.get('format') == 2 and manifest.get('components') == ['web']
+    components = manifest.get('components', [])
+    runtime = manifest.get('format') == 2 and components in (['web'], ['native-services'], ['web', 'native-services'])
     if type(manifest.get('format')) is not int or not (manifest['format'] == 1 or runtime):
         raise ValueError('Invalid source manifest')
+    return components, runtime
+
+def payload_records(manifest, entries):
+    components, runtime = manifest_components(manifest)
     rows = manifest.get('files')
     if not isinstance(rows, list):
         raise ValueError('Invalid source manifest')
@@ -146,7 +151,19 @@ def payload_records(manifest, entries):
     names = [entry.name for entry in entries]
     if len(records) != len(rows) or set(records) != set(names) - {'HOST-MANIFEST.json'}:
         raise ValueError('Source manifest does not match payload')
+    if runtime:
+        component_inventory(records, components)
     return (records, runtime)
+
+def component_inventory(records, components):
+    manifests = {'web': 'runtime/manifest.json', 'native-services': 'runtime/services/manifest.json'}
+    if not {manifests[name] for name in components}.issubset(records):
+        raise ValueError('Runtime component manifest is missing')
+    for name in records:
+        if name.startswith('runtime/'):
+            owner = 'native-services' if name.startswith('runtime/services/') else 'web'
+            if owner not in components:
+                raise ValueError('Runtime file belongs to an undeclared component')
 
 def bounded_entries(source):
     entries = []
@@ -191,7 +208,8 @@ def verify_existing(destination, records, data, runtime):
     except ValueError as error:
         raise ValueError('Existing source changed; user data was preserved') from error
     if runtime:
-        web_links(destination)
+        if (destination / 'runtime/manifest.json').is_file():
+            web_links(destination)
     for name, target in [('data', data), ('.env', data.parent / '.env')]:
         verify_persistent_link(destination / name, target)
 
@@ -224,7 +242,8 @@ def stage_source(archive, installation):
             write_payload(source, work, records)
             (work / 'HOST-MANIFEST.json').write_text(json.dumps(manifest))
             if runtime:
-                web_links(work, create=True)
+                if (work / 'runtime/manifest.json').is_file():
+                    web_links(work, create=True)
             (work / 'data').symlink_to(data, target_is_directory=True)
             (work / '.env').symlink_to(data.parent / '.env')
             work.rename(destination)

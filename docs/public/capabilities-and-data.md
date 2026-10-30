@@ -12,7 +12,7 @@
 | browser-android | Address bar navigation, submit-vs-suggestion distinction, OCR limitations and actual loading checks |
 | files-android | DocumentsUI type filters, uncertain scope, missing viewer handling and transfer handoff |
 
-The last two were distilled from model-generated experience that passed real Android execution and independent auditing. Personal paths, file names, observation/run identifiers and fixed screen coordinates were removed. They are reusable methods with known limits, not universal app guarantees. Built-ins are installed from versioned source on startup; user-installed or learned Skills retain separate identities. Built-in disable preferences are preserved across initialization.
+The last two were distilled from model-generated experience that passed real Android execution and independent auditing. Their versioned sources contain generalized workflows without personal data or fixed screen coordinates. They are reusable methods with known limits, not universal app guarantees. Built-ins are installed from versioned source on startup; user-installed or learned Skills retain separate identities. Built-in disable preferences are preserved across initialization.
 
 知识库功能开箱可用，用户内容保持空白。内置操作知识由Skill承载，不把开发者的私人知识、聊天或记忆复制给新用户。用户新增经验只保存在其服务器，不会自动回传项目。经验未经审计不得作为已验证能力发布。
 

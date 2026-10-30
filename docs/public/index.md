@@ -38,15 +38,8 @@
 
 [Apache-2.0](../../LICENSE) · [免责声明 / Disclaimer](../../DISCLAIMER.md) · [隐私 / Privacy](../../PRIVACY.md) · [第三方声明 / Notices](../../THIRD_PARTY_NOTICES.md) · [安全 / Security](../../SECURITY.md)
 
-## 审阅与证据 / Review evidence
+## Contributor resources
 
-[当前发行状态 / Current status](release-status.md) 是验收结论入口。带日期的审计文档记录当时范围，不能覆盖较新的退役或修复决定。
-
-- [CSS与线上审阅候选 / CSS and hosted review](css-review-2026-10-29.md)
-- [本体收敛、语言与选择控件](core-retirement-2026-10-29.md)
-- [首配与窗口审查](release-ux-audit-2026-10-29.md)
-- [SOLID审计与欠账](solid-audit.md)
-- [Model/channel/platform maturity / 模型、渠道与平台成熟度](interface-audit-2026-10-29.md)
-- [声音与恢复](release-stability-2026-10-29.md)
-
-[Preview clients, installation limits and release process / 预览客户端下载与限制](preview-release.md)
+- [Release status / 发行状态](release-status.md)
+- [Engineering reviews / 工程审阅](engineering/index.md)
+- [Distribution requirements / 发行标准](preview-release.md)

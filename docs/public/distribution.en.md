@@ -2,7 +2,7 @@
 
 [简体中文](distribution.zh-CN.md) · Updated 2026-10-30
 
-The product is an application that deploys its own devices and services. Users configure resources and models in the client; an existing-server connection remains an optional development/remote path. Complete installers are not yet available. The source and documentation are [public](https://github.com/Conferringo/AI-Phone); incomplete preview downloads have been withdrawn.
+The product is an application that deploys its own devices and services. Users configure resources and models in the client; an existing-server connection remains an optional development/remote path. Complete installers are not yet available. The source and documentation are [public](https://github.com/Conferringo/AI-Phone).
 
 | Target | Build/runtime evidence | Remaining independent-host work |
 |---|---|---|

@@ -39,7 +39,7 @@ Interface and first-setup languages: all ten languages above. The language contr
 - **Reusable capability:** built-in phone-use, computer-use, transfer and application-learning Skills; linked knowledge documents; Agent-specific memory and external connections.
 - **Guest networking:** native Clash applications run inside Android and Linux; users control guest networking there. Host networking defaults to direct access.
 
-See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeCom, Telegram and local-QR WhatsApp scope. Adapter code does not establish end-to-end acceptance for every account. [Model and connection setup](docs/public/model-and-channel-setup.md) covers all 13 presets and the three API protocols. The desktop companion has been removed from the core; only a [future extension design](docs/public/companion-extension.md) remains.
+See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeCom, Telegram and local-QR WhatsApp scope. Adapter code does not establish end-to-end acceptance for every account. [Model and connection setup](docs/public/model-and-channel-setup.md) covers all 13 presets and the three API protocols.
 
 ## Architecture and directories
 

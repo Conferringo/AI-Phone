@@ -10,6 +10,7 @@ if [ "$(uname -s)" != Darwin ]; then
   exit 0
 fi
 mkdir -p target/phone-vision
-if [ ! -x target/phone-vision/recognize ] || [ scripts/phone-vision/main.swift -nt target/phone-vision/recognize ]; then
-  swiftc -O scripts/phone-vision/main.swift -o target/phone-vision/recognize
+if [ ! -x target/phone-vision/recognize ] || [ scripts/phone-vision/main.swift -nt target/phone-vision/recognize ] || [ scripts/build-phone-vision.sh -nt target/phone-vision/recognize ] || [ scripts/macos_target.py -nt target/phone-vision/recognize ] || [ apps/client/src-tauri/tauri.conf.json -nt target/phone-vision/recognize ]; then
+  macos_target=$(python3 scripts/macos_target.py)
+  swiftc -O -target "$macos_target" scripts/phone-vision/main.swift -o target/phone-vision/recognize
 fi

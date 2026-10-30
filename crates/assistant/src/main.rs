@@ -123,6 +123,10 @@ fn db_error(_: impl std::fmt::Display) -> Response {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().any(|arg| arg == "--version") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     let setup_admin = std::env::args().any(|arg| arg == "--set-admin");
     let migrate_database = std::env::args().any(|arg| arg == "--migrate");
     let check_database = std::env::args().any(|arg| arg == "--database-check");

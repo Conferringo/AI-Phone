@@ -6,7 +6,7 @@ One phone and one computer occupy the same perspective stage; clicking an expose
 
 Device name, volume, mute, rotation (phone only), screenshot, exploration settings and cable controls sit directly above that device's actual screen. The toolbar uses the same screen aspect/available-height calculation, with room for controls on narrow paired devices. Screenshot previews support saving or attaching to that device's chat. Global Skill, knowledge and workspace remain shared; API/model, memory and application connections belong to Agent.
 
-GSAP layout movement, inner device perspective and conversation translation have separate property owners. Capture only real layout/orientation changes; an unchanged observation must not finish the current animation. Preserve mounted streams, drafts and native cursors through transitions. Support reversal, cleanup, hidden pages and reduced motion. The desktop companion has been removed from the core.
+GSAP layout movement, inner device perspective and conversation translation have separate property owners. Capture only real layout/orientation changes; an unchanged observation must not finish the current animation. Preserve mounted streams, drafts and native cursors through transitions. Support reversal, cleanup, hidden pages and reduced motion.
 
 Eight catalogs share stable keys and interpolation. Never translate user chat, document content, device names or credentials. Review actual English/Chinese input, save/error paths, tool switching, narrow layouts and reduced motion; a language selector alone is not translation acceptance. Keep screenshots containing credentials, subscription URLs or pairing secrets out of public evidence.
 

@@ -904,6 +904,10 @@ async fn action(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().any(|arg| arg == "--version") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     let root = std::env::var_os("AI_PHONE_PROJECT_ROOT")
         .map(PathBuf::from)
         .unwrap_or(std::env::current_dir()?);
@@ -942,7 +946,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap_or_else(|| PathBuf::from("adb"))
             }),
         token,
-        vision: root.join("target/phone-vision/recognize"),
+        vision: std::env::var_os("AI_PHONE_OCR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| root.join("target/phone-vision/recognize")),
         grounding: Mutex::new(grounding::GroundingState::default()),
         ledger_path,
         ledger: Mutex::new(ledger),

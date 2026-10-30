@@ -100,20 +100,28 @@ if __name__=='__main__':
     parser.add_argument('--platform',choices=['macos','windows','linux','android'],default='macos')
     parser.add_argument('--package-only',action='store_true',help='Inspect and package an existing build; does not claim it is current')
     parser.add_argument('--with-web-runtime',action='store_true',help='Include a matching prebuilt standalone web service and pinned Bun; other full-device components remain required')
+    parser.add_argument('--with-service-runtime',action='store_true',help='Include matching prebuilt Rust services and OCR on macOS/Linux')
     args=parser.parse_args()
     from check_source import check
     check(ROOT)
     from prepare_client_host import prepare
     if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
+    if args.with_service_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Native service component requires a matching macOS/Linux build')
     if args.with_web_runtime:
         from bootstrap_bun import bun_path
         bun=bun_path(ROOT)
         build_env={**os.environ,'PATH':str(bun.parent)+os.pathsep+os.environ.get('PATH','')}
         subprocess.run([str(bun),'run','build'],cwd=ROOT,env=build_env,check=True)
-    prepare(ROOT,with_web_runtime=args.with_web_runtime)
+    if args.with_service_runtime:
+        from build_native_services import build
+        build(ROOT)
+    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime)
     if args.with_web_runtime:
         from prepare_client_host import verify_prepared_web
         print(json.dumps({'prebuilt_web':verify_prepared_web(ROOT)}))
+    if args.with_service_runtime:
+        from prepare_client_host import verify_prepared_services
+        print(json.dumps({'prebuilt_services':verify_prepared_services(ROOT)}))
     notice_manifest(ROOT)
     if subprocess.check_output(['rustc','--version'],text=True).split()[1]!='1.96.0':
         raise ValueError('Build preview clients with Rust 1.96.0; review runtime notices before changing toolchains')

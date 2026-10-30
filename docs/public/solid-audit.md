@@ -106,3 +106,7 @@ Location policy, distance interpolation, guest adapters, protobuf persistence an
 Static fixes, route advance, pause and clearing were checked against the existing Android and Linux Chromium guests. Location updates preserve screen grounding and cursor state and use durable phone action receipts. Generic Linux application location, cross-platform fresh-host setup and long-running location acceptance remain unverified.
 
 Linux location was additionally checked through the real browser navigator API. That exposed temporary CDP sessions losing their overrides on disconnect. A guest-local protobuf service now owns persistent sessions, reuses them for movement and clears them on disable; a disconnect-sensitive browser fixture prevents regression. Android packaging was diagnosed against a real APK: Gradle expands `.gz` assets, so the exact compressed source uses an opaque `.payload` name. The temporary resource-copy task was removed; native source and unpacked artifact tests retain strict byte checks.
+
+## Native runtime increment — 2026-10-30
+
+[Native runtime review](engineering/native-runtime-20261030.md) records host-matched release binaries, OCR, archive admission, explicit-root installation, Linux service reuse, isolated migration/role execution and scoped mutation evidence. Full distribution, large CLI/container/UI boundaries and complete architecture acceptance remain open.

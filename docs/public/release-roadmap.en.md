@@ -12,7 +12,7 @@ Database runtime privileges, backup/restore and action-ledger retention have evi
 - **Complete device bundle:** ship clean Android/Linux baselines, matched emulator and prebuilt services; first setup must not ask users to acquire images or compile a backend. The prebuilt [web component](runtime-bundles.md) is one implemented part.
 - **Long-running recovery:** worker fault injection and restoration have evidence. Host sleep/wake, reboot, extended background operation and complete upgrade rollback remain.
 
-Native CI has compiled macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 targets; current revision results remain separate. Incomplete preview downloads were withdrawn. Android independent hosting targets root/KVM devices, not ordinary unrooted phones. Non-macOS physical installation tests are waived by the maintainer and remain unverified; complete contents, compilation, audits and redistribution checks are still required.
+Native CI has compiled macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 targets; current revision results remain separate. Android independent hosting targets root/KVM devices, not ordinary unrooted phones. Non-macOS physical installation tests are waived by the maintainer and remain unverified; complete contents, compilation, audits and redistribution checks are still required.
 
 ## Delivery order
 

@@ -35,6 +35,7 @@ jobs:
           ./scripts/bootstrap.sh
       - name: Native tests and lint
         run: |
+          PYTHONPATH=scripts python3 -m unittest test_native_services
           cargo fmt --manifest-path apps/client/src-tauri/Cargo.toml --check
           cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked
           cargo clippy --manifest-path apps/client/src-tauri/Cargo.toml --all-targets --locked -- -D warnings
@@ -43,7 +44,7 @@ jobs:
           cargo install cargo-audit --version 0.22.2 --locked
           python3 scripts/audit_dependencies.py --target aarch64-apple-darwin --output audit.json
       - name: Local unsigned bundle and privacy checks
-        run: python3 scripts/build_client.py --with-web-runtime
+        run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime
       - name: Retain development artifact only on explicit request
         if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -90,10 +91,10 @@ jobs:
       - name: Relocated dependency and archive regressions
         env:
           PYTHONPATH: scripts
-        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web
+        run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web test_native_services
       - name: Linux native libraries
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
       - name: Windows inspection tools
         if: runner.os == 'Windows'
         shell: pwsh
@@ -105,7 +106,11 @@ jobs:
           python -m unittest discover -s scripts -p test_native_backports.py
           python -m unittest discover -s scripts -p test_release_portability.py
       - name: Build and inspect local preview
+        if: runner.os == 'Windows'
         run: python scripts/build_client.py --platform ${{ matrix.platform }} --with-web-runtime
+      - name: Build and inspect Linux service bundle
+        if: runner.os == 'Linux'
+        run: python scripts/build_client.py --platform linux --with-web-runtime --with-service-runtime
       - name: Retain development artifact only on explicit request
         if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

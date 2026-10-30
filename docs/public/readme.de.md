@@ -27,7 +27,7 @@ Code und Nutzerdaten sind getrennt. Geräteplatten, Konten, Chats, Anhänge und 
 
 ## Ausblick, Verantwortung und Lizenz
 
-Prioritäten: vollständige Pakete, Wiederaufnahme der Installation, signierte Updates, Agentenstabilität, Audio/Eingabe, Modellprüfung und spezialisierte App-Skills. Sprache und experimentelle Telefonie folgen später; echte Anrufe/eSIM sind nicht implementiert. Das Desktop-Haustier wurde aus dem Kern entfernt und bleibt nur eine Erweiterungsidee.
+Prioritäten: vollständige Pakete, Wiederaufnahme der Installation, signierte Updates, Agentenstabilität, Audio/Eingabe, Modellprüfung und spezialisierte App-Skills. Sprache und experimentelle Telefonie folgen später; echte Anrufe/eSIM sind nicht implementiert.
 
 Oberfläche und Ersteinrichtung unterstützen zehn Sprachen. Der Sprachschalter links von Skills ändert die Oberfläche; Gastbetriebssysteme und rohe Werkzeugausgaben werden nicht automatisch übersetzt. Arabisch verwendet RTL.
 
