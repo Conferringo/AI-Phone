@@ -10,6 +10,7 @@ from release_package import SECRET
 
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
+SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
 
 
 def binary_path(role):
@@ -30,7 +31,7 @@ def prepare_services(root):
         if SECRET.search(data) or (str(Path.home()).rstrip('/\\') + '/').encode() in data:
             raise ValueError('Private material in native service: ' + role)
         files.append((binary_path(role), data, 0o755))
-    files.append((FIXTURE, (root / 'crates/assistant/fixtures/vision-probe.png').read_bytes(), 0o644))
+    files.append((FIXTURE, (root / SOURCE_FIXTURE).read_bytes(), 0o644))
     records = [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'mode': mode}
                for name, data, mode in files]
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],

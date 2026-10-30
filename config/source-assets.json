@@ -36,6 +36,25 @@
       "sha256": {
         "apps/client/src-tauri/icons/source.svg": "5588923eb2c77283a131ee68aa7dd538ab33f622e079eec959bd359109bfc3ea"
       }
+    },
+    {
+      "id": "native-ocr-probe",
+      "files": [
+        "crates/phone-runner/fixtures/ocr-probe.png"
+      ],
+      "origin": "Generated non-user diagnostic text with scripts/phone-vision/generate-fixture.py and DejaVuSans.ttf",
+      "license": "Bitstream-Vera; DejaVu changes public domain; generator Apache-2.0",
+      "font_sha256": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e",
+      "references": [
+        {
+          "source": "https://dejavu-fonts.github.io/",
+          "license_file": "docs/public/licenses/fixtures/dejavu.txt",
+          "license_sha256": "a3429c4aad4d17e8292d02b7639178516fd3531ac56030082e52176a1253218c"
+        }
+      ],
+      "sha256": {
+        "crates/phone-runner/fixtures/ocr-probe.png": "7a5fb3b96b7b1c54054fbf2c40794c14fef708cb21aed3d773b39afd462de13e"
+      }
     }
   ]
 }

@@ -11,6 +11,7 @@ from host_platform import host_key
 from release_package import select_files
 from check_native_services import version_receipt, vision_receipt
 from client_host_entry import checked_record, verify_file
+from prebuilt_services import SOURCE_FIXTURE
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner'}
@@ -122,7 +123,7 @@ def build(root=ROOT):
     checks = {role: version_receipt(path, versions[role]['name'], versions[role]['version'])
               for role, path in artifacts.items()}
     artifacts['vision'] = compile_vision(root)
-    checks['vision'] = vision_receipt(artifacts['vision'], root / 'crates/assistant/fixtures/vision-probe.png')
+    checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE)
     if platform.system() == 'Darwin':
         from macos_target import verify_targets
         checks['macos_minimum_versions'] = verify_targets(root, artifacts)

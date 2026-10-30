@@ -15,7 +15,7 @@ from unittest.mock import patch
 from build_native_services import cached_build, source_fingerprint
 from client_host_entry import stage_source
 from host_platform import host_key
-from prebuilt_services import ROLES, FIXTURE, binary_path, service_command, launch_spec, prepare_services, read_manifest, manifest_records
+from prebuilt_services import ROLES, FIXTURE, SOURCE_FIXTURE, binary_path, service_command, launch_spec, prepare_services, read_manifest, manifest_records
 from check_native_services import require_test_database
 from macos_target import verify_targets, swift_target
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 class NativeServiceTests(unittest.TestCase):
     def build_fixture(self, root, payload=b'generated binary fixture'):
         target=root/'target/release';target.mkdir(parents=True)
-        fixture=root/'crates/assistant/fixtures/vision-probe.png';fixture.parent.mkdir(parents=True);fixture.write_bytes(b'generated image fixture')
+        fixture=root/SOURCE_FIXTURE;fixture.parent.mkdir(parents=True);fixture.write_bytes(b'generated image fixture')
         records={}
         for role,name in [('assistant','ai-phone-assistant'),('runner','ai-phone-runner'),('vision','phone-vision')]:
             path=target/name;path.write_bytes(payload)
@@ -53,7 +53,8 @@ class NativeServiceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'Private material'):prepare_services(root)
 
     def test_manifest_size_and_type_boundaries_fail_explicitly(self):
-        with tempfile.TemporaryDirectory() as folder:
+        # Metadata fixtures exercise a supported component host on every CI OS.
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.platform.system',return_value='Darwin'):
             root=Path(folder);path=root/'runtime/services/manifest.json';path.parent.mkdir(parents=True)
             data=json.dumps({'format':1,'host':host_key()}).encode()
             path.write_bytes(data+b' '*(4*1024*1024-len(data)))
@@ -132,7 +133,7 @@ class NativeServiceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'integrity'): service_command(root, 'runner')
 
     def test_present_invalid_components_never_fall_back_to_source(self):
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.platform.system',return_value='Darwin'):
             root=Path(folder)
             self.assertFalse(launch_spec(root,'assistant')['prebuilt'])
             manifest=root/'runtime/services/manifest.json';manifest.parent.mkdir(parents=True)

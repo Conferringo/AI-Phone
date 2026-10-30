@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 10772,
-      "sha256": "fae59a80e6eccffe55b7e4b75c4d782ecf6c41ab4fd4f4b86ae779602091f13b"
+      "size": 11011,
+      "sha256": "3f2c6d8a973fbc4e40624908b639bb84bfe54c8a96f86e2ce665390633388a6d"
     },
     {
       "path": "ai-phone",
@@ -2039,8 +2039,8 @@
     },
     {
       "path": "config/source-assets.json",
-      "size": 1404,
-      "sha256": "ce5ae64d63545340e7a01727e3b803f33dbca0bb613039914b4721fecad226e0"
+      "size": 2241,
+      "sha256": "1334f0f4aa1153e09ba3f297e244f68af1ad139af27dc8859d688c4f652c5168"
     },
     {
       "path": "crates/api/Cargo.toml",
@@ -2391,6 +2391,11 @@
       "path": "crates/phone-runner/Cargo.toml",
       "size": 629,
       "sha256": "e87a581ce3ac9642c8cdd3651853756bc6bb7b5c7500a59c9f4d780f092e0bc9"
+    },
+    {
+      "path": "crates/phone-runner/fixtures/ocr-probe.png",
+      "size": 4385,
+      "sha256": "7a5fb3b96b7b1c54054fbf2c40794c14fef708cb21aed3d773b39afd462de13e"
     },
     {
       "path": "crates/phone-runner/src/action_store.rs",
@@ -3111,6 +3116,11 @@
       "path": "docs/public/licenses/android/ffa67166fbe4cff3-jackson-annotations-2.15.3.pom.xml",
       "size": 7058,
       "sha256": "ffa67166fbe4cff3497d0cc629c2019cd0e7cd5ed01bec683a7cbf213d030ec8"
+    },
+    {
+      "path": "docs/public/licenses/fixtures/dejavu.txt",
+      "size": 2669,
+      "sha256": "a3429c4aad4d17e8292d02b7639178516fd3531ac56030082e52176a1253218c"
     },
     {
       "path": "docs/public/licenses/javascript/async/LICENSE",
@@ -3884,8 +3894,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 6600,
-      "sha256": "75e1dde40e23fa259956d589385f94ffcfd12f0a8087d09092d00556c6d7bcfb"
+      "size": 6615,
+      "sha256": "b1d8d026338b5bcc17635418bfe3588724e5b6c72084ef28d9c3259c2c47e8c3"
     },
     {
       "path": "scripts/bun",
@@ -4118,6 +4128,16 @@
       "sha256": "b0258f7dbaae0297cec5f801543735f5bee5e0b89b0b59372485b23a7fc20e06"
     },
     {
+      "path": "scripts/phone-vision/README.md",
+      "size": 1110,
+      "sha256": "1f4e6c92e2da32b67b0d9807ec42bbdca7108251a273c8a51600ecf8c2ddfb46"
+    },
+    {
+      "path": "scripts/phone-vision/generate-fixture.py",
+      "size": 980,
+      "sha256": "35dc16d337b818dd852360b906e448bdead7ec30cc7abc278b1d65139df2a307"
+    },
+    {
       "path": "scripts/phone-vision/main.swift",
       "size": 2653,
       "sha256": "b6d4e68a988f04319e257dced545a86e37ee4d49e7ec753b96110fa94e51d01e"
@@ -4134,8 +4154,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 4402,
-      "sha256": "6efd8f796844b596a1392a502fcfe222636556a396b6883c9a232187eb1581a9"
+      "size": 4434,
+      "sha256": "3abf3649afcc21efcba0e68b907158020f4f319a61a100641ca383b0a9b8f061"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -4309,8 +4329,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 28841,
-      "sha256": "f3bbed9e399feb06cb1364d34e651c8385b6767d9f9acd2cd4ebb815f0a3c4fe"
+      "size": 29037,
+      "sha256": "0c338e0910aed6d31b1e46c96f550c61c6591b3575337c0389ba16069c3bc136"
     },
     {
       "path": "scripts/test_prebuilt_web.py",
