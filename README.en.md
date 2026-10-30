@@ -1,30 +1,23 @@
 # AI Phone
 
-English · [简体中文](README.md#简体中文) · Apache-2.0 · **0.1.0-preview.2 experimental preview**
+English · [简体中文](README.md#简体中文) · Apache-2.0 · **Development — distribution in preparation**
 
-## Download and install
+## Downloads
 
-Download a preview client for your platform. **The macOS Apple Silicon client includes experimental local setup:** choose device resources, let the client acquire/build its dependencies, then configure a model in the workbench. Fresh-host installation remains untested. Windows, Linux and Android packages remain connection clients. The complete source host currently targets macOS Apple Silicon; Windows/Linux host management and Android independent hosting remain unfinished. See the [current release status](docs/public/release-status.md).
+There is currently **no product installer available**. Incomplete preview downloads have been withdrawn. This repository contains development source; successful client compilation is not a complete deployment.
 
-| System | Client format | Status / instructions |
+The next distribution must include the matching Android/Linux system images, emulator and prebuilt runtime components. Users should configure device resources and a model in the client, then start using their devices. They should not have to find images, install an SDK, compile services or manually connect to a separately deployed backend.
+
+| Target | Required distribution | Current state |
 |---|---|---|
-| macOS Apple Silicon | [DMG](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-macos-arm64.dmg) | Experimental managed setup; fresh-host install untested; unsigned/unnotarized |
-| Windows x64 | [EXE / NSIS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-windows-x64-setup.exe) | Unsigned; installation/runtime untested |
-| Linux amd64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-arm64.deb) | Ubuntu 24.04 builds; desktop/media untested |
-| Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-android-arm64.apk) | Preview certificate; touch/background untested |
+| macOS Apple Silicon | Complete local device bundle and client | Integrated runtime/bundle acceptance in progress |
+| Windows x64 | Complete local device bundle and client | Native phone/backend integration unfinished |
+| Linux x64 | Complete local device bundle and client | Managed runtime under development; complete bundle unfinished |
+| Android ARM64 | Root/KVM host and matching local device bundle | Privileged runtime/image integration unfinished |
 
-[Open the release](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) · [SHA256SUMS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/SHA256SUMS). Releases include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
+[Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
-Source deployment requires Python 3.11+, Node.js 22+, Bun (project bootstrap), Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
-
-```sh
-./ai-phone doctor
-./ai-phone install
-```
-
-Configuration asks for a language first, then device resources and prerequisites. Existing guest disks and accounts are preserved. Startup opens the workbench directly; first setup configures an Agent model and device bindings. External channels and memory are optional later settings. The project uses a pinned local Bun entry.
-
-[Setup guide](docs/public/getting-started.en.md) · [Eight languages](docs/public/languages.md) · [Backup/restore](docs/public/backup-restore.en.md)
+Source setup commands in the development guides are for contributors. They are not the intended product installation experience. Device disks, accounts, conversations, attachments and secrets never belong in a distributable image.
 
 ## Technical overview
 
