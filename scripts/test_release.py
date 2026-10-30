@@ -12,6 +12,23 @@ from release_stage import stage_bundle
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_bundled_image_checkpoints_never_build_or_pull_missing_images(self):
+        import release
+        from install_state import InstallState
+        from container_images import atomic_selection
+        from test_container_images import ContainerImageTests
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);_,manifest=ContainerImageTests().fixture(root);atomic_selection(root,manifest)
+            selected=runtime_env(root)
+            self.assertEqual(selected['AI_PHONE_POSTGRES_IMAGE'],manifest['images']['postgres']['ref'])
+            with InstallState(root) as state,patch('release.run') as run:
+                with patch('release.image_id',side_effect=lambda ref:'verified-'+ref) as observed:
+                    release.install_guest_images(state,root,selected)
+                self.assertEqual([call.args[0] for call in observed.call_args_list],[manifest['images'][role]['ref'] for role in ('workspace','desktop')])
+                with patch('release.image_id',return_value=''):
+                    with self.assertRaisesRegex(ValueError,'verification failed'):release.install_guest_images(state,root,selected)
+                run.assert_not_called()
+
     def test_sdk_checks_report_missing_and_unsupported_java(self):
         import release,subprocess
         with tempfile.TemporaryDirectory() as folder:

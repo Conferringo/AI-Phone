@@ -17,8 +17,7 @@ RUN chmod 755 /usr/local/lib/ai-phone/notification-record.py
 COPY pulse.pa /etc/ai-phone-pulse.pa
 RUN chmod 755 /usr/local/bin/desktop-bridge /usr/local/bin/desktop-start
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends iproute2 iptables && rm -rf /var/lib/apt/lists/*
-COPY --from=clash_apps . /tmp/clash-app/
-RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends /tmp/clash-app/*.deb libglib2.0-bin gsettings-desktop-schemas && rm -rf /var/lib/apt/lists/* /tmp/clash-app
+RUN --mount=from=clash_apps,target=/tmp/clash-app,readonly apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends /tmp/clash-app/*.deb libglib2.0-bin gsettings-desktop-schemas && rm -rf /var/lib/apt/lists/*
 COPY clash-launch.sh /usr/local/bin/ai-phone-clash
 RUN chmod 755 /usr/local/bin/ai-phone-clash
 COPY network-start.sh /usr/local/bin/device-network-start

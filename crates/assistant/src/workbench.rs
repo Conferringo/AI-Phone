@@ -145,8 +145,10 @@ async fn ensure_workspace(app: &App) -> Result<(), String> {
         return Ok(());
     }
     let owner = std::fs::metadata(&dir).map_err(|e| e.to_string())?;
+    let workspace_image = workspace_image();
     let args: Vec<String> = vec![
         "run",
+        "--pull=never",
         "-d",
         "--name",
         "ai-phone-tools",
@@ -194,7 +196,7 @@ async fn ensure_workspace(app: &App) -> Result<(), String> {
         "PIP_USER=1",
         "--env",
         "PYTHONUNBUFFERED=1",
-        "ai-phone-workspace:20261026",
+        &workspace_image,
     ]
     .iter()
     .map(|s| s.to_string())
@@ -332,6 +334,11 @@ async fn skill_edit(
     let row = skill_resources::commit(tx, &app.db, &app.root, &input.id).await?;
     Ok(skill(&row))
 }
+pub fn workspace_image() -> String {
+    std::env::var("AI_PHONE_WORKSPACE_IMAGE")
+        .unwrap_or_else(|_| "ai-phone-workspace:20261026".into())
+}
+
 pub async fn initialize(db: &PgPool, root: &std::path::Path) -> Result<(), String> {
     for id in [
         "phone-use",

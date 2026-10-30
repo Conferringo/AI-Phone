@@ -1,7 +1,8 @@
 name: ai-phone
 services:
   desktop:
-    image: ai-phone-desktop:20261028
+    image: ${AI_PHONE_DESKTOP_IMAGE:-ai-phone-desktop:20261028}
+    pull_policy: ${AI_PHONE_IMAGE_PULL_POLICY:-missing}
     build:
       context: ./infra/desktop
       additional_contexts:

@@ -9,6 +9,7 @@ from unittest.mock import patch
 from client_resources import resource_map,build_config,inspect_stream
 from prepare_client_host import prepare,payload_components
 import test_android_runtime
+import test_container_images
 
 
 class ClientResourceTests(unittest.TestCase):
@@ -30,6 +31,17 @@ class ClientResourceTests(unittest.TestCase):
             (native/'gen/host/integrity.json').write_text(json.dumps({**result,'private.file':'0'*64}))
             with self.assertRaisesRegex(ValueError,'Unrecognized'):resource_map(root)
             prepare(root);self.assertNotIn('gen/host/android.payload',resource_map(root));self.assertFalse((native/'gen/host/android.payload').exists())
+
+    def test_image_capsule_is_in_the_native_inventory_and_cleared_on_source_build(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);payload,_=test_container_images.ContainerImageTests().fixture(root)
+            native=root/'apps/client/src-tauri';native.mkdir(parents=True)
+            (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload','gen/host/entry.py':'host/entry.py'}}}))
+            (root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
+            result=prepare(root,image_runtime=payload)
+            self.assertIn('images.payload',result);self.assertEqual(payload_components(root),['container-images'])
+            self.assertEqual(resource_map(root)['gen/host/images.payload'],'host/images.payload')
+            prepare(root);self.assertNotIn('gen/host/images.payload',resource_map(root));self.assertFalse((native/'gen/host/images.payload').exists())
 
     def test_compiled_resource_mismatch_stops_packaging(self):
         from client_resources import verify_compiled_inventory

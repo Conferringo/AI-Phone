@@ -23,11 +23,12 @@ class NativeHostTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='owned engine ') as temp:
             home=Path(temp);lima=home/'fake lima';docker=home/'docker'
             python_command(lima, 'import os,sys,subprocess\nsubprocess.run(sys.argv[sys.argv.index("env"):],env={"PATH":'+repr(str(home)+':/usr/bin:/bin')+'},check=True)\n')
-            python_command(docker, 'import os,json,sys\nprint(json.dumps({"arch":os.environ.get("AI_PHONE_CLASH_DESKTOP_DIR"),"cpu":os.environ.get("AI_PHONE_DESKTOP_CPUS"),"args":sys.argv[1:],"secret":os.environ.get("UNRELATED_TEST_SECRET")}))\n')
+            python_command(docker, 'import os,json,sys\nprint(json.dumps({"arch":os.environ.get("AI_PHONE_CLASH_DESKTOP_DIR"),"cpu":os.environ.get("AI_PHONE_DESKTOP_CPUS"),"args":sys.argv[1:],"secret":os.environ.get("UNRELATED_TEST_SECRET"),"images":{k:os.environ.get(k) for k in ["AI_PHONE_WORKSPACE_IMAGE","AI_PHONE_DESKTOP_IMAGE","AI_PHONE_POSTGRES_IMAGE","AI_PHONE_REDIS_IMAGE","AI_PHONE_IMAGE_PULL_POLICY"]}}))\n')
             lima.chmod(0o755);docker.chmod(0o755)
             folder=write_container_wrapper(home,home,lima)
-            result=subprocess.check_output([folder/'docker','compose','path with spaces'],env={**os.environ,'AI_PHONE_CLASH_DESKTOP_DIR':'linux-amd64','AI_PHONE_DESKTOP_CPUS':'4','UNRELATED_TEST_SECRET':'fixture-only'},text=True)
-            self.assertEqual(json.loads(result),{'arch':'linux-amd64','cpu':'4','args':['compose','path with spaces'],'secret':None})
+            images={**{'AI_PHONE_'+role+'_IMAGE':'owned-'+role.lower() for role in ('WORKSPACE','DESKTOP','POSTGRES','REDIS')},'AI_PHONE_IMAGE_PULL_POLICY':'never'}
+            result=subprocess.check_output([folder/'docker','compose','path with spaces'],env={**os.environ,**images,'AI_PHONE_CLASH_DESKTOP_DIR':'linux-amd64','AI_PHONE_DESKTOP_CPUS':'4','UNRELATED_TEST_SECRET':'fixture-only'},text=True)
+            self.assertEqual(json.loads(result),{'arch':'linux-amd64','cpu':'4','args':['compose','path with spaces'],'secret':None,'images':images})
     def test_toolchain_interruption_reuses_only_matching_native_admission(self):
         with tempfile.TemporaryDirectory() as temp:
             home=Path(temp);root=home/'releases'/('a'*64);root.mkdir(parents=True)

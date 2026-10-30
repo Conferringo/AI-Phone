@@ -2,7 +2,8 @@ name: ai-phone
 
 services:
   postgres:
-    image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+    image: ${AI_PHONE_POSTGRES_IMAGE:-postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73}
+    pull_policy: ${AI_PHONE_IMAGE_PULL_POLICY:-missing}
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ai_phone}
       POSTGRES_USER: ${POSTGRES_USER:-ai_phone}
@@ -20,7 +21,8 @@ services:
 
   redis:
     profiles: [cache]
-    image: redis:8-alpine@sha256:becdda6c7f4b3fb42e42fd7f120bbf5c54c4caaaf16f26da24e4563d2c1f0576
+    image: ${AI_PHONE_REDIS_IMAGE:-redis:8-alpine@sha256:becdda6c7f4b3fb42e42fd7f120bbf5c54c4caaaf16f26da24e4563d2c1f0576}
+    pull_policy: ${AI_PHONE_IMAGE_PULL_POLICY:-missing}
     command: ["redis-server", "--appendonly", "yes", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
     volumes:
       - redis_data:/data

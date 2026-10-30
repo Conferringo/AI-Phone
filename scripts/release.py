@@ -260,10 +260,17 @@ def install_source_components(state, root, env):
 
 def install_guest_images(state, root, env):
     from install_state import fingerprint
+    from container_images import image_environment
+    images=image_environment(root)
+    if images:
+        for role in ('workspace','desktop'):
+            reference=images['AI_PHONE_'+role.upper()+'_IMAGE']
+            state.phase(role+'-image',fingerprint(root,[],{'image':reference}),lambda:None,lambda:image_id(reference))
+        return
     proxy = env['AI_PHONE_CONTAINER_PROXY']
     state.phase('workspace-image', fingerprint(root, ['infra/workspace']),
                 lambda: run(['docker', 'build', '--build-arg', 'HTTP_PROXY='+proxy, '--build-arg', 'HTTPS_PROXY='+proxy,
-                             '-t', 'ai-phone-workspace:20261026', '-f', 'infra/workspace/Dockerfile', '.'], env=env, root=root),
+                             '-t', 'ai-phone-workspace:20261026', '-f', 'infra/workspace/Dockerfile', 'infra/workspace'], env=env, root=root),
                 lambda: image_id('ai-phone-workspace:20261026'))
     state.phase('desktop-image', fingerprint(root, ['infra/desktop', 'compose.desktop.yaml', 'config/clash-apps.json'],
                                            {'workspace_image': image_id('ai-phone-workspace:20261026')}),

@@ -87,7 +87,7 @@ def write_container_wrapper(root, home, command):
     wrapper=bin_dir/'docker'
     # Compose runs in the owned VM. sudo must not erase the selected architecture
     # or resource profile; only these installation fields cross this boundary.
-    defaults={'AI_PHONE_CLASH_DESKTOP_DIR':'linux','AI_PHONE_DESKTOP_CPUS':'2','AI_PHONE_DESKTOP_MEMORY':'2560m','AI_PHONE_CONTAINER_PROXY':''}
+    defaults={'AI_PHONE_CLASH_DESKTOP_DIR':'linux','AI_PHONE_DESKTOP_CPUS':'2','AI_PHONE_DESKTOP_MEMORY':'2560m','AI_PHONE_CONTAINER_PROXY':'','AI_PHONE_POSTGRES_IMAGE':'','AI_PHONE_REDIS_IMAGE':'','AI_PHONE_DESKTOP_IMAGE':'','AI_PHONE_WORKSPACE_IMAGE':'','AI_PHONE_IMAGE_PULL_POLICY':'missing'}
     arguments=' '.join(key+'="${'+key+':-'+value+'}"' for key,value in defaults.items())
     wrapper.write_text('#!/bin/sh\nexport LIMA_HOME='+shlex.quote(str(home/'lima'))+'\nexec '+shlex.quote(str(command))+' shell --workdir '+shlex.quote(str(root))+' ai-phone sudo env '+arguments+' docker "$@"\n')
     wrapper.chmod(0o755)
@@ -210,7 +210,7 @@ def selected_tools(tools, bundled_services, bundled_android):
     return [tool for tool in tools if tool.split('@',1)[0] not in excluded]
 
 
-def install(root, home, request, mise, emit, android_sdk=None):
+def install(root, home, request, mise, emit, android_sdk=None, image_runtime=None):
     request=check_request(request)
     from host_platform import host_policy
     from prebuilt_services import launch_spec
@@ -230,6 +230,10 @@ def install(root, home, request, mise, emit, android_sdk=None):
         prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
     container_engine(root,home,config,emit)
     verify_container_ownership(root)
+    if image_runtime is not None:
+        from container_images import stage, activate
+        emit('container-host')
+        os.environ.update(activate(root,stage(image_runtime)))
     import release
     release.install(root=root,observer=lambda phase,state:emit(phase,state),license_action=lambda manager,env,packages:sdk_licenses(manager,env,emit,packages),launch_client=False,minimum_free_gb=config['minimum_resume_free_gb'])
     emit('devices')

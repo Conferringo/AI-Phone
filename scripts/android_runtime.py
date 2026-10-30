@@ -14,6 +14,7 @@ import tarfile
 import tempfile
 import zipfile
 from host_platform import host_key
+from artifact_io import digest
 
 MANIFEST='ANDROID-MANIFEST.json'
 ABIS={'macos-arm64':'arm64-v8a','linux-x64':'x86_64'}
@@ -21,10 +22,6 @@ MAX_FILES=20000
 MAX_FILE=4*1024**3
 MAX_TOTAL=8*1024**3
 RESERVE=4*1024**3
-
-
-def digest(path):
-    with Path(path).open('rb') as source:return hashlib.file_digest(source,'sha256').hexdigest()
 
 
 def checked_path_text(name):

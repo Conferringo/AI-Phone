@@ -1222,8 +1222,11 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
     let mut preflight = docker();
     preflight.args(["info", "--format", "{{.Architecture}} {{.MemTotal}}"]);
     let info = String::from_utf8_lossy(&process(preflight, vec![], 1024, 15).await?).to_string();
-    if !info.starts_with("aarch64") && !info.starts_with("arm64") {
-        return Err("当前模板只验收了ARM64，请使用原生ARM64 Docker".into());
+    if !matches!(
+        info.split_whitespace().next(),
+        Some("aarch64" | "arm64" | "x86_64" | "amd64")
+    ) {
+        return Err("Unsupported Docker CPU architecture".into());
     }
     let mem = info
         .split_whitespace()
@@ -1247,26 +1250,20 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
     {
         return Err("安装至少需要6GiB可用空间".into());
     }
+    let desktop_image = std::env::var("AI_PHONE_DESKTOP_IMAGE")
+        .unwrap_or_else(|_| "ai-phone-desktop:20261028".into());
+    let workspace_image = crate::workbench::workspace_image();
     let mut inspect = docker();
-    inspect.args([
-        "image",
-        "inspect",
-        "ai-phone-desktop:20261028",
-        "--format",
-        "{{.Id}}",
-    ]);
+    inspect.args(["image", "inspect", &desktop_image, "--format", "{{.Id}}"]);
     if process(inspect, vec![], 4096, 15).await.is_err() {
+        if std::env::var("AI_PHONE_IMAGE_PULL_POLICY").as_deref() == Ok("never") {
+            return Err("Bundled desktop image is missing; run client initialization again".into());
+        }
         install_step(app, id, "准备Clash客户端").await?;
         crate::device_network::install_apps(app).await?;
         install_step(app, id, "准备基础镜像").await?;
         let mut base = docker();
-        base.args([
-            "image",
-            "inspect",
-            "ai-phone-workspace:20261026",
-            "--format",
-            "{{.Id}}",
-        ]);
+        base.args(["image", "inspect", &workspace_image, "--format", "{{.Id}}"]);
         if process(base, vec![], 4096, 15).await.is_err() {
             let mut build = docker();
             build.current_dir(&app.root).args([
@@ -1282,10 +1279,10 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
                     std::env::var("AI_PHONE_CONTAINER_PROXY").unwrap_or_default()
                 ),
                 "-t",
-                "ai-phone-workspace:20261026",
+                &workspace_image,
                 "-f",
                 "infra/workspace/Dockerfile",
-                ".",
+                "infra/workspace",
             ]);
             process(build, vec![], 2 * 1024 * 1024, 1800).await?;
         }

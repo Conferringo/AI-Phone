@@ -29,7 +29,9 @@ def runtime_env(root):
     x64=template=='android35-x86_64' or (not template and platform.system()=='Linux' and platform.machine()=='x86_64')
     host_proxy = value.get('host_proxy', legacy.get('HOST_HTTP_PROXY', ''))
     container_proxy = value.get('container_proxy', legacy.get('CONTAINER_HTTP_PROXY', ''))
+    from container_images import image_environment
     return {
+        **image_environment(root),
         'PATH': os.pathsep.join(dict.fromkeys(filter(None,[os.environ.get('AI_PHONE_MANAGED_BIN'),str(root / '.tools/bin'), '/opt/homebrew/bin', '/usr/local/bin', *os.environ.get('PATH', '/usr/bin:/bin:/usr/sbin:/sbin').split(os.pathsep)]))),
         'AI_PHONE_DEFAULT_LOCALE': value.get('locale', ''),
         'AI_PHONE_LOCAL_ENTRY': '1' if value.get('local_entry', legacy.get('AI_PHONE_LOCAL_ENTRY')=='1') else '0',

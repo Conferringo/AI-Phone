@@ -190,20 +190,34 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| e.to_string())
 }
 
-fn verify_resources(folder: &Path) -> Result<bool, String> {
+struct Components {
+    android: bool,
+    images: bool,
+}
+
+fn verify_resources(folder: &Path) -> Result<Components, String> {
     let expected: std::collections::BTreeMap<String, String> =
         serde_json::from_str(INTEGRITY).map_err(|e| e.to_string())?;
     if !expected.contains_key("source.payload") || !expected.contains_key("entry.py") {
         return Err("invalid_payload".into());
     }
     for (name, digest) in &expected {
-        if !["source.payload", "entry.py", "android.payload"].contains(&name.as_str())
+        if ![
+            "source.payload",
+            "entry.py",
+            "android.payload",
+            "images.payload",
+        ]
+        .contains(&name.as_str())
             || hash(&folder.join(name))? != *digest
         {
             return Err("invalid_payload".into());
         }
     }
-    Ok(expected.contains_key("android.payload"))
+    Ok(Components {
+        android: expected.contains_key("android.payload"),
+        images: expected.contains_key("images.payload"),
+    })
 }
 
 fn checks(path: &Path) -> Vec<Check> {
@@ -338,7 +352,7 @@ fn run(
         .resource_dir()
         .map_err(|e| e.to_string())?
         .join("host");
-    let with_android = verify_resources(&resource)?;
+    let components = verify_resources(&resource)?;
     let request_path = folder.join("request.json");
     fs::write(
         &request_path,
@@ -360,10 +374,15 @@ fn run(
         .arg(request_path)
         .arg("--mise")
         .arg(&mise);
-    if with_android {
+    if components.android {
         command
             .arg("--android-runtime")
             .arg(resource.join("android.payload"));
+    }
+    if components.images {
+        command
+            .arg("--images-runtime")
+            .arg(resource.join("images.payload"));
     }
     layout.apply(&mut command);
     command

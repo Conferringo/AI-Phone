@@ -9,9 +9,10 @@ def resource_map(root):
     integrity=native/'gen/host/integrity.json'
     if integrity.exists():
         expected=json.loads(integrity.read_text())
-        if set(expected)-{'source.payload','entry.py','android.payload'}:
+        if set(expected)-{'source.payload','entry.py','android.payload','images.payload'}:
             raise ValueError('Unrecognized native resource')
-        if 'android.payload' in expected:resources['gen/host/android.payload']='host/android.payload'
+        for name in ('android.payload','images.payload'):
+            if name in expected:resources['gen/host/'+name]='host/'+name
     return resources
 
 

@@ -260,6 +260,7 @@ def main():
     parser.add_argument('--request', type=Path, required=True)
     parser.add_argument('--mise', type=Path, required=True)
     parser.add_argument('--android-runtime',type=Path)
+    parser.add_argument('--images-runtime',type=Path)
     args = parser.parse_args()
     import fcntl
     import signal
@@ -283,7 +284,7 @@ def main():
             from android_runtime import stage
             emit('sdk-packages')
             android_sdk=stage(args.android_runtime,args.home)
-        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit, android_sdk=android_sdk)
+        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit, android_sdk=android_sdk, image_runtime=args.images_runtime)
 if __name__ == '__main__':
     try:
         main()

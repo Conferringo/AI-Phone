@@ -21,7 +21,7 @@ Select the preset, enter a model ID and API key, then run the connection check b
 
 Native Messages sends `x-api-key` and `anthropic-version`, converts tool results/images and requires a complete stream before returning proposed actions. Signed thinking blocks remain private, verbatim replay data. Chat Completions retains supported providers' reasoning fields and Gemini tool signatures. DeepSeek forced tools disable thinking for that call, preserving the forced tool choice. The shared engine still enforces real observations, execution ownership and post-action evidence.
 
-Local real-HTTP fixtures verify authentication, image/tool round-trips and framing. They do **not** establish successful paid-provider account use. Existing local models recently returned HTTP 402; that account/service refusal is not solved by changing the preset list.
+Local real-HTTP fixtures verify authentication, image/tool round-trips and framing. They do **not** establish successful account use for every provider. The connection check tests the actual configured endpoint and reports account, protocol and capability failures separately.
 
 ## Local WhatsApp pairing
 

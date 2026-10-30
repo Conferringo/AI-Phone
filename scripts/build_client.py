@@ -98,6 +98,7 @@ def build_other(target, package_only=False):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--platform',choices=['macos','windows','linux','android'],default='macos')
+    parser.add_argument('--images-runtime',type=Path,help='Include architecture-matched desktop and database image capsule')
     parser.add_argument('--android-runtime',type=Path,help='Embed a host-matched Android development runtime; complete distribution review remains required')
     parser.add_argument('--package-only',action='store_true',help='Inspect and package an existing build; does not claim it is current')
     parser.add_argument('--with-web-runtime',action='store_true',help='Include a matching prebuilt standalone web service and pinned Bun; other full-device components remain required')
@@ -108,6 +109,7 @@ if __name__=='__main__':
     from prepare_client_host import prepare
     if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
     if args.with_service_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Native service component requires a matching macOS/Linux build')
+    if args.images_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Image capsule requires a matching desktop host build')
     if args.android_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Android runtime embedding requires a matching desktop host build')
     if args.with_web_runtime:
         from bootstrap_bun import bun_path
@@ -117,7 +119,7 @@ if __name__=='__main__':
     if args.with_service_runtime:
         from build_native_services import build
         build(ROOT)
-    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,android_runtime=args.android_runtime)
+    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,android_runtime=args.android_runtime,image_runtime=args.images_runtime)
     if args.with_web_runtime:
         from prepare_client_host import verify_prepared_web
         print(json.dumps({'prebuilt_web':verify_prepared_web(ROOT)}))

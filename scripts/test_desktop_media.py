@@ -17,7 +17,7 @@ class DesktopMediaTest(unittest.TestCase):
         cls.container = 'ai-phone-media-test-' + uuid.uuid4().hex[:10]
         subprocess.run(['docker', 'run', '-d', '--rm', '--init', '--network', 'none',
                         '--label', 'ai-phone.test=media', '--name', cls.container,
-                        '--entrypoint', 'sh', 'ai-phone-desktop:20261028', '-c',
+                        '--entrypoint', 'sh', os.environ.get('AI_PHONE_TEST_DESKTOP_IMAGE','ai-phone-desktop:20261028'), '-c',
                         'mkdir -p /tmp/ai-runtime; chown ai:ai /tmp/ai-runtime; chmod 700 /tmp/ai-runtime; exec sleep 300'],
                        check=True, stdout=subprocess.DEVNULL)
         cls.addClassCleanup(lambda: subprocess.run(['docker', 'rm', '-f', cls.container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
@@ -84,6 +84,28 @@ class DesktopMediaTest(unittest.TestCase):
             child.stdout.close()
             child.stderr.close()
             self.assert_no_capture()
+
+    def test_tone_reaches_the_host_capture_pipe(self):
+        import array
+        generated=self.run_guest('ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','lavfi','-i','sine=frequency=440:duration=2','-ar','48000','-ac','2','/tmp/aiphone-test-tone.wav')
+        self.assertEqual(generated.returncode,0,generated.stderr)
+        child=self.capture();tone=None;peak=0
+        try:
+            self.assertTrue(child.stdout.read(9600))
+            tone=subprocess.Popen(['docker','exec','-u','ai',self.container,'paplay','/tmp/aiphone-test-tone.wav'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            deadline=time.monotonic()+3
+            while time.monotonic()<deadline:
+                block=child.stdout.read(9600)
+                if not block:break
+                samples=array.array('h');samples.frombytes(block[:len(block)//2*2])
+                peak=max(peak,max((abs(value) for value in samples),default=0))
+                if peak>1000:break
+            self.assertGreater(peak,1000,'Capture contained no audible test signal')
+        finally:
+            drain=threading.Thread(target=child.stdout.read);drain.start()
+            child.stdin.close();child.wait(timeout=8);drain.join(timeout=2);child.stdout.close();child.stderr.close()
+            if tone is not None:tone.wait(timeout=5)
+        self.assert_no_capture()
 
     def test_lost_heartbeat_expires(self):
         child = self.capture()
