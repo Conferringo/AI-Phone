@@ -1,0 +1,69 @@
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --background: #fafafa;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2f2;
+  --secondary-foreground: #171717;
+  --muted: #f2f2f2;
+  --muted-foreground: #595959;
+  --accent: #eaeaea;
+  --accent-foreground: #171717;
+  --destructive: #b52525;
+  --border: #dedede;
+  --input: #dedede;
+  --ring: #171717;
+  --radius: 8px;
+  --radius-panel: 14px;
+  --radius-small: 6px;
+  --radius-popover: var(--radius-panel);
+  --window-inset: 24px;
+  --window-header: 56px;
+  --radius-mark: 4px;
+  --control-height: 40px;
+  --control-compact: 34px;
+  --target-size: 44px;
+  --text-title: 24px;
+  --text-section: 16px;
+  --text-body: 14px;
+  --text-caption: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --glass-fill: rgb(255 255 255 / 60%);
+  --glass-blur: 11px;
+  --motion-feedback: 140ms;
+  --motion-enter: 280ms;
+  --motion-exit: 180ms;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-panel);
+}
+

@@ -1,0 +1,37 @@
+[package]
+name = "ai-phone-client"
+version = "0.1.0-preview.3"
+description = "Native client for a user-owned AI Phone deployment"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "ai_phone_native"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "=2.11.6", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+sha2 = "0.10"
+tokio = { version = "1", features = ["time"] }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+glib = "=0.18.5"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
+# Exact upstream fix for RUSTSEC-2024-0429, tracked in config/native-backports.json.
+[patch.crates-io]
+glib = { path = "vendor/glib" }

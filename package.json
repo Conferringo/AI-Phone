@@ -1,0 +1,29 @@
+{
+  "name": "ai-phone",
+  "private": true,
+  "version": "0.0.1",
+  "packageManager": "bun@1.4.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "typecheck": "bun run --cwd apps/web typecheck && apps/web/node_modules/.bin/tsc -p apps/channels/tsconfig.json && apps/web/node_modules/.bin/tsc -p apps/device-stream/tsconfig.json && apps/web/node_modules/.bin/tsc -p apps/device-network/tsconfig.json",
+    "proto:check": "buf lint && buf build",
+    "proto:generate": "buf generate",
+    "smoke:protocol": "bun scripts/smoke-protocol.ts",
+    "check": "bun run proto:check && bun run typecheck && cargo check --workspace --locked",
+    "location:generate": "bun build infra/desktop/location.ts --target=bun --outfile=infra/desktop/location.js"
+  },
+  "devDependencies": {
+    "@bufbuild/protobuf": "2.16.0",
+    "@bufbuild/buf": "1.75.0",
+    "@bufbuild/protoc-gen-es": "2.16.0"
+  },
+  "license": "Apache-2.0",
+  "overrides": {
+    "puppeteer": "25.16.0"
+  }
+}

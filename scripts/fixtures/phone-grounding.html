@@ -1,0 +1,6 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Phone OCR test</title><style>html,body{margin:0;background:#f6f8fb;overflow:hidden}canvas{display:block}</style><canvas aria-hidden="true"></canvas><script>
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');let state='ready';
+function draw(){const d=devicePixelRatio||1;canvas.width=innerWidth*d;canvas.height=innerHeight*d;canvas.style.width=innerWidth+'px';canvas.style.height=innerHeight+'px';ctx.scale(d,d);ctx.fillStyle='#f6f8fb';ctx.fillRect(0,0,innerWidth,innerHeight);ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.fillStyle='#243041';ctx.fillText('真实手机 OCR',innerWidth/2,90);ctx.fillStyle=state==='changed'?'#fae0c0':'#c8eee4';ctx.fillRect(24,180,innerWidth-48,100);ctx.fillStyle='#122725';ctx.fillText(state==='ready'?'开始定位验证':state==='clicked'?'定位验证成功':'页面已经更新',innerWidth/2,237);}
+canvas.addEventListener('click',e=>{if(state==='ready'&&e.clientX>=24&&e.clientX<=innerWidth-24&&e.clientY>=180&&e.clientY<=280){state='clicked';draw();fetch('/proof',{method:'POST'})}});
+setInterval(async()=>{try{const value=await(await fetch('/state')).json();if(value.changed&&state!=='changed'){state='changed';draw()}}catch{}},250);draw();
+</script></html>

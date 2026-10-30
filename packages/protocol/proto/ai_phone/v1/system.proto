@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package ai_phone.v1;
+
+// A transport probe, not application readiness or authenticated user data.
+message ProbeRequest {
+  string nonce = 1;
+}
+
+message ProbeResponse {
+  string nonce = 1;
+  string service = 2;
+  string version = 3;
+  string stage = 4;
+}
+
+message ApiError {
+  string code = 1;
+  string message = 2;
+}
+

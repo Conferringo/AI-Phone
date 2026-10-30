@@ -1,0 +1,7 @@
+.fail
+load-module module-native-protocol-unix
+load-module module-null-sink sink_name=aiphone rate=48000 channels=2
+load-module module-stream-restore
+load-module module-device-restore
+set-default-sink aiphone
+set-default-source aiphone.monitor

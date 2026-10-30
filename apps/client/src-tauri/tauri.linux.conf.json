@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "targets": [
+      "deb",
+      "appimage"
+    ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
+      "deb": {
+        "depends": [
+          "libc6 (>= 2.39)",
+          "libwebkit2gtk-4.1-0 (>= 2.40)",
+          "libgtk-3-0 (>= 3.24)"
+        ]
+      }
+    }
+  }
+}

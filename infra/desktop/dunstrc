@@ -1,0 +1,15 @@
+[global]
+origin = top-right
+width = 360
+offset = (16, 16)
+font = Noto Sans 10
+frame_width = 1
+corner_radius = 10
+background = "#f5f7fa"
+foreground = "#26313c"
+frame_color = "#ccd3db"
+timeout = 8
+always_run_script = true
+
+[agent-inbox]
+script = /usr/local/lib/ai-phone/notification-record.py

@@ -1,0 +1,150 @@
+{
+  "format": 1,
+  "scope": "Locked dependency advisories and selected build graphs; not platform runtime acceptance",
+  "rust": {
+    "server": {
+      "lock_sha256": "5fe896d9077e52c80d67835d7d4b2937ee86a174e3006f90b1c9e50faa27f137",
+      "database": {
+        "advisory-count": 1386,
+        "last-commit": "ee1a49a2769a24a596afc1c20cb33748d2769586",
+        "last-updated": "2026-10-29T15:05:38+01:00"
+      },
+      "findings": [
+        {
+          "package": "rsa@0.9.10",
+          "advisory": "RUSTSEC-2023-0071",
+          "category": "vulnerability",
+          "title": "Marvin Attack: potential key recovery through timing sidechannels",
+          "url": "https://github.com/RustCrypto/RSA/issues/626",
+          "active_targets": [],
+          "blocking_when_active": true
+        }
+      ]
+    },
+    "client": {
+      "lock_sha256": "dc1813dbf94c5956224ce2f87624371da194ddea898f60ec2ab76bfc24c77431",
+      "database": {
+        "advisory-count": 1386,
+        "last-commit": "ee1a49a2769a24a596afc1c20cb33748d2769586",
+        "last-updated": "2026-10-29T15:05:38+01:00"
+      },
+      "findings": [
+        {
+          "package": "proc-macro-error@1.0.4",
+          "advisory": "RUSTSEC-2024-0370",
+          "category": "unmaintained",
+          "title": "proc-macro-error is unmaintained",
+          "url": "https://gitlab.com/CreepySkeleton/proc-macro-error/-/issues/20",
+          "active_targets": [
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-char-property@0.9.0",
+          "advisory": "RUSTSEC-2025-0081",
+          "category": "unmaintained",
+          "title": "`unic-char-property` is unmaintained",
+          "url": "https://github.com/rustsec/advisory-db/issues/2414",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "aarch64-linux-android"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-char-range@0.9.0",
+          "advisory": "RUSTSEC-2025-0075",
+          "category": "unmaintained",
+          "title": "`unic-char-range` is unmaintained",
+          "url": "https://github.com/rustsec/advisory-db/issues/2414",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "aarch64-linux-android"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-common@0.9.0",
+          "advisory": "RUSTSEC-2025-0080",
+          "category": "unmaintained",
+          "title": "`unic-common` is unmaintained",
+          "url": "https://github.com/rustsec/advisory-db/issues/2414",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "aarch64-linux-android"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-ucd-ident@0.9.0",
+          "advisory": "RUSTSEC-2025-0100",
+          "category": "unmaintained",
+          "title": "`unic-ucd-ident` is unmaintained",
+          "url": "https://github.com/rustsec/advisory-db/issues/2414",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "aarch64-linux-android"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-ucd-version@0.9.0",
+          "advisory": "RUSTSEC-2025-0098",
+          "category": "unmaintained",
+          "title": "`unic-ucd-version` is unmaintained",
+          "url": "https://github.com/rustsec/advisory-db/issues/2414",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc",
+            "aarch64-linux-android"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "glib@0.18.5",
+          "advisory": "RUSTSEC-2024-0429",
+          "category": "unsound",
+          "title": "Verified vendored upstream backport; see source manifest",
+          "url": "https://rustsec.org/advisories/RUSTSEC-2024-0429.html",
+          "active_targets": [
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu"
+          ],
+          "blocking_when_active": false,
+          "mitigation": {
+            "type": "verified-upstream-backport",
+            "source": "https://github.com/gtk-rs/gtk-rs-core/commit/b5a4071e439bef2b5eea76c3aa25e5ae84839e34",
+            "manifest": "config/native-backports.json",
+            "files_checked": 121
+          }
+        }
+      ]
+    }
+  },
+  "javascript": {},
+  "javascript_passed": true,
+  "blocked_targets": {
+    "aarch64-apple-darwin": [],
+    "aarch64-unknown-linux-gnu": [],
+    "x86_64-unknown-linux-gnu": [],
+    "x86_64-pc-windows-msvc": [],
+    "aarch64-linux-android": []
+  },
+  "blanket_ignores": []
+}

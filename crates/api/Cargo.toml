@@ -1,0 +1,22 @@
+[package]
+name = "ai-phone-api"
+version = "0.0.1"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+axum = "=0.8.9"
+prost = "=0.14.4"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+prost-build = "=0.14.4"
+protoc-bin-vendored = "3"
+
+[lints]
+workspace = true
+

@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "scope": "source-preview; original code Apache-2.0, dependencies retain their own licences",
+  "assets": [
+    {
+      "id": "knowledge-motion",
+      "files": [
+        "apps/web/src/components/knowledge/knowledgeGraphMotion.ts"
+      ],
+      "origin": "original time-based canvas renderer for AI Phone",
+      "license": "Apache-2.0",
+      "visual_reference": "EPIC design interaction only",
+      "visual_acceptance": "pending-real-page",
+      "sha256": {
+        "apps/web/src/components/knowledge/knowledgeGraphMotion.ts": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
+      }
+    },
+    {
+      "id": "vision-probe",
+      "files": [
+        "crates/assistant/fixtures/vision-probe.png"
+      ],
+      "origin": "project-generated diagnostic digit fixture, not a user screenshot",
+      "license": "Apache-2.0",
+      "sha256": {
+        "crates/assistant/fixtures/vision-probe.png": "39f7a5f8f45c3d80c9bfb32fa7b38a54ea74b627f947882f5beaea607eb4d93e"
+      }
+    },
+    {
+      "id": "native-client-icon",
+      "origin": "original project SVG; platform icons generated with pinned Tauri CLI",
+      "license": "Apache-2.0",
+      "files": [
+        "apps/client/src-tauri/icons/source.svg"
+      ],
+      "sha256": {
+        "apps/client/src-tauri/icons/source.svg": "5588923eb2c77283a131ee68aa7dd538ab33f622e079eec959bd359109bfc3ea"
+      }
+    }
+  ]
+}

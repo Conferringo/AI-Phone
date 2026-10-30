@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+bun_bin="$project_root/.tools/bin/bun"
+if [ ! -x "$bun_bin" ]; then
+  echo "Project Bun is missing. Run ./scripts/bootstrap.sh first." >&2
+  exit 1
+fi
+PATH="$project_root/.tools/bin:$PATH"
+export PATH
+exec "$bun_bin" "$@"
+

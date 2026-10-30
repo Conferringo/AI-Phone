@@ -1,0 +1,60 @@
+import {test,expect} from 'bun:test';
+import {EventEmitter} from 'node:events';
+import {mkdtempSync,rmSync,mkdirSync,writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {startWhatsApp} from './whatsapp';
+import {whatsappProxy,whatsappBrowser} from './whatsapp-browser';
+import {ownerTarget} from './outbox';
+class Fake extends EventEmitter{
+ info={wid:{_serialized:'account@c.us'}};destroyed=0;loggedOut=0;sent:any[]=[];
+ async initialize(){}async destroy(){this.destroyed++;}async logout(){this.loggedOut++;}
+ async sendMessage(chat:string,content:any){this.sent.push({chat,content});return {id:{_serialized:'outgoing'}};}
+}
+function fixture(extra:Partial<Parameters<typeof startWhatsApp>[0]>={},dependencies:Parameters<typeof startWhatsApp>[1]={}){
+ const root=mkdtempSync(join(tmpdir(),'aiphone-wa-test-')),clients:Fake[]=[],options:any[]=[];const seen:any[]=[];
+ const control=startWhatsApp({root,sessionId:'owned-test',proxyUrl:'',onIdentity:()=>true,onMessage:(...v)=>seen.push(v),...extra},{browser:()=>'/fixture/chromium',client:config=>{options.push(config);const fake=new Fake();clients.push(fake);return fake;},qr:async()=>Buffer.from('fixture-qr'),...dependencies});
+ return {root,control,clients,options,seen,async close(){await control.stop();rmSync(root,{recursive:true,force:true});}};
+}
+const flush=()=>new Promise(r=>setTimeout(r,0));
+test('QR login, identity gate, private messages and image replies share the paired-owner transport',async()=>{
+ const f=fixture();try{
+  f.clients[0].emit('qr','private-qr');await flush();expect(f.control.state).toBe('waiting_qr');expect(f.control.qrPng.length).toBeGreaterThan(0);
+  f.clients[0].emit('authenticated');expect(f.control.qrPng.length).toBe(0);expect(f.control.state).toBe('authenticating');
+  f.clients[0].emit('ready');expect(f.control.state).toBe('connected');
+  const message={from:'owner@lid',body:'/pair 123456',fromMe:false,isStatus:false,id:{_serialized:'received'}};
+  f.clients[0].emit('message',message);f.clients[0].emit('message',{...message,from:'group@g.us'});f.clients[0].emit('message',{...message,fromMe:true});f.clients[0].emit('message',{...message,isStatus:true});expect(f.seen).toHaveLength(1);
+  const target=ownerTarget('whatsapp',['owner@lid']) as {chat:string};expect(target).toEqual({chat:'owner@lid'});
+  await f.control.send({id:'one',target},'reply');await f.control.sendImage({id:'two',target},Buffer.from('PNG'));
+  expect(f.clients[0].sent[0]).toEqual({chat:'owner@lid',content:'reply'});expect(f.clients[0].sent[1].content.mimetype).toBe('image/png');
+  expect(await f.control.logout()).toBe(true);expect(f.clients[0].loggedOut).toBe(1);expect(f.options[0].puppeteer.signal.aborted).toBe(true);
+ }finally{await f.close();}
+});
+test('late QR work and callbacks cannot resurrect a stopped connection',async()=>{
+ let resolve!:(v:Buffer)=>void;const f=fixture({}, {qr:()=>new Promise(r=>resolve=r)});try{
+  f.clients[0].emit('qr','old');await f.control.stop();resolve(Buffer.from('late'));await flush();f.clients[0].emit('ready');f.clients[0].emit('message',{from:'owner@c.us',body:'late',id:{_serialized:'late'}});
+  expect(f.control.qrPng.length).toBe(0);expect(f.control.state).toBe('idle');expect(f.seen).toHaveLength(0);
+ }finally{await f.close();}
+});
+test('authentication supersedes an in-flight QR render and rejects duplicate identities',async()=>{
+ let resolve!:(v:Buffer)=>void;const f=fixture({onIdentity:()=>false},{qr:()=>new Promise(r=>resolve=r)});try{
+  f.clients[0].emit('qr','old');f.clients[0].emit('authenticated');f.clients[0].emit('ready');resolve(Buffer.from('stale'));await flush();
+  expect(f.control.state).toBe('failed');expect(f.control.qrPng.length).toBe(0);expect(f.clients[0].destroyed).toBeGreaterThan(0);
+ }finally{await f.close();}
+});
+test('network reconnection closes the old client and ignores its later events',async()=>{
+ const f=fixture({}, {retryMs:1});try{
+  f.clients[0].emit('ready');f.clients[0].emit('disconnected','TIMEOUT');
+  for(let i=0;i<30&&f.clients.length<2;i++)await new Promise(r=>setTimeout(r,5));
+  expect(f.clients).toHaveLength(2);expect(f.clients[0].destroyed).toBeGreaterThan(0);
+  f.clients[0].emit('ready');expect(f.control.state).not.toBe('connected');f.clients[1].emit('ready');expect(f.control.state).toBe('connected');
+ }finally{await f.close();}
+});
+test('storage failures stop reception instead of dispatching unsaved instructions',async()=>{
+ const f=fixture({onMessage:()=>{throw Error('fixture storage failure');}});try{f.clients[0].emit('ready');f.clients[0].emit('message',{from:'owner@c.us',body:'work',fromMe:false,isStatus:false,id:{_serialized:'one'}});await flush();expect(f.control.state).toBe('failed');expect(f.clients[0].destroyed).toBeGreaterThan(0);}finally{await f.close();}
+});
+test('proxy credentials are separated from Chrome arguments and browser manifests cannot escape',()=>{
+ expect(whatsappProxy('http://user:pass@127.0.0.1:7897')).toEqual({args:['--proxy-server=http://127.0.0.1:7897'],auth:{username:'user',password:'pass'}});
+ for(const url of ['file:///tmp/else','https://proxy.example/path','socks5://user:pass@proxy.example:1080'])expect(()=>whatsappProxy(url)).toThrow();
+ const root=mkdtempSync(join(tmpdir(),'aiphone-wa-component-'));try{mkdirSync(join(root,'.tools/whatsapp-browser'),{recursive:true});writeFileSync(join(root,'.tools/whatsapp-browser/browser.json'),JSON.stringify({format:1,executable:'../../../../bin/sh'}));expect(()=>whatsappBrowser(root)).toThrow();}finally{rmSync(root,{recursive:true,force:true});}
+});

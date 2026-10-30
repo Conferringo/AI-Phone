@@ -1,0 +1,15 @@
+import groovy.json.JsonOutput
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+allprojects { p ->
+ if (p.path == ':app') {
+  tasks.register('aiPhoneLicenseGraph') {
+   doLast {
+    def items = configurations.getByName('universalReleaseRuntimeClasspath').incoming.resolutionResult.allComponents.collect { c ->
+     def id=c.id
+     id instanceof ModuleComponentIdentifier ? [group:id.group,name:id.module,version:id.version] : null
+    }.findAll { it != null }
+    file(System.getenv('AI_PHONE_LICENSE_GRAPH')).text=JsonOutput.prettyPrint(JsonOutput.toJson(items))
+   }
+  }
+ }
+}

@@ -1,0 +1,12 @@
+{
+  "version": "1.4.4",
+  "source": "https://github.com/oven-sh/bun/releases/tag/bun-v1.4.4",
+  "assets": {
+    "bun-darwin-aarch64.zip": "c240d7f0ccb90c263a849fcdb09b7ee62630d921348ed6aafda86b9d577bc510",
+    "bun-darwin-x64-baseline.zip": "d4a155adfbfd09155eb3ba05c9e3a544f39297d7a68616d3c7759f67ab5c47dc",
+    "bun-linux-aarch64.zip": "baa6bb36f51d6e58561e02bbea825038a9df454f673d6d776e8bbf86f8c7850e",
+    "bun-linux-x64-baseline.zip": "e0446eb55995772eb9894bebae9a6be368d985a8b9271ee124486f9946eedd76",
+    "bun-windows-aarch64.zip": "2d57a0eec0cb44d95c918c3f9734f60455a1306ae5085d76fc68f44e3ee30d09",
+    "bun-windows-x64-baseline.zip": "0f20ce6674d4f2dbcc8c5d59fdf99f7ba45f8c3b367e0f5781cbfa30a1c78d99"
+  }
+}
