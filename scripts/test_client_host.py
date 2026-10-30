@@ -7,11 +7,21 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-from client_host import check_request, sdk_licenses, verify_container_ownership, installation_reserve
+from client_host import check_request, sdk_licenses, verify_container_ownership, installation_reserve, write_container_wrapper
 from install_state import InstallState
 
 
 class NativeHostTests(unittest.TestCase):
+    def test_owned_vm_keeps_architecture_resources_and_quoted_arguments(self):
+        import os
+        with tempfile.TemporaryDirectory(prefix='owned engine ') as temp:
+            home=Path(temp);lima=home/'fake lima';docker=home/'docker'
+            lima.write_text('#!'+sys.executable+'\nimport os,sys,subprocess\nsubprocess.run(sys.argv[sys.argv.index("env"):],env={"PATH":'+repr(str(home)+':/usr/bin:/bin')+'},check=True)\n')
+            docker.write_text('#!'+sys.executable+'\nimport os,json,sys\nprint(json.dumps({"arch":os.environ.get("AI_PHONE_CLASH_DESKTOP_DIR"),"cpu":os.environ.get("AI_PHONE_DESKTOP_CPUS"),"args":sys.argv[1:],"secret":os.environ.get("UNRELATED_TEST_SECRET")}))\n')
+            lima.chmod(0o755);docker.chmod(0o755)
+            folder=write_container_wrapper(home,home,lima)
+            result=subprocess.check_output([folder/'docker','compose','path with spaces'],env={**os.environ,'AI_PHONE_CLASH_DESKTOP_DIR':'linux-amd64','AI_PHONE_DESKTOP_CPUS':'4','UNRELATED_TEST_SECRET':'fixture-only'},text=True)
+            self.assertEqual(json.loads(result),{'arch':'linux-amd64','cpu':'4','args':['compose','path with spaces'],'secret':None})
     def test_toolchain_interruption_reuses_only_matching_native_admission(self):
         with tempfile.TemporaryDirectory() as temp:
             home=Path(temp);root=home/'releases'/('a'*64);root.mkdir(parents=True)

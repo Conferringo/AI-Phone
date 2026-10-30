@@ -1,6 +1,6 @@
 # Managed Linux host
 
-The preview.3 source adds a client-owned Linux x64 installer for Ubuntu/Debian. **Fresh-host acceptance is in progress; the published preview.2 DEBs still connect to an existing deployment.** Linux ARM64 lacks a reviewed, architecture-matched Android SDK/emulator distribution and remains unsupported as an independent host.
+The preview.3 source adds a client-owned Linux x64 installer for Ubuntu/Debian. **Fresh-host acceptance is in progress. This is a development bootstrap; it does not meet the complete bundled-distribution requirement. Product binaries have been withdrawn.** Linux ARM64 lacks a reviewed, architecture-matched Android SDK/emulator distribution and remains unsupported as an independent host.
 
 The native client selects language, phone CPU/RAM/storage and desktop CPU/RAM. It downloads checksum-pinned tools, chooses an Android 15 **x86_64** image, prepares its own AVD and guest applications, starts the database/backend/media/workbench and hands off to model configuration. There are no user-written service deployment commands in this path.
 
@@ -25,7 +25,7 @@ Windows still needs a native phone/WSL backend adapter. A normal Android APK can
 
 # Linux 客户端本机安装
 
-preview.3 源码已接入 Ubuntu/Debian x64 本机安装链，仍在全新环境验收。已发布的 preview.2 DEB 尚不包含它。安装器选择匹配宿主的 Android 15 x86_64 镜像，准备设备、应用、服务与画面，再进入模型配置。Linux ARM64 尚缺经审阅的匹配 SDK/模拟器分发，不标记为独立宿主可用。
+preview.3 源码已接入 Ubuntu/Debian x64 本机安装链，仍在全新环境验收。此前产品下载已撤下；这条在线研发引导链不等于包含镜像、模拟器与预构建服务的完整发行包。安装器选择匹配宿主的 Android 15 x86_64 镜像，准备设备、应用、服务与画面，再进入模型配置。Linux ARM64 尚缺经审阅的匹配 SDK/模拟器分发，不标记为独立宿主可用。
 
 缺少依赖时通过系统 PolicyKit 授权安装；不收集密码、不修改全局 Docker context、不授予 Docker 组权限。没有可用引擎时准备应用所属的 Lima/QEMU 容器宿主，Linux virtiofs 路径仍需实际验收。必须有硬件虚拟化及可访问的 `/dev/kvm`，不存在时明确阻止。
 

@@ -13,7 +13,8 @@
     "long_running_recovery": false,
     "database_runtime_role": true,
     "clean_host_install": false,
-    "backup_restore": true
+    "backup_restore": true,
+    "self_contained_device_bundle": false
   },
   "files": [
     {
@@ -48,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 5811,
-      "sha256": "a4e3306346d303d66d22bce263f31f43540f6b146d9fbab1f9e93610d05154f3"
+      "size": 6266,
+      "sha256": "bdf85134ae718c184add9046d15556c1dc359a085aa8a7e0f86a0ec37f0a9895"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -68,8 +69,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 3077,
-      "sha256": "2e8c30ebe0b6aa865fd89b0d11b6754f07953d95ee862fb48a9149b6d8278167"
+      "size": 218,
+      "sha256": "bbc49e5040de194aaa26178b72ad1aa80c32404c45840113b739589c696430a6"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -108,13 +109,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 8551,
-      "sha256": "5946d91ae6054a6a08aa15924d6f3751102f2e75fc3eea371f91a22606d0aad3"
+      "size": 6909,
+      "sha256": "bf577304f291f29630516940fa477d1176e3b201f6cb99505e1085f386295289"
     },
     {
       "path": "README.md",
-      "size": 15703,
-      "sha256": "83aa252553f4d72734e6c83b5704d83285bebeca1a9eeefad039edcdf8110d7a"
+      "size": 12341,
+      "sha256": "bf83a7d5a706ddbe2b4755f4b79cd0a8b14055d0f670685a91b33ab55740f434"
     },
     {
       "path": "SECURITY.md",
@@ -1973,8 +1974,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 1642,
-      "sha256": "1546286ea44cd5a18f4dee4878185806730b3bd9e4f37621fb20388165d51d21"
+      "size": 2114,
+      "sha256": "cf28cdabc275ea831dba0b2209de4ed787bc77c075570a93e4817b3d1a1fb370"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2313,8 +2314,8 @@
     },
     {
       "path": "crates/assistant/src/workbench.rs",
-      "size": 55119,
-      "sha256": "5faf3b6bd54eb22edf0d5315ec837f7dda631a5cb054afea63b5bf4e2331e0ae"
+      "size": 55143,
+      "sha256": "55289ced621684aba031cbc3fd1bda8e6328b06bf4afc1b9d8465b6b678e5b06"
     },
     {
       "path": "crates/assistant/src/worker.rs",
@@ -2488,8 +2489,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 6499,
-      "sha256": "a9e34e63cc57a85a3223284067d236919dac18026693c81c29c059b24946f005"
+      "size": 6754,
+      "sha256": "86a42b9b5e46774dcb501dfa5ba76d542b33b356657c3bd0b149e23afd93e615"
     },
     {
       "path": "docs/public/interface-audit-2026-10-29.md",
@@ -3218,8 +3219,8 @@
     },
     {
       "path": "docs/public/managed-linux.md",
-      "size": 4405,
-      "sha256": "10c8390bf9ca00ccb6a4719c8cfa2dd252e51ba1060f6360e00ce19bd491d6d4"
+      "size": 4554,
+      "sha256": "6c4affaf4b8b3dd3c861237d8b2614de5be71fec7b7e22e88fa9d379495e9806"
     },
     {
       "path": "docs/public/multiplatform-clients.md",
@@ -3238,13 +3239,13 @@
     },
     {
       "path": "docs/public/native-client.en.md",
-      "size": 2308,
-      "sha256": "105df5ac7ddf59d6c711a106b555b3f6777067c2bc3fdc48e5075f310cb8e58c"
+      "size": 2136,
+      "sha256": "4e8903e912cb8873314b90ca3a70d259cb707346018f40b89f2a32db0d422318"
     },
     {
       "path": "docs/public/native-client.zh-CN.md",
-      "size": 1794,
-      "sha256": "87b7fe1ec10b1bc0ca3f059e31a98bf138030038ec7ea9abe4cbfeb9724275dc"
+      "size": 1585,
+      "sha256": "40e5f0743005882699fa20e9ee515f3a6acd1b2c41e191bf3969a78216171f69"
     },
     {
       "path": "docs/public/network.md",
@@ -3258,8 +3259,8 @@
     },
     {
       "path": "docs/public/preview-release.md",
-      "size": 3891,
-      "sha256": "788275a5ab5eb006750d551ea16ae4b9feff29d483050a69f363e06b7e3ef0cd"
+      "size": 2820,
+      "sha256": "e8af70f9474e907b5fb757aed38b27777b775f882a4900b5dd9b6860da1f3a9f"
     },
     {
       "path": "docs/public/protocol-boundaries.md",
@@ -3298,8 +3299,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 7831,
-      "sha256": "eeb7a3e76727a7b426e78cf353e3a08de5026fab33403150bc139f5d4cb16431"
+      "size": 2601,
+      "sha256": "34a6f7f10036a7d5280ae220de06fa2fdebf9807f0a2d06513e2930354ea8118"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3698,8 +3699,8 @@
     },
     {
       "path": "scripts/android_sdk.py",
-      "size": 1073,
-      "sha256": "87d0c22babd979b4e036b7f733131bacfb758a4a3c9b21bc1665ad10d17bcd4e"
+      "size": 1077,
+      "sha256": "430f19a7abb358b5663129ba2fa53fb4646ffe3ca0c11f6eb0b14eab95abd18d"
     },
     {
       "path": "scripts/assistant-start.sh",
@@ -3798,8 +3799,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 12444,
-      "sha256": "6ff5f9a88fcfea055cc0385f9078fde796790af5a412de6054f055fefdeea070"
+      "size": 12964,
+      "sha256": "7ee99c9d2f736108b13921ba4e7508b20b73cd6ee32f4f368c3d9bfbab8a8afb"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4008,8 +4009,8 @@
     },
     {
       "path": "scripts/runtime_config.py",
-      "size": 3224,
-      "sha256": "2ab0cbe2483023b70ffb4aa5820a55c96eb8d2ec920ad05a586cab50f9c3aa2e"
+      "size": 3276,
+      "sha256": "1fce2671f90d7bc9f5531b0431761161007ca45c86722124c7789449b4fdd199"
     },
     {
       "path": "scripts/service_start.py",
@@ -4063,8 +4064,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 4587,
-      "sha256": "3ed10dd34dec89cb6486e4a8732dbe525ab21a6cf51772defbe18c3294dff30a"
+      "size": 5783,
+      "sha256": "d3510f83da2883fb8367bbab2b78e6f41b024c2aaabea1683c719b61927919df"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4140,6 +4141,11 @@
       "path": "scripts/test_release_portability.py",
       "size": 2414,
       "sha256": "47a07ecd42ef1e12954b9e07e559710f75af3049d497ff21fe476503a1d3979d"
+    },
+    {
+      "path": "scripts/test_sdk_entrypoints.py",
+      "size": 1227,
+      "sha256": "9164f6981c2d5aa9c3f08fa8bb4738b7a8381776aa90c7d5b52cce37d7251247"
     },
     {
       "path": "scripts/test_source_export.py",

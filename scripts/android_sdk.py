@@ -14,7 +14,7 @@ def command(manager, env, args=()):
     library = manager.parent.parent / 'lib' / (name + '-classpath.jar')
     java = Path(env['JAVA_HOME']) / 'bin/java'
     if not java.is_file() or not library.is_file(): raise ValueError('Android SDK Java entry point is missing')
-    return [str(java), '-Djava.awt.headless=true', '-Dcom.android.sdklib.toolsdir=' + str(manager.parent.parent), '-classpath', str(library), ENTRY_POINTS[name], *args]
+    return [str(java), '-Djava.awt.headless=true', '-Dcom.android.sdkmanager.toolsdir=' + str(manager.parent.parent), '-classpath', str(library), ENTRY_POINTS[name], *args]
 
 
 if __name__ == '__main__':

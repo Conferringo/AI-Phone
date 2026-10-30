@@ -80,6 +80,18 @@ def prepare_sdk(record, sdk, cache):
             (Path(temp) / 'cmdline-tools').rename(folder / 'latest')
 
 
+def write_container_wrapper(root, home, command):
+    bin_dir=home/'bin';bin_dir.mkdir(exist_ok=True)
+    wrapper=bin_dir/'docker'
+    # Compose runs in the owned VM. sudo must not erase the selected architecture
+    # or resource profile; only these installation fields cross this boundary.
+    defaults={'AI_PHONE_CLASH_DESKTOP_DIR':'linux','AI_PHONE_DESKTOP_CPUS':'2','AI_PHONE_DESKTOP_MEMORY':'2560m','AI_PHONE_CONTAINER_PROXY':''}
+    arguments=' '.join(key+'="${'+key+':-'+value+'}"' for key,value in defaults.items())
+    wrapper.write_text('#!/bin/sh\nexport LIMA_HOME='+shlex.quote(str(home/'lima'))+'\nexec '+shlex.quote(str(command))+' shell --workdir '+shlex.quote(str(root))+' ai-phone sudo env '+arguments+' docker "$@"\n')
+    wrapper.chmod(0o755)
+    return bin_dir
+
+
 def container_engine(root, home, config, emit):
     """Use an existing engine, or an app-owned VZ VM mounting only app data."""
     if os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE')!='1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
@@ -114,10 +126,8 @@ def container_engine(root, home, config, emit):
     # limactl start is idempotent for a running owned VM; no Docker context changes.
     found = subprocess.run([str(command), 'list', 'ai-phone', '--format', '{{.Status}}'], capture_output=True, text=True)
     execute([command, 'start', '--tty=false', 'ai-phone'] if found.stdout.strip() else [command, 'start', '--tty=false', '--name=ai-phone', definition])
-    bin_dir = home / 'bin'; bin_dir.mkdir(exist_ok=True)
-    wrapper = bin_dir / 'docker'
-    wrapper.write_text('#!/bin/sh\nexport LIMA_HOME=' + shlex.quote(str(home / 'lima')) + '\nexec ' + shlex.quote(str(command)) + ' shell --workdir ' + shlex.quote(str(root)) + ' ai-phone sudo docker "$@"\n')
-    wrapper.chmod(0o755); os.environ['PATH'] = str(bin_dir) + os.pathsep + os.environ['PATH']
+    bin_dir = write_container_wrapper(root,home,command)
+    os.environ['PATH'] = str(bin_dir) + os.pathsep + os.environ['PATH']
     # Persist only owned tool paths; launchd jobs must retain the same engine.
     os.environ['AI_PHONE_MANAGED_BIN'] = str(bin_dir)
     execute(['docker', 'info'], stdout=subprocess.DEVNULL)

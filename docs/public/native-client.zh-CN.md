@@ -1,8 +1,8 @@
-# 原生客户端预览
+# 原生客户端开发
 
-[English](native-client.en.md) · 0.1.0-preview.2 · 实验性版本
+[English](native-client.en.md) · 开发中
 
-从 [Releases](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) 下载对应安装包。macOS Apple Silicon 已包含实验性[本机安装](integrated-hosts.md)：选择语言和设备资源，安装依赖与设备，再进入真实工作台配置模型。全新宿主安装尚未实测。Windows、Linux、Android 仍是连接客户端，需要已有本机或局域网服务。
+产品下载已撤下。下一次发行必须包含系统镜像、模拟器与预构建服务，详见[发行标准](preview-release.md)。下述源码安装与连接实现仅供开发，不作为完整产品交付。
 
 保存的服务可达时直接进入工作台。macOS 已完成且源码版本一致的安装可恢复所属服务，实际探测后进入；未完成安装提供重试。菜单「AI Phone → Setup」（Command/Control+,）返回安装或连接配置。失败不清空输入；停止可打断卡住的下载和安装进程组。进度、资源不足和错误在恢复时仍可见。
 

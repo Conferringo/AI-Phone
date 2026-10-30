@@ -1,32 +1,23 @@
 # AI Phone
 
-English · [简体中文](README.md#简体中文) · Apache-2.0 · **0.1.0-preview.2 experimental preview**
+English · [简体中文](README.md#简体中文) · Apache-2.0 · **Development — distribution in preparation**
 
-Development source targets preview.3 and adds [Linux x64 managed setup](docs/public/managed-linux.md), under full runtime validation. Published preview.2 downloads below retain their original capabilities. Windows/Android independent host support is still unfinished.
+## Downloads
 
-## Download and install
+There is currently **no product installer available**. Incomplete preview downloads have been withdrawn. This repository contains development source; successful client compilation is not a complete deployment.
 
-Download a preview client for your platform. **The macOS Apple Silicon client includes experimental local setup:** choose device resources, let the client acquire/build its dependencies, then configure a model in the workbench. Fresh-host installation remains untested. Windows, Linux and Android packages remain connection clients. The complete source host currently targets macOS Apple Silicon; Windows/Linux host management and Android independent hosting remain unfinished. See the [current release status](docs/public/release-status.md).
+The next distribution must include the matching Android/Linux system images, emulator and prebuilt runtime components. Users should configure device resources and a model in the client, then start using their devices. They should not have to find images, install an SDK, compile services or manually connect to a separately deployed backend.
 
-| System | Client format | Status / instructions |
+| Target | Required distribution | Current state |
 |---|---|---|
-| macOS Apple Silicon | [DMG](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-macos-arm64.dmg) | Experimental managed setup; fresh-host install untested; unsigned/unnotarized |
-| Windows x64 | [EXE / NSIS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-windows-x64-setup.exe) | Unsigned; installation/runtime untested |
-| Linux amd64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-arm64.deb) | Ubuntu 24.04 builds; desktop/media untested |
-| Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-android-arm64.apk) | Preview certificate; touch/background untested |
+| macOS Apple Silicon | Complete local device bundle and client | Integrated runtime/bundle acceptance in progress |
+| Windows x64 | Complete local device bundle and client | Native phone/backend integration unfinished |
+| Linux x64 | Complete local device bundle and client | Managed runtime under development; complete bundle unfinished |
+| Android ARM64 | Root/KVM host and matching local device bundle | Privileged runtime/image integration unfinished |
 
-[Open the release](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) · [SHA256SUMS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/SHA256SUMS). Releases include checksums, provenance manifests and third-party notices. Read the [preview scope and limits](docs/public/preview-release.md). The maintainer waived physical installation acceptance; untested platforms remain unverified. Report sanitized problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose).
+[Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
-Source deployment requires Python 3.11+, Node.js 22+, Bun (project bootstrap), Rust 1.88+, Java 17, Android command-line tools, Xcode Command Line Tools and Docker Desktop. Recommended: 16GB RAM; reserve 35GiB for a fresh install.
-
-```sh
-./ai-phone doctor
-./ai-phone install
-```
-
-Configuration asks for a language first, then device resources and prerequisites. Existing guest disks and accounts are preserved. Startup opens the workbench directly; first setup configures an Agent model and device bindings. External channels and memory are optional later settings. The project uses a pinned local Bun entry.
-
-[Setup guide](docs/public/getting-started.en.md) · [Eight languages](docs/public/languages.md) · [Backup/restore](docs/public/backup-restore.en.md)
+Source setup commands in the development guides are for contributors. They are not the intended product installation experience. Device disks, accounts, conversations, attachments and secrets never belong in a distributable image.
 
 ## Technical overview
 
@@ -86,29 +77,15 @@ The maintainer elected to publish this experimental source preview without waiti
 
 [Back to English](#ai-phone)
 
-## 下载与安装
+## 下载
 
-下载适合自己系统和架构的预览客户端。**macOS Apple Silicon 客户端已包含实验性本机安装流程**：选择设备资源、准备依赖和服务，再配置模型；全新宿主安装尚未实测。Windows、Linux、Android 仍为连接客户端；完整源码宿主目前以 macOS Apple Silicon 为目标，Windows/Linux 宿主管理和 Android 独立宿主尚未完成。详见[当前发行状态](docs/public/release-status.md)。
+目前**没有达到标准的产品安装包**，此前不完整的预览下载已撤下。仓库仍处于开发阶段，客户端编译成功不等于完整部署成功。
 
-| 系统 | 客户端格式 | 当前状态 / 安装说明 |
-|---|---|---|
-| macOS Apple Silicon | [DMG](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-macos-arm64.dmg) | 未签名/公证；未做安装验收 |
-| Windows x64 | [EXE / NSIS](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-windows-x64-setup.exe) | 未签名；未做安装/运行验收 |
-| Linux x64 / ARM64 | [amd64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-amd64.deb) / [arm64 DEB](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-linux-arm64.deb) | Ubuntu 24.04构建；未做安装/媒体验收 |
-| Android ARM64 | [APK](https://github.com/Conferringo/AI-Phone/releases/download/v0.1.0-preview.2/AI-Phone-0.1.0-preview.2-android-arm64.apk) | 预览证书；未做触屏/后台验收 |
+下一次发行包必须包含匹配平台的 Android/Linux 系统镜像、模拟器和预构建运行组件。用户在客户端选择设备资源、配置模型后即可使用，无需另找镜像、安装 SDK、编译服务或手动部署后端。Android 独立宿主优先支持 root 且开放 KVM 的设备。
 
-安装包、校验和、来源清单及第三方声明见 [Releases](https://github.com/Conferringo/AI-Phone/releases)。[预览范围与已知限制](docs/public/preview-release.md)。维护者暂不做实机安装验收，未实测项目按原状披露；请通过 [Issue](https://github.com/Conferringo/AI-Phone/issues/new/choose) 反馈（勿附密钥或私人聊天）。
+[发行标准](docs/public/preview-release.md) · [当前进度](docs/public/release-status.md) · [Issue 反馈](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
-从源码部署需要 Python 3.11+、Node.js 22+、Bun（项目自动安装）、Rust 1.88+、Java 17、Android 命令行工具、Xcode Command Line Tools 和 Docker Desktop。建议16GB内存，新安装预留35GiB磁盘。
-
-```sh
-./ai-phone doctor
-./ai-phone install
-```
-
-安装配置第一步选语言，然后配置设备资源和依赖。安装器保留已有设备盘与账号；启动后直接进入工作台，完成 Agent 模型和设备绑定。首次配置不要求绑定外部应用或编辑记忆。项目内 Bun 使用固定版本，不需要全局安装 Bun。
-
-[完整安装指南](docs/public/getting-started.zh-CN.md) · [八语言选择](docs/public/languages.md) · [备份恢复](docs/public/backup-restore.zh-CN.md)
+开发文档中的源码启动命令仅供贡献者调试，不作为产品安装方案。设备盘、账号、聊天、附件、密钥与私有证据不会进入发行镜像。
 
 ## 技术说明
 

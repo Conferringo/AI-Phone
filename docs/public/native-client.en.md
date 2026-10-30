@@ -1,10 +1,10 @@
-# Native client preview
+# Native client development
 
-[简体中文](native-client.zh-CN.md) · 0.1.0-preview.2 · Experimental
+[简体中文](native-client.zh-CN.md) · Development
 
-## Download and use
+## Development status
 
-Download your platform's installer from [Releases](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2). macOS Apple Silicon now includes [client-managed setup](integrated-hosts.md): choose language/device resources, install dependencies and devices, then configure your model. Fresh-host installation is untested. Windows, Linux and Android remain connection clients requiring an existing local/LAN deployment.
+Product downloads are withdrawn. The next distribution must include system images, emulator and prebuilt services; see [distribution requirements](preview-release.md). The source setup/connection implementation below is development code, not a complete product installer.
 
 A reachable saved deployment opens directly. macOS can resume a completed installation owned by the same client payload; interrupted setup shows Retry. AI Phone → Setup (Command/Control+,) returns to setup or connection settings. Only a successful server address is saved. User files, credentials, devices and conversations are not replaced by a client installation.
 

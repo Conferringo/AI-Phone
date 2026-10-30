@@ -1,63 +1,27 @@
 # Release status / 发行状态
 
-Updated 2026-10-29. **Public experimental preview; not a finished four-platform product. / 已公开实验性预览，尚非成熟的四平台产品。**
+Updated 2026-10-30. **Development; no complete product distribution is available.**
 
-## Published preview / 当前下载
+Incomplete preview downloads and their release tags have been withdrawn. Source and active development reviews remain available. No replacement is published until the complete-device-bundle gate passes.
 
-Development source: preview.3 adds the [Linux x64 managed-host worker](managed-linux.md). Full install/resume acceptance is in progress. Preview.2 installers are immutable and retain their original platform scope. Windows/Android independent hosts remain unfinished.
+The required user experience is: install the distribution, configure phone/computer/model in the client, then use the workbench. The package must contain matched system images, emulator and prebuilt services. Requiring users to acquire SDK/images, compile services or manually deploy a backend does not meet this standard.
 
-- [v0.1.0-preview.2](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) introduces experimental client-managed installation on macOS Apple Silicon: device resources, owned tools, Android licenses, service preparation, desktop provisioning, install recovery and model configuration handoff. **Full fresh-host dual-device installation remains untested.**
-- Windows x64 NSIS, Linux amd64/ARM64 DEB and Android ARM64 APK remain connection clients. Their independent host adapters are unfinished. macOS/Windows are unsigned; Android uses a preview certificate. Physical installation acceptance remains waived and untested.
-- [preview.1](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) is retained unchanged as the earlier connection-client release. New source does not rewrite its tags or installer bytes.
-- There is no stable release. `/releases/latest` excludes prereleases; use the explicit tag. Artifact manifests record build source, hashes, notices and limitations.
+| Target | Development evidence | Remaining distribution gate |
+|---|---|---|
+| macOS ARM64 | Existing Android/Linux runtime, native setup and recovery tests | Complete redistributable payload, offline materialization, first-run acceptance |
+| Windows x64 | Native client compilation | Native phone + backend supervision, complete payload and first run |
+| Linux x64 | Managed worker under review | Full runtime acceptance and complete payload |
+| Linux ARM64 | Client compilation | Reviewed architecture-matched Android runtime and payload |
+| Android ARM64 root/KVM | Host scope selected | Kernel/permission checks, matching privileged runtime and both guests |
 
-## Capability maturity / 实际成熟度
+`config/release-policy.json` is the promotion gate owner. Binary publication is disabled and `self_contained_device_bundle` is false. A prior waiver of physical installer tests does not waive complete package contents or redistribution requirements. Source CI and client builds continue as development checks; they are not downloadable product releases.
 
-| Area | Implemented / 已实现 | Remaining / 尚未成熟 |
-| --- | --- | --- |
-| Device workbench | Real Android and Linux screens/input, per-device conversations, file exchange, grounded action checks | Full platform/audio/touch/accessibility matrix and long-running multi-device soak |
-| Model transport | Responses and Chat Completions, image/tool conversion, configuration probes, cancellation | DeepSeek Chat thinking/tool continuity, discovery, provider-specific policies, native Anthropic/Gemini |
-| Channels | QQ, WeCom, Feishu and Telegram adapter code, per-Agent pairing and delivery state | Real-account send/receive/notification/image acceptance; incoming attachments; more platforms |
-| Local deployment | macOS ARM64 managed client setup + source CLI, durable installer progress and owned-service resume | Complete fresh-host first run; Windows/Linux host adapters; Android host feasibility |
-| State and recovery | Scoped action ledger, runtime/migration DB roles, isolated backup/recovery and failure tests | Signed update activation/rollback, real host sleep/reboot/power-loss and prolonged operation |
-| UI and language | Shared controls and eight language catalogs | Large component ownership, complete window/language/error/localization acceptance |
+Model/provider continuity, channel certification, long-running recovery, signed updates and full UI/language/media acceptance remain open. See [SOLID audit](solid-audit.md), [compatibility](compatibility.md), [bundle requirements](preview-release.md) and [database recovery](backup-restore.en.md).
 
-[Compatibility](compatibility.md) defines what was actually checked. **Adapter code, successful HTTP, CI builds and a dropdown entry are different evidence.** No completion percentage is assigned to unmeasured behavior.
+---
 
-## Prioritized remaining work / 按优先级收敛
+# 中文状态
 
-| ID | Priority | Work and exit criterion / 工作及验收条件 |
-| --- | --- | --- |
-| H01 | P0 | Client-owned deployment: configure phone/computer/model, prepare services, receive real frames/input/audio, restart without losing state; handle interrupted installation. Per-platform results stay separate. |
-| M01 | P1 | DeepSeek Chat thinking: retain genuine provider reasoning for subsequent tool turns, map controls/forced-tool restrictions, preserve tool provenance, prove multi-turn behavior through strict HTTP fixtures and a separately authorized provider check. |
-| M02 | P1 | Provider expansion: capability/model discovery, explicit native protocol adapters, bounded errors/cancellation/tool round-trips; never infer support from a provider label. |
-| C01 | P1 | Channel certification: real incoming request → selected Agent/device → progress → final text/image; interrupted delivery remains unknown until verified. Add incoming files only with scoped storage and receipt tests. |
-| R01 | P1 | Updates/recovery: versioned artifacts, verified manifests, user-state separation, migrations, activation/rollback and host sleep/reboot tests. A direct `git pull` into user data is not an updater. |
-| U01 | P1 | UI ownership: split device session, media/input, window lifecycle and registry form state with behavioral tests; verify desktop/narrow/reduced-motion and language layouts. |
-| L01 | P1 | Distribution: per-artifact legal review/signing, complete SDK/guest redistribution obligations and clear untested-platform labels. Preview waivers do not close product gates. |
-| D01 | P2 | Repository hygiene: small scoped changes, one current release-status owner, accurate compatibility tables and privacy-safe issue reports; retain historical audit evidence in dated reports. |
+当前没有完整产品安装包。此前不完整的预览版与标签已撤回，源码与当前研发审阅保留。完整包应包含系统镜像、模拟器与预构建服务，初始化时自动部署，再由用户配置设备资源与模型；不能把源码安装或连接客户端当成最终发行。
 
-## This source review / 本次源码修复
-
-Model transport now shares one bounded SSE framing implementation, supports standard multiline events and CR/LF boundaries, refuses non-SSE HTTP success, accepts matching complete endpoint URLs once, and rejects endpoint/protocol mismatches. Configuration files, credentials, chat records and protobuf contracts remain unchanged. This does not close M01/M02 or certify a new public provider.
-
-Runtime verification: assistant tests **71 passed / 30 explicitly ignored**, including loopback HTTP and parser regressions; strict assistant Clippy passed. Ignored database/provider/process tests are not passed tests. The before/after regressions reproduce multiline stream failures, double-appended endpoint 404s and acceptance of an invalid response MIME type. Broader product/runtime acceptance remains open.
-
-## Gates and evidence / 门槛与证据
-
-`config/release-policy.json` owns promotion gates. UI acceptance, complete asset/source redistribution review, long-running host recovery and clean-host installation remain open. Runtime DB role, durable action retention and isolated backup/recovery have scoped passing evidence. `./ai-phone package --public` remains stricter than publishing an explicitly limited source preview.
-
-- [SOLID audit and remaining boundaries](solid-audit.md)
-- [Stability, sound and state recovery](release-stability-2026-10-29.md)
-- [Task recovery and install checkpoints](task-recovery.md)
-- [Native preview scope and notices](preview-release.md)
-- [Database roles](database-roles.md), [backup/restore](backup-restore.en.md), [dependency inventory](dependency-licenses.json)
-- [Release contract](release-contract.en.md), [中文交付标准](release-contract.zh-CN.md)
-
-Dated audits retain their original scope and historical findings; this page owns the current summary. No live keys, accounts, conversations, guest disks or private screenshots belong in repository evidence or Issues.
-
-## Preview.2 managed-host increment
-
-Native deployment progress is persisted atomically and tied to the bundled payload. A saved completed install is not live readiness: startup resumes owned services and probes before opening. Failed child processes cannot authorize auto-resume via a ready line. Stage completion cannot strand the UI in a false terminal state. Pending licenses are never auto-accepted after restart. Stop interrupts stalled HTTP headers/body without repeating requests, and registered stopped services can start without force-killing live tasks.
-
-Local native regression tests and isolated installer/source-staging tests cover these contracts. Real existing-environment verification retained all seven running service PIDs and returned a genuine desktop frame. This is meaningful H01 implementation evidence, while the fresh-host and independent-platform exit criteria remain open. See [managed-host scope](integrated-hosts.md). No maturity percentage is assigned.
+二进制发布开关已关闭，新增“完整设备包”门槛且保持未通过。Android 以 root＋KVM 为宿主范围。四平台运行组件、镜像/模拟器再分发依据、完整包校验与初始化验收都必须明确，不用编译通过、页面入口或文档代替运行事实。

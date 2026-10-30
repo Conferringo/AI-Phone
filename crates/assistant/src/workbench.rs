@@ -90,12 +90,12 @@ async fn drain(
 }
 async fn command(args: &[String], limit: u64, seconds: u64) -> Result<(bool, String), String> {
     let mut child = Command::new("docker")
-    .args(args)
-    .kill_on_drop(true)
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped())
-    .spawn()
-    .map_err(|_| "Docker尚未运行".to_string())?;
+        .args(args)
+        .kill_on_drop(true)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|_| "Docker尚未运行".to_string())?;
     let out = child.stdout.take().unwrap();
     let err = child.stderr.take().unwrap();
     let (mut a, mut b) = (Vec::new(), Vec::new());
