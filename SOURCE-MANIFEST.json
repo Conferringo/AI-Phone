@@ -3699,8 +3699,8 @@
     },
     {
       "path": "scripts/android_sdk.py",
-      "size": 1077,
-      "sha256": "430f19a7abb358b5663129ba2fa53fb4646ffe3ca0c11f6eb0b14eab95abd18d"
+      "size": 1172,
+      "sha256": "bfcdd3507ae528f2aa7f2aa53849f05435b30527d56ae66abc39d22b576b538f"
     },
     {
       "path": "scripts/assistant-start.sh",
@@ -3799,8 +3799,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 12964,
-      "sha256": "7ee99c9d2f736108b13921ba4e7508b20b73cd6ee32f4f368c3d9bfbab8a8afb"
+      "size": 13054,
+      "sha256": "511716442e1dc48e759545d89b37365ee2ba7df83304d8f4fe35e7a0da1f3df5"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4144,8 +4144,8 @@
     },
     {
       "path": "scripts/test_sdk_entrypoints.py",
-      "size": 1227,
-      "sha256": "9164f6981c2d5aa9c3f08fa8bb4738b7a8381776aa90c7d5b52cce37d7251247"
+      "size": 1835,
+      "sha256": "11b9219cf07e16d3f4a11e3990a4c09d650854d35bcc3f80dc305b871472b49e"
     },
     {
       "path": "scripts/test_source_export.py",

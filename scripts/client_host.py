@@ -60,7 +60,9 @@ def sdk_licenses(manager, env, emit, packages):
                 if not answer or json.loads(answer) != {'accept': True}: raise ValueError('SDK license was not accepted')
                 child.stdin.write('y\n'); child.stdin.flush(); text = ''
                 emit('sdk-licenses')
-        if child.wait() != 0: raise ValueError('SDK licenses did not complete')
+        if child.wait() != 0:
+            print(text[-4096:],file=sys.stderr)
+            raise ValueError('SDK package installation or license review did not complete')
     finally:
         if child.poll() is None: child.terminate(); child.wait(timeout=5)
         child.stdout.close(); child.stdin.close()

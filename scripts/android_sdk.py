@@ -4,7 +4,10 @@ from pathlib import Path
 import subprocess
 import sys
 
-ENTRY_POINTS = {'sdkmanager': 'com.android.sdklib.tool.sdkmanager.SdkManagerCli', 'avdmanager': 'com.android.sdklib.tool.AvdManagerCli'}
+ENTRY_POINTS = {
+    'sdkmanager': ('com.android.sdklib.tool.sdkmanager.SdkManagerCli','com.android.sdklib.toolsdir'),
+    'avdmanager': ('com.android.sdklib.tool.AvdManagerCli','com.android.sdkmanager.toolsdir'),
+}
 
 
 def command(manager, env, args=()):
@@ -14,7 +17,8 @@ def command(manager, env, args=()):
     library = manager.parent.parent / 'lib' / (name + '-classpath.jar')
     java = Path(env['JAVA_HOME']) / 'bin/java'
     if not java.is_file() or not library.is_file(): raise ValueError('Android SDK Java entry point is missing')
-    return [str(java), '-Djava.awt.headless=true', '-Dcom.android.sdkmanager.toolsdir=' + str(manager.parent.parent), '-classpath', str(library), ENTRY_POINTS[name], *args]
+    entry,property_name=ENTRY_POINTS[name]
+    return [str(java), '-Djava.awt.headless=true', '-D'+property_name+'=' + str(manager.parent.parent), '-classpath', str(library), entry, *args]
 
 
 if __name__ == '__main__':
