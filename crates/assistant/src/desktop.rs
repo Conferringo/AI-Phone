@@ -90,11 +90,8 @@ async fn process(
         .map_err(|_| "操作超时，结果可能未知，请先观察或核对文件".to_string())?
 }
 fn docker() -> Command {
-    Command::new(if std::path::Path::new("/usr/local/bin/docker").exists() {
-        "/usr/local/bin/docker"
-    } else {
-        "docker"
-    })
+    // The installer owns PATH and can select its private container host.
+    Command::new("docker")
 }
 async fn helper(op: &str, args: Value) -> Result<Value> {
     let mut c = docker();

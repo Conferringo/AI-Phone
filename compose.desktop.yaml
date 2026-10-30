@@ -5,7 +5,7 @@ services:
     build:
       context: ./infra/desktop
       additional_contexts:
-        clash_apps: ./.tools/clash-apps/linux
+        clash_apps: ./.tools/clash-apps/${AI_PHONE_CLASH_DESKTOP_DIR:-linux}
       args:
         HTTP_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
         HTTPS_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}

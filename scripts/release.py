@@ -35,8 +35,8 @@ def validate(value):
         raise ValueError('Unsupported profile schema')
     if value.get('locale') not in LOCALES:
         raise ValueError('Unsupported interface language')
-    if value['phone'].get('template') != 'android35-arm64' or value['desktop'].get('template') != 'debian13-openbox':
-        raise ValueError('Only the tested Android 15 / Debian 13 templates are available')
+    if value['phone'].get('template') not in ('android35-arm64','android35-x86_64') or value['desktop'].get('template') != 'debian13-openbox':
+        raise ValueError('Only the Android 15 / Debian 13 templates are available')
     for section in ('phone', 'desktop'):
         p = value[section]
         if type(p['cpus']) is not int or p['cpus'] not in (1, 2, 4):
@@ -63,7 +63,7 @@ def default_profile(root=ROOT):
     return dict(schema_version=1, local_entry=True, locale='zh-CN', sdk_root=env['AI_PHONE_SDK_ROOT'],
                 java_home=env['JAVA_HOME'], host_proxy=env['AI_PHONE_HOST_PROXY'],
                 container_proxy=env['AI_PHONE_CONTAINER_PROXY'],
-                phone=dict(template='android35-arm64', cpus=4, memory_mb=3072, storage_gb=16),
+                phone=dict(template='android35-x86_64' if env['AI_PHONE_ANDROID_ABI']=='x86_64' else 'android35-arm64', cpus=4, memory_mb=3072, storage_gb=16),
                 desktop=dict(template='debian13-openbox', cpus=2, memory_mb=2560))
 
 
@@ -108,9 +108,13 @@ def doctor(root=ROOT, *, minimum_free_gb=35):
     checks = []
     def check(name, passed, fix):
         checks.append(dict(name=name, passed=bool(passed), fix='' if passed else fix))
-    check('host', platform.system() == 'Darwin' and platform.machine() == 'arm64', 'Preview supports macOS Apple Silicon only')
+    from host_platform import host_policy
+    try:host_policy(root);supported=True
+    except ValueError:supported=False
+    check('host', supported, 'Independent deployment currently requires macOS ARM64 or Linux x64')
     check('python-version', sys.version_info >= (3,11), 'Python 3.11+ required')
-    for executable, hint in [('node', 'Install Node.js 22+'), ('cargo', 'Install Rust via rustup'), ('docker', 'Install and start Docker Desktop'), ('swiftc', 'Install Xcode Command Line Tools: xcode-select --install')]:
+    native=[('swiftc','Install Xcode Command Line Tools')] if platform.system()=='Darwin' else [('tesseract','Install the managed Linux OCR dependencies')]
+    for executable, hint in [('node', 'Install Node.js 22+'), ('cargo', 'Install Rust via rustup'), ('docker', 'Prepare the managed container host'), *native]:
         check(executable, shutil.which(executable), hint)
     if shutil.which('node'):
         node = subprocess.run(['node', '-p', 'Number(process.versions.node.split(".")[0])>=22'], capture_output=True, text=True)
@@ -135,9 +139,12 @@ def doctor(root=ROOT, *, minimum_free_gb=35):
         check('docker-engine', result.returncode == 0 and result.stdout.strip() == 'linux', 'Start Docker Desktop with Linux containers')
         result = subprocess.run(['docker', 'compose', 'version'], capture_output=True, timeout=10)
         check('docker-compose', result.returncode == 0, 'Install Docker Compose v2')
-    if shutil.which('sysctl'):
+    if platform.system()=='Darwin':
         memory = subprocess.check_output(['sysctl', '-n', 'hw.memsize'], text=True).strip()
         check('memory-budget', int(memory) >= 12 * 1024**3, '12 GB host RAM minimum; 16 GB+ recommended for phone + desktop')
+    elif platform.system()=='Linux':
+        memory=next(int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemTotal:'))
+        check('memory-budget',memory>=12*1024**3,'12 GB host RAM minimum; 16 GB+ recommended')
     check('free-disk', shutil.disk_usage(root).free >= minimum_free_gb * 1024**3, f'Keep at least {minimum_free_gb} GB free for SDK, images and builds')
     return checks
 
@@ -156,7 +163,8 @@ def install(*, observer=None, license_action=None, launch_client=True, minimum_f
     if not all(c['passed'] or c['name'] in downloadable for c in checks):
         raise ValueError('Resolve failed checks and run ./ai-phone install again. No devices were changed.')
     env=environment();sdk=Path(env['AI_PHONE_SDK_ROOT']);sdkmanager=sdk/'cmdline-tools/latest/bin/sdkmanager'
-    required=('platform-tools/adb','emulator/lib/emulator_controller.proto','build-tools/35.0.0/d8','build-tools/35.0.0/aapt2','platforms/android-35/android.jar','system-images/android-35/default/arm64-v8a/system.img')
+    abi=env['AI_PHONE_ANDROID_ABI']
+    required=('platform-tools/adb','emulator/lib/emulator_controller.proto','build-tools/35.0.0/d8','build-tools/35.0.0/aapt2','platforms/android-35/android.jar',f'system-images/android-35/default/{abi}/system.img')
     def image(tag):
         result=subprocess.run(['docker','image','inspect','--format','{{.Id}}',tag],capture_output=True,text=True)
         return result.stdout.strip() if result.returncode==0 else ''
@@ -173,7 +181,7 @@ def install(*, observer=None, license_action=None, launch_client=True, minimum_f
         # CLI uses the SDK prompt; the native client displays each actual license.
         licenses=lambda:all((sdk/'licenses'/name).is_file() for name in ['android-sdk-license'])
         state.phase('sdk-licenses',fingerprint(ROOT,[],{'sdk':str(sdk)}),lambda:license_action(sdkmanager,env) if license_action else run(sdk_command(sdkmanager,env,['--licenses']),env=env),licenses)
-        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':'arm64-v8a'}),lambda:run(sdk_command(sdkmanager,env,['platform-tools','emulator','platforms;android-35','build-tools;35.0.0','system-images;android-35;default;arm64-v8a']),env=env),lambda:all((sdk/name).is_file() for name in required))
+        state.phase('sdk-packages',fingerprint(ROOT,[],{'sdk':str(sdk),'api':35,'abi':abi}),lambda:run(sdk_command(sdkmanager,env,['platform-tools','emulator','platforms;android-35','build-tools;35.0.0',f'system-images;android-35;default;{abi}']),env=env),lambda:all((sdk/name).is_file() for name in required))
         state.phase('dependencies',fingerprint(ROOT,['scripts/bootstrap.sh','package.json','bun.lock','buf.gen.yaml','packages/protocol/proto',*[str(p.relative_to(ROOT)) for base in ('apps','packages') for p in (ROOT/base).glob('*/package.json')]]),lambda:run(['./scripts/bootstrap.sh'],env=env),bootstrap_valid)
         state.phase('native-apps',fingerprint(ROOT,['config/clash-apps.json','apps/device-network/native-apps.ts']),lambda:native_apps(True),native_apps)
         state.phase('workspace-image',fingerprint(ROOT,['infra/workspace']),lambda:run(['docker','build','--build-arg','HTTP_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'--build-arg','HTTPS_PROXY='+env['AI_PHONE_CONTAINER_PROXY'],'-t','ai-phone-workspace:20261026','-f','infra/workspace/Dockerfile','.'],env=env),lambda:image('ai-phone-workspace:20261026'))
@@ -184,8 +192,8 @@ def install(*, observer=None, license_action=None, launch_client=True, minimum_f
 def start(*, launch_client=True):
     if (ROOT/'data/restore-quarantine.json').exists():
         raise ValueError('Restored state is quarantined. Verify recovery and stop the original instance before activation; see docs/public/backup-restore.zh-CN.md')
-    if platform.system() != 'Darwin' or platform.machine() != 'arm64':
-        raise ValueError('This preview supports macOS Apple Silicon only')
+    from host_platform import host_policy
+    host_policy(ROOT)
     from service_start import start_missing
     start_missing(ROOT)
     import time

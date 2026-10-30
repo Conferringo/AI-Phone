@@ -4,6 +4,8 @@ Updated 2026-10-29. **Public experimental preview; not a finished four-platform 
 
 ## Published preview / 当前下载
 
+Development source: preview.3 adds the [Linux x64 managed-host worker](managed-linux.md). Full install/resume acceptance is in progress. Preview.2 installers are immutable and retain their original platform scope. Windows/Android independent hosts remain unfinished.
+
 - [v0.1.0-preview.2](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.2) introduces experimental client-managed installation on macOS Apple Silicon: device resources, owned tools, Android licenses, service preparation, desktop provisioning, install recovery and model configuration handoff. **Full fresh-host dual-device installation remains untested.**
 - Windows x64 NSIS, Linux amd64/ARM64 DEB and Android ARM64 APK remain connection clients. Their independent host adapters are unfinished. macOS/Windows are unsigned; Android uses a preview certificate. Physical installation acceptance remains waived and untested.
 - [preview.1](https://github.com/Conferringo/AI-Phone/releases/tag/v0.1.0-preview.1) is retained unchanged as the earlier connection-client release. New source does not rewrite its tags or installer bytes.

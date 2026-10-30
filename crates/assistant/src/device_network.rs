@@ -4,7 +4,7 @@ use tokio::{io::AsyncWriteExt, process::Command};
 static MUTATION: Mutex<()> = Mutex::const_new(());
 
 async fn invoke(app: &App, value: Value) -> Result<Value, String> {
-    let mut child = Command::new(app.root.join(".tools/node_modules/.bin/bun"))
+    let mut child = Command::new(app.root.join(".tools/bin/bun"))
         .arg(app.root.join("apps/device-network/control.ts"))
         .env("AI_PHONE_PROJECT_ROOT", &app.root)
         .current_dir(&app.root)

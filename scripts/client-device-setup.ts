@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {RegistryRequestSchema, RegistryStateSchema, DeviceSaveRequestSchema} from '../packages/protocol/src/gen/ai_phone/v1/registry_pb';
 import {DesktopProvisionRequestSchema, DesktopProvisionJobSchema, DesktopRequestSchema, DeviceLinkStateSchema, DesktopObservationSchema} from '../packages/protocol/src/gen/ai_phone/v1/desktop_pb';
+import {DeviceRequestSchema, DeviceObservationSchema} from '../packages/protocol/src/gen/ai_phone/v1/phone_runtime_pb';
 
 const root=process.env.AI_PHONE_PROJECT_ROOT;
 if(!root)throw Error('Missing owned installation root');
@@ -15,6 +16,12 @@ async function rpc<I extends DescMessage,O extends DescMessage>(path:string,inpu
  return fromBinary(output,new Uint8Array(await response.arrayBuffer()));
 }
 let state=await rpc('registry/state',RegistryRequestSchema,{},RegistryStateSchema);
+// A working desktop alone cannot authorize the two-device ready state.
+const runnerToken=(await readFile(join(root,'data/phone-runner/token'),'utf8')).trim();
+const phoneResponse=await fetch('http://127.0.0.1:17862/v1/observe',{method:'POST',proxy:null,headers:{authorization:'Bearer '+runnerToken,'content-type':'application/x-protobuf'},body:toBinary(DeviceRequestSchema,create(DeviceRequestSchema,{phoneId:'phone-local-01',ownerId:'local-user'})),signal:AbortSignal.timeout(30000)});
+if(!phoneResponse.ok)throw Error('Phone did not return an observation');
+const phone=fromBinary(DeviceObservationSchema,new Uint8Array(await phoneResponse.arrayBuffer()));
+if(!phone.png.length||!phone.width||!phone.height||!phone.rootIdentity.includes('uid=0'))throw Error('Phone frame/root control was not verified');
 let desktop=state.devices.find(device=>device.kind==='desktop');
 if(desktop?.runtimeState==='managed'){
  // Never recreate a device on retry. Read-only observation verifies the live runtime.
@@ -41,4 +48,4 @@ if(desktop?.runtimeState==='managed'){
  const frame=await rpc('desktop/observe',DesktopRequestSchema,{deviceId:id},DesktopObservationSchema);
  if(!frame.png.length)throw Error('Desktop did not return a frame');
 }
-console.log('Owned desktop verified; user conversations unchanged');
+console.log('Owned phone frame/root and desktop frame verified; user conversations unchanged');

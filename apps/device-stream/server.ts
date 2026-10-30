@@ -1,12 +1,12 @@
 import {beginAudio} from './audio-transport';
+import {emulatorDiscovery} from './emulator-discovery';
 import {physicalPoint,interpolate} from "./gestures";
 import {desktopScreen,desktopAudio,stopDesktop} from './desktop-hub';
 import * as grpc from "@grpc/grpc-js";
 import {loadSync} from "@grpc/proto-loader";
 import sharp from "sharp";
 import http from "node:http";
-import {homedir} from "node:os";
-import {readFileSync,readdirSync,statSync} from "node:fs";
+import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {timingSafeEqual} from "node:crypto";
 import {fromBinary,toBinary} from "@bufbuild/protobuf";
@@ -33,14 +33,9 @@ async function refreshOrientation(){
 function correction(frame:any){const value=frame.format.rotation?.rotation;const delivered=typeof value==="number"?value:({PORTRAIT:0,LANDSCAPE:1,REVERSE_PORTRAIT:2,REVERSE_LANDSCAPE:3} as Record<string,number>)[value]||0;return -90*((rotation-delivered+4)%4);}
 
 function connection(){
- const directory=homedir()+"/Library/Caches/TemporaryItems/avd/running";
- const files=readdirSync(directory).filter(f=>/^pid_.*\.ini$/.test(f)).map(f=>directory+"/"+f).sort((a,b)=>statSync(b).mtimeMs-statSync(a).mtimeMs);
- const path=files.find(path=>readFileSync(path,"utf8").split(/\r?\n/).includes("grpc.port="+grpcPort));
- if(!path)throw new Error("emulator_unavailable");
- const values=Object.fromEntries(readFileSync(path,"utf8").split(/\r?\n/).filter(l=>l.includes("=")).map(l=>{const at=l.indexOf("=");return[l.slice(0,at),l.slice(at+1)];}));
- if(!values["grpc.token"])throw new Error("emulator_auth_unavailable");
+ const {path,token:emulatorToken}=emulatorDiscovery(grpcPort,serial);
  if(cachedPath!==path){client?.close();client=new Controller("127.0.0.1:"+grpcPort,grpc.credentials.createInsecure(),{"grpc.max_receive_message_length":12*1024*1024});cachedPath=path;}
- const metadata=new grpc.Metadata();metadata.set("authorization","Bearer "+values["grpc.token"]);return {client,metadata};
+ const metadata=new grpc.Metadata();metadata.set("authorization","Bearer "+emulatorToken);return {client,metadata};
 }
 async function call(method:string,input:any,deadlineMs=5000){const {client,metadata}=connection();return new Promise<any>((yes,no)=>client[method](input,metadata,{deadline:Date.now()+deadlineMs},(e:any,v:any)=>e?no(e):yes(v)));}
 // Capture and transport are separate: one encoder, one latest pending raw frame,

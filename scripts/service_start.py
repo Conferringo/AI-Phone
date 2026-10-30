@@ -61,6 +61,10 @@ def start_missing(root,query=None,execute=None,package_installed=None):
     with os.fdopen(fd,'a+') as lock:
         try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         except BlockingIOError:raise ValueError('Another startup is in progress for this user directory')
+        import platform
+        if platform.system()=='Linux':
+            from linux_host import start_missing as linux_start
+            return linux_start(root)
         return _start_missing(root,query,execute,package_installed)
 
 if __name__=='__main__':start_missing(Path(__file__).resolve().parent.parent)

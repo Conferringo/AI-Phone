@@ -89,7 +89,17 @@ pub struct Snapshot {
     pub previous_request: Option<Request>,
 }
 
+fn platform_key(os: &str, arch: &str) -> String {
+    let arch = match arch {
+        "aarch64" => "arm64",
+        "x86_64" => "x64",
+        other => other,
+    };
+    format!("{os}-{arch}")
+}
 pub fn capability(os: &str, arch: &str) -> Capability {
+    let key = platform_key(os, arch);
+    let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
     Capability {
         platform: os.into(),
         arch: arch.into(),
@@ -101,7 +111,7 @@ pub fn capability(os: &str, arch: &str) -> Capability {
             _ => "unsupported",
         }
         .into(),
-        implemented: os == "macos" && arch == "aarch64",
+        implemented: policy["hosts"][&key].is_object(),
     }
 }
 
@@ -192,8 +202,9 @@ fn verify_resources(folder: &Path) -> Result<(), String> {
 }
 
 fn checks(path: &Path) -> Vec<Check> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
+        #[cfg(target_os = "macos")]
         let ram = Command::new("/usr/sbin/sysctl")
             .args(["-n", "hw.memsize"])
             .output()
@@ -202,6 +213,17 @@ fn checks(path: &Path) -> Vec<Check> {
             .and_then(|s| s.trim().parse::<u64>().ok())
             .unwrap_or(0)
             / 1024_u64.pow(3);
+        #[cfg(target_os = "linux")]
+        let ram = fs::read_to_string("/proc/meminfo")
+            .ok()
+            .and_then(|s| {
+                s.lines()
+                    .find(|line| line.starts_with("MemTotal:"))
+                    .and_then(|line| line.split_whitespace().nth(1))
+                    .and_then(|value| value.parse::<u64>().ok())
+            })
+            .unwrap_or(0)
+            / 1024_u64.pow(2);
         let mut existing = path;
         while !existing.exists() {
             if let Some(parent) = existing.parent() {
@@ -249,7 +271,7 @@ fn checks(path: &Path) -> Vec<Check> {
             },
         ]
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     {
         let _ = path;
         Vec::new()
@@ -294,11 +316,8 @@ fn prepare_runtime(manager: &ManagerState, folder: &Path) -> Result<PathBuf, Str
     let mise = layout.binary;
     let policy: serde_json::Value = serde_json::from_str(POLICY).map_err(|e| e.to_string())?;
     manager.set(folder, "runtime", "running", "")?;
-    tauri::async_runtime::block_on(download_mise(
-        manager,
-        &mise,
-        &policy["mise"]["macos-arm64"],
-    ))?;
+    let key = platform_key(std::env::consts::OS, std::env::consts::ARCH);
+    tauri::async_runtime::block_on(download_mise(manager, &mise, &policy["mise"][&key]))?;
     Ok(mise)
 }
 
@@ -550,10 +569,11 @@ mod tests {
     #[test]
     fn arbitrary_os_images_and_unimplemented_hosts_are_not_claimed_available() {
         assert!(capability("macos", "aarch64").implemented);
+        assert!(capability("linux", "x86_64").implemented);
         for (os, arch) in [
             ("macos", "x86_64"),
             ("windows", "x86_64"),
-            ("linux", "x86_64"),
+            ("linux", "aarch64"),
             ("android", "aarch64"),
         ] {
             assert!(!capability(os, arch).implemented);

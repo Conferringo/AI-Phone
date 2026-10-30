@@ -16,6 +16,9 @@ from service_stop import stop_owned
 SCRIPTS=Path(__file__).resolve().parent
 
 class InstallResumeTests(unittest.TestCase):
+    def setUp(self):
+        # These fixtures exercise the launchd adapter on every CI host.
+        host=patch('platform.system',return_value='Darwin');host.start();self.addCleanup(host.stop)
     def test_reuse_requires_same_source_and_valid_artifact(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);(root/'input').write_text('v1');artifact=root/'artifact';calls=[]

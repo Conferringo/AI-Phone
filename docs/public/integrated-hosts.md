@@ -4,6 +4,8 @@ Preview.2 introduces an experimental managed installer for **macOS Apple Silicon
 
 ## Platform scope
 
+The preview.3 source also contains the [Linux x64 installer](managed-linux.md), currently undergoing full hosted-runtime acceptance. Preview.2 download capabilities below are unchanged; a compiled client is not proof of a completed installation.
+
 | Host | Implemented in this preview | Remaining |
 |---|---|---|
 | macOS Apple Silicon | Native setup, resource presets, pinned tool acquisition, Android licenses, resumable phases, owned service startup and desktop provisioning | Complete clean-host installation, reboot/long-running acceptance, signed updates |

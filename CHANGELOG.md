@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-preview.3 — development, 2026-10-30
+
+- Client-managed Ubuntu/Debian x64 installation worker, architecture-matched Android/Clash resources and Linux OCR.
+- Owned Linux service supervision, PID/start-identity validation, missing-service startup and crash recovery.
+- Portable authenticated emulator discovery and private container-engine PATH binding.
+- Two-device readiness requires actual phone root/PNG and desktop PNG. Full hosted install/resume acceptance is in progress; no four-platform completion is claimed.
+
 ## 0.1.0-preview.1 — internal candidate, 2026-10-28
 
 - Guided source install/configure/doctor/start/stop entry and macOS double-click launcher.

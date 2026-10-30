@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-phone-client"
-version = "0.1.0-preview.2"
+version = "0.1.0-preview.3"
 dependencies = [
  "glib",
  "reqwest 0.12.28",

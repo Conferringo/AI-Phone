@@ -1,0 +1,46 @@
+name: Managed Linux host acceptance
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/managed-host.yml'
+      - 'scripts/*host*'
+      - 'scripts/linux_services.py'
+      - 'scripts/android-*.sh'
+      - 'config/host-bootstrap.json'
+permissions:
+  contents: read
+concurrency:
+  group: managed-host-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  linux-x64:
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [existing, managed]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      CARGO_BUILD_JOBS: '2'
+      NEXT_TELEMETRY_DISABLED: '1'
+      AI_PHONE_REQUIRE_MANAGED_ENGINE: ${{ matrix.engine == 'managed' && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Ephemeral runner system dependencies
+        run: |
+          # Reclaim only unused preinstalled tools on this disposable hosted runner.
+          # SDK license files remain available for the worker's explicit license check.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip openssh-client qemu-system-x86 qemu-utils ovmf virtiofsd tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim python3-pil libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl
+          test -c /dev/kvm
+          sudo setfacl -m "u:$(id -u):rw" /dev/kvm
+          df -h .
+      - name: Linux lifecycle regressions
+        run: python3 -m unittest discover -s scripts -p test_linux_services.py -v
+      - name: Deploy phone, desktop and backend from the client payload
+        run: python3 scripts/linux_host_acceptance.py
+      # No guest disks, raw service logs, accounts, token files or screenshots uploaded.

@@ -40,12 +40,7 @@ async fn phone(app: &App, id: &str, fix: wire::LocationFix) -> Result<(), String
 }
 async fn desktop_bytes(fix: wire::LocationFix) -> Result<Vec<u8>, String> {
     use tokio::io::AsyncWriteExt;
-    let bin = if std::path::Path::new("/usr/local/bin/docker").exists() {
-        "/usr/local/bin/docker"
-    } else {
-        "docker"
-    };
-    let mut child = tokio::process::Command::new(bin)
+    let mut child = tokio::process::Command::new("docker")
         .args([
             "exec",
             "-i",

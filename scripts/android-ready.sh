@@ -1,9 +1,10 @@
 #!/bin/sh
 set -eu
 . "$(dirname -- "$0")/android-env.sh"
-python3 - "$ANDROID_HOME/platform-tools/adb" <<'PY'
+python3 - "$ANDROID_HOME/platform-tools/adb" "${1:-}" <<'PY'
 import os, subprocess, sys, time
 adb = [sys.argv[1], '-P', '15037', '-s', os.environ.get('AI_PHONE_SERIAL','emulator-5564')]
+observe_only=sys.argv[2]=='--observe-only'
 def run(*args):
     try: return subprocess.run(adb+list(args), capture_output=True, text=True, timeout=6)
     except subprocess.TimeoutExpired: return None
@@ -13,10 +14,13 @@ while time.monotonic()<deadline:
     if result and result.returncode==0 and result.stdout.strip()=='1': break
     time.sleep(1)
 else: raise SystemExit('Android did not finish booting within 120 seconds')
-run('root')
+if not observe_only:run('root')
 for _ in range(20):
     result = run('shell','id','-u')
     if result and result.returncode==0 and result.stdout.strip()=='0':
+        if observe_only:
+            print('READY: existing Android/root observed; settings unchanged')
+            break
         run('shell','settings','put','system','show_touches','1')
         touches=run('shell','settings','get','system','show_touches')
         if not touches or touches.returncode!=0 or touches.stdout.strip()!='1':
@@ -32,4 +36,4 @@ for _ in range(20):
 else: raise SystemExit('Android is not root-ready')
 PY
 
-"$AI_PHONE_PROJECT_ROOT/scripts/android-configure-network.sh"
+if [ "${1:-}" != --observe-only ]; then "$AI_PHONE_PROJECT_ROOT/scripts/android-configure-network.sh"; fi

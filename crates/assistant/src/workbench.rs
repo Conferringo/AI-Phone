@@ -89,11 +89,7 @@ async fn drain(
     }
 }
 async fn command(args: &[String], limit: u64, seconds: u64) -> Result<(bool, String), String> {
-    let mut child = Command::new(if FilePath::new("/usr/local/bin/docker").exists() {
-        "/usr/local/bin/docker"
-    } else {
-        "docker"
-    })
+    let mut child = Command::new("docker")
     .args(args)
     .kill_on_drop(true)
     .stdout(Stdio::piped())

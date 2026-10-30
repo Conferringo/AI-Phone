@@ -1,4 +1,4 @@
-"""Managed macOS host adapter. No system-wide toolchain or user-state replacement."""
+"""Managed host installation. No user-state replacement or implicit ownership adoption."""
 import hashlib
 import json
 import os
@@ -82,12 +82,14 @@ def prepare_sdk(record, sdk, cache):
 
 def container_engine(root, home, config, emit):
     """Use an existing engine, or an app-owned VZ VM mounting only app data."""
-    if shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+    if os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE')!='1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
         return
     emit('container-host')
+    from host_platform import host_policy
+    _,host=host_policy(root)
     tools = home / 'tools'; lima = tools / 'lima'; command = lima / 'bin/limactl'
     if not command.is_file():
-        archive = download(config['lima'], home / 'cache/lima.tar.gz')
+        archive = download(config['lima_hosts'][host['lima']], home / 'cache/lima.tar.gz')
         with tarfile.open(archive) as source:
             # Lima owns bin/share; reject link escapes before extraction.
             entries=[]
@@ -99,10 +101,10 @@ def container_engine(root, home, config, emit):
                 entries.append(entry)
             lima.mkdir(parents=True, exist_ok=True); source.extractall(lima, members=entries, filter='data')
     os.environ['LIMA_HOME'] = str(home / 'lima')
-    image = config['container_host']
+    image = config['container_hosts'][host['image']]
     memory = max(4, (int(os.environ['AI_PHONE_DESKTOP_MEMORY'].rstrip('m')) + 2048 + 1023) // 1024)
-    value = {'vmType': 'vz', 'arch': 'aarch64', 'cpus': 4, 'memory': f'{memory}GiB', 'disk': '64GiB',
-             'images': [{'location': image['url'], 'arch': 'aarch64', 'digest': 'sha256:' + image['sha256']}],
+    value = {'vmType': host['vm_type'], 'arch': host['vm_arch'], 'cpus': 4, 'memory': f'{memory}GiB', 'disk': '64GiB',
+             'images': [{'location': image['url'], 'arch': host['vm_arch'], 'digest': 'sha256:' + image['sha256']}],
              'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
              'containerd': {'system': False, 'user': False},
              'provision': [{'mode': 'system', 'script': '#!/bin/sh\nset -eu\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 docker-buildx\nsystemctl enable --now docker\nusermod -aG docker {{.User}}\n'}],
@@ -146,16 +148,20 @@ def installation_reserve(root, home, config):
 
 def install(root, home, request, mise, emit):
     request = check_request(request)
-    if platform.system() != 'Darwin' or platform.machine() != 'arm64': raise ValueError('This host backend is not implemented yet')
-    from service_start import owned_jobs
-    owned_jobs(root)  # Fail before installing if another checkout owns loaded jobs.
-    config = json.loads((root / 'config/host-bootstrap.json').read_text())
+    from host_platform import host_policy
+    config,host=host_policy(root)
+    if platform.system()=='Darwin':
+        from service_start import owned_jobs
+        owned_jobs(root)  # Fail before installing if another checkout owns loaded jobs.
     minimum = installation_reserve(root, home, config)
     if shutil.disk_usage(home).free < minimum * 1024 ** 3: raise ValueError(f'At least {minimum} GiB free space is required')
-    if subprocess.run(['xcode-select', '-p'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+    if platform.system()=='Darwin' and subprocess.run(['xcode-select', '-p'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
         emit('system-tools', 'blocked', error='command_line_tools')
         subprocess.run(['xcode-select', '--install'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return
+    if platform.system()=='Linux':
+        from linux_host import prepare_system
+        prepare_system(emit)
     emit('toolchain')
     execute([mise, 'install', '-y', *config['tools']], cwd=home)
     result = execute([mise, 'env', '--json', *config['tools']], cwd=home, capture_output=True, text=True)
@@ -168,15 +174,16 @@ def install(root, home, request, mise, emit):
         # An upgrade may not silently change hardware or user configuration.
         from release import validate
         validate(existing)
+        if existing['phone']['template']!=host['phone_template']:raise ValueError('Existing phone architecture differs from this host; no devices were changed')
     else:
         import release
         value = dict(schema_version=1, local_entry=True, locale=request['locale'], sdk_root=str(sdk), java_home=os.environ['JAVA_HOME'], host_proxy='', container_proxy='',
-                     phone={'template': 'android35-arm64', **request['phone']}, desktop={'template': 'debian13-openbox', **request['desktop']})
+                     phone={'template': host['phone_template'], **request['phone']}, desktop={'template': 'debian13-openbox', **request['desktop']})
         profile = home / 'request-profile.json'; profile.write_text(json.dumps(value)); profile.chmod(0o600)
         release.configure(root, profile)
     from runtime_config import runtime_env
     os.environ.update(runtime_env(root))
-    emit('sdk-tools'); prepare_sdk(config['sdk'], Path(os.environ['AI_PHONE_SDK_ROOT']), home / 'cache')
+    emit('sdk-tools'); prepare_sdk(config['sdk_hosts'][host['sdk']], Path(os.environ['AI_PHONE_SDK_ROOT']), home / 'cache')
     container_engine(root, home, config, emit)
     verify_container_ownership(root)
     import release

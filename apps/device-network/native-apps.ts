@@ -3,11 +3,16 @@ import {createHash,randomBytes} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync,existsSync,renameSync,unlinkSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=process.env.AI_PHONE_PROJECT_ROOT||resolve(import.meta.dir,'../..');
-const pins=()=>JSON.parse(readFileSync(root+'/config/clash-apps.json','utf8'));
+const pins=()=>{
+ const config=JSON.parse(readFileSync(root+'/config/clash-apps.json','utf8'));
+ const x64=process.env.AI_PHONE_ANDROID_ABI==='x86_64';
+ return {...config,android:x64?config.alternatives['android-x86_64']:config.android,linux:x64?config.alternatives['linux-amd64']:config.linux};
+};
+const cacheKind=(kind:'android'|'linux')=>kind==='linux'?(process.env.AI_PHONE_CLASH_DESKTOP_DIR||'linux'):kind;
 export function verifyApps(kinds:('android'|'linux')[]=['android','linux']){
  const metadata=pins();
  for(const kind of kinds){
-  const pin=metadata[kind],path=root+'/.tools/clash-apps/'+kind+'/'+pin.file;
+  const pin=metadata[kind],path=root+'/.tools/clash-apps/'+cacheKind(kind)+'/'+pin.file;
   if(!existsSync(path))throw Error('Clash application cache missing');
   const bytes=readFileSync(path);
   if(bytes.length!==pin.size_bytes||createHash('sha256').update(bytes).digest('hex')!==pin.sha256)throw Error('Clash application cache integrity failed');
@@ -17,7 +22,7 @@ export function verifyApps(kinds:('android'|'linux')[]=['android','linux']){
 export async function downloadApps(kinds:('android'|'linux')[]=['android','linux']){
  const metadata=pins();
  await Promise.all(kinds.map(async kind=>{
-  const pin=metadata[kind],dir=root+'/.tools/clash-apps/'+kind,path=dir+'/'+pin.file;mkdirSync(dir,{recursive:true});
+  const pin=metadata[kind],dir=root+'/.tools/clash-apps/'+cacheKind(kind),path=dir+'/'+pin.file;mkdirSync(dir,{recursive:true});
   if(existsSync(path)){const bytes=readFileSync(path);if(bytes.length!==pin.size_bytes||createHash('sha256').update(bytes).digest('hex')!==pin.sha256)throw Error('Clash app cache integrity failed');return;}
   const response=await fetch(pin.url,{proxy:process.env.AI_PHONE_BOOTSTRAP_PROXY||null,signal:AbortSignal.timeout(180000)} as any);
   if(!response.ok||!response.body)throw Error('Clash app download failed');

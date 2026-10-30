@@ -5,6 +5,11 @@ import subprocess
 from service_start import owned_jobs,SERVICES
 
 def stop_owned(root,query=None,execute=None):
+    import platform
+    if platform.system()=='Linux':
+        from linux_services import stop_unit
+        names=['lan','web','channels','assistant','media','runner','emulator']
+        return {name for name in names if stop_unit(root,name)}
     root=Path(root).resolve();jobs=owned_jobs(root,query)
     def run(args):
         if execute:execute(args)

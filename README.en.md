@@ -2,6 +2,8 @@
 
 English · [简体中文](README.md#简体中文) · Apache-2.0 · **0.1.0-preview.2 experimental preview**
 
+Development source targets preview.3 and adds [Linux x64 managed setup](docs/public/managed-linux.md), under full runtime validation. Published preview.2 downloads below retain their original capabilities. Windows/Android independent host support is still unfinished.
+
 ## Download and install
 
 Download a preview client for your platform. **The macOS Apple Silicon client includes experimental local setup:** choose device resources, let the client acquire/build its dependencies, then configure a model in the workbench. Fresh-host installation remains untested. Windows, Linux and Android packages remain connection clients. The complete source host currently targets macOS Apple Silicon; Windows/Linux host management and Android independent hosting remain unfinished. See the [current release status](docs/public/release-status.md).

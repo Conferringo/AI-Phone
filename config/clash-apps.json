@@ -15,5 +15,24 @@
     "file": "clash-party-linux-2.0.4-arm64.deb",
     "sha256": "cc1f38075a2c4d223d80f679699b7004279e63efa12828e0e18026578731452c",
     "size_bytes": 187146692
+  },
+  "alternatives": {
+    "android-x86_64": {
+      "version": "v2.11.36",
+      "source": "https://github.com/MetaCubeX/ClashMetaForAndroid",
+      "url": "https://github.com/MetaCubeX/ClashMetaForAndroid/releases/download/v2.11.36/cmfa-2.11.36-meta-x86_64-release.apk",
+      "sha256": "aa70600b1cdc4211b8fd314d44d32c830c2bd60ef1c4185457b9eb17a17ec83e",
+      "file": "cmfa-2.11.36-meta-x86_64-release.apk",
+      "size_bytes": 49543854,
+      "signer_sha256": "5f5571af767fe0f611292aa088b445a05f725fb8262fb80a13b69e4d809ae1f1"
+    },
+    "linux-amd64": {
+      "version": "v2.0.4",
+      "source": "https://github.com/mihomo-party-org/clash-party",
+      "url": "https://github.com/mihomo-party-org/clash-party/releases/download/v2.0.4/clash-party-linux-2.0.4-amd64.deb",
+      "file": "clash-party-linux-2.0.4-amd64.deb",
+      "sha256": "33f3b75a8c0ed91c09499c0b9f2e0eb755e5ae13f69d6ffabab713fbb9bbf3a4",
+      "size_bytes": 202066144
+    }
   }
 }

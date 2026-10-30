@@ -1,9 +1,8 @@
 import {spawn} from 'node:child_process';
-import {existsSync} from 'node:fs';
 
 /** The guest owns ffmpeg; this connection renews its lease until disposal. */
 export function guestCapture(kind:'screen'|'audio') {
-  const child=spawn(existsSync('/usr/local/bin/docker')?'/usr/local/bin/docker':'docker',[
+  const child=spawn('docker',[
     'exec','-i','-u','ai','ai-phone-desktop','python3','/usr/local/lib/ai-phone/media-capture.py',kind,
   ],{stdio:['pipe','pipe','pipe']});
   let stopped=false;

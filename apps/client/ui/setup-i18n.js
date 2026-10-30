@@ -28,3 +28,15 @@ for(const [locale,values] of Object.entries(phaseNames))Object.assign(setupLabel
 
 const ownership={en:'An existing installation owns the services. Choose “Use an existing deployment” to keep using it.','zh-CN':'本机已有部署正在使用这些服务，请选择“使用已有部署”。','zh-TW':'本機已有部署正在使用這些服務，請選擇「使用現有部署」。',ja:'既存の環境がサービスを使用中です。「既存の環境を使う」を選んでください。',ko:'기존 설치가 서비스를 사용 중입니다. “기존 배포 사용”을 선택하세요.',de:'Eine vorhandene Installation nutzt die Dienste. „Vorhandene Installation verwenden“ wählen.',fr:'Une installation existante utilise les services. Choisissez « Utiliser un déploiement existant ».',es:'Una instalación existente usa los servicios. Elige « Usar un despliegue existente ».'};
 for(const [locale,text] of Object.entries(ownership))setupLabels[locale].foreignInstallation=text;
+
+const linuxErrors={
+ en:['Local installation currently supports Ubuntu and Debian x64.','System authorization is needed to install dependencies and access KVM. Use a desktop session with PolicyKit.','KVM is unavailable. Enable hardware virtualization in firmware and check /dev/kvm. No devices were changed.'],
+ 'zh-CN':['本机安装目前支持 Ubuntu / Debian x64。','安装依赖和访问 KVM 需要系统授权，请在具有 PolicyKit 的桌面会话中重试。','KVM 不可用，请开启固件虚拟化并检查 /dev/kvm。设备数据未改变。'],
+ 'zh-TW':['本機安裝目前支援 Ubuntu / Debian x64。','安裝相依套件與存取 KVM 需要系統授權，請在具有 PolicyKit 的桌面工作階段重試。','KVM 無法使用，請啟用韌體虛擬化並檢查 /dev/kvm。裝置資料未變更。'],
+ ja:['ローカルインストールは現在 Ubuntu / Debian x64 に対応しています。','依存関係と KVM へのアクセスにはシステム認証が必要です。PolicyKit のあるデスクトップで再試行してください。','KVM を使用できません。ファームウェアの仮想化と /dev/kvm を確認してください。デバイスデータは保持されています。'],
+ ko:['현재 로컬 설치는 Ubuntu / Debian x64를 지원합니다.','종속성 설치와 KVM 접근에 시스템 승인이 필요합니다. PolicyKit 데스크톱에서 다시 시도하세요.','KVM을 사용할 수 없습니다. 펌웨어 가상화와 /dev/kvm을 확인하세요. 기기 데이터는 유지됩니다.'],
+ de:['Lokale Installation unterstützt derzeit Ubuntu / Debian x64.','Abhängigkeiten und KVM benötigen Systemfreigabe. In einer Desktop-Sitzung mit PolicyKit erneut versuchen.','KVM nicht verfügbar. Firmware-Virtualisierung und /dev/kvm prüfen. Gerätedaten wurden nicht verändert.'],
+ fr:['L’installation locale prend actuellement en charge Ubuntu / Debian x64.','Les dépendances et KVM nécessitent une autorisation système. Réessayez dans une session de bureau avec PolicyKit.','KVM indisponible. Vérifiez la virtualisation du firmware et /dev/kvm. Les données sont conservées.'],
+ es:['La instalación local admite Ubuntu / Debian x64.','Las dependencias y KVM requieren autorización del sistema. Reintenta en una sesión con PolicyKit.','KVM no disponible. Revisa la virtualización del firmware y /dev/kvm. Los datos no se han modificado.']
+};
+for(const [locale,values] of Object.entries(linuxErrors))Object.assign(setupLabels[locale],Object.fromEntries(['linuxDistribution','linuxAuthorization','virtualizationUnavailable'].map((key,index)=>[key,values[index]])));
