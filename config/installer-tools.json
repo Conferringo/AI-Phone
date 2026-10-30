@@ -1,0 +1,38 @@
+{
+  "format": 1,
+  "hosts": {
+    "macos-arm64": {
+      "python": {
+        "version": "3.13.18",
+        "file": "python.tar.gz",
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.13.18%2B20261026-aarch64-apple-darwin-install_only_stripped.tar.gz",
+        "sha256": "8392b6ea51d94391befb2c31ebe75463f045d0b69dfcf5e1bb3234e1f5fa3405",
+        "size_bytes": 25265774
+      },
+      "node": {
+        "version": "22.23.4",
+        "file": "node.tar.gz",
+        "url": "https://nodejs.org/dist/v22.23.4/node-v22.23.4-darwin-arm64.tar.gz",
+        "sha256": "c9e1dbc748b33ed2d14f42445191ecaf14c56259c7a9a26d0042c49ec2b66428",
+        "public_build_paths_sha256": "2cc28a1880d0774616959f2210ee739bffa6ac695c887e8988a496a21271f6c0",
+        "size_bytes": 49996369
+      }
+    },
+    "linux-x64": {
+      "python": {
+        "version": "3.13.18",
+        "file": "python.tar.gz",
+        "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-3.13.18%2B20261026-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+        "sha256": "df15fe60d3ff55bf9dcf25824b5572756bb8816ff93865a273d3301d7066a8b7",
+        "size_bytes": 35395906
+      },
+      "node": {
+        "version": "22.23.4",
+        "file": "node.tar.gz",
+        "url": "https://nodejs.org/dist/v22.23.4/node-v22.23.4-linux-x64.tar.gz",
+        "sha256": "b8492284c76a54baf58d61668dd0e41ee0fc98adabf9503d30f05d08f55b4406",
+        "size_bytes": 56807066
+      }
+    }
+  }
+}

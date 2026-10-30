@@ -16,6 +16,7 @@ mod checkpoint;
 mod download;
 mod process;
 mod toolchain;
+mod tools;
 use download::{hash, mise as download_mise};
 use process::execute;
 
@@ -193,6 +194,7 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 struct Components {
     android: bool,
     images: bool,
+    tools: Option<String>,
 }
 
 fn verify_resources(folder: &Path) -> Result<Components, String> {
@@ -207,6 +209,7 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
             "entry.py",
             "android.payload",
             "images.payload",
+            "tools/manifest.json",
         ]
         .contains(&name.as_str())
             || hash(&folder.join(name))? != *digest
@@ -217,7 +220,32 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
     Ok(Components {
         android: expected.contains_key("android.payload"),
         images: expected.contains_key("images.payload"),
+        tools: expected.get("tools/manifest.json").cloned(),
     })
+}
+
+fn available_bytes(path: &Path) -> u64 {
+    let mut existing = path;
+    while !existing.exists() {
+        match existing.parent() {
+            Some(parent) => existing = parent,
+            None => return 0,
+        }
+    }
+    Command::new("/bin/df")
+        .arg("-k")
+        .arg(existing)
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .and_then(|s| {
+            s.lines()
+                .nth(1)
+                .and_then(|l| l.split_whitespace().nth(3))
+                .and_then(|v| v.parse::<u64>().ok())
+        })
+        .and_then(|v| v.checked_mul(1024))
+        .unwrap_or(0)
 }
 
 fn checks(path: &Path) -> Vec<Check> {
@@ -243,28 +271,7 @@ fn checks(path: &Path) -> Vec<Check> {
             })
             .unwrap_or(0)
             / 1024_u64.pow(2);
-        let mut existing = path;
-        while !existing.exists() {
-            if let Some(parent) = existing.parent() {
-                existing = parent;
-            } else {
-                break;
-            }
-        }
-        let disk = Command::new("/bin/df")
-            .arg("-k")
-            .arg(existing)
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .and_then(|s| {
-                s.lines()
-                    .nth(1)
-                    .and_then(|l| l.split_whitespace().nth(3))
-                    .and_then(|v| v.parse::<u64>().ok())
-            })
-            .unwrap_or(0)
-            / 1024_u64.pow(2);
+        let disk = available_bytes(path) / 1024_u64.pow(3);
         let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
         let disk_required = policy[if path.join("user/data/deployment/profile.json").is_file()
             || checkpoint::admitted(path)
@@ -359,21 +366,59 @@ fn run(
         serde_json::to_vec(&request).map_err(|e| e.to_string())?,
     )
     .map_err(|e| e.to_string())?;
-    let mise = prepare_runtime(manager, &folder)?;
+    let runtime = if let Some(identity) = components.tools {
+        manager.set(&folder, "runtime", "running", "")?;
+        Some(tools::prepare(
+            &resource.join("tools"),
+            &folder,
+            &identity,
+            &platform_key(std::env::consts::OS, std::env::consts::ARCH),
+            &available_bytes,
+            &|| manager.check_cancelled(),
+        )?)
+    } else {
+        None
+    };
+    let mise = if runtime.is_none() {
+        Some(prepare_runtime(manager, &folder)?)
+    } else {
+        None
+    };
     let layout = toolchain::Toolchain::new(&folder);
-    let mut command = Command::new(&mise);
+    let mut command = if let Some(runtime) = &runtime {
+        let mut command = Command::new(&runtime.python);
+        command.args(["-I", "-S", "-B"]);
+        command
+    } else {
+        let mut command = Command::new(mise.as_ref().ok_or("installer_runtime")?);
+        let policy: serde_json::Value =
+            serde_json::from_str(POLICY).map_err(|_| "invalid_tool_policy")?;
+        let python = policy["tools"]
+            .as_array()
+            .and_then(|rows| {
+                rows.iter()
+                    .filter_map(|v| v.as_str())
+                    .find(|v| v.starts_with("python@"))
+            })
+            .ok_or("invalid_tool_policy")?;
+        command.args(["exec", "-y", python, "--", "python"]);
+        command
+    };
     command
         .current_dir(&folder)
-        .args(["exec", "-y", "python@3.13.5", "--", "python"])
         .arg(resource.join("entry.py"))
         .arg("--payload")
         .arg(resource.join("source.payload"))
         .arg("--home")
         .arg(&folder)
         .arg("--request")
-        .arg(request_path)
-        .arg("--mise")
-        .arg(&mise);
+        .arg(request_path);
+    if let Some(mise) = mise {
+        command.arg("--mise").arg(mise);
+    }
+    if let Some(runtime) = runtime {
+        command.arg("--tool-runtime").arg(runtime.directory);
+    }
     if components.android {
         command
             .arg("--android-runtime")

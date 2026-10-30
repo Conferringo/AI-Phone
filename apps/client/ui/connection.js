@@ -7,6 +7,8 @@ let locale=connectionLocale(savedLanguage||navigator.language),mode='local',edit
 const resources={phone:{cpus:2,memory_mb:2048,storage_gb:16},desktop:{cpus:2,memory_mb:2560}},pickers=[];
 const errorKeys=['Cannot reach the server. Start your deployment, then retry.','Invalid server address','Use an HTTP(S) server address without credentials or a path','This preview connects only to localhost or a private LAN address','Connection already in progress'];
 const errors={host_resources:'hostResources',host_backend_pending:'hostPending',installation_cancelled:'cancelled',command_line_tools:'commandLineTools',invalid_payload:'invalidPayload',download_failed:'downloadFailed',download_checksum:'invalidPayload',installation_interrupted:'interrupted',invalid_install_checkpoint:'invalidCheckpoint',checkpoint_write_failed:'checkpointFailed',foreign_installation:'foreignInstallation',linux_distribution:'linuxDistribution',linux_authorization:'linuxAuthorization',virtualization_unavailable:'virtualizationUnavailable'};
+for(const code of ['invalid_installer_tools','installer_tools_changed','installer_tools_host','installer_tools_inventory','installer_tools_permissions','installer_tools_directory'])errors[code]='invalidPayload';
+errors.installer_tools_space='hostResources';errors.installer_tools_cleanup='checkpointFailed';
 function label(key){return setupLabels[locale][key]||setupLabels.en[key]||key;}
 function showPanel(){
  const view=mode==='connection'?'connection':snapshot?.progress.state?'progress':'local-setup';

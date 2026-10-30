@@ -258,10 +258,12 @@ def main():
     parser.add_argument('--payload', type=Path, required=True)
     parser.add_argument('--home', type=Path, required=True)
     parser.add_argument('--request', type=Path, required=True)
-    parser.add_argument('--mise', type=Path, required=True)
+    parser.add_argument('--mise', type=Path)
+    parser.add_argument('--tool-runtime',type=Path)
     parser.add_argument('--android-runtime',type=Path)
     parser.add_argument('--images-runtime',type=Path)
     args = parser.parse_args()
+    if args.mise is None and args.tool_runtime is None:parser.error('Supply bundled installer tools or a managed tool executable')
     import fcntl
     import signal
 
@@ -284,7 +286,7 @@ def main():
             from android_runtime import stage
             emit('sdk-packages')
             android_sdk=stage(args.android_runtime,args.home)
-        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit, android_sdk=android_sdk, image_runtime=args.images_runtime)
+        install(root, args.home, json.loads(args.request.read_text()), args.mise, emit, android_sdk=android_sdk, image_runtime=args.images_runtime, tool_runtime=args.tool_runtime)
 if __name__ == '__main__':
     try:
         main()

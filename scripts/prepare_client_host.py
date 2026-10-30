@@ -9,7 +9,7 @@ import tarfile
 from release_package import select_files
 ROOT = Path(__file__).resolve().parent.parent
 
-def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, android_runtime=None, image_runtime=None):
+def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, android_runtime=None, image_runtime=None, installer_tools=None):
     folder = root / 'apps/client/src-tauri/gen/host'
     folder.mkdir(parents=True, exist_ok=True)
     files = select_files(root)
@@ -37,6 +37,8 @@ def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, an
     digests = {name: digest(folder/name) for name in ['source.payload', 'entry.py']}
     digests.update(prepare_android(folder,android_runtime))
     digests.update(prepare_images(folder,image_runtime))
+    from installer_tools import prepare_resources
+    digests.update(prepare_resources(folder,installer_tools))
     (folder / 'integrity.json').write_text(json.dumps(digests, sort_keys=True))
     if (root/'apps/client/src-tauri/tauri.conf.json').exists():
         from client_resources import build_config
@@ -96,7 +98,7 @@ def payload_components(root=ROOT):
         components=json.load(source.extractfile(entry)).get('components', [])
     sidecar=archive.parent/'integrity.json'
     integrity=json.loads(sidecar.read_text()) if sidecar.exists() else {}
-    return components+(['android-runtime'] if 'android.payload' in integrity else [])+(['container-images'] if 'images.payload' in integrity else [])
+    return components+(['android-runtime'] if 'android.payload' in integrity else [])+(['container-images'] if 'images.payload' in integrity else [])+(['installer-tools'] if 'tools/manifest.json' in integrity else [])
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
@@ -104,6 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--with-service-runtime', action='store_true')
     parser.add_argument('--android-runtime',type=Path)
     parser.add_argument('--images-runtime',type=Path)
+    parser.add_argument('--installer-tools',type=Path)
     parser.add_argument('--verify-web-runtime', action='store_true')
     parser.add_argument('--verify-service-runtime', action='store_true')
     parser.add_argument('--pg-container')
@@ -115,7 +118,7 @@ if __name__ == '__main__':
         parser.error('Verification requires --with-service-runtime')
     if (args.pg_container is None) != (args.pg_port is None) or (args.pg_container is not None and not args.verify_service_runtime):
         parser.error('Database fixture requires container/port and service verification')
-    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,android_runtime=args.android_runtime,image_runtime=args.images_runtime)
+    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
     if args.verify_web_runtime:
         result['web_runtime_verification'] = verify_prepared_web()
     if args.verify_service_runtime:

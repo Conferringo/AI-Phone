@@ -1,6 +1,6 @@
 # Release status / 发行状态
 
-Updated 2026-10-30. **Development; no complete product distribution is available.**
+Updated 2026-10-31. **Development; no complete product distribution is available.**
 
 Source, technical documentation and contributor build instructions are available. Product installers require the complete-device-bundle gate to pass.
 
@@ -20,6 +20,8 @@ The required user experience is: install the distribution, configure phone/compu
 
 [Thirteen model presets and local WhatsApp QR](model-and-channel-setup.md) are implemented with isolated protocol/transport fixtures and real QR-bootstrap evidence. The saved model connection passed authorized text, image and complete tool-roundtrip probes without sending chats or device state; other providers and WhatsApp account-level acceptance remain pending. Channel certification, long-running recovery, signed updates and full UI/language/media acceptance remain open. See [SOLID audit](solid-audit.md), [compatibility](compatibility.md), [bundle requirements](preview-release.md) and [database recovery](backup-restore.en.md).
 
+The optional [portable installer tool component](engineering/installer-tools.md) now executes Python/Node directly instead of downloading those interpreters. Native staging, source extraction and runtime-path restoration passed in a network-denied macOS sandbox. This component is not yet a rebuilt complete installer; phone applications, the container host and media/channel runtimes remain separate distribution work.
+
 ---
 
 # 中文状态
@@ -27,3 +29,5 @@ The required user experience is: install the distribution, configure phone/compu
 当前没有完整产品安装包。源码、技术文档与贡献者构建说明已提供。完整包应包含系统镜像、模拟器与预构建服务，初始化时自动部署，再由用户配置设备资源与模型；不能把源码安装或连接客户端当成最终发行。
 
 二进制发布要求“完整设备包”门槛通过；当前仍有待完成的组件。Android 以 root＋KVM 为宿主范围。四平台运行组件、镜像/模拟器再分发依据、完整包校验与初始化验收都必须明确，不用编译通过、页面入口或文档代替运行事实。
+
+随包 Python/Node 已完成 macOS 系统禁网环境下的原生复制、源码展开与运行路径恢复，尚未重建为完整产品安装包；手机应用、容器宿主及媒体/渠道运行组件继续补齐。

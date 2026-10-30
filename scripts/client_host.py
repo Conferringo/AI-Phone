@@ -177,6 +177,7 @@ def install_preflight(root, home, config, bundled_services, emit):
 
 
 def install_tools(home, mise, tools, emit):
+    if not tools:return
     emit('toolchain')
     execute([mise,'install','-y',*tools],cwd=home)
     result=execute([mise,'env','--json',*tools],cwd=home,capture_output=True,text=True)
@@ -203,24 +204,30 @@ def deployment_sdk(root, provided):
     return Path(json.loads(profile.read_text())['sdk_root']) if profile.exists() else provided
 
 
-def selected_tools(tools, bundled_services, bundled_android):
-    excluded=set()
+def selected_tools(tools, bundled_services, bundled_android, bundled_tools=()):
+    excluded=set(bundled_tools)
     if bundled_services:excluded.add('rust')
     if bundled_android:excluded.add('java')
     return [tool for tool in tools if tool.split('@',1)[0] not in excluded]
 
 
-def install(root, home, request, mise, emit, android_sdk=None, image_runtime=None):
+def install(root, home, request, mise, emit, android_sdk=None, image_runtime=None, tool_runtime=None):
     request=check_request(request)
     from host_platform import host_policy
     from prebuilt_services import launch_spec
     config,host=host_policy(root)
+    available=()
+    if tool_runtime is not None:
+        from installer_tools import select
+        os.environ.update(select(root,tool_runtime));available=('python','node')
     bundled=launch_spec(root,'assistant')['prebuilt']
     if not install_preflight(root,home,config,bundled,emit):return
     from android_runtime import bundled_sdk
     android_sdk=deployment_sdk(root,android_sdk)
     android_bundled=android_sdk is not None and bundled_sdk(android_sdk) is not None
-    tools=selected_tools(config['tools'],bundled,android_bundled)
+    tools=selected_tools(config['tools'],bundled,android_bundled,available)
+    if tools and mise is None:
+        mise=download(config['mise'][host['mise']],home/'tools/bin/mise');mise.chmod(0o700)
     install_tools(home,mise,tools,emit)
     prepare_profile(root,home,request,host,android_sdk)
     from runtime_config import runtime_env

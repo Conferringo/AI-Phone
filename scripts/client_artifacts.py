@@ -30,12 +30,15 @@ def notice_manifest(root=ROOT):
 
 def inspect_payload(files, root=ROOT):
     import io
-    from client_resources import resource_map, file_receipt, inspect_stream
+    from client_resources import resource_map, file_receipt, inspect_stream,public_build_digest
     native=root/'apps/client/src-tauri'
-    legal={destination:file_receipt(native/source) for source,destination in resource_map(root).items()}
+    resources=resource_map(root)
+    public={destination:public_build_digest(root,destination) for destination in resources.values()}
+    legal={destination:file_receipt(native/source,public[destination]) for source,destination in resources.items()}
     seen=set();result=[]
     for name,data in sorted(files.items()):
-        receipt=file_receipt(data) if isinstance(data,Path) else inspect_stream(io.BytesIO(data),name)
+        approved=next((digest for relative,digest in public.items() if name.endswith('/'+relative) or name==relative),None)
+        receipt=file_receipt(data,approved) if isinstance(data,Path) else inspect_stream(io.BytesIO(data),name,approved)
         for relative,expected in legal.items():
             if name.endswith('/'+relative) or name==relative:
                 if receipt!=expected:raise ValueError('Stale legal resource: '+name)

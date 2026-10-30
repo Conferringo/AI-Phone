@@ -215,7 +215,7 @@ class NativeLauncherTests(unittest.TestCase):
     SANDBOX = '(version 1) (allow default) (deny process-exec (literal "/bin/launchctl"))'
     def fixture(self, root, script):
         scripts = root / 'scripts'; scripts.mkdir()
-        for name in [script, 'android-env.sh', 'runtime_config.py','container_images.py','artifact_io.py', 'prebuilt_services.py', 'client_host_entry.py', 'host_platform.py', 'release_package.py']:
+        for name in [script, 'android-env.sh', 'runtime_config.py','container_images.py','artifact_io.py','installer_tools.py', 'prebuilt_services.py', 'client_host_entry.py', 'host_platform.py', 'release_package.py']:
             shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
         (scripts / 'release.py').write_text('import os,shlex\nfrom pathlib import Path\nr=Path.cwd()\nfor k,v in {"AI_PHONE_PROJECT_ROOT":str(r),"AI_PHONE_DATA_ROOT":str(r/"data"),"AI_PHONE_SDK_ROOT":str(r/"sdk"),"AI_PHONE_JAVA_HOME":""}.items():print("export "+k+"="+shlex.quote(v))\n')
         (scripts / 'database.py').write_text('import os\nfrom pathlib import Path\np=Path(os.environ["AI_PHONE_TEST_LAUNCH_LOG"])\np.open("a").write("database prepare\\n")\n')

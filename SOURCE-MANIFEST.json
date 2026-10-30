@@ -633,9 +633,14 @@
       "sha256": "3401cded925cf570f8a88ee6d10cd9e6eab4ede9193a173ccb35eb1fcbcbab37"
     },
     {
+      "path": "apps/client/src-tauri/src/bootstrap/tools.rs",
+      "size": 23000,
+      "sha256": "f5df9eed0d12292a35181736bc8a464753cc5d81a64e67fa23d89e383293a216"
+    },
+    {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 24326,
-      "sha256": "c1ffd341d31a648c5a2db78c692de3ae9c5559ef7e98283513eb1703cc98c75f"
+      "size": 25750,
+      "sha256": "4f513174efadd9667382a86196ad762b76a7104d7b82b97cd9e61220a2d1ba19"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -1284,8 +1289,8 @@
     },
     {
       "path": "apps/client/ui/connection.js",
-      "size": 9557,
-      "sha256": "cdb2b6413b6f88db564cbb9cd789a2f99166815a7cf3813c80cfab677acb5147"
+      "size": 9865,
+      "sha256": "e60c59ee940c6dc3bc53c710564bfda46b8872d494d6c6dd8d8c45c11274fce9"
     },
     {
       "path": "apps/client/ui/index.html",
@@ -2009,8 +2014,13 @@
     },
     {
       "path": "config/host-bootstrap.json",
-      "size": 2599,
-      "sha256": "74c83ae4fd5ec16ee106cf3bf38a5739099d30a737c8241252ee867d70b0cfad"
+      "size": 2600,
+      "sha256": "de117d28ed8e9ee2370592e017c9139beb53cb7ac06e6285544a19c5af842a89"
+    },
+    {
+      "path": "config/installer-tools.json",
+      "size": 1533,
+      "sha256": "a9c9ac7ead3ebaa65b9924a9ddc125a659c5f56ba2e277cf3c64b36f689eee21"
     },
     {
       "path": "config/mihomo-release.json",
@@ -2549,8 +2559,13 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 906,
-      "sha256": "ce2047d5073fda143051458f8888299b0ba7ec6541d84388a13553bfd5c9a1bd"
+      "size": 955,
+      "sha256": "74cf8db44702aae7e966e27ca4349cbfbee724ee588a39f3df7ae15c1e49373f"
+    },
+    {
+      "path": "docs/public/engineering/installer-tools.md",
+      "size": 6924,
+      "sha256": "fccb3e8f6411e14250a61994ed4d9a8ab8b1802a854600cdad614770fc89050c"
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
@@ -3459,8 +3474,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 3736,
-      "sha256": "78182ca57d43803bc281843a4e5c21996a559d7d679c67ef3e9b7c802d99adae"
+      "size": 4378,
+      "sha256": "a3264259ba67aa2789c094e703de881b0a9ec43bde3283372ae66bce1eca5e3b"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3474,8 +3489,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 5620,
-      "sha256": "a89b72f200a4e4d3743e3fcde513408fa6627bf47e135e6c10c0e36a491d5270"
+      "size": 6141,
+      "sha256": "6171a9c7a0b14c019829d8b98f785706a58f4786b329ce1896d40d1ee387a2a8"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3919,8 +3934,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 9995,
-      "sha256": "8d63ccddb34a6ea6fe5f8dff04746af4718a149c13627309f019da2ea83ea165"
+      "size": 10318,
+      "sha256": "5e43b65acca14595c9891cc05869d55de9a472695dc0c82ada431fb7501afc58"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -3994,23 +4009,23 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6133,
-      "sha256": "c9925de44cfdd734362771eff9f55e9637b6cd25e9a445e48c8b4e955e713a91"
+      "size": 6440,
+      "sha256": "76fa8be8433153a2ea84f051f733969959b81ab12b93c8ec675d93c357e099a2"
     },
     {
       "path": "scripts/client_host.py",
-      "size": 14092,
-      "sha256": "b6e4ee6345b8bea527969754fc8cd87ad82a65a6d5f66c0498f67e2fb4338f06"
+      "size": 14473,
+      "sha256": "b10db12c7bccb1e760457f4ea1f38ce05542aa7281c1d519b06a934f76ae4e14"
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 12944,
-      "sha256": "0742d157b89328a966a92fe26297a0e7878950c4c89d9f65ca08b24ab13db2d5"
+      "size": 13144,
+      "sha256": "7b61fb332fe65f88470635c90dea857bccb59ab184256ca04f5aee02b989af6a"
     },
     {
       "path": "scripts/client_resources.py",
-      "size": 2041,
-      "sha256": "e0a2ffc0056ab681aa28739fae55ec055032b12284ac52ed841aa7a242e71ff3"
+      "size": 3313,
+      "sha256": "bde037c0ce21a14738dc09b9cec749ed95de3c8cc7901d6d5de0e27dac1353ba"
     },
     {
       "path": "scripts/container_images.py",
@@ -4071,6 +4086,11 @@
       "path": "scripts/install_state.py",
       "size": 3437,
       "sha256": "d6f4f8a703a22e59fc4fb276b318b65e1e9821919d626c39b3270461d1e6a4c6"
+    },
+    {
+      "path": "scripts/installer_tools.py",
+      "size": 10149,
+      "sha256": "d022422b8d36f98ff233cf8074843892d5d4c485bb006b073a3502a9a9a5ccda"
     },
     {
       "path": "scripts/knowledge-motion.test.ts",
@@ -4139,8 +4159,8 @@
     },
     {
       "path": "scripts/native_bundle.py",
-      "size": 2288,
-      "sha256": "0b4fccb809513a68918406d6497e97a6951e1b816def96fa7a1526cf9fbe1efe"
+      "size": 2464,
+      "sha256": "627e86142380a6413582f17c1e44bb07716048a2ab781a319b2d4c70e4618388"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -4214,8 +4234,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 6346,
-      "sha256": "c2c3ca8eddf6db26f66ef20c6b4dc9730465494f8a054be7121afe9e7319244e"
+      "size": 6640,
+      "sha256": "780e03853878754f4c0b710cd1e862a50a0b8eb51f9b650463b7f4b2e63aee7f"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -4249,8 +4269,8 @@
     },
     {
       "path": "scripts/runtime_config.py",
-      "size": 3362,
-      "sha256": "4c6b3d460baa68ffe24b5855fcfbce593e57dbab569e029c8f526dce730eb031"
+      "size": 3534,
+      "sha256": "e3a10c5df92f504ff4ebeddc6f6b147796b0c742799256ce7e0aa09b6b0b70f8"
     },
     {
       "path": "scripts/runtime_verification.py",
@@ -4314,8 +4334,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 6309,
-      "sha256": "0d007e28824f0cefe8dd0219352c9b85abde7c1b455feab75941d602601734cd"
+      "size": 6807,
+      "sha256": "ac6a7b3ec5df6fba19b735d88cbb421cfc947bffe76123c8004933f441ee6b50"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4324,8 +4344,8 @@
     },
     {
       "path": "scripts/test_client_resources.py",
-      "size": 4217,
-      "sha256": "0c53545e2b367e8f8863fbcbe8bd8d2b08ebfe00dde52f2656c7c90f0efd0f11"
+      "size": 7941,
+      "sha256": "f77cc289580fe14be2f12d1ec32994243554777dd65121f204d9232e980de13d"
     },
     {
       "path": "scripts/test_container_images.py",
@@ -4373,6 +4393,11 @@
       "sha256": "b1976285fad051059df7757defee91640a6b7442e45a5746008284ea8b8c337f"
     },
     {
+      "path": "scripts/test_installer_tools.py",
+      "size": 16422,
+      "sha256": "00744af933f940b7fcf4af9608c06d46db4b56b327f28b1a2ed7afcf647c985d"
+    },
+    {
       "path": "scripts/test_linux_services.py",
       "size": 3055,
       "sha256": "03701414407863741794f3d13e11c082dc175c3faf5fb52343747bc6efeb5239"
@@ -4389,8 +4414,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 29076,
-      "sha256": "8abf2cbefc814418cd416ef74291c4740acc5003ecd3a6c96cb8f464abc902f5"
+      "size": 29097,
+      "sha256": "419d9b666f52b4fd62c4e8923b98387798fa41d73a7c9d59a72ae8b6e4708bad"
     },
     {
       "path": "scripts/test_prebuilt_web.py",

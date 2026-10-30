@@ -9,10 +9,17 @@ def resource_map(root):
     integrity=native/'gen/host/integrity.json'
     if integrity.exists():
         expected=json.loads(integrity.read_text())
-        if set(expected)-{'source.payload','entry.py','android.payload','images.payload'}:
+        if set(expected)-{'source.payload','entry.py','android.payload','images.payload','tools/manifest.json'}:
             raise ValueError('Unrecognized native resource')
         for name in ('android.payload','images.payload'):
             if name in expected:resources['gen/host/'+name]='host/'+name
+        if 'tools/manifest.json' in expected:
+            from installer_tools import read_manifest
+            from artifact_io import digest
+            folder=native/'gen/host/tools'
+            if digest(folder/'manifest.json')!=expected['tools/manifest.json']:raise ValueError('Installer tools changed before packaging')
+            manifest=read_manifest(folder)
+            for name in ['manifest.json',*[row['path'] for row in manifest['files']]]:resources['gen/host/tools/'+name]='host/tools/'+name
     return resources
 
 
@@ -23,21 +30,34 @@ def build_config(root):
     return target
 
 
-def inspect_stream(source, name):
+def public_build_digest(root,destination):
+    if destination!='host/tools/node/bin/node':return None
+    from installer_tools import read_manifest
+    folder=Path(root)/'apps/client/src-tauri/gen/host/tools'
+    host=read_manifest(folder)['host']
+    pins=json.loads((Path(root)/'config/installer-tools.json').read_text())
+    return pins['hosts'][host]['node'].get('public_build_paths_sha256')
+
+
+def inspect_stream(source, name,public_build_digest=None):
     import hashlib
     import re
     from release_package import SECRET
-    digest=hashlib.sha256();size=0;tail=b''
+    digest=hashlib.sha256();size=0;tail=b'';build_path=False
     while chunk:=source.read(1024**2):
         sample=tail+chunk
-        if SECRET.search(sample) or SECRET.search(sample.replace(b'\x00',b'')) or re.search(rb'/Users/[A-Za-z0-9._-]+/',sample):
+        if SECRET.search(sample) or SECRET.search(sample.replace(b'\x00',b'')):
             raise ValueError('Private material in bundle file: '+name)
+        build_path=build_path or re.search(rb'/Users/[A-Za-z0-9._-]+/',sample) is not None
         digest.update(chunk);size+=len(chunk);tail=sample[-4096:]
-    return {'size':size,'sha256':digest.hexdigest()}
+    identity=digest.hexdigest()
+    if (public_build_digest is not None and identity!=public_build_digest) or (build_path and identity!=public_build_digest):
+        raise ValueError('Private material in bundle file: '+name)
+    return {'size':size,'sha256':identity}
 
 
-def file_receipt(path):
-    with Path(path).open('rb') as source:return inspect_stream(source,str(path.name))
+def file_receipt(path,public_build_digest=None):
+    with Path(path).open('rb') as source:return inspect_stream(source,str(path.name),public_build_digest)
 
 
 def verify_compiled_inventory(binary, expected):

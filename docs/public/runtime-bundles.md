@@ -10,12 +10,15 @@ AI Phone separates versioned application code, clean device baselines and persis
 |---|---|---|
 | Web | Next.js standalone output, static/public assets, pinned host-matched Bun | Installed file hashes and contained dependency aliases must match |
 | Native services | Release Rust assistant and phone runner, OCR helper, generated OCR fixture | Host, hashes, inventory and executable permissions must match |
+| Installer tools | Portable Python and Node in a separate native resource group | Compiled manifest digest, host, complete inventory and immutable activation must match |
 | macOS OCR | Apple Vision helper with the client's minimum deployment target | macOS system frameworks |
 | Linux OCR | Tesseract adapter | Python/Pillow, Tesseract and English/Chinese language data; these dependencies still need a complete offline payload |
 
 Each component manifest records file sizes, SHA-256 hashes and permissions. Native builds also record source fingerprints and compiler provenance. The packager accepts only matching builds. macOS helpers cannot require a newer OS than the client.
 
 ## Installation and startup
+
+The optional [portable installer tools](engineering/installer-tools.md) start the worker without a host interpreter. Native activation places verified tools in an immutable private component directory before source staging; service launchers retain those paths across restarts. Complete guest and service dependencies remain separate requirements.
 
 The staging entry validates bounded archive headers and inventory before writing an immutable release directory. Duplicate entries, malformed paths, private paths, escaping aliases, unlisted files, changed bytes and occupied destinations are rejected. The version's `data` and `.env` link to the persistent `user` directory; staging a new version does not activate it or replace existing devices, credentials or conversations.
 

@@ -10,6 +10,7 @@ from client_resources import resource_map,build_config,inspect_stream
 from prepare_client_host import prepare,payload_components
 import test_android_runtime
 import test_container_images
+import test_installer_tools
 
 
 class ClientResourceTests(unittest.TestCase):
@@ -50,6 +51,22 @@ class ClientResourceTests(unittest.TestCase):
             verify_compiled_inventory(binary,{'source.payload':sha})
             with self.assertRaisesRegex(ValueError,'Compiled resources differ'):verify_compiled_inventory(binary,{'source.payload':'b'*64})
 
+    def test_installer_tools_have_one_bound_manifest_and_source_build_omits_the_group(self):
+        with tempfile.TemporaryDirectory() as temp,patch('installer_tools.host_key',return_value='macos-arm64'):
+            root=Path(temp);fixture=test_installer_tools.InstallerToolTests();archives,pins=fixture.fixture(root);component=root/'tools';fixture._build(archives,component,pins=pins,host='macos-arm64')
+            native=root/'apps/client/src-tauri';native.mkdir(parents=True);(native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload','gen/host/entry.py':'host/entry.py'}}}))
+            (root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
+            result=prepare(root,installer_tools=component);mapping=resource_map(root)
+            self.assertIn('tools/manifest.json',result);self.assertEqual(payload_components(root),['installer-tools'])
+            self.assertEqual(mapping['gen/host/tools/python/bin/python3'],'host/tools/python/bin/python3')
+            from client_resources import public_build_digest,file_receipt
+            node=native/'gen/host/tools/node/bin/node';sha=hashlib.sha256(node.read_bytes()).hexdigest()
+            (root/'config').mkdir();(root/'config/installer-tools.json').write_text(json.dumps({'hosts':{'macos-arm64':{'node':{'public_build_paths_sha256':sha}}}}))
+            self.assertEqual(public_build_digest(root,'host/tools/node/bin/node'),sha)
+            self.assertIsNone(public_build_digest(root,'host/tools/python/bin/python3'))
+            self.assertEqual(file_receipt(node,sha)['sha256'],sha)
+            prepare(root);self.assertFalse(any(name.startswith('gen/host/tools/') for name in resource_map(root)))
+
     def test_scanning_is_bounded_and_finds_tokens_across_chunks(self):
         class Bounded(io.BytesIO):
             def read(self,size=-1):
@@ -59,6 +76,36 @@ class ClientResourceTests(unittest.TestCase):
         self.assertEqual(inspect_stream(Bounded(data),'fixture'),{'size':len(data),'sha256':hashlib.sha256(data).hexdigest()})
         for secret in [b' sk-'+b'A'*32,(' sk-'+'A'*32).encode('utf-16-le'),b'/Users/'+b'fixture/private/']:
             with self.assertRaisesRegex(ValueError,'Private material'):inspect_stream(Bounded(b'x'*(1024**2-7)+secret),'fixture')
+
+    def test_public_vendor_build_paths_require_exact_bytes_and_never_exempt_tokens(self):
+        data=b'official build path '+b'/Users/'+b'public-builder/source/'
+        sha=hashlib.sha256(data).hexdigest()
+        with self.assertRaises(ValueError):inspect_stream(io.BytesIO(data),'vendor')
+        self.assertEqual(inspect_stream(io.BytesIO(data),'vendor',public_build_digest=sha)['sha256'],sha)
+        with self.assertRaises(ValueError):inspect_stream(io.BytesIO(data+b'changed'),'vendor',public_build_digest=sha)
+        with self.assertRaises(ValueError):inspect_stream(io.BytesIO(b'changed without a build path'),'vendor',public_build_digest=sha)
+        secret=b' sk-'+b'A'*32
+        with self.assertRaises(ValueError):inspect_stream(io.BytesIO(secret),'vendor',public_build_digest=hashlib.sha256(secret).hexdigest())
+
+    def test_privacy_scan_keeps_a_bounded_working_window(self):
+        from release_package import SECRET
+        class Probe:
+            def search(self,data):
+                if len(data)>1024**2+4096:raise AssertionError('Scanner retained unbounded input')
+                return SECRET.search(data)
+        data=b'x'*(4*1024**2)
+        with patch('release_package.SECRET',Probe()):self.assertEqual(inspect_stream(io.BytesIO(data),'fixture')['sha256'],hashlib.sha256(data).hexdigest())
+
+    def test_compiled_inventory_scan_does_not_retain_the_whole_binary(self):
+        import tracemalloc
+        from client_resources import verify_compiled_inventory
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'binary';sha='a'*64;path.write_bytes(b'x'*(8*1024**2)+sha.encode())
+            tracemalloc.start()
+            try:
+                verify_compiled_inventory(path,{'source.payload':sha});peak=tracemalloc.get_traced_memory()[1]
+            finally:tracemalloc.stop()
+            self.assertLess(peak,12*1024**2,'Compiled inventory scan retained the whole binary')
 
 
 if __name__=='__main__':unittest.main()
