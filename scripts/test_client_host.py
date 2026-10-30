@@ -18,6 +18,35 @@ def python_command(path, source):
 
 
 class NativeHostTests(unittest.TestCase):
+    def test_first_engine_creation_does_not_query_a_missing_instance(self):
+        from client_host import activate_container_engine
+        import os
+        with tempfile.TemporaryDirectory(dir='/tmp',prefix='ae-') as temporary:
+            base=Path(temporary);home=base/'install';root=home/'releases'/'version';root.mkdir(parents=True);data=home/'user/data';data.mkdir(parents=True);(root/'data').symlink_to(data,target_is_directory=True)
+            command=home/'limactl';command.write_text('#!/bin/sh\nexit 0\n');command.chmod(0o755)
+            def query(args,**kwargs):
+                return subprocess.CompletedProcess(args,1 if 'ai-phone' in args else 0,stdout='',stderr='unmatched instances')
+            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute:
+                activate_container_engine(root,home,command,{'fixture':True})
+                self.assertIn('--name=ai-phone',execute.call_args_list[0].args[0])
+
+    def test_complete_host_never_adopts_global_docker(self):
+        from client_host import container_engine
+        import os
+        runtime={'command':Path('/private/runtime/lima')}
+        with patch.dict(os.environ,{'AI_PHONE_DESKTOP_MEMORY':'2560m'},clear=True),patch('container_host_runtime.selection',return_value=runtime),patch('container_host_runtime.definition',return_value={'local':True}),patch('host_platform.host_policy',return_value=({},{})),patch('client_host.activate_container_engine') as activate,patch('client_host.subprocess.run') as run,patch('client_host.shutil.which',return_value='/usr/local/bin/docker'):
+            container_engine(Path('/private/root'),Path('/private'),{},lambda *_:None)
+            activate.assert_called_once_with(Path('/private/root'),Path('/private'),runtime['command'],{'local':True})
+            run.assert_not_called()
+
+    def test_wrapper_does_not_overwrite_an_unowned_file_or_follow_symlinks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            home=Path(temporary);folder=home/'bin';folder.mkdir();wrapper=folder/'docker';wrapper.write_text('unowned')
+            with self.assertRaises(ValueError):write_container_wrapper(home,home,home/'limactl')
+            self.assertEqual(wrapper.read_text(),'unowned');wrapper.unlink();target=home/'original';target.write_text('keep');wrapper.symlink_to(target)
+            with self.assertRaises(ValueError):write_container_wrapper(home,home,home/'limactl')
+            self.assertEqual(target.read_text(),'keep')
+
     def test_complete_bundled_toolchain_does_not_run_a_package_manager(self):
         from client_host import selected_tools,install_tools
         tools=selected_tools(['python@3.13.18','node@22.23.4','rust@1.96.0','java@temurin-17'],True,True,('python','node'),True)

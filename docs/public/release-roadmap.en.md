@@ -30,6 +30,8 @@ Next: model discovery with manual-ID fallback, separate text/vision/tool/context
 
 ## Voice and calling — planned, not implemented
 
+The [Copilot implementation contract](copilot-voice.md) defines continuous listening, 1.5-second commits, transcript corrections, steering, spoken feedback and a separate guest-audio path. These capabilities remain planned.
+
 - **V1:** per-Agent STT/TTS adapters, independent microphone/device/playback tracks, local and cloud providers, transcription fallback and clear recording state.
 - **V2:** endpoint detection, echo handling, interruptible playback, ordered transcription receipts and playback generations. Reuse the durable conversation/steering path; interruptions must not replay device side effects.
 - **V3:** a mock/SIP CallSession and TelephonyProvider. Persist intent before dialing, deduplicate callbacks, query uncertain results, bound DTMF and duration, and reject late audio after hangup.

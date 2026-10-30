@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 11011,
-      "sha256": "3f2c6d8a973fbc4e40624908b639bb84bfe54c8a96f86e2ce665390633388a6d"
+      "size": 11528,
+      "sha256": "e1f65df53321e14a11d6eea971aa41c01568e18a8ce125fcecef1d1f7d366b5e"
     },
     {
       "path": "ai-phone",
@@ -2008,6 +2008,11 @@
       "sha256": "525cf32b76b564f231cf9518137dd04a53e06b82645771d9d14c92b7f131636b"
     },
     {
+      "path": "config/container-host-runtime.json",
+      "size": 9899,
+      "sha256": "8af52214619e4cc68012b37fb4af0f89107cc8e841c6a57d51219a8ffa563f1f"
+    },
+    {
       "path": "config/device-presets.json",
       "size": 1056,
       "sha256": "8f7dc28969c42773c563223ad498d92aebaa6341f2817bfcb8fcd2a47058ecae"
@@ -2508,6 +2513,11 @@
       "sha256": "0213ec46ecc34b55892f4eb8fb398d3cd48f00044abd7a85aca9d24cfd3739c7"
     },
     {
+      "path": "docs/public/container-host-runtime.md",
+      "size": 4453,
+      "sha256": "f7d395c4b721f2c217cdd13e332882744fb0e4c396734aa8038c60b6e71712ea"
+    },
+    {
       "path": "docs/public/contributor-agents.md",
       "size": 1605,
       "sha256": "e1088973e00926c0b40d4c95e9652c79c34fc2729f8a5d3d9f1481b8b723aeae"
@@ -2516,6 +2526,11 @@
       "path": "docs/public/conversation-steering.md",
       "size": 3332,
       "sha256": "921f2781adf233d1c4acf64e350a3f3358261e5447fd4322d6c85994c38f4d75"
+    },
+    {
+      "path": "docs/public/copilot-voice.md",
+      "size": 13281,
+      "sha256": "e30fbe8c784c7c696998e477f1d0d05aba0f0bc0f67399760a091d2f44949cf7"
     },
     {
       "path": "docs/public/core-retirement-2026-10-29.md",
@@ -2599,13 +2614,13 @@
     },
     {
       "path": "docs/public/index.md",
-      "size": 2317,
-      "sha256": "5ec154247bfc7d6c0fea373d8fa637d7d6308092685e813dc1197b909380ae58"
+      "size": 2390,
+      "sha256": "66c110093d0e8c73ac53a9683d5fd38b75f5746b4d37381b3004446ed7d39258"
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 6754,
-      "sha256": "86a42b9b5e46774dcb501dfa5ba76d542b33b356657c3bd0b149e23afd93e615"
+      "size": 5870,
+      "sha256": "8cd48f8b4cafdda02d99c2633cee492a5d5882a8cf215bb0690e974ef8007138"
     },
     {
       "path": "docs/public/interface-audit-2026-10-29.md",
@@ -3464,13 +3479,13 @@
     },
     {
       "path": "docs/public/release-roadmap.en.md",
-      "size": 5669,
-      "sha256": "02648292b46e3d80ca44a178d6488ed8b24b95093f74c7313bed02e9f8db833d"
+      "size": 5894,
+      "sha256": "20b4a98d31be368cd2125e9cb940193b09c6c889db550ff9351a4345857e5f1e"
     },
     {
       "path": "docs/public/release-roadmap.zh-CN.md",
-      "size": 6457,
-      "sha256": "fe5ccf73d50c2cfc3f204d9db60e4519fdc60dae63f21a31995a2f638810f9fe"
+      "size": 6674,
+      "sha256": "1ce7d09a036a2d44ab6e9213f3ae7f9880c5a5e03813086421aa184a994ce806"
     },
     {
       "path": "docs/public/release-stability-2026-10-29.md",
@@ -3479,8 +3494,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4615,
-      "sha256": "447e10fbd67020240b42ed1a23efccd6c2fe68476b7e2a1dacb5dcab30d2ddee"
+      "size": 5023,
+      "sha256": "eac6b467f20407f27c827314ce1304a4a85cf4b6febaf93c2b46dc643c22bef1"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3504,8 +3519,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 17015,
-      "sha256": "8abbba298e40414b5869a4f503e8d9888329b96b7961325c82aa26842f910d81"
+      "size": 17993,
+      "sha256": "2a66faa30a7ac193387c312b4cc40f9c8097927e8ed99f3ae9a9cdcc27de34d2"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3939,8 +3954,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 10612,
-      "sha256": "736928b044f2b376da4fdb5ce248e99022413af06938c7a568c4032c17ab358e"
+      "size": 10951,
+      "sha256": "8a3aa080fba2742bdaca0c93c3847e46f054e43dcc076888e1ae3e0db0e8cc91"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4019,18 +4034,23 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 14777,
-      "sha256": "765f7134b35eb1cea068b3cd15221e59022bbc0d0a0aa47e1046158e8044b119"
+      "size": 16248,
+      "sha256": "af0347b050251e357fed77b7fde09bed722936bccd578c593858a051e4ce974e"
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 13347,
-      "sha256": "28f1f7a52b075a3610f8c3cc9719ced1fe1bb9b344f486b6ad19a15bf1cba527"
+      "size": 13400,
+      "sha256": "8e4b3be54783f666e92a3a0330db8082fe39f22d7b89e372c1a9fbfb10e71db8"
     },
     {
       "path": "scripts/client_resources.py",
       "size": 3313,
       "sha256": "bde037c0ce21a14738dc09b9cec749ed95de3c8cc7901d6d5de0e27dac1353ba"
+    },
+    {
+      "path": "scripts/container_host_runtime.py",
+      "size": 11859,
+      "sha256": "3f8b3f64a8d9326160b457c071da4f72b820645c0d91dd5322c2d303ad473066"
     },
     {
       "path": "scripts/container_images.py",
@@ -4113,9 +4133,14 @@
       "sha256": "af1f630c1f7d13698f11e87c4d35c3d85551ba77697ab034a483ff4a45eb50cb"
     },
     {
+      "path": "scripts/lima_native.py",
+      "size": 7880,
+      "sha256": "58ce566d3d3df32599d6f610f29156f695bc63be0f9bedf107e9f0856f674e8a"
+    },
+    {
       "path": "scripts/linux_host.py",
-      "size": 7455,
-      "sha256": "5bcc051ef0896106ece9758b5dc97fc8f2a8ce32351e426dc0c1bf6f0e306f00"
+      "size": 7475,
+      "sha256": "199a1ff21ba420f16a6f0a6c62795b6410eb2b64b010bbe15a09d1fc515958fc"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -4146,6 +4171,11 @@
       "path": "scripts/macos_target.py",
       "size": 1384,
       "sha256": "56162a77788e39af06d9dadd40b1d75bff3bc2b5785c255303bc1de969bc538d"
+    },
+    {
+      "path": "scripts/managed_engine.py",
+      "size": 6310,
+      "sha256": "3de2000123dac042e8d622a68e003ed08bdb64aaa441a9bae7bdaa4ab43301dd"
     },
     {
       "path": "scripts/media-relay.test.ts",
@@ -4244,8 +4274,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 6925,
-      "sha256": "68dcaa0108ae9ab99b56f821f05b3a5955a4a84b17c7d25a461bd706deaa7884"
+      "size": 7246,
+      "sha256": "0c13cc7948a14df8bf8ed278ce2cdba20341f5a676454ac2a12506b35a4b19de"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -4279,8 +4309,8 @@
     },
     {
       "path": "scripts/runtime_config.py",
-      "size": 3534,
-      "sha256": "e3a10c5df92f504ff4ebeddc6f6b147796b0c742799256ce7e0aa09b6b0b70f8"
+      "size": 3693,
+      "sha256": "38cee9a48d45dea919e1a621a9aac501b4124aa5291e4fd3a2bdb839bb6c5956"
     },
     {
       "path": "scripts/runtime_verification.py",
@@ -4289,8 +4319,8 @@
     },
     {
       "path": "scripts/service_start.py",
-      "size": 4077,
-      "sha256": "d5b014a4ec9f2e91e4fbc50af31f44a53a8bdfbae2250bf1ee094f65a9efb3f8"
+      "size": 4152,
+      "sha256": "f519805d1d5b4d31e9ab70fd1d7a9199ef34c2109704ce317d2b14438b8b1866"
     },
     {
       "path": "scripts/service_stop.py",
@@ -4344,8 +4374,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 6812,
-      "sha256": "129db9fa8fd19e64ac632caa110031bc2f7e419d3226d0569526e7006cd586e8"
+      "size": 9443,
+      "sha256": "b3e8810177c5de83fa5b5ddad5f08930a0e27381f916bb61daa0b4a2e8d9330d"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4356,6 +4386,11 @@
       "path": "scripts/test_client_resources.py",
       "size": 7941,
       "sha256": "f77cc289580fe14be2f12d1ec32994243554777dd65121f204d9232e980de13d"
+    },
+    {
+      "path": "scripts/test_container_host_runtime.py",
+      "size": 10128,
+      "sha256": "5400435cc6607f08d6c5ce58682236e71b812add79e1181ca430f5c2e1604d67"
     },
     {
       "path": "scripts/test_container_images.py",
@@ -4408,9 +4443,19 @@
       "sha256": "00744af933f940b7fcf4af9608c06d46db4b56b327f28b1a2ed7afcf647c985d"
     },
     {
+      "path": "scripts/test_lima_native.py",
+      "size": 9074,
+      "sha256": "10021e0a80913c5712d2c19830091f28e8ceb2d1cb465a1edc02e2392ef0863f"
+    },
+    {
       "path": "scripts/test_linux_services.py",
       "size": 3055,
       "sha256": "03701414407863741794f3d13e11c082dc175c3faf5fb52343747bc6efeb5239"
+    },
+    {
+      "path": "scripts/test_managed_engine.py",
+      "size": 8822,
+      "sha256": "35deca65c55af8084ce282633034eb139d3ed235dd689f5e7ac667c7955bde69"
     },
     {
       "path": "scripts/test_native_backports.py",
@@ -4424,8 +4469,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 29097,
-      "sha256": "419d9b666f52b4fd62c4e8923b98387798fa41d73a7c9d59a72ae8b6e4708bad"
+      "size": 29199,
+      "sha256": "af40f67810596da928a38b753a785c8fe0f67de659d4609ad1f96285ede30337"
     },
     {
       "path": "scripts/test_prebuilt_phone.py",

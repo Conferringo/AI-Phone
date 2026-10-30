@@ -82,57 +82,97 @@ def prepare_sdk(record, sdk, cache):
             (Path(temp) / 'cmdline-tools').rename(folder / 'latest')
 
 
-def write_container_wrapper(root, home, command):
-    bin_dir=home/'bin';bin_dir.mkdir(exist_ok=True)
+def write_container_wrapper(root, home, command, state=None):
+    bin_dir=home/'bin'
+    if bin_dir.is_symlink():raise ValueError('Docker wrapper directory was replaced')
+    bin_dir.mkdir(exist_ok=True)
     wrapper=bin_dir/'docker'
     # Compose runs in the owned VM. sudo must not erase the selected architecture
     # or resource profile; only these installation fields cross this boundary.
     defaults={'AI_PHONE_CLASH_DESKTOP_DIR':'linux','AI_PHONE_DESKTOP_CPUS':'2','AI_PHONE_DESKTOP_MEMORY':'2560m','AI_PHONE_CONTAINER_PROXY':'','AI_PHONE_POSTGRES_IMAGE':'','AI_PHONE_REDIS_IMAGE':'','AI_PHONE_DESKTOP_IMAGE':'','AI_PHONE_WORKSPACE_IMAGE':'','AI_PHONE_IMAGE_PULL_POLICY':'missing'}
     arguments=' '.join(key+'="${'+key+':-'+value+'}"' for key,value in defaults.items())
-    wrapper.write_text('#!/bin/sh\nexport LIMA_HOME='+shlex.quote(str(home/'lima'))+'\nexec '+shlex.quote(str(command))+' shell --workdir '+shlex.quote(str(root))+' ai-phone sudo env '+arguments+' docker "$@"\n')
-    wrapper.chmod(0o755)
+    text='#!/bin/sh\nexport LIMA_HOME='+shlex.quote(str(state or home/'lima'))+'\nexec '+shlex.quote(str(command))+' shell --workdir '+shlex.quote(str(root))+' ai-phone sudo env '+arguments+' docker "$@"\n'
+    publish_container_wrapper(root,wrapper,text)
     return bin_dir
 
 
+def publish_container_wrapper(root, wrapper, text):
+    if wrapper.is_symlink():raise ValueError('Docker wrapper was replaced')
+    if wrapper.exists() and wrapper.read_text()!=text:
+        from managed_engine import selection
+        if selection(root) is None:raise ValueError('Unowned Docker wrapper was preserved')
+    with tempfile.NamedTemporaryFile(mode='w',prefix='.docker-',dir=wrapper.parent,delete=False) as output:
+        temporary=Path(output.name)
+        try:
+            output.write(text);output.flush();temporary.chmod(0o755);temporary.replace(wrapper)
+        finally:temporary.unlink(missing_ok=True)
+
+
+def source_container_runtime(home, config, host):
+    lima = home / 'tools/lima'
+    command = lima / 'bin/limactl'
+    if command.is_file():
+        return command
+    if lima.exists():
+        raise ValueError('Incomplete Lima tools were preserved; review repair before continuing')
+    archive = download(config['lima_hosts'][host['lima']], home / 'cache/lima.tar.gz')
+    from container_host_runtime import unpack_lima
+    lima.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.lima-', dir=lima.parent) as temporary:
+        staged = Path(temporary) / 'runtime'
+        unpack_lima(archive, staged)
+        if not (staged / 'bin/limactl').is_file():
+            raise ValueError('Lima executable is missing')
+        staged.rename(lima)
+    return command
+
+
+def source_container_definition(home, config, host, memory):
+    image = config['container_hosts'][host['image']]
+    return {'vmType': host['vm_type'], 'arch': host['vm_arch'], 'cpus': 4, 'memory': memory, 'disk': '64GiB',
+            'images': [{'location': image['url'], 'arch': host['vm_arch'], 'digest': 'sha256:' + image['sha256']}],
+            'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
+            'containerd': {'system': False, 'user': False}, 'propagateProxyEnv': False,
+            'provision': [{'mode': 'system', 'script': '#!/bin/sh\nset -eu\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 docker-buildx\nsystemctl enable --now docker\nusermod -aG docker {{.User}}\n'}],
+            'hostResolver': {'hosts': {'host.docker.internal': 'host.lima.internal'}},
+            'portForwards': [{'guestPortRange': [17860, 17869], 'ignore': True}]}
+
+
+def activate_container_engine(root, home, command, value):
+    from managed_engine import state_directory, claim_state, save_selection
+    state = state_directory(root, home)
+    claim_state(root, state)
+    os.environ['LIMA_HOME'] = str(state)
+    definition = home / 'container-host.yaml'
+    definition.write_text(json.dumps(value))
+    # Listing all owned instances succeeds even before the first one exists.
+    found = subprocess.run([str(command), 'list', '--format', '{{if eq .Name "ai-phone"}}{{.Status}}{{end}}'], capture_output=True, text=True)
+    if found.returncode or found.stdout.strip() not in ('', 'Running', 'Stopped'):
+        raise ValueError('Container host state is unknown; existing devices were preserved')
+    execute([command, 'start', '--tty=false', 'ai-phone'] if found.stdout.strip() else [command, 'start', '--tty=false', '--name=ai-phone', definition])
+    bin_dir = write_container_wrapper(root, home, command, state)
+    os.environ['PATH'] = str(bin_dir) + os.pathsep + os.environ['PATH']
+    execute(['docker', 'info'], stdout=subprocess.DEVNULL)
+    save_selection(root, home, state, command, bin_dir)
+    os.environ['AI_PHONE_MANAGED_BIN'] = str(bin_dir)
+
+
 def container_engine(root, home, config, emit):
-    """Use an existing engine, or an app-owned VZ VM mounting only app data."""
-    if os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE')!='1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+    """Reuse the selected engine or start the installation's authenticated host."""
+    from host_platform import host_policy
+    from container_host_runtime import selection, definition
+    runtime = selection(root)
+    if runtime is None and os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE') != '1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
         return
     emit('container-host')
-    from host_platform import host_policy
-    _,host=host_policy(root)
-    tools = home / 'tools'; lima = tools / 'lima'; command = lima / 'bin/limactl'
-    if not command.is_file():
-        archive = download(config['lima_hosts'][host['lima']], home / 'cache/lima.tar.gz')
-        with tarfile.open(archive) as source:
-            # Lima owns bin/share; reject link escapes before extraction.
-            entries=[]
-            for entry in source.getmembers():
-                path = PurePosixPath(entry.name)
-                # Upstream's documentation alias is unnecessary at runtime.
-                if entry.issym() and entry.name == './share/doc/lima/templates' and entry.linkname == '../../lima/templates': continue
-                if path.is_absolute() or '..' in path.parts or '\\' in entry.name or not (entry.isfile() or entry.isdir()): raise ValueError('Invalid Lima distribution')
-                entries.append(entry)
-            lima.mkdir(parents=True, exist_ok=True); source.extractall(lima, members=entries, filter='data')
-    os.environ['LIMA_HOME'] = str(home / 'lima')
-    image = config['container_hosts'][host['image']]
-    memory = max(4, (int(os.environ['AI_PHONE_DESKTOP_MEMORY'].rstrip('m')) + 2048 + 1023) // 1024)
-    value = {'vmType': host['vm_type'], 'arch': host['vm_arch'], 'cpus': 4, 'memory': f'{memory}GiB', 'disk': '64GiB',
-             'images': [{'location': image['url'], 'arch': host['vm_arch'], 'digest': 'sha256:' + image['sha256']}],
-             'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
-             'containerd': {'system': False, 'user': False},
-             'provision': [{'mode': 'system', 'script': '#!/bin/sh\nset -eu\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 docker-buildx\nsystemctl enable --now docker\nusermod -aG docker {{.User}}\n'}],
-             'hostResolver': {'hosts': {'host.docker.internal': 'host.lima.internal'}},
-             'portForwards': [{'guestPortRange': [17860, 17869], 'ignore': True}]}
-    definition = home / 'container-host.yaml'; definition.write_text(json.dumps(value))
-    # limactl start is idempotent for a running owned VM; no Docker context changes.
-    found = subprocess.run([str(command), 'list', 'ai-phone', '--format', '{{.Status}}'], capture_output=True, text=True)
-    execute([command, 'start', '--tty=false', 'ai-phone'] if found.stdout.strip() else [command, 'start', '--tty=false', '--name=ai-phone', definition])
-    bin_dir = write_container_wrapper(root,home,command)
-    os.environ['PATH'] = str(bin_dir) + os.pathsep + os.environ['PATH']
-    # Persist only owned tool paths; launchd jobs must retain the same engine.
-    os.environ['AI_PHONE_MANAGED_BIN'] = str(bin_dir)
-    execute(['docker', 'info'], stdout=subprocess.DEVNULL)
+    _, host = host_policy(root)
+    memory = str(max(4, (int(os.environ['AI_PHONE_DESKTOP_MEMORY'].rstrip('m')) + 2048 + 1023) // 1024)) + 'GiB'
+    if runtime is not None:
+        command, value = runtime['command'], definition(home, runtime, memory)
+    else:
+        command = source_container_runtime(home, config, host)
+        value = source_container_definition(home, config, host, memory)
+    activate_container_engine(root, home, command, value)
 
 
 def verify_container_ownership(root, query=None):

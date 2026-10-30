@@ -8,7 +8,7 @@ import tarfile
 import tempfile
 import re
 
-COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json'}
+COMPONENT_MANIFESTS={'web':'runtime/manifest.json','native-services':'runtime/services/manifest.json','phone-apps':'runtime/phone-apps/manifest.json','container-host':'runtime/container-host/manifest.json'}
 
 def canonical_name(name):
     if not isinstance(name, str):
@@ -25,7 +25,7 @@ def canonical_name(name):
 def runtime_name(path, enabled):
     if not enabled:
         return False
-    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps'))
+    return len(path.parts) > 1 and path.parts[0] == 'runtime' and (path.parts[1] in ('web', 'bin', 'manifest.json', 'services', 'phone-apps', 'container-host'))
 
 def source_name(name, runtime=False):
     path = canonical_name(name)
@@ -162,7 +162,7 @@ def component_inventory(records, components):
         raise ValueError('Runtime component manifest is missing')
     for name in records:
         if name.startswith('runtime/'):
-            owner = next((role for prefix,role in [('runtime/services/','native-services'),('runtime/phone-apps/','phone-apps')] if name.startswith(prefix)), 'web')
+            owner = next((role for role,path in reversed(COMPONENT_MANIFESTS.items()) if name.startswith(str(PurePosixPath(path).parent)+'/')))
             if owner not in components:
                 raise ValueError('Runtime file belongs to an undeclared component')
 

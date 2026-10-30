@@ -26,7 +26,10 @@ def owned_jobs(root,query=None):
 def _start_missing(root,query=None,execute=None,package_installed=None):
     root=Path(root).resolve()
     if (root/'data/restore-quarantine.json').exists():raise ValueError('Restored state is quarantined; no services started')
-    jobs=owned_jobs(root,query);env={**os.environ,**runtime_env(root),'NEXT_TELEMETRY_DISABLED':'1'}
+    jobs=owned_jobs(root,query)
+    from managed_engine import ensure_running
+    ensure_running(root)
+    env={**os.environ,**runtime_env(root),'NEXT_TELEMETRY_DISABLED':'1'}
     started=[]
     for label,running in jobs.items():
         if not running:

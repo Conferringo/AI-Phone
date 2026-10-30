@@ -1,54 +1,46 @@
-# Developer bootstrap and host runtime
+# Self-contained host runtime
 
-**Development reference only. Product downloads are withdrawn. The next distribution must contain images, emulator and prebuilt services; see [requirements](preview-release.md). The online source bootstrap below is not that distribution.**
-
-Preview.2 introduces an experimental managed installer for **macOS Apple Silicon**. It acquires private tools, prepares the Android phone and Debian/Openbox desktop, starts services and then opens model configuration. Users do not need to run server deployment commands for this path. It still downloads dependencies and builds services; it is not an offline appliance. **Fresh-host dual-device installation remains untested.**
+The product target is an installed client that creates its phone, computer and model configuration without a manual server deployment. **Complete distributions are not available yet.** Source bootstrap and connection clients are separate developer/remote-access paths, not substitutes for the complete product. See the [release contract](release-contract.en.md) and [current status](release-status.md).
 
 ## Platform scope
 
-The preview.3 source also contains the [Linux x64 installer](managed-linux.md), currently undergoing full hosted-runtime acceptance. Preview.2 download capabilities below are unchanged; a compiled client is not proof of a completed installation.
-
-| Host | Implemented in this preview | Remaining |
+| Host | Current source path | Unfinished independent-host work |
 |---|---|---|
-| macOS Apple Silicon | Native setup, resource presets, pinned tool acquisition, Android licenses, resumable phases, owned service startup and desktop provisioning | Complete clean-host installation, reboot/long-running acceptance, signed updates |
-| Windows x64 | Local/LAN connection client | WHPX, managed WSL2 backend, architecture-matched phone image, native supervision/vision |
-| Linux amd64/ARM64 | Local/LAN connection client | KVM permissions, distribution-aware dependencies, user services and vision backend |
-| Android ARM64 | Local/LAN connection client | Privileged AVF/KVM research and device matrix; ordinary unrooted APK dual-guest hosting is not promised |
+| macOS Apple Silicon only | Native first-run worker, versioned resources, prebuilt web/services/tools/phone applications, Android and Linux image components; local Lima/VZ host component | Full assembled client, remaining offline media/channel/browser dependencies, clean default-device creation and full recovery |
+| Windows x64 | Native client and explicit local/LAN connection | Complete WHPX/WSL2 runtime, matched images/services, independent initialization and supervision |
+| Linux x64 / ARM64 | Native clients; [x64 managed source installer](managed-linux.md) | Offline distribution, matched components, KVM/system integration and clean-host acceptance; ARM64 independent host remains incomplete |
+| Android ARM64 | Native client | Root/KVM host runtime, device matrix, complete privileged dual-device deployment; ordinary unrooted devices are outside this host scope |
 
-The Linux desktop is a container, sharing the container host's kernel. A separate-kernel Fedora/QEMU desktop is an extension, not a current choice. This preview uses fixed Android 15 ARM64 and Debian 13/Openbox templates. CPU, memory and initial phone storage are configurable; changing a preset never silently resizes existing devices.
+A successful client compilation is not independent-host acceptance. Physical non-macOS installation tests are waived and remain unverified; component completeness, build evidence and redistribution review are still required.
 
-## Install and recovery
+The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, memory and initial phone storage are configurable. Existing device storage is never silently resized by changing a creation preset. The Linux desktop shares its container host kernel; a separate-kernel Fedora desktop is a future adapter.
 
-1. Open the client, choose a language and phone/computer resources, then install. A fresh install requires 12 GiB RAM minimum and 35 GiB free storage; 16 GiB RAM or more is recommended.
-2. The client downloads pinned tools into its own directory. Complete macOS developer-tool installation if requested, and review each Android license yourself. It does not collect a sudo password or automatically accept terms.
-3. The installer verifies downloads, source inputs and completed artifacts. Android, service dependencies, guest applications and desktop images have separate resumable checkpoints.
-4. After services and a real desktop frame are verified, choose Configure model. Model configuration, keys and bindings live in the workbench's single configuration center.
-5. Subsequent launches open a reachable deployment directly. If this exact client payload has a completed install checkpoint, it can resume the owned deployment and probe it before opening. Incomplete installation offers Retry; a saved checkpoint never proves that services are currently running.
+## Installation and recovery contract
 
-Closing during installation stops its child process group and retains completed work. Stop also interrupts a network peer that stalls before response headers or body data. A phase-completion event does not mark the whole installation ready; the installer process must exit successfully. An SDK license pending at interruption is presented again, never automatically accepted from a saved prompt.
+1. Choose language and device resources in the installed client. A fresh installation requires at least 12 GiB RAM and 35 GiB free storage; 16 GiB RAM is recommended.
+2. The complete distribution must carry its matched images, emulator, services and private tools. It must not ask ordinary users to install Rust, Java, Node, Python, Docker or download system images. Required operating-system permissions and distribution terms remain explicit.
+3. Stage verified code under `host/releases/<payload hash>`. Keep devices, database state, files and configuration under `host/user`; an update does not overwrite them.
+4. Create the devices and start owned services; verify real frames and service health before entering the existing Agent model form. Completed phases support retry but do not prove that the whole deployment is ready.
+5. On reopening, restore the selected runtime environment and start stopped owned services without restarting active work. A missing or changed runtime is a recoverable error, not permission to switch silently to another installation.
 
-Already running services are left intact. A registered but stopped owned launchd job uses kickstart without forced termination. Foreign jobs/containers and quarantined restored data are rejected before startup changes. This is not full installation rollback or an automatic updater.
+Stopping installation terminates its child process group and retains completed work. SDK license prompts are never automatically accepted from a saved pending prompt. Foreign jobs/containers and quarantined restored data are rejected before startup changes. This is not full upgrade rollback or a signed updater.
 
-## Data ownership
+## Isolation
 
-`host/releases/<payload hash>` contains immutable application source. `host/user/data` and `host/user/.env` retain devices, database state and configuration separately. Host tools and caches are private to the app. The remote workbench has no native installer IPC authority. An existing deployment may also be connected without adoption or copying its state.
+A complete macOS bundle selects its own [container-host component](container-host-runtime.md), even when another Docker engine is running. It uses a real short private Lima state directory bound to this installation's persistent user data; executable selection is restored after reopening. It never changes global Docker contexts. Contributor source mode can reuse an explicitly available engine, but must still check container ownership.
 
-A healthy existing Docker engine can be reused; otherwise the macOS adapter prepares an app-owned Lima/VZ container host with a scoped data mount. It does not change the global Docker context. Guest Clash applications are installed inside the devices; no proxy subscriptions are distributed. [Lima VZ](https://lima-vm.io/docs/config/vmtype/vz/), [Android acceleration](https://developer.android.com/studio/run/emulator-acceleration).
+Tools stay inside the installation, and backend/development dependencies belong inside its containers where practical. Native virtualization and input/vision helpers remain app-private platform binaries. Guest Clash applications control the guests' networks; the host defaults to direct networking. User proxy subscriptions are never bundled.
 
-## Evidence and open gates
+## Evidence limits
 
-Local native tests exercise actual child processes, durable checkpoints, failed-ready rejection, cancellation of stalled loopback HTTP and resource validation. Isolated Python tests cover source staging, user-data separation, retries, license prompts and service ownership. A real existing installation was resumed without changing any of its seven process IDs; its authenticated desktop observation returned a real frame. These checks do not constitute a clean-host installation or a physical-platform test.
-
-Windows/Linux managed hosts, Android privileged hosting, full install/upgrade rollback, signed updates and whole-system long-running recovery remain open in [release status](release-status.md).
+Android clean-base boot, root, frames/input and restart persistence have separate diagnostic evidence. Linux desktop, audio capture and local image import have separate evidence. The offline macOS engine has real VM/container startup evidence. None of these proves that the final installer has created both default-sized devices, configured a model and completed the whole workflow on a clean host. The remaining media/channel/browser dependencies and redistribution review must still be completed.
 
 ---
 
-# 研发引导与宿主运行时
+# 一体化宿主运行时
 
-Preview.2 为 macOS Apple Silicon 提供实验性受管安装：在客户端选语言与设备资源，准备工具、Android、服务和 Linux 桌面，再进入模型配置，不必手动部署服务。全新宿主创建双设备仍未实测。Windows、Linux、Android 安装包继续用于连接已有服务，没有冒充四个平台均已支持独立运行。
+目标是下载安装客户端后，直接配置手机、电脑和模型，不要求用户手动部署服务。**完整发行包尚未完成**；源码引导和连接客户端是独立的开发/远程使用路径。macOS仅支持M系列芯片，Windows、Linux和Android范围不变；Android独立宿主优先root/KVM。
 
-固定模板为 Android 15 ARM64 与 Debian 13/Openbox；初始 CPU、内存和手机存储可选，已有设备不会随预设变化被重置或偷偷扩容。首次需要至少 12 GiB RAM、35 GiB 可用空间，建议 16 GiB RAM。开发工具或 Android 许可需要用户完成确认。
+完整包应自带系统镜像、模拟器、服务与私有工具，不让普通用户安装SDK、编译器或Docker。能容器化的依赖放入本项目容器，原生虚拟化/输入/视觉程序放在应用自己的目录，不修改用户全局开发环境。完整macOS包优先自己的Lima/VZ引擎，不改全局Docker context；代码版本、持久user目录和短路径容器状态分别归属同一安装，重开恢复原环境。
 
-安装进度与资源分开持久化。阶段完成不等于安装完成；失败进程的 ready 事件不授权自动恢复。重开后，中断安装提供重试；已装完的相同源码版本先恢复所属服务并真实探测，再打开工作台。停止可中断下载和子进程组。正在执行的任务不重启，已停的受管进程可无强制终止地启动。用户设备、账号、聊天、文件和密钥不进入源码包；代码版本与用户数据分离。
-
-真实现有环境已验证七个服务进程 ID 不变、协议接口和电脑画面可用。这不等于全新安装、整机重启或四平台独立宿主验收；未完成项保持公开。
+首次安装需要至少12GiB内存、35GiB可用存储，推荐16GiB内存。设备资源在创建时设置，已有设备不会随预设变化被重建或扩容。关闭、中断、重试、缺失组件和恢复隔离均要明确反馈；单项测试或阶段完成不能代替完整初装验收。现有设备、聊天、账号和密钥不进入源码或运行组件。

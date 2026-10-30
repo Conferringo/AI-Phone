@@ -117,11 +117,12 @@ def start_missing(root):
     root=Path(root).resolve()
     if (root/'data/restore-quarantine.json').exists():
         raise ValueError('Restored state is quarantined; no services started')
+    from managed_engine import ensure_running
+    ensure_running(root)
     from prebuilt_services import launch_spec
     runner_spec=launch_spec(root,'runner');assistant_spec=launch_spec(root,'assistant')
     env={**runtime_env(root),'NEXT_TELEMETRY_DISABLED':'1'}
     # The private tool environment is inherited by the supervisor at spawn, never serialized wholesale.
-    env['PATH']=os.environ.get('PATH',env['PATH'])
     child_env={**os.environ,**env};started=[]
     def run(args):execute(args,cwd=root,env=child_env)
     def start(name,argv,extra_env=None):

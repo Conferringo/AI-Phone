@@ -10,6 +10,8 @@ def runtime_env(root):
     from installer_tools import selected_environment
     base_path=os.pathsep.join(dict.fromkeys([str(root/'.tools/bin'),'/opt/homebrew/bin','/usr/local/bin',*os.environ.get('PATH','/usr/bin:/bin:/usr/sbin:/sbin').split(os.pathsep)]))
     tools=selected_environment(root,base_path)
+    from managed_engine import environment as managed_environment
+    managed=managed_environment(root)
     profile = root / 'data/deployment/profile.json'
     value = json.loads(profile.read_text()) if profile.exists() else {}
     if not isinstance(value,dict): raise ValueError('Invalid private host profile; expected a JSON object')
@@ -35,8 +37,9 @@ def runtime_env(root):
     from container_images import image_environment
     return {
         **tools,
+        **managed,
         **image_environment(root),
-        'PATH': os.pathsep.join(filter(None,[os.environ.get('AI_PHONE_MANAGED_BIN'),tools.get('PATH',base_path)])),
+        'PATH': os.pathsep.join(filter(None,[managed.get('AI_PHONE_MANAGED_BIN',os.environ.get('AI_PHONE_MANAGED_BIN')),tools.get('PATH',base_path)])),
         'AI_PHONE_DEFAULT_LOCALE': value.get('locale', ''),
         'AI_PHONE_LOCAL_ENTRY': '1' if value.get('local_entry', legacy.get('AI_PHONE_LOCAL_ENTRY')=='1') else '0',
         'AI_PHONE_DATA_ROOT': str((root / 'data').resolve()),
