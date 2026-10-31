@@ -63,7 +63,7 @@ def build_other(target, package_only=False):
         source=native/'gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk'
         destination=dist/f'AI-Phone-{version}-android-arm64.apk'
         sign(source,destination)
-        record(destination,'android','arm64',inspect_apk(destination),signing='local-preview-key; not release identity')
+        manifest=record(destination,'android','arm64',inspect_apk(destination),signing='local-preview-key; not release identity')
     elif target=='windows':
         cross=platform.system()!='Windows'
         if cross and not package_only:
@@ -78,7 +78,7 @@ def build_other(target, package_only=False):
         source=native/f'target/x86_64-pc-windows-msvc/release/bundle/nsis/AI Phone_{version}_x64-setup.exe'
         destination=dist/f'AI-Phone-{version}-windows-x64-setup.exe'
         shutil.copy2(source,destination)
-        record(destination,'windows','x64',inspect_windows(destination))
+        manifest=record(destination,'windows','x64',inspect_windows(destination))
     else:
         if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
         arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
@@ -88,8 +88,8 @@ def build_other(target, package_only=False):
         source=native/f'target/release/bundle/deb/AI Phone_{version}_{arch}.deb'
         destination=dist/f'AI-Phone-{version}-linux-{arch}.deb'
         shutil.copy2(source,destination)
-        record(destination,'linux',arch,inspect_deb(destination))
-    print(json.dumps({'artifact':str(destination),'server_included':False,'remote_upload':False}))
+        manifest=record(destination,'linux',arch,inspect_deb(destination))
+    print(json.dumps({'artifact':str(destination),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 
 
 if __name__=='__main__':

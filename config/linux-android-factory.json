@@ -1,0 +1,31 @@
+{
+  "format": 1,
+  "host": "linux-x64",
+  "api": 35,
+  "abi": "x86_64",
+  "license_id": "android-sdk-license",
+  "archives": {
+    "emulator": {
+      "url": "https://dl.google.com/android/repository/emulator-linux_x64-16696583.zip",
+      "size_bytes": 354166476,
+      "vendor_sha1": "4296551c0fce5928710bf29bd1ce6d4888372051",
+      "sha256": "2c234e5d38a9ac2f962acd80d5b724e87373e9fc7b632b3f39f7c01f4ff81ea5",
+      "file": "emulator.zip"
+    },
+    "platform-tools": {
+      "url": "https://dl.google.com/android/repository/platform-tools_r37.0.1-linux.zip",
+      "size_bytes": 9054187,
+      "vendor_sha1": "477254aa5f903c15cf51001717bdf347fb6b53e0",
+      "sha256": "d230f13842f60f782a8645f9c813f8f845bf36089ea7289f28c48f17979313f1",
+      "file": "platform-tools.zip"
+    },
+    "system-image": {
+      "url": "https://dl.google.com/android/repository/sys-img/android/x86_64-35_r02.zip",
+      "size_bytes": 782404023,
+      "vendor_sha1": "2d857d170c0d1b827149565da34b3383e5306f7f",
+      "sha256": "6dd7de33e63ef105cf2fabea6badda1dbe7665c96d8908e5f6e1407e63ff4556",
+      "file": "system-image.zip"
+    }
+  },
+  "redistribution_review_complete": false
+}

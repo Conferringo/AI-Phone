@@ -18,6 +18,24 @@ def python_command(path, source):
 
 
 class NativeHostTests(unittest.TestCase):
+    def test_large_download_is_streamed_and_bad_replacement_preserves_cached_file(self):
+        import hashlib
+        from client_host import download
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'runtime';path.write_bytes(b'original')
+            expected=hashlib.sha256(b'complete').hexdigest()
+            with patch.object(Path,'read_bytes',side_effect=AssertionError('Unbounded dependency read')):
+                opener=unittest.mock.Mock()
+                opener.open.return_value=io.BytesIO(b'wrong')
+                with patch('client_host.urllib.request.build_opener',return_value=opener):
+                    with self.assertRaisesRegex(ValueError,'checksum'):download({'url':'https://example.test/runtime','sha256':expected},path)
+                with path.open('rb') as original:self.assertEqual(original.read(),b'original')
+                self.assertFalse(path.with_suffix('.partial').exists())
+                opener.open.return_value=io.BytesIO(b'complete')
+                with patch('client_host.urllib.request.build_opener',return_value=opener):
+                    self.assertEqual(download({'url':'https://example.test/runtime','sha256':expected},path),path)
+            self.assertEqual(path.read_bytes(),b'complete')
+
     def test_first_engine_creation_does_not_query_a_missing_instance(self):
         from client_host import activate_container_engine
         import os

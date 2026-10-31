@@ -14,6 +14,7 @@
 - [模型、消息渠道、语言 / Compatibility](compatibility.md)
 - [连续输入与任务打断 / Conversation steering](conversation-steering.md)
 - [Copilot 实时语音计划 / Continuous voice plan](copilot-voice.md)
+- [Complete Linux client factory](linux-client-factory.md)
 - [Notification-driven work / 通知工作流](notification-workflows.md)
 - [Self-directed exploration / 无指向探索](autonomous-exploration.md)
 - [设备内Clash与网络 / Networking](network.md)

@@ -53,6 +53,11 @@
       "sha256": "44e4ea682c694196fe231fb5c715823a95a6679a046d2ae1b206098d7367eabd"
     },
     {
+      "path": ".github/workflows/linux-full-client.yml",
+      "size": 2514,
+      "sha256": "b9e766abe226d6a9adf8a2546479a88a6a1937d8f1c47e22ec87513dfd3cc739"
+    },
+    {
       "path": ".github/workflows/managed-host.yml",
       "size": 1936,
       "sha256": "ed3f6e6a4b0a59078a27fa077940578b98e0fd31cc6edcf9ac6a091a123e7026"
@@ -2073,6 +2078,11 @@
       "sha256": "1adb34eecdaa84d029013f403be0df2ea9f0477006b3f2b5650dea8ade5a1991"
     },
     {
+      "path": "config/linux-android-factory.json",
+      "size": 1165,
+      "sha256": "ae18364e1c3d15d1323ac363bef2fdb5c7722ca8c7e301b5a18eacd4514ecd8b"
+    },
+    {
       "path": "config/linux-host-runtime.json",
       "size": 426,
       "sha256": "ed45f53ad1337ebf652447cac99716605e85d2a4214ba6fdff2223a82697da04"
@@ -2709,8 +2719,8 @@
     },
     {
       "path": "docs/public/index.md",
-      "size": 2390,
-      "sha256": "66c110093d0e8c73ac53a9683d5fd38b75f5746b4d37381b3004446ed7d39258"
+      "size": 2449,
+      "sha256": "9a2aa4a50dc703a9a27d64bcb9f638513106d0c24eed491112ac6f753e2daa31"
     },
     {
       "path": "docs/public/integrated-hosts.md",
@@ -3463,6 +3473,11 @@
       "sha256": "f5062c9a188d81dfe66b56db4182dcf9e4b17c0d9b0d311a8e20b3a1b075c443"
     },
     {
+      "path": "docs/public/linux-client-factory.md",
+      "size": 2614,
+      "sha256": "8fd15e51d9e4f30fc309c6ea3553be12c498844b3583b1db71478c326e832fb9"
+    },
+    {
       "path": "docs/public/managed-linux.md",
       "size": 4554,
       "sha256": "6c4affaf4b8b3dd3c861237d8b2614de5be71fec7b7e22e88fa9d379495e9806"
@@ -3644,8 +3659,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 2252,
-      "sha256": "c4bc534d3e5f7f508ff5ba13a509fcf99e2b50542180c62ddbb062c9bfb27b89"
+      "size": 2291,
+      "sha256": "aa55cde324721aba9b563c078530cde0b8fadfc05dc38882a4e71e7529619db2"
     },
     {
       "path": "infra/desktop/audio-service.py",
@@ -4079,8 +4094,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11790,
-      "sha256": "7466d45886505c2606db81e5f7049f91fab50d60580e8df9ee83307720089623"
+      "size": 11899,
+      "sha256": "7ebb6a4e58b550c7abba3e950afa82ce3d4fa1817a2a16a13063066b856d0423"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4164,13 +4179,13 @@
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 1385,
-      "sha256": "1386d4dc60f32f7a5fcad5bf092c5afeacb53ab4ab64d9b1569846b78ac420a7"
+      "size": 1434,
+      "sha256": "8cea4b558fe9afb8e3d958119c27fa21b82afd0710039705a706c8328b8cc704"
     },
     {
       "path": "scripts/client_host.py",
-      "size": 16566,
-      "sha256": "7e6e2369dfea2e8170ce349f8ac8951be2d962916fbfdd48c4f1224187b5a76e"
+      "size": 16531,
+      "sha256": "3239bd651bd6f7951e2d82ea5e74c44043ae857158d5032c17a903fd2ae757bb"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4341,6 +4356,11 @@
       "path": "scripts/linux-ocr/vision.sh",
       "size": 173,
       "sha256": "c93021ff09e7cb841b251c9506226bc353f68754ff4b8edb6a893cb1cf41dd16"
+    },
+    {
+      "path": "scripts/linux_client_factory.py",
+      "size": 10835,
+      "sha256": "ea838088e29f815d744f894de2d22d09bee28c93ca206efaf6436c94fe858e8e"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4644,13 +4664,13 @@
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 2278,
-      "sha256": "56e7a53fda89ba7abc93f13986517782c56598bb95543916d8e9b7ca4706230d"
+      "size": 2820,
+      "sha256": "2cbe369301ee48feebb5da246a3df9cb6c16282e81f5d415205f4292fadf2f5c"
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 9443,
-      "sha256": "b3e8810177c5de83fa5b5ddad5f08930a0e27381f916bb61daa0b4a2e8d9330d"
+      "size": 10732,
+      "sha256": "17c487a7c784869cf26fd321952975846df37757b15a0d82d61c9281574333d2"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -4731,6 +4751,11 @@
       "path": "scripts/test_lima_native.py",
       "size": 9074,
       "sha256": "10021e0a80913c5712d2c19830091f28e8ceb2d1cb465a1edc02e2392ef0863f"
+    },
+    {
+      "path": "scripts/test_linux_client_factory.py",
+      "size": 3286,
+      "sha256": "66e8532c719bbbd339a9499cd22a9f53680fe53bad1af5c7e16f7565c86f298a"
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",

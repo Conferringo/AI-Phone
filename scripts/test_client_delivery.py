@@ -23,8 +23,16 @@ class ClientDeliveryTests(unittest.TestCase):
         value=delivery_metadata(['web','native-services','js-services'],'macos-arm64')
         self.assertTrue(value['server_included']);self.assertFalse(value['complete_device_bundle'])
 
+    def test_complete_linux_resources_describe_contents_without_claiming_runtime_acceptance(self):
+        value=delivery_metadata(FULL,'linux-x64')
+        self.assertTrue(value['runtime_payload_complete']);self.assertTrue(value['complete_device_bundle'])
+        self.assertNotIn('runtime_acceptance',value)
+        for missing in FULL:
+            result=delivery_metadata([name for name in FULL if name!=missing],'linux-x64')
+            self.assertFalse(result['complete_device_bundle']);self.assertIn(missing,result['missing_runtime_components'])
+
     def test_component_presence_does_not_claim_an_unimplemented_host(self):
-        for host in ('linux-x64','linux-arm64','windows-x64','android-arm64'):
+        for host in ('linux-arm64','windows-x64','android-arm64'):
             value=delivery_metadata(FULL,host);self.assertTrue(value['server_included']);self.assertFalse(value['complete_device_bundle']);self.assertIn('host-runtime',value['missing_runtime_components'])
         for invalid in (None,'web',['unknown'],['web','web']):
             with self.assertRaises(ValueError):delivery_metadata(invalid,'macos-arm64')

@@ -1,0 +1,55 @@
+name: Complete Linux client factory
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: full-linux-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  linux-x64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Disposable factory toolchain
+        run: |
+          set -euo pipefail
+          # These paths belong to this disposable GitHub runner, never a user's host.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+          df -h .
+      - name: Maintainer Android application compiler
+        run: |
+          set -euo pipefail
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          # Existing hosted-runner licenses only; do not auto-accept new terms.
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' < /dev/null
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+      - name: Assemble all resources and compile the complete client
+        run: python3 scripts/linux_client_factory.py
+      - name: Retain text qualification receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: complete-linux-build-receipt
+          path: dist/linux-full-factory-report.json
+          if-no-files-found: error
+          retention-days: 14
+      # No installer, guest disk, signing key or private state is uploaded here.
+      # Binary distribution is a separate license/source and release-policy gate.

@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 import urllib.request
 import zipfile
+from artifact_io import digest
 
 
 def execute(args, **kwargs):
@@ -20,13 +21,13 @@ def execute(args, **kwargs):
 
 def download(record, destination):
     destination = Path(destination); destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if destination.is_file() and hashlib.sha256(destination.read_bytes()).hexdigest() == record['sha256']: return destination
+    if destination.is_file() and digest(destination) == record['sha256']: return destination
     temp = destination.with_suffix('.partial')
     try:
         # Bootstrap requests are direct. Guest applications manage their own proxy.
         with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(record['url'], timeout=60) as response, temp.open('wb') as target:
             shutil.copyfileobj(response, target)
-        if hashlib.sha256(temp.read_bytes()).hexdigest() != record['sha256']: raise ValueError('Downloaded dependency checksum mismatch')
+        if digest(temp) != record['sha256']: raise ValueError('Downloaded dependency checksum mismatch')
         temp.replace(destination)
     finally: temp.unlink(missing_ok=True)
     return destination

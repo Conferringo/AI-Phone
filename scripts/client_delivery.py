@@ -3,8 +3,8 @@ from client_host_entry import COMPONENT_MANIFESTS
 
 SIDECARS={'android-runtime','container-images','installer-tools'}
 SERVICES={'web','native-services','js-services'}
-MACOS_RUNTIME=set(COMPONENT_MANIFESTS)|SIDECARS
-HOST_RUNTIMES={'macos-arm64':MACOS_RUNTIME}
+FULL_RUNTIME=set(COMPONENT_MANIFESTS)|SIDECARS
+HOST_RUNTIMES={'macos-arm64':FULL_RUNTIME,'linux-x64':FULL_RUNTIME,'linux-amd64':FULL_RUNTIME}
 
 
 def delivery_metadata(components,host):
@@ -13,7 +13,7 @@ def delivery_metadata(components,host):
     selected=set(components)
     if len(selected)!=len(components) or selected-set(COMPONENT_MANIFESTS)-SIDECARS:
         raise ValueError('Unknown or duplicate client component')
-    required=HOST_RUNTIMES.get(host,MACOS_RUNTIME|{'host-runtime'})
+    required=HOST_RUNTIMES.get(host,FULL_RUNTIME|{'host-runtime'})
     missing=sorted(required-selected)
     server=SERVICES<=selected
     complete=not missing
