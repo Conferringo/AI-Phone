@@ -212,7 +212,7 @@ class WslExecutionPlanTests(unittest.TestCase):
             stack.enter_context(patch.dict(entry.os.environ,dict(entry.os.environ)))
             root=Path(folder);(root/'chat').write_text('existing')
             for name in ('client_host.verify_container_ownership','linux_host.private_token','linux_host.start_web_service','linux_services.start_unit'):
-                stack.enter_context(patch(name))
+                stack.enter_context(patch(name,return_value={}) if name=='client_host.verify_container_ownership' else patch(name))
             stack.enter_context(patch('linux_services.unit_state',return_value=None))
             stack.enter_context(patch('container_images.stage',return_value=SimpleNamespace()))
             stack.enter_context(patch('container_images.activate',return_value={}))
@@ -222,7 +222,7 @@ class WslExecutionPlanTests(unittest.TestCase):
             entry.start_backend(root,run)
             calls=[list(map(str,call.args[0])) for call in run.call_args_list]
             self.assertTrue(any('postgres' in argv and '--no-build' in argv and '--pull' in argv and 'never' in argv for argv in calls))
-            self.assertTrue(any('desktop' in argv and '--no-build' in argv and 'never' in argv for argv in calls))
+            self.assertFalse(any('compose.desktop.yaml' in argv or argv[:2]==['docker','start'] for argv in calls))
             self.assertFalse(any('emulator' in word or 'limactl' in word for argv in calls for word in argv))
             self.assertEqual((root/'chat').read_text(),'existing')
 

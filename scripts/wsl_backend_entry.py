@@ -87,7 +87,7 @@ def start_backend(root,run):
     from prebuilt_js import launch_spec as js_launch_spec
     from runtime_config import runtime_env
     require_owned_backend(root);bind_environment()
-    verify_container_ownership(root)
+    existing=verify_container_ownership(root)
     os.environ.update(activate(root,stage(BUNDLE/'images.payload')))
     os.environ.update(runtime_env(root))
     private_token(root,'assistant');private_token(root,'phone-runner');private_token(root,'channels')
@@ -103,8 +103,11 @@ def start_backend(root,run):
     start_web_service(root,web_environment,run,start)
     for name in ('channels','media'):
         spec=js_launch_spec(root,name);start_unit(root,name,spec['argv'],{**os.environ,**spec['environment']})
-    # Start the bundled desktop without rebuilding, pulling or touching the native Android guest.
-    run(['docker','compose','-f','compose.desktop.yaml','up','-d','--wait','--no-build','--pull','never','desktop'])
+    # First creation belongs to desktop/provision. Resume only the exact owned
+    # container; restarting the backend must not replace its resources or data.
+    desktop=existing.get('ai-phone-desktop')
+    if desktop and not desktop['running']:
+        run(['docker','start',desktop['id']])
 
 
 def initialize_locked(request):

@@ -124,7 +124,7 @@ class NativeHostTests(unittest.TestCase):
 
     def test_foreign_database_is_refused_before_compose_can_change_anything(self):
         root=Path('/owned')
-        def result(owner): return subprocess.CompletedProcess([],0,stdout=json.dumps({'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}))
+        def result(owner): return subprocess.CompletedProcess([],0,stdout=json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}}))
         verify_container_ownership(root,lambda _:result('/owned'))
         with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda _:result('/somebody-else'))
 

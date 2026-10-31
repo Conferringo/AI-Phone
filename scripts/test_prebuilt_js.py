@@ -144,7 +144,7 @@ class JavaScriptBuildTests(unittest.TestCase):
                     return result
                 with patch('prebuilt_js.build_manifest',side_effect=manifest_fixture),patch('bootstrap_bun.bun_path',return_value=root/'runtime/bin/bun'),patch('prebuilt_js.subprocess.check_output',side_effect=version_probe),patch('prebuilt_js.bundle',side_effect=compile_fixture),patch('prebuilt_js.shutil.disk_usage',return_value=SimpleNamespace(free=RESERVE+MAX_BYTES+MAX_SOURCE)):
                     if mode=='success':
-                        value=build(root);self.assertEqual(len(value['entries']),6);self.assertIn('backend-qualification',value['entries']);self.assertEqual(build(root),value)
+                        value=build(root);self.assertEqual(len(value['entries']),7);self.assertIn('backend-qualification',value['entries']);self.assertIn('device-network',value['entries']);self.assertEqual(build(root),value)
                     else:
                         with self.assertRaises((ValueError,subprocess.CalledProcessError)):build(root)
                         self.assertFalse((root/'.tools/js-services').exists())

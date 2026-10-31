@@ -62,7 +62,7 @@ class WslRuntimeBoundaryTests(unittest.TestCase):
         def capture(root,name,argv,environment):captured.append((name,list(map(str,argv)),dict(environment)))
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{},clear=False):
             root=Path(folder);(root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
-            with patch('client_host.verify_container_ownership'),patch('container_images.stage'),patch('container_images.activate',return_value={}),patch('linux_services.unit_state',return_value=None),patch('linux_services.start_unit',side_effect=capture),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_host.shutil.which',return_value='/fixture/node'):
+            with patch('client_host.verify_container_ownership',return_value={}),patch('container_images.stage'),patch('container_images.activate',return_value={}),patch('linux_services.unit_state',return_value=None),patch('linux_services.start_unit',side_effect=capture),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_host.shutil.which',return_value='/fixture/node'):
                 # runtime_env and web startup helper remain real: the regression covers their composition.
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             names=[name for name,_,_ in captured]
@@ -100,7 +100,7 @@ class WslOwnershipChainTests(unittest.TestCase):
                 docker_calls.append(list(map(str,argv)))
                 self.assertEqual(os.environ['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('DOCKER_CONTEXT',os.environ)
                 if argv[1]=='inspect':
-                    text=json.dumps({'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':str(root)})
+                    text=json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':str(root)}})
                 elif argv[1]=='info':text='amd64'
                 elif argv[1:3]==['image','inspect']:
                     image=next(row for row in manifest['images'].values() if row['ref']==argv[3])
@@ -123,7 +123,7 @@ class WslOwnershipChainTests(unittest.TestCase):
     def test_lima_owned_state_is_rejected_before_queries_or_environment_changes(self):
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{'DOCKER_CONTEXT':'original'}):
             root=Path(folder);record=root/'data/deployment/container-host.json';record.parent.mkdir(parents=True);record.write_bytes(b'preserved')
-            with patch('client_host.verify_container_ownership') as query:
+            with patch('client_host.verify_container_ownership',return_value={}) as query:
                 with self.assertRaisesRegex(ValueError,'Lima-owned'):entry.start_backend(root,lambda *_args:None)
             query.assert_not_called();self.assertEqual(record.read_bytes(),b'preserved')
             self.assertEqual(os.environ['DOCKER_CONTEXT'],'original')

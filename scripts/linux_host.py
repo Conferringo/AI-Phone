@@ -82,7 +82,8 @@ def start_guest(root, child_env, run, start):
     run(['sh',root/'scripts/android-create.sh'])
     created=start('emulator',['sh',str(root/'scripts/android-emulator.sh')])
     run(['sh',root/'scripts/android-ready.sh',*([] if created else ['--observe-only'])])
-    for package,script in [('dev.aiphone.input','android-install-input.sh'),('dev.aiphone.home','android-install-home.sh'),('com.github.metacubex.clash.meta','android-install-clash.sh')]:
+    run(['sh',root/'scripts/android-install-input.sh'])
+    for package,script in [('dev.aiphone.home','android-install-home.sh'),('com.github.metacubex.clash.meta','android-install-clash.sh')]:
         result=subprocess.run([root/'scripts/android-adb','shell','pm','path',package],capture_output=True,text=True,env=child_env)
         if result.returncode or not result.stdout.startswith('package:'):run(['sh',root/'scripts'/script])
 
