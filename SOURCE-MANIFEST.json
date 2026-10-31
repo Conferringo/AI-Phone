@@ -2654,8 +2654,8 @@
     },
     {
       "path": "docs/public/contributor-agents.md",
-      "size": 1675,
-      "sha256": "e20efda276f9d78229376587984e9696b1de7e915dec9d41e1e03b81c5c8d6df"
+      "size": 2334,
+      "sha256": "14d7209c9f380dfede2bcfa9b1df6300fc5e485baadaa11c017edacd4a32dbe6"
     },
     {
       "path": "docs/public/conversation-steering.md",
@@ -4258,9 +4258,14 @@
       "sha256": "28f8ee4910b1de57b4e60dc551802d42201540a8965537b437ad0538190e3ded"
     },
     {
+      "path": "scripts/client-device-setup.test.ts",
+      "size": 6421,
+      "sha256": "8db94378bab6b1774f7ac256d18523e090d552f07710448b4fe0d61f0cfa49b8"
+    },
+    {
       "path": "scripts/client-device-setup.ts",
-      "size": 4246,
-      "sha256": "e473665cc17bf12748bf14df092fbb20be0df60b8e1d4e96167b7b2a98b4059e"
+      "size": 4233,
+      "sha256": "c3c3be14bccf1803f42114d00bfb56a32ab730dad513218ce6845ec631530750"
     },
     {
       "path": "scripts/client-id.test.ts",
@@ -5189,8 +5194,8 @@
     },
     {
       "path": "AGENTS.md",
-      "size": 1675,
-      "sha256": "e20efda276f9d78229376587984e9696b1de7e915dec9d41e1e03b81c5c8d6df"
+      "size": 2334,
+      "sha256": "14d7209c9f380dfede2bcfa9b1df6300fc5e485baadaa11c017edacd4a32dbe6"
     }
   ]
 }

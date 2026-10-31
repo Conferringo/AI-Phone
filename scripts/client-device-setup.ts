@@ -21,7 +21,7 @@ const runnerToken=(await readFile(join(root,'data/phone-runner/token'),'utf8')).
 const phoneResponse=await fetch('http://127.0.0.1:17862/v1/observe',{method:'POST',proxy:null,headers:{authorization:'Bearer '+runnerToken,'content-type':'application/x-protobuf'},body:toBinary(DeviceRequestSchema,create(DeviceRequestSchema,{phoneId:'phone-local-01',ownerId:'local-user'})),signal:AbortSignal.timeout(30000)});
 if(!phoneResponse.ok)throw Error('Phone did not return an observation');
 const phone=fromBinary(DeviceObservationSchema,new Uint8Array(await phoneResponse.arrayBuffer()));
-if(!phone.png.length||!phone.width||!phone.height||!phone.rootIdentity.includes('uid=0'))throw Error('Phone frame/root control was not verified');
+if(!phone.png.length||!phone.width||!phone.height||phone.rootIdentity!=='0')throw Error('Phone frame/root control was not verified');
 let desktop=state.devices.find(device=>device.kind==='desktop');
 if(desktop?.runtimeState==='managed'){
  // Never recreate a device on retry. Read-only observation verifies the live runtime.
