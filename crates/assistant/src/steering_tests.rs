@@ -5,6 +5,9 @@ use axum::{body::Bytes, extract::State, http::HeaderMap};
 use sqlx::{Connection, postgres::PgConnectOptions, postgres::PgPoolOptions};
 use std::{future::Future, panic::AssertUnwindSafe, str::FromStr};
 
+#[path = "model_recovery_tests.rs"]
+mod model_recovery;
+
 async fn database_case<F, Fut>(test: F)
 where
     F: FnOnce(Shared) -> Fut,
@@ -49,7 +52,10 @@ where
     .catch_unwind()
     .await;
     db.close().await;
-    sqlx::query(&format!("DROP DATABASE {name} WITH (FORCE)"))
+    // SQLx has sent Terminate; the server owns the remaining shutdown. Normal
+    // DROP uses PostgreSQL's bounded CountOtherDBBackends wait and still fails
+    // for live clients. An immediate pg_stat_activity assertion races that wait.
+    sqlx::query(&format!("DROP DATABASE {name}"))
         .execute(&mut admin)
         .await
         .unwrap();
@@ -57,6 +63,43 @@ where
     if let Err(panic) = outcome {
         std::panic::resume_unwind(panic);
     }
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; ordinary DROP must reject a live fixture client"]
+async fn fixture_cleanup_waits_for_server_shutdown_without_force_or_privilege() {
+    database_case(|app| async move {
+        let mut held = app.db.acquire().await.unwrap();
+        let name: String = sqlx::query_scalar("SELECT current_database()")
+            .fetch_one(&mut *held)
+            .await
+            .unwrap();
+        assert!(name.starts_with("aiphone_steering_regression_"));
+        assert!(name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+        let url = std::env::var("AI_PHONE_TEST_PERSISTENCE_DATABASE_URL").unwrap();
+        let mut admin = sqlx::PgConnection::connect(&url).await.unwrap();
+        let error = sqlx::query(&format!("DROP DATABASE {name}"))
+            .execute(&mut admin)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.as_database_error().unwrap().code().as_deref(),
+            Some("55006"),
+            "a live client must not be terminated or ignored"
+        );
+        assert_eq!(
+            sqlx::query_scalar::<_, i32>("SELECT 1")
+                .fetch_one(&mut *held)
+                .await
+                .unwrap(),
+            1,
+            "ordinary DROP must leave the client alive"
+        );
+        admin.close().await.unwrap();
+        drop(held);
+        // database_case now closes the pool and requires ordinary DROP to succeed.
+    })
+    .await;
 }
 
 fn request(text: &str) -> wire::ChatSendRequest {
@@ -759,7 +802,7 @@ async fn successive_inputs_interrupt_a_slow_model_without_canceling_the_run() {
             let next = request(text);
             let (model, admitted_at) = tokio::time::timeout(Duration::from_secs(4), async {
                 tokio::join!(
-                    respond_to_current_input(&app, run.id, &run.context, &cancel, false),
+                    respond_to_current_input(&app, run.id, &run.context, &cancel, false, 0),
                     async {
                         let body = received
                             .recv()

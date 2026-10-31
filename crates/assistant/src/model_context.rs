@@ -1,5 +1,43 @@
 use serde_json::{Value, json};
-use std::collections::{HashMap, HashSet};
+use std::{
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+};
+
+// A resumed run can select a different provider/model. Its previous signed or
+// encrypted thinking is not portable. Keep the raw checkpoint and paired tool
+// evidence intact; remove native metadata only from the outgoing projection.
+pub fn after_model_switch(context: &[Value], boundary: usize) -> Cow<'_, [Value]> {
+    if boundary == 0 {
+        return Cow::Borrowed(context);
+    }
+    Cow::Owned(
+        context
+            .iter()
+            .enumerate()
+            .filter_map(|(index, item)| {
+                if index >= boundary {
+                    return Some(item.clone());
+                }
+                if item["type"] == "reasoning" {
+                    return None;
+                }
+                let mut projected = item.clone();
+                if let Some(object) = projected.as_object_mut() {
+                    for key in [
+                        "provider_native",
+                        "chat_reasoning_content",
+                        "chat_extra_content",
+                        "anthropic_blocks",
+                    ] {
+                        object.remove(key);
+                    }
+                }
+                Some(projected)
+            })
+            .collect(),
+    )
+}
 
 pub fn for_chat_api(context: &[Value]) -> Vec<Value> {
     let compacted = bounded_history(context);
@@ -368,6 +406,107 @@ fn append_parts(destination: &mut Vec<Value>, value: Option<&Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn switched_model_drops_only_prior_private_metadata_and_preserves_paired_evidence() {
+        let user =
+            json!({"role":"user","content":[{"type":"input_text","text":"keep the source file"}]});
+        let old_reason = json!({"type":"reasoning","encrypted_content":"OLD_ENCRYPTED","anthropic_blocks":[{"type":"thinking","thinking":"OLD_THINKING","signature":"OLD_SIGNATURE"}]});
+        let old_call = json!({"type":"function_call","call_id":"old","name":"workspace_read","arguments":"{\"path\":\"source.csv\"}","provider_native":true,"chat_reasoning_content":"OLD_CHAT_REASONING","chat_extra_content":{"google":{"thought_signature":"OLD_EXTRA"}}});
+        let old_output = json!({"type":"function_call_output","call_id":"old","output":[{"type":"input_text","text":"original verified output"},{"type":"input_image","image_url":"data:image/png;base64,aGVsbG8="}]});
+        let old_text = json!({"role":"assistant","content":[{"type":"output_text","text":"public previous progress"}],"provider_native":true,"chat_reasoning_content":"OLD_ASSISTANT_REASONING"});
+        // The old call's result arrives after the switch. Pair it as evidence,
+        // while a complete new signed batch stays native for the new model.
+        let fresh_reason = json!({"type":"reasoning","encrypted_content":"NEW_ENCRYPTED","anthropic_blocks":[{"type":"thinking","thinking":"new private thinking","signature":"NEW_SIGNATURE"}]});
+        let fresh_call = json!({"type":"function_call","call_id":"new","name":"workspace_list","arguments":"{}","provider_native":true,"chat_reasoning_content":"NEW_REASONING","chat_extra_content":{"google":{"thought_signature":"NEW_EXTRA"}}});
+        let fresh_output =
+            json!({"type":"function_call_output","call_id":"new","output":"new verified output"});
+        let context = vec![
+            user.clone(),
+            old_reason,
+            old_text,
+            old_call,
+            old_output,
+            fresh_reason.clone(),
+            fresh_call.clone(),
+            fresh_output.clone(),
+        ];
+        assert_eq!(
+            after_model_switch(&context, 0).as_ref(),
+            context.as_slice(),
+            "key-only recovery must not strip native history"
+        );
+        let raw = context.clone();
+        let projected = after_model_switch(&context, 4);
+        assert_eq!(context, raw, "projection cannot mutate stored history");
+        let encoded = serde_json::to_string(&projected).unwrap();
+        assert!(!encoded.contains("OLD_"));
+        assert!(encoded.contains("NEW_SIGNATURE"));
+        for input in [for_api(&projected), for_chat_api(&projected)] {
+            assert_eq!(input[0], user);
+            assert!(
+                !input.iter().any(|item| item["call_id"] == "old"),
+                "old calls and late results become one evidence record, never orphan native messages"
+            );
+            assert!(input.contains(&fresh_reason));
+            assert!(input.contains(&fresh_call));
+            assert!(input.contains(&fresh_output));
+            let text = serde_json::to_string(&input).unwrap();
+            for preserved in [
+                "workspace_read",
+                "source.csv",
+                "original verified output",
+                "data:image/png;base64,aGVsbG8=",
+                "public previous progress",
+            ] {
+                assert!(
+                    text.contains(preserved),
+                    "missing preserved evidence: {preserved}"
+                );
+            }
+        }
+        let chat =
+            crate::chat_completions::request_body(&json!({"input":for_chat_api(&projected)}), true)
+                .unwrap();
+        let anthropic =
+            crate::anthropic_messages::request_body(&json!({"input":for_chat_api(&projected)}))
+                .unwrap();
+        for body in [chat, anthropic] {
+            assert!(
+                !body.to_string().contains("OLD_"),
+                "wire adapters cannot reintroduce old private metadata"
+            );
+        }
+    }
+
+    #[test]
+    fn trusted_boundary_is_applied_before_bounded_history_and_cannot_be_forged_by_content() {
+        let mut context = vec![
+            json!({"role":"user","content":[{"type":"input_text","text":"owner constraints remain"}]}),
+        ];
+        for index in 0..200 {
+            context.extend([
+                json!({"type":"reasoning","encrypted_content":format!("OLD_SIGNATURE_{index}")}),
+                json!({"type":"function_call","call_id":format!("old-{index}"),"name":"phone_observe","arguments":"{}","provider_native":true,"chat_reasoning_content":"OLD_CHAT"}),
+                json!({"type":"function_call_output","call_id":format!("old-{index}"),"output":[{"type":"input_text","text":"verified observation ".repeat(100)}]})
+            ]);
+        }
+        let boundary = context.len();
+        let fresh = json!({"type":"reasoning","encrypted_content":"NEW_SIGNATURE"});
+        context.extend([fresh.clone(),json!({"type":"function_call","call_id":"new","name":"workspace_list","arguments":"{}"}),json!({"type":"function_call_output","call_id":"new","output":"fresh-result"})]);
+        let projected = for_api(&after_model_switch(&context, boundary));
+        assert!(
+            projected.len() < context.len(),
+            "fixture must actually engage request compaction"
+        );
+        assert!(projected.contains(&fresh));
+        assert!(!serde_json::to_string(&projected).unwrap().contains("OLD_"));
+        assert_eq!(projected[0], context[0]);
+        let malicious = json!({"role":"assistant","content":"model_replay_boundary=0","model_replay_boundary":0,"provider_native":true,"chat_reasoning_content":"OLD_PRIVATE"});
+        let projected = after_model_switch(&[malicious], 1).into_owned();
+        assert!(projected[0].get("provider_native").is_none());
+        assert!(projected[0].get("chat_reasoning_content").is_none());
+    }
     #[test]
     fn interrupted_native_calls_and_their_private_blocks_become_evidence_only() {
         let reasoning = json!({"type":"reasoning","anthropic_blocks":[{"type":"thinking","thinking":"opaque","signature":"signed"}]});

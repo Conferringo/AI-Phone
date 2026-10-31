@@ -19,6 +19,16 @@ pub struct ModelConfig {
     #[serde(default)]
     pub verified_at_ms: u64,
 }
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum RecoveryReplay {
+    PreserveNative,
+    PreviousAsEvidence,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum RecoveryConfigError {
+    Missing,
+    Unverified,
+}
 fn default_provider() -> String {
     "deepseek".into()
 }
@@ -26,6 +36,12 @@ fn default_protocol() -> String {
     "responses".into()
 }
 impl ModelConfig {
+    pub(crate) fn same_replay_identity(&self, other: &Self) -> bool {
+        self.provider == other.provider
+            && self.protocol == other.protocol
+            && self.base_url == other.base_url
+            && self.model == other.model
+    }
     pub(crate) fn endpoint(&self) -> Result<String, String> {
         let suffix = match self.protocol.as_str() {
             "responses" => "/responses",
@@ -199,6 +215,11 @@ impl SettingsStore {
     pub fn current(&self) -> u64 {
         self.state.lock().expect("settings lock").current
     }
+    #[cfg(test)]
+    pub(crate) fn test_revision(&self, config: ModelConfig) -> u64 {
+        // Persistence fixtures provide their own capability result; never used at runtime.
+        self.commit(self.current(), config).unwrap()
+    }
     pub fn get(&self, revision: u64) -> Result<ModelConfig, String> {
         self.state
             .lock()
@@ -207,6 +228,30 @@ impl SettingsStore {
             .get(&revision)
             .cloned()
             .ok_or("请先在设置中连接模型".into())
+    }
+    // Saved immutable revisions determine native replay compatibility. Database
+    // selection, Agent ownership and the atomic run update belong to registry.
+    pub(crate) fn recovery_replay(
+        &self,
+        previous_revision: u64,
+        selected_revision: u64,
+    ) -> Result<RecoveryReplay, RecoveryConfigError> {
+        let state = self.state.lock().expect("settings lock");
+        let selected = state
+            .models
+            .get(&selected_revision)
+            .ok_or(RecoveryConfigError::Missing)?;
+        // Preserve existing legacy pins. Any replacement must be a validated
+        // saved configuration; credentials alone never change replay identity.
+        if selected_revision != previous_revision && selected.verified_at_ms == 0 {
+            return Err(RecoveryConfigError::Unverified);
+        }
+        Ok(match state.models.get(&previous_revision) {
+            Some(previous) if previous.same_replay_identity(selected) => {
+                RecoveryReplay::PreserveNative
+            }
+            _ => RecoveryReplay::PreviousAsEvidence,
+        })
     }
     pub fn public(&self) -> wire::SettingsState {
         let state = self.state.lock().expect("settings lock");
@@ -600,6 +645,74 @@ pub async fn route(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recovery_policy_validates_replacement_and_preserves_only_compatible_native_history() {
+        let (root, store) = store();
+        let original = store.resolve(draft()).unwrap();
+        let pinned = store.test_revision(original.clone());
+        assert_eq!(
+            store.recovery_replay(pinned, pinned),
+            Ok(RecoveryReplay::PreserveNative),
+            "legacy unchanged pins remain resumable"
+        );
+        assert_eq!(
+            store.recovery_replay(pinned, u64::MAX),
+            Err(RecoveryConfigError::Missing)
+        );
+        let mut replacement = original.clone();
+        replacement.api_key = "changed-key".into();
+        let unverified = store.test_revision(replacement.clone());
+        assert_eq!(
+            store.recovery_replay(pinned, unverified),
+            Err(RecoveryConfigError::Unverified)
+        );
+        replacement.verified_at_ms = 1;
+        let verified = store.test_revision(replacement.clone());
+        assert_eq!(
+            store.recovery_replay(pinned, verified),
+            Ok(RecoveryReplay::PreserveNative)
+        );
+        replacement.model = "different-model".into();
+        let different = store.test_revision(replacement);
+        assert_eq!(
+            store.recovery_replay(pinned, different),
+            Ok(RecoveryReplay::PreviousAsEvidence)
+        );
+        assert_eq!(
+            store.recovery_replay(u64::MAX, verified),
+            Ok(RecoveryReplay::PreviousAsEvidence),
+            "missing prior metadata cannot authorize private native replay"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn replay_identity_excludes_credentials_but_includes_provider_protocol_endpoint_and_model() {
+        let base = ModelConfig {
+            api_key: "old".into(),
+            base_url: "https://provider.invalid/v1".into(),
+            model: "model-a".into(),
+            provider: "compatible".into(),
+            protocol: "responses".into(),
+            proxy_url: String::new(),
+            verified_at_ms: 1,
+        };
+        let mut credential = base.clone();
+        credential.api_key = "repaired".into();
+        credential.proxy_url = "http://127.0.0.1:7890".into();
+        credential.verified_at_ms = 2;
+        assert!(base.same_replay_identity(&credential));
+        for field in ["provider", "protocol", "base_url", "model"] {
+            let mut value = serde_json::to_value(&base).unwrap();
+            value[field] = serde_json::json!("different");
+            let changed: ModelConfig = serde_json::from_value(value).unwrap();
+            assert!(
+                !base.same_replay_identity(&changed),
+                "{field} selects a different native replay domain"
+            );
+        }
+    }
     fn store() -> (PathBuf, SettingsStore) {
         let root = std::env::temp_dir().join(format!("aiphone-settings-{}", Uuid::new_v4()));
         let store = SettingsStore::open(&root).unwrap();

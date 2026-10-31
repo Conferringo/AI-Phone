@@ -2352,6 +2352,7 @@ async fn execute(
             &context,
             cancel,
             verification_attempts(&context) > 0 && !has_current_observation(&context),
+            state.model_replay_boundary,
         )
         .await
         {
@@ -2630,6 +2631,7 @@ async fn respond_to_current_input(
     context: &[Value],
     cancel: &CancellationToken,
     require_observation: bool,
+    model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
     input_quiet(app, run, cancel).await?;
     if has_steering(app, run).await? {
@@ -2639,7 +2641,7 @@ async fn respond_to_current_input(
         biased;
         _=cancel.cancelled()=>return Err("canceled".into()),
         changed=wait_for_steering(app,run)=>{changed?;return Ok(None);},
-        result=respond(app,run,context,cancel,require_observation)=>result,
+        result=respond(app,run,context,cancel,require_observation,model_replay_boundary)=>result,
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.
     if has_steering(app, run).await? {
@@ -2654,13 +2656,15 @@ async fn respond(
     context: &[Value],
     cancel: &CancellationToken,
     require_observation: bool,
+    model_replay_boundary: usize,
 ) -> Result<Vec<Value>, String> {
     let config = crate::settings::for_run(app, run).await?;
+    let projected = crate::model_context::after_model_switch(context, model_replay_boundary);
     let input = if config.protocol == "chat-completions" || config.protocol == "anthropic-messages"
     {
-        crate::model_context::for_chat_api(context)
+        crate::model_context::for_chat_api(&projected)
     } else {
-        crate::model_context::for_api(context)
+        crate::model_context::for_api(&projected)
     };
     let mut body = json!({"input":input,"tools":tools(),"parallel_tool_calls":false,"reasoning":{"effort":if require_observation {"none"} else if phone_task(context)||action_task(context) {"high"} else {"low"}},"max_output_tokens":8192});
     if require_observation {

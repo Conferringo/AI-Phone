@@ -15,6 +15,7 @@ pub struct LoopState {
     pub stalls: u32,
     pub observation_recoveries: u32,
     pub model_retries: u32,
+    pub model_replay_boundary: usize,
     pub recent_results: Vec<String>,
     pub last_issue: String,
     pub plan: Option<Value>,

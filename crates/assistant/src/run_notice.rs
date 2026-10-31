@@ -2,7 +2,8 @@
 //! Legacy records are projected, never rewritten or deleted.
 use crate::wire::RunNoticeKind;
 use serde_json::Value;
-use sqlx::{PgPool, Row};
+use sqlx::{PgPool, Postgres, Row, Transaction};
+use uuid::Uuid;
 
 pub fn kind(status: &str, error: &str, state: &Value) -> RunNoticeKind {
     if error.is_empty() {
@@ -75,6 +76,31 @@ pub fn event_kind(kind: &str, title: &str, status: &str) -> String {
     } else {
         kind.into()
     }
+}
+
+// Recovery clears retry counters and the active error. Preserve only notices
+// already identified by exact persisted provenance so legacy assistant rows
+// cannot become dialogue again. The original rows and tool ledger are unchanged.
+pub async fn preserve_before_resume(
+    tx: &mut Transaction<'_, Postgres>,
+    run: Uuid,
+    error: &str,
+    state: &Value,
+) -> Result<(), sqlx::Error> {
+    let notice = kind("paused", error, state);
+    let rows = sqlx::query("SELECT id,text FROM messages WHERE role='assistant' AND (run_id=$1 OR id=(SELECT assistant_message_id FROM runs WHERE id=$1))")
+        .bind(run).fetch_all(&mut **tx).await?;
+    for row in rows {
+        let text: &str = row.get("text");
+        let (_, system_notice) =
+            message("assistant", text, error, notice, legacy_pause(text, state));
+        if system_notice.is_empty() {
+            continue;
+        }
+        sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) SELECT $1,$2,$3,'system_error','系统通知',$4,'failed',now() WHERE NOT EXISTS(SELECT 1 FROM harness_events WHERE message_id=$3 AND kind='system_error' AND content=$4 AND status='failed')")
+            .bind(Uuid::now_v7()).bind(run).bind(row.get::<Uuid,_>("id")).bind(system_notice).execute(&mut **tx).await?;
+    }
+    Ok(())
 }
 
 pub async fn background_error(
