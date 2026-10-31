@@ -5,11 +5,45 @@ import tempfile
 import unittest
 import zipfile
 from unittest.mock import patch
+from artifact_io import digest
 
 import linux_client_factory as factory
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    def test_pinned_factory_download_rejects_bad_size_and_invalid_destination_name(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);source=root/'input';source.write_bytes(b'verified')
+            pin={'url':source.as_uri(),'sha256':digest(source),'size_bytes':8}
+            destination=factory.fetch(root/'cache','input',pin)
+            self.assertEqual(destination.read_bytes(),b'verified')
+            with self.assertRaisesRegex(ValueError,'size'):factory.fetch(root/'cache','input',{**pin,'size_bytes':9})
+            with self.assertRaisesRegex(ValueError,'name'):factory.fetch(root/'cache','../outside',pin)
+            self.assertFalse((root/'outside').exists())
+
+    def test_factory_refuses_old_or_classic_docker_before_building_any_image(self):
+        modern={'Client':{'ApiVersion':'1.52'},'Server':{'ApiVersion':'1.52'}}
+        store={'DriverStatus':[['driver-type','io.containerd.snapshotter.v1']]}
+        def probe(version=modern,info=store):
+            import json
+            return patch('linux_client_factory.subprocess.check_output',side_effect=[json.dumps(version),json.dumps(info)])
+        with probe():factory.check_docker()
+        for version,info in [({**modern,'Client':{'ApiVersion':'1.48'}},store),({**modern,'Server':{'ApiVersion':'1.48'}},store),(modern,{'DriverStatus':[['Backing Filesystem','extfs']]})]:
+            with probe(version,info),self.assertRaisesRegex(ValueError,'Docker'):factory.check_docker()
+
+    def test_sdk_directory_metadata_and_exact_file_budget(self):
+        entry=zipfile.ZipInfo('emulator/');entry.external_attr=0o040755<<16
+        self.assertEqual(factory.sdk_name(entry,'emulator'),'emulator')
+        entry.filename='emulator/bad-directory'
+        with self.assertRaisesRegex(ValueError,'directory'):factory.sdk_name(entry,'emulator')
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'input.zip'
+            with zipfile.ZipFile(path,'w') as output:output.writestr('emulator/bin',b'123')
+            with zipfile.ZipFile(path) as source,patch('linux_client_factory.SDK_MAX_FILES',1),patch('linux_client_factory.SDK_MAX_BYTES',3):
+                self.assertEqual(len(list(factory.sdk_members(source,'emulator'))),1)
+            with zipfile.ZipFile(path) as source,patch('linux_client_factory.SDK_MAX_FILES',0):
+                with self.assertRaisesRegex(ValueError,'budget'):list(factory.sdk_members(source,'emulator'))
+
     def test_runtime_archives_preserve_modes_and_reject_cross_component_paths(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);source=root/'tools.zip'
@@ -46,6 +80,8 @@ class LinuxClientFactoryTests(unittest.TestCase):
     def test_image_builds_use_unique_factory_references_and_preserve_existing_images(self):
         namespace=factory.image_namespace('a'*64,'b'*12)
         self.assertTrue(namespace.startswith('ai-phone-factory/'))
+        for source,nonce in [('a'*63,'b'*12),('g'*64,'b'*12),('a'*64,'b'*11)]:
+            with self.assertRaisesRegex(ValueError,'identity'):factory.image_namespace(source,nonce)
         with patch('linux_client_factory.docker_image',return_value={'Id':'sha256:'+'c'*64}),patch('linux_client_factory.run') as run:
             with self.assertRaisesRegex(ValueError,'exists'):factory.build_image(Path('/source'),'workspace',namespace+'/workspace:build')
             run.assert_not_called()

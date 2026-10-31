@@ -19,7 +19,7 @@ The workflow retains only a text qualification receipt. Installer publication re
 
 ## Local maintainer build
 
-Use a fresh Linux x64 checkout with Docker Buildx, Rust 1.96.0, the locked Bun dependencies, Java 17, Android build-tools 35 and the native Tauri compiler libraries. Keep at least 35 GiB free before starting.
+Use a fresh Linux x64 checkout with Docker Buildx with client/engine API 1.49 or newer and the containerd image store, Rust 1.96.0, the locked Bun dependencies, Java 17, Android build-tools 35 and the native Tauri compiler libraries. Keep at least 35 GiB free before starting.
 
 ```sh
 ./scripts/bootstrap.sh

@@ -33,15 +33,21 @@ def fetch(folder,name,pin):
     return target
 
 
+def sdk_name(entry,component):
+    name=canonical_name(entry.filename.rstrip('/')).as_posix()
+    if name!=component and not name.startswith(component+'/'):raise ValueError('Invalid SDK archive component')
+    kind=entry.external_attr>>16&0o170000
+    if kind not in (0,0o100000,0o040000):raise ValueError('Invalid SDK archive member type')
+    if kind==0o040000 and not entry.is_dir():raise ValueError('Invalid SDK archive directory')
+    return name
+
+
 def sdk_members(source,component):
     total=0;seen=set()
     for number,entry in enumerate(source.infolist()):
-        name=canonical_name(entry.filename.rstrip('/')).as_posix();total+=entry.file_size
+        name=sdk_name(entry,component);total+=entry.file_size
         if number>=SDK_MAX_FILES or total>SDK_MAX_BYTES:raise ValueError('SDK archive budget exceeded')
-        kind=entry.external_attr>>16&0o170000
-        if (name!=component and not name.startswith(component+'/')) or name in seen or kind not in (0,0o100000,0o040000):
-            raise ValueError('Invalid SDK archive member')
-        if kind==0o040000 and not entry.is_dir():raise ValueError('Invalid SDK archive directory')
+        if name in seen:raise ValueError('Invalid duplicate SDK archive member')
         seen.add(name)
         yield name,entry
 
@@ -76,6 +82,17 @@ def image_namespace(source,nonce):
 def docker_image(reference):
     value=subprocess.run(['docker','image','inspect',reference],capture_output=True,text=True)
     return json.loads(value.stdout)[0] if value.returncode==0 else None
+
+
+def check_docker():
+    version=json.loads(subprocess.check_output(['docker','version','--format','{{json .}}'],text=True))
+    for role in ('Client','Server'):
+        revision=str(version[role]['ApiVersion'])
+        if re.fullmatch(r'\d+\.\d+',revision) is None or tuple(map(int,revision.split('.')))<(1,49):
+            raise ValueError('Docker factory requires client and engine API 1.49 or newer')
+    info=json.loads(subprocess.check_output(['docker','info','--format','{{json .}}'],text=True))
+    if dict(info.get('DriverStatus') or []).get('driver-type')!='io.containerd.snapshotter.v1':
+        raise ValueError('Docker factory requires the platform-aware containerd image store')
 
 
 def build_image(root,role,reference,*,workspace=None,clash=None):
@@ -183,6 +200,7 @@ def build(root):
     root=Path(root).resolve()
     if host_key()!='linux-x64':raise ValueError('Complete Linux factory requires a Linux x64 host')
     if shutil.disk_usage(root).free<35*1024**3:raise ValueError('Complete Linux factory requires 35 GiB free workspace')
+    check_docker()
     from check_source import check
     check(root);cache=root/'.tools/complete-linux'
     if cache.exists():raise ValueError('Use a fresh factory checkout; existing outputs were preserved')

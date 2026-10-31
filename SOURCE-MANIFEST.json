@@ -54,8 +54,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 2514,
-      "sha256": "b9e766abe226d6a9adf8a2546479a88a6a1937d8f1c47e22ec87513dfd3cc739"
+      "size": 3342,
+      "sha256": "a9ab5902540389112a4ae7222c0c6d13630a48525c0fd853601e152ba8c230d6"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -3474,8 +3474,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 2614,
-      "sha256": "8fd15e51d9e4f30fc309c6ea3553be12c498844b3583b1db71478c326e832fb9"
+      "size": 2682,
+      "sha256": "ce5ba7ce3593b36c4426160be454b6d7ac869c1313d767a8ccce1360165a63c2"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4359,8 +4359,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 10835,
-      "sha256": "ea838088e29f815d744f894de2d22d09bee28c93ca206efaf6436c94fe858e8e"
+      "size": 11729,
+      "sha256": "db1257f36ee5e9b635053a3cf4546543ddc1652816306ca5190157b129b7fc2b"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4754,8 +4754,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 3286,
-      "sha256": "66e8532c719bbbd339a9499cd22a9f53680fe53bad1af5c7e16f7565c86f298a"
+      "size": 5967,
+      "sha256": "7e573de5516571dca34d44ee1dc2bbf6c97a40b6c40bbbb1c145f149464d361c"
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
