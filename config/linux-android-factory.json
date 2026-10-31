@@ -6,11 +6,13 @@
   "license_id": "android-sdk-license",
   "archives": {
     "emulator": {
-      "url": "https://dl.google.com/android/repository/emulator-linux_x64-16696583.zip",
-      "size_bytes": 354166476,
-      "vendor_sha1": "4296551c0fce5928710bf29bd1ce6d4888372051",
-      "sha256": "2c234e5d38a9ac2f962acd80d5b724e87373e9fc7b632b3f39f7c01f4ff81ea5",
-      "file": "emulator.zip"
+      "url": "https://dl.google.com/android/repository/emulator-linux_x64-16740729.zip",
+      "size_bytes": 349658551,
+      "vendor_sha1": "f41f9e31eb5ca64926603c03265c50bbc0ff4172",
+      "file": "emulator.zip",
+      "sha256": "cbc7c3cfb83220b8a0f9c513fdab557712e74d339ec19ddffa43f23350ae9bdd",
+      "version": "37.2.13",
+      "channel": "stable"
     },
     "platform-tools": {
       "url": "https://dl.google.com/android/repository/platform-tools_r37.0.1-linux.zip",

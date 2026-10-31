@@ -183,9 +183,12 @@ def prepare_images(root,cache,source):
     output=cache/'images.payload';return output,build(sources,output)
 
 
+def run_checks(root,**options):
+    return run([Path(root)/'scripts/bun','run','check'],root,**options)
+
+
 def compile_client(root,android,images,tools,ocr):
-    from bootstrap_bun import bun_path
-    run([bun_path(root),'run','check'],root)
+    run_checks(root)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','linux','--with-web-runtime','--with-service-runtime','--with-phone-apps',
          '--with-container-host','--with-js-services','--with-guest-apps','--android-runtime',android,'--images-runtime',images,'--installer-tools',tools,'--linux-ocr',ocr],root)
     from prepare_client_host import payload_components

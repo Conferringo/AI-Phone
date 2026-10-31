@@ -1,5 +1,6 @@
 """Full Linux factory contracts reject incomplete plans and unsafe SDK archives."""
 import os
+import shutil
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,6 +12,18 @@ import linux_client_factory as factory
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    @unittest.skipUnless(os.name=='posix','Complete Linux factory uses its POSIX Bun entry')
+    def test_nested_checks_find_project_bun_without_a_global_install(self):
+        with tempfile.TemporaryDirectory(prefix='factory path ') as temporary:
+            root=Path(temporary);(root/'scripts').mkdir();(root/'.tools/bin').mkdir(parents=True)
+            shutil.copyfile(Path(__file__).with_name('bun'),root/'scripts/bun');(root/'scripts/bun').chmod(0o755)
+            program=root/'.tools/bin/bun'
+            program.write_text('#!/bin/sh\nif [ "$1" = run ]; then exec bun --version; fi\necho fixture-nested-bun\n')
+            program.chmod(0o755)
+            with patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=False):
+                result=factory.run_checks(root,capture_output=True,text=True)
+            self.assertEqual(result.stdout.strip(),'fixture-nested-bun')
+
     def test_pinned_factory_download_rejects_bad_size_and_invalid_destination_name(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);source=root/'input';source.write_bytes(b'verified')

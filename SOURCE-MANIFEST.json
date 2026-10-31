@@ -2079,8 +2079,8 @@
     },
     {
       "path": "config/linux-android-factory.json",
-      "size": 1165,
-      "sha256": "ae18364e1c3d15d1323ac363bef2fdb5c7722ca8c7e301b5a18eacd4514ecd8b"
+      "size": 1220,
+      "sha256": "e476741eb08b4a33314a5255f669ab04f14a8e702f68f651cbd0cabad5d2ac1b"
     },
     {
       "path": "config/linux-host-runtime.json",
@@ -3474,8 +3474,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 2682,
-      "sha256": "ce5ba7ce3593b36c4426160be454b6d7ac869c1313d767a8ccce1360165a63c2"
+      "size": 2870,
+      "sha256": "8071a35498340b29d5ef2663759cf93d2d0317777e845d0c39d2f5d8ec0f2cfd"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4028,6 +4028,11 @@
       "sha256": "bfcdd3507ae528f2aa7f2aa53849f05435b30527d56ae66abc39d22b576b538f"
     },
     {
+      "path": "scripts/android_sdk_repository.py",
+      "size": 2887,
+      "sha256": "a4641d58368133e65996d8796b5b9cbf4afade90009dd67e18a18f51db4088d2"
+    },
+    {
       "path": "scripts/apk_review.py",
       "size": 690,
       "sha256": "414340356eea9791457d1a8fb013caab7959e441df1a79373c99f9a13d198577"
@@ -4359,8 +4364,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11729,
-      "sha256": "db1257f36ee5e9b635053a3cf4546543ddc1652816306ca5190157b129b7fc2b"
+      "size": 11772,
+      "sha256": "5c9ec537d4899ca423fda0b9e1c82a989f295a6bec1ceebe8e940ee36fd6bc94"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4633,6 +4638,11 @@
       "sha256": "532fa3ffd8df40624a8930de8cc0e48ff265cfea12ea6a5161b0879d8de911de"
     },
     {
+      "path": "scripts/test_android_sdk_repository.py",
+      "size": 2036,
+      "sha256": "a9aeba543948b3fe5cb9f71bbccecf4312f02df4f1d27a3846e61d616f4aba1b"
+    },
+    {
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
@@ -4754,8 +4764,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 5967,
-      "sha256": "7e573de5516571dca34d44ee1dc2bbf6c97a40b6c40bbbb1c145f149464d361c"
+      "size": 6865,
+      "sha256": "03acf84e9da172f5d9ca19155b6ada719a6ff6539694feaafdc19682c1bb2be5"
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
