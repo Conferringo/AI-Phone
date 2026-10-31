@@ -50,7 +50,7 @@ The map uses Leaflet 1.9.4 under BSD-2-Clause. Its full [copyright and license](
 
 ## Local WhatsApp connection
 
-Puppeteer is pinned to 25.16.0 via a root override; the older 24.38.0 transitive chain included unresolved extract-zip advisories. The replacement removes that chain and passed the real QR bootstrap test. This is our tested integration pin, not an upstream compatibility guarantee.
+Puppeteer is pinned to 25.16.0 via a root override; the older 24.38.0 transitive chain included unresolved extract-zip advisories. The replacement removes that chain and passed the real QR bootstrap test. This is our tested integration pin, not an upstream compatibility guarantee. The project adapter also repairs SDK destroy/logout calls to the removed `isConnected()` API; shutdown and account retention now have explicit regression checks. See [browser lifecycle evidence and limits](docs/public/engineering/channel-browser.md).
 
 The optional local linked-device connection uses **whatsapp-web.js 1.34.7 (Apache-2.0)** and **qrcode 1.5.4 (MIT)**. Full upstream terms are retained in [whatsapp-web.js](docs/public/licenses/javascript/whatsapp-web.js/LICENSE) and [qrcode](docs/public/licenses/javascript/qrcode/license). Its legacy async 0.2.10 transitive dependency ships a [MIT grant](docs/public/licenses/javascript/async/LICENSE) without a package SPDX field. The dependency inventory records that missing metadata rather than inventing a declaration. WhatsApp and Meta do not sponsor this project; the Web protocol adapter is unofficial.
 

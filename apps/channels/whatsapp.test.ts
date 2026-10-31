@@ -1,6 +1,6 @@
 import {test,expect} from 'bun:test';
 import {EventEmitter} from 'node:events';
-import {mkdtempSync,rmSync,mkdirSync,writeFileSync} from 'node:fs';
+import {mkdtempSync,rmSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {startWhatsApp} from './whatsapp';
@@ -57,4 +57,24 @@ test('proxy credentials are separated from Chrome arguments and browser manifest
  expect(whatsappProxy('http://user:pass@127.0.0.1:7897')).toEqual({args:['--proxy-server=http://127.0.0.1:7897'],auth:{username:'user',password:'pass'}});
  for(const url of ['file:///tmp/else','https://proxy.example/path','socks5://user:pass@proxy.example:1080'])expect(()=>whatsappProxy(url)).toThrow();
  const root=mkdtempSync(join(tmpdir(),'aiphone-wa-component-'));try{mkdirSync(join(root,'.tools/whatsapp-browser'),{recursive:true});writeFileSync(join(root,'.tools/whatsapp-browser/browser.json'),JSON.stringify({format:1,executable:'../../../../bin/sh'}));expect(()=>whatsappBrowser(root)).toThrow();}finally{rmSync(root,{recursive:true,force:true});}
+});
+test('uncertain browser close blocks reconnect and preserves the account on logout',async()=>{
+ const f=fixture({}, {retryMs:1});const profile=join(f.root,'data/channels/whatsapp/session-owned-test');
+ mkdirSync(profile,{recursive:true});writeFileSync(join(profile,'account'),'keep');
+ f.clients[0].destroy=async()=>{throw Error('close unknown')};
+ try{
+  f.clients[0].emit('ready');f.clients[0].emit('disconnected','TIMEOUT');
+  await new Promise(r=>setTimeout(r,20));expect(f.clients).toHaveLength(1);expect(f.control.state).toBe('failed');
+  await expect(f.control.logout()).rejects.toThrow();expect(readFileSync(join(profile,'account'),'utf8')).toBe('keep');
+ }finally{await f.control.stop().catch(()=>{});rmSync(f.root,{recursive:true,force:true});}
+});
+test('overlapping stops await one close and ignore late initialization',async()=>{
+ let finish!:()=>void;let complete!:()=>void;
+ const fake=new Fake();fake.initialize=()=>new Promise(r=>complete=r);fake.destroy=()=>{fake.destroyed++;return new Promise(r=>finish=r)};
+ const f=fixture({}, {client:()=>fake});
+ try{
+  let done=false;const first=f.control.stop().then(()=>{done=true}),second=f.control.stop();await flush();
+  expect(done).toBe(false);expect(fake.destroyed).toBe(1);complete();await flush();finish();await Promise.all([first,second]);await flush();
+  expect(fake.destroyed).toBe(1);expect(f.control.state).toBe('idle');
+ }finally{await f.close();}
 });

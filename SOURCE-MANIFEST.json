@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 13017,
-      "sha256": "05bdedc2c8b6fe63a834e7bd90aacbe00dbc6f6345fe357bfce30cce405eca3d"
+      "size": 13268,
+      "sha256": "5afbf446b5add63e2112a1571328303b0bec40775d8286e9eb112cf7a6618135"
     },
     {
       "path": "ai-phone",
@@ -268,14 +268,24 @@
       "sha256": "d7864c53343b153dd07d0b6bc95540fb57b545ae7a0180e0ac755487f0cb267a"
     },
     {
+      "path": "apps/channels/whatsapp-client.test.ts",
+      "size": 2171,
+      "sha256": "c25cb0cfa815c7e657ef38f88a23d865828273b09ac4ffcb3da340ea3ea41f57"
+    },
+    {
+      "path": "apps/channels/whatsapp-client.ts",
+      "size": 726,
+      "sha256": "f57d7ec01320eaf88f8091c6e4cb6eb4f1e8fce36ce412fd64c2c52f2e2052b9"
+    },
+    {
       "path": "apps/channels/whatsapp.test.ts",
-      "size": 5580,
-      "sha256": "71447804a964712fcdf96c7ccd8300cea35d18dcd0172a4ca66465dc39d7f5ed"
+      "size": 7018,
+      "sha256": "2abf427f08136c9905164fffcac8bc54a77fd8b90671c2b80a73f0f2ee05613e"
     },
     {
       "path": "apps/channels/whatsapp.ts",
-      "size": 6247,
-      "sha256": "ec451a38e9e6fd4f622cac175be81b6dd035a6b53c13e7e96f1216b44598a554"
+      "size": 6537,
+      "sha256": "a1c3d85675da798186d97bde60c17722d21ce9a5d668974911bca62e004da368"
     },
     {
       "path": "apps/client/android/AndroidManifest.xml",
@@ -2588,6 +2598,11 @@
       "sha256": "0ac3fce2f4674875ebce64fbb1c06eac695d25aca959ae8a31059b89a0d72be8"
     },
     {
+      "path": "docs/public/engineering/channel-browser.md",
+      "size": 5481,
+      "sha256": "0d33b0c113d9ba461b788d3f9d080f170960d7857fc87fa6507b217b4b90a6eb"
+    },
+    {
       "path": "docs/public/engineering/guest-apps.md",
       "size": 4089,
       "sha256": "af9bf90867bff40c4a4057f7e262f0ede900da18c80ddb76c2c749db4b3f751c"
@@ -3539,8 +3554,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 7552,
-      "sha256": "1bdde4c9283d37e6fb0466ca205493ff7a07ae22eaeeb164cc59571ce40636c5"
+      "size": 7814,
+      "sha256": "f221413090a00a9db853f5ecbbf8f65e3adb49e41b31c7e05870f3fd0ec390ac"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3549,8 +3564,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 19651,
-      "sha256": "0c45bb2c992e6e75376a230f6d5d1d28c4cdb012cac87632400ffae6e6245239"
+      "size": 20278,
+      "sha256": "e2d897f992492304ba81b91e3309d1eabf04e9935db3ff09428ce0c8c3f9f1d7"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3993,6 +4008,21 @@
       "sha256": "63d8fafb8d740550ce512d45d49fc168ecd1251f300370f4356e05d497ce6dad"
     },
     {
+      "path": "scripts/browser_engine.py",
+      "size": 5767,
+      "sha256": "48ccb65cfb2f3a5787d390b2abe0e4cdc8617d144ff8693b337a213367c765bb"
+    },
+    {
+      "path": "scripts/browser_lease.py",
+      "size": 8824,
+      "sha256": "f0ed013707ca1bbeb3599d7faf43e15e5d65b7e839498e797ff003b6c6e74d22"
+    },
+    {
+      "path": "scripts/browser_pipe.py",
+      "size": 2536,
+      "sha256": "c081fbbfcf65cf166545763031f756caf2c0eb22c295dae695dc39325991fb5f"
+    },
+    {
       "path": "scripts/build-phone-vision.sh",
       "size": 835,
       "sha256": "64afe969deb0661b23269697f95bd6ce427e9c56966678fc5246cdd533d60a5e"
@@ -4016,6 +4046,11 @@
       "path": "scripts/bun",
       "size": 302,
       "sha256": "df01716c25a8d09a16a4de6341e6c08de7320058201a1bc345ae37bcd31f69b8"
+    },
+    {
+      "path": "scripts/channel_browser.py",
+      "size": 3950,
+      "sha256": "28b671e9e36c47d48b98bdfa26dd287530b22523911f2bd2e7c3efbbfb587e7f"
     },
     {
       "path": "scripts/channels-start.sh",
@@ -4451,6 +4486,26 @@
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
+    },
+    {
+      "path": "scripts/test_browser_engine.py",
+      "size": 6143,
+      "sha256": "e1750ae6ab8ec8f585a032f0ff09b9c50e434e7e2f8b2c37af7f76ce248c84d6"
+    },
+    {
+      "path": "scripts/test_browser_lease.py",
+      "size": 13125,
+      "sha256": "74ebd7f7074735d74361461d072dc6d3768466c34f62a14c88bb048f3a34ffbb"
+    },
+    {
+      "path": "scripts/test_browser_pipe.py",
+      "size": 6594,
+      "sha256": "6341a04fa7c42ecd2fb3b9771115bb84e0e36a4e6921079946b9cc66d4bd4c76"
+    },
+    {
+      "path": "scripts/test_channel_browser.py",
+      "size": 5926,
+      "sha256": "4d3b757e76e8c275492d2cee81e4be331a30ac7c9281408b3122415a2c8eb7ba"
     },
     {
       "path": "scripts/test_client_artifacts.py",
