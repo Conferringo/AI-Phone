@@ -10,7 +10,7 @@ The factory archive is pinned in `config/linux-ocr.json`. Admission checks archi
 
 ## Maintainer build
 
-Create a dedicated factory context containing `scripts/linux-ocr/collect.py` and the Linux x64 `python.tar.gz` identified in `config/installer-tools.json`. Do not use a development checkout or user directory as the Docker build context.
+Create a dedicated factory context containing `scripts/linux-ocr/collect.py`, `scripts/linux_dependency_factory.py` as `factory.py`, and the Linux x64 `python.tar.gz` identified in `config/installer-tools.json`. Do not use a development checkout or user directory as the Docker build context.
 
 ```sh
 docker buildx build --platform linux/amd64 \

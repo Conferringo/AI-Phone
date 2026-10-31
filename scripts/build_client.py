@@ -115,7 +115,7 @@ if __name__=='__main__':
     if args.linux_ocr and (args.platform!='linux' or not args.with_service_runtime):parser.error('Offline Linux OCR requires a matching Linux native service build')
     if args.with_phone_apps and args.package_only:parser.error('Phone applications must be supplied before compilation')
     if args.with_guest_apps and args.package_only:parser.error('Guest applications must be supplied before compilation')
-    if args.with_container_host and (args.platform!='macos' or args.package_only):parser.error('The reviewed container-host component currently targets macOS ARM64')
+    if args.with_container_host and (args.platform not in ('macos','linux') or args.package_only):parser.error('Container-host components require a matching supported desktop host')
     if args.with_js_services and (not args.with_web_runtime or args.package_only):parser.error('JS services require the matching prebuilt web/Bun runtime')
     if args.images_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Image capsule requires a matching desktop host build')
     if args.installer_tools and (args.platform not in ('macos','linux') or args.package_only):parser.error('Installer tools require a matching supported host build')

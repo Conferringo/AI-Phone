@@ -2,6 +2,8 @@
 import hashlib
 import io
 import json
+import os
+import shutil
 from pathlib import Path
 import tarfile
 import tempfile
@@ -11,22 +13,55 @@ from prepare_client_host import prepare
 from client_host_entry import stage_source
 
 
+@unittest.skipUnless(os.name == 'posix', 'Container host components require POSIX file semantics')
 class ContainerHostRuntimeTests(unittest.TestCase):
     def setUp(self):
         mocked=patch('container_host_runtime.verify_targets',return_value={'lima':'14.4'},create=True);mocked.start();self.addCleanup(mocked.stop)
+        # These inputs are byte-sized stand-ins, not an installation. Keep fixture
+        # admission deterministic; the reserve test overrides both threshold edges.
+        space=patch('container_host_runtime.shutil.disk_usage',return_value=shutil._ntuple_diskusage(8*1024**3,2*1024**3,6*1024**3))
+        space.start();self.addCleanup(space.stop)
 
-    def inputs(self,root):
+    def inputs(self,root,host='macos-arm64'):
+        arch='x86_64' if host=='linux-x64' else 'aarch64'
+        executable=b'\x7fELF\x02\x01\x01'+bytes(11)+b'\x3e\x00'+bytes(44) if host=='linux-x64' else b'limactl fixture'
         archives=root/'inputs';archives.mkdir();lima=archives/'lima.tar.gz'
         with tarfile.open(lima,'w:gz') as archive:
             directory=tarfile.TarInfo('.');directory.type=tarfile.DIRTYPE;archive.addfile(directory)
-            for name,data,mode in [('./bin/limactl',b'limactl fixture',0o755),('./share/lima/lima-guestagent.Linux-aarch64.gz',b'guest agent fixture',0o644)]:
+            for name,data,mode in [('./bin/limactl',executable,0o755),('./share/lima/lima-guestagent.Linux-'+arch+'.gz',b'guest agent fixture',0o644)]:
                 entry=tarfile.TarInfo(name);entry.size=len(data);entry.mode=mode;archive.addfile(entry,io.BytesIO(data))
         iso=archives/'alpine.iso';iso.write_bytes(b'clean iso fixture');packages=archives/'apks';packages.mkdir();package=packages/'docker-1.0-r0.apk';package.write_bytes(b'signed APK fixture')
         record=lambda path:{'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'size_bytes':path.stat().st_size,'url':'https://example.invalid/'+path.name}
-        policy={'engine':'lima-vz','arch':'aarch64','lima':'2.2.1','alpine':'3.24.1','docker':'1.0','compose':'1.0','image':record(iso),'packages':[{'file':package.name,**record(package)}]}
-        (root/'config').mkdir();(root/'config/container-host-runtime.json').write_text(json.dumps({'format':1,'hosts':{'macos-arm64':policy}}));(root/'config/host-bootstrap.json').write_text(json.dumps({'lima_hosts':{'macos-arm64':record(lima)}}))
+        policy={'engine':'lima-qemu' if host=='linux-x64' else 'lima-vz','arch':arch,'lima':'2.2.1','alpine':'3.24.1','docker':'1.0','compose':'1.0','image':record(iso),'packages':[{'file':package.name,**record(package)}]}
+        (root/'config').mkdir();(root/'config/container-host-runtime.json').write_text(json.dumps({'format':1,'hosts':{host:policy}}));(root/'config/host-bootstrap.json').write_text(json.dumps({'lima_hosts':{host:record(lima)}}))
         config=root/'apps/client/src-tauri/tauri.conf.json';config.parent.mkdir(parents=True);config.write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload','gen/host/entry.py':'host/entry.py'},'macOS':{'minimumSystemVersion':'14.4'}}}))
         return lima,iso,packages
+
+    def test_linux_component_uses_its_own_qemu_and_ssh_after_staging(self):
+        from container_host_runtime import build, selection, definition
+        import linux_host_runtime as native
+        from test_linux_ocr_runtime import LinuxOcrTests
+        with tempfile.TemporaryDirectory() as temporary, patch('platform.system',return_value='Linux'), patch('platform.machine',return_value='x86_64'), patch('container_host_runtime.verify_targets',side_effect=AssertionError('macOS inspector used on Linux')):
+            root=Path(temporary);lima,iso,packages=self.inputs(root,'linux-x64')
+            archive=LinuxOcrTests().fixture(root,profile=native.PROFILE)
+            native.build(root,archive,root/'.tools/linux-host-runtime')
+            build(root,lima,iso,packages)
+            (root/'scripts/client_host_entry.py').write_text('fixture')
+            prepare(root,with_container_host=True)
+            home=root/'installation';(home/'user/data').mkdir(parents=True);(home/'user/data/chat').write_text('keep')
+            staged=stage_source(root/'apps/client/src-tauri/gen/host/source.payload',home)
+            runtime=selection(staged);value=definition(home,runtime,'4GiB')
+            self.assertEqual(runtime['command'],staged/'runtime/container-host/bin/limactl')
+            self.assertIn('native/launchers',runtime['command'].read_text())
+            self.assertEqual(value['vmType'],'qemu');self.assertEqual(value['mountType'],'9p')
+            self.assertEqual((home/'user/data/chat').read_text(),'keep')
+            manifest=staged/'runtime/container-host/manifest.json';original=json.loads(manifest.read_text())
+            for targets in (None,{'lima':'macos-arm64'},{'lima':'linux-x64','extra':'linux-x64'}):
+                manifest.write_text(json.dumps({**original,'native_targets':targets}))
+                with self.assertRaisesRegex(ValueError,'target'):selection(staged)
+            manifest.write_text(json.dumps(original))
+            (staged/'runtime/container-host/native/bin/ssh').write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError,'integrity'):selection(staged)
 
     def test_real_resource_paths_remain_bounded_after_source_staging(self):
         from container_host_runtime import build,selection

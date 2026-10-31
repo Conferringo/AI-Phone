@@ -17,14 +17,15 @@ class HostPrerequisite(ValueError):
         super().__init__(code)
 
 
-def system_packages(*, build_tools=True, ocr_tools=True):
+def system_packages(*, build_tools=True, ocr_tools=True, engine_tools=True):
     values={}
     for line in Path('/etc/os-release').read_text().splitlines():
         if '=' in line:
             key,value=line.split('=',1);values[key]=value.strip('"')
     distro=values.get('ID');version=int(values.get('VERSION_ID','0').split('.')[0])
     if distro not in ('ubuntu','debian'):raise HostPrerequisite('linux_distribution')
-    packages=['ca-certificates','unzip','openssh-client','qemu-system-x86','qemu-utils','ovmf','virtiofsd','libgl1','libnss3','libx11-xcb1','libxcb-cursor0','libxkbcommon-x11-0','libpulse0','acl']
+    packages=['ca-certificates','unzip','libgl1','libnss3','libx11-xcb1','libxcb-cursor0','libxkbcommon-x11-0','libpulse0','acl']
+    if engine_tools:packages.extend(['openssh-client','qemu-system-x86','qemu-utils','ovmf','virtiofsd'])
     if ocr_tools:packages.extend(['tesseract-ocr','tesseract-ocr-eng','tesseract-ocr-chi-sim','python3-pil'])
     if build_tools:packages.extend(['build-essential','pkg-config','libssl-dev'])
     packages.append('libasound2t64' if (distro=='ubuntu' and version>=24) or (distro=='debian' and version>=13) else 'libasound2')
@@ -60,12 +61,12 @@ def require_kvm():
     except OSError as error:raise HostPrerequisite('virtualization_unavailable') from error
 
 
-def prepare_system(emit, *, build_tools=True, ocr_tools=True):
+def prepare_system(emit, *, build_tools=True, ocr_tools=True, engine_tools=True):
     """Use the OS authorization dialog for fixed distro dependencies, never passwords."""
     os.environ['PATH']=os.environ.get('PATH','/usr/bin:/bin')+':/usr/libexec'
     # Reject an absent accelerator before requesting package-install authorization.
     if not Path('/dev/kvm').exists():raise HostPrerequisite('virtualization_unavailable')
-    install_dependencies(system_packages(build_tools=build_tools,ocr_tools=ocr_tools),emit)
+    install_dependencies(system_packages(build_tools=build_tools,ocr_tools=ocr_tools,engine_tools=engine_tools),emit)
     require_kvm()
 
 

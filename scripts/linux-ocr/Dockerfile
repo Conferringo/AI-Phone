@@ -5,6 +5,7 @@ COPY python.tar.gz /tmp/python.tar.gz
 RUN echo 'df15fe60d3ff55bf9dcf25824b5572756bb8816ff93865a273d3301d7066a8b7  /tmp/python.tar.gz' | sha256sum -c - && mkdir /portable && tar -xzf /tmp/python.tar.gz -C /portable && rm /tmp/python.tar.gz
 RUN mkdir -p /out/python && python3 -m pip download --no-cache-dir --no-deps --only-binary=:all: --platform manylinux_2_28_x86_64 --python-version 313 --implementation cp --abi cp313 --dest /out pillow==13.0.0
 COPY collect.py /tmp/collect.py
+COPY factory.py /tmp/factory.py
 RUN /usr/bin/python3 /tmp/collect.py
 FROM scratch AS export
 COPY --from=factory /export/ /

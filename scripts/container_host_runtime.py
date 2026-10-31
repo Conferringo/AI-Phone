@@ -24,7 +24,9 @@ def policy(root):
         raise ValueError('No matched container-host component for this platform')
     runtime = value['hosts'][host]
     bootstrap = json.loads((Path(root) / 'config/host-bootstrap.json').read_text())
-    return {'host': host, 'runtime': runtime, 'lima': bootstrap['lima_hosts'][host], 'minimum_macos': minimum_version(root)}
+    result = {'host': host, 'runtime': runtime, 'lima': bootstrap['lima_hosts'][host]}
+    if host.startswith('macos-'): result['minimum_macos'] = minimum_version(root)
+    return result
 
 
 def policy_digest(value):
@@ -107,9 +109,16 @@ def checked_manifest(folder, value):
         raise ValueError('Invalid container-host manifest')
     if manifest.get('host') != value['host'] or manifest.get('policy_sha256') != policy_digest(value):
         raise ValueError('Container-host source policy changed')
-    validate_targets(manifest.get('native_targets'), value['minimum_macos'])
+    checked_targets(manifest.get('native_targets'), value)
     validate_inventory(manifest.get('files'), value)
     return manifest
+
+
+def checked_targets(targets, value):
+    if value['host'] == 'linux-x64':
+        if targets != {'lima': 'linux-x64'}: raise ValueError('Invalid Linux native target')
+    else:
+        validate_targets(targets, value['minimum_macos'])
 
 
 def validate_inventory(records, value):
@@ -134,7 +143,8 @@ def validate_records(rows, value):
     total = 0
     for row in map(checked_record, rows):
         name = canonical_name(row['path'])
-        if name.parts[0] not in ('lima', 'packages', 'image.iso') or len(name.parts) > 16:
+        allowed = ('lima', 'packages', 'image.iso', 'native', 'bin') if value['host'] == 'linux-x64' else ('lima', 'packages', 'image.iso')
+        if name.parts[0] not in allowed or len(name.parts) > 16:
             raise ValueError('Invalid container-host path')
         total += row['size']
         if row['path'] in records or row['size'] > 200 * 1024**2 or total > LIMIT:
@@ -146,6 +156,7 @@ def validate_records(rows, value):
 def validate_required(records, value):
     required = {'lima/bin/limactl', 'lima/share/lima/lima-guestagent.Linux-' + value['runtime']['arch'] + '.gz', 'image.iso'}
     required.update('packages/' + row['file'] for row in value['runtime']['packages'])
+    if value['host'] == 'linux-x64': required.update({'bin/limactl', 'native/manifest.json'})
     if not required <= records.keys() or records['lima/bin/limactl']['mode'] != 0o755:
         raise ValueError('Container-host runtime is incomplete')
     pins = [('image.iso', value['runtime']['image'])] + [('packages/' + row['file'], row) for row in value['runtime']['packages']]
@@ -166,6 +177,10 @@ def verify(root, folder):
         verify_file(folder, row)
         if (folder / row['path']).stat().st_mode & 0o777 != row['mode']:
             raise ValueError('Container-host resource permissions changed')
+    if manifest['host'] == 'linux-x64':
+        from linux_host_runtime import verify as verify_native
+        from linux_dependencies import elf_check
+        verify_native(root, folder / 'native'); elf_check(folder / 'lima/bin/limactl')
     return manifest
 
 
@@ -187,7 +202,7 @@ def build(root, lima, image, packages):
         work.mkdir()
         unpack_lima(lima, work / 'lima')
         replace_native(root, work, value)
-        targets = verify_targets(root, {'lima': work / 'lima/bin/limactl'})
+        targets = prepare_native(root, work, value)
         shutil.copyfile(image, work / 'image.iso')
         shutil.copytree(packages, work / 'packages')
         records = [{'path': name, 'size': (work / name).stat().st_size,
@@ -198,6 +213,19 @@ def build(root, lima, image, packages):
         verify(root, work)
         work.rename(output)
     return {'files': len(records), 'bytes': sum(row['size'] for row in records), 'policy_sha256': policy_digest(value)}
+
+
+def prepare_native(root, work, value):
+    if value['host'] != 'linux-x64': return verify_targets(root, {'lima': work / 'lima/bin/limactl'})
+    from linux_host_runtime import prepare, PREFIX as native_prefix
+    from linux_dependencies import elf_check
+    elf_check(work / 'lima/bin/limactl')
+    for name, data, mode in prepare(root, root / '.tools/linux-host-runtime'):
+        path = work / 'native' / name.removeprefix(native_prefix)
+        path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data); path.chmod(mode)
+    (work / 'bin').mkdir(); command = work / 'bin/limactl'
+    shutil.copyfile(root / 'scripts/linux-host/lima.sh', command); command.chmod(0o755)
+    return {'lima': 'linux-x64'}
 
 
 def replace_native(root, work, value):
@@ -225,17 +253,19 @@ def selection(root):
         return None
     verify(root, folder)
     value = policy(root)['runtime']
-    return {'command': folder / 'lima/bin/limactl', 'image': folder / 'image.iso',
+    linux = policy(root)['host'] == 'linux-x64'
+    return {'command': folder / ('bin/limactl' if linux else 'lima/bin/limactl'), 'image': folder / 'image.iso',
+            'vm_type': 'qemu' if linux else 'vz', 'mount_type': '9p' if linux else 'virtiofs',
             'packages': folder / 'packages', 'arch': value['arch'], 'image_sha256': value['image']['sha256']}
 
 
 def definition(home, runtime, memory):
     packages = shlex.quote(str(runtime['packages']))
     script = '#!/bin/sh\nset -eu\npackages=' + packages + '\napk --no-network add "$packages"/*.apk\nrc-service docker start\n'
-    return {'minimumLimaVersion': '2.2.1', 'vmType': 'vz', 'arch': runtime['arch'],
+    return {'minimumLimaVersion': '2.2.1', 'vmType': runtime.get('vm_type', 'vz'), 'arch': runtime['arch'],
             'cpus': 4, 'memory': memory, 'disk': '64GiB',
             'images': [{'location': str(runtime['image']), 'arch': runtime['arch'], 'digest': 'sha256:' + runtime['image_sha256']}],
-            'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
+            'mountType': runtime.get('mount_type', 'virtiofs'), 'mounts': [{'location': str(home), 'writable': True}],
             'containerd': {'system': False, 'user': False}, 'propagateProxyEnv': False,
             'ssh': {'loadDotSSHPubKeys': False, 'forwardAgent': False},
             'env': {key: '' for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy')},

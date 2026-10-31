@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 14092,
-      "sha256": "9ca78a9070572b4ecdf049e6f52d3f3ce45b5ecab620269e9250a6923b6613d5"
+      "size": 14447,
+      "sha256": "9475d04c8d387a9e004f98f10ba87d2118afca0e993e5aa442923966ac775cd4"
     },
     {
       "path": "ai-phone",
@@ -2049,8 +2049,8 @@
     },
     {
       "path": "config/container-host-runtime.json",
-      "size": 9899,
-      "sha256": "8af52214619e4cc68012b37fb4af0f89107cc8e841c6a57d51219a8ffa563f1f"
+      "size": 19317,
+      "sha256": "aa408a0fa8bffaf8fa338abd10bcc16ed89ea28ef2eb1bd7ad416f2fddaf87f3"
     },
     {
       "path": "config/device-presets.json",
@@ -2071,6 +2071,11 @@
       "path": "config/js-runtime-vendor.json",
       "size": 681,
       "sha256": "1adb34eecdaa84d029013f403be0df2ea9f0477006b3f2b5650dea8ade5a1991"
+    },
+    {
+      "path": "config/linux-host-runtime.json",
+      "size": 426,
+      "sha256": "ed45f53ad1337ebf652447cac99716605e85d2a4214ba6fdff2223a82697da04"
     },
     {
       "path": "config/linux-ocr.json",
@@ -2574,8 +2579,8 @@
     },
     {
       "path": "docs/public/container-host-runtime.md",
-      "size": 4453,
-      "sha256": "f7d395c4b721f2c217cdd13e332882744fb0e4c396734aa8038c60b6e71712ea"
+      "size": 6843,
+      "sha256": "44316ecdaf745e93c0a94483c89d0fab8b8c38c856e8fa806e1bffc0b74b3230"
     },
     {
       "path": "docs/public/contributor-agents.md",
@@ -2664,8 +2669,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 4400,
-      "sha256": "b0cc6ef134ad06b6104f912349ef2cc39c2317e02fce6e3696099adc694f9f40"
+      "size": 4456,
+      "sha256": "dd47898389ede0ef08ae735189f81a8d3de113f3ff9893326771e7cb2b762216"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -3584,8 +3589,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4519,
-      "sha256": "86bf63cabf5ee9d4b9a498012530e59163b20b011be49d13b2c7ca55ea8aa178"
+      "size": 4544,
+      "sha256": "480402bde421aa438dfb4cee4c1da3a5c2a623b966cb2b6c126f006fcb87dc70"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3599,8 +3604,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 8352,
-      "sha256": "6d1ecaf263f3a84f60182726dc1df89ef1b37a776f7e4599c440df2cb4a57e13"
+      "size": 8570,
+      "sha256": "2f012470d0c20de532eee714f21a1c7c276eac2932f5376d5724c5a7478cdc1e"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3609,8 +3614,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 23534,
-      "sha256": "8f1bc87d7811ba3dee856b29fd8f8e7744f152560f99b3581132089050cfaffb"
+      "size": 24702,
+      "sha256": "74317b779cb335bc7c3362a3a91628a0c0c16ce6903d45f8584a01b3c692505c"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -4074,8 +4079,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11774,
-      "sha256": "100ecaa7e0543cb173d81f14e6dd57ab492934a906b6d0817e8c097cbc708c1c"
+      "size": 11790,
+      "sha256": "7466d45886505c2606db81e5f7049f91fab50d60580e8df9ee83307720089623"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4164,8 +4169,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 16476,
-      "sha256": "92db11692711d59220792f325787622147a27fac0157d2e1d56c3f1c0d7fca8e"
+      "size": 16566,
+      "sha256": "7e6e2369dfea2e8170ce349f8ac8951be2d962916fbfdd48c4f1224187b5a76e"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4179,8 +4184,8 @@
     },
     {
       "path": "scripts/container_host_runtime.py",
-      "size": 11859,
-      "sha256": "3f8b3f64a8d9326160b457c071da4f72b820645c0d91dd5322c2d303ad473066"
+      "size": 13506,
+      "sha256": "e0013f1b7b80f78fd63e21b3fc28ef5a414edfcad1f27a8830790896fa2e9182"
     },
     {
       "path": "scripts/container_images.py",
@@ -4293,14 +4298,34 @@
       "sha256": "58ce566d3d3df32599d6f610f29156f695bc63be0f9bedf107e9f0856f674e8a"
     },
     {
+      "path": "scripts/linux-host/Dockerfile",
+      "size": 541,
+      "sha256": "517cc1f3ffc75773a089f41381af8336680095da4638a22b83300f154ca2dd1b"
+    },
+    {
+      "path": "scripts/linux-host/collect.py",
+      "size": 1143,
+      "sha256": "74afa7026b0419b3342b8fab6fab1077afacb8e54ef24054c32bdd306f40e117"
+    },
+    {
+      "path": "scripts/linux-host/launch.sh",
+      "size": 389,
+      "sha256": "72ed57de71e746c6cc4cd5f60d2772f8a3fd2ea027fb7080ef63683eef44f44f"
+    },
+    {
+      "path": "scripts/linux-host/lima.sh",
+      "size": 170,
+      "sha256": "c462738e3915cb9ab2bf9d2ffc2154968af2a46e0641d27ad8089fa2b729aa9d"
+    },
+    {
       "path": "scripts/linux-ocr/Dockerfile",
-      "size": 945,
-      "sha256": "1d50d7fabbbd5acba9913c91f8abef1b2d9d570253673f8faed769516687b0c8"
+      "size": 977,
+      "sha256": "a182f9322610587b87263f6e1cc9bc48e17e3e52615abc83fde65b5def2adf4b"
     },
     {
       "path": "scripts/linux-ocr/collect.py",
-      "size": 2944,
-      "sha256": "af4d1871dd3f63f031c2d8174ca812e2fb1a786b8558de9b5ecb372314522d0f"
+      "size": 1213,
+      "sha256": "e8acbe852425e719cbb7a4bbe9f934f684b490579f1c7dd4be8fa61d23e2c6c6"
     },
     {
       "path": "scripts/linux-ocr/run.py",
@@ -4318,9 +4343,19 @@
       "sha256": "c93021ff09e7cb841b251c9506226bc353f68754ff4b8edb6a893cb1cf41dd16"
     },
     {
+      "path": "scripts/linux_dependencies.py",
+      "size": 8087,
+      "sha256": "15f795d7df6822cd5325dea1516a099117ef43fd750c03ad1dbdbc2247779d9c"
+    },
+    {
+      "path": "scripts/linux_dependency_factory.py",
+      "size": 2237,
+      "sha256": "c94c44a5ea4cfc5395a389f547f29c1983761cd56f68b273ae10a642ce280a41"
+    },
+    {
       "path": "scripts/linux_host.py",
-      "size": 7638,
-      "sha256": "1d1d858394f75263214099ad8b88049c669b55b04784d2ab92cc5fe7562cbb49"
+      "size": 7741,
+      "sha256": "25dabc63ecab2a47960f2220511a43ccbbc298213f5f167e93ecee6cc7d5d2d8"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -4328,9 +4363,14 @@
       "sha256": "5fa49b4ae4a77e7d72dbb6193525ea0718e02e712440e870a656046118919e11"
     },
     {
+      "path": "scripts/linux_host_runtime.py",
+      "size": 1964,
+      "sha256": "d146db5de8f692bec0a174ccdf6cb10da33f9564c3d30d84a685f2e210a2ea81"
+    },
+    {
       "path": "scripts/linux_ocr_runtime.py",
-      "size": 8697,
-      "sha256": "63a3077a507252285e2212a2bbaa0430b0c49649f1fd5a0b927d0440cb4d7c4f"
+      "size": 2332,
+      "sha256": "337d6c385382b030f81552dd635a824fee1be15dec304b54df1b7e21ebda541f"
     },
     {
       "path": "scripts/linux_services.py",
@@ -4624,8 +4664,8 @@
     },
     {
       "path": "scripts/test_container_host_runtime.py",
-      "size": 10128,
-      "sha256": "5400435cc6607f08d6c5ce58682236e71b812add79e1181ca430f5c2e1604d67"
+      "size": 12930,
+      "sha256": "4bf33522515db4bf53a85cdffef6e11336f323a5241fef5ba782565f6139971d"
     },
     {
       "path": "scripts/test_container_images.py",
@@ -4694,8 +4734,8 @@
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
-      "size": 7657,
-      "sha256": "355826be933bd8014acc9b799634df54039ea8081113e2e53bd1d15181a4e632"
+      "size": 9245,
+      "sha256": "53d5f9c2945f616e0de277e875b4c9ca860f178c98310bfaaeb73318c36f34f0"
     },
     {
       "path": "scripts/test_linux_services.py",
@@ -4729,8 +4769,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 31367,
-      "sha256": "a4c3f69b8bf3116765261b342459211825b8d4e114121e03e5af3f01c78616cc"
+      "size": 32883,
+      "sha256": "d7bc7addab4a348f87b7098b7604999e6fbcfe738a87b15d611824ab00691b4c"
     },
     {
       "path": "scripts/test_prebuilt_guest_apps.py",

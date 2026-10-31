@@ -16,6 +16,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 | JavaScript services | Media, channels and setup helpers with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
 | Guest applications | Pinned Clash Meta APKs for ARM64 and x86_64 guests | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | macOS OCR | Apple Vision helper with the client's minimum deployment target | macOS system frameworks |
+| Linux container host | Matched Lima, QEMU/SSH/firmware, Alpine ISO and signed Docker/Compose closure | [Host component and qualification](container-host-runtime.md); complete Linux client resources remain separate |
 | Linux OCR | Canonical Tesseract adapter; optional x64 offline closure | Bundled CPython/Pillow, ELF libraries, English/Chinese language data and TSV configuration; [component and qualification](engineering/linux-offline-ocr.md) |
 
 Each component manifest records file sizes, SHA-256 hashes and permissions. Native builds also record source fingerprints and compiler provenance. The packager accepts only matching builds. macOS helpers cannot require a newer OS than the client.
