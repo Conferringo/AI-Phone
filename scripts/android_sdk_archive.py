@@ -5,7 +5,7 @@ import tempfile
 import zipfile
 from client_host_entry import canonical_name
 from host_platform import host_key
-from android_runtime import windows_path
+from host_filesystem import windows_path
 
 SDK_MAX_BYTES=8*1024**3
 SDK_MAX_FILES=20000

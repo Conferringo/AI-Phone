@@ -14,7 +14,7 @@ The worker starts Python with isolated imports and bytecode writes disabled. Aft
 
 ## Maintainer build
 
-Obtain and verify the factory archives specified by the matching host entry. Keep them in an owned build cache as `python.tar.gz` and `node.tar.gz`, then run:
+Obtain and verify the factory archives specified by the matching host entry. Keep them in an owned build cache using the pinned filenames (`python.tar.gz` and the matched Node archive), then run:
 
 ```sh
 python3 scripts/installer_tools.py \
@@ -29,6 +29,17 @@ python3 scripts/build_client.py --platform macos \
 ```
 
 These are contributor build commands, not the intended product setup. The completed distribution must already contain its runtime components. See [distribution status](../release-status.md).
+
+## Native host layouts
+
+| Host | Python entry | Node entry | Factory input |
+|---|---|---|---|
+| macOS ARM64 / Linux x64 | `python/bin/python3` | `node/bin/node` | Pinned tar archives |
+| Windows x64 | `python/python.exe` | `node/node.exe` | Pinned Python tar and selective Node ZIP |
+
+The [installer factory](../../../scripts/installer_tool_factory.py) downloads the reviewed archives into a fresh owned directory, builds the component and executes its programs under an isolated profile. Python runs with isolated imports and bytecode writes disabled; SSL, SQLite and native-library loading are checked. Node contributes its executable, licence and README. Windows resource metadata follows native filename, case, alias and permission rules shared with the Android component.
+
+The [Windows qualification workflow](../../../.github/workflows/windows-installer-tools.yml) records the component inventory and actual program versions. This runtime is part of the Windows host installer; the independent device/backend environment has separate qualification.
 
 ## Public vendor build paths
 

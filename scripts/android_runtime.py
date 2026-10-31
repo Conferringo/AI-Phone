@@ -7,7 +7,6 @@ import gzip
 import hashlib
 import io
 import json
-import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -16,6 +15,7 @@ import tempfile
 import zipfile
 from host_platform import host_key
 from artifact_io import digest
+from host_filesystem import windows_path,is_alias,permissions_match,file_mode
 
 MANIFEST='ANDROID-MANIFEST.json'
 ABIS={'macos-arm64':'arm64-v8a','linux-x64':'x86_64','windows-x64':'x86_64'}
@@ -29,14 +29,6 @@ def checked_path_text(name):
     if not isinstance(name,str) or not name or '\\' in name or any(ord(c)<32 for c in name):
         raise ValueError('Invalid Android runtime path')
     return name
-
-
-def windows_path(path):
-    for part in path.parts:
-        if part.endswith((' ','.')) or set(part).intersection('<>:"|?*'):
-            raise ValueError('Invalid Windows Android runtime path')
-        if re.fullmatch(r'(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])',part.split('.')[0],re.IGNORECASE):
-            raise ValueError('Reserved Windows Android runtime path')
 
 
 def checked_path(name, abi):
@@ -100,16 +92,6 @@ def checked_manifest(value):
         raise ValueError('Android runtime review status is not supported')
     checked_files(value.get('files'),value['abi'])
     return value
-
-
-def is_alias(path):
-    return path.is_symlink() or path.is_junction()
-
-
-def permissions_match(path,mode):
-    actual=path.stat().st_mode
-    if os.name=='nt':return bool(actual&0o200)==bool(mode&0o200)
-    return actual&0o777==mode
 
 
 def sdk_inventory(folder):
@@ -196,8 +178,7 @@ def stage(payload, home):
 
 
 def inventory_file(name, path):
-    executable=path.suffix.lower() in ('.exe','.bat','.cmd') if host_key()=='windows-x64' else bool(path.stat().st_mode&0o111)
-    return {'path':name,'size':path.stat().st_size,'sha256':digest(path),'mode':0o755 if executable else 0o644}
+    return {'path':name,'size':path.stat().st_size,'sha256':digest(path),'mode':file_mode(path,host_key())}
 
 
 def tools_inventory(sdk, abi):

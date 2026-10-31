@@ -73,6 +73,11 @@
       "sha256": "44addd7c3b842ebcfa3245303e2cfd14d53802d57473244bee77d4668b306fd5"
     },
     {
+      "path": ".github/workflows/windows-installer-tools.yml",
+      "size": 1150,
+      "sha256": "3205d79de11751d2e4747f46f68a20cb2f40a1a1e5763830c2a926425a2dfdef"
+    },
+    {
       "path": ".gitignore",
       "size": 813,
       "sha256": "63639262a5b116b0417006c04ce37a0cb4a2463a5af4e8646ecd6a601c8569b9"
@@ -2079,8 +2084,8 @@
     },
     {
       "path": "config/installer-tools.json",
-      "size": 1533,
-      "sha256": "a9c9ac7ead3ebaa65b9924a9ddc125a659c5f56ba2e277cf3c64b36f689eee21"
+      "size": 2221,
+      "sha256": "35288e1e6c953f40d9de17041397450666b536fbae4760dfff6550d69f928a09"
     },
     {
       "path": "config/js-runtime-vendor.json",
@@ -2669,8 +2674,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 6982,
-      "sha256": "116adedef66d05e1ffcee01352c512f439d8c4b58b188a1b6cba0e064918edf8"
+      "size": 8076,
+      "sha256": "7d3c02dfd7d644dab740d72f22a57c299bd40bc27592ac2f66eebe833ff643fd"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -4034,8 +4039,8 @@
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 12552,
-      "sha256": "280d1fa96e9804c2edfa91f5478c256f031b592039b5a3ec88068be224c36d53"
+      "size": 11877,
+      "sha256": "7eba471382d1a7f3ae534e75f3fcf63ed482efaf28e15bca375f146d5b859ef8"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -4045,7 +4050,7 @@
     {
       "path": "scripts/android_sdk_archive.py",
       "size": 2161,
-      "sha256": "0b8c52905d4ec21ae6e6f624acccab4f8795eb8df05c436a7040b0c17efe36f3"
+      "sha256": "58c7896b8695e2edaf5f31c7fa561c8620c5dc230dcddf6a5e59b446ec7e1f87"
     },
     {
       "path": "scripts/android_sdk_repository.py",
@@ -4283,6 +4288,11 @@
       "sha256": "f2019c9307b3932e3c855c2b307d84f3633c4cd4550fd8f6d659fd23bc43a3bd"
     },
     {
+      "path": "scripts/host_filesystem.py",
+      "size": 951,
+      "sha256": "57efb0888d77f22f3f8275f7b03fce31483d83c6b3444005f9dbc59c1bd8cbdf"
+    },
+    {
       "path": "scripts/host_platform.py",
       "size": 830,
       "sha256": "71f7d5a786a7897678ed3b73110b9b53493079434dacace99e1a18c844f53542"
@@ -4303,9 +4313,14 @@
       "sha256": "c7f757c34349b0c7e5ddd2ab5abbed6c359bcbee810d55c093fe072b3272c738"
     },
     {
+      "path": "scripts/installer_tool_factory.py",
+      "size": 2895,
+      "sha256": "5d55a2e851de20fa4b0c5d6b9209ca2a5dee48db48b7ec6d37e354322c815eff"
+    },
+    {
       "path": "scripts/installer_tools.py",
-      "size": 10149,
-      "sha256": "d022422b8d36f98ff233cf8074843892d5d4c485bb006b073a3502a9a9a5ccda"
+      "size": 11818,
+      "sha256": "dcc76d0082610a4f2f478d681813a0609dff134d26264df032fe9e512146c15e"
     },
     {
       "path": "scripts/js_dependencies.py",
@@ -4829,8 +4844,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 32883,
-      "sha256": "d7bc7addab4a348f87b7098b7604999e6fbcfe738a87b15d611824ab00691b4c"
+      "size": 32904,
+      "sha256": "a907ca29f206d7fc7d306f9ec5008bfffc5e6045eb8e45fcad927369ad7d9a27"
     },
     {
       "path": "scripts/test_prebuilt_guest_apps.py",
@@ -4896,6 +4911,11 @@
       "path": "scripts/test_windows_acl.py",
       "size": 5748,
       "sha256": "2217220baa84af4a961dc9cffb5b7f861379b5c3debaf1b09d37cde4164af433"
+    },
+    {
+      "path": "scripts/test_windows_installer_tools.py",
+      "size": 4254,
+      "sha256": "1d8c7f749e6f2ea2d5518ab99117f4fe8bad0e03c64a832926e15ded793717a8"
     },
     {
       "path": "scripts/test_windows_private.py",
