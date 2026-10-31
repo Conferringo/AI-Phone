@@ -319,8 +319,8 @@
     },
     {
       "path": "apps/client/package.json",
-      "size": 222,
-      "sha256": "970e11b13c5efa55fe2252f202298724a551e4651bb60db362323d6a9693c0ae"
+      "size": 242,
+      "sha256": "a68fd5182eeb20f61969980569fffc7882101fd37946567405354c3d7934cffc"
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
@@ -2010,7 +2010,7 @@
     {
       "path": "bun.lock",
       "size": 150039,
-      "sha256": "c72de6b7d2ae34434908da631a47d5e572defc134af6713335cb545acbe89666"
+      "sha256": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1"
     },
     {
       "path": "compose.desktop.yaml",
@@ -2605,7 +2605,7 @@
     {
       "path": "docs/public/dependency-licenses.json",
       "size": 425403,
-      "sha256": "a2df93138365d56815bddcd46244e9f94902b523d51b52939e5cd494e828b1b3"
+      "sha256": "f8a988d7de1affb5d331c038009adb56edd212329bd0c811b23c5c06366f3b51"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -4059,8 +4059,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11688,
-      "sha256": "56f219ddb3e36936e17c4211b71d15b0b62c5ac0afee8cb1e9f5852be231b23b"
+      "size": 11487,
+      "sha256": "30ad2ecbb373f7621015228e674c0073067b0bd435d274adc57bddc639a81bec"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4139,8 +4139,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6440,
-      "sha256": "76fa8be8433153a2ea84f051f733969959b81ab12b93c8ec675d93c357e099a2"
+      "size": 6456,
+      "sha256": "d4e5fcd2bad205e4b808cb5590f99359ad5ecb557bd7b5c171188bf69bf808e5"
+    },
+    {
+      "path": "scripts/client_delivery.py",
+      "size": 1385,
+      "sha256": "1386d4dc60f32f7a5fcad5bf092c5afeacb53ab4ab64d9b1569846b78ac420a7"
     },
     {
       "path": "scripts/client_host.py",
@@ -4303,6 +4308,11 @@
       "sha256": "f9b053443426e052786a8ae2b5c6e80eb0e6bc04cd9c6a193059316f7237dc71"
     },
     {
+      "path": "scripts/macos_disk_image.py",
+      "size": 1085,
+      "sha256": "744680090f66918629d8841d126afbd5ca3e434054406c6cb5fdbc08a7a75811"
+    },
+    {
       "path": "scripts/macos_target.py",
       "size": 1384,
       "sha256": "56162a77788e39af06d9dadd40b1d75bff3bc2b5785c255303bc1de969bc538d"
@@ -4414,8 +4424,8 @@
     },
     {
       "path": "scripts/prebuilt_web.py",
-      "size": 8406,
-      "sha256": "b1f36136538b697d5ecabf24aa3ce4471f5d6b872680129938ed0724da7983a7"
+      "size": 9393,
+      "sha256": "60cbed1a0709c2fef0b1780087fbb1018a6414ebaa93d10d9411f46ad98d23ef"
     },
     {
       "path": "scripts/prepare_android_client.py",
@@ -4548,6 +4558,11 @@
       "sha256": "055c69ce0422ab52d1ac2e0d482f4fb5868942b487862cff9ea4c0cca7ea9a05"
     },
     {
+      "path": "scripts/test_client_delivery.py",
+      "size": 1994,
+      "sha256": "b7f959d33c710d6c900af6592dffe5e186e9ee1ba278b1d6e8c59a3b7e78772d"
+    },
+    {
       "path": "scripts/test_client_host.py",
       "size": 9443,
       "sha256": "b3e8810177c5de83fa5b5ddad5f08930a0e27381f916bb61daa0b4a2e8d9330d"
@@ -4638,6 +4653,11 @@
       "sha256": "03701414407863741794f3d13e11c082dc175c3faf5fb52343747bc6efeb5239"
     },
     {
+      "path": "scripts/test_macos_disk_image.py",
+      "size": 2139,
+      "sha256": "f6c993131afe4491d68753c6c6740744aa6c56652e90fc84cfc3901025300755"
+    },
+    {
       "path": "scripts/test_managed_engine.py",
       "size": 8822,
       "sha256": "35deca65c55af8084ce282633034eb139d3ed235dd689f5e7ac667c7955bde69"
@@ -4674,8 +4694,8 @@
     },
     {
       "path": "scripts/test_prebuilt_web.py",
-      "size": 6308,
-      "sha256": "32dd983ca2041824396ffb9169cb7b77a04d24ff16bbd8ffa80f14980aceada3"
+      "size": 7674,
+      "sha256": "8d1eb745c7fc219a5ed7f1db6803502d946c3d0eeae8d41d6cae395dfe33fc60"
     },
     {
       "path": "scripts/test_preview_notices.py",

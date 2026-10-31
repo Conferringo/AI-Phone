@@ -20,28 +20,25 @@ def build_macos():
     flags=environment.get('CARGO_ENCODED_RUSTFLAGS','').split('\x1f') if environment.get('CARGO_ENCODED_RUSTFLAGS') else []
     flags.append('--remap-path-prefix='+str(Path.home())+'=/build-user')
     environment['CARGO_ENCODED_RUSTFLAGS']='\x1f'.join(flags)
-    subprocess.run([ROOT/'scripts/bun','run','--cwd','apps/client','build','--config','src-tauri/gen/host/resources.json','--ci','--no-sign','--','--locked'],cwd=ROOT,env=environment,check=True)
+    subprocess.run([ROOT/'scripts/bun','run','--cwd','apps/client','build','--config','src-tauri/gen/host/resources.json','--bundles','app','--ci','--no-sign','--','--locked'],cwd=ROOT,env=environment,check=True)
     bundles=ROOT/'apps/client/src-tauri/target/release/bundle'
     inspected=inspect_macos_bundle(ROOT,bundles/'macos/AI Phone.app')
-    source=bundles/'dmg'/f'AI Phone_{version}_aarch64.dmg'
-    subprocess.run(['hdiutil','verify',str(source)],check=True,stdout=subprocess.DEVNULL)
     destination=ROOT/'dist'/f'AI-Phone-{version}-macos-arm64.dmg'
-    destination.parent.mkdir(parents=True,exist_ok=True)
-    shutil.copy2(source,destination)
+    from macos_disk_image import build as build_disk_image
+    build_disk_image(bundles/'macos/AI Phone.app',destination)
     with destination.open('rb') as source:digest=hashlib.file_digest(source,'sha256').hexdigest()
     destination.with_suffix('.dmg.sha256').write_text(digest+'  '+destination.name+'\n')
-    manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'server_included':False,'remote_upload':False,'server_requirement':'An already configured local/LAN deployment','source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
+    manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'remote_upload':False,'source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
     manifest['source_payload_included']=True
     from prepare_client_host import payload_components
-    manifest['prebuilt_components']=payload_components(ROOT)
-    manifest['complete_device_bundle']=False
+    from client_delivery import delivery_metadata
+    manifest.update(delivery_metadata(payload_components(ROOT),'macos-arm64'))
     manifest['local_bootstrap']={'implemented_on':sorted(json.loads((ROOT/'config/host-bootstrap.json').read_text())['hosts']),'fresh_install_acceptance':'pending','user_state_bundled':False}
-    manifest['server_requirement']='Client-managed local source deployment, or an existing local/LAN deployment'
     manifest['bundle']=inspected
     manifest['third_party_notices']=notice_manifest(ROOT)
     manifest['source_commit']=os.environ.get('GITHUB_SHA','')
     destination.with_suffix('.dmg.manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
-    print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':False,'remote_upload':False}))
+    print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 
 def build_other(target, package_only=False):
     version=json.loads((ROOT/'config/release-policy.json').read_text())['version']

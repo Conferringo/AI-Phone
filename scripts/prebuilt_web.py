@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 from host_platform import host_key
-from release_package import SECRET
+from release_package import SECRET, select_files
 from client_host_entry import source_name, web_links, verify_file
 HOME_PATH = re.compile(b'(?:/Users/[A-Za-z0-9._-]+/|[A-Za-z]:[\\\\/]+Users[\\\\/]+[^\\\\/]+[\\\\/])')
 
@@ -122,6 +122,21 @@ def runtime_binary(root, bun):
     binary = 'runtime/bin/bun.exe' if os.name == 'nt' else 'runtime/bin/bun'
     return (binary, bun.read_bytes(), 493)
 
+def checked_routes(root, standalone):
+    path=standalone/'apps/web/.next/server/app-paths-manifest.json'
+    if not path.is_file() or path.is_symlink() or path.stat().st_size>4*1024**2:
+        raise ValueError('Standalone routes manifest is missing or invalid')
+    routes=json.loads(path.read_text())
+    if not isinstance(routes,dict) or any(not isinstance(key,str) or not isinstance(value,str) for key,value in routes.items()):
+        raise ValueError('Invalid standalone routes')
+    prefix='apps/web/src/app/'
+    sources={str(PurePosixPath(name[len(prefix):]).with_suffix('')) for name,_,_ in select_files(root)
+             if re.fullmatch(r'apps/web/src/app/(?:.*/)?(?:page|route)\.(?:tsx?|jsx?)',name)}
+    generated={'/_global-error/page','/_not-found/page'}
+    actual=set(routes)-generated
+    if actual!={'/'+name for name in sources}:
+        raise ValueError('Compiled routes differ from the public source selection')
+
 def prepare_web(root, bun):
     root = Path(root).resolve()
     app = root / 'apps/web'
@@ -131,6 +146,7 @@ def prepare_web(root, bun):
     _, config, _ = next_config((standalone / 'apps/web/server.js').read_text())
     if config.get('images', {}).get('unoptimized') is not True:
         raise ValueError('Standalone runtime requires native image optimization to be disabled')
+    checked_routes(root,standalone)
     files = []
     links = []
     for folder, prefix in [(standalone, 'runtime/web'), (app / '.next/static', 'runtime/web/apps/web/.next/static'), (app / 'public', 'runtime/web/apps/web/public')]:

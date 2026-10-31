@@ -32,7 +32,7 @@
     },
     "apps/client": {
       "name": "@ai-phone/client",
-      "version": "0.1.0-preview.2",
+      "version": "0.1.0-preview.3",
       "devDependencies": {
         "@tauri-apps/cli": "2.12.4",
       },

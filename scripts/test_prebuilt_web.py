@@ -15,6 +15,19 @@ from check_prebuilt_web import verify, isolated_environment
 ROOT=Path(__file__).resolve().parent.parent
 
 class PrebuiltWebTests(unittest.TestCase):
+    def test_compiled_routes_must_match_the_public_source_selection(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);app=self.fixture(root)
+            page=app/'src/app/page.tsx';page.parent.mkdir(parents=True,exist_ok=True);page.write_text('export default function Page(){return null}')
+            private=app/'src/app/lab/devices/page.tsx';private.parent.mkdir(parents=True);private.write_text('private prototype')
+            manifest=app/'.next/standalone/apps/web/.next/server/app-paths-manifest.json';manifest.parent.mkdir(parents=True,exist_ok=True)
+            manifest.write_text(json.dumps({'/page':'app/page.js','/lab/devices/page':'app/lab/devices/page.js'}))
+            with self.assertRaisesRegex(ValueError,'routes'):prepare_web(root,bun_path(ROOT))
+            manifest.write_text(json.dumps({'/page':'app/page.js'}))
+            self.assertTrue(prepare_web(root,bun_path(ROOT)))
+            (app/'src/app/page.tsx').unlink()
+            with self.assertRaisesRegex(ValueError,'routes'):prepare_web(root,bun_path(ROOT))
+
     def test_isolation_keeps_windows_system_environment_without_model_credentials(self):
         with tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,{'SYSTEMROOT':'C:/Windows','USERPROFILE':'C:/Users/fixture','DEEPSEEK_API_KEY':'fixture-model-key'},clear=True):
             environment=isolated_environment(Path(temp),12345)
@@ -26,6 +39,8 @@ class PrebuiltWebTests(unittest.TestCase):
         (root/'config').mkdir();(root/'config/bun-runtime.json').write_bytes((ROOT/'config/bun-runtime.json').read_bytes())
         app=root/'apps/web';server=app/'.next/standalone/apps/web/server.js';server.parent.mkdir(parents=True)
         server.write_text('const nextConfig = {"images":{"unoptimized":true}};\nconsole.log("offline-web-runtime")')
+        page=app/'src/app/page.tsx';page.parent.mkdir(parents=True);page.write_text('export default function Page(){return null}')
+        routes=server.parent/'.next/server/app-paths-manifest.json';routes.parent.mkdir(parents=True);routes.write_text(json.dumps({'/page':'app/page.js'}))
         (app/'.next/static').mkdir();(app/'.next/static/chunk.js').write_text('public chunk')
         (app/'public').mkdir();(app/'public/icon.svg').write_text('<svg/>')
         return app

@@ -101,14 +101,15 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
     path.with_suffix(path.suffix+'.sha256').write_text(digest+'  '+path.name+'\n')
     manifest = {'version': json.loads((root/'config/release-policy.json').read_text())['version'],
         'kind': 'native-client-preview', 'os': os_name, 'arch': arch, 'sha256': digest,
-        'signing': signing, 'runtime_acceptance': runtime, 'server_included': False,
+        'signing': signing, 'runtime_acceptance': runtime,
         'dependencies_license_review_complete': False, 'remote_upload': False,
         'third_party_notices': notice_manifest(root), 'source_commit': os.environ.get('GITHUB_SHA',''),
         'source_locks': {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
                          for name in ['bun.lock', 'apps/client/src-tauri/Cargo.lock']},
         'source_payload_included': True,
-        'prebuilt_components': payload_components(root), 'complete_device_bundle': False,
         'local_bootstrap': {'implemented_on': sorted(json.loads((root/'config/host-bootstrap.json').read_text())['hosts']), 'fresh_install_acceptance': 'pending', 'user_state_bundled': False},
         'payload': inspection}
+    from client_delivery import delivery_metadata
+    manifest.update(delivery_metadata(payload_components(root),os_name+'-'+arch))
     path.with_suffix(path.suffix+'.manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     return manifest
