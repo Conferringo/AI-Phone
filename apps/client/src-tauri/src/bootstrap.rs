@@ -15,10 +15,12 @@ use tauri::Manager;
 mod checkpoint;
 mod download;
 mod process;
+mod resources;
 mod toolchain;
 mod tools;
 use download::{hash, mise as download_mise};
 use process::execute;
+use resources::available_bytes;
 
 const INTEGRITY: &str = include_str!("../gen/host/integrity.json");
 const POLICY: &str = include_str!("../../../../config/host-bootstrap.json");
@@ -224,53 +226,10 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
     })
 }
 
-fn available_bytes(path: &Path) -> u64 {
-    let mut existing = path;
-    while !existing.exists() {
-        match existing.parent() {
-            Some(parent) => existing = parent,
-            None => return 0,
-        }
-    }
-    Command::new("/bin/df")
-        .arg("-k")
-        .arg(existing)
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .and_then(|s| {
-            s.lines()
-                .nth(1)
-                .and_then(|l| l.split_whitespace().nth(3))
-                .and_then(|v| v.parse::<u64>().ok())
-        })
-        .and_then(|v| v.checked_mul(1024))
-        .unwrap_or(0)
-}
-
 fn checks(path: &Path) -> Vec<Check> {
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     {
-        #[cfg(target_os = "macos")]
-        let ram = Command::new("/usr/sbin/sysctl")
-            .args(["-n", "hw.memsize"])
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .and_then(|s| s.trim().parse::<u64>().ok())
-            .unwrap_or(0)
-            / 1024_u64.pow(3);
-        #[cfg(target_os = "linux")]
-        let ram = fs::read_to_string("/proc/meminfo")
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .find(|line| line.starts_with("MemTotal:"))
-                    .and_then(|line| line.split_whitespace().nth(1))
-                    .and_then(|value| value.parse::<u64>().ok())
-            })
-            .unwrap_or(0)
-            / 1024_u64.pow(2);
+        let ram = resources::total_memory_bytes() / 1024_u64.pow(3);
         let disk = available_bytes(path) / 1024_u64.pow(3);
         let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
         let disk_required = policy[if path.join("user/data/deployment/profile.json").is_file()
@@ -297,7 +256,7 @@ fn checks(path: &Path) -> Vec<Check> {
             },
         ]
     }
-    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     {
         let _ = path;
         Vec::new()
@@ -719,7 +678,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     fn retry_budget_is_not_the_initial_download_reserve() {
         let folder = std::env::temp_dir().join(format!("ai-phone-space-{}", std::process::id()));
         fs::create_dir(&folder).unwrap();

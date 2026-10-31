@@ -5,7 +5,7 @@
 .exploration-toggle:focus-visible{outline:2px solid #7c76c9;outline-offset:2px}
 .exploration-toggle:disabled{opacity:.5;cursor:wait}
 .proactive-dock[data-exploring=true] .exploration-toggle{color:#514b8a;background:linear-gradient(115deg,#b0dffb30,#e2bffb30,#ffd4bb30)}
-.proactive-inline-error{font-size:12px;color:#a34453;max-width:100%;overflow-wrap:anywhere;line-height:1.4}
+
 /* EPIC conversationAura: the same palette, edge reveal and orbit; read-only design reference. */
 .exploration-aura{--exploration-palette:conic-gradient(from 30deg,#63d9ec,#7783f5 18%,#b078e9 35%,#ed98bf 52%,#ffc293 68%,#71ddce 84%,#63d9ec);position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden;contain:layout paint;clip-path:inset(0);animation:exploration-enter 1400ms ease;transition:opacity 700ms ease}
 .exploration-aura[data-enabled=false]{opacity:0}

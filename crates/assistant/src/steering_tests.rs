@@ -383,7 +383,7 @@ impl FixtureRun {
 async fn steering_preserves_published_text_events_and_rotates_the_assistant_turn() {
     database_case(|app| async move {
         let mut run = FixtureRun::start(&app, "处理表格，保留原始文件").await;
-        assert!(run.finish(&app, "已完成读取，等待列名确认。", RunDisposition::Paused).await);
+        assert!(run.finish(&app, "已完成读取，等待列名确认。", RunDisposition::NeedsInput).await);
         let old_message = run.message;
         let event = Uuid::now_v7();
         sqlx::query(r#"INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,result,finished_at) VALUES($1,$2,$3,'tool','已读取文件','第一阶段真实记录','completed','{"success":true}'::jsonb,now())"#)
@@ -425,7 +425,7 @@ async fn failed_attempt_after_steering_does_not_rewrite_the_prior_fragment() {
     database_case(|app| async move {
         let mut run = FixtureRun::start(&app, "处理工作文件").await;
         assert!(
-            run.finish(&app, "第一阶段已记录。", RunDisposition::Paused)
+            run.finish(&app, "第一阶段已记录。", RunDisposition::NeedsInput)
                 .await
         );
         let claimed_message = run.message;
@@ -458,7 +458,21 @@ async fn failed_attempt_after_steering_does_not_rewrite_the_prior_fragment() {
             .find(|message| message.id == run.message.to_string())
             .unwrap();
         assert_eq!(previous.text, "第一阶段已记录。");
-        assert_eq!(current.text, "fixture model disconnected");
+        assert!(
+            current.text.is_empty(),
+            "transport failure is not assistant speech"
+        );
+        assert_eq!(state.error, "fixture model disconnected");
+        assert_eq!(state.notice_kind, wire::RunNoticeKind::SystemFailure as i32);
+        let stored: String = sqlx::query_scalar("SELECT text FROM messages WHERE id=$1")
+            .bind(run.message)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+        assert!(
+            stored.is_empty(),
+            "the failure belongs only to the run record"
+        );
         assert_eq!(state.run_status, "failed");
     })
     .await;
@@ -615,7 +629,7 @@ async fn completion_and_new_input_respect_both_serialization_orders() {
 async fn unknown_side_effect_keeps_pending_input_and_published_output_untouched() {
     database_case(|app| async move {
         let mut run = FixtureRun::start(&app, "手机处理文件").await;
-        assert!(run.finish(&app, "文件已读取，下一步待核对。", RunDisposition::Paused).await);
+        assert!(run.finish(&app, "文件已读取，下一步待核对。", RunDisposition::NeedsInput).await);
         sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run.id).execute(&app.db).await.unwrap();
         let action = Uuid::now_v7();
         let call = json!({"type":"function_call","call_id":"unknown-tap","local_action_id":action.to_string(),"name":"phone_tap","arguments":"{\"x\":10,\"y\":20}"});

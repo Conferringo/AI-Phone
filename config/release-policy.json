@@ -36,22 +36,6 @@
       "decision": "Non-macOS physical installation tests are not required by the maintainer. Target compilation, payload inspection, audits and complete runtime contents remain required; untested runtime behavior is disclosed."
     }
   },
-  "binary_preview": {
-    "publication_authorized": false,
-    "release_tag": null,
-    "channel": "prerelease",
-    "server_included": false,
-    "physical_installation_tested": false,
-    "notice_scope": "Locked Rust client graph and resolved Android Java/Kotlin release runtime graph; guest images and server binaries excluded.",
-    "required_checks": [
-      "source-ci",
-      "native-ci",
-      "payload-privacy",
-      "third-party-notice-hashes",
-      "sha256"
-    ],
-    "signing": "macOS/Windows unsigned; Android private preview certificate; no store distribution"
-  },
   "distribution": {
     "delivery": "complete-local-device-bundle",
     "required_components": [

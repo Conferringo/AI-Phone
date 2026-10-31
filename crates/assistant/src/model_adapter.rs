@@ -62,27 +62,11 @@ pub async fn request(
                     .into(),
             );
         }
-        if status == 429 {
-            let mut stream = response.bytes_stream();
-            let mut bytes = Vec::new();
-            while let Some(Ok(chunk)) = tokio::select! {
-                _ = cancel.cancelled() => return Err("canceled".into()),
-                chunk = stream.next() => chunk,
-            } {
-                if bytes.len() + chunk.len() > 8192 {
-                    break;
-                }
-                bytes.extend_from_slice(&chunk);
-            }
-            if serde_json::from_slice::<Value>(&bytes)
-                .ok()
-                .is_some_and(|value| {
-                    ["insufficient_quota", "billing_hard_limit_reached"]
-                        .contains(&value["error"]["code"].as_str().unwrap_or(""))
-                })
-            {
-                return Err("模型额度已耗尽，请检查服务商余额；任务和记录已保留".into());
-            }
+        if status == 402 {
+            return Err("模型服务要求付款（HTTP 402）；请检查服务商余额或套餐".into());
+        }
+        if status == 429 && quota_exhausted(response, cancel).await? {
+            return Err("模型额度已耗尽，请检查服务商余额；任务和记录已保留".into());
         }
         return Err(format!(
             "模型服务返回 HTTP {}；请检查模型 ID、密钥和服务权限",
@@ -126,6 +110,33 @@ pub async fn request(
         }
     }
 }
+async fn quota_exhausted(
+    response: reqwest::Response,
+    cancel: &CancellationToken,
+) -> Result<bool, String> {
+    let mut stream = response.bytes_stream();
+    let mut bytes = Vec::new();
+    // The HTTP status is already known; optional diagnostics cannot hold the
+    // worker for the normal 180-second generation timeout.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(1);
+    while let Some(Ok(chunk)) = tokio::select! {
+        _ = cancel.cancelled() => return Err("canceled".into()),
+        _ = tokio::time::sleep_until(deadline) => None,
+        chunk = stream.next() => chunk,
+    } {
+        if bytes.len() + chunk.len() > 8192 {
+            break;
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    Ok(serde_json::from_slice::<Value>(&bytes)
+        .ok()
+        .is_some_and(|value| {
+            ["insufficient_quota", "billing_hard_limit_reached"]
+                .contains(&value["error"]["code"].as_str().unwrap_or(""))
+        }))
+}
+
 fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
     let fast = effort == "none";
     if config.provider == "deepseek" {
@@ -400,6 +411,71 @@ mod tests {
         .unwrap();
         server.abort();
         assert_eq!(text(&second), "actual-native-receipt");
+    }
+
+    async fn error_fixture(
+        status: StatusCode,
+        stalled: bool,
+    ) -> (ModelConfig, tokio::task::JoinHandle<()>) {
+        use axum::{Router, body::Body, routing::post};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let router = Router::new().route(
+            "/v1/responses",
+            post(move || async move {
+                let body = if stalled {
+                    Body::from_stream(
+                        futures_util::stream::once(async {
+                            Ok::<_, std::io::Error>(Bytes::from_static(b"{"))
+                        })
+                        .chain(futures_util::stream::pending()),
+                    )
+                } else {
+                    Body::from("{\"error\":{\"message\":\"private provider details\"}}")
+                };
+                (status, body)
+            }),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        (
+            ModelConfig {
+                api_key: String::new(),
+                base_url: format!("http://{address}/v1"),
+                model: "fixture".into(),
+                provider: "compatible".into(),
+                protocol: "responses".into(),
+                proxy_url: String::new(),
+                verified_at_ms: 0,
+            },
+            server,
+        )
+    }
+    #[tokio::test]
+    async fn payment_required_reports_billing_without_disclosing_provider_payload() {
+        let (config, server) = error_fixture(StatusCode::PAYMENT_REQUIRED, false).await;
+        let result = request(&config, json!({"input":[]}), &CancellationToken::new())
+            .await
+            .unwrap_err();
+        server.abort();
+        assert!(result.contains("HTTP 402"));
+        assert!(result.contains("余额"));
+        assert!(!result.contains("private provider details"));
+        assert!(crate::agent_loop::model_retry_delay(&result, 1).is_none());
+    }
+    #[tokio::test]
+    async fn a_stalled_rate_limit_body_cannot_hold_the_agent_for_the_model_timeout() {
+        let (config, server) = error_fixture(StatusCode::TOO_MANY_REQUESTS, true).await;
+        let result = tokio::time::timeout(
+            Duration::from_secs(3),
+            request(&config, json!({"input":[]}), &CancellationToken::new()),
+        )
+        .await;
+        server.abort();
+        let error = result
+            .expect("an error-body inspection has its own short deadline")
+            .unwrap_err();
+        assert!(error.contains("HTTP 429"));
+        assert_eq!(crate::agent_loop::model_retry_delay(&error, 1), Some(2000));
     }
 
     #[tokio::test]

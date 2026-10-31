@@ -153,17 +153,25 @@ def entry_name(entry,role,prefix,host=None):
 def bounded_entries(source,role,host=None):
     seen=set();total=0;prefix=None;windows=(host or host_key())=='windows-x64'
     for count,entry in enumerate(source):
-        if count>=MAX_FILES or entry.size<0 or entry.size>MAX_BYTES:
-            raise ValueError('Installer archive budget exceeded')
-        prefix=prefix or entry.name.split('/')[0];name=entry_name(entry,role,prefix,host);total+=entry.size
+        size=entry_size(count,entry)
+        prefix=prefix or entry.name.split('/')[0];name=entry_name(entry,role,prefix,host);total+=size
         identity=name.as_posix().casefold() if windows else name.as_posix()
         if identity in seen or total>MAX_BYTES:raise ValueError('Duplicate or oversized installer archive')
         seen.add(identity);yield entry,name
 
 
+def entry_size(count,entry):
+    if count>=MAX_FILES or entry.size<0 or entry.size>MAX_BYTES:raise ValueError('Installer archive budget exceeded')
+    return entry.size
+
+
 def unpack(archive,destination,role,*,host=None,version=None):
     host=host or host_key()
     if role=='node' and host=='windows-x64':return unpack_windows_node(archive,destination,version)
+    unpack_tar(archive,destination,role,host)
+
+
+def unpack_tar(archive,destination,role,host):
     aliases={}
     with tarfile.open(archive,'r:gz') as source:
         for entry,name in bounded_entries(source,role,host):
@@ -185,7 +193,7 @@ def unpack_windows_node(archive,destination,version):
         for name in ('node.exe','LICENSE','README.md'):
             if names.count(prefix+name)!=1:raise ValueError('Missing or duplicate Windows Node resource')
             entry=source.getinfo(prefix+name);total+=entry.file_size
-            if not 0<entry.file_size<=MAX_BYTES or total>MAX_BYTES or entry.external_attr>>16&0o170000 not in (0,0o100000):
+            if entry.file_size<=0 or total>MAX_BYTES or entry.external_attr>>16&0o170000 not in (0,0o100000):
                 raise ValueError('Invalid Windows Node resource')
             target=destination/'node'/name;target.parent.mkdir(parents=True,exist_ok=True)
             with source.open(entry) as incoming,target.open('xb') as output:shutil.copyfileobj(incoming,output,1024**2)

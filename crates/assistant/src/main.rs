@@ -39,6 +39,7 @@ mod notification_policy;
 mod phone_system;
 mod proactive;
 mod registry;
+mod run_notice;
 mod settings;
 mod setup;
 mod tool_catalog;

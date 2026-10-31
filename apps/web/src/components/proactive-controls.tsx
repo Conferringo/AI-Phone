@@ -1,4 +1,5 @@
 'use client';
+import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from "./locale-provider";
 import {createContext,useContext,useCallback,useEffect,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
@@ -46,7 +47,8 @@ export function ProactiveProvider({children}:{children:ReactNode}){
 /** Both device types expose the same durable pause/resume control and failure feedback. */
 export function ExplorationControl({active,ready,saving,error,status,onToggle}:{active:boolean;ready:boolean;saving:boolean;error:string;status:string;onToggle:()=>void}){
  const {t}=useI18n();
- return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoaderCircle size={16} className="spinning"/>:active?<Pause size={15}/>:<Compass size={16}/>}<span>{active?t("暂停探索"):t("自主探索")}</span></button></div>{error&&<span className="proactive-inline-error" role="alert">{t(error)}</span>}</div>;
+ useWorkbenchNotice(error);
+ return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoaderCircle size={16} className="spinning"/>:active?<Pause size={15}/>:<Compass size={16}/>}<span>{active?t("暂停探索"):t("自主探索")}</span></button></div></div>;
 }
 export function ExplorationToggle(){
  const {state,saving,error,update}=useProactive();

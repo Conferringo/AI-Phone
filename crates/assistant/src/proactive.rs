@@ -91,13 +91,16 @@ pub async fn state(app: &App) -> Result<wire::ProactiveState, sqlx::Error> {
         sqlx::query_scalar("SELECT detail FROM proactive_reports ORDER BY created_at DESC LIMIT 1")
             .fetch_optional(&app.db)
             .await?;
+    let last_error =
+        crate::run_notice::background_error(&app.db, crate::registry::PHONE, row.get("last_error"))
+            .await?;
     Ok(wire::ProactiveState {
         revision: row.get::<i64,_>("revision") as u64, exploring,
         attention_connected:row.get("attention_connected"), wechat_watch:row.get("wechat_watch"), notifications_enabled:row.get("notifications_enabled"), forward_notifications:row.get("forward_notifications"), autonomous_reply:row.get("autonomous_reply"), autonomous_install:row.get("autonomous_install"), interval_seconds:row.get::<i32,_>("interval_seconds") as u32,
         next_wake_at_ms:if exploring {row.get::<i64,_>("wake_ms") as u64}else{0},
         active_run_id:active.as_ref().map(|r|r.get::<Uuid,_>("id").to_string()).unwrap_or_default(),
         status:active.as_ref().map(|r|if r.get::<String,_>("status")=="paused" {"paused".to_string()} else {match r.get::<String,_>("origin").as_str(){"user"=>"user_busy", "notification"=>"notification",_=>"exploring"}.to_string()}).unwrap_or_else(||if exploring{"waiting"}else{"idle"}.into()),
-        last_error:row.get("last_error"),listener_connected:row.get("listener_connected"),
+        last_error,listener_connected:row.get("listener_connected"),
         pending_notifications:sqlx::query_scalar::<_,i64>("SELECT count(*) FROM phone_notifications WHERE status IN ('pending','pending-summary')").fetch_one(&app.db).await? as u32,
         latest_summary:latest.unwrap_or_default(),delivery_status:delivery.unwrap_or_default(),
     })
@@ -196,7 +199,7 @@ pub async fn stop_exploration(app: &App, reason: &str) -> Result<(), sqlx::Error
     sqlx::query("SELECT id FROM conversations WHERE owner_id='local-user' AND device_id='phone-local-01' FOR UPDATE")
         .fetch_one(&mut *tx)
         .await?;
-    sqlx::query("UPDATE proactive_state SET exploring=false,revision=revision+1,last_error=$1 WHERE exploring").bind(reason).execute(&mut *tx).await?;
+    sqlx::query("UPDATE proactive_state SET exploring=false,revision=revision+1,last_error='' WHERE exploring").execute(&mut *tx).await?;
     sqlx::query("UPDATE runs SET status='canceled',error=$1,finished_at=now(),next_wake_at=NULL WHERE origin='exploration' AND status IN ('queued','running','paused')").bind(reason).execute(&mut *tx).await?;
     tx.commit().await?;
     cancel_stopped(app).await;

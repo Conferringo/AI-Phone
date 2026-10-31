@@ -14,9 +14,9 @@ Installation flow: **device resources → model → workbench**. A complete pack
 
 | Platform | Package | Availability |
 |---|---|---|
-| macOS Apple Silicon | Desktop application with local device runtime | Preparing the complete package |
+| macOS Apple Silicon | Desktop application with local device runtime | Full package compiled; release qualification |
 | Windows x64 | Desktop application with local device runtime | Host integration in progress |
-| Linux x64 | Desktop application with local device runtime | Preparing the complete package |
+| Linux x64 | Desktop application with local device runtime | Full package compiled; release qualification |
 | Android ARM64 | Root/KVM application with local device runtime | Privileged runtime integration in progress |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
@@ -46,7 +46,7 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 | Layer | Implementation | Directory |
 |---|---|---|
 | Workbench | Next.js App Router/Turbopack, React, Tailwind, shadcn/Radix | `apps/web` |
-| Native client | Tauri 2, managed macOS setup + local/LAN connection | `apps/client` |
+| Native client | Tauri 2, client-managed macOS/Linux setup and local workbench | `apps/client` |
 | Agent/device services | Rust, Axum, Tokio | `crates` |
 | Protocol/state | protobuf, PostgreSQL/SQLx; Redis reserved for optional caching | `packages/protocol`, `compose.yaml` |
 | Runtime/images | Native ARM64 Android Emulator, Docker Compose Linux | `infra`, `scripts` |

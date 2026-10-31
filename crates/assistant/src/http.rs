@@ -62,7 +62,7 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *tx)
         .await?;
-    let rows=sqlx::query("SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind<>'task') has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id WHERE m.conversation_id=$1 ORDER BY m.ordinal").bind(id).fetch_all(&mut *tx).await?;
+    let rows=sqlx::query("SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1 ORDER BY m.ordinal").bind(id).fetch_all(&mut *tx).await?;
     let ids: Vec<Uuid> = rows
         .iter()
         .flat_map(|row| row.get::<Vec<Uuid>, _>("attachment_ids"))
@@ -85,30 +85,49 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
         .collect();
     let messages = rows
         .iter()
-        .map(|r| wire::ChatMessage {
-            id: r.get::<Uuid, _>("id").to_string(),
-            run_id: r
-                .get::<Option<Uuid>, _>("run_id")
-                .map(|id| id.to_string())
-                .unwrap_or_default(),
-            request_id: r
-                .get::<Option<Uuid>, _>("request_id")
-                .map(|v| v.to_string())
-                .unwrap_or_default(),
-            ordinal: r.get::<i64, _>("ordinal") as u64,
-            active: r.get("active"),
-            has_activity: r.get("has_activity"),
-            voice: crate::voice_input::from_row(r),
-            role: r.get("role"),
-            text: r.get("text"),
-            attachments: r
-                .get::<Vec<Uuid>, _>("attachment_ids")
-                .iter()
-                .filter_map(|id| files.get(id).cloned())
-                .collect(),
+        .map(|r| {
+            let notice = crate::run_notice::kind(
+                r.get("source_status"),
+                r.get("source_error"),
+                &r.get::<Value, _>("source_state"),
+            );
+            let (text, system_notice) = crate::run_notice::message(
+                r.get("role"),
+                r.get("text"),
+                r.get("source_error"),
+                notice,
+                r.get::<bool, _>("recorded_retry")
+                    || crate::run_notice::legacy_pause(
+                        r.get("text"),
+                        &r.get::<Value, _>("source_state"),
+                    ),
+            );
+            wire::ChatMessage {
+                id: r.get::<Uuid, _>("id").to_string(),
+                run_id: r
+                    .get::<Option<Uuid>, _>("run_id")
+                    .map(|id| id.to_string())
+                    .unwrap_or_default(),
+                request_id: r
+                    .get::<Option<Uuid>, _>("request_id")
+                    .map(|v| v.to_string())
+                    .unwrap_or_default(),
+                ordinal: r.get::<i64, _>("ordinal") as u64,
+                active: r.get("active"),
+                has_activity: r.get("has_activity"),
+                voice: crate::voice_input::from_row(r),
+                role: r.get("role"),
+                text,
+                system_notice,
+                attachments: r
+                    .get::<Vec<Uuid>, _>("attachment_ids")
+                    .iter()
+                    .filter_map(|id| files.get(id).cloned())
+                    .collect(),
+            }
         })
         .collect();
-    let run=sqlx::query("SELECT id,status,error,agent_id,agent_name,device_id,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,created_at DESC,id DESC LIMIT 1").bind(id).fetch_optional(&mut *tx).await?;
+    let run=sqlx::query("SELECT id,status,error,loop_state,agent_id,agent_name,device_id,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,created_at DESC,id DESC LIMIT 1").bind(id).fetch_optional(&mut *tx).await?;
     let value = wire::ChatState {
         revision: rows
             .last()
@@ -135,6 +154,16 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
             .unwrap_or_default(),
         run_status: run.as_ref().map(|r| r.get("status")).unwrap_or_default(),
         error: run.as_ref().map(|r| r.get("error")).unwrap_or_default(),
+        notice_kind: run
+            .as_ref()
+            .map(|r| {
+                crate::run_notice::kind(
+                    r.get("status"),
+                    r.get("error"),
+                    &r.get::<Value, _>("loop_state"),
+                ) as i32
+            })
+            .unwrap_or_default(),
         next_wake_at_ms: run.as_ref().map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
     };
     tx.commit().await?;
@@ -338,13 +367,18 @@ pub async fn send(
     match state(&app, id).await {
         Ok(mut value) => {
             // A retry's receipt stays attached to the original run (including channel clients).
-            let run = match sqlx::query("SELECT status,error,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE id=$1 AND conversation_id=$2")
+            let run = match sqlx::query("SELECT status,error,loop_state,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE id=$1 AND conversation_id=$2")
                 .bind(run_id).bind(id).fetch_one(&app.db).await {
                     Ok(row) => row, Err(e) => return db_error(e),
                 };
             value.run_id = run_id.to_string();
             value.run_status = run.get("status");
             value.error = run.get("error");
+            value.notice_kind = crate::run_notice::kind(
+                run.get("status"),
+                run.get("error"),
+                &run.get::<Value, _>("loop_state"),
+            ) as i32;
             value.next_wake_at_ms = run.get("next_wake_at_ms");
             pb(StatusCode::ACCEPTED, value)
         }
@@ -645,10 +679,24 @@ pub async fn run_state(
     let Ok(id) = Uuid::parse_str(&request.run_id) else {
         return error(StatusCode::BAD_REQUEST, "invalid_run", "任务不存在");
     };
-    let row=match sqlx::query("SELECT r.id,r.conversation_id,r.status,r.error,r.agent_id,r.agent_name,r.device_id,COALESCE((extract(epoch FROM r.next_wake_at)*1000)::bigint,0) next_wake_at_ms,m.id AS message_id,m.text FROM runs r JOIN messages m ON m.id=r.assistant_message_id JOIN conversations c ON c.id=r.conversation_id WHERE r.id=$1 AND c.owner_id='local-user'").bind(id).fetch_optional(&app.db).await { Ok(Some(r))=>r, Ok(None)=>return error(StatusCode::NOT_FOUND,"not_found","任务不存在"), Err(e)=>return db_error(e) };
+    let row=match sqlx::query("SELECT r.id,r.conversation_id,r.status,r.error,r.loop_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,r.agent_id,r.agent_name,r.device_id,COALESCE((extract(epoch FROM r.next_wake_at)*1000)::bigint,0) next_wake_at_ms,m.id AS message_id,m.text FROM runs r JOIN messages m ON m.id=r.assistant_message_id JOIN conversations c ON c.id=r.conversation_id WHERE r.id=$1 AND c.owner_id='local-user'").bind(id).fetch_optional(&app.db).await { Ok(Some(r))=>r, Ok(None)=>return error(StatusCode::NOT_FOUND,"not_found","任务不存在"), Err(e)=>return db_error(e) };
+    let notice_kind = crate::run_notice::kind(
+        row.get("status"),
+        row.get("error"),
+        &row.get::<Value, _>("loop_state"),
+    );
+    let (text, system_notice) = crate::run_notice::message(
+        "assistant",
+        row.get("text"),
+        row.get("error"),
+        notice_kind,
+        row.get::<bool, _>("recorded_retry")
+            || crate::run_notice::legacy_pause(row.get("text"), &row.get::<Value, _>("loop_state")),
+    );
     pb(
         StatusCode::OK,
         wire::ChatState {
+            notice_kind: notice_kind as i32,
             conversation_id: row.get::<Uuid, _>("conversation_id").to_string(),
             run_id: id.to_string(),
             device_id: row.get("device_id"),
@@ -664,7 +712,8 @@ pub async fn run_state(
                 id: row.get::<Uuid, _>("message_id").to_string(),
                 run_id: id.to_string(),
                 role: "assistant".into(),
-                text: row.get("text"),
+                text,
+                system_notice,
                 attachments: vec![],
                 ..Default::default()
             }],

@@ -7,8 +7,8 @@ Updated 2026-10-31. Source code and technical documentation are available. Publi
 | Target | Verified scope | Remaining qualification |
 |---|---|---|
 | macOS Apple Silicon | Complete nine-component App/DMG compiled; mounted-file verification; portable runtime execution; native migration and role checks; workbench startup | Fresh default-size dual-device installation, upgrades, signing/notarization and full acceptance |
-| Windows x64 | Native client compilation; [sealed Android SDK/image component](engineering/windows-android-runtime.md), NTFS admission and packaged emulator/ADB execution | Complete independent host, backend, acceleration setup and first run |
-| Linux x64 | Native client compilation, [offline host resources](container-host-runtime.md) and [isolated offline OCR](engineering/linux-offline-ocr.md) | Complete offline host, payload and first run |
+| Windows x64 | Native client compilation; [sealed Android SDK/image component](engineering/windows-android-runtime.md), NTFS admission, packaged emulator/ADB and [portable installer runtime](engineering/installer-tools.md) execution | Complete independent host, backend, acceleration setup and first run |
+| Linux x64 | [Complete nine-component Debian package](linux-client-factory.md) compiled and inspected; packaged web/native/OCR execution | First-run behavior remains untested under the maintainer waiver; complete product qualification remains open |
 | Linux ARM64 | Native client compilation | Matched Android runtime and complete independent host |
 | Android ARM64 root/KVM | Native client compilation; privileged host target defined | Kernel/runtime integration, matched payload and both guests |
 
@@ -30,6 +30,6 @@ Architecture findings and remaining complexity are recorded in the [SOLID audit]
 
 源码和技术文档已公开；公开安装包依照完整发行与第三方再分发门槛提供。
 
-Apple Silicon完整App/DMG已编译，包含全部九类运行资源；只读映像文件逐项核对、系统隔离运行、包内原生程序迁移/数据库权限及工作台启动检查均已通过。默认规格双设备全新创建、升级、签名和完整产品验收仍待确认。Windows、Linux和root/KVM Android已具备客户端编译证据，完整独立宿主与配套运行资源仍需完成。
+Apple Silicon完整App/DMG已编译，包含全部九类运行资源；只读映像文件逐项核对、系统隔离运行、包内原生程序迁移/数据库权限及工作台启动检查均已通过。默认规格双设备全新创建、升级、签名和完整产品验收仍待确认。Linux x64完整九类资源DEB也已编译、解包核验并执行包内网页/原生/OCR检查；Windows已有原生SDK/系统底图和Python/Node实际运行证据，完整Windows宿主、Linux ARM64及root/KVM Android配套环境仍继续推进。
 
 非macOS实机安装按本轮范围豁免；编译、完整内容、隐私与再分发检查继续保留。模型/渠道按各自协议及账号能力验收，测试替身不等于真实账号送达；Copilot的纠错和调度基础已接通，实际收音、语音识别/合成与设备麦克风路由尚未交付。所有发行门槛以版本配置及对应证据为准。

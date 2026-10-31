@@ -1,4 +1,5 @@
 "use client";
+import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import{useRef,useState}from'react';
 import{ScanLine,LoaderCircle,Volume2,VolumeX,Smartphone}from'lucide-react';
@@ -9,6 +10,7 @@ export function PhoneToolbar({deviceId,rotate,capture,landscape,onInteract,kind=
  const {t}=useI18n();
 
  const audio=usePhoneAudio(deviceId,kind==="desktop"?`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}&kind=audio`:`/api/phone/media/audio?device=${encodeURIComponent(deviceId)}`),[busy,setBusy]=useState(''),[error,setError]=useState('');
+ useWorkbenchNotice(error||audio.error);
  const pending=useRef(false);
  async function action(name:string,work:()=>Promise<void>){if(pending.current)return;pending.current=true;setBusy(name);setError('');onInteract();try{await work();}catch(issue){setError(issue instanceof Error?issue.message:t("操作失败"));}finally{pending.current=false;setBusy('');}}
  const volume=audio.enabled?Math.round(audio.volume*100):0;
@@ -20,6 +22,5 @@ export function PhoneToolbar({deviceId,rotate,capture,landscape,onInteract,kind=
   </div>
   {kind==="phone"&&<Button variant="ghost" size="icon" aria-label={landscape?t("切换竖屏"):t("切换横屏")} title={landscape?t("切换竖屏"):t("切换横屏")} disabled={!!busy} onClick={()=>void action('rotate',()=>rotate(landscape?'portrait':'landscape'))}>{busy==='rotate'?<LoaderCircle className="spinning" size={18}/>:<Smartphone size={18} className={landscape?'phone-rotation-landscape':''}/>}</Button>}
   <Button variant="ghost" size="icon" aria-label={t("截图")} title={t("截图")} disabled={!!busy} onClick={()=>void action('capture',capture)}>{busy==='capture'?<LoaderCircle className="spinning" size={18}/>:<ScanLine size={18}/>}</Button>
-  {(error||audio.error)&&<div className="phone-toolbar-error" role="alert">{error||audio.error}</div>}
  </div>;
 }

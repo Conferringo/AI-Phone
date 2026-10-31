@@ -27,3 +27,7 @@ python3 scripts/linux_client_factory.py
 ```
 
 The factory writes the inspected Debian package and a JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
+
+## Qualification snapshot — 2026-10-31
+
+[Complete Linux build 41179728753](https://github.com/Conferringo/AI-Phone/actions/runs/41179728753) compiled and inspected the nine-component Debian package from source `84d82c4e00e75dec9f821f7eab9607a7f87e49ef`. The artifact is 2,990,070,838 bytes, SHA-256 `050e253b1407f09a6cf01847bf7d263930ec7f1c2afab51e47c525172d1be805`. Packaged web HTML, thirteen script assets, PNG, service versions and OCR passed execution checks. The factory retained a text qualification receipt; installer binaries were not published. Physical installation is recorded as not tested under the maintainer waiver.

@@ -1,4 +1,5 @@
 'use client';
+import {useWorkbenchNotice} from './workbench-notices';
 import {clientId} from '@/lib/client-id';
 import {useLayoutEffect,useRef,useState} from 'react';
 import {create,type MessageInitShape,type MessageShape} from '@bufbuild/protobuf';
@@ -17,6 +18,7 @@ export function DesktopSurface({deviceId,active}:{deviceId:string;active:boolean
   return()=>{activeRef.current=false;generation.current++;if(clickTimer.current)clearTimeout(clickTimer.current);};
  },[active]);
  const [error,setError]=useState(''),[online,setOnline]=useState(false);
+ useWorkbenchNotice(active?error:'');
  const send=(value:Action)=>{
   if(!activeRef.current)return;const version=generation.current,current=()=>activeRef.current&&generation.current===version;
   queue.current=queue.current.then(async()=>{
@@ -39,6 +41,6 @@ export function DesktopSurface({deviceId,active}:{deviceId:string;active:boolean
    onPointerCancel={()=>{pointer.current=null;}} onContextMenu={e=>{e.preventDefault();if(clickTimer.current)clearTimeout(clickTimer.current);lastClick.current=null;pointer.current=null;if(active)send({kind:'click',...point(e),button:3});}}
    onWheel={e=>{if(!active||Date.now()-wheel.current<180)return;wheel.current=Date.now();send({kind:'scroll',...point(e),amount:Math.sign(e.deltaY)*3});}}/>
   {active&&<textarea ref={input} className="desktop-keyboard" aria-label="电脑键盘输入" autoCapitalize="off" autoComplete="off" spellCheck={false} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;flush();}} onInput={flush} onPaste={e=>{e.preventDefault();send({kind:'text',text:e.clipboardData.getData('text/plain')});}} onKeyDown={e=>{if(e.nativeEvent.isComposing||composing.current||e.key==='Process'||(e.metaKey&&e.key===','))return;const map:Record<string,string>={Enter:'Return',Backspace:'BackSpace',Delete:'Delete',Escape:'Escape',ArrowLeft:'Left',ArrowRight:'Right',ArrowUp:'Up',ArrowDown:'Down',Tab:'Tab',Home:'Home',End:'End',PageUp:'Prior',PageDown:'Next'};if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='v')return;if(map[e.key]||e.ctrlKey||e.metaKey||e.altKey){e.preventDefault();send({kind:'key',key:[e.ctrlKey||e.metaKey?'ctrl':'',e.altKey?'alt':'',e.shiftKey?'shift':'',map[e.key]||e.key].filter(Boolean).join('+')});}}}/>}
-  {error&&active&&<div className="desktop-error" role="alert">{error}</div>}{!online&&<span className="desktop-connecting">连接桌面…</span>}
+  {!online&&<span className="desktop-connecting">连接桌面…</span>}
  </div>;
 }

@@ -27,8 +27,15 @@ message ChatMessage {
   bool active = 8;
   bool has_activity = 9;
   ChatVoiceInput voice = 10;
+  // Historical operational notices are preserved separately from dialogue.
+  string system_notice = 11;
 }
 message ChatHistoryRequest { string conversation_id = 1; string device_id = 2; }
+enum RunNoticeKind {
+  RUN_NOTICE_KIND_UNSPECIFIED = 0;
+  RUN_NOTICE_KIND_SYSTEM_FAILURE = 1;
+  RUN_NOTICE_KIND_NEEDS_INPUT = 2;
+}
 message ChatState {
   string conversation_id = 1;
   repeated ChatMessage messages = 2;
@@ -40,6 +47,7 @@ message ChatState {
   string agent_name = 8;
   string device_id = 9;
   uint64 revision = 10;
+  RunNoticeKind notice_kind = 11;
 }
 message ChatSendRequest {
   string conversation_id = 1;

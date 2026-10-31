@@ -31,15 +31,15 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, message): (String, Uuid) =
+    let (status, _message): (String, Uuid) =
         sqlx::query_as("SELECT status,assistant_message_id FROM runs WHERE id=$1 FOR UPDATE")
             .bind(id)
             .fetch_one(&mut *tx)
             .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
-        Ok(RunDisposition::Queued) => "waiting",
-        Ok(RunDisposition::Paused) => "paused",
+        Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
+        Ok(RunDisposition::Paused | RunDisposition::NeedsInput) => "paused",
         Err(error) if error.starts_with("paused:") || error.contains("结果未知") => "paused",
         Err(error) if error == "canceled" || cancelled => "canceled",
         _ => "failed",
@@ -73,7 +73,8 @@ async fn finish_attempt(
         trace = status;
         sqlx::query("UPDATE runs SET status=CASE WHEN $4 AND jsonb_array_length(steering)>0 THEN 'queued' ELSE $2 END,error=CASE WHEN $4 AND jsonb_array_length(steering)>0 THEN '' ELSE $3 END,next_wake_at=NULL,finished_at=CASE WHEN $2 IN ('paused','queued') THEN NULL ELSE now() END WHERE id=$1 AND status<>'canceled'")
             .bind(id).bind(status).bind(&display).bind(manual).execute(&mut *tx).await?;
-        sqlx::query("UPDATE messages SET text=CASE WHEN text='' THEN $2 ELSE text END WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM runs WHERE id=$3 AND jsonb_array_length(steering)>0)").bind(message).bind(display).bind(id).execute(&mut *tx).await?;
+        sqlx::query("UPDATE runs SET loop_state=jsonb_set(loop_state,'{notice_kind}','\"system_failure\"'::jsonb) WHERE id=$1 AND error<>''")
+            .bind(id).execute(&mut *tx).await?;
     }
     sqlx::query("UPDATE harness_events SET status=$2,finished_at=CASE WHEN $2 IN ('completed','failed','canceled') THEN now() ELSE NULL END WHERE id=$1").bind(id).bind(trace).execute(&mut *tx).await?;
     tx.commit().await
@@ -1670,7 +1671,9 @@ fn now_ms() -> u64 {
 enum RunDisposition {
     Completed,
     Queued,
+    Retrying,
     Paused,
+    NeedsInput,
 }
 const CONTINUE_ACTION: &str = "任务仍在进行。普通文字只作为进展，不能结束行动目标；继续调用工具执行并复查，完成后task_finish(completed)，确有需要用户补充的具体阻碍时task_finish(needs_input)。不要反复提出是否继续。";
 fn verification_attempts(context: &[Value]) -> usize {
@@ -1685,12 +1688,13 @@ async fn progress_event(
     app: &App,
     run: Uuid,
     message: Uuid,
+    kind: &str,
     title: &str,
     text: &str,
     status: &str,
 ) -> Result<(), String> {
-    sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,'summary',$4,$5,$6,now())")
-        .bind(Uuid::now_v7()).bind(run).bind(message).bind(title).bind(text.chars().take(24000).collect::<String>()).bind(status).execute(&app.db).await.map_err(|e|e.to_string())?;
+    sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,$4,$5,$6,$7,now())")
+        .bind(Uuid::now_v7()).bind(run).bind(message).bind(kind).bind(title).bind(text.chars().take(24000).collect::<String>()).bind(status).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(())
 }
 async fn checkpoint(
@@ -1899,33 +1903,41 @@ async fn persist_disposition(
     let has_steering = steering
         .as_array()
         .is_some_and(|entries| !entries.is_empty());
-    if disposition != RunDisposition::Queued && has_steering {
+    if !matches!(
+        disposition,
+        RunDisposition::Queued | RunDisposition::Retrying
+    ) && has_steering
+    {
         return Ok(false);
     }
     let status = match disposition {
         RunDisposition::Completed => "succeeded",
-        RunDisposition::Queued => "queued",
-        RunDisposition::Paused => "paused",
+        RunDisposition::Queued | RunDisposition::Retrying => "queued",
+        RunDisposition::Paused | RunDisposition::NeedsInput => "paused",
     };
-    let error = if disposition == RunDisposition::Paused {
-        format!("需要补充：{summary}")
-    } else {
-        String::new()
+    let (error, notice_kind) = match disposition {
+        RunDisposition::Paused | RunDisposition::Retrying => {
+            (summary.to_string(), "system_failure")
+        }
+        RunDisposition::NeedsInput => (summary.to_string(), "needs_input"),
+        _ => (String::new(), ""),
     };
-    let answer = if disposition == RunDisposition::Queued {
-        ""
-    } else {
-        summary
-    };
+    let dialogue = matches!(
+        disposition,
+        RunDisposition::Completed | RunDisposition::NeedsInput
+    );
+    let answer = if dialogue { summary } else { "" };
+    let mut stored_state = json!(state);
+    stored_state["notice_kind"] = json!(notice_kind);
     let wake = if has_steering {
         None
     } else {
         wake.map(|value| value as f64 / 1000.0)
     };
     crate::agent_loop::compact_observations(context);
-    sqlx::query("UPDATE runs SET status=$2,context=$3,pending_tools=$4,answer=$5,step=$6,loop_state=$7,error=$8,next_wake_at=to_timestamp($9::double precision),heartbeat_at=now(),finished_at=CASE WHEN $2='succeeded' THEN now() ELSE NULL END WHERE id=$1")
-        .bind(id).bind(status).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(json!(state)).bind(error).bind(wake).execute(&mut *tx).await.map_err(|e|e.to_string())?;
-    if disposition != RunDisposition::Queued {
+    sqlx::query("UPDATE runs SET status=$2,context=$3,pending_tools=$4,answer=CASE WHEN $10 THEN answer ELSE $5 END,step=$6,loop_state=$7,error=$8,next_wake_at=to_timestamp($9::double precision),heartbeat_at=now(),finished_at=CASE WHEN $2='succeeded' THEN now() ELSE NULL END WHERE id=$1")
+        .bind(id).bind(status).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    if dialogue {
         sqlx::query("UPDATE messages SET text=$2 WHERE id=$1")
             .bind(message)
             .bind(summary)
@@ -2145,6 +2157,7 @@ async fn execute(
                         app,
                         id,
                         message,
+                        "summary",
                         "重新观察",
                         "已安排重新获取当前画面；被拒绝的动作没有执行。",
                         "completed",
@@ -2194,6 +2207,7 @@ async fn execute(
                         app,
                         id,
                         message,
+                        "summary",
                         "计划",
                         &format!("{goal}\n\n{steps}"),
                         "completed",
@@ -2236,7 +2250,7 @@ async fn execute(
                 let disposition = if finish["status"] == "completed" {
                     RunDisposition::Completed
                 } else {
-                    RunDisposition::Paused
+                    RunDisposition::NeedsInput
                 };
                 if !pending.is_empty() {
                     return Err("结束任务时仍有待执行操作，结果未知；请检查后继续。".into());
@@ -2352,11 +2366,20 @@ async fn execute(
                 let retryable = crate::agent_loop::model_retry_delay(&error, state.model_retries);
                 let stalled = retryable.is_none();
                 state.last_issue = error.clone();
-                progress_event(app, id, message, "连接重试", &error, "failed").await?;
+                progress_event(
+                    app,
+                    id,
+                    message,
+                    "system_error",
+                    "模型连接",
+                    &error,
+                    "failed",
+                )
+                .await?;
                 let disposition = if stalled {
                     RunDisposition::Paused
                 } else {
-                    RunDisposition::Queued
+                    RunDisposition::Retrying
                 };
                 let wake = if stalled {
                     None
@@ -2402,12 +2425,14 @@ async fn execute(
                     .join("\n");
                 if !text.trim().is_empty() {
                     if progress_is_verified(&context, &text) {
-                        progress_event(app, id, message, "过程摘要", &text, "completed").await?;
+                        progress_event(app, id, message, "summary", "过程摘要", &text, "completed")
+                            .await?;
                     } else {
                         progress_event(
                             app,
                             id,
                             message,
+                            "summary",
                             "执行校验",
                             "未经本轮执行证据验证的过程结论已拦截。",
                             "failed",
@@ -2450,12 +2475,14 @@ async fn execute(
             answer.clear();
             if !new_text.trim().is_empty() {
                 if progress_is_verified(&context, &new_text) {
-                    progress_event(app, id, message, "进展", &new_text, "completed").await?;
+                    progress_event(app, id, message, "summary", "进展", &new_text, "completed")
+                        .await?;
                 } else {
                     progress_event(
                         app,
                         id,
                         message,
+                        "summary",
                         "执行校验",
                         "未经本轮执行证据验证的完成草稿已拦截；任务继续。",
                         "failed",
@@ -2792,6 +2819,7 @@ async fn recorded_tool(
                 app,
                 run,
                 message,
+                "summary",
                 "下一步",
                 &intent.chars().take(1800).collect::<String>(),
                 "completed",
@@ -4248,7 +4276,56 @@ mod loop_persistence_tests {
             }
             state.no_progress("同一失败");state.no_progress("同一失败");assert!(state.no_progress("同一失败"));
             assert!(persist_disposition(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: "连续失败，请补充实际信息", step: 56, state: &state }, RunDisposition::Paused, None).await.unwrap());
-            let row=sqlx::query("SELECT status,error,loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(row.get::<String,_>("status"),"paused");assert!(row.get::<String,_>("error").starts_with("需要补充："));assert!(!row.get::<String,_>("error").contains("手动接管"));assert_eq!(row.get::<Value,_>("loop_state")["stalls"],3);
+            let row=sqlx::query("SELECT status,error,loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(row.get::<String,_>("status"),"paused");assert_eq!(row.get::<String,_>("error"),"连续失败，请补充实际信息");assert_eq!(row.get::<Value,_>("loop_state")["notice_kind"],"system_failure");assert!(!row.get::<String,_>("error").contains("手动接管"));assert_eq!(row.get::<Value,_>("loop_state")["stalls"],3);
+            let fault_message:String=sqlx::query_scalar("SELECT text FROM messages WHERE id=$1").bind(message).fetch_one(&app.db).await.unwrap();
+            assert_eq!(fault_message,"","an operational pause must not become assistant speech");
+            let model_error="模型服务返回 HTTP 402；请检查模型 ID、密钥和服务权限";
+            sqlx::query("UPDATE messages SET text='已读取表格，正在处理。' WHERE id=$1").bind(message).execute(&app.db).await.unwrap();
+            assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:model_error,step:56,state:&state},RunDisposition::Paused,None).await.unwrap());
+            let retained:String=sqlx::query_scalar("SELECT text FROM messages WHERE id=$1").bind(message).fetch_one(&app.db).await.unwrap();
+            assert_eq!(retained,"已读取表格，正在处理。","provider failure must preserve existing dialogue");
+            assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:"请提供收件人。",step:56,state:&state},RunDisposition::NeedsInput,None).await.unwrap());
+            let question=crate::http::state(&app,conversation).await.unwrap();
+            assert_eq!(question.notice_kind,wire::RunNoticeKind::NeedsInput as i32);
+            assert_eq!(question.messages.iter().find(|m|m.id==message.to_string()).unwrap().text,"请提供收件人。");
+            sqlx::query("UPDATE runs SET origin='exploration' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE proactive_state SET last_error='请提供收件人。'").execute(&app.db).await.unwrap();
+            assert_eq!(crate::proactive::state(&app).await.unwrap().last_error,"");
+            let original_background:String=sqlx::query_scalar("SELECT last_error FROM proactive_state").fetch_one(&app.db).await.unwrap();
+            assert_eq!(original_background,"请提供收件人。","projection preserves the stored question");
+            for manual in ["已停止自主探索","你已接管手机，自主探索已暂停","你已接管电脑，自主探索已暂停"] {
+                assert_eq!(crate::run_notice::background_error(&app.db,crate::registry::PHONE,manual).await.unwrap(),"");
+            }
+            let legacy_error=format!("需要补充：{model_error}");
+            sqlx::query("UPDATE runs SET error=$2,loop_state=$3 WHERE id=$1").bind(run).bind(&legacy_error).bind(json!({"model_retries":1,"last_issue":model_error})).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE messages SET text=$2 WHERE id=$1").bind(message).bind(model_error).execute(&app.db).await.unwrap();
+            let legacy=crate::http::state(&app,conversation).await.unwrap();
+            assert_eq!(legacy.notice_kind,wire::RunNoticeKind::SystemFailure as i32);
+            let projected=legacy.messages.iter().find(|m|m.id==message.to_string()).unwrap();
+            assert_eq!(projected.text,"");assert_eq!(projected.system_notice,model_error);
+            let original:String=sqlx::query_scalar("SELECT text FROM messages WHERE id=$1").bind(message).fetch_one(&app.db).await.unwrap();
+            assert_eq!(original,model_error,"history projection must never erase the stored record");
+            assert_eq!(crate::run_notice::background_error(&app.db,crate::registry::PHONE,&legacy_error).await.unwrap(),legacy_error,"real model errors remain visible");
+            sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status) VALUES($1,$2,$3,'summary','连接重试',$4,'failed')").bind(Uuid::now_v7()).bind(run).bind(message).bind(model_error).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET status='running',error='',loop_state='{}' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            let continued=crate::http::state(&app,conversation).await.unwrap();
+            assert!(continued.messages.iter().find(|m|m.id==message.to_string()).unwrap().text.is_empty(),"retry provenance survives clearing the run error");
+            let error_only=Uuid::now_v7();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role,text,run_id) VALUES($1,$2,'assistant',$3,$4)").bind(error_only).bind(conversation).bind(model_error).bind(run).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status) VALUES($1,$2,$3,'summary','连接重试',$4,'failed')").bind(Uuid::now_v7()).bind(run).bind(error_only).bind(model_error).execute(&app.db).await.unwrap();
+            let projected=crate::http::state(&app,conversation).await.unwrap().messages.into_iter().find(|m|m.id==error_only.to_string()).unwrap();
+            assert!(!projected.has_activity,"an error-only historical message has no empty execution bubble");assert!(projected.text.is_empty());
+            sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status) VALUES($1,$2,$3,'tool','真实工具失败','failed')").bind(Uuid::now_v7()).bind(run).bind(error_only).execute(&app.db).await.unwrap();
+            assert!(crate::http::state(&app,conversation).await.unwrap().messages.iter().find(|m|m.id==error_only.to_string()).unwrap().has_activity,"tool failure remains in the execution ledger");
+            sqlx::query("UPDATE messages SET text='已有真实回复' WHERE id=$1").bind(message).execute(&app.db).await.unwrap();
+            finish_attempt(&app,run,message,&Err("database transport failed".into()),false).await.unwrap();
+            let completed_error=crate::http::state(&app,conversation).await.unwrap();
+            assert_eq!(completed_error.error,"database transport failed");
+            assert_eq!(completed_error.notice_kind,wire::RunNoticeKind::SystemFailure as i32);
+            assert_eq!(completed_error.messages.iter().find(|m|m.id==message.to_string()).unwrap().text,"已有真实回复");
+            assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:"HTTP 429",step:56,state:&state},RunDisposition::Retrying,Some(now_ms()+2000)).await.unwrap());
+            let retry=crate::http::state(&app,conversation).await.unwrap();
+            assert_eq!(retry.run_status,"queued");assert_eq!(retry.error,"HTTP 429");assert_eq!(retry.notice_kind,wire::RunNoticeKind::SystemFailure as i32);assert!(retry.next_wake_at_ms>now_ms() as i64);
             let continuing_context=vec![input("自由探索，没有指定应用或目标")];
             let continuing_pending=vec![call("workspace_list",json!({}))];
             let continuing_state=json!({"stalls":2,"model_retries":2,"plan":{"goal":"agent-chosen-interest"},"exploration_window":{"first_step":100,"started_at_ms":1}});

@@ -24,6 +24,9 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 sha2 = "0.10"
 tokio = { version = "1", features = ["time"] }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Storage_FileSystem", "Win32_System_SystemInformation"] }
+
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 glib = "=0.18.5"
 

@@ -21,11 +21,14 @@ pub async fn state(app: &App, device: &str) -> Result<wire::DesktopExploreState,
         .map_err(|e| e.to_string())?;
     let r=sqlx::query("SELECT *, (extract(epoch FROM next_cycle_at)*1000)::bigint wake FROM desktop_exploration WHERE device_id=$1").bind(device).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
     let run:Option<Uuid>=sqlx::query_scalar("SELECT id FROM runs WHERE device_id=$1 AND origin='desktop-exploration' AND status IN ('queued','running','paused') ORDER BY created_at DESC LIMIT 1").bind(device).fetch_optional(&app.db).await.map_err(|e|e.to_string())?;
+    let last_error = crate::run_notice::background_error(&app.db, device, r.get("last_error"))
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(wire::DesktopExploreState {
         device_id: device.into(),
         enabled: r.get("enabled"),
         interval_seconds: r.get::<i32, _>("interval_seconds") as u32,
-        last_error: r.get("last_error"),
+        last_error,
         next_wake_at_ms: r.get::<i64, _>("wake") as u64,
         run_id: run.map(|v| v.to_string()).unwrap_or_default(),
     })
@@ -84,7 +87,7 @@ async fn change_mode(
     lock_device(&mut tx, device)
         .await
         .map_err(|e| e.to_string())?;
-    sqlx::query("UPDATE desktop_exploration SET enabled=$2,interval_seconds=COALESCE($3,interval_seconds),next_cycle_at=CASE WHEN $2 THEN now() ELSE next_cycle_at END,last_error=$4 WHERE device_id=$1").bind(device).bind(enabled).bind(interval).bind(reason).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    sqlx::query("UPDATE desktop_exploration SET enabled=$2,interval_seconds=COALESCE($3,interval_seconds),next_cycle_at=CASE WHEN $2 THEN now() ELSE next_cycle_at END,last_error='' WHERE device_id=$1").bind(device).bind(enabled).bind(interval).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     let detail = if enabled {
         "重新开启自主探索，旧暂停轮保留记录"
     } else {

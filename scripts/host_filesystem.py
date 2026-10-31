@@ -6,9 +6,9 @@ import re
 def windows_path(path):
     for part in path.parts:
         if part.endswith((' ','.')) or set(part).intersection('<>:"|?*'):
-            raise ValueError('Invalid Windows Android runtime path')
+            raise ValueError('Invalid Windows runtime path')
         if re.fullmatch(r'(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])',part.split('.')[0],re.IGNORECASE):
-            raise ValueError('Reserved Windows Android runtime path')
+            raise ValueError('Reserved Windows runtime path')
 
 
 def is_alias(path):

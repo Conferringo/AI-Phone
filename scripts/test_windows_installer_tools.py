@@ -6,6 +6,7 @@ from pathlib import Path,PurePosixPath
 import tarfile
 import tempfile
 import unittest
+from types import SimpleNamespace
 import zipfile
 from unittest.mock import patch
 
@@ -13,6 +14,24 @@ from installer_tools import build,verify,environment,checked_manifest
 
 
 class WindowsInstallerToolsTests(unittest.TestCase):
+    def test_native_readonly_metadata_is_independent_of_posix_execute_bits(self):
+        from host_filesystem import permissions_match
+        for actual,expected,valid in [(0o777,0o755,True),(0o666,0o644,True),(0o444,0o644,False),(0o444,0o444,True),(0o666,0o444,False)]:
+            path=SimpleNamespace(stat=lambda:SimpleNamespace(st_mode=actual))
+            with patch('host_filesystem.os.name','nt'):
+                self.assertEqual(permissions_match(path,expected),valid)
+
+    def test_windows_node_selected_body_budget_is_inclusive(self):
+        from installer_tools import unpack_windows_node
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);source=root/'node.zip'
+            with zipfile.ZipFile(source,'w') as target:
+                for name in ('node.exe','LICENSE','README.md'):target.writestr('node-v22.23.4-win-x64/'+name,b'1')
+            with patch('installer_tools.MAX_BYTES',3):unpack_windows_node(source,root/'valid','22.23.4')
+            self.assertEqual((root/'valid/node/node.exe').read_bytes(),b'1')
+            with patch('installer_tools.MAX_BYTES',2),self.assertRaisesRegex(ValueError,'Invalid Windows Node'):
+                unpack_windows_node(source,root/'overflow','22.23.4')
+
     def fixture(self,root):
         folder=root/'inputs';folder.mkdir();python=folder/'python.tar.gz';node=folder/'node.zip'
         with tarfile.open(python,'w:gz') as target:

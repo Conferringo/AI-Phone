@@ -1,5 +1,6 @@
 "use client";
 import {LanguageWindow,LanguageTrigger} from '@/components/language-window';
+import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchNotice} from '@/components/workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import {DeviceDefaultsProvider,creationDefaults,type DeviceDefaults} from '@/components/device-defaults';
 import { useCallback, useEffect, useRef, useState,type CSSProperties,type Dispatch,type SetStateAction } from "react";
@@ -20,6 +21,7 @@ import {
   ControlStateSchema,
 } from "@ai-phone/protocol/ai_phone/v1/phone_runtime_pb";
 import {
+  RunNoticeKind,
   ChatHistoryRequestSchema,
   ChatMessageSchema,
   ChatStateSchema,
@@ -107,7 +109,7 @@ async function rpc<I extends DescMessage, O extends DescMessage>(
   return fromBinary(output, bytes);
 }
 export default function PhoneConsole({defaults=creationDefaults}:{defaults?:DeviceDefaults}) {
-  return <DeviceDefaultsProvider value={defaults}><ProactiveProvider><DeviceWorkbench/></ProactiveProvider></DeviceDefaultsProvider>;
+  return <DeviceDefaultsProvider value={defaults}><WorkbenchNoticeProvider><ProactiveProvider><DeviceWorkbench/></ProactiveProvider></WorkbenchNoticeProvider></DeviceDefaultsProvider>;
 }
 type SessionState={agentId:string;agentName:string;status:string;runId:string;reply:string;nextWakeAtMs:number};
 function DeviceWorkbench(){
@@ -132,6 +134,7 @@ function DeviceWorkbench(){
  const close=(name:string)=>setFeature(old=>old===name?'':old);
  return <main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
   <header className="workbench-navigation">
+   <WorkbenchNotices activeFeature={feature}/>
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>
     <LanguageTrigger open={feature==='language'} onOpen={()=>setFeature('language')}/>
     <WindowTrigger label={t("Skill管理")} open={feature==='skills'} onOpen={()=>setFeature('skills')}><Wrench size={18}/></WindowTrigger>
@@ -143,7 +146,7 @@ function DeviceWorkbench(){
    <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!states[current]} onClick={()=>refreshers.current[current]?.()}><RefreshCw size={18}/></Button>
   </header>
   <div className="device-focus-grid" data-stacked={solo} data-wide={wide} data-count={focus.length} data-mixed={focus.length>1&&focus.some(id=>devices.find(d=>d.id===id)?.kind==='phone'&&!horizontal[id])} style={{'--device-columns':solo?'minmax(360px,1.65fr)':focus.map(id=>devices.find(d=>d.id===id)?.kind==='desktop'?'minmax(220px,1.3fr)':'minmax(180px,.8fr)').join(' '),'--chat-column':focus.length+1,'--chat-rows':groups.map(()=> 'minmax(0,1fr)').join(' ')} as CSSProperties}>
-   {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <PhoneWorkspace key={d.id} deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} linked={linked.includes(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} current={current===d.id} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/>;})}
+   {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <DeviceNoticeScope key={d.id} id={d.id} name={d.name}><PhoneWorkspace deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} linked={linked.includes(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} current={current===d.id} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/></DeviceNoticeScope>;})}
   </div>
   <DeviceCableLine root={scene} devices={devices} linked={linked}/>
   <RegistryWindow open={feature==='settings'} onClose={()=>close('settings')} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
@@ -193,6 +196,11 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
     setChatSnapshot(previous=>acceptSnapshot(previous,next,order));
   },[]);
   const outbox=useChatOutbox(chat?.conversationId||'',deviceId,acceptChat,beginHistory);
+  useWorkbenchNotice(error);
+  useWorkbenchNotice(historyError,()=>void fetchChat());
+  useWorkbenchNotice(outbox.error||(outbox.entries[0]?.status==='failed'?outbox.entries[0].error||'发送失败':''),outbox.retry);
+  useWorkbenchNotice(chat?.noticeKind===RunNoticeKind.NEEDS_INPUT?'':chat?.error||'');
+  useWorkbenchNotice(phoneError,()=>void observe());
   const [files, setFiles] = useState<PendingFile[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<Attachment | null>(null);
@@ -521,11 +529,6 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
             onChange={e=>{if(phoneComposing.current)return;const value=e.currentTarget.value;e.currentTarget.value="";if(value&&!(lastComposition.current?.value===value&&Date.now()-lastComposition.current.at<80))typePhone(value);}}
             onPaste={e=>{e.preventDefault();const value=e.clipboardData.getData("text/plain");if(value)typePhone(value);}}
             onKeyDown={e=>{if(e.nativeEvent.isComposing||phoneComposing.current||e.keyCode===229)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="a"){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:"SELECT_ALL"}});return;}if(e.metaKey||e.ctrlKey||e.altKey)return;const keys:Record<string,string>={Backspace:"DEL",Delete:"FORWARD_DEL",Enter:"ENTER",Tab:"TAB",Escape:"BACK",ArrowLeft:"DPAD_LEFT",ArrowRight:"DPAD_RIGHT",ArrowUp:"DPAD_UP",ArrowDown:"DPAD_DOWN"};if(keys[e.key]){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:keys[e.key]}});}}}/>
-          {phoneError && (
-            <button className="connection-error" onClick={() => void observe()}>
-              {phoneError}
-            </button>
-          )}
         </>:<div className="device-pending" data-scene-device={deviceId}>{selectedDevice?.kind==='desktop'?<Monitor size={32}/>:<Smartphone size={32}/>}<h2>{selectedDevice?.name||t("设备")}</h2><p>{t("尚未安装系统")}</p></div>}
         </div></section>
         <section data-flip-id={showChat?`chat-slot-${chatRow}`:undefined} data-scene-device={`chat:${deviceId}`} className="conversation-pane" aria-label={`${selectedDevice.name}对话`} data-chat-visible={showChat} aria-hidden={!showChat} inert={!showChat} style={{...stageStyle,display:showChat?undefined:'none',gridColumn:chatColumn,gridRow:chatRow}}>
@@ -722,20 +725,6 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
               </div>
             </div>
           </form>
-          {(outbox.error||outbox.entries[0]?.status==='failed')&&<div className="chat-error" role="alert"><span>{outbox.error||outbox.entries[0]?.error}</span><Button variant="ghost" type="button" onClick={outbox.retry}>{t('重试')}</Button></div>}
-          {(error || historyError) && (
-            <div className="chat-error" role="alert">
-              {error || historyError}
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("关闭错误")}
-                onClick={() => { setError(""); setHistoryError(""); }}
-              >
-                <X size={14} />
-              </Button>
-            </div>
-          )}
         </section>
       </div>
       <FloatingWindow id={`phone-capture-${deviceId}`} title={t("截图")} open={activeFeature==='phone-capture'} onClose={()=>closeFeature('phone-capture')} width={desktopAvailable?700:360} height={580} fitContent>

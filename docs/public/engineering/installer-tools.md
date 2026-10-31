@@ -68,3 +68,7 @@ Primary sources: [Python portable distributions](https://docs.astral.sh/python-b
 当前 macOS ARM64 组件包含 1,660 文件、213,170,787 字节。在系统拒绝全部网络的沙箱中，原生安装器真实复制、校验随包程序，再由隔离的 Python 3.13.18 展开源码、恢复运行路径并调用 Node 22.23.4；SSL、SQLite 和隔离聊天夹具保持均通过。网络探测确认访问被拒绝。该证据属于组件验证，并非双设备完整初始化或最终 App 验收。
 
 Python 边界的 CC≤9、CRAP<10，0.8 相似度无重复候选；164 项定向变异捕获 162 项，另两项改变 JSON 键排序。原生模块 CC≤9，覆盖率与 CRAP 尚未测量，不外推全仓。Linux x64 已固定对应归档。完整容器宿主、手机输入/桌面应用、媒体/渠道组件、各平台初始化和二进制声明仍继续推进；这个组件不单独代表完整客户端发行。
+
+## Windows qualification — 2026-10-31
+
+[Windows factory 41181233120](https://github.com/Conferringo/AI-Phone/actions/runs/41181233120) built and verified 3,316 files / 149,856,514 bytes. Manifest SHA-256: `a13f44d500ee8a03c65830c3002cf1b31a5a7035b735c270ca414744e49348a2`. The component Python reported 3.13.18 and passed SSL, SQLite and native-library loading; the component Node reported 22.23.4. The Python executable identity was checked against the component path. This qualifies the installer interpreter environment, separately from the Windows device/backend host.

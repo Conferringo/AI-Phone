@@ -949,7 +949,11 @@ pub async fn route(
                             id: r.get::<Uuid, _>("id").to_string(),
                             run_id: id.to_string(),
                             message_id: r.get::<Uuid, _>("message_id").to_string(),
-                            kind: r.get("kind"),
+                            kind: crate::run_notice::event_kind(
+                                r.get("kind"),
+                                r.get("title"),
+                                r.get("status"),
+                            ),
                             title: r.get("title"),
                             content: r.get("content"),
                             status: r.get("status"),

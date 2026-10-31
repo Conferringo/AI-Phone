@@ -98,12 +98,9 @@ def prepare_host(root,cache,python_archive):
 
 
 def prepare_tools(root,cache):
-    from installer_tools import build
-    pins=json.loads((root/'config/installer-tools.json').read_text())['hosts']['linux-x64']
-    archives=cache/'tools-inputs'
-    for role,pin in pins.items():fetch(archives,pin['file'],pin)
-    output=cache/'tools';result=build(archives,output,pins=pins)
-    return output,archives/'python.tar.gz',result
+    from installer_tool_factory import factory
+    work=cache/'installer';result=factory(root,work)
+    return work/'component',work/'inputs/python.tar.gz',result
 
 
 def prepare_apps(root,env):

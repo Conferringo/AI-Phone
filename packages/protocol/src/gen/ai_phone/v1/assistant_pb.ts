@@ -2,15 +2,15 @@
 // @generated from file ai_phone/v1/assistant.proto (package ai_phone.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file ai_phone/v1/assistant.proto.
  */
 export const file_ai_phone_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEInoKDkNoYXRWb2ljZUlucHV0EhIKCnNlc3Npb25faWQYASABKAkSFAoMdXR0ZXJhbmNlX2lkGAIgASgJEhAKCHJldmlzaW9uGAMgASgNEg8KB2xpdGVyYWwYBCABKAkSGwoTY29ycmVjdHNfcmVxdWVzdF9pZBgFIAEoCSLuAQoLQ2hhdE1lc3NhZ2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIMCgR0ZXh0GAMgASgJEjAKC2F0dGFjaG1lbnRzGAQgAygLMhsuYWlfcGhvbmUudjEuQ2hhdEF0dGFjaG1lbnQSDgoGcnVuX2lkGAUgASgJEhIKCnJlcXVlc3RfaWQYBiABKAkSDwoHb3JkaW5hbBgHIAEoBBIOCgZhY3RpdmUYCCABKAgSFAoMaGFzX2FjdGl2aXR5GAkgASgIEioKBXZvaWNlGAogASgLMhsuYWlfcGhvbmUudjEuQ2hhdFZvaWNlSW5wdXQiQAoSQ2hhdEhpc3RvcnlSZXF1ZXN0EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAki5wEKCUNoYXRTdGF0ZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSKgoIbWVzc2FnZXMYAiADKAsyGC5haV9waG9uZS52MS5DaGF0TWVzc2FnZRIOCgZydW5faWQYAyABKAkSEgoKcnVuX3N0YXR1cxgEIAEoCRINCgVlcnJvchgFIAEoCRIXCg9uZXh0X3dha2VfYXRfbXMYBiABKAMSEAoIYWdlbnRfaWQYByABKAkSEgoKYWdlbnRfbmFtZRgIIAEoCRIRCglkZXZpY2VfaWQYCSABKAkSEAoIcmV2aXNpb24YCiABKAQitQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCRIqCgV2b2ljZRgHIAEoCzIbLmFpX3Bob25lLnYxLkNoYXRWb2ljZUlucHV0IiAKDkNoYXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCWIGcHJvdG8z");
+  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEInoKDkNoYXRWb2ljZUlucHV0EhIKCnNlc3Npb25faWQYASABKAkSFAoMdXR0ZXJhbmNlX2lkGAIgASgJEhAKCHJldmlzaW9uGAMgASgNEg8KB2xpdGVyYWwYBCABKAkSGwoTY29ycmVjdHNfcmVxdWVzdF9pZBgFIAEoCSKFAgoLQ2hhdE1lc3NhZ2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIMCgR0ZXh0GAMgASgJEjAKC2F0dGFjaG1lbnRzGAQgAygLMhsuYWlfcGhvbmUudjEuQ2hhdEF0dGFjaG1lbnQSDgoGcnVuX2lkGAUgASgJEhIKCnJlcXVlc3RfaWQYBiABKAkSDwoHb3JkaW5hbBgHIAEoBBIOCgZhY3RpdmUYCCABKAgSFAoMaGFzX2FjdGl2aXR5GAkgASgIEioKBXZvaWNlGAogASgLMhsuYWlfcGhvbmUudjEuQ2hhdFZvaWNlSW5wdXQSFQoNc3lzdGVtX25vdGljZRgLIAEoCSJAChJDaGF0SGlzdG9yeVJlcXVlc3QSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCSKYAgoJQ2hhdFN0YXRlEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIqCghtZXNzYWdlcxgCIAMoCzIYLmFpX3Bob25lLnYxLkNoYXRNZXNzYWdlEg4KBnJ1bl9pZBgDIAEoCRISCgpydW5fc3RhdHVzGAQgASgJEg0KBWVycm9yGAUgASgJEhcKD25leHRfd2FrZV9hdF9tcxgGIAEoAxIQCghhZ2VudF9pZBgHIAEoCRISCgphZ2VudF9uYW1lGAggASgJEhEKCWRldmljZV9pZBgJIAEoCRIQCghyZXZpc2lvbhgKIAEoBBIvCgtub3RpY2Vfa2luZBgLIAEoDjIaLmFpX3Bob25lLnYxLlJ1bk5vdGljZUtpbmQitQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCRIqCgV2b2ljZRgHIAEoCzIbLmFpX3Bob25lLnYxLkNoYXRWb2ljZUlucHV0IiAKDkNoYXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSp1Cg1SdW5Ob3RpY2VLaW5kEh8KG1JVTl9OT1RJQ0VfS0lORF9VTlNQRUNJRklFRBAAEiIKHlJVTl9OT1RJQ0VfS0lORF9TWVNURU1fRkFJTFVSRRABEh8KG1JVTl9OT1RJQ0VfS0lORF9ORUVEU19JTlBVVBACYgZwcm90bzM");
 
 /**
  * @generated from message ai_phone.v1.ChatAttachment
@@ -137,6 +137,13 @@ export type ChatMessage = Message<"ai_phone.v1.ChatMessage"> & {
    * @generated from field: ai_phone.v1.ChatVoiceInput voice = 10;
    */
   voice?: ChatVoiceInput | undefined;
+
+  /**
+   * Historical operational notices are preserved separately from dialogue.
+   *
+   * @generated from field: string system_notice = 11;
+   */
+  systemNotice: string;
 };
 
 /**
@@ -221,6 +228,11 @@ export type ChatState = Message<"ai_phone.v1.ChatState"> & {
    * @generated from field: uint64 revision = 10;
    */
   revision: bigint;
+
+  /**
+   * @generated from field: ai_phone.v1.RunNoticeKind notice_kind = 11;
+   */
+  noticeKind: RunNoticeKind;
 };
 
 /**
@@ -293,4 +305,30 @@ export type ChatRunRequest = Message<"ai_phone.v1.ChatRunRequest"> & {
  */
 export const ChatRunRequestSchema: GenMessage<ChatRunRequest> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_assistant, 6);
+
+/**
+ * @generated from enum ai_phone.v1.RunNoticeKind
+ */
+export enum RunNoticeKind {
+  /**
+   * @generated from enum value: RUN_NOTICE_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: RUN_NOTICE_KIND_SYSTEM_FAILURE = 1;
+   */
+  SYSTEM_FAILURE = 1,
+
+  /**
+   * @generated from enum value: RUN_NOTICE_KIND_NEEDS_INPUT = 2;
+   */
+  NEEDS_INPUT = 2,
+}
+
+/**
+ * Describes the enum ai_phone.v1.RunNoticeKind.
+ */
+export const RunNoticeKindSchema: GenEnum<RunNoticeKind> = /*@__PURE__*/
+  enumDesc(file_ai_phone_v1_assistant, 0);
 

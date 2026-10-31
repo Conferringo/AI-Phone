@@ -260,23 +260,6 @@
   width: 28px;
   height: 28px;
 }
-.chat-error,
-.connection-error {
-  color: var(--destructive);
-  font-size: 14px;
-}
-.chat-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 4px;
-}
-.connection-error {
-  cursor: pointer;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
 .attachment-dialog {
   max-width: min(90vw, 960px) !important;
 }
@@ -390,7 +373,6 @@
 .phone-toolbar{display:flex;align-items:center;gap:2px;position:relative;margin-left:auto}
 .phone-toolbar-volume{display:flex;align-items:center;gap:2px;margin-right:6px}
 .phone-toolbar-volume input{width:64px;min-height:36px;accent-color:#686777;cursor:pointer}
-.phone-toolbar-error{position:absolute;top:100%;left:0;z-index:46;max-width:260px;padding:8px 12px;background:var(--card);color:var(--destructive);border-radius:var(--radius);font-size:13px;box-shadow:0 8px 24px #0001}
 .phone-rotation-landscape{transform:rotate(90deg)}
 .workspace-tools{margin-left:12px}
 
