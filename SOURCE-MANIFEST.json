@@ -68,6 +68,11 @@
       "sha256": "0eaa4de128741aa4509b2373dae40d2397379fe998ab0eaac1841cf57143e770"
     },
     {
+      "path": ".github/workflows/windows-android-component.yml",
+      "size": 2258,
+      "sha256": "44addd7c3b842ebcfa3245303e2cfd14d53802d57473244bee77d4668b306fd5"
+    },
+    {
       "path": ".gitignore",
       "size": 813,
       "sha256": "63639262a5b116b0417006c04ce37a0cb4a2463a5af4e8646ecd6a601c8569b9"
@@ -2043,6 +2048,11 @@
       "sha256": "d422bdc308deba43573ad6d46b60b38c8ed4bcb47461962cbd2cc28caa7721b8"
     },
     {
+      "path": "config/android-factory.json",
+      "size": 2305,
+      "sha256": "12cd35cd713c20b88b1e65cb7ef5ebf86dd22153d834c13dfb63e3c68e0fb841"
+    },
+    {
       "path": "config/bun-runtime.json",
       "size": 716,
       "sha256": "1466a4e3ff5f95394822a0247cd6cbc720bd9366857b7b57afc9757c552a2684"
@@ -2076,11 +2086,6 @@
       "path": "config/js-runtime-vendor.json",
       "size": 681,
       "sha256": "1adb34eecdaa84d029013f403be0df2ea9f0477006b3f2b5650dea8ade5a1991"
-    },
-    {
-      "path": "config/linux-android-factory.json",
-      "size": 1220,
-      "sha256": "e476741eb08b4a33314a5255f669ab04f14a8e702f68f651cbd0cabad5d2ac1b"
     },
     {
       "path": "config/linux-host-runtime.json",
@@ -2708,6 +2713,11 @@
       "sha256": "089074bc72eb5ea03f1d397a444447680d7764c4ac47415e5e758b0d8e4c52da"
     },
     {
+      "path": "docs/public/engineering/windows-android-runtime.md",
+      "size": 2283,
+      "sha256": "29c4b9d3e3776116b4115c012f184b78f62ac21d14a13c66c1f5d7710a45f0b5"
+    },
+    {
       "path": "docs/public/getting-started.en.md",
       "size": 5591,
       "sha256": "ae6907d5eda0700cb1a6d9bd4b30d3a70e3c5bd84e59b5e84b7c150227bb10c9"
@@ -2719,8 +2729,8 @@
     },
     {
       "path": "docs/public/index.md",
-      "size": 2449,
-      "sha256": "9a2aa4a50dc703a9a27d64bcb9f638513106d0c24eed491112ac6f753e2daa31"
+      "size": 2527,
+      "sha256": "e4a6042c0e9e768dad6784415557133766324d0275e6c1579c89cf19c2e81cb0"
     },
     {
       "path": "docs/public/integrated-hosts.md",
@@ -3474,8 +3484,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 2870,
-      "sha256": "8071a35498340b29d5ef2663759cf93d2d0317777e845d0c39d2f5d8ec0f2cfd"
+      "size": 2864,
+      "sha256": "3f432edca224cba52feff25c0b6cee21ab974b8199812bfa56cb171e639933be"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4013,19 +4023,29 @@
       "sha256": "079cef765da7e57e959fa744fd7102eb12e44d60637d344a2c3092efcc674e0f"
     },
     {
+      "path": "scripts/android_component_factory.py",
+      "size": 4313,
+      "sha256": "c21d4a42067e364fa39b08cb278f580288b1262b9f166b83c23a013b161e6cb3"
+    },
+    {
       "path": "scripts/android_notices.py",
       "size": 1217,
       "sha256": "0c0532633cca27476617c3e6d2a23b537094ad26c8d6d34447cb876acf1be1e1"
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 11233,
-      "sha256": "5fa3851a8fd7f7b36556d80c89795a65e17ac92f33054827cfb0a0e6f3a1f4b3"
+      "size": 12403,
+      "sha256": "6ae161e3f3e8e13d14257eeb4a46d65442eef50c78d3a1cd30914ae620489f6d"
     },
     {
       "path": "scripts/android_sdk.py",
       "size": 1172,
       "sha256": "bfcdd3507ae528f2aa7f2aa53849f05435b30527d56ae66abc39d22b576b538f"
+    },
+    {
+      "path": "scripts/android_sdk_archive.py",
+      "size": 2161,
+      "sha256": "0b8c52905d4ec21ae6e6f624acccab4f8795eb8df05c436a7040b0c17efe36f3"
     },
     {
       "path": "scripts/android_sdk_repository.py",
@@ -4364,8 +4384,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11772,
-      "sha256": "5c9ec537d4899ca423fda0b9e1c82a989f295a6bec1ceebe8e940ee36fd6bc94"
+      "size": 9368,
+      "sha256": "85c57b3d30b61504728448a925423476fedae9635fd352e79a77da2a8520379b"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4643,6 +4663,11 @@
       "sha256": "a9aeba543948b3fe5cb9f71bbccecf4312f02df4f1d27a3846e61d616f4aba1b"
     },
     {
+      "path": "scripts/test_android_windows_runtime.py",
+      "size": 6138,
+      "sha256": "7d03a70101ff996d8abf724b2fa98ab7aa34c3cbd6481ac96485d5299a28f770"
+    },
+    {
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
@@ -4764,8 +4789,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 6865,
-      "sha256": "03acf84e9da172f5d9ca19155b6ada719a6ff6539694feaafdc19682c1bb2be5"
+      "size": 6935,
+      "sha256": "70b417546967db5671b7a7b93aa8a3b51c0400714707479eff1ec35c0bbf1c9b"
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",

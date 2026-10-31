@@ -12,15 +12,9 @@ import shutil
 import subprocess
 import tempfile
 import uuid
-import zipfile
 from artifact_io import digest
-from client_host_entry import canonical_name
 from client_host import download
 from host_platform import host_key
-
-SDK_MAX_BYTES=8*1024**3
-SDK_MAX_FILES=20000
-
 
 def run(argv,root=None,**kwargs):
     return subprocess.run([str(arg) for arg in argv],cwd=root,check=True,**kwargs)
@@ -31,39 +25,6 @@ def fetch(folder,name,pin):
     target=download(pin,Path(folder)/name)
     if 'size_bytes' in pin and target.stat().st_size!=pin['size_bytes']:raise ValueError('Factory download size differs')
     return target
-
-
-def sdk_name(entry,component):
-    name=canonical_name(entry.filename.rstrip('/')).as_posix()
-    if name!=component and not name.startswith(component+'/'):raise ValueError('Invalid SDK archive component')
-    kind=entry.external_attr>>16&0o170000
-    if kind not in (0,0o100000,0o040000):raise ValueError('Invalid SDK archive member type')
-    if kind==0o040000 and not entry.is_dir():raise ValueError('Invalid SDK archive directory')
-    return name
-
-
-def sdk_members(source,component):
-    total=0;seen=set()
-    for number,entry in enumerate(source.infolist()):
-        name=sdk_name(entry,component);total+=entry.file_size
-        if number>=SDK_MAX_FILES or total>SDK_MAX_BYTES:raise ValueError('SDK archive budget exceeded')
-        if name in seen:raise ValueError('Invalid duplicate SDK archive member')
-        seen.add(name)
-        yield name,entry
-
-
-def unpack_sdk(archive,destination,component):
-    destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
-    if destination.exists():raise ValueError('SDK destination must be new')
-    with zipfile.ZipFile(archive) as source,tempfile.TemporaryDirectory(prefix='.sdk-',dir=destination.parent) as temporary:
-        folder=Path(temporary)
-        for name,entry in sdk_members(source,component):
-            target=folder/name
-            if entry.is_dir():target.mkdir(parents=True,exist_ok=True);continue
-            target.parent.mkdir(parents=True,exist_ok=True)
-            with source.open(entry) as incoming,target.open('xb') as output:shutil.copyfileobj(incoming,output,1024**2)
-            target.chmod(0o755 if entry.external_attr>>16&0o111 else 0o644)
-        folder.rename(destination)
 
 
 def checked_delivery(components):
@@ -107,17 +68,8 @@ def build_image(root,role,reference,*,workspace=None,clash=None):
 
 
 def prepare_android(root,cache):
-    from android_runtime import build
-    pins=json.loads((root/'config/linux-android-factory.json').read_text())['archives']
-    archives={role:fetch(cache,record['file'],record) for role,record in pins.items()}
-    output=cache/'android.payload'
-    with tempfile.TemporaryDirectory(prefix='.android-sdk-',dir=cache) as temporary:
-        folder=Path(temporary)
-        for role in ('emulator','platform-tools'):unpack_sdk(archives[role],folder/role,role)
-        sdk=folder/'sdk';sdk.mkdir()
-        for role in ('emulator','platform-tools'):(folder/role/role).rename(sdk/role)
-        result=build(sdk,archives['system-image'],output,pins['system-image']['sha256'])
-    return output,result
+    from android_component_factory import build
+    return build(root,cache/'android')
 
 
 def factory_context(root,folder,role,python_archive=None):

@@ -9,6 +9,7 @@ from unittest.mock import patch
 from artifact_io import digest
 
 import linux_client_factory as factory
+import android_sdk_archive as sdk_archive
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
@@ -46,42 +47,42 @@ class LinuxClientFactoryTests(unittest.TestCase):
 
     def test_sdk_directory_metadata_and_exact_file_budget(self):
         entry=zipfile.ZipInfo('emulator/');entry.external_attr=0o040755<<16
-        self.assertEqual(factory.sdk_name(entry,'emulator'),'emulator')
+        self.assertEqual(sdk_archive.sdk_name(entry,'emulator'),'emulator')
         entry.filename='emulator/bad-directory'
-        with self.assertRaisesRegex(ValueError,'directory'):factory.sdk_name(entry,'emulator')
+        with self.assertRaisesRegex(ValueError,'directory'):sdk_archive.sdk_name(entry,'emulator')
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'input.zip'
             with zipfile.ZipFile(path,'w') as output:output.writestr('emulator/bin',b'123')
-            with zipfile.ZipFile(path) as source,patch('linux_client_factory.SDK_MAX_FILES',1),patch('linux_client_factory.SDK_MAX_BYTES',3):
-                self.assertEqual(len(list(factory.sdk_members(source,'emulator'))),1)
-            with zipfile.ZipFile(path) as source,patch('linux_client_factory.SDK_MAX_FILES',0):
-                with self.assertRaisesRegex(ValueError,'budget'):list(factory.sdk_members(source,'emulator'))
+            with zipfile.ZipFile(path) as source,patch('android_sdk_archive.SDK_MAX_FILES',1),patch('android_sdk_archive.SDK_MAX_BYTES',3):
+                self.assertEqual(len(list(sdk_archive.sdk_members(source,'emulator'))),1)
+            with zipfile.ZipFile(path) as source,patch('android_sdk_archive.SDK_MAX_FILES',0):
+                with self.assertRaisesRegex(ValueError,'budget'):list(sdk_archive.sdk_members(source,'emulator'))
 
     def test_runtime_archives_preserve_modes_and_reject_cross_component_paths(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);source=root/'tools.zip'
             entry=zipfile.ZipInfo('emulator/emulator');entry.external_attr=(0o100755<<16)
             with zipfile.ZipFile(source,'w') as output:output.writestr(entry,b'program')
-            factory.unpack_sdk(source,root/'sdk','emulator')
+            sdk_archive.unpack_sdk(source,root/'sdk','emulator')
             self.assertEqual((root/'sdk/emulator/emulator').read_bytes(),b'program')
             if os.name=='posix':self.assertEqual((root/'sdk/emulator/emulator').stat().st_mode&0o777,0o755)
             for name,mode in [('../outside',0o100644),('platform-tools/adb',0o100755),('emulator/link',0o120777),('emulator/pipe',0o010644)]:
                 with zipfile.ZipFile(source,'w') as output:
                     entry=zipfile.ZipInfo(name);entry.external_attr=mode<<16;output.writestr(entry,b'bad')
-                with self.assertRaises(ValueError):factory.unpack_sdk(source,root/'invalid','emulator')
+                with self.assertRaises(ValueError):sdk_archive.unpack_sdk(source,root/'invalid','emulator')
                 self.assertFalse((root/'outside').exists())
 
     def test_duplicate_and_oversized_members_fail_before_activation(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);source=root/'tools.zip'
             with zipfile.ZipFile(source,'w') as output:output.writestr('emulator/bin',b'one')
-            with patch('linux_client_factory.SDK_MAX_BYTES',2),self.assertRaisesRegex(ValueError,'budget'):
-                factory.unpack_sdk(source,root/'sdk','emulator')
+            with patch('android_sdk_archive.SDK_MAX_BYTES',2),self.assertRaisesRegex(ValueError,'budget'):
+                sdk_archive.unpack_sdk(source,root/'sdk','emulator')
             self.assertFalse((root/'sdk').exists())
             with zipfile.ZipFile(source,'w') as output:
                 output.writestr('emulator/bin',b'one')
                 with self.assertWarns(UserWarning):output.writestr('emulator/bin',b'two')
-            with self.assertRaisesRegex(ValueError,'Invalid'):factory.unpack_sdk(source,root/'sdk','emulator')
+            with self.assertRaisesRegex(ValueError,'Invalid'):sdk_archive.unpack_sdk(source,root/'sdk','emulator')
             self.assertFalse((root/'sdk').exists())
 
     def test_missing_components_cannot_produce_a_complete_factory_receipt(self):

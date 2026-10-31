@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -17,7 +18,7 @@ from host_platform import host_key
 from artifact_io import digest
 
 MANIFEST='ANDROID-MANIFEST.json'
-ABIS={'macos-arm64':'arm64-v8a','linux-x64':'x86_64'}
+ABIS={'macos-arm64':'arm64-v8a','linux-x64':'x86_64','windows-x64':'x86_64'}
 MAX_FILES=20000
 MAX_FILE=4*1024**3
 MAX_TOTAL=8*1024**3
@@ -30,11 +31,20 @@ def checked_path_text(name):
     return name
 
 
+def windows_path(path):
+    for part in path.parts:
+        if part.endswith((' ','.')) or set(part).intersection('<>:"|?*'):
+            raise ValueError('Invalid Windows Android runtime path')
+        if re.fullmatch(r'(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])',part.split('.')[0],re.IGNORECASE):
+            raise ValueError('Reserved Windows Android runtime path')
+
+
 def checked_path(name, abi):
     path=PurePosixPath(checked_path_text(name))
     prefixes=('sdk/emulator/','sdk/platform-tools/',f'sdk/system-images/android-35/default/{abi}/')
     if path.as_posix()!=name or '..' in path.parts or not name.startswith(prefixes):
         raise ValueError('Invalid Android runtime path')
+    if host_key()=='windows-x64':windows_path(path)
     if any(part in ('.env','snapshots','userdata-qemu.img','userdata-qemu.img.qcow2') or part.startswith('._') for part in path.parts):
         raise ValueError('Private Android runtime path')
     return path
@@ -56,16 +66,19 @@ def checked_file(row, abi):
 def checked_files(rows, abi):
     if not isinstance(rows,list) or not 1<=len(rows)<=MAX_FILES:
         raise ValueError('Invalid Android runtime inventory')
-    records={};total=0
+    records={};total=0;names=set();windows=host_key()=='windows-x64'
     for row in rows:
         name=checked_file(row,abi)
-        if name in records:
+        identity=name.casefold() if windows else name
+        if identity in names:
             raise ValueError('Duplicate Android runtime file')
+        names.add(identity)
         total+=row['size']
         if total>MAX_TOTAL:
             raise ValueError('Android runtime exceeds size budget')
         records[name]=row
-    required=['sdk/emulator/emulator','sdk/platform-tools/adb',*[f'sdk/system-images/android-35/default/{abi}/{name}' for name in ('system.img','vendor.img','kernel-ranchu','ramdisk.img','NOTICE.txt')]]
+    suffix='.exe' if windows else ''
+    required=['sdk/emulator/emulator'+suffix,'sdk/platform-tools/adb'+suffix,*[f'sdk/system-images/android-35/default/{abi}/{name}' for name in ('system.img','vendor.img','kernel-ranchu','ramdisk.img','NOTICE.txt')]]
     if not all(name in records for name in required):
         raise ValueError('Incomplete Android runtime')
     for name in required[:2]:
@@ -85,20 +98,31 @@ def checked_manifest(value):
     return value
 
 
+def is_alias(path):
+    return path.is_symlink() or path.is_junction()
+
+
+def permissions_match(path,mode):
+    actual=path.stat().st_mode
+    if os.name=='nt':return bool(actual&0o200)==bool(mode&0o200)
+    return actual&0o777==mode
+
+
 def verify_sdk(sdk):
     sdk=Path(sdk);folder=sdk.parent
+    if is_alias(sdk) or is_alias(folder):raise ValueError('Android runtime integrity: directory alias')
     manifest=checked_manifest(json.loads((folder/MANIFEST).read_text()))
     expected={row['path'] for row in manifest['files']}|{MANIFEST}
     actual=set()
     for path in folder.rglob('*'):
-        if path.is_symlink():
+        if is_alias(path):
             raise ValueError('Android runtime integrity: symlink')
         if path.is_file():actual.add(path.relative_to(folder).as_posix())
     if expected!=actual:
         raise ValueError('Android runtime integrity: inventory')
     for row in manifest['files']:
         path=folder/row['path']
-        if path.stat().st_mode&0o777!=row['mode'] or path.stat().st_size!=row['size'] or digest(path)!=row['sha256']:
+        if not permissions_match(path,row['mode']) or path.stat().st_size!=row['size'] or digest(path)!=row['sha256']:
             raise ValueError('Android runtime integrity: file')
     return manifest
 
@@ -111,13 +135,13 @@ def bundled_sdk(sdk):
 def owned_components(home):
     home=Path(home)
     # Resolve OS aliases such as macOS /var, but never adopt a linked app root.
-    if home.is_symlink():
+    if is_alias(home):
         raise ValueError('Android installation directory is a symlink')
     home=home.resolve()
     folder=home
     for name in ('components','android'):
         folder=folder/name
-        if folder.is_symlink():
+        if is_alias(folder):
             raise ValueError('Android component directory is a symlink')
     folder.mkdir(parents=True,exist_ok=True,mode=0o700)
     return folder
@@ -142,7 +166,7 @@ def write_member(source, entry, work, row):
 
 def stage(payload, home):
     folder=owned_components(home);destination=folder/digest(payload)
-    if destination.is_symlink():
+    if is_alias(destination):
         raise ValueError('Android component directory is a symlink')
     if destination.exists():verify_sdk(destination/'sdk');return destination/'sdk'
     with tarfile.open(payload,'r|gz') as source:
@@ -164,17 +188,19 @@ def stage(payload, home):
 
 
 def inventory_file(name, path):
-    return {'path':name,'size':path.stat().st_size,'sha256':digest(path),'mode':0o755 if path.stat().st_mode&0o111 else 0o644}
+    executable=path.suffix.lower() in ('.exe','.bat','.cmd') if host_key()=='windows-x64' else bool(path.stat().st_mode&0o111)
+    return {'path':name,'size':path.stat().st_size,'sha256':digest(path),'mode':0o755 if executable else 0o644}
 
 
 def tools_inventory(sdk, abi):
     files=[];sources={}
     for component in ('emulator','platform-tools'):
+        if is_alias(sdk/component):raise ValueError('SDK runtime source contains a link')
         if not (sdk/component/'source.properties').is_file():
             raise ValueError('Missing SDK component metadata')
         for path in sorted((sdk/component).rglob('*')):
             if path.name.startswith('._') or path.name=='.DS_Store':continue
-            if path.is_symlink():
+            if is_alias(path):
                 raise ValueError('SDK runtime source contains a link')
             if path.is_file():
                 name='sdk/'+path.relative_to(sdk).as_posix();checked_path(name,abi)
