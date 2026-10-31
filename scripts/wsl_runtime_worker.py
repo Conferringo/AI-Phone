@@ -42,14 +42,32 @@ def checkpoint(receipt,stage):
     atomic_json(STATE/'qualification-result.json',receipt)
 
 
-def initialize():
+def initialize(receipt):
     import wsl_backend_entry as entry
+    import wsl_initialize_diagnostics as diagnostic
     from database import atomic_json
-    request=STATE/'qualification-request.json'
-    atomic_json(request,{'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2048}})
-    result=entry.initialize(request)
-    if result['phone_ready'] or result['windows_boot_verified']:raise ValueError('Backend initialization overclaimed readiness')
-    return entry.staged(entry.INSTALLATION)
+    engine_root=None;before=False
+    def progress(step,root):
+        nonlocal engine_root,before
+        receipt['initialization']['step']=step
+        if step=='engine_supervisor':
+            engine_root=root;before=diagnostic.engine_cursor(root)
+        checkpoint(receipt,'initialize')
+    try:
+        request=STATE/'qualification-request.json'
+        atomic_json(request,{'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2048}})
+        result=entry.initialize(request,observer=progress)
+        if result['phone_ready'] or result['windows_boot_verified']:raise ValueError('Backend initialization overclaimed readiness')
+        entry.observe(progress,'source')
+        root=entry.staged(entry.INSTALLATION)
+        entry.observe(progress,'complete')
+        return root
+    except Exception as error:
+        receipt['initialization'].update(diagnostic.error_fields(error))
+        if engine_root is not None and receipt['initialization']['step'] in diagnostic.ENGINE_STEPS:
+            try:receipt['initialization']['engine']=diagnostic.engine_report(engine_root,before)
+            except Exception:receipt['initialization']['engine']=diagnostic.log_result('unavailable')
+        raise
 
 
 def shutdown(root):
@@ -68,7 +86,7 @@ def perform(receipt,nonce,phase):
     checkpoint(receipt,'nesting');nested_cgroups()
     checkpoint(receipt,'initialize');root=None;completed=False
     try:
-        root=initialize()
+        root=initialize(receipt)
         checkpoint(receipt,'readiness');receipt['checks'].update(probe.ready(root));receipt['checks'].update(probe.database_roles(root))
         checkpoint(receipt,'desktop')
         device=probe.desktop_registration(root,nonce,phase)
@@ -87,9 +105,10 @@ def perform(receipt,nonce,phase):
 
 def main():
     from wsl_runtime_fixture import CHECKS
+    from wsl_initialize_diagnostics import initial
     nonce=fixture_identity();STATE.mkdir(mode=0o700,exist_ok=True)
     marker=STATE/'qualification-marker.json';phase=next_phase(marker,nonce)
-    receipt={'format':1,'nonce':nonce,'phase':phase,'status':'failed','stage':'guard','checks':{name:False for name in sorted(CHECKS)},'frame':{},'windows_boot_verified':False,'phone_ready':False}
+    receipt={'format':1,'nonce':nonce,'phase':phase,'status':'failed','stage':'guard','checks':{name:False for name in sorted(CHECKS)},'frame':{},'windows_boot_verified':False,'phone_ready':False,'initialization':initial()}
     checkpoint(receipt,'guard')
     try:
         perform(receipt,nonce,phase)

@@ -210,6 +210,7 @@ def event_delta(before, after):
 
 
 def collect(root, adb, phase, state, before, started, *, invoke=None, clock=time.monotonic):
+    from linux_kvm_snapshot import snapshot
     invoke = invoke or bounded_probe
     deadline = clock() + 8
     system = platform.system()
@@ -219,7 +220,7 @@ def collect(root, adb, phase, state, before, started, *, invoke=None, clock=time
             'configuration': applied_configuration(root), 'process': process_report(root), 'acceleration': acceleration(adb, deadline, invoke, clock, system),
             'adb': boot_probes(adb, deadline, invoke, clock), 'resources_before': before,
             'resources_after': after, 'cgroup_oom_delta': event_delta(before, after),
-            'oom_cause_confirmed': False}
+            'oom_cause_confirmed': False, 'kvm': snapshot()}
 
 
 def applied_configuration(root):

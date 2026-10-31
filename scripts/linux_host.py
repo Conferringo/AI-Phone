@@ -9,6 +9,7 @@ import sys
 from client_host import execute
 from linux_services import start_unit, unit_state
 from runtime_config import runtime_env
+from linux_kvm_snapshot import emit_snapshot
 
 
 class HostPrerequisite(ValueError):
@@ -68,6 +69,7 @@ def prepare_system(emit, *, build_tools=True, ocr_tools=True, engine_tools=True)
     if not Path('/dev/kvm').exists():raise HostPrerequisite('virtualization_unavailable')
     install_dependencies(system_packages(build_tools=build_tools,ocr_tools=ocr_tools,engine_tools=engine_tools),emit)
     require_kvm()
+    emit_snapshot('preflight_ready')
 
 
 def private_token(root, section):
@@ -80,6 +82,7 @@ def private_token(root, section):
 def start_guest(root, child_env, run, start):
     run([root/'scripts/android-adb','start-server'])
     run(['sh',root/'scripts/android-create.sh'])
+    emit_snapshot('before_android_start')
     created=start('emulator',['sh',str(root/'scripts/android-emulator.sh')])
     run(['sh',root/'scripts/android-ready.sh',*([] if created else ['--observe-only'])])
     run(['sh',root/'scripts/android-install-input.sh'])

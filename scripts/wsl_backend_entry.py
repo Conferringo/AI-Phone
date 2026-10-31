@@ -69,16 +69,24 @@ def wait_engine(run,deadline=30):
     raise ValueError('Owned WSL engine did not become ready')
 
 
-def start_engine(root,run):
+def observe(observer,step,root=None):
+    if observer is not None:
+        try:observer(step,root)
+        except Exception:pass  # Qualification diagnostics cannot change initialization behavior.
+
+
+def start_engine(root,run,observer=None):
     from linux_services import start_unit
+    observe(observer,'engine_supervisor',root)
     Path('/run/aiphone').mkdir(mode=0o700,exist_ok=True)
     command=['/usr/local/bin/dockerd','--host',SOCKET,'--data-root','/var/lib/aiphone/docker',
              '--exec-root','/run/aiphone/engine','--pidfile','/run/aiphone/dockerd.pid']
     start_unit(root,'wsl-engine',command,environment())
+    observe(observer,'engine_ready',root)
     wait_engine(run)
 
 
-def start_backend(root,run):
+def start_backend(root,run,observer=None):
     from client_host import verify_container_ownership
     from container_images import stage,activate
     from linux_host import private_token,start_web_service
@@ -87,16 +95,22 @@ def start_backend(root,run):
     from prebuilt_js import launch_spec as js_launch_spec
     from runtime_config import runtime_env
     require_owned_backend(root);bind_environment()
+    observe(observer,'container_ownership')
     existing=verify_container_ownership(root)
+    observe(observer,'images')
     os.environ.update(activate(root,stage(BUNDLE/'images.payload')))
+    observe(observer,'environment')
     os.environ.update(runtime_env(root))
     private_token(root,'assistant');private_token(root,'phone-runner');private_token(root,'channels')
     compose=['docker','compose','-f','compose.yaml','-f','compose.dev.yaml']
+    observe(observer,'database_start')
     run([*compose,'up','-d','--wait','--no-build','--pull','never','postgres','redis'])
+    observe(observer,'database_prepare')
     assistant=launch_spec(root,'assistant')
     if not unit_state(root,'assistant'):
         run([sys.executable,root/'scripts/database.py','prepare'])
         run([*assistant['argv'],'--migrate'])
+    observe(observer,'services_start')
     start_unit(root,'assistant',assistant['argv'],{**os.environ,**assistant['environment']})
     web_environment=dict(os.environ)
     def start(name,argv,extra_env=None):return start_unit(root,name,argv,{**web_environment,**(extra_env or {})})
@@ -110,28 +124,31 @@ def start_backend(root,run):
         run(['docker','start',desktop['id']])
 
 
-def initialize_locked(request):
+def initialize_locked(request,observer=None):
     from client_host import check_request,prepare_profile
     require_linux()
     request=check_request(json.loads(Path(request).read_text()))
     if shutil.disk_usage('/').free<4*1024**3:raise ValueError('Keep 4 GiB free for backend initialization')
-    bind_environment();root=staged(INSTALLATION)
+    bind_environment();observe(observer,'source');root=staged(INSTALLATION)
     if (root/'data/restore-quarantine.json').exists():raise ValueError('Restored state is quarantined')
     require_owned_backend(root)
     from installer_tools import select
+    observe(observer,'tools')
     os.environ.update(select(root,TOOLS))
     # The bridge is deliberately absent from this component; it cannot emit two-device readiness.
+    observe(observer,'profile')
     prepare_profile(root,INSTALLATION,request,{'phone_template':'android35-x86_64'},Path('/opt/aiphone/native-phone-bridge'))
     def run(argv,**kwargs):return subprocess.run(list(map(str,argv)),cwd=root,env=dict(os.environ),check=kwargs.pop('check',True),**kwargs)
-    start_engine(root,run);start_backend(root,run)
+    start_engine(root,run,observer);start_backend(root,run,observer)
     return {'backend_started':True,'phone_ready':False,'complete_device_bundle':False,'windows_boot_verified':False}
 
 
-def initialize(request):
+def initialize(request,observer=None):
     from installer_lock import acquire
+    observe(observer,'preflight')
     INSTALLATION.parent.mkdir(parents=True,mode=0o700,exist_ok=True)
     with acquire(INSTALLATION.parent/'initialize.lock'):
-        return initialize_locked(request)
+        return initialize_locked(request,observer)
 
 
 def main(argv=None):

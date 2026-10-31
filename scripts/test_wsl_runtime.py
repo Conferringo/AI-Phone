@@ -35,6 +35,8 @@ class QualificationScopeTests(unittest.TestCase):
     def test_public_evidence_rejects_extra_fields_and_false_completion(self):
         from wsl_runtime_fixture import worker_result
         record={'format':1,'nonce':'a'*32,'phase':1,'status':'passed','stage':'stopped','checks':{'assistant':True,'web':True,'channels':True,'database_roles':True,'redis':True,'desktop_frame':True,'work_file':True,'database_marker':True,'desktop_registered':True,'desktop_media':True},'frame':{'width':1280,'height':800,'sha256':'b'*64},'windows_boot_verified':False,'phone_ready':False}
+        from wsl_initialize_diagnostics import initial
+        record['initialization']={**initial(),'step':'complete'}
         self.assertEqual(worker_result(record,'a'*32,1),record)
         for extra in ({**record,'token':'secret'},{**record,'windows_boot_verified':True},{**record,'phase':2}):
             with self.assertRaises(ValueError):worker_result(extra,'a'*32,1)

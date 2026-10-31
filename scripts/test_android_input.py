@@ -315,7 +315,7 @@ class CallerDelegationTests(unittest.TestCase):
     def test_linux_delegates_input_once_without_its_own_package_decision(self):
         run=[];queried=[]
         def query(argv,**_):queried.append(argv);return types.SimpleNamespace(returncode=0,stdout='package:fixture')
-        function=extracted('linux_host.py','start_guest',{'subprocess':types.SimpleNamespace(run=query)})
+        function=extracted('linux_host.py','start_guest',{'subprocess':types.SimpleNamespace(run=query),'emit_snapshot':lambda _phase:None})
         function(Path('/fixture'),{},run.append,lambda *_:False)
         self.assertEqual(sum(str(a[-1]).endswith('/android-install-input.sh') for a in run),1)
         self.assertFalse(any('dev.aiphone.input' in a for a in queried))

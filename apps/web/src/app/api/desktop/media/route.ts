@@ -28,8 +28,9 @@ export async function GET(request: Request) {
     if (!state.devices.some(device => device.id === id && device.kind === 'desktop' && device.runtimeState === 'managed')) {
       return assistantError(404, 'not_found', '电脑尚未接入');
     }
-    const root = process.env.AI_PHONE_PROJECT_ROOT || path.resolve(process.cwd(), '../..');
-    const token = (await readFile(path.join(root, 'data/phone-runner/token'), 'utf8')).trim();
+    const root = process.env.AI_PHONE_PROJECT_ROOT || path.resolve(/* turbopackIgnore: true */ process.cwd(), '../..');
+    const tokenPath = path.join(/* turbopackIgnore: true */ root, 'data/phone-runner/token');
+    const token = (await readFile(/* turbopackIgnore: true */ tokenPath, 'utf8')).trim();
     return await relayMedia(
       request.signal,
       signal => fetch(`http://127.0.0.1:17865/desktop/${kind}`, {

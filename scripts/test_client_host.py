@@ -44,7 +44,7 @@ class NativeHostTests(unittest.TestCase):
             command=home/'limactl';command.write_text('#!/bin/sh\nexit 0\n');command.chmod(0o755)
             def query(args,**kwargs):
                 return subprocess.CompletedProcess(args,1 if 'ai-phone' in args else 0,stdout='',stderr='unmatched instances')
-            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute:
+            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute,patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
                 activate_container_engine(root,home,command,{'fixture':True})
                 self.assertIn('--name=ai-phone',execute.call_args_list[0].args[0])
 

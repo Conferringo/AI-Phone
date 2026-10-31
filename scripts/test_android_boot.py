@@ -238,7 +238,8 @@ with lock.open('w') as stream:
         state={'observations':120,'last_boot':{'return_code':1,'timed_out_or_unavailable':False,'boot_completed':'unknown'}}
         after={'platform':'linux','cgroup':{'events':{'oom_kill':2}}};before={'platform':'linux','cgroup':{'events':{'oom_kill':1}}}
         with patch.object(diag,'resources',return_value=after),patch.object(diag,'process_report',return_value={'verified':False,'current_exit_code':None}),patch.object(diag,'applied_configuration',return_value={'phone_cpus':2}),patch.object(diag.platform,'system',return_value='Linux'):
-            report=diag.collect(Path('/private/path'),['/private/sdk/platform-tools/adb','-s','SECRET'], 'boot_failed',state,before,0,invoke=lambda *_:result('arbitrary private text',1,'token'),clock=lambda:120)
+            with patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
+                report=diag.collect(Path('/private/path'),['/private/sdk/platform-tools/adb','-s','SECRET'], 'boot_failed',state,before,0,invoke=lambda *_:result('arbitrary private text',1,'token'),clock=lambda:120)
         self.assertFalse(report['oom_cause_confirmed']);self.assertEqual(report['cgroup_oom_delta'],{'oom_kill':1})
         encoded=json.dumps(report);self.assertNotIn('private',encoded);self.assertNotIn('SECRET',encoded);self.assertNotIn('token',encoded);self.assertLess(len(encoded),16384)
 

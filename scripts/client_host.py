@@ -156,6 +156,8 @@ def activate_container_engine(root, home, command, value):
     execute(['docker', 'info'], stdout=subprocess.DEVNULL)
     save_selection(root, home, state, command, bin_dir)
     os.environ['AI_PHONE_MANAGED_BIN'] = str(bin_dir)
+    from linux_kvm_snapshot import emit_snapshot
+    emit_snapshot('engine_ready')
 
 
 def container_engine(root, home, config, emit):
