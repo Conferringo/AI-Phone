@@ -1,7 +1,7 @@
 import {connectionKey,migrateAgentScopes,managedDevice,authorizedDevice} from "./scopes";
 import {DesktopRequestSchema,DesktopObservationSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
 import {startWhatsApp} from './whatsapp';
-import {whatsappBrowser,whatsappProxy} from './whatsapp-browser';
+import {BrowserSession} from './whatsapp-runtime';
 import {startTelegram,telegramIdentity} from './telegram';
 import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
 import { ChannelListRequestSchema, ChannelListResponseSchema, ChannelBindRequestSchema, ChannelUnbindRequestSchema, ChannelPairRequestSchema, ChannelPushRequestSchema, ChannelPushResultSchema, ChannelPushStatusRequestSchema } from "@ai-phone/protocol/ai_phone/v1/channels_pb";
@@ -259,9 +259,10 @@ const server=Bun.serve({hostname:"127.0.0.1",port:17864,maxRequestBodySize:5*102
         config.appId=id;config.allowed=old?.appId===id?old.allowed:[];config.offset=old?.appId===id?old.offset:0;
       }
       if(provider==='whatsapp'){
-        try{whatsappBrowser(root);whatsappProxy(input.proxyUrl);}catch{return error(503,"browser_unavailable","WhatsApp浏览器组件或代理不可用");}
+        config.appId=!input.resetSession&&old?old.appId:crypto.randomUUID();
+        try{new BrowserSession({root,sessionId:config.appId,proxyUrl:input.proxyUrl||proxy,signal:new AbortController().signal});}catch{return error(503,"browser_unavailable","WhatsApp浏览器组件或代理不可用");}
         if(input.resetSession&&old){const confirmed=await connections.get(connectionKey(agentId,provider))?.logout?.();if(!confirmed){vault.disconnectWarnings??={};vault.disconnectWarnings[connectionKey(agentId,provider)]="旧会话已本地断开，WhatsApp远端注销未确认";}}
-        config.appId=!input.resetSession&&old?old.appId:crypto.randomUUID();config.secret=old?.secret||randomBytes(32).toString('hex');config.proxyUrl=input.proxyUrl;
+        config.secret=old?.secret||randomBytes(32).toString('hex');config.proxyUrl=input.proxyUrl;
         config.allowed=!input.resetSession&&old?old.allowed:[];config.identity=!input.resetSession?old?.identity:undefined;
       }
       if(vault.disconnectWarnings&&!input.resetSession)delete vault.disconnectWarnings[connectionKey(agentId,provider)];

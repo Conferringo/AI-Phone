@@ -4,7 +4,7 @@ Original AI Phone code is licensed under **Apache-2.0**, selected by the maintai
 
 | Component | Source / licence evidence | Release action |
 | --- | --- | --- |
-| Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 440 JavaScript packages across the server and native client, licence metadata and notice-file hashes. One legacy package (async 0.2.10) omits its SPDX field; its packaged MIT grant is retained and hashed. Redistribution/source-offer review remains open |
+| Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 425 JavaScript packages across the server and native client, licence metadata and notice-file hashes. One legacy package (async 0.2.10) omits its SPDX field; its packaged MIT grant is retained and hashed. Redistribution/source-offer review remains open |
 | Knowledge motion + native app icon | Original AI Phone TypeScript/SVG implementations, Apache-2.0; hashes in config/source-assets.json | Original renderer implementation with EPIC as a visual reference. Complete knowledge-motion visual acceptance remains pending. |
 | Native OCR test glyphs | DejaVu Sans; Bitstream Vera grant and public-domain DejaVu changes | Generated diagnostic PNG only, no font binary. [Font notice](docs/public/licenses/fixtures/dejavu.txt); font/image hashes in config/source-assets.json |
 | Android SDK/emulator/system image | Google's SDK packages | Clean, pinned development runtime component exists; source archives exclude SDK/image binaries. Complete binary redistribution and corresponding-source/terms review remain open. Contributor sdkmanager downloads remain separate |
@@ -54,7 +54,9 @@ Puppeteer is pinned to 25.16.0 via a root override; the older 24.38.0 transitive
 
 The optional local linked-device connection uses **whatsapp-web.js 1.34.7 (Apache-2.0)** and **qrcode 1.5.4 (MIT)**. Full upstream terms are retained in [whatsapp-web.js](docs/public/licenses/javascript/whatsapp-web.js/LICENSE) and [qrcode](docs/public/licenses/javascript/qrcode/license). Its legacy async 0.2.10 transitive dependency ships a [MIT grant](docs/public/licenses/javascript/async/LICENSE) without a package SPDX field. The dependency inventory records that missing metadata rather than inventing a declaration. WhatsApp and Meta do not sponsor this project; the Web protocol adapter is unofficial.
 
-Chromium is a separate required runtime component for this optional connection. The developer bootstrap downloads a matching build into the ignored project tool directory; it is **not currently redistributed in a product installer**. Complete distributions must include its matching binary, full Chromium third-party notices/source obligations and provenance. The runtime-component publication gate remains closed. No personal browser profile, linked-device state or QR payload belongs in a source export.
+Bundled installations use Chromium from the included Linux desktop image for fresh accounts. Existing host profiles and contributor overrides retain their original host browser. Complete binary distributions require the image’s full Chromium third-party notices, source obligations and provenance; binary publication awaits that review. No personal browser profile, linked-device state or QR payload belongs in a source export. See the [runtime policy](docs/public/engineering/channel-browser.md).
+
+The locked archive dependencies use glob 14.0.3 and minimatch 11.0.3, covering [glob cancellation](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) and [minimatch pattern amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249). The SDK archive directory/pattern integration is tested with Unicode, hidden files and ignore rules. Licence metadata and packaged upstream grants remain independent of the advisory result.
 
 ## Prebuilt web component (development builds)
 

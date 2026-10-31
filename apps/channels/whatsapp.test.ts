@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {startWhatsApp} from './whatsapp';
 import {whatsappProxy,whatsappBrowser} from './whatsapp-browser';
+import {BrowserConfigurationError} from './whatsapp-runtime';
 import {ownerTarget} from './outbox';
 class Fake extends EventEmitter{
  info={wid:{_serialized:'account@c.us'}};destroyed=0;loggedOut=0;sent:any[]=[];
@@ -36,6 +37,23 @@ test('late QR work and callbacks cannot resurrect a stopped connection',async()=
   expect(f.control.qrPng.length).toBe(0);expect(f.control.state).toBe('idle');expect(f.seen).toHaveLength(0);
  }finally{await f.close();}
 });
+test('authentication keeps a still-rendering QR from replacing the authenticating state',async()=>{
+ let resolve!:(v:Buffer)=>void;const f=fixture({}, {qr:()=>new Promise(r=>resolve=r)});
+ try{f.clients[0].emit('qr','old');f.clients[0].emit('authenticated');resolve(Buffer.from('stale'));await flush();expect(f.control.state).toBe('authenticating');expect(f.control.qrPng.length).toBe(0);}finally{await f.close()}
+});
+test('send requires a ready connection and honors the message length boundary',async()=>{
+ const f=fixture();const job={id:'boundary',target:{chat:'owner@c.us'}};
+ try{
+  await expect(f.control.send(job,'not ready')).rejects.toThrow('未连接');f.clients[0].emit('ready');
+  for(const text of ['', 'x'.repeat(65001)])await expect(f.control.send(job,text)).rejects.toThrow('长度');
+  expect(await f.control.send(job,'x'.repeat(65000))).toBe('outgoing');await f.control.stop();await expect(f.control.send(job,'stopped')).rejects.toThrow('未连接');
+ }finally{await f.close()}
+});
+test('unpaired logout is confirmed and failed construction can still be stopped',async()=>{
+ const f=fixture();try{f.clients[0].emit('qr','fixture');await flush();expect(await f.control.logout()).toBe(true);expect(f.clients[0].loggedOut).toBe(0);}finally{await f.close()}
+ const broken=fixture({}, {browser:()=>{throw new BrowserConfigurationError('missing component')}});
+ try{expect(broken.control.state).toBe('failed');expect(broken.control.error).toBe('missing component');await broken.control.stop();await expect(broken.control.logout()).rejects.toThrow('数据已保留');}finally{await broken.close()}
+});
 test('authentication supersedes an in-flight QR render and rejects duplicate identities',async()=>{
  let resolve!:(v:Buffer)=>void;const f=fixture({onIdentity:()=>false},{qr:()=>new Promise(r=>resolve=r)});try{
   f.clients[0].emit('qr','old');f.clients[0].emit('authenticated');f.clients[0].emit('ready');resolve(Buffer.from('stale'));await flush();
@@ -52,6 +70,12 @@ test('network reconnection closes the old client and ignores its later events',a
 });
 test('storage failures stop reception instead of dispatching unsaved instructions',async()=>{
  const f=fixture({onMessage:()=>{throw Error('fixture storage failure');}});try{f.clients[0].emit('ready');f.clients[0].emit('message',{from:'owner@c.us',body:'work',fromMe:false,isStatus:false,id:{_serialized:'one'}});await flush();expect(f.control.state).toBe('failed');expect(f.clients[0].destroyed).toBeGreaterThan(0);}finally{await f.close();}
+});
+test('identity storage and QR failures stop the attempt without publishing a connection',async()=>{
+ const identity=fixture({onIdentity:()=>{throw Error('storage unavailable')}});
+ try{identity.clients[0].emit('ready');await flush();expect(identity.control.state).toBe('failed');expect(identity.clients[0].destroyed).toBe(1);}finally{await identity.close()}
+ const qr=fixture({}, {qr:async()=>{throw Error('renderer failed')}});
+ try{qr.clients[0].emit('qr','fixture');await flush();expect(qr.control.state).toBe('failed');expect(qr.control.qrPng.length).toBe(0);expect(qr.clients[0].destroyed).toBe(1);}finally{await qr.close()}
 });
 test('proxy credentials are separated from Chrome arguments and browser manifests cannot escape',()=>{
  expect(whatsappProxy('http://user:pass@127.0.0.1:7897')).toEqual({args:['--proxy-server=http://127.0.0.1:7897'],auth:{username:'user',password:'pass'}});
@@ -77,4 +101,39 @@ test('overlapping stops await one close and ignore late initialization',async()=
   expect(done).toBe(false);expect(fake.destroyed).toBe(1);complete();await flush();finish();await Promise.all([first,second]);await flush();
   expect(fake.destroyed).toBe(1);expect(f.control.state).toBe('idle');
  }finally{await f.close();}
+});
+test('an already queued retry cannot resurrect a stopped connection',async()=>{
+ const native=globalThis.setTimeout;let queued:(()=>void)|undefined;
+ globalThis.setTimeout=((callback:any,delay:number,...args:any[])=>{
+  if(delay===1234){queued=callback;return native(()=>{},60000);}
+  return native(callback,delay,...args);
+ }) as typeof setTimeout;
+ const f=fixture({}, {retryMs:1234});
+ try{
+  f.clients[0].emit('ready');f.clients[0].emit('disconnected','TIMEOUT');await flush();expect(queued).toBeDefined();
+  await f.control.stop();queued!();await flush();expect(f.clients).toHaveLength(1);expect(f.control.state).toBe('idle');
+ }finally{globalThis.setTimeout=native;await f.close()}
+});
+test('normal initialization stays live and incoming work waits for the identity gate',async()=>{
+ const f=fixture(),message={from:'owner@c.us',body:'work',fromMe:false,isStatus:false,id:{_serialized:'one'}};
+ try{
+  await flush();expect(f.clients[0].destroyed).toBe(0);f.clients[0].emit('message',message);expect(f.seen).toHaveLength(0);
+  f.clients[0].emit('ready');f.clients[0].emit('message',message);expect(f.seen).toHaveLength(1);
+ }finally{await f.close()}
+ const missing=fixture();try{Object.defineProperty(missing.clients[0],'info',{value:undefined});expect(()=>missing.clients[0].emit('ready')).not.toThrow();await flush();expect(missing.control.state).toBe('failed');}finally{await missing.close()}
+});
+test('reconnect uses bounded backoff, resets after ready, and honors an explicit zero delay',async()=>{
+ const native=globalThis.setTimeout,scheduled:{callback:()=>void;delay:number;timer:ReturnType<typeof setTimeout>}[]=[];
+ const settle=()=>new Promise(resolve=>native(resolve,0));
+ globalThis.setTimeout=((callback:any,delay:number,...args:any[])=>{
+  if(delay<60000){const timer=native(()=>{},60000);scheduled.push({callback,delay,timer});return timer;}
+  return native(callback,delay,...args);
+ }) as typeof setTimeout;
+ const f=fixture();let zero:ReturnType<typeof fixture>|undefined;
+ try{
+  f.clients[0].emit('disconnected','TIMEOUT');await settle();expect(scheduled.at(-1)?.delay).toBe(2000);scheduled.at(-1)!.callback();await settle();
+  f.clients[1].emit('disconnected','TIMEOUT');await settle();expect(scheduled.at(-1)?.delay).toBe(4000);scheduled.at(-1)!.callback();await settle();
+  f.clients[2].emit('ready');f.clients[2].emit('disconnected','TIMEOUT');await settle();expect(scheduled.at(-1)?.delay).toBe(2000);
+  zero=fixture({}, {retryMs:0});zero.clients[0].emit('disconnected','TIMEOUT');await settle();expect(scheduled.at(-1)?.delay).toBe(0);
+ }finally{globalThis.setTimeout=native;await f.close();await zero?.close();for(const item of scheduled)clearTimeout(item.timer);}
 });

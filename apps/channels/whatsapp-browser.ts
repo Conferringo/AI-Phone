@@ -1,7 +1,7 @@
 import {readFileSync,existsSync,constants,accessSync} from 'node:fs';
 import {resolve,isAbsolute,relative} from 'node:path';
-export function whatsappBrowser(root:string):string{
- const custom=process.env.AI_PHONE_WHATSAPP_CHROMIUM;
+export function whatsappBrowser(root:string,env:NodeJS.ProcessEnv=process.env):string{
+ const custom=env.AI_PHONE_WHATSAPP_CHROMIUM;
  if(custom){if(!isAbsolute(custom))throw Error('WhatsApp浏览器路径必须是绝对路径');accessSync(custom,constants.X_OK);return custom;}
  const base=resolve(root,'.tools/whatsapp-browser'),manifest=resolve(base,'browser.json');
  if(!existsSync(manifest))throw Error('WhatsApp浏览器组件尚未安装');

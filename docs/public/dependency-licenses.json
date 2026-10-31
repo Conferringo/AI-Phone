@@ -4,7 +4,7 @@
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
     "Cargo.lock": "5fe896d9077e52c80d67835d7d4b2937ee86a174e3006f90b1c9e50faa27f137",
-    "bun.lock": "100949f46452ba920439cd85b74851d1f7fbaa4dac4044c065939d66f9f431af",
+    "bun.lock": "c72de6b7d2ae34434908da631a47d5e572defc134af6713335cb545acbe89666",
     "apps/client/src-tauri/Cargo.lock": "dc1813dbf94c5956224ce2f87624371da194ddea898f60ec2ab76bfc24c77431"
   },
   "rust": [
@@ -10384,14 +10384,14 @@
       "notices": []
     },
     {
-      "name": "@isaacs/cliui",
-      "version": "8.0.2",
-      "license": "ISC",
-      "repository": "yargs/cliui",
+      "name": "@isaacs/nonrecursive-glob-match",
+      "version": "1.0.3",
+      "license": "BlueOak-1.0.0",
+      "repository": null,
       "notices": [
         {
-          "file": "LICENSE.txt",
-          "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
+          "file": "LICENSE.md",
+          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
         }
       ]
     },
@@ -10492,18 +10492,6 @@
       "license": "MIT",
       "repository": "https://github.com/vercel/next.js",
       "notices": []
-    },
-    {
-      "name": "@pkgjs/parseargs",
-      "version": "0.11.0",
-      "license": "MIT",
-      "repository": "git@github.com:pkgjs/parseargs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
     },
     {
       "name": "@protobufjs/aspromise",
@@ -11847,13 +11835,13 @@
     },
     {
       "name": "balanced-match",
-      "version": "1.0.2",
+      "version": "4.0.4",
       "license": "MIT",
       "repository": "git://github.com/juliangruber/balanced-match.git",
       "notices": [
         {
           "file": "LICENSE.md",
-          "sha256": "a1bd5deadb6a06dd74efa852c1b8b23f63b67f2214fbe9c8bd591da51da69268"
+          "sha256": "d408f38ffa3355c5faec517153295338892eb0f1ea43f57874bb23c6075979b5"
         }
       ]
     },
@@ -11959,13 +11947,13 @@
     },
     {
       "name": "brace-expansion",
-      "version": "2.1.7",
+      "version": "5.0.12",
       "license": "MIT",
-      "repository": "git://github.com/juliangruber/brace-expansion.git",
+      "repository": "git+https://github.com/juliangruber/brace-expansion.git",
       "notices": [
         {
           "file": "LICENSE",
-          "sha256": "68f12f6e2c33688699249c01d8f9623c534da20aa71989c57b061b7bc1676d14"
+          "sha256": "9c63a23124d68cd30cd316a94a1a0bca34f032786df6df69fc4b5f136bac8d2e"
         }
       ]
     },
@@ -12284,18 +12272,6 @@
       ]
     },
     {
-      "name": "cross-spawn",
-      "version": "7.0.6",
-      "license": "MIT",
-      "repository": "git@github.com:moxystudio/node-cross-spawn.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "aaa78451b6fecd1b9c4594c796c133c0e90cad100372ff8bc6de615e9ef9adf1"
-        }
-      ]
-    },
-    {
       "name": "csstype",
       "version": "3.2.3",
       "license": "MIT",
@@ -12452,13 +12428,6 @@
       ]
     },
     {
-      "name": "eastasianwidth",
-      "version": "0.2.0",
-      "license": "MIT",
-      "repository": "git://github.com/komagata/eastasianwidth.git",
-      "notices": []
-    },
-    {
       "name": "emoji-regex",
       "version": "10.6.0",
       "license": "MIT",
@@ -12473,18 +12442,6 @@
     {
       "name": "emoji-regex",
       "version": "8.0.0",
-      "license": "MIT",
-      "repository": "https://github.com/mathiasbynens/emoji-regex.git",
-      "notices": [
-        {
-          "file": "LICENSE-MIT.txt",
-          "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a"
-        }
-      ]
-    },
-    {
-      "name": "emoji-regex",
-      "version": "9.2.2",
       "license": "MIT",
       "repository": "https://github.com/mathiasbynens/emoji-regex.git",
       "notices": [
@@ -12699,18 +12656,6 @@
       ]
     },
     {
-      "name": "foreground-child",
-      "version": "3.3.1",
-      "license": "ISC",
-      "repository": "git+https://github.com/tapjs/foreground-child.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "93f5d82a8d59442fe3275383453a255fef761647fb28265644010ba799806148"
-        }
-      ]
-    },
-    {
       "name": "form-data",
       "version": "4.0.6",
       "license": "MIT",
@@ -12808,13 +12753,13 @@
     },
     {
       "name": "glob",
-      "version": "10.5.0",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/node-glob.git",
+      "version": "14.0.3",
+      "license": "BlueOak-1.0.0",
+      "repository": "git@github.com:isaacs/node-glob.git",
       "notices": [
         {
-          "file": "LICENSE",
-          "sha256": "cdbc258d13806538e727964c2436a8806e6e2496ccd616224aace6f7bf98dbc1"
+          "file": "LICENSE.md",
+          "sha256": "a49c9ba464796f65b59fca3f1e6ca40912df1e859f575383223f7ec6c5baae09"
         }
       ]
     },
@@ -13080,18 +13025,6 @@
       ]
     },
     {
-      "name": "jackspeak",
-      "version": "3.4.3",
-      "license": "BlueOak-1.0.0",
-      "repository": "git+https://github.com/isaacs/jackspeak.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "2c7c5d22ed5a8ee968c64757710979afcd77438c48b4a265b94e615babd8a901"
-        }
-      ]
-    },
-    {
       "name": "jiti",
       "version": "2.7.0",
       "license": "MIT",
@@ -13273,13 +13206,13 @@
     },
     {
       "name": "lru-cache",
-      "version": "10.4.3",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/node-lru-cache.git",
+      "version": "11.5.3",
+      "license": "BlueOak-1.0.0",
+      "repository": "git+ssh://git@github.com/isaacs/node-lru-cache.git",
       "notices": [
         {
-          "file": "LICENSE",
-          "sha256": "451ec07eeb9c4e1b86de9abdaa426462a8be48f887ec7421cf0bbb9c769555ab"
+          "file": "LICENSE.md",
+          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
         }
       ]
     },
@@ -13897,25 +13830,13 @@
     },
     {
       "name": "minimatch",
-      "version": "5.1.9",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/minimatch.git",
+      "version": "11.0.3",
+      "license": "BlueOak-1.0.0",
+      "repository": "git@github.com:isaacs/minimatch",
       "notices": [
         {
-          "file": "LICENSE",
-          "sha256": "d11323827fa4edeaafc437cc5b91b6971b335f0127efeeb42bf5122fe8657e8f"
-        }
-      ]
-    },
-    {
-      "name": "minimatch",
-      "version": "9.0.9",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/minimatch.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "d11323827fa4edeaafc437cc5b91b6971b335f0127efeeb42bf5122fe8657e8f"
+          "file": "LICENSE.md",
+          "sha256": "2c7c5d22ed5a8ee968c64757710979afcd77438c48b4a265b94e615babd8a901"
         }
       ]
     },
@@ -14088,18 +14009,6 @@
       ]
     },
     {
-      "name": "package-json-from-dist",
-      "version": "1.0.1",
-      "license": "BlueOak-1.0.0",
-      "repository": "git+https://github.com/isaacs/package-json-from-dist.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "a49c9ba464796f65b59fca3f1e6ca40912df1e859f575383223f7ec6c5baae09"
-        }
-      ]
-    },
-    {
       "name": "parse-entities",
       "version": "4.0.2",
       "license": "MIT",
@@ -14124,20 +14033,8 @@
       ]
     },
     {
-      "name": "path-key",
-      "version": "3.1.1",
-      "license": "MIT",
-      "repository": "sindresorhus/path-key",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
       "name": "path-scurry",
-      "version": "1.11.1",
+      "version": "3.0.0",
       "license": "BlueOak-1.0.0",
       "repository": "git+https://github.com/isaacs/path-scurry",
       "notices": [
@@ -14548,30 +14445,6 @@
       ]
     },
     {
-      "name": "shebang-command",
-      "version": "2.0.0",
-      "license": "MIT",
-      "repository": "kevva/shebang-command",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "69dee148a2cc470554dfa7142e830662062394d0fe67cddd379aba90dc60d6b3"
-        }
-      ]
-    },
-    {
-      "name": "shebang-regex",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "sindresorhus/shebang-regex",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
       "name": "side-channel",
       "version": "1.1.1",
       "license": "MIT",
@@ -14620,18 +14493,6 @@
       ]
     },
     {
-      "name": "signal-exit",
-      "version": "4.1.0",
-      "license": "ISC",
-      "repository": "https://github.com/tapjs/signal-exit.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "b173e19b9a78df305577ace0e52ef45a4bcc915ea28b47b256dc3b68dcb1f7e7"
-        }
-      ]
-    },
-    {
       "name": "source-map-js",
       "version": "1.2.2",
       "license": "BSD-3-Clause",
@@ -14676,18 +14537,6 @@
         {
           "file": "license",
           "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "string-width",
-      "version": "5.1.2",
-      "license": "MIT",
-      "repository": "sindresorhus/string-width",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
         }
       ]
     },
@@ -15195,18 +15044,6 @@
       ]
     },
     {
-      "name": "which",
-      "version": "2.0.2",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/node-which.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b"
-        }
-      ]
-    },
-    {
       "name": "which-module",
       "version": "2.0.1",
       "license": "ISC",
@@ -15233,18 +15070,6 @@
     {
       "name": "wrap-ansi",
       "version": "7.0.0",
-      "license": "MIT",
-      "repository": "chalk/wrap-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "wrap-ansi",
-      "version": "8.1.0",
       "license": "MIT",
       "repository": "chalk/wrap-ansi",
       "notices": [

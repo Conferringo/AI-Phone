@@ -68,4 +68,4 @@ Non-macOS physical installation is waived for this release scope and remains unv
 
 真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux OCR 仍依赖系统 Python/Pillow、Tesseract 与语言数据，完整离线包须继续内置这些依赖。媒体/渠道离线组件另有真实归档运行证据，仍需完整镜像、模拟器、浏览器及其他宿主集成，完整安装包尚未提供。
 
-Browser follow-up: the [container lifecycle component](engineering/channel-browser.md) has isolated real-browser and SDK evidence. Production selection still uses the host component; the complete offline browser integration and redistribution gate remain open.
+The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.

@@ -219,7 +219,7 @@ def bootstrap_valid(root):
 
 
 def messaging_browser(root, env, download=False):
-    # Contributor bootstrap. Complete distributions must include this component.
+    # Full bundles verify the included image; contributors may prepare a host browser.
     from prebuilt_js import launch_spec
     args = launch_spec(root, 'messaging-browser')['argv'] + ([] if download else ['--verify'])
     result = subprocess.run(args, cwd=root, env=env, capture_output=True, text=True)
@@ -257,12 +257,18 @@ def install_source_components(state, root, env):
     state.phase('dependencies', fingerprint(root, inputs), prepare, lambda: bootstrap_valid(root))
     state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'apps/device-network/native-apps.ts','apps/device-network/app-assets.ts']),
                 lambda: native_apps(root, env, True), lambda: native_apps(root, env))
-    # No upstream Chromium snapshot for Linux ARM; do not record absent bytes as installed.
-    if platform.system() == 'Linux' and platform.machine().lower() in ('aarch64', 'arm64') and not env.get('AI_PHONE_WHATSAPP_CHROMIUM'):
+
+
+def install_messaging_browser(state,root,env):
+    from install_state import fingerprint
+    from prebuilt_js import BROWSER_SOURCES
+    # A complete bundle uses the already imported desktop image on every architecture.
+    if not env.get('AI_PHONE_DESKTOP_IMAGE') and platform.system() == 'Linux' and platform.machine().lower() in ('aarch64', 'arm64') and not env.get('AI_PHONE_WHATSAPP_CHROMIUM'):
         print('WhatsApp browser not prepared: this architecture needs a matched bundled runtime')
-    else:
-        state.phase('messaging-browser', fingerprint(root, ['apps/channels/install-browser.ts', 'apps/channels/whatsapp-browser.ts', 'bun.lock']),
-                    lambda: messaging_browser(root, env, True), lambda: messaging_browser(root, env))
+        return
+    sources=['apps/channels/install-browser.ts','apps/channels/whatsapp-browser.ts','apps/channels/whatsapp-runtime.ts','bun.lock',*BROWSER_SOURCES]
+    state.phase('messaging-browser',fingerprint(root,sources,{'image':env.get('AI_PHONE_DESKTOP_IMAGE',''),'python':env.get('AI_PHONE_PYTHON','')}),
+                lambda:messaging_browser(root,env,True),lambda:messaging_browser(root,env))
 
 
 def install_guest_images(state, root, env):
@@ -299,6 +305,7 @@ def install(root=ROOT, *, observer=None, license_action=None, launch_client=True
         install_sdk(state, root, env, license_action)
         install_source_components(state, root, env)
         install_guest_images(state, root, env)
+        install_messaging_browser(state,root,env)
         state.phase('services', fingerprint(root, ['scripts/service_start.py', PROFILE]),
                     lambda: start(root=root, launch_client=launch_client), lambda: service_ready('http://127.0.0.1:17860') is None, reuse=False)
 

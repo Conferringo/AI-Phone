@@ -4,6 +4,7 @@ import threading
 import unittest
 import subprocess
 import sys
+from pathlib import Path
 from unittest.mock import patch
 from browser_pipe import write_all,relay,high_pipe,run_relay,stop_guest,reserve_debug_fds
 
@@ -18,7 +19,8 @@ threading.Timer(0.03,lambda:os.kill(os.getpid(),signal.SIGTERM)).start()
 run_relay(type('Child',(),{'poll':lambda self:None})(),[(reader,os.open(os.devnull,os.O_WRONLY))])
 print('closed')
 '''
-        result=subprocess.run([sys.executable,'-c',code],capture_output=True,text=True,timeout=2)
+        env={**os.environ,'PYTHONPATH':str(Path(__file__).absolute().parent)}
+        result=subprocess.run([sys.executable,'-c',code],capture_output=True,text=True,timeout=2,env=env)
         self.assertEqual(result.returncode,0);self.assertEqual(result.stdout.strip(),'closed')
 
     @unittest.skipIf(os.name=='nt','Linux guest signal/process-group contract')

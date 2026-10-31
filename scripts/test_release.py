@@ -12,6 +12,36 @@ from release_stage import stage_bundle
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_contributor_browser_preparation_happens_before_verification(self):
+        import release
+        from install_state import InstallState
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);prepared=False
+            def browser(actual,env,download=False):
+                nonlocal prepared
+                self.assertEqual(actual,root)
+                if download:prepared=True
+                return prepared
+            with InstallState(root) as state,patch('release.platform.system',return_value='Darwin'),patch('release.messaging_browser',side_effect=browser):
+                release.install_messaging_browser(state,root,{})
+            self.assertTrue(prepared)
+
+    def test_unbundled_arm64_does_not_record_an_absent_browser_as_installed(self):
+        import release
+        with tempfile.TemporaryDirectory() as temporary,patch('release.platform.system',return_value='Linux'),patch('release.platform.machine',return_value='aarch64'),patch('release.messaging_browser') as check:
+            state=MagicMock();release.install_messaging_browser(state,Path(temporary),{})
+            state.phase.assert_not_called();check.assert_not_called()
+
+    def test_arm64_bundle_checks_the_included_browser_and_keeps_failure_visible(self):
+        from install_state import InstallState
+        import release
+        image='ai-phone-bundle/desktop:sha-'+'a'*64
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);env={'AI_PHONE_DESKTOP_IMAGE':image,'AI_PHONE_PYTHON':'/bundled/python'}
+            with InstallState(root) as state,patch('release.platform.system',return_value='Linux'),patch('release.platform.machine',return_value='aarch64'),patch('release.messaging_browser',return_value=True) as check:
+                release.install_messaging_browser(state,root,env);self.assertTrue(check.called)
+                with patch('release.messaging_browser',return_value=False),self.assertRaisesRegex(ValueError,'verification failed'):release.install_messaging_browser(state,root,env)
+
     def test_bundled_image_checkpoints_never_build_or_pull_missing_images(self):
         import release
         from install_state import InstallState
@@ -113,8 +143,8 @@ class ReleaseTests(unittest.TestCase):
             checks=[{'name':'sdk/platform-tools/adb','passed':False,'fix':'SDK download required'},{'name':'fixture tool','passed':True,'fix':''}]
             with patch('release.doctor', return_value=checks), patch('release.environment', return_value=environment), patch('install_state.InstallState', return_value=state), patch('android_sdk.command', return_value=['sdk-fixture']), patch('release.run', side_effect=command), patch('release.subprocess.run', side_effect=command), patch('release.start') as start, patch('release.platform.system', return_value='Darwin'):
                 release.install(root=root, launch_client=False)
-            self.assertEqual(phases, [(name, name!='services') for name in ('sdk-packages', 'dependencies', 'native-apps', 'messaging-browser', 'workspace-image', 'desktop-image', 'services')])
-            self.assertEqual([args[0] for args, _ in commands], ['sdk-fixture', './scripts/bootstrap.sh', str(root/'.tools/bin/bun'), str(root/'.tools/bin/bun'), 'docker', 'docker', 'docker'])
+            self.assertEqual(phases, [(name, name!='services') for name in ('sdk-packages', 'dependencies', 'native-apps', 'workspace-image', 'desktop-image', 'messaging-browser', 'services')])
+            self.assertEqual([args[0] for args, _ in commands], ['sdk-fixture', './scripts/bootstrap.sh', str(root/'.tools/bin/bun'), 'docker', 'docker', 'docker',str(root/'.tools/bin/bun')])
             for args, kwargs in commands:
                 if args[:3] != ['docker', 'image', 'inspect']:
                     self.assertEqual(kwargs.get('root', kwargs.get('cwd')), root)
