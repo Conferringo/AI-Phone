@@ -144,7 +144,7 @@ class JavaScriptBuildTests(unittest.TestCase):
                     return result
                 with patch('prebuilt_js.build_manifest',side_effect=manifest_fixture),patch('bootstrap_bun.bun_path',return_value=root/'runtime/bin/bun'),patch('prebuilt_js.subprocess.check_output',side_effect=version_probe),patch('prebuilt_js.bundle',side_effect=compile_fixture),patch('prebuilt_js.shutil.disk_usage',return_value=SimpleNamespace(free=RESERVE+MAX_BYTES+MAX_SOURCE)):
                     if mode=='success':
-                        value=build(root);self.assertEqual(len(value['entries']),5);self.assertEqual(build(root),value)
+                        value=build(root);self.assertEqual(len(value['entries']),7);self.assertIn('backend-qualification',value['entries']);self.assertIn('device-network',value['entries']);self.assertEqual(build(root),value)
                     else:
                         with self.assertRaises((ValueError,subprocess.CalledProcessError)):build(root)
                         self.assertFalse((root/'.tools/js-services').exists())
@@ -178,13 +178,13 @@ class JavaScriptBuildTests(unittest.TestCase):
 
 
     def test_copy_inventory_and_staging_budgets_accept_the_exact_boundary(self):
-        from prebuilt_js import copy_dependencies,file_records,snapshot_sources,source_inputs,actual_members
+        from prebuilt_js import ENTRIES,copy_dependencies,file_records,snapshot_sources,source_inputs,actual_members
         from unittest.mock import patch
         from types import SimpleNamespace
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary).resolve();value=self.fixture(root);package=root/'node_modules/vendor';package.mkdir(parents=True);(package/'a.js').write_bytes(b'a');(package/'b.js').write_bytes(b'bb')
             graph=SimpleNamespace(source=root,packages={package:{'name':'vendor','version':'1'}},package_source=lambda path:path)
-            for limit,count,passes in ((3,7,True),(2,7,False),(3,6,False)):
+            for limit,count,passes in ((3,len(ENTRIES)+2,True),(2,len(ENTRIES)+2,False),(3,len(ENTRIES)+1,False)):
                 work=root/f'work-{limit}-{count}'
                 with patch('prebuilt_js.MAX_BYTES',limit),patch('prebuilt_js.MAX_FILES',count):
                     if passes:copy_dependencies(root,work,graph);self.assertEqual((work/'runtime/js-services/node_modules/vendor/b.js').read_bytes(),b'bb')

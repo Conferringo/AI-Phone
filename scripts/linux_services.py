@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -15,8 +16,7 @@ from database import atomic_json
 
 def folder_for(root, name):
     if not re.fullmatch(r'[a-z][a-z0-9-]{0,39}',name):raise ValueError('Invalid service name')
-    folder=Path(root).resolve()/'data/services';folder.mkdir(parents=True,exist_ok=True,mode=0o700)
-    return folder
+    return Path(root).resolve()/'data/services'
 
 
 def process_start(pid):
@@ -28,11 +28,29 @@ def process_start(pid):
     except (OSError,ValueError,IndexError):return None
 
 
+def read_receipt(folder, name):
+    """Open existing private state once; inspection never creates directories."""
+    directory = os.open(folder, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        descriptor = os.open(name+'.json', os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW, dir_fd=directory)
+        with os.fdopen(descriptor, 'rb') as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                return None
+            data = stream.read(8193)
+    finally:
+        os.close(directory)
+    if len(data) > 8192:
+        return None
+    return json.loads(data)
+
+
 def unit_state(root, name):
     try:
-        value=json.loads((folder_for(root,name)/(name+'.json')).read_text())
+        value=read_receipt(folder_for(root,name),name)
+        if not isinstance(value,dict):return None
         if value.get('root')!=str(Path(root).resolve()) or type(value.get('pid')) is not int:return None
-        if process_start(value['pid'])!=value.get('start_ticks'):return None
+        start=process_start(value['pid'])
+        if start is None or start!=value.get('start_ticks'):return None
         args=(Path('/proc')/str(value['pid'])/'cmdline').read_bytes().split(b'\0')
         if str(Path(__file__).resolve()).encode() not in args or name.encode() not in args:return None
         return value
@@ -41,6 +59,7 @@ def unit_state(root, name):
 
 def start_unit(root, name, command, environment):
     root=Path(root).resolve();folder=folder_for(root,name)
+    folder.mkdir(parents=True,exist_ok=True,mode=0o700)
     spec={'command':list(map(str,command)),'environment':environment}
     digest=hashlib.sha256(json.dumps(spec,sort_keys=True).encode()).hexdigest()
     fd=os.open(folder/(name+'.lock'),os.O_RDWR|os.O_CREAT,0o600)

@@ -1,0 +1,60 @@
+name: WSL backend component qualification
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wsl-backend-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  linux-x64-component:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      PYTHONDONTWRITEBYTECODE: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Disposable Linux build prerequisites
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+      - name: Owned disposable image store
+        uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: ai-phone-wsl-factory
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Admission and lifecycle regressions
+        run: |
+          PYTHONPATH=scripts python3 -m unittest test_wsl_backend test_wsl_backend_review test_wsl_runtime test_native_services.NativeHostToolsTests
+          ./scripts/bun test ./apps/device-stream/phone-grpc.test.ts ./apps/device-stream/phone-runtime-startup.test.ts ./scripts/wsl-desktop-qualification.test.ts
+      - name: Assemble, boot and restart the isolated Linux backend
+        env:
+          AI_PHONE_DISPOSABLE_QUALIFICATION: '1'
+        run: python3 scripts/wsl_backend_qualification.py
+      - name: Retain sanitized qualification receipt only
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: wsl-backend-qualification-receipt
+          path: dist/wsl-backend-qualification.json
+          if-no-files-found: warn
+          retention-days: 14
+      # No rootfs, guest disk, archive, environment, or private test log is uploaded.
+      # This factory does not establish Windows WSL/WHPX/phone-bridge availability.

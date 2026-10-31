@@ -1,9 +1,7 @@
 import {beginAudio} from './audio-transport';
-import {emulatorDiscovery} from './emulator-discovery';
+import {createPhoneGrpc} from './phone-grpc';
 import {physicalPoint,interpolate} from "./gestures";
 import {desktopScreen,desktopAudio,stopDesktop} from './desktop-hub';
-import * as grpc from "@grpc/grpc-js";
-import {loadSync} from "@grpc/proto-loader";
 import sharp from "sharp";
 import http from "node:http";
 import {readFileSync} from "node:fs";
@@ -21,9 +19,7 @@ const grpcPort=Number(process.env.AI_PHONE_GRPC_PORT||8558),port=Number(process.
 const runnerDir=process.env.AI_PHONE_RUNNER_DIR||root+"/data/phone-runner";
 const token=readFileSync(runnerDir+"/token","utf8").trim();
 const sdk=process.env.AI_PHONE_SDK_ROOT||"/opt/homebrew/share/android-commandlinetools";
-const definition=grpc.loadPackageDefinition(loadSync(sdk+"/emulator/lib/emulator_controller.proto",{keepCase:false,longs:String,enums:String,defaults:true,oneofs:true}));
-const Controller=(definition as any).android.emulation.control.EmulatorController;
-let cachedPath="",client:any;
+const phoneGrpc=createPhoneGrpc({sdk,port:grpcPort,serial});
 
 let nativeWidth=720,nativeHeight=1440,rotation=0,orientationAt=0,orientationPending:Promise<void>|null=null;
 async function refreshOrientation(){
@@ -32,11 +28,7 @@ async function refreshOrientation(){
 }
 function correction(frame:any){const value=frame.format.rotation?.rotation;const delivered=typeof value==="number"?value:({PORTRAIT:0,LANDSCAPE:1,REVERSE_PORTRAIT:2,REVERSE_LANDSCAPE:3} as Record<string,number>)[value]||0;return -90*((rotation-delivered+4)%4);}
 
-function connection(){
- const {path,token:emulatorToken}=emulatorDiscovery(grpcPort,serial);
- if(cachedPath!==path){client?.close();client=new Controller("127.0.0.1:"+grpcPort,grpc.credentials.createInsecure(),{"grpc.max_receive_message_length":12*1024*1024});cachedPath=path;}
- const metadata=new grpc.Metadata();metadata.set("authorization","Bearer "+emulatorToken);return {client,metadata};
-}
+function connection(){return phoneGrpc.connection();}
 async function call(method:string,input:any,deadlineMs=5000){const {client,metadata}=connection();return new Promise<any>((yes,no)=>client[method](input,metadata,{deadline:Date.now()+deadlineMs},(e:any,v:any)=>e?no(e):yes(v)));}
 // Capture and transport are separate: one encoder, one latest pending raw frame,
 // and one latest replacement for each backpressured viewer.
@@ -103,4 +95,4 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==="POST"&&req.url==="/action"){const buffers:Buffer[]=[];let bytes=0;try{for await(const buffer of req){bytes+=buffer.length;if(bytes>32768)throw new Error("large");buffers.push(buffer);}await action(Buffer.concat(buffers));actionCursor.finish("completed");res.writeHead(200);res.end("ok");}catch{res.writeHead(502);res.end("action_outcome_unknown");}return;}
  res.writeHead(404);res.end();
 });server.listen(port,"127.0.0.1",()=>console.log("Private media bridge ready",deviceId,port));
-process.on("SIGTERM",()=>{stopDesktop();stopScreen();hub.close();server.close();client?.close();process.exit(0);});
+process.on("SIGTERM",()=>{stopDesktop();stopScreen();hub.close();server.close();phoneGrpc.close();process.exit(0);});

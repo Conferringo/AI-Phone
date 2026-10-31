@@ -124,9 +124,11 @@ class NativeHostTests(unittest.TestCase):
 
     def test_foreign_database_is_refused_before_compose_can_change_anything(self):
         root=Path('/owned')
-        def result(owner): return subprocess.CompletedProcess([],0,stdout=json.dumps({'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}))
-        verify_container_ownership(root,lambda _:result('/owned'))
-        with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda _:result('/somebody-else'))
+        def result(owner,argv):
+            text='a'*64 if argv[:3]==['docker','container','ls'] else json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}})
+            return subprocess.CompletedProcess([],0,stdout=text)
+        verify_container_ownership(root,lambda argv,**_:result('/owned',argv))
+        with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda argv,**_:result('/somebody-else',argv))
 
     def test_progress_observer_preserves_checkpoint_order_and_failure(self):
         with tempfile.TemporaryDirectory() as temp:

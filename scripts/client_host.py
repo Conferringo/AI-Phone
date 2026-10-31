@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -175,17 +176,35 @@ def container_engine(root, home, config, emit):
     activate_container_engine(root, home, command, value)
 
 
+def verified_container(root, value):
+    labels=value.get('labels') if isinstance(value,dict) else None
+    if not isinstance(labels,dict) or labels.get('com.docker.compose.project')!='ai-phone' or not isinstance(labels.get('com.docker.compose.project.working_dir'),str) or Path(labels['com.docker.compose.project.working_dir']).resolve()!=root.resolve():
+        from service_start import OwnershipConflict
+        raise OwnershipConflict('Another installation owns existing AI Phone containers; no containers or data were changed')
+    if not isinstance(value.get('id'),str) or re.fullmatch(r'[0-9a-f]{64}',value['id']) is None or type(value.get('running')) is not bool:
+        raise ValueError('Existing container state could not be verified; no containers or data were changed')
+    return {'id':value['id'],'running':value['running']}
+
+
 def verify_container_ownership(root, query=None):
-    for name in ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop'):
-        result = query(name) if query else subprocess.run(['docker', 'inspect', '--format', '{{json .Config.Labels}}', name], capture_output=True, text=True)
-        if result.returncode:
-            # A missing container is fine; an unreachable daemon is not.
-            if not query: execute(['docker', 'info'], stdout=subprocess.DEVNULL)
-            continue
-        labels = json.loads(result.stdout)
-        if not isinstance(labels, dict) or labels.get('com.docker.compose.project') != 'ai-phone' or Path(labels.get('com.docker.compose.project.working_dir', '')).resolve() != root.resolve():
-            from service_start import OwnershipConflict
-            raise OwnershipConflict('Another installation owns existing AI Phone containers; no containers or data were changed')
+    existing={}
+    query=query or subprocess.run
+    template='{"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}'
+    for name in ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop'):
+        # Absence must come from a successful container query, not wrapper stderr.
+        result=query(['docker','container','ls','--all','--filter','name=^/'+name+'$','--no-trunc','--format','{{.ID}}'],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        identifier=result.stdout.strip()
+        if not identifier:continue
+        if re.fullmatch(r'[0-9a-f]{64}',identifier) is None:
+            raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        result=query(['docker','container','inspect','--format',template,identifier],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        container=verified_container(root,json.loads(result.stdout))
+        if container['id']!=identifier:
+            raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        existing[name]=container
+    return existing
 
 
 def installation_reserve(root, home, config):
