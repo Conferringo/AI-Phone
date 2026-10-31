@@ -1,6 +1,6 @@
 # Contributing / 参与贡献
 
-This is a local source-preview candidate. Original project code is Apache-2.0; dependencies/assets retain their own terms. No GitHub upload is authorized in this batch. Do not upload a development checkout's private state when preparing a contribution.
+Original project code is Apache-2.0; dependencies and assets retain their own terms. Keep device disks, accounts, conversations, attachments, credentials and local audit evidence out of contributions.
 
 ## Development
 
@@ -9,8 +9,8 @@ Use the documented stack and project-local Bun. Read [the public UI system](docs
 ```sh
 ./scripts/bootstrap.sh
 ./scripts/bun run check
-./scripts/bun test ./apps/channels ./scripts/locale.test.ts ./scripts/device-focus.test.ts
-python3 -m unittest discover -s scripts -p test_release.py
+./scripts/bun test ./apps/channels ./apps/device-network ./scripts/*.test.ts
+python3 -m unittest discover -s scripts -p 'test_*.py'
 cargo fmt --all --check
 cargo test --workspace --locked
 ./scripts/bun run build
@@ -28,4 +28,6 @@ App-experience contributions must strip accounts, contacts, file names, private 
 
 Source packages are built with `./ai-phone package`. Do not use a blanket archive or upload the entire workspace. Public packaging additionally requires completed publication gates and a manual review of the resulting archive.
 
-GitHub workflow definitions are prepared with pinned checkout/setup-node commits and read-only repository permissions. They run only mocks and isolated databases, never a real phone or paid provider. Remote CI has not yet run because the repository is not uploaded.
+`master` requires a pull request and passing Source/Native checks from GitHub Actions, with the branch up to date. Administrators follow the same rule. Finish validation of one candidate before advancing the next; retain failures and fix their cause rather than weakening a check.
+
+Workflows use pinned actions and read-only repository permissions. Automated tests use mocks and isolated databases; they do not control personal devices or call paid providers. Dependency audit failures name the affected package and advisory; the Native workflow retains a sanitized report for diagnosis. Passing source and native-build checks does not qualify a complete client release: full runtime resources, licensing, privacy and the publication gates are checked separately.

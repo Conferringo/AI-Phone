@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 from native_backports import verified_backports
+from dependency_report import sanitized_report, report_lines, write_report
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGETS = ('aarch64-apple-darwin', 'aarch64-unknown-linux-gnu', 'x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc', 'aarch64-linux-android')
@@ -72,14 +73,30 @@ def audit(root=ROOT):
             'blocked_targets': blocked, 'blanket_ignores': []}
 
 
-if __name__ == '__main__':
+def publish_report(result, output):
+    report = sanitized_report(result, TARGETS)
+    write_report(output, report)
+    for line in report_lines(report):
+        print(line)
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--target', choices=TARGETS, help='Fail on active vulnerability/unsound findings for this target')
-    args = parser.parse_args()
-    result = audit()
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2)+'\n')
-    print(json.dumps({'javascript_passed': result['javascript_passed'], 'blocked_targets': result['blocked_targets']}))
+    args = parser.parse_args(argv)
+    try:
+        result = audit()
+        publish_report(result, args.output)
+    except Exception as error:
+        # Retain no raw command output, exception message, path or environment.
+        write_report(args.output, {'format': 2, 'completed': False,
+            'error': 'Dependency audit did not complete', 'exception': type(error).__name__})
+        raise
     if not result['javascript_passed'] or (args.target and result['blocked_targets'][args.target]):
-        raise SystemExit(1)
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

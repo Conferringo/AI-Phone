@@ -43,6 +43,14 @@ jobs:
         run: |
           cargo install cargo-audit --version 0.22.2 --locked
           python3 scripts/audit_dependencies.py --target aarch64-apple-darwin --output audit.json
+      - name: Retain sanitized dependency diagnostics
+        if: always() && hashFiles('audit.json') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-dependency-audit
+          path: audit.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Local unsigned bundle and privacy checks
         run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime --with-js-services
       - name: Retain development artifact only on explicit request

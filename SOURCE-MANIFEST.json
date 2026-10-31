@@ -49,8 +49,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7279,
-      "sha256": "44e4ea682c694196fe231fb5c715823a95a6679a046d2ae1b206098d7367eabd"
+      "size": 7620,
+      "sha256": "236b9eca1ce9cb90502858672d885e3f0ccf79b6ef36ccea45702434be15e2fe"
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
@@ -94,8 +94,8 @@
     },
     {
       "path": "CONTRIBUTING.md",
-      "size": 2894,
-      "sha256": "cf895064ccb88838c85a9c83d0cb1096911f2b4768753a651fab20c3f10b001b"
+      "size": 3322,
+      "sha256": "c9f53d36f22d8ef71a325d1fe59b57ad8b187bcb289fe90acd834f317a55db19"
     },
     {
       "path": "Cargo.lock",
@@ -4104,8 +4104,8 @@
     },
     {
       "path": "scripts/audit_dependencies.py",
-      "size": 5042,
-      "sha256": "bbb5870de6c98fb9c695c8d66de43dc385e0d76ebe3e16bc84ba8d8cc76fb1a9"
+      "size": 5455,
+      "sha256": "fa1cb52d2346a5b2e21eab71735042d468ca6c60b3ff01191645f7aae92887b6"
     },
     {
       "path": "scripts/bench-phone.ts",
@@ -4276,6 +4276,11 @@
       "path": "scripts/dependency_inventory.py",
       "size": 8340,
       "sha256": "7883caba00d46d803951e805198b00c4900a67a76e7a840b3e91796107b02c7e"
+    },
+    {
+      "path": "scripts/dependency_report.py",
+      "size": 4161,
+      "sha256": "3a6724601c1c064aaae5cd02eafc88ab957c3be30305ad367a2d39953198d23e"
     },
     {
       "path": "scripts/device-focus.test.ts",
@@ -4776,6 +4781,11 @@
       "path": "scripts/test_dependency_notices.py",
       "size": 3110,
       "sha256": "58bdb15897685e81590b950bc40895ba1904226ad3cd3695eae4636d2ed5146e"
+    },
+    {
+      "path": "scripts/test_dependency_reporting.py",
+      "size": 5396,
+      "sha256": "ee005502934e2803a447a42ba0294436f53c7d0585af8ac234927ddfe14777e9"
     },
     {
       "path": "scripts/test_desktop_media.py",
