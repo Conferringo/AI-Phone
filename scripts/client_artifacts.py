@@ -37,12 +37,13 @@ def inspect_payload(files, root=ROOT):
     legal={destination:file_receipt(native/source,public[destination]) for source,destination in resources.items()}
     seen=set();result=[]
     for name,data in sorted(files.items()):
-        approved=next((digest for relative,digest in public.items() if name.endswith('/'+relative) or name==relative),None)
+        relative=next((relative for relative in legal if name.endswith('/'+relative) or name==relative),None)
+        if '/host/tools/' in ('/'+name).casefold() and relative is None:raise ValueError('Unexpected installer tool resource: '+name)
+        approved=public.get(relative)
         receipt=file_receipt(data,approved) if isinstance(data,Path) else inspect_stream(io.BytesIO(data),name,approved)
-        for relative,expected in legal.items():
-            if name.endswith('/'+relative) or name==relative:
-                if receipt!=expected:raise ValueError('Stale legal resource: '+name)
-                seen.add(relative)
+        if relative is not None:
+            if receipt!=legal[relative]:raise ValueError('Stale legal resource: '+name)
+            seen.add(relative)
         result.append({'path':name,**receipt})
     if seen!=set(legal):raise ValueError('Missing legal resources: '+str(sorted(set(legal)-seen)))
     return result

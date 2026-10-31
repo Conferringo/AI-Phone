@@ -71,9 +71,11 @@ class WindowsAndroidRuntimeTests(unittest.TestCase):
     def test_host_names_case_aliases_and_ntfs_streams_cannot_be_admitted(self):
         with patch('android_runtime.host_key',return_value='windows-x64'):
             value=self.manifest();self.assertEqual(checked_manifest(value)['abi'],'x86_64')
-            for name in ['sdk/emulator/emulator','sdk/emulator/CON','sdk/emulator/aux.txt','sdk/emulator/file:stream','sdk/emulator/end.','sdk/emulator/end ']:
-                changed={**value,'files':[{**value['files'][0],'path':name},*value['files'][1:]]}
-                with self.subTest(name=name),self.assertRaises(ValueError):checked_manifest(changed)
+            wrong_program={**value,'files':[{**value['files'][0],'path':'sdk/emulator/emulator'},*value['files'][1:]]}
+            with self.assertRaisesRegex(ValueError,'Incomplete'):checked_manifest(wrong_program)
+            for name in ['sdk/emulator/CON','sdk/emulator/aux.txt','sdk/emulator/file:stream','sdk/emulator/end.','sdk/emulator/end ']:
+                changed={**value,'files':[*value['files'],{**value['files'][0],'path':name}]}
+                with self.subTest(name=name),self.assertRaisesRegex(ValueError,'path'):checked_manifest(changed)
             duplicate={**value['files'][0],'path':'sdk/emulator/EMULATOR.exe'}
             with self.assertRaises(ValueError):checked_manifest({**value,'files':[*value['files'],duplicate]})
         with patch('android_runtime.host_key',return_value='linux-x64'):

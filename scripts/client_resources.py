@@ -14,11 +14,11 @@ def resource_map(root):
         for name in ('android.payload','images.payload'):
             if name in expected:resources['gen/host/'+name]='host/'+name
         if 'tools/manifest.json' in expected:
-            from installer_tools import read_manifest
+            from installer_tools import verify
             from artifact_io import digest
             folder=native/'gen/host/tools'
             if digest(folder/'manifest.json')!=expected['tools/manifest.json']:raise ValueError('Installer tools changed before packaging')
-            manifest=read_manifest(folder)
+            manifest=verify(folder)
             for name in ['manifest.json',*[row['path'] for row in manifest['files']]]:resources['gen/host/tools/'+name]='host/tools/'+name
     return resources
 
@@ -26,7 +26,10 @@ def resource_map(root):
 def build_config(root):
     native=Path(root)/'apps/client/src-tauri'
     target=native/'gen/host/resources.json'
-    target.write_text(json.dumps({'bundle':{'resources':resource_map(root)}},sort_keys=True)+'\n')
+    expanded=resource_map(root)
+    resources={source:destination for source,destination in expanded.items() if not source.startswith('gen/host/tools/')}
+    if len(resources)!=len(expanded):resources['gen/host/tools']='host/tools'
+    target.write_text(json.dumps({'bundle':{'resources':resources}},sort_keys=True)+'\n')
     return target
 
 

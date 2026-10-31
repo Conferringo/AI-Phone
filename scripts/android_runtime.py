@@ -77,6 +77,11 @@ def checked_files(rows, abi):
         if total>MAX_TOTAL:
             raise ValueError('Android runtime exceeds size budget')
         records[name]=row
+    checked_programs(records,abi,windows)
+    return records
+
+
+def checked_programs(records,abi,windows):
     suffix='.exe' if windows else ''
     required=['sdk/emulator/emulator'+suffix,'sdk/platform-tools/adb'+suffix,*[f'sdk/system-images/android-35/default/{abi}/{name}' for name in ('system.img','vendor.img','kernel-ranchu','ramdisk.img','NOTICE.txt')]]
     if not all(name in records for name in required):
@@ -84,7 +89,6 @@ def checked_files(rows, abi):
     for name in required[:2]:
         if records[name]['mode']!=0o755:
             raise ValueError('Android runtime program is not executable')
-    return records
 
 
 def checked_manifest(value):
@@ -108,17 +112,21 @@ def permissions_match(path,mode):
     return actual&0o777==mode
 
 
-def verify_sdk(sdk):
-    sdk=Path(sdk);folder=sdk.parent
-    if is_alias(sdk) or is_alias(folder):raise ValueError('Android runtime integrity: directory alias')
-    manifest=checked_manifest(json.loads((folder/MANIFEST).read_text()))
-    expected={row['path'] for row in manifest['files']}|{MANIFEST}
+def sdk_inventory(folder):
     actual=set()
     for path in folder.rglob('*'):
         if is_alias(path):
             raise ValueError('Android runtime integrity: symlink')
         if path.is_file():actual.add(path.relative_to(folder).as_posix())
-    if expected!=actual:
+    return actual
+
+
+def verify_sdk(sdk):
+    sdk=Path(sdk);folder=sdk.parent
+    if is_alias(sdk) or is_alias(folder):raise ValueError('Android runtime integrity: directory alias')
+    manifest=checked_manifest(json.loads((folder/MANIFEST).read_text()))
+    expected={row['path'] for row in manifest['files']}|{MANIFEST}
+    if expected!=sdk_inventory(folder):
         raise ValueError('Android runtime integrity: inventory')
     for row in manifest['files']:
         path=folder/row['path']

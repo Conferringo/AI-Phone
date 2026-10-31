@@ -10,11 +10,11 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
-import tempfile
 import uuid
 from artifact_io import digest
 from client_host import download
 from host_platform import host_key
+
 
 def run(argv,root=None,**kwargs):
     return subprocess.run([str(arg) for arg in argv],cwd=root,check=True,**kwargs)

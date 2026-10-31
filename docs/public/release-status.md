@@ -7,7 +7,7 @@ Updated 2026-10-31. Source code and technical documentation are available. Publi
 | Target | Verified scope | Remaining qualification |
 |---|---|---|
 | macOS Apple Silicon | Complete nine-component App/DMG compiled; mounted-file verification; portable runtime execution; native migration and role checks; workbench startup | Fresh default-size dual-device installation, upgrades, signing/notarization and full acceptance |
-| Windows x64 | Native client compilation | Complete independent host, matched runtime resources and first run |
+| Windows x64 | Native client compilation; [sealed Android SDK/image component](engineering/windows-android-runtime.md), NTFS admission and packaged emulator/ADB execution | Complete independent host, backend, acceleration setup and first run |
 | Linux x64 | Native client compilation, [offline host resources](container-host-runtime.md) and [isolated offline OCR](engineering/linux-offline-ocr.md) | Complete offline host, payload and first run |
 | Linux ARM64 | Native client compilation | Matched Android runtime and complete independent host |
 | Android ARM64 root/KVM | Native client compilation; privileged host target defined | Kernel/runtime integration, matched payload and both guests |
