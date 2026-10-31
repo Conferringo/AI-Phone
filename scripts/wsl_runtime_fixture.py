@@ -122,12 +122,21 @@ def read_phase(work,container,nonce,phase,run=docker):
 def run_phase(work,container,nonce,phase,run=docker):
     owned('container',container,nonce,run)
     failed=False
-    with (work/f'worker-phase-{phase}.private.log').open('xb') as output:
+    # Reuse the existing exclusive phase output; no second capture or process wrapper.
+    with (work/f'worker-phase-{phase}.private.log').open('x+b') as output:
         try:failed=subprocess.run(['docker','start','--attach',container],stdout=output,stderr=subprocess.STDOUT,timeout=900).returncode!=0
         except subprocess.TimeoutExpired:failed=True
-    result=read_phase(work,container,nonce,phase,run)
-    if failed:result['status']='failed'
-    return result
+        result=read_phase(work,container,nonce,phase,run)
+        if failed:result['status']='failed'
+        initialization=result['initialization']
+        if failed and result['stage']=='initialize' and initialization['step']=='database_start' and initialization['error']=='command_failed':
+            from wsl_initialize_diagnostics import database_report,checked,log_result
+            try:
+                evidence=database_report(output)
+                checked({**initialization,'database':evidence})
+                initialization['database']=evidence
+            except Exception:initialization['database']=log_result('unavailable')
+        return result
 
 
 def materialize(work,nonce,resources,run=docker):

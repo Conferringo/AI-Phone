@@ -140,7 +140,7 @@
     {
       "path": "README.md",
       "size": 12636,
-      "sha256": "094fb6e76703fa48eee058efdd4606a59a5473a4af4a0c6edf92abe87f437e75"
+      "sha256": "6af8da930b9e64c1c551108738f81d297c939fa9420320a7fed1933ce218e614"
     },
     {
       "path": "SECURITY.md",
@@ -2644,8 +2644,8 @@
     },
     {
       "path": "docs/public/compatibility.md",
-      "size": 8312,
-      "sha256": "0213ec46ecc34b55892f4eb8fb398d3cd48f00044abd7a85aca9d24cfd3739c7"
+      "size": 7727,
+      "sha256": "b00363ae26d34e2f01c455b52954b83555a3623b798dc654f2de6faf3f2576a7"
     },
     {
       "path": "docs/public/container-host-runtime.md",
@@ -2774,13 +2774,13 @@
     },
     {
       "path": "docs/public/getting-started.en.md",
-      "size": 5591,
-      "sha256": "ae6907d5eda0700cb1a6d9bd4b30d3a70e3c5bd84e59b5e84b7c150227bb10c9"
+      "size": 6052,
+      "sha256": "c9c26c3e6208f9a0f7bbbb4e92e466e4027cf0d13916c3524930400cf40fd8bd"
     },
     {
       "path": "docs/public/getting-started.zh-CN.md",
-      "size": 5432,
-      "sha256": "f302812816551e19a657a041ee0689dee3736fdec61ac5dfea97c8f564164beb"
+      "size": 5796,
+      "sha256": "82d5c7995d8df048823d3726152ed6144a14cd6a6778f5e46490d2b447c000fc"
     },
     {
       "path": "docs/public/index.md",
@@ -2789,8 +2789,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 5870,
-      "sha256": "8cd48f8b4cafdda02d99c2633cee492a5d5882a8cf215bb0690e974ef8007138"
+      "size": 5904,
+      "sha256": "86bd889a461ea53fd4b2423b20cca5a0fb14ff6a7e8270ff727181866e421940"
     },
     {
       "path": "docs/public/interface-audit-2026-10-29.md",
@@ -2799,8 +2799,8 @@
     },
     {
       "path": "docs/public/languages.md",
-      "size": 1741,
-      "sha256": "4ba27e665399aaaa5d31f296eae910bdc6eaa152c3c13524cd8cc65be7798158"
+      "size": 1753,
+      "sha256": "7199637e2fe64c6ec05045e77dbefc822aacb6323168b6973f7ea28477e7ed3e"
     },
     {
       "path": "docs/public/licenses/android/013288a9317a5527-documentfile-1.0.0.pom.xml",
@@ -3544,8 +3544,8 @@
     },
     {
       "path": "docs/public/managed-linux.md",
-      "size": 4554,
-      "sha256": "6c4affaf4b8b3dd3c861237d8b2614de5be71fec7b7e22e88fa9d379495e9806"
+      "size": 4579,
+      "sha256": "af9fa3761d59ffd9348eb35993c3cfc9531b53b2534798998897719ac22bd4c8"
     },
     {
       "path": "docs/public/model-and-channel-setup.md",
@@ -3669,8 +3669,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4915,
-      "sha256": "3b78f091fe0f766422957429edd0f56b53348887dbdc15104bd34d9b9803cdd2"
+      "size": 5742,
+      "sha256": "67d5ecc564c8fefe942e8cf2db6d93fe4a987fac35ef94c8a9447548cb268732"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -4294,8 +4294,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 17961,
-      "sha256": "4b0c66fb14010235292152aff7f470a9817b49bda4e4784a46cd0cc188ebe0a2"
+      "size": 18171,
+      "sha256": "b26e5be946719e0b1a1cf847d27ecae695eddb899b572bf4b961b17ebb9c6695"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4514,8 +4514,8 @@
     },
     {
       "path": "scripts/linux_kvm_snapshot.py",
-      "size": 4062,
-      "sha256": "14e04d03c22a27ba3c9f043de378df79d2077ca89a83bce23441986031b0b73e"
+      "size": 7151,
+      "sha256": "8d97eae218d3e9f9e1b08a0f199ae4cbdf077bef3b829835d59a468a6987cb71"
     },
     {
       "path": "scripts/linux_ocr_runtime.py",
@@ -4924,8 +4924,8 @@
     },
     {
       "path": "scripts/test_linux_kvm_snapshot.py",
-      "size": 14930,
-      "sha256": "82229ec588ec6f167f8c2f5b8253d046ef5820f339cbd278462d6e2ea1bae3fe"
+      "size": 27880,
+      "sha256": "b32eb8b61d9d73433b865af876b8ee88ff2656958a3ce72b5662b2b143f9278e"
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
@@ -5063,6 +5063,11 @@
       "sha256": "8db73e3c8be4612f0a46b9b7f9fd2fa3e77bd59013e57be9015e5c8b9198b2df"
     },
     {
+      "path": "scripts/test_wsl_database_start_diagnostics.py",
+      "size": 14220,
+      "sha256": "3e222a25272a2535b1fa3198be2000478cfea805744dfd7ff9b0cf157323c00d"
+    },
+    {
       "path": "scripts/test_wsl_initialize_diagnostics.py",
       "size": 19513,
       "sha256": "fdd49ee43c36d6dec73030c7c5404428a414f7655440ecb6311bffb515e650c9"
@@ -5139,13 +5144,13 @@
     },
     {
       "path": "scripts/wsl_initialize_diagnostics.py",
-      "size": 5936,
-      "sha256": "268131793569c9b3587db7b6c48499883ccd894ac4b3de8ed410ed24aa3a8180"
+      "size": 8528,
+      "sha256": "9da582460f6ca0c8572bcf8ac7597f81d5ad3d9785d11588061759ff9864425b"
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9076,
-      "sha256": "8ee3d0a4984af3447c8f4d3a2a05e8c915109dafcb8771e68c6ea0bd2a4a01fc"
+      "size": 9718,
+      "sha256": "9b3423f3e2437cb5153351a027bc863c2d47b98209cf8594f938e2fe0a988bed"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",

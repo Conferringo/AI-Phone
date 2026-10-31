@@ -18,7 +18,7 @@ The decoder accepts LF, CRLF or CR line boundaries, comments, initial BOM, split
 
 Provider presets are centralized in `config/model-providers.json`: DeepSeek, OpenAI, Anthropic, Kimi Global/CN, GLM CN/Z.ai, Gemini, Qwen CN/Global, MiniMax, Ollama and custom. All endpoints and model IDs remain editable. Regional API keys are not interchangeable. [Configuration and sources](model-and-channel-setup.md).
 
-DeepSeek Chat now preserves returned `reasoning_content` for completed native turns and maps thinking/effort controls. Forced/required tools disable thinking for that request while preserving the requested tool constraint, as required by its API. Kimi/GLM preserve their returned reasoning; GLM receives only the required tool when its API supports auto choice alone. Gemini's opaque tool signatures survive a tool round-trip. Private reasoning is replay data, not UI output. Legacy or interrupted calls remain quoted evidence and are not represented as newly executed actions. Local fixtures verify these contracts; they do not certify external accounts or model quality. [DeepSeek contract](https://api-docs.deepseek.com/guides/thinking_mode/), [tool restrictions](https://api-docs.deepseek.com/api/create-chat-completion/).
+DeepSeek Chat preserves returned `reasoning_content` for completed native turns and maps thinking/effort controls. Forced/required tools disable thinking for that request while preserving the requested tool constraint, as required by its API. Kimi/GLM preserve their returned reasoning; GLM receives only the required tool when its API supports auto choice alone. Gemini's opaque tool signatures survive a tool round-trip. Private reasoning is replay data, not UI output. Legacy or interrupted calls remain quoted evidence and are not represented as newly executed actions. Local fixtures verify these contracts; they do not certify external accounts or model quality. [DeepSeek contract](https://api-docs.deepseek.com/guides/thinking_mode/), [tool restrictions](https://api-docs.deepseek.com/api/create-chat-completion/).
 
 Pending model work: discovery/capability metadata, structured/localized provider errors, native Gemini generateContent, and actual acceptance with each external provider. Preset availability is not account certification.
 
@@ -37,7 +37,7 @@ Images from tool results are preserved as evidence in a following user content m
 
 Telegram checks the bot identity, refuses an existing Webhook, persists queued events before advancing the polling offset and never auto-replays unknown sends. Long-polling authentication/conflict errors are surfaced. It does not delete another application's Webhook. Incoming images/files are not implemented; outgoing text is bounded to the platform limit. Official reference: [Bot API getUpdates](https://core.telegram.org/bots/api#getupdates).
 
-Bindings are per Agent, not per model credential. Two Agents may use the same model connection while keeping separate memories and bot ownership. Removing a visible allowed-user-ID field does not authorize every sender; private pairing remains required.
+Bindings are per Agent, not per model credential. Two Agents may use the same model connection while keeping separate memories and bot ownership. Each sender must be authorized through private pairing.
 
 ## Languages / 语言
 
@@ -47,15 +47,7 @@ Backend detailed errors and some tool records still contain source-language stri
 
 ## Host platforms / 独立部署
 
-| Platform | Published client | Independent local host |
-| --- | --- | --- |
-| macOS Apple Silicon | Withdrawn development build | Experimental managed client installer and source CLI; fresh-host acceptance pending |
-| Windows x64 | Withdrawn development build | WHPX/WSL2 host adapter and service lifecycle not implemented |
-| Linux x64 / ARM64 | Withdrawn development build | Linux x64 managed worker/source bootstrap in development; matched ARM runtime and complete payload pending |
-| Android ARM64 | Withdrawn development build | Privileged AVF/KVM and software-emulation research; ordinary APK dual-guest hosting is not promised |
-
-Five built installer artifacts do not establish four standalone hosts. [Release gates and priorities](release-status.md) are the current completion record. Physical-install acceptance was waived for the experimental preview and remains untested, not passed.
-
+Installer availability, component evidence and unfinished host work are maintained in the [release-status platform table](release-status.md#platform-qualification). A compiled client or runtime component is not acceptance of an independent host. Physical-install acceptance was waived for the experimental preview; untested installation remains untested, not passed.
 ## Development runtime: exploration and notifications
 
-The source runtime now has [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. Complete installers are not yet available. They do not certify standalone hosts, every model protocol or real-account attachment delivery.
+The source runtime supports [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. Complete installers are not yet available. They do not certify standalone hosts, every model protocol or real-account attachment delivery.

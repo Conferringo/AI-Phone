@@ -4,10 +4,13 @@ import json
 import os
 import platform
 import stat
+import struct
 
 
 DEVICE = '/dev/kvm'
-PHASES = ('preflight_ready', 'engine_ready', 'before_android_start')
+PHASES = ('preflight_ready', 'toolchain_ready', 'sdk_tools_ready', 'engine_ready', 'before_android_start')
+MAX_ACL_BYTES = 4096  # Linux bounds getxattr itself to 64 KiB; parse a smaller value only.
+MAX_GROUPS = 65536  # Linux UAPI NGROUPS_MAX; never emit the process group list.
 
 
 def error_kind(error):
@@ -30,6 +33,76 @@ def access_bits(effective):
         except (OSError, NotImplementedError, TypeError):
             pass
     return result
+
+
+def acl_state(status='unknown', error=None, user=None, mask=None):
+    return {'status': status, 'euid_permissions': user, 'mask_permissions': mask, 'error': error}
+
+
+def acl_payload_error(body):
+    # Linux UAPI posix_acl_xattr: LE32 version 2, then LE16 tag/perms + LE32 ID.
+    if not isinstance(body, bytes) or len(body) > MAX_ACL_BYTES:
+        return 'size_limit'
+    if len(body) < 4 or (len(body) - 4) % 8:
+        return 'malformed'
+    if struct.unpack_from('<I', body)[0] != 2:
+        return 'unsupported'
+    return None
+
+
+def valid_acl_entry(tag, permissions, identity, seen):
+    if tag not in (1, 2, 4, 8, 16, 32) or permissions > 7 or (tag, identity) in seen:
+        return False
+    if tag in (2, 8):
+        return identity != 0xffffffff
+    return identity == 0xffffffff
+
+
+def project_acl(entries, uid):
+    seen, user, mask, named = set(), None, None, False
+    for tag, permissions, identity in entries:
+        if not valid_acl_entry(tag, permissions, identity, seen):
+            return acl_state(error='malformed')
+        seen.add((tag, identity))
+        named |= tag in (2, 8)
+        if tag == 2 and identity == uid:
+            user = permissions
+        elif tag == 16:
+            mask = permissions
+    required = {(1, 0xffffffff), (4, 0xffffffff), (32, 0xffffffff)}
+    if not required <= seen or (named and mask is None):
+        return acl_state(error='malformed')
+    return acl_state('present', user=user, mask=mask)
+
+
+def decode_acl(body, uid):
+    error = acl_payload_error(body)
+    if error:
+        return acl_state(error=error)
+    return project_acl(struct.iter_unpack('<HHI', body[4:]), uid)
+
+
+def access_acl(uid):
+    try:
+        body = os.getxattr(DEVICE, 'system.posix_acl_access', follow_symlinks=False)
+        return decode_acl(body, uid)
+    except OSError as error:
+        if error.errno == errno.ENODATA:
+            return acl_state('absent')
+        kind = 'unsupported' if error.errno in (errno.ENOTSUP, errno.EOPNOTSUPP) else error_kind(error)
+        return acl_state(error=kind)
+    except (AttributeError, NotImplementedError, ValueError, TypeError):
+        return acl_state(error='unsupported')
+
+
+def node_group_member(gid):
+    try:
+        if gid == os.getegid():
+            return True
+        groups = os.getgroups()
+        return gid in groups if len(groups) <= MAX_GROUPS else None
+    except (OSError, AttributeError, NotImplementedError, ValueError, TypeError):
+        return None
 
 
 def api_version(info):
@@ -61,6 +134,8 @@ def linux_snapshot():
         'device': {'kind': 'unknown', 'mode': None, 'uid': None, 'gid': None,
                    'dev': None, 'inode': None, 'rdev': None, 'error': None},
         'access': {'real': {'read': None, 'write': None}, 'effective': {'read': None, 'write': None}},
+        'acl': acl_state('not_probed'),
+        'node_group_member': None,
         'ioctl': {'status': 'not_probed', 'version': None, 'error': None},
     }
     try:
@@ -70,6 +145,8 @@ def linux_snapshot():
                                 dev=info.st_dev, inode=info.st_ino, rdev=info.st_rdev)
         if kind == 'character':
             result['access'] = {'real': access_bits(False), 'effective': access_bits(True)}
+            result['acl'] = access_acl(result['identity']['euid'])
+            result['node_group_member'] = node_group_member(info.st_gid)
             result['ioctl'] = api_version(info)
             if device_identity(os.lstat(DEVICE)) != device_identity(info):
                 result['device']['error'] = 'changed'
@@ -77,6 +154,9 @@ def linux_snapshot():
         result['device']['error'] = error_kind(error)
     except (AttributeError, ValueError, TypeError):
         result['device']['error'] = 'unknown'
+    if result['device']['error'] and result['acl']['status'] != 'not_probed':
+        result['acl'] = acl_state(error=result['device']['error'])
+        result['node_group_member'] = None
     return result
 
 

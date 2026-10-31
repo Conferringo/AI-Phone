@@ -164,8 +164,10 @@ def container_engine(root, home, config, emit):
     """Reuse the selected engine or start the installation's authenticated host."""
     from host_platform import host_policy
     from container_host_runtime import selection, definition
+    from linux_kvm_snapshot import emit_snapshot
     runtime = selection(root)
     if runtime is None and os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE') != '1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+        emit_snapshot('engine_ready')
         return
     emit('container-host')
     _, host = host_policy(root)
@@ -296,12 +298,15 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     if tools and mise is None:
         mise=download(config['mise'][host['mise']],home/'tools/bin/mise');mise.chmod(0o700)
     install_tools(home,mise,tools,emit)
+    from linux_kvm_snapshot import emit_snapshot
+    emit_snapshot('toolchain_ready')
     prepare_profile(root,home,request,host,android_sdk)
     from runtime_config import runtime_env
     os.environ.update(runtime_env(root))
     if not android_bundled:
         emit('sdk-tools')
         prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
+    emit_snapshot('sdk_tools_ready')
     container_engine(root,home,config,emit)
     verify_container_ownership(root)
     if image_runtime is not None:
