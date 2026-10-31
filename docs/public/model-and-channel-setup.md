@@ -1,6 +1,6 @@
 # Models and connected applications
 
-**Development scope, 2026-10-30.** Configure a model and applications inside **Configuration → Agent**. Device bindings and memories belong to the Agent; model credentials can be shared without sharing channel ownership. Existing saved configurations are retained.
+Configure a model and applications inside **Configuration → Agent**. Device bindings and memories belong to the Agent; model credentials can be shared without sharing channel ownership. Existing saved configurations are retained.
 
 ## Models
 
@@ -18,6 +18,8 @@
 | Custom | Any of the three implemented protocols | User supplied |
 
 Select the preset, enter a model ID and API key, then run the connection check before saving. Preset examples may change availability; choose a model supporting **images and tools** for device control. A text-only service cannot pass the required vision probe. Cloud credentials must match the endpoint's region; keys never move from the previous provider when changing presets. The advanced proxy applies only to that model connection. No protocol fallback silently retries failed requests.
+
+After correcting a model ID, API endpoint or key, test and save the configuration in the original Agent. Choose **Resume** on its paused task, or send a follow-up in that task’s conversation. Recovery uses that Agent’s latest saved configuration; changing the device’s default Agent does not reassign the task. Running tasks keep their existing model snapshot until they pause and you resume them. Conversation and execution records are retained. If the replacement configuration is unavailable or unverified, the task remains paused. [Task recovery](task-recovery.md) describes the execution contract.
 
 Native Messages sends `x-api-key` and `anthropic-version`, converts tool results/images and requires a complete stream before returning proposed actions. Signed thinking blocks remain private, verbatim replay data. Chat Completions retains supported providers' reasoning fields and Gemini tool signatures. DeepSeek forced tools disable thinking for that call, preserving the forced tool choice. The shared engine still enforces real observations, execution ownership and post-action evidence.
 
@@ -52,6 +54,8 @@ Real WhatsApp Web generated a valid QR twice in disposable sessions, including t
 # 模型与连接应用
 
 配置中心的每个 Agent 内统一管理模型、设备、连接应用与记忆。已有账号、设备、配置和聊天保留。当前有13项可编辑预设，覆盖 DeepSeek、OpenAI、Anthropic、Kimi 国内/国际、GLM 国内/Z.ai、Gemini、Qwen 国内/国际、MiniMax、Ollama 和自定义；支持 Responses、Chat Completions 与原生 Messages。更换预设不会沿用上一个服务商的密钥。必须选支持图片和工具的模型，并通过实际连接检查。
+
+修正模型 ID、API 地址或密钥后，在原 Agent 中测试并保存配置，再点击暂停任务的「继续任务」，或在该任务的对话中补充指令。恢复时使用原 Agent 最新保存的配置；更改设备默认 Agent 不会替换任务所属的 Agent。正在运行的任务保持原模型快照，直到暂停后由你恢复。对话和执行记录保留；替换配置不可用或未通过验证时，任务继续保持暂停。执行契约见[任务恢复](task-recovery.md)。
 
 WhatsApp 采用用户选择的本地扫码关联设备，无需公网回调。入口在 Agent → 连接应用 → WhatsApp。扫码后，从另一个私聊账号发送界面上的配对指令，再进行远程操作；不接收群聊、状态、自发消息或“发给自己”。文字和PNG回复进入原持久任务队列，未知送达不自动重发，入站附件暂未支持。高级项可选代理；用户浏览器资料不会被复用。解绑/重扫会清理当前本地会话；远端注销不确定时会明确提示。
 

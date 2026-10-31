@@ -158,6 +158,65 @@ pub async fn pin_run_for(
     sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) SELECT $1,b.device_id FROM agent_device_bindings b JOIN runs r ON r.agent_id=b.agent_id WHERE r.id=$1 ON CONFLICT DO NOTHING").bind(run).execute(&mut **tx).await?;
     Ok(())
 }
+
+// The caller queues the run in this same transaction. Only the model binding may
+// change: the Agent identity, device authorization and execution ledger stay pinned.
+pub(crate) async fn refresh_paused_model(
+    tx: &mut Transaction<'_, Postgres>,
+    settings: &settings::SettingsStore,
+    run: Uuid,
+    expected: (Uuid, Option<Uuid>),
+) -> std::result::Result<Option<Uuid>, sqlx::Error> {
+    let Some(row) = sqlx::query("SELECT conversation_id,agent_id,model_revision,error,loop_state,jsonb_array_length(context) context_len FROM runs WHERE id=$1 AND conversation_id=$2 AND agent_id IS NOT DISTINCT FROM $3 AND status='paused' FOR UPDATE")
+        .bind(run).bind(expected.0).bind(expected.1).fetch_optional(&mut **tx).await? else { return Ok(None); };
+    // Startup annotates legacy NULL identities under the registry lock. Never
+    // wait for that lock while holding a legacy row it still needs to annotate.
+    if row.get::<Option<Uuid>, _>("agent_id").is_none() {
+        return Err(sqlx::Error::Protocol("model_missing".into()));
+    }
+    // Match send's run -> registry lock order; registry saves serialize here too.
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(LOCK)
+        .execute(&mut **tx)
+        .await?;
+    let current = sqlx::query("SELECT m.id,m.model_revision FROM runs r JOIN agents a ON a.id=r.agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE r.id=$1 AND a.owner_id=$2 AND m.owner_id=$2")
+        .bind(run).bind(OWNER).fetch_optional(&mut **tx).await?
+        .ok_or_else(|| sqlx::Error::Protocol("model_missing".into()))?;
+    let revision: i64 = current.get("model_revision");
+    let previous: i64 = row.get("model_revision");
+    let replay = settings
+        .recovery_replay(previous as u64, revision as u64)
+        .map_err(|error| {
+            sqlx::Error::Protocol(
+                match error {
+                    settings::RecoveryConfigError::Missing => "model_missing",
+                    settings::RecoveryConfigError::Unverified => "model_unverified",
+                }
+                .into(),
+            )
+        })?;
+    let mut state: serde_json::Value = row.get("loop_state");
+    crate::run_notice::preserve_before_resume(tx, run, row.get("error"), &state).await?;
+    if replay == settings::RecoveryReplay::PreviousAsEvidence {
+        // Raw context is append-only; compact_observations changes parts in place.
+        // Apply this trusted boundary before any request-only history compaction.
+        state["model_replay_boundary"] = serde_json::json!(row.get::<i32, _>("context_len"));
+    }
+    state["model_retries"] = serde_json::json!(0);
+    state["stalls"] = serde_json::json!(0);
+    state["last_issue"] = serde_json::json!("");
+    state["notice_kind"] = serde_json::json!("");
+    sqlx::query(
+        "UPDATE runs SET model_connection_id=$2,model_revision=$3,loop_state=$4 WHERE id=$1",
+    )
+    .bind(run)
+    .bind(current.get::<Uuid, _>("id"))
+    .bind(revision)
+    .bind(state)
+    .execute(&mut **tx)
+    .await?;
+    Ok(Some(row.get("conversation_id")))
+}
 fn device_limit(kind: &str) -> u32 {
     let presets: serde_json::Value =
         serde_json::from_str(include_str!("../../../config/device-presets.json"))

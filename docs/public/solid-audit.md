@@ -1,5 +1,31 @@
 # SOLID / Clean Code Audit — 2026-10-28–29
 
+## Paused-task configuration recovery
+
+Immutable model revisions remain owned by SettingsStore. Its recovery policy checks
+the selected saved revision and determines whether previous provider-private replay
+data is compatible. The registry owns original-Agent selection and atomic SQL
+updates; it does not copy credentials into a second configuration store.
+
+Explicit recovery follows the same conversation → run → registry lock order as
+accepted input, rechecks the paused task identity, and commits model selection,
+notice provenance, retry state and queueing together. Invalid replacements and
+failed follow-up submissions leave the original checkpoint intact. Provider or
+protocol changes affect the outgoing request projection; raw context, paired tool
+evidence, pending action IDs and unknown outcomes remain preserved.
+
+Isolated validation covers concurrent recovery/input/cancel/configuration changes,
+original Agent identity, receipt deduplication, protocol requests, durable replay
+boundaries, legacy operational notices and unknown side effects. Database fixtures
+close their pools and use normal DROP as the server-side completion boundary;
+a live-client negative case confirms that cleanup does not forcibly terminate it.
+
+The recovery policy has CC6. The SQL coordinator remains CC12, and Rust coverage
+and CRAP have not been measured; this is an outstanding scoped metric, not a
+whole-repository certification. Unit, isolated PostgreSQL, strict Clippy and
+selected mutation evidence accompany this boundary. Real provider accounts,
+production device execution and full installation acceptance are separate checks.
+
 2026-10-31 Linux host review: OCR and host ELF dependencies share a frozen profile, bounded archive admission, inventory and atomic assembly implementation. The two factories share file collection, hashing, attribution and deterministic archive writing. Host selection remains responsible for platform targets, VM definition and activation; persistent engine state retains its existing owner. The scoped admission/host modules have CRAP scores below 10; the 0.8 duplication scan found no candidates. All 25 selected ELF/archive/host-target mutations were caught. Factory execution, raw QEMU boot, signed offline package installation, complete component assembly and an independent reader have separate receipts; none substitutes for the complete Linux client. Windows CI exposed a Linux POSIX permission fixture running on Windows; Linux filesystem tests now declare their platform scope while Windows-specific regressions remain enabled. Tiny archive unit fixtures use deterministic capacity, with both real threshold edges covered separately; real factory and installation guards remain unchanged. [Host specification and qualification](container-host-runtime.md).
 
 2026-10-31 Linux OCR review: the factory owns dependency collection; one manifest module owns archive admission and integrity; native service selection owns activation; the existing adapter owns recognition. No second OCR implementation or persistence store was introduced. The offline component recognized numeric and Chinese fixtures in a read-only, network-disabled x64 container using pinned portable Python. Scope tests cover wrong architecture, hashes, inventory, paths, permissions, TSV format and retained components. The complete Python suite passed 336 tests with 16 explicit environment skips. Selected ELF/host/archive admission functions caught all 23 executed mutations after adding the zero-byte boundary case. Scoped CRAP scores are below 10 and the 0.8 duplication scan found no candidates. These results do not qualify the full Linux host, all mutation sites or the whole repository. [Component specification](engineering/linux-offline-ocr.md).

@@ -303,6 +303,9 @@ pub async fn send(
 
         let run = if let Some(active) = active {
             let run = active.get::<Uuid,_>("id");
+            if active.get::<String,_>("status") == "paused" {
+                crate::registry::refresh_paused_model(&mut tx, &app.settings, run, (id, active.get("agent_id"))).await?;
+            }
             let input = steering_input(&app, &request, &attachments).await?;
             let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
                 .bind(run).bind(request_id.to_string()).bind(input).bind(quiet_ms).execute(&mut *tx).await?;
@@ -338,6 +341,11 @@ pub async fn send(
                     StatusCode::CONFLICT,
                     "model_missing",
                     "请先在设置中连接模型",
+                ),
+                s if s.contains("model_unverified") => error(
+                    StatusCode::CONFLICT,
+                    "model_unverified",
+                    "请先测试并保存此 Agent 的模型配置",
                 ),
                 s if s.contains("request_conflict") => error(
                     StatusCode::CONFLICT,
@@ -473,17 +481,23 @@ async fn run_command(
         Ok(v) => v,
         Err(_) => return error(StatusCode::BAD_REQUEST, "invalid_run", "任务不存在"),
     };
-    let query = if resume {
-        "UPDATE runs SET status='queued',control_epoch=0,error='',next_wake_at=NULL,loop_state=jsonb_set(jsonb_set(loop_state,'{stalls}','0'::jsonb),'{last_issue}','\"\"'::jsonb) WHERE id=$1 AND status='paused' RETURNING conversation_id"
+    let result = if resume {
+        resume_paused(&app, id).await
     } else {
-        "UPDATE runs SET status='canceled',finished_at=now(),next_wake_at=NULL WHERE id=$1 AND status IN ('queued','running','paused') RETURNING conversation_id"
+        sqlx::query_scalar("UPDATE runs SET status='canceled',finished_at=now(),next_wake_at=NULL WHERE id=$1 AND status IN ('queued','running','paused') RETURNING conversation_id")
+            .bind(id).fetch_optional(&app.db).await
     };
-    let conversation: Option<Uuid> = match sqlx::query_scalar(query)
-        .bind(id)
-        .fetch_optional(&app.db)
-        .await
-    {
+    let conversation: Option<Uuid> = match result {
         Ok(v) => v,
+        Err(sqlx::Error::Protocol(code))
+            if code == "model_missing" || code == "model_unverified" =>
+        {
+            return error(
+                StatusCode::CONFLICT,
+                &code,
+                "请先测试并保存此 Agent 的模型配置",
+            );
+        }
         Err(e) => return db_error(e),
     };
     let Some(conversation) = conversation else {
@@ -532,6 +546,34 @@ async fn run_command(
         Ok(v) => pb(StatusCode::OK, v),
         Err(e) => db_error(e),
     }
+}
+
+async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error> {
+    let mut tx = app.db.begin().await?;
+    let Some(expected) = sqlx::query_as::<_, (Uuid, Option<Uuid>)>(
+        "SELECT conversation_id,agent_id FROM runs WHERE id=$1",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?
+    else {
+        return Ok(None);
+    };
+    // Match send's conversation -> run -> registry order. Updating a run can
+    // recheck its conversation FK, so holding only the run lock can deadlock
+    // with a sender that already owns the conversation and is waiting on it.
+    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
+        .bind(expected.0)
+        .execute(&mut *tx)
+        .await?;
+    let conversation =
+        crate::registry::refresh_paused_model(&mut tx, &app.settings, id, expected).await?;
+    if conversation.is_some() {
+        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',next_wake_at=NULL WHERE id=$1")
+            .bind(id).execute(&mut *tx).await?;
+    }
+    tx.commit().await?;
+    Ok(conversation)
 }
 
 fn media_type(bytes: &[u8], name: &str) -> Option<&'static str> {
