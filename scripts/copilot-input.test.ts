@@ -5,7 +5,7 @@ import {ChatOutbox} from '../apps/web/src/lib/chat-outbox';
 function fixture(accept?: (commit: VoiceCommit) => void) {
   const sent: VoiceCommit[] = [];
   let id = 0;
-  const voice = new CopilotInput({conversationId: 'conversation', deviceId: 'phone'}, commit => {
+  const voice = new CopilotInput({conversationId: 'conversation', deviceId: 'phone', sessionId: 'capture'}, commit => {
     accept?.(commit);
     sent.push(structuredClone(commit));
   }, () => `receipt-${++id}`);
@@ -180,17 +180,18 @@ describe('Copilot continuous input contract', () => {
   });
 
   test('binding and transcript byte limits are exact; caller-owned bindings cannot retarget capture', () => {
-    for (const binding of [{conversationId: '', deviceId: 'phone'}, {conversationId: 'c', deviceId: ''}]) {
+    for (const binding of [{conversationId: '', deviceId: 'phone', sessionId: 'capture'}, {conversationId: 'c', deviceId: '', sessionId: 'capture'}, {conversationId: 'c', deviceId: 'phone', sessionId: ''}]) {
       expect(() => new CopilotInput(binding, () => {})).toThrow('required');
     }
-    const binding = {conversationId: 'original', deviceId: 'phone'};
+    const binding = {conversationId: 'original', deviceId: 'phone', sessionId: 'capture'};
     const sent: VoiceCommit[] = [];
     const voice = new CopilotInput(binding, commit => {sent.push(commit);});
     binding.conversationId = 'other';
     const id = 'a'.repeat(128);
     expect(voice.speech(id, 0)).toBe(true);
     const exact = '😀'.repeat(12000);
-    voice.transcript(patch(id, 1, exact, true));
+    voice.transcript(patch(id, 0xffffffff, exact, true));
+    expect(() => voice.transcript(patch(id, 0x100000000, exact, true))).toThrow('revision');
     voice.advance(1500);
     expect(sent[0].text).toBe(exact);
     expect(sent[0].conversationId).toBe('original');
@@ -273,7 +274,7 @@ describe('Copilot continuous input contract', () => {
   test('stop during a handoff prevents dispatching a newer reentrant revision', () => {
     let voice!: CopilotInput;
     const sent: VoiceCommit[] = [];
-    voice = new CopilotInput({conversationId: 'c', deviceId: 'd'}, commit => {
+    voice = new CopilotInput({conversationId: 'c', deviceId: 'd', sessionId: 'capture'}, commit => {
       sent.push(commit);
       voice.transcript(patch('a', 2, '保留为草稿', true));
       voice.stop();

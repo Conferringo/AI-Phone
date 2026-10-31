@@ -150,7 +150,7 @@ async fn initial_context(
     system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它是带真实Openbox图形界面的Debian ARM64容器，有浏览器、LibreOffice和Python；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立、device_files查真实路径、device_transfer传输，之后核对SHA256和目标路径。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
-    let rows=sqlx::query("SELECT * FROM (SELECT id,role,text,attachment_ids,ordinal FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent ORDER BY ordinal").bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal").bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     let task_start = rows
         .iter()
         .rposition(|row| row.get::<String, _>("role") == "user");
@@ -160,6 +160,15 @@ async fn initial_context(
         }
         let role: String = row.get("role");
         let text: String = row.get("text");
+        let request = row
+            .get::<Option<Uuid>, _>("request_id")
+            .map(|id| id.to_string())
+            .unwrap_or_default();
+        let text = crate::voice_input::model_text(
+            &text,
+            &request,
+            crate::voice_input::from_row(&row).as_ref(),
+        );
         let mut content = Vec::new();
         if !text.is_empty() {
             content.push(
@@ -2572,16 +2581,17 @@ async fn wait_for_steering(app: &App, run: Uuid) -> Result<(), String> {
     }
 }
 
-// Receipt persistence is immediate. Only model generation waits for a short input burst.
+// Text bursts settle briefly. Voice was already endpointed by the capture owner.
 async fn input_quiet(app: &App, run: Uuid, cancel: &CancellationToken) -> Result<(), String> {
     loop {
-        let remaining:f64=sqlx::query_scalar("SELECT COALESCE(GREATEST(0,700-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision FROM runs WHERE id=$1")
+        let remaining:f64=sqlx::query_scalar("SELECT COALESCE(GREATEST(0,input_quiet_ms-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision FROM runs WHERE id=$1")
             .bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
         if remaining <= 0.0 {
             return Ok(());
         }
         tokio::select! {
             _=cancel.cancelled()=>return Err("canceled".into()),
+            changed=wait_for_steering(app,run)=>{changed?;return Ok(());},
             _=tokio::time::sleep(Duration::from_millis(remaining.ceil() as u64))=>{}
         }
     }

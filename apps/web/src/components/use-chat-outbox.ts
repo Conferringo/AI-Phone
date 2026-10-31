@@ -1,9 +1,10 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {create,fromBinary,toBinary,type MessageShape} from '@bufbuild/protobuf';
-import {ChatHistoryRequestSchema,ChatSendRequestSchema,ChatStateSchema} from '@ai-phone/protocol/ai_phone/v1/assistant_pb';
+import {ChatHistoryRequestSchema,ChatStateSchema} from '@ai-phone/protocol/ai_phone/v1/assistant_pb';
 import {ApiErrorSchema} from '@ai-phone/protocol/ai_phone/v1/system_pb';
 import {ChatOutbox,type OutboxEntry,type OutboxInput} from '@/lib/chat-outbox';
+import {encodeChatSend} from '@/lib/chat-wire';
 
 type Chat=MessageShape<typeof ChatStateSchema>;
 export function useChatOutbox(conversationId:string,deviceId:string,accepted:(chat:Chat,order:number)=>void,beginHistory:()=>number){
@@ -14,7 +15,7 @@ export function useChatOutbox(conversationId:string,deviceId:string,accepted:(ch
     const key=`ai-phone:outbox:${deviceId}:${conversationId}`;
     try{
       const value=new ChatOutbox({read:()=>localStorage.getItem(key),write:value=>localStorage.setItem(key,value)},async (item,signal)=>{
-        const response=await fetch('/api/assistant/send',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:toBinary(ChatSendRequestSchema,create(ChatSendRequestSchema,{conversationId:item.conversationId,deviceId:item.deviceId,text:item.text,attachmentIds:item.attachments.map(file=>file.id),requestId:item.id})),signal:AbortSignal.any([signal,AbortSignal.timeout(30000)])});
+        const response=await fetch('/api/assistant/send',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:encodeChatSend(item),signal:AbortSignal.any([signal,AbortSignal.timeout(30000)])});
         const bytes=new Uint8Array(await response.arrayBuffer());
         if(!response.ok)throw Error(fromBinary(ApiErrorSchema,bytes).message);
         // Send returns the original run receipt on retry. Read the current conversation

@@ -1,5 +1,6 @@
 export type OutboxAttachment={id:string;name:string;mediaType:string;sizeBytes:string};
-export type OutboxInput={id:string;conversationId:string;deviceId:string;text:string;attachments:OutboxAttachment[]};
+export type OutboxVoice={sessionId:string;utteranceId:string;revision:number;literal:string;correctsRequestId:string};
+export type OutboxInput={id:string;conversationId:string;deviceId:string;text:string;attachments:OutboxAttachment[];voice?:OutboxVoice};
 export type OutboxEntry=OutboxInput&{status:'queued'|'sending'|'failed';error:string};
 type Storage={read:()=>string|null;write:(value:string)=>void};
 
@@ -16,6 +17,7 @@ export class ChatOutbox<T> {
   }
   enqueue(input:OutboxInput){
     if(this.disposed)throw Error('对话正在切换，请重试');
+    if(!validInput(input))throw Error('待发送消息格式无效');
     if(this.entries.some(item=>item.id===input.id))throw Error('重复消息标识');
     this.commit([...this.entries,{...structuredClone(input),status:'queued',error:''}]);
     this.start();
@@ -56,5 +58,8 @@ export class ChatOutbox<T> {
 function validInput(value:unknown):value is OutboxInput{
   if(!value||typeof value!=='object')return false;
   const item=value as OutboxInput;
-  return ['id','conversationId','deviceId','text'].every(key=>typeof item[key as keyof OutboxInput]==='string')&&Array.isArray(item.attachments)&&item.attachments.every(file=>file&&['id','name','mediaType','sizeBytes'].every(key=>typeof file[key as keyof OutboxAttachment]==='string'));
+  return ['id','conversationId','deviceId','text'].every(key=>typeof item[key as keyof OutboxInput]==='string')&&Array.isArray(item.attachments)&&item.attachments.every(file=>file&&['id','name','mediaType','sizeBytes'].every(key=>typeof file[key as keyof OutboxAttachment]==='string'))&&(item.voice===undefined||validVoice(item.voice));
+}
+function validVoice(value:OutboxVoice):boolean{
+  return !!value&&['sessionId','utteranceId','literal','correctsRequestId'].every(key=>typeof value[key as keyof OutboxVoice]==='string')&&Number.isInteger(value.revision)&&value.revision>0&&value.revision<=0xffffffff;
 }

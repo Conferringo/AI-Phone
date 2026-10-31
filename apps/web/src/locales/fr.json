@@ -380,5 +380,9 @@
   "认证中": "Authentification",
   "WhatsApp二维码": "Code QR WhatsApp",
   "重新扫码": "Scanner à nouveau",
-  "重新配对": "Réassocier"
+  "重新配对": "Réassocier",
+  "语音片段或修订信息无效": "Segment vocal ou révision invalide",
+  "语音输入需要文字且不能混入附件": "La saisie vocale nécessite du texte sans pièce jointe",
+  "语音更正与已接受的片段不一致，请保留文本并重新发送": "La correction vocale ne correspond pas au segment accepté. Conservez le texte et renvoyez-le.",
+  "待发送消息格式无效": "Message en attente invalide"
 }

@@ -380,5 +380,9 @@
   "认证中": "Authentifizierung",
   "WhatsApp二维码": "WhatsApp-QR-Code",
   "重新扫码": "Erneut scannen",
-  "重新配对": "Erneut koppeln"
+  "重新配对": "Erneut koppeln",
+  "语音片段或修订信息无效": "Ungültiger Sprachabschnitt oder Revisionsstand",
+  "语音输入需要文字且不能混入附件": "Spracheingaben benötigen Text ohne Anhänge",
+  "语音更正与已接受的片段不一致，请保留文本并重新发送": "Die Sprachkorrektur widerspricht dem angenommenen Abschnitt. Behalten Sie den Text und senden Sie ihn erneut.",
+  "待发送消息格式无效": "Ungültige Nachricht in der Warteschlange"
 }

@@ -127,3 +127,10 @@ Scoped executable-line evidence (Python stdlib tracing and Bun LCOV) gives the n
 
 The actual official APKs passed hash/signature/package/version/ABI and privacy checks. The compiled consumer selected both ABIs in a network/home-source/SDK-denied macOS sandbox. This proves the offline component path, not complete guest creation or all-platform installation. Repository-wide complexity, coverage, domain-boundary, provider/channel and UI acceptance debts remain open.
 
+
+
+## 2026-10-31 Copilot accepted-input boundary
+
+The recorded input core now hands capture/session identity, literal speech and correction receipts through the existing Outbox and protobuf chat API. PostgreSQL accepts revisions under the existing conversation/receipt transaction; conflicting branches roll back. Fresh context and active steering share one metadata-to-user-content function. Voice uses zero additional quiet delay and can interrupt an already running text quiet window; exploration configuration is retained. Capture, provider streams, playback and guest microphones remain separate upcoming work.
+
+The selected TypeScript boundary has CC/CRAP at most 9 with local line-coverage evidence; this is not branch coverage. The new Rust metadata module has CC at most 7; Rust coverage and mutation completeness are not claimed. The targeted TypeScript mutation run caught 135 of 140 sites; five survivors were reviewed as equivalent initial/fallback/private-return changes. Duplicate search at 0.8 found no candidates in the selected boundary. Existing HTTP/worker complexity and broader audit items remain open. Disposable PostgreSQL regressions exercise durable history, correction ordering, retries, rejected branches, task completion/re-entry and voice priority. No production account, device, microphone or cloud speech provider was used for these tests.

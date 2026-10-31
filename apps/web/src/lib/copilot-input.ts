@@ -1,7 +1,8 @@
 /** Recorded-event core. Capture/provider adapters must normalize audio time to one
  * monotonic clock; transcript arrival never moves the silence deadline. No audio
  * or credentials are stored here, and no model/device action is dispatched here. */
-export type VoiceBinding = {conversationId: string; deviceId: string};
+import type {OutboxInput} from './chat-outbox';
+export type VoiceBinding = {conversationId: string; deviceId: string; sessionId: string};
 export type VoicePatch = {
   utteranceId: string;
   revision: number;
@@ -19,6 +20,16 @@ export type VoiceCommit = VoiceBinding & {
   text: string;
   correctsRequestId?: string;
 };
+
+export function voiceOutboxInput(commit: VoiceCommit): OutboxInput {
+  return {
+    id: commit.requestId, conversationId: commit.conversationId,
+    deviceId: commit.deviceId, text: commit.text, attachments: [],
+    voice: {sessionId: commit.sessionId, utteranceId: commit.utteranceId,
+      revision: commit.revision, literal: commit.literal,
+      correctsRequestId: commit.correctsRequestId ?? ''},
+  };
+}
 type Utterance = {
   id: string;
   lastAudio: number;
@@ -54,7 +65,7 @@ function boundedText(value: string) {
   return value.trim();
 }
 function validatePatch(patch: VoicePatch, slot: Utterance) {
-  if (!Number.isSafeInteger(patch.revision) || patch.revision <= 0) throw Error('Invalid transcript revision');
+  if (!Number.isSafeInteger(patch.revision) || patch.revision <= 0 || patch.revision > 0xffffffff) throw Error('Invalid transcript revision');
   boundedText(patch.literal);
   if (!patch.correction) return;
   if (patch.correction.baseRevision !== slot.revision) throw Error('Correction revision conflict');
@@ -82,7 +93,7 @@ export class CopilotInput {
   private failure = '';
 
   constructor(binding: VoiceBinding, private accept: (commit: VoiceCommit) => void, private receipt = () => crypto.randomUUID()) {
-    if (!binding.conversationId || !binding.deviceId) throw Error('A conversation and device are required');
+    if (!binding.conversationId || !binding.deviceId || !binding.sessionId) throw Error('A conversation, device and capture session are required');
     this.binding = {...binding};
   }
 

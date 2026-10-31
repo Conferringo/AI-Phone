@@ -1804,8 +1804,8 @@
     },
     {
       "path": "apps/web/src/components/use-chat-outbox.ts",
-      "size": 3250,
-      "sha256": "e6c1e97128472137b4b0a4241cfb5e9efcc12601ac525716d5fef2dc723100c1"
+      "size": 3092,
+      "sha256": "b74d57cebad645bc3e35d61124259c4e3567c0d59d9e8824241f49d7c574a8cc"
     },
     {
       "path": "apps/web/src/components/workbench-motion.ts",
@@ -1829,13 +1829,18 @@
     },
     {
       "path": "apps/web/src/lib/chat-outbox.ts",
-      "size": 3141,
-      "sha256": "dfb4e4680afa0dec6ff06fc765e79c9358c7c0cb58089e0d2947d03eeedf580a"
+      "size": 3668,
+      "sha256": "3f54641de260ef537e2b0320b8b5034a96464da06d8c0f2c88031c466f9faf00"
     },
     {
       "path": "apps/web/src/lib/chat-snapshot.ts",
       "size": 905,
       "sha256": "bfb1ec40b5b366994a27dd42f45306fe7d352cff2ddf8c07be6b639216c68e40"
+    },
+    {
+      "path": "apps/web/src/lib/chat-wire.ts",
+      "size": 558,
+      "sha256": "b638f32674cbaa86c43a73c6373f48b657c8e5591e4e416b364c00d8aef95fa9"
     },
     {
       "path": "apps/web/src/lib/client-id.ts",
@@ -1849,8 +1854,8 @@
     },
     {
       "path": "apps/web/src/lib/copilot-input.ts",
-      "size": 7253,
-      "sha256": "271430dad0c8b8070a76048ef72a8fa2ae3147516b8188bd6c3ba1213170144d"
+      "size": 7800,
+      "sha256": "d5dc66b870102090e6c6b15ddc68d3c72a67bd80d43dfc5a01aba149b215fbbd"
     },
     {
       "path": "apps/web/src/lib/device-defaults-server.ts",
@@ -1924,48 +1929,48 @@
     },
     {
       "path": "apps/web/src/locales/ar.json",
-      "size": 19000,
-      "sha256": "7bd44dbb9dc5296a96a443dc4aea8c3444d33d8e9169715a900c62ecebfcd634"
+      "size": 19542,
+      "sha256": "ac862f624177d6c673aa253306af7d6bc997df8476f139ebf7748c952bb35319"
     },
     {
       "path": "apps/web/src/locales/de.json",
-      "size": 16236,
-      "sha256": "bb186729df0456773b354b17986d10ca6cf0fa1241f4bcbef743661fcdcfcc84"
+      "size": 16697,
+      "sha256": "53ab689d2ab00ef981907b5783abdea441209b27c4d5fb868ff172640367363b"
     },
     {
       "path": "apps/web/src/locales/en.json",
-      "size": 14695,
-      "sha256": "1a4eed3b02685812227a59b5228147bf4816e51960358002618fe0fcd1a0a461"
+      "size": 15105,
+      "sha256": "e4bdea7d732214a33ea02985512ed352e4f563f86fa55050682b1418b5885c3b"
     },
     {
       "path": "apps/web/src/locales/es.json",
-      "size": 16299,
-      "sha256": "8b768b57311f5504a62343f3ba979d36dcb80832f034385be11368e26c34df86"
+      "size": 16736,
+      "sha256": "79136e7e89b23f7df80c457b1056efed78d1a8b3142cc16b5536c10d4a2c7f31"
     },
     {
       "path": "apps/web/src/locales/fr.json",
-      "size": 16816,
-      "sha256": "ff4f7bc14e27d284bbc7c3df197d4581cfdb8fc1b2067938362722119cbcff40"
+      "size": 17247,
+      "sha256": "87529a1fa196d4d5f8f525f14cb7feeae1a6261963d0f1721ff24f3f7239b7a8"
     },
     {
       "path": "apps/web/src/locales/ja.json",
-      "size": 17773,
-      "sha256": "259c7cfe5a06205dcd1f2f6e3e66846630890cef53bf13d623500b6504bc6238"
+      "size": 18305,
+      "sha256": "9976730929f172154eb754087e5d282db968c37d916c52294f347ff7d3be3479"
     },
     {
       "path": "apps/web/src/locales/ko.json",
-      "size": 15894,
-      "sha256": "33e877ffe6f9bc9ee1026b6d970eedc246cf133b3bda66d79771d5b53f821481"
+      "size": 16436,
+      "sha256": "d648a974e1522156a6f84770f28cd2ea567105fb9e0a951a684485cd7ea177cd"
     },
     {
       "path": "apps/web/src/locales/ru.json",
-      "size": 21649,
-      "sha256": "59541a6ba473a760aa67cbcc746c7790616094ca01301b83d000d3f329b61331"
+      "size": 22294,
+      "sha256": "33bbb76f0f0ec6fe0507af0e556780773a2d8d28a47562d6562c2962ac9a4f34"
     },
     {
       "path": "apps/web/src/locales/zh-TW.json",
-      "size": 14299,
-      "sha256": "4d292fb3a1ad1a62083264c97ea79fd6fee6de009bf2719e13081318a6fc6af3"
+      "size": 14699,
+      "sha256": "8b18243348adfce5edca49a5ea9cc0ef39909146e30d70151e25661060d65424"
     },
     {
       "path": "apps/web/src/proxy.ts",
@@ -2283,6 +2288,11 @@
       "sha256": "89d29adbd8defbfe2029272e62b2d108f2c3d46062d70007ced4302420e986af"
     },
     {
+      "path": "crates/assistant/migrations/0032_voice_inputs.sql",
+      "size": 833,
+      "sha256": "fef965e23bac2bcd76088544aa539e177a01e7c5dede790a46c15e449d1f6069"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
       "size": 9271,
       "sha256": "91e36ed59eaef926bb05943a66f87a5d07d534f447658de0c12a7501b88100f5"
@@ -2344,8 +2354,8 @@
     },
     {
       "path": "crates/assistant/src/http.rs",
-      "size": 36710,
-      "sha256": "767a9f21e7576e6a7f2ef19a6a0ac5c8cd3a7745d888a3c70d4e14e7d609cfde"
+      "size": 38082,
+      "sha256": "cd7e2aacdeac5fdfb3f19096c38b0106b89db6e287762d19ee3ef525fdf86506"
     },
     {
       "path": "crates/assistant/src/location.rs",
@@ -2364,8 +2374,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 8955,
-      "sha256": "ffd305e40191ab213e7712baa0db67db4400636a1046b23a0f951936749cb168"
+      "size": 8972,
+      "sha256": "7b1862d57887c51c76cea3f36e3c71e47e21f6a1d32072c1e4d0511f7ff91a22"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -2429,13 +2439,18 @@
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 28832,
-      "sha256": "b60fbd68c25a08e69aae5e55b1547ec131dbc97bb6d881c143abca6ff42e2f7d"
+      "size": 37152,
+      "sha256": "b141fedf33a7fe987b8018e07f93421e1367586f574ad1099094469e13bddd75"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
       "size": 16369,
       "sha256": "aeb1caf65b545398ff827ceb8989c77012065f9c9078a9e66782e0f133522e9d"
+    },
+    {
+      "path": "crates/assistant/src/voice_input.rs",
+      "size": 6708,
+      "sha256": "3322a42d7963540811062a49dbe90b2d30abcefe1da3310c5e14cd2ee59ef0c2"
     },
     {
       "path": "crates/assistant/src/workbench.rs",
@@ -2444,8 +2459,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 186296,
-      "sha256": "35f6f1837dd32d186ca2b8609f87412bba6957bfc2d1e27cf163fe268b31c8f8"
+      "size": 186827,
+      "sha256": "31386285264838e4a5ee1624bdf8765e35853b0029cd915d742b8ceb0fc879be"
     },
     {
       "path": "crates/phone-runner/Cargo.toml",
@@ -2569,8 +2584,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 16418,
-      "sha256": "381dbbb8a38517bd8cfbdad9c2e482449304d97c59bcd8a4dfeb05b773e7e43e"
+      "size": 17591,
+      "sha256": "0b63405aa9b8d687a4003f6aec1b43b30dfc9f0862c78e6a701a1c9642a25445"
     },
     {
       "path": "docs/public/core-retirement-2026-10-29.md",
@@ -3554,8 +3569,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6312,
-      "sha256": "28cb9b50f1f55866a00a785f6d4eee9f42449d3d6a17574ef1069abd3c6f06f9"
+      "size": 6396,
+      "sha256": "19cfe5dc5ed39722cc13a1717a3b26d45ab7c5476f448738d3a26a4b81c2a2a0"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3579,8 +3594,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 20170,
-      "sha256": "b5755cc97306ce1d5ec623d21be182727aecb5424da1e5310da47177a26ff1e8"
+      "size": 21541,
+      "sha256": "6b7b33751003614c6493e91662cdbb9e72e8294e0b5e50d0bbce5d1dc97f3a75"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -3689,8 +3704,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/assistant.proto",
-      "size": 982,
-      "sha256": "0dabfe49030a89c66fc184db88a975497ec50f0418da3cccf1ca38f800f15b72"
+      "size": 1356,
+      "sha256": "71d52216e88b5e30c7edc3030dc6133de8d8a7c1aa6ecf9fd331db7e695544c5"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/auth.proto",
@@ -3754,8 +3769,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/assistant_pb.ts",
-      "size": 6591,
-      "sha256": "4c4db9f620cb7b129e2209ad256edf3d845ec0a50ed46125214684372b363aa7"
+      "size": 8093,
+      "sha256": "79b17c8f8cc181e8a10a00cbeba1c2f58a0577bec8b11a79f99a9f939bfcb66e"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/auth_pb.ts",
@@ -4154,8 +4169,13 @@
     },
     {
       "path": "scripts/copilot-input.test.ts",
-      "size": 15061,
-      "sha256": "6dbe852a46abef384dbb6c76fe83b4636db810fb05bc6ed513c72d13531f55f7"
+      "size": 15330,
+      "sha256": "60349aaea6c05935cf252982dc6209eea9be6764ba3097ab9fcd325aa250140d"
+    },
+    {
+      "path": "scripts/copilot-wire.test.ts",
+      "size": 3975,
+      "sha256": "a8d2c86e401c2775b0c223a1450fae18e1e55f8081c5644ddc98b382ac5c78ab"
     },
     {
       "path": "scripts/database.py",

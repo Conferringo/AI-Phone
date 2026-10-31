@@ -26,7 +26,7 @@ The [guest application component](engineering/guest-apps.md) now supplies pinned
 
 [Private installation state](engineering/private-install-state.md) now separates checkpoint policy from platform file locks and private atomic writes. Windows native acceptance is tracked independently from its still-incomplete full host; a client build is not a two-device installation result.
 
-Copilot has a [recorded-event input core](copilot-voice.md): audio-based endpointing, draft/correction revisions, stable handoff retries and bounded retention have local regression evidence. Continuous voice is not available yet; actual capture, speech providers, wire integration, UI and spoken/guest-audio feedback remain upcoming development. Copilot and exploration are designed to coexist, with spoken instructions taking priority.
+Copilot has a [recorded-event input core and durable chat-wire integration](copilot-voice.md): audio-based endpointing, correction receipt links, stable retries, bounded retention and voice-priority dispatch have local and disposable-PostgreSQL regression evidence. Continuous voice is not available yet; actual capture, speech providers, streaming-audio transport, UI and spoken/guest-audio feedback remain upcoming development. Copilot and exploration are designed to coexist, with spoken instructions taking priority.
 
 ---
 

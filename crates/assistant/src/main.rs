@@ -42,6 +42,7 @@ mod registry;
 mod settings;
 mod setup;
 mod tool_catalog;
+mod voice_input;
 mod workbench;
 mod worker;
 

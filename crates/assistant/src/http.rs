@@ -62,7 +62,7 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *tx)
         .await?;
-    let rows=sqlx::query("SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind<>'task') has_activity FROM messages m LEFT JOIN runs r ON r.assistant_message_id=m.id WHERE m.conversation_id=$1 ORDER BY m.ordinal").bind(id).fetch_all(&mut *tx).await?;
+    let rows=sqlx::query("SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind<>'task') has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id WHERE m.conversation_id=$1 ORDER BY m.ordinal").bind(id).fetch_all(&mut *tx).await?;
     let ids: Vec<Uuid> = rows
         .iter()
         .flat_map(|row| row.get::<Vec<Uuid>, _>("attachment_ids"))
@@ -98,6 +98,7 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
             ordinal: r.get::<i64, _>("ordinal") as u64,
             active: r.get("active"),
             has_activity: r.get("has_activity"),
+            voice: crate::voice_input::from_row(r),
             role: r.get("role"),
             text: r.get("text"),
             attachments: r
@@ -176,6 +177,29 @@ pub async fn send(
             "消息为空或内容过大",
         );
     }
+    let voice = match request
+        .voice
+        .as_ref()
+        .map(crate::voice_input::VoiceInput::parse)
+        .transpose()
+    {
+        Ok(value) => value,
+        Err(_) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "invalid_voice",
+                "语音片段或修订信息无效",
+            );
+        }
+    };
+    if voice.is_some() && (request.text.trim().is_empty() || !request.attachment_ids.is_empty()) {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_voice",
+            "语音输入需要文字且不能混入附件",
+        );
+    }
+    let quiet_ms: i16 = if voice.is_some() { 0 } else { 700 };
     let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
         Ok(v) => v,
         Err(e) => return e,
@@ -246,11 +270,13 @@ pub async fn send(
         let user = Uuid::now_v7();
         sqlx::query("INSERT INTO messages(id,conversation_id,role,text,attachment_ids,request_id) VALUES($1,$2,'user',$3,$4,$5)")
             .bind(user).bind(id).bind(&request.text).bind(&files).bind(request_id).execute(&mut *tx).await?;
+        if let Some(voice) = &voice {voice.persist(&mut tx, id, user, request_id).await?;}
+
         let run = if let Some(active) = active {
             let run = active.get::<Uuid,_>("id");
             let input = steering_input(&app, &request, &attachments).await?;
-            let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
-                .bind(run).bind(request_id.to_string()).bind(input).execute(&mut *tx).await?;
+            let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
+                .bind(run).bind(request_id.to_string()).bind(input).bind(quiet_ms).execute(&mut *tx).await?;
             if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
             sqlx::query("INSERT INTO run_inputs(request_id,run_id,message_id,fingerprint) VALUES($1,$2,$3,$4)")
                 .bind(request_id).bind(run).bind(user).bind(&fingerprint).execute(&mut *tx).await?;
@@ -261,8 +287,8 @@ pub async fn send(
             let run = Uuid::now_v7();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
                 .bind(assistant).bind(id).execute(&mut *tx).await?;
-            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp())")
-                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64).execute(&mut *tx).await?;
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),$7)")
+                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64).bind(quiet_ms).execute(&mut *tx).await?;
             sqlx::query("UPDATE messages SET run_id=$2 WHERE id=$1").bind(assistant).bind(run).execute(&mut *tx).await?;
             crate::registry::pin_run_for(&mut tx, &app.settings, run, &request.agent_id).await?;
             run
@@ -293,6 +319,11 @@ pub async fn send(
                     StatusCode::BAD_REQUEST,
                     "invalid_attachments",
                     "附件无效或总大小超过12MiB",
+                ),
+                s if s.contains("voice_conflict") => error(
+                    StatusCode::CONFLICT,
+                    "voice_conflict",
+                    "语音更正与已接受的片段不一致，请保留文本并重新发送",
                 ),
                 s if s.contains("steering_full") => error(
                     StatusCode::TOO_MANY_REQUESTS,
@@ -330,7 +361,7 @@ async fn steering_input(
     let invalid = || sqlx::Error::Protocol("invalid_attachments".into());
     let mut content = Vec::new();
     if !request.text.is_empty() {
-        content.push(json!({"type":"input_text","text":request.text}));
+        content.push(json!({"type":"input_text","text":crate::voice_input::model_text(&request.text, &request.request_id, request.voice.as_ref())}));
     }
     let base = app.root.join("data/attachments");
     let mut actual_total = 0u64;

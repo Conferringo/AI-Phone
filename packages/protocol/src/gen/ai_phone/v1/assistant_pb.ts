@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/assistant.proto.
  */
 export const file_ai_phone_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEIsIBCgtDaGF0TWVzc2FnZRIKCgJpZBgBIAEoCRIMCgRyb2xlGAIgASgJEgwKBHRleHQYAyABKAkSMAoLYXR0YWNobWVudHMYBCADKAsyGy5haV9waG9uZS52MS5DaGF0QXR0YWNobWVudBIOCgZydW5faWQYBSABKAkSEgoKcmVxdWVzdF9pZBgGIAEoCRIPCgdvcmRpbmFsGAcgASgEEg4KBmFjdGl2ZRgIIAEoCBIUCgxoYXNfYWN0aXZpdHkYCSABKAgiQAoSQ2hhdEhpc3RvcnlSZXF1ZXN0EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAki5wEKCUNoYXRTdGF0ZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSKgoIbWVzc2FnZXMYAiADKAsyGC5haV9waG9uZS52MS5DaGF0TWVzc2FnZRIOCgZydW5faWQYAyABKAkSEgoKcnVuX3N0YXR1cxgEIAEoCRINCgVlcnJvchgFIAEoCRIXCg9uZXh0X3dha2VfYXRfbXMYBiABKAMSEAoIYWdlbnRfaWQYByABKAkSEgoKYWdlbnRfbmFtZRgIIAEoCRIRCglkZXZpY2VfaWQYCSABKAkSEAoIcmV2aXNpb24YCiABKAQiiQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCSIgCg5DaGF0UnVuUmVxdWVzdBIOCgZydW5faWQYASABKAliBnByb3RvMw");
+  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEInoKDkNoYXRWb2ljZUlucHV0EhIKCnNlc3Npb25faWQYASABKAkSFAoMdXR0ZXJhbmNlX2lkGAIgASgJEhAKCHJldmlzaW9uGAMgASgNEg8KB2xpdGVyYWwYBCABKAkSGwoTY29ycmVjdHNfcmVxdWVzdF9pZBgFIAEoCSLuAQoLQ2hhdE1lc3NhZ2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIMCgR0ZXh0GAMgASgJEjAKC2F0dGFjaG1lbnRzGAQgAygLMhsuYWlfcGhvbmUudjEuQ2hhdEF0dGFjaG1lbnQSDgoGcnVuX2lkGAUgASgJEhIKCnJlcXVlc3RfaWQYBiABKAkSDwoHb3JkaW5hbBgHIAEoBBIOCgZhY3RpdmUYCCABKAgSFAoMaGFzX2FjdGl2aXR5GAkgASgIEioKBXZvaWNlGAogASgLMhsuYWlfcGhvbmUudjEuQ2hhdFZvaWNlSW5wdXQiQAoSQ2hhdEhpc3RvcnlSZXF1ZXN0EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAki5wEKCUNoYXRTdGF0ZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSKgoIbWVzc2FnZXMYAiADKAsyGC5haV9waG9uZS52MS5DaGF0TWVzc2FnZRIOCgZydW5faWQYAyABKAkSEgoKcnVuX3N0YXR1cxgEIAEoCRINCgVlcnJvchgFIAEoCRIXCg9uZXh0X3dha2VfYXRfbXMYBiABKAMSEAoIYWdlbnRfaWQYByABKAkSEgoKYWdlbnRfbmFtZRgIIAEoCRIRCglkZXZpY2VfaWQYCSABKAkSEAoIcmV2aXNpb24YCiABKAQitQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCRIqCgV2b2ljZRgHIAEoCzIbLmFpX3Bob25lLnYxLkNoYXRWb2ljZUlucHV0IiAKDkNoYXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCWIGcHJvdG8z");
 
 /**
  * @generated from message ai_phone.v1.ChatAttachment
@@ -43,6 +43,46 @@ export type ChatAttachment = Message<"ai_phone.v1.ChatAttachment"> & {
  */
 export const ChatAttachmentSchema: GenMessage<ChatAttachment> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_assistant, 0);
+
+/**
+ * An accepted transcription revision. Corrections append to history; they never
+ * replace an accepted message or claim that a device action has been undone.
+ *
+ * @generated from message ai_phone.v1.ChatVoiceInput
+ */
+export type ChatVoiceInput = Message<"ai_phone.v1.ChatVoiceInput"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+
+  /**
+   * @generated from field: string utterance_id = 2;
+   */
+  utteranceId: string;
+
+  /**
+   * @generated from field: uint32 revision = 3;
+   */
+  revision: number;
+
+  /**
+   * @generated from field: string literal = 4;
+   */
+  literal: string;
+
+  /**
+   * @generated from field: string corrects_request_id = 5;
+   */
+  correctsRequestId: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.ChatVoiceInput.
+ * Use `create(ChatVoiceInputSchema)` to create a new message.
+ */
+export const ChatVoiceInputSchema: GenMessage<ChatVoiceInput> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_assistant, 1);
 
 /**
  * @generated from message ai_phone.v1.ChatMessage
@@ -92,6 +132,11 @@ export type ChatMessage = Message<"ai_phone.v1.ChatMessage"> & {
    * @generated from field: bool has_activity = 9;
    */
   hasActivity: boolean;
+
+  /**
+   * @generated from field: ai_phone.v1.ChatVoiceInput voice = 10;
+   */
+  voice?: ChatVoiceInput | undefined;
 };
 
 /**
@@ -99,7 +144,7 @@ export type ChatMessage = Message<"ai_phone.v1.ChatMessage"> & {
  * Use `create(ChatMessageSchema)` to create a new message.
  */
 export const ChatMessageSchema: GenMessage<ChatMessage> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 1);
+  messageDesc(file_ai_phone_v1_assistant, 2);
 
 /**
  * @generated from message ai_phone.v1.ChatHistoryRequest
@@ -121,7 +166,7 @@ export type ChatHistoryRequest = Message<"ai_phone.v1.ChatHistoryRequest"> & {
  * Use `create(ChatHistoryRequestSchema)` to create a new message.
  */
 export const ChatHistoryRequestSchema: GenMessage<ChatHistoryRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 2);
+  messageDesc(file_ai_phone_v1_assistant, 3);
 
 /**
  * @generated from message ai_phone.v1.ChatState
@@ -183,7 +228,7 @@ export type ChatState = Message<"ai_phone.v1.ChatState"> & {
  * Use `create(ChatStateSchema)` to create a new message.
  */
 export const ChatStateSchema: GenMessage<ChatState> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 3);
+  messageDesc(file_ai_phone_v1_assistant, 4);
 
 /**
  * @generated from message ai_phone.v1.ChatSendRequest
@@ -218,6 +263,11 @@ export type ChatSendRequest = Message<"ai_phone.v1.ChatSendRequest"> & {
    * @generated from field: string agent_id = 6;
    */
   agentId: string;
+
+  /**
+   * @generated from field: ai_phone.v1.ChatVoiceInput voice = 7;
+   */
+  voice?: ChatVoiceInput | undefined;
 };
 
 /**
@@ -225,7 +275,7 @@ export type ChatSendRequest = Message<"ai_phone.v1.ChatSendRequest"> & {
  * Use `create(ChatSendRequestSchema)` to create a new message.
  */
 export const ChatSendRequestSchema: GenMessage<ChatSendRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 4);
+  messageDesc(file_ai_phone_v1_assistant, 5);
 
 /**
  * @generated from message ai_phone.v1.ChatRunRequest
@@ -242,5 +292,5 @@ export type ChatRunRequest = Message<"ai_phone.v1.ChatRunRequest"> & {
  * Use `create(ChatRunRequestSchema)` to create a new message.
  */
 export const ChatRunRequestSchema: GenMessage<ChatRunRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 5);
+  messageDesc(file_ai_phone_v1_assistant, 6);
 

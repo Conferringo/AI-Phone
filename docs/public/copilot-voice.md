@@ -1,6 +1,6 @@
 # Copilot voice — implementation plan
 
-Status: **recorded-event input core implemented; no voice mode is shipped yet**. This contract extends the existing [continuous conversation and steering](conversation-steering.md). It does not replace the model adapter, device action ledger or conversation history.
+Status: **recorded-event input and durable chat-wire integration implemented; microphone/STT/TTS are not shipped yet**. This contract extends the existing [continuous conversation and steering](conversation-steering.md). It does not replace the model adapter, device action ledger or conversation history.
 
 ## Implemented development boundary
 
@@ -11,7 +11,7 @@ Status: **recorded-event input core implemented; no voice mode is shipped yet**.
 - Revised text after a handoff emits a fresh request linked to the previous request. Failed handoffs freeze the original ID/body until explicit retry; subsequent recognition is a separate correction. Stopping ignores late events, retains unsent text and does not cancel already accepted Agent work.
 - At most 32 segments are retained. Final, successfully handed-off segments can be retired to make room; unresolved segments cause a visible capacity error rather than being dropped. The provider adapter must respect the capture lifetime, use unique utterance IDs and pause input on capacity errors. Results for retired/unknown IDs are ignored.
 
-The [recorded-event regressions](../../scripts/copilot-input.test.ts) exercise timer boundaries, revisions, explicit/quoted corrections, late results, failure recovery, bounded retention, 300 consecutive segments and a three-message handoff into the existing `ChatOutbox` while its first network send remains unresolved. This is **local state/outbox evidence**. Voice correction metadata is not yet carried by the chat protobuf API; the fixture that hands text to `ChatOutbox` does not qualify server-side correction linking. Microphone capture, a real streaming STT adapter, UI, provider credentials, reconnect negotiation, TTS/barge-in and guest audio routing remain unimplemented. The existing 700 ms text quiet window also remains; a voice-specific dispatch policy must remove stacked waiting before continuous voice is released.
+The [recorded-event regressions](../../scripts/copilot-input.test.ts) exercise timer boundaries, revisions, explicit/quoted corrections, late results, failure recovery, bounded retention, 300 consecutive segments and a three-message handoff into the existing `ChatOutbox` while its first network send remains unresolved. This is **local state/outbox evidence**. The accepted-input path now carries `ChatVoiceInput` through the durable Outbox, protobuf send/history API and PostgreSQL. Each capture has a session ID. A late correction must reference the latest accepted receipt for the same conversation, session and utterance, with an increasing revision; exact retries keep their original receipt. Conflicting branches roll back without appending a message. Both fresh model context and active steering include the receipt link as user content. Existing accepted messages remain unchanged. Microphone capture, a real streaming STT adapter, UI, provider credentials, reconnect negotiation, TTS/barge-in and guest audio routing remain unimplemented. Voice commits bypass the 700 ms typed-input quiet window, including when a previous text wait is already in progress. Typed-input batching remains unchanged. Disposable PostgreSQL tests cover correction persistence/history, retries/conflicts, fresh context after task completion and priority over exploration. These are backend contracts, not measured microphone-to-action latency.
 
 ## Experience
 
@@ -42,15 +42,15 @@ Initial capture states are `off → connecting → listening ↔ speaking → co
 
 Recognition revisions and semantic corrections are different. The reducer keeps the current literal hypothesis and intended draft separately. Prefer a voice adapter that can emit both in the same stream. A pipeline adapter may run a correction pass on stable utterances asynchronously, with a strict deadline; never add a model request for every audio chunk or block the 1.5-second commit waiting for it. Late intent corrections become linked steering events. Quoted negation, uncertain references and multiple self-corrections are required qualification cases. Provider choice must be measured against this complete path.
 
-## Provider and wire contract, before protobuf implementation
+## Accepted-input wire and upcoming stream contract
 
-The following are domain fields, **not a new API already implemented**:
+`ChatSendRequest.voice` and `ChatMessage.voice` are implemented in [assistant.proto](../../packages/protocol/proto/ai_phone/v1/assistant.proto). They identify the capture session, utterance, revision, literal speech and optional corrected receipt. Audio and the provider stream described below are **not implemented**:
 
 - Bind a session once to authenticated user, Agent and conversation/device. Give each utterance an ID, each stream event an increasing sequence and each transcript an explicit revision/final flag. Negotiation pins provider/model and supported formats for that session.
 - Draft patches identify the utterance and previous revision. A stale or reordered patch cannot overwrite a newer draft. An end-of-speech event carries the last audio timestamp, allowing exact endpoint measurement.
 - A commit has a stable existing chat `request_id`, final text, the utterance identity and an optional correction target. Acknowledgement distinguishes accepted, consumed by the run and completed; UI does not claim an action at transcription time.
 - Retries reuse the same commit ID and exact body. Reconnect asks for the last acknowledged sequence and accepted IDs. If provider audio resumption is unavailable, retain the accepted transcript and begin a new segment; never fabricate that missing speech was recognized.
-- Bound the audio backlog and the unacknowledged commit queue. If either fills, surface the failure and preserve available text. Do not silently drop speech or resend it with a new ID. Existing steering queue limits and the current 700 ms text-burst quiet window must be reconciled explicitly before continuous-input release; do not stack that debounce after the 1.5-second voice endpoint.
+- Bound the audio backlog and the unacknowledged commit queue. If either fills, surface the failure and preserve available text. Do not silently drop speech or resend it with a new ID. The existing 32-input steering limit still applies. Voice commits use zero additional quiet delay after the 1.5-second endpoint; the capture adapter must not send partial hypotheses as committed messages.
 - Before each model context compaction, retain the current task, recent corrections, pending inputs, action outcomes and unresolved operations. Compression does not clear the visible transcript or change a session ID. Verify that multiple interruptions and a reconnect preserve accepted order.
 
 New business messages must be defined in `packages/protocol/proto`, generated for Rust/TypeScript, and streamed as protobuf WebSocket frames. Audio is a separately negotiated media stream, not JSON/base64 added to every chat request. The first implementation reuses existing chat submission and steering rather than adding a parallel Agent loop.
@@ -94,14 +94,14 @@ Do not couple the current offline-distribution completion gate to speculative ca
 
 # Copilot 实时语音开发契约
 
-**语音输入状态内核与回放测试已实现，真实语音模式尚未交付。** 未来入口放在自由探索右侧，开启后持续监听，1.5秒没有语音就提交；后续补充保持同一会话，并优先调整当前任务。按用户确认，与自主探索可同时开启，用户语音优先；一个麦克风同时只归属一个明确的对话。
+**语音状态内核、持久消息协议与后端纠错接线已实现，真实语音模式尚未交付。** 未来入口放在自由探索右侧，开启后持续监听，1.5秒没有语音就提交；后续补充保持同一会话，并优先调整当前任务。按用户确认，与自主探索可同时开启，用户语音优先；一个麦克风同时只归属一个明确的对话。
 
-当前代码已验证音频时间分段、草稿版本、显式语义修正、迟到结果关联、冻结回执重试、停止保留文本和32段有界积压；300段连续回放与现有Outbox连续交接通过。语义修正由未来适配器明确提供，代码尚不能自行理解自然语音里的“说错了”。纠错关联尚未接入protobuf/API，麦克风、真实STT/TTS、原生权限、语音插话/回声、设备内声音注入均未接通，也没有未接通的产品按钮。现有700ms文字等待尚未改成语音专用政策，不能将单元计时当作端到端延迟。
+当前代码已验证音频时间分段、草稿版本、显式语义修正、迟到结果关联、冻结回执重试、停止保留文本和32段有界积压；300段连续回放与现有Outbox连续交接通过。语义修正由未来适配器明确提供，代码尚不能自行理解自然语音里的“说错了”。纠错关联现已接入持久Outbox、protobuf收发/历史与PostgreSQL事务；只能更正同对话、同采集会话/片段的最新已接受回执，原话和旧消息保留。重试/冲突回滚、跨任务迟到修订、模型上下文关联及探索优先调度已通过隔离数据库回归。语音跳过额外700ms文字等待，也能唤醒已开始的文字等待；不能将此当作端到端延迟。麦克风、真实STT/TTS、原生权限、语音插话/回声、设备内声音注入均未接通，没有未接通的产品按钮。
 
 识别中的文字在输入区修订，避免每个字都变成一条消息。“不是、说错了”等明确纠错在发送前修订草稿；普通否定或引用不能误删。发送后的纠错作为有回执的新指令进入现有steering，不抹掉已接受的消息和真实动作。停用只关闭语音采集与播放，保留文字草稿，已经接受的任务继续遵循原有控制。
 
 实时采集、语音网关、Agent任务、播放和客体麦克风分别负责自己的生命周期。连接、断线、重连不重建聊天；音频默认不落盘。临时识别不逐帧写数据库、不反复读取配置、不重做安装资源校验。鉴权和格式协商在会话入口完成；设备副作用仍在执行边界保留action_id、控制epoch与真实观察。响应速度用音频采集→识别→提交→执行/语音反馈的p50/p95衡量，表中时间均为待验收目标。
 
-模型配置归入原有Agent表单，允许语音识别＋现有文字模型＋语音合成，以及原生实时语音两类适配。不把普通文字模型当成语音模型；输入/输出/打断/重连能力分别探测。后续协议先改protobuf，音频独立协商传输。多个补充、晚到识别、排队上限、上下文压缩和重连必须一起验证，不能靠重新开启session丢掉上下文。
+模型配置归入原有Agent表单，允许语音识别＋现有文字模型＋语音合成，以及原生实时语音两类适配。不把普通文字模型当成语音模型；输入/输出/打断/重连能力分别探测。音频流协议仍须先定义protobuf、独立协商传输。多个补充、晚到识别、排队上限、上下文压缩和重连必须一起验证，不能靠重新开启session丢掉上下文。
 
 开发顺序：先验证纠错与1.5秒端点的事件契约，再接真实麦克风和流式识别，再做可打断语音反馈，最后接客体虚拟麦克风、语音消息与测试通话。前面的文字、语音与任务能力先可用，不等电话能力。每一阶段都要有真实证据；当前不增加未接通的按钮。

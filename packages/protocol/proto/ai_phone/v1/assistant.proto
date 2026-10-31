@@ -7,6 +7,15 @@ message ChatAttachment {
   string media_type = 3;
   uint64 size_bytes = 4;
 }
+// An accepted transcription revision. Corrections append to history; they never
+// replace an accepted message or claim that a device action has been undone.
+message ChatVoiceInput {
+  string session_id = 1;
+  string utterance_id = 2;
+  uint32 revision = 3;
+  string literal = 4;
+  string corrects_request_id = 5;
+}
 message ChatMessage {
   string id = 1;
   string role = 2;
@@ -17,6 +26,7 @@ message ChatMessage {
   uint64 ordinal = 7;
   bool active = 8;
   bool has_activity = 9;
+  ChatVoiceInput voice = 10;
 }
 message ChatHistoryRequest { string conversation_id = 1; string device_id = 2; }
 message ChatState {
@@ -38,5 +48,6 @@ message ChatSendRequest {
   string request_id = 4;
   string device_id = 5;
   string agent_id = 6;
+  ChatVoiceInput voice = 7;
 }
 message ChatRunRequest { string run_id = 1; }

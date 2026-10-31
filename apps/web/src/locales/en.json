@@ -380,5 +380,9 @@
   "认证中": "Authenticating",
   "WhatsApp二维码": "WhatsApp QR code",
   "重新扫码": "Scan again",
-  "重新配对": "Pair again"
+  "重新配对": "Pair again",
+  "语音片段或修订信息无效": "Invalid voice segment or revision",
+  "语音输入需要文字且不能混入附件": "Voice input requires text without attachments",
+  "语音更正与已接受的片段不一致，请保留文本并重新发送": "The voice correction conflicts with the accepted segment. Keep the text and send it again.",
+  "待发送消息格式无效": "Invalid queued message"
 }

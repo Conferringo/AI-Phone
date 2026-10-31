@@ -101,6 +101,212 @@ async fn accept(app: &Shared, request: &wire::ChatSendRequest) -> wire::ChatStat
     wire::ChatState::decode(body.as_slice()).unwrap()
 }
 
+fn spoken(text: &str, session: &str, utterance: &str, revision: u32) -> wire::ChatSendRequest {
+    wire::ChatSendRequest {
+        voice: Some(wire::ChatVoiceInput {
+            session_id: session.into(),
+            utterance_id: utterance.into(),
+            revision,
+            literal: text.into(),
+            ..Default::default()
+        }),
+        ..request(text)
+    }
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; no production data, model or device calls"]
+async fn voice_corrections_are_durable_ordered_and_scoped() {
+    database_case(|app| async move {
+        let session = Uuid::new_v4().to_string();
+        let first = spoken("处理第一份", &session, "utterance-1", 1);
+        let state = accept(&app, &first).await;
+        assert_eq!(state.messages[0].voice, first.voice);
+        let mut correction = spoken("处理第二份", &session, "utterance-1", 2);
+        correction.voice.as_mut().unwrap().literal = "不是，说错了，第二份".into();
+        correction.voice.as_mut().unwrap().corrects_request_id = first.request_id.clone();
+        let corrected = accept(&app, &correction).await;
+        assert_eq!(corrected.run_id, state.run_id);
+        let follow = spoken("保存一份副本", &session, "utterance-2", 1);
+        accept(&app, &follow).await;
+        accept(&app, &first).await;
+        accept(&app, &correction).await;
+        let history = crate::http::state(&app, Uuid::parse_str(&state.conversation_id).unwrap())
+            .await
+            .unwrap();
+        let users: Vec<_> = history
+            .messages
+            .iter()
+            .filter(|m| m.role == "user")
+            .collect();
+        assert_eq!(
+            users.iter().map(|m| m.text.as_str()).collect::<Vec<_>>(),
+            ["处理第一份", "处理第二份", "保存一份副本"]
+        );
+        assert_eq!(users[1].voice, correction.voice);
+        let run = Uuid::parse_str(&state.run_id).unwrap();
+        let queue: Value = sqlx::query_scalar("SELECT steering FROM runs WHERE id=$1")
+            .bind(run)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+        assert!(queue[0]["input"].to_string().contains(&first.request_id));
+        assert!(queue[0]["input"].to_string().contains("处理第二份"));
+        assert_eq!(queue.as_array().unwrap().len(), 2);
+        let mut fork = spoken("不能覆盖", &session, "utterance-1", 3);
+        assert_eq!(submit(&app, &fork).await.0, StatusCode::CONFLICT);
+        fork.voice.as_mut().unwrap().corrects_request_id = first.request_id.clone();
+        assert_eq!(
+            submit(&app, &fork).await.0,
+            StatusCode::CONFLICT,
+            "an old branch cannot replace the latest correction"
+        );
+        fork.voice.as_mut().unwrap().corrects_request_id = correction.request_id.clone();
+        fork.voice.as_mut().unwrap().session_id = Uuid::new_v4().to_string();
+        assert_eq!(submit(&app, &fork).await.0, StatusCode::CONFLICT);
+        let mut changed = correction.clone();
+        changed.voice.as_mut().unwrap().literal = "changed recognition".into();
+        assert_eq!(submit(&app, &changed).await.0, StatusCode::CONFLICT);
+        let after = crate::http::state(&app, Uuid::parse_str(&state.conversation_id).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(
+            history, after,
+            "rejected metadata cannot leave messages or alter the task"
+        );
+        sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1")
+            .bind(run)
+            .execute(&app.db)
+            .await
+            .unwrap();
+        let mut late = spoken("处理第三份", &session, "utterance-1", 4);
+        late.voice.as_mut().unwrap().corrects_request_id = correction.request_id.clone();
+        let reopened = accept(&app, &late).await;
+        assert_ne!(reopened.run_id, state.run_id);
+        assert_eq!(reopened.conversation_id, state.conversation_id);
+        let assistant: Uuid =
+            sqlx::query_scalar("SELECT assistant_message_id FROM runs WHERE id=$1")
+                .bind(Uuid::parse_str(&reopened.run_id).unwrap())
+                .fetch_one(&app.db)
+                .await
+                .unwrap();
+        let context = initial_context(
+            &app,
+            Uuid::parse_str(&state.conversation_id).unwrap(),
+            assistant,
+        )
+        .await
+        .unwrap();
+        let last = context
+            .iter()
+            .rev()
+            .find(|item| item["role"] == "user")
+            .unwrap();
+        assert!(last.to_string().contains(&correction.request_id));
+        assert!(last.to_string().contains("处理第三份"));
+        let removal = sqlx::query("DELETE FROM chat_voice_inputs WHERE request_id=$1")
+            .bind(Uuid::parse_str(&first.request_id).unwrap())
+            .execute(&app.db)
+            .await;
+        assert_eq!(
+            removal
+                .unwrap_err()
+                .as_database_error()
+                .unwrap()
+                .code()
+                .as_deref(),
+            Some("23503"),
+            "an accepted correction keeps its original receipt available"
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; no production data, model or device calls"]
+async fn voice_uses_existing_user_priority_without_an_extra_text_delay() {
+    database_case(|app| async move {
+        let old = FixtureRun::start(&app, "autonomous exploration fixture").await;
+        sqlx::query("UPDATE runs SET origin='exploration' WHERE id=$1")
+            .bind(old.id)
+            .execute(&app.db)
+            .await
+            .unwrap();
+        let input = spoken(
+            "先处理我刚刚说的工作",
+            &Uuid::new_v4().to_string(),
+            "one",
+            1,
+        );
+        let accepted = accept(&app, &input).await;
+        let status: String = sqlx::query_scalar("SELECT status FROM runs WHERE id=$1")
+            .bind(old.id)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+        assert_eq!(status, "canceled");
+        let run = Uuid::parse_str(&accepted.run_id).unwrap();
+        assert_ne!(run, old.id);
+        let policy: (String, i16) =
+            sqlx::query_as("SELECT origin,input_quiet_ms FROM runs WHERE id=$1")
+                .bind(run)
+                .fetch_one(&app.db)
+                .await
+                .unwrap();
+        assert_eq!(policy, ("user".into(), 0));
+        assert!(
+            tokio::time::timeout(
+                Duration::from_millis(300),
+                input_quiet(&app, run, &CancellationToken::new())
+            )
+            .await
+            .unwrap()
+            .is_ok()
+        );
+        accept(&app, &request("文字补充保持原合并策略")).await;
+        let quiet: i16 = sqlx::query_scalar("SELECT input_quiet_ms FROM runs WHERE id=$1")
+            .bind(run)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+        assert_eq!(quiet, 700);
+        let mut invalid = spoken("invalid", "not-a-session", "one", 1);
+        assert_eq!(submit(&app, &invalid).await.0, StatusCode::BAD_REQUEST);
+        invalid.voice.as_mut().unwrap().session_id = Uuid::new_v4().to_string();
+        invalid.voice.as_mut().unwrap().revision = 0;
+        assert_eq!(submit(&app, &invalid).await.0, StatusCode::BAD_REQUEST);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; no production data, model or device calls"]
+async fn voice_interrupts_an_in_progress_text_quiet_window() {
+    database_case(|app| async move {
+        let first = accept(&app, &request("等待文字补充")).await;
+        let run = Uuid::parse_str(&first.run_id).unwrap();
+        let interrupt = async {
+            tokio::time::sleep(Duration::from_millis(30)).await;
+            accept(
+                &app,
+                &spoken("语音优先", &Uuid::new_v4().to_string(), "one", 1),
+            )
+            .await;
+        };
+        let quiet = async {
+            tokio::time::timeout(
+                Duration::from_millis(300),
+                input_quiet(&app, run, &CancellationToken::new()),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+        };
+        tokio::join!(quiet, interrupt);
+    })
+    .await;
+}
+
 struct FixtureRun {
     id: Uuid,
     message: Uuid,
