@@ -6,6 +6,7 @@ These records support contributor review. Dated results apply to their recorded 
 - [Native runtime review](native-runtime-20261030.md)
 - [Android runtime component](android-runtime.md)
 - [Linux desktop and service image component](linux-image-runtime.md)
+- [Offline Linux OCR](linux-offline-ocr.md)
 - [Portable installer tools](installer-tools.md)
 - [Phone control applications](phone-apps.md)
 - [Guest application resources](guest-apps.md)

@@ -1,5 +1,7 @@
 # SOLID / Clean Code Audit — 2026-10-28–29
 
+2026-10-31 Linux OCR review: the factory owns dependency collection; one manifest module owns archive admission and integrity; native service selection owns activation; the existing adapter owns recognition. No second OCR implementation or persistence store was introduced. The offline component recognized numeric and Chinese fixtures in a read-only, network-disabled x64 container using pinned portable Python. Scope tests cover wrong architecture, hashes, inventory, paths, permissions, TSV format and retained components. The complete Python suite passed 336 tests with 16 explicit environment skips. Selected ELF/host/archive admission functions caught all 23 executed mutations after adding the zero-byte boundary case. Scoped CRAP scores are below 10 and the 0.8 duplication scan found no candidates. These results do not qualify the full Linux host, all mutation sites or the whole repository. [Component specification](engineering/linux-offline-ocr.md).
+
 本次完成全仓自动扫描、风险驱动代码审查与首批高可信修复（不是逐行形式化证明），**尚未达到全仓严格 SOLID / ub-mode 验收**。不能把编译通过、文件拆分或局部 100% 变异分数当作整个产品已成熟。
 
 2026-10-30追加：[预编译运行组件与精简收据](runtime-bundles.md)覆盖打包、解包、启动四个Python模块；CC至多9、CRAP低于10、0.8相似度无重复候选、七个路径/摘要/归档预算函数53项定向变异全部被检查捕获。该范围不代表全仓通过，完整客户端和设备镜像仍有缺口。

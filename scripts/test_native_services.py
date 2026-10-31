@@ -64,6 +64,29 @@ class NativeServiceTests(unittest.TestCase):
             for rows in (None,{},'not an inventory'):
                 with self.assertRaisesRegex(ValueError,'Incomplete'):manifest_records({'files':rows})
 
+    def test_bundled_linux_ocr_is_part_of_verified_native_service_inventory(self):
+        from test_linux_ocr_runtime import LinuxOcrTests
+        from linux_ocr_runtime import build, PREFIX
+        with tempfile.TemporaryDirectory() as folder, patch('platform.system', return_value='Linux'), patch('platform.machine', return_value='x86_64'):
+            root = Path(folder); archive = LinuxOcrTests().fixture(root)
+            self.build_fixture(root); component = root / 'ocr-component'
+            build(root, archive, component)
+            files = prepare_services(root, linux_ocr=component)
+            for name, data, mode in files:
+                path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data); path.chmod(mode)
+            value = json.loads((root / 'runtime/services/manifest.json').read_text())
+            self.assertEqual(value['vision'], 'linux-tesseract-bundled')
+            self.assertIn(PREFIX + 'tessdata/chi_sim.traineddata', {row['path'] for row in manifest_records(value)})
+            self.assertTrue(launch_spec(root, 'runner')['prebuilt'])
+            (root / (PREFIX + 'tessdata/chi_sim.traineddata')).write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError, 'integrity'): launch_spec(root, 'runner')
+
+    def test_extra_ocr_inventory_requires_explicit_backend_and_matching_host(self):
+        value = json.loads(self.component()['runtime/services/manifest.json'])
+        value['files'].append({'path': 'runtime/services/ocr/run.py', 'size': 1, 'sha256': 'a'*64, 'mode': 0o644})
+        for backend, host in [('linux-tesseract', 'linux-x64'), ('linux-tesseract-bundled', 'macos-arm64')]:
+            with self.assertRaises(ValueError): manifest_records({**value, 'vision': backend, 'host': host})
+
     def component(self):
         files = {binary_path(role): ('fixture-' + role).encode() for role in ROLES}
         files[FIXTURE] = b'fixture image data'
@@ -260,6 +283,9 @@ class NativeHostToolsTests(unittest.TestCase):
         for distro,version,audio in [('ubuntu','24.04','libasound2t64'),('ubuntu','22.04','libasound2'),('debian','13','libasound2t64'),('debian','12','libasound2')]:
             with patch('linux_host.Path.read_text',return_value=f'# fixture OS\nID={distro}\nVERSION_ID="{version}"\n'):
                 native=system_packages(build_tools=False);source=system_packages()
+                offline=system_packages(build_tools=False,ocr_tools=False)
+                self.assertNotIn('tesseract-ocr',offline);self.assertNotIn('python3-pil',offline)
+                self.assertIn('qemu-system-x86',offline)
                 self.assertIn(audio,native);self.assertIn('tesseract-ocr-chi-sim',native)
                 self.assertNotIn('build-essential',native)
                 self.assertEqual(set(source)-set(native),{'build-essential','pkg-config','libssl-dev'})
@@ -310,10 +336,10 @@ class NativeHostToolsTests(unittest.TestCase):
             self.assertFalse(install_preflight(Path(folder),Path(folder),{'minimum_free_gb':35},False,lambda *args,**kwargs:events.append((args,kwargs))))
             self.assertEqual(native.call_count,2)
             self.assertEqual(events[0][1]['error'],'command_line_tools')
-        with tempfile.TemporaryDirectory() as folder,patch('platform.system',return_value='Linux'),patch('client_host.shutil.disk_usage',return_value=shutil._ntuple_diskusage(100*1024**3,0,100*1024**3)),patch('linux_host.prepare_system') as system:
+        with tempfile.TemporaryDirectory() as folder,patch('platform.system',return_value='Linux'),patch('client_host.shutil.disk_usage',return_value=shutil._ntuple_diskusage(100*1024**3,0,100*1024**3)),patch('prebuilt_services.load_manifest',return_value={'vision':'linux-tesseract-bundled'}),patch('linux_host.prepare_system') as system:
             emit=lambda *_args,**_kwargs:None
             self.assertTrue(install_preflight(Path(folder),Path(folder),{'minimum_free_gb':35},True,emit))
-            system.assert_called_once_with(emit,build_tools=False)
+            system.assert_called_once_with(emit,build_tools=False,ocr_tools=False)
 
     def test_profile_creation_does_not_replace_existing_device_resources(self):
         from client_host import prepare_profile

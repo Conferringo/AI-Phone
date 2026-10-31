@@ -134,8 +134,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 13693,
-      "sha256": "431be9e69d7b5cf03a08093d771ff6d33030df1b0ab78892fc70bd205917d380"
+      "size": 14092,
+      "sha256": "9ca78a9070572b4ecdf049e6f52d3f3ce45b5ecab620269e9250a6923b6613d5"
     },
     {
       "path": "ai-phone",
@@ -2073,6 +2073,11 @@
       "sha256": "1adb34eecdaa84d029013f403be0df2ea9f0477006b3f2b5650dea8ade5a1991"
     },
     {
+      "path": "config/linux-ocr.json",
+      "size": 532,
+      "sha256": "b64f2d94731ea2d4cf9faba7a30ce50067d871dc1dad17e1d00cca1370e854fa"
+    },
+    {
       "path": "config/mihomo-release.json",
       "size": 1324,
       "sha256": "d9b60f402cd7c5df7a92794bda87785ede14c71647f360174cc47d5a77c0980d"
@@ -2639,8 +2644,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1394,
-      "sha256": "260d9c44b1bbd7a79f568a1cd7cb53a0a6fdd2758f709939bc97d116f09c453e"
+      "size": 1438,
+      "sha256": "afc87fe9e816aad87e9a6b2aec0a26cb27a627af3a24dc8c76de202b238e1e92"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -2656,6 +2661,11 @@
       "path": "docs/public/engineering/linux-image-runtime.md",
       "size": 6425,
       "sha256": "05332002ea78f72a2be797197929fbba72250af9053735d3cc210511b7415be7"
+    },
+    {
+      "path": "docs/public/engineering/linux-offline-ocr.md",
+      "size": 4400,
+      "sha256": "b0cc6ef134ad06b6104f912349ef2cc39c2317e02fce6e3696099adc694f9f40"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -3574,8 +3584,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4461,
-      "sha256": "fb4e7c65a1602df80e8b96ded08adb4b0289fe7b704d408380f0ec12342399d9"
+      "size": 4519,
+      "sha256": "86bf63cabf5ee9d4b9a498012530e59163b20b011be49d13b2c7ca55ea8aa178"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3589,8 +3599,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 8201,
-      "sha256": "8d1feda47dc5adb0bcca78be0fced990ff75b22bf3a0ec4d2adedab1914c4f1a"
+      "size": 8352,
+      "sha256": "6d1ecaf263f3a84f60182726dc1df89ef1b37a776f7e4599c440df2cb4a57e13"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3599,8 +3609,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 22570,
-      "sha256": "23769b3c9d639af37100bc4afb9249e14de0eb98f71154681350adc824ef1e9f"
+      "size": 23534,
+      "sha256": "8f1bc87d7811ba3dee856b29fd8f8e7744f152560f99b3581132089050cfaffb"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -4064,8 +4074,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11487,
-      "sha256": "30ad2ecbb373f7621015228e674c0073067b0bd435d274adc57bddc639a81bec"
+      "size": 11774,
+      "sha256": "100ecaa7e0543cb173d81f14e6dd57ab492934a906b6d0817e8c097cbc708c1c"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4104,8 +4114,8 @@
     },
     {
       "path": "scripts/check_native_services.py",
-      "size": 5538,
-      "sha256": "e5bf7e8c41e45e1162edafd9ca3b2473a4df4eb35879a881c5581e1f7d81e41a"
+      "size": 6185,
+      "sha256": "718103f41618cdf4854ac917ab8c78a1eacaac8c5ceed95c448107629ad9458a"
     },
     {
       "path": "scripts/check_prebuilt_web.py",
@@ -4154,8 +4164,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 16292,
-      "sha256": "2a102a51ab5fe05eb8ddcea2a525d452e6c180a9d3a58290d219b629afafa405"
+      "size": 16476,
+      "sha256": "92db11692711d59220792f325787622147a27fac0157d2e1d56c3f1c0d7fca8e"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4283,14 +4293,44 @@
       "sha256": "58ce566d3d3df32599d6f610f29156f695bc63be0f9bedf107e9f0856f674e8a"
     },
     {
+      "path": "scripts/linux-ocr/Dockerfile",
+      "size": 945,
+      "sha256": "1d50d7fabbbd5acba9913c91f8abef1b2d9d570253673f8faed769516687b0c8"
+    },
+    {
+      "path": "scripts/linux-ocr/collect.py",
+      "size": 2944,
+      "sha256": "af4d1871dd3f63f031c2d8174ca812e2fb1a786b8558de9b5ecb372314522d0f"
+    },
+    {
+      "path": "scripts/linux-ocr/run.py",
+      "size": 380,
+      "sha256": "468b07eae63f90ece2679ab6530da5a71fb1c3918b9329ef871b0833bc712e32"
+    },
+    {
+      "path": "scripts/linux-ocr/tesseract.sh",
+      "size": 167,
+      "sha256": "005a0e91383911d9608b53a4e79c92af02c825283ffb2dc00b37fea1ac45c78c"
+    },
+    {
+      "path": "scripts/linux-ocr/vision.sh",
+      "size": 173,
+      "sha256": "c93021ff09e7cb841b251c9506226bc353f68754ff4b8edb6a893cb1cf41dd16"
+    },
+    {
       "path": "scripts/linux_host.py",
-      "size": 7550,
-      "sha256": "a7db189f4d5480cbe24b9c5fc2cde307399d418ff60a9f1868b3dce5c6bbe6d2"
+      "size": 7638,
+      "sha256": "1d1d858394f75263214099ad8b88049c669b55b04784d2ab92cc5fe7562cbb49"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
       "size": 3637,
       "sha256": "5fa49b4ae4a77e7d72dbb6193525ea0718e02e712440e870a656046118919e11"
+    },
+    {
+      "path": "scripts/linux_ocr_runtime.py",
+      "size": 8697,
+      "sha256": "63a3077a507252285e2212a2bbaa0430b0c49649f1fd5a0b927d0440cb4d7c4f"
     },
     {
       "path": "scripts/linux_services.py",
@@ -4399,8 +4439,8 @@
     },
     {
       "path": "scripts/phone-vision/tesseract.py",
-      "size": 1787,
-      "sha256": "caa8271164ab5917a160763b010c429d28209e8c35345746bfdc7c11d58e495a"
+      "size": 2118,
+      "sha256": "82c1fe694f7ce8bfbb32188432346b1cdcb26b3cca966d7c81dbcc4dc0a128a7"
     },
     {
       "path": "scripts/phone-web-start.sh",
@@ -4424,8 +4464,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 4434,
-      "sha256": "3abf3649afcc21efcba0e68b907158020f4f319a61a100641ca383b0a9b8f061"
+      "size": 5703,
+      "sha256": "d39a4a3e65162eabde707733691d933c43cc1a1a7ae91c3ce6ea375a5f80f7bf"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -4439,8 +4479,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 7928,
-      "sha256": "1b4ad243db125b468f58efc76340544fe2fab20e0d005480110bc43fbf29d9af"
+      "size": 8192,
+      "sha256": "632473bb23fc47d7fee5318ad2f2716baeef85330decf1ae9635c3dc7c872944"
     },
     {
       "path": "scripts/private_files.py",
@@ -4653,9 +4693,19 @@
       "sha256": "10021e0a80913c5712d2c19830091f28e8ceb2d1cb465a1edc02e2392ef0863f"
     },
     {
+      "path": "scripts/test_linux_ocr_runtime.py",
+      "size": 7657,
+      "sha256": "355826be933bd8014acc9b799634df54039ea8081113e2e53bd1d15181a4e632"
+    },
+    {
       "path": "scripts/test_linux_services.py",
       "size": 3055,
       "sha256": "03701414407863741794f3d13e11c082dc175c3faf5fb52343747bc6efeb5239"
+    },
+    {
+      "path": "scripts/test_linux_vision.py",
+      "size": 1326,
+      "sha256": "b7dbe1ddc816e27ec3a63e0ddee5edc62e6787b9cc9409a395d5c5786e443597"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
@@ -4679,8 +4729,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 29240,
-      "sha256": "16920a8245c58e5c2b40ff5daad9f46dc6cbd99995f142780f4cc09593ea85d1"
+      "size": 31367,
+      "sha256": "a4c3f69b8bf3116765261b342459211825b8d4e114121e03e5af3f01c78616cc"
     },
     {
       "path": "scripts/test_prebuilt_guest_apps.py",

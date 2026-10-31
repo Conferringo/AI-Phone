@@ -16,7 +16,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 | JavaScript services | Media, channels and setup helpers with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
 | Guest applications | Pinned Clash Meta APKs for ARM64 and x86_64 guests | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | macOS OCR | Apple Vision helper with the client's minimum deployment target | macOS system frameworks |
-| Linux OCR | Tesseract adapter | Python/Pillow, Tesseract and English/Chinese language data; these dependencies still need a complete offline payload |
+| Linux OCR | Canonical Tesseract adapter; optional x64 offline closure | Bundled CPython/Pillow, ELF libraries, English/Chinese language data and TSV configuration; [component and qualification](engineering/linux-offline-ocr.md) |
 
 Each component manifest records file sizes, SHA-256 hashes and permissions. Native builds also record source fingerprints and compiler provenance. The packager accepts only matching builds. macOS helpers cannot require a newer OS than the client.
 
@@ -68,6 +68,6 @@ Non-macOS physical installation is waived for this release scope and remains unv
 
 客户端将版本化程序、干净设备基础和持久用户数据分开。网页组件包含 Next standalone、静态资源及对应宿主的 Bun；原生组件包含 Rust 助手、手机执行器与 OCR。macOS/Linux 启动已有原生组件时校验宿主、摘要和执行权限；组件损坏会明确失败，不回退到源码编译掩盖错误。
 
-真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux OCR 仍依赖系统 Python/Pillow、Tesseract 与语言数据，完整离线包须继续内置这些依赖。macOS完整App/DMG已装配全部九类资源，并从只读映像验证包内运行；公开安装包、全新默认双设备创建及其他宿主仍依照各自发行门槛验收。
+真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux x64 OCR 离线组件已实际构建并通过断网数字/中文识别，使用随包 Python/Pillow、Tesseract 与完整依赖；完整 Linux 宿主仍需补齐其他运行组件。macOS完整App/DMG已装配全部九类资源，并从只读映像验证包内运行；公开安装包、全新默认双设备创建及其他宿主仍依照各自发行门槛验收。
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.

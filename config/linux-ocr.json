@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "host": "linux-x64",
+  "archive": {
+    "file": "linux-x64-ocr.tar.gz",
+    "size_bytes": 43672441,
+    "sha256": "1f25f05af6a0f4876c0f73ac533f53c597e804b2b611c6d51e378dcaa8d8e970"
+  },
+  "factory": {
+    "base_image": "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d",
+    "python": "3.13.18",
+    "tesseract": "5.3.4",
+    "pillow": "13.0.0",
+    "pillow_sha256": "5f56499c1a74d2b862beb0c33b8016f99d095858455df9d21583bbbc1c15b582"
+  },
+  "redistribution_review_complete": false
+}

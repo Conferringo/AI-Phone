@@ -212,7 +212,9 @@ def install_preflight(root, home, config, bundled_services, emit):
             return False
     if platform.system()=='Linux':
         from linux_host import prepare_system
-        prepare_system(emit,build_tools=not bundled_services)
+        from prebuilt_services import load_manifest
+        bundled_ocr = bundled_services and load_manifest(root).get('vision') == 'linux-tesseract-bundled'
+        prepare_system(emit,build_tools=not bundled_services,ocr_tools=not bundled_ocr)
     return True
 
 

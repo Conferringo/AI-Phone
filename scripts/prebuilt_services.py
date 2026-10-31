@@ -19,7 +19,7 @@ def binary_path(role):
     return 'runtime/services/bin/' + role
 
 
-def prepare_services(root):
+def prepare_services(root, *, linux_ocr=None):
     from build_native_services import cached_build, source_fingerprint
     root = Path(root).resolve()
     receipt = cached_build(root, source_fingerprint(root))
@@ -27,17 +27,28 @@ def prepare_services(root):
         raise ValueError('Build the matching native services before packaging')
     files = []
     for role in ROLES:
-        data = (root / receipt['artifacts'][role]['path']).read_bytes()
+        path = root / receipt['artifacts'][role]['path']
+        if role == 'vision' and linux_ocr is not None:
+            path = root / 'scripts/linux-ocr/vision.sh'
+        data = path.read_bytes()
         if SECRET.search(data) or (str(Path.home()).rstrip('/\\') + '/').encode() in data:
             raise ValueError('Private material in native service: ' + role)
         files.append((binary_path(role), data, 0o755))
     files.append((FIXTURE, (root / SOURCE_FIXTURE).read_bytes(), 0o644))
+    if linux_ocr is not None:
+        from linux_ocr_runtime import prepare
+        files.extend(prepare(root, linux_ocr))
     records = [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'mode': mode}
                for name, data, mode in files]
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
-                'vision': 'macos-vision' if platform.system() == 'Darwin' else 'linux-tesseract', 'files': records}
+                'vision': vision_backend(linux_ocr), 'files': records}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
+
+
+def vision_backend(linux_ocr):
+    if linux_ocr is not None: return 'linux-tesseract-bundled'
+    return 'macos-vision' if platform.system() == 'Darwin' else 'linux-tesseract'
 
 
 def read_manifest(root):
@@ -54,16 +65,36 @@ def read_manifest(root):
 
 def manifest_records(value):
     rows = value.get('files')
-    if not isinstance(rows, list) or len(rows) != len(ROLES) + 1:
+    if not isinstance(rows, list) or not len(ROLES) + 1 <= len(rows) <= 2053:
         raise ValueError('Incomplete native service inventory')
     records = [checked_record(row) for row in rows]
-    if {row['path'] for row in records} != {binary_path(role) for role in ROLES} | {FIXTURE}:
+    extras = core_inventory(records)
+    checked_extras(value, extras)
+    return records
+
+
+def core_inventory(records):
+    core = {binary_path(role) for role in ROLES} | {FIXTURE}
+    names = {row['path'] for row in records}
+    if len(names) != len(records):
+        raise ValueError('Duplicate native service inventory')
+    if not core <= names:
         raise ValueError('Invalid native service inventory')
-    for row in records:
+    extras = [row for row in records if row['path'] not in core]
+    for row in (row for row in records if row['path'] in core):
         mode = 0o644 if row['path'] == FIXTURE else 0o755
         if row['mode'] != mode:
             raise ValueError('Invalid native service executable/data permissions')
-    return records
+    return extras
+
+
+def checked_extras(value, rows):
+    if value.get('vision') == 'linux-tesseract-bundled':
+        from linux_ocr_runtime import bundled_records
+        if value.get('host') != 'linux-x64': raise ValueError('Bundled OCR host mismatch')
+        bundled_records(rows)
+    elif rows:
+        raise ValueError('Unexpected native service inventory')
 
 
 def load_manifest(root):
@@ -72,6 +103,9 @@ def load_manifest(root):
         verify_file(root, row)
         if (root / row['path']).stat().st_mode & 0o777 != row['mode']:
             raise ValueError('Native service permissions changed')
+    if value.get('vision') == 'linux-tesseract-bundled':
+        from linux_ocr_runtime import verify, PREFIX
+        verify(root, root / PREFIX)
     return value
 
 

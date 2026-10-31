@@ -9,7 +9,7 @@ import tarfile
 from release_package import select_files
 ROOT = Path(__file__).resolve().parent.parent
 
-def component_records(root,requested):
+def component_records(root,requested,linux_ocr=None):
     from bootstrap_bun import bun_path
     from client_host_entry import COMPONENT_MANIFESTS
     from prebuilt_web import prepare_web
@@ -19,18 +19,20 @@ def component_records(root,requested):
     from prebuilt_js import prepare as prepare_js
     from prebuilt_guest_apps import prepare_apps as guest_apps
     producers={'web':lambda:prepare_web(root,bun_path(root)),
-               'native-services':lambda:prepare_services(root),'phone-apps':lambda:phone_apps(root),
+               'native-services':lambda:prepare_services(root,linux_ocr=linux_ocr),'phone-apps':lambda:phone_apps(root),
                'container-host':lambda:prepare_host(root),'js-services':lambda:prepare_js(root),
                'guest-apps':lambda:guest_apps(root)}
     components=[name for name in COMPONENT_MANIFESTS if requested[name]]
     return components,[row for name in components for row in producers[name]()]
 
 
-def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, with_js_services=False, with_guest_apps=False, android_runtime=None, image_runtime=None, installer_tools=None):
+def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, with_js_services=False, with_guest_apps=False, android_runtime=None, image_runtime=None, installer_tools=None, linux_ocr=None):
+    if linux_ocr is not None and not with_service_runtime:
+        raise ValueError('Bundled Linux OCR requires the native service component')
     folder = root / 'apps/client/src-tauri/gen/host'
     folder.mkdir(parents=True, exist_ok=True)
     components,resources=component_records(root,{'web':with_web_runtime,'native-services':with_service_runtime,
-        'phone-apps':with_phone_apps,'container-host':with_container_host,'js-services':with_js_services,'guest-apps':with_guest_apps})
+        'phone-apps':with_phone_apps,'container-host':with_container_host,'js-services':with_js_services,'guest-apps':with_guest_apps},linux_ocr)
     files = select_files(root)+resources
     manifest = {'format': 2 if components else 1, 'components': components, 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=mode) for name, data, mode in files]}
     files.append(('HOST-MANIFEST.json', json.dumps(manifest, sort_keys=True).encode(), 420))
@@ -93,7 +95,7 @@ def verify_prepared_services(root=ROOT, *, pg_container=None, pg_port=None):
     from check_native_services import verify, database_receipt
     with tempfile.TemporaryDirectory(prefix='aiphone-bundled-services-') as folder:
         staged = stage_source(root / 'apps/client/src-tauri/gen/host/source.payload', Path(folder) / 'installation')
-        result = verify(staged)
+        result = verify(staged, tool_runtime=root / 'apps/client/src-tauri/gen/host/tools')
         if pg_container is not None:
             result['database'] = database_receipt(staged, pg_container, pg_port)
         return result
