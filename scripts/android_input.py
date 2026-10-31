@@ -14,6 +14,7 @@ PACKAGE = 'dev.aiphone.input'
 IME = PACKAGE + '/.UnicodeIme'
 ATTENTION = PACKAGE + '/.PhoneAttention'
 NOTIFICATION = PACKAGE + '/.PhoneNotifications'
+NOTIFICATION_PROBE = '/data/local/tmp/ai-phone-input-notification-probe.jar'
 USER = '0'
 REGISTRATION_SECONDS = 5.0
 OBSERVE_INTERVAL = 0.1
@@ -117,11 +118,30 @@ def enable_setting(adb, key):
     if settings(adb,'get',key) != '1':raise RuntimeError('Android input setting was not confirmed')
 
 
-def configure_services(adb):
+def prepare_notification_probe(adb, root):
+    value = command([sys.executable], [str(root/'scripts/prebuilt_phone.py'),'--root',str(root),
+        '--notification-probe'], 'notification probe preparation', timeout=None)
+    jar = Path(value)
+    expected = [root/'runtime/phone-apps/notification-access.jar',root/'data/android/notification-probe/notification-access.jar']
+    if jar not in expected or not jar.is_file() or jar.is_symlink():
+        raise RuntimeError('Android input notification probe is unavailable')
+    command(adb, ['push',str(jar),NOTIFICATION_PROBE], 'notification probe transfer')
+
+
+def notification_granted(adb):
+    value = command(adb, ['shell','env','CLASSPATH='+NOTIFICATION_PROBE,'app_process','/',
+        'dev.aiphone.input.probe.NotificationAccess'], 'notification observation')
+    if value not in ('true','false'):
+        raise RuntimeError('Android input notification observation is unknown')
+    return value == 'true'
+
+
+def configure_services(adb, root):
     enable_setting(adb,'show_ime_with_hard_keyboard')
-    if not has_component(components(settings(adb,'get','enabled_notification_listeners')),NOTIFICATION):
+    prepare_notification_probe(adb,root)
+    if not notification_granted(adb):
         command(adb, ['shell','cmd','notification','allow_listener',NOTIFICATION,USER], 'notifications')
-        if not has_component(components(settings(adb,'get','enabled_notification_listeners')),NOTIFICATION):
+        if not notification_granted(adb):
             raise RuntimeError('Android input notification permission was not confirmed')
     current = settings(adb,'get','enabled_accessibility_services')
     services = components(current)
@@ -172,7 +192,7 @@ def _setup_locked(executable, serial, root, path, apk, clock, pause):
     if pending is None or pending['stage'] != 'configure':save_pending(path,serial,'configure')
     await_registration(adb,clock,pause)
     configure_ime(adb)
-    configure_services(adb)
+    configure_services(adb,root)
     path.unlink()
     descriptor = os.open(path.parent,os.O_RDONLY)
     try:os.fsync(descriptor)

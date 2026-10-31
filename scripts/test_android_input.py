@@ -34,6 +34,12 @@ if matched:
 if a==['shell','pm','list','packages','--user','0','dev.aiphone.input']:
  if s.get('package'):print('package:dev.aiphone.input')
 elif a==['shell','am','get-current-user']:print(s.get('user','0'))
+elif a and a[0]=='push':
+ if len(a)!=3 or a[2]!='/data/local/tmp/ai-phone-input-notification-probe.jar' or not Path(a[1]).is_file():fail()
+elif a==['shell','env','CLASSPATH=/data/local/tmp/ai-phone-input-notification-probe.jar','app_process','/','dev.aiphone.input.probe.NotificationAccess']:
+ s['notification_queries']=s.get('notification_queries',0)+1
+ if s.get('query_fail_at')==s['notification_queries']:fail()
+ print(s.get('notification_query_output','true' if s.get('notification_granted') else 'false'))
 elif a and a[0]=='install':
  pending=p.parent/'data/android/input-setup.pending.json'
  s['pending_at_install']=json.loads(pending.read_text()) if pending.exists() else None
@@ -52,10 +58,27 @@ elif a[:3]==['shell','settings','--user'] and a[3]=='0':
  else:fail()
 elif a==['shell','cmd','notification','allow_listener','dev.aiphone.input/.PhoneNotifications','0']:
  component='dev.aiphone.input/dev.aiphone.input.PhoneNotifications' if s.get('expanded_components') else 'dev.aiphone.input/.PhoneNotifications'
- old=s['settings']['enabled_notification_listeners'];s['settings']['enabled_notification_listeners']=old+':'+component if old else component
+ s['notification_granted']=not s.get('deny_notifications')
+ if not s.get('defer_notification_settings'):
+  old=s['settings']['enabled_notification_listeners'];s['settings']['enabled_notification_listeners']=old+':'+component if old else component
 else:fail()
 save()
 if matched:fail()
+'''
+RESOLVER = r'''from pathlib import Path
+import os,sys,time
+root=Path(__file__).resolve().parent.parent
+if '--notification-probe' in sys.argv:
+ jar=root/'data/android/notification-probe/notification-access.jar'
+ jar.parent.mkdir(parents=True,exist_ok=True);jar.write_bytes(b'fixture probe')
+ (root/'probe-prepared').write_text('prepared');print(jar)
+else:
+ if os.environ.get('INPUT_FIXTURE_HOLD'):
+  (root/'entered').write_text('entered');deadline=time.monotonic()+8
+  while not (root/'release').exists():
+   if time.monotonic()>deadline:raise SystemExit('fixture release timed out')
+   time.sleep(.01)
+ (root/'resolved').write_text('called');print(root/'fixture.apk')
 '''
 
 
@@ -75,7 +98,7 @@ class InputRecoveryTests(unittest.TestCase):
         for name in ('android_input.py','android-install-input.sh','private_files.py','installer_lock.py'):
             shutil.copyfile(HERE/name,self.scripts/name)
         (self.scripts/'android-env.sh').write_text('AI_PHONE_PROJECT_ROOT='+shlex.quote(str(self.root))+'\nANDROID_HOME='+shlex.quote(str(sdk))+'\n')
-        (self.scripts/'prebuilt_phone.py').write_text('from pathlib import Path\np=Path('+repr(str(self.root/'resolved'))+')\np.write_text("called")\nprint('+repr(str(self.apk))+')\n')
+        (self.scripts/'prebuilt_phone.py').write_text(RESOLVER)
         self.reset()
 
     def reset(self, **values):
@@ -109,18 +132,6 @@ class InputRecoveryTests(unittest.TestCase):
 
     def test_direct_cli_concurrent_setup_is_rejected_before_adb(self):
         entered=self.root/'entered';release=self.root/'release'
-        resolver=self.scripts/'prebuilt_phone.py'
-        resolver.write_text('''import os,time
-from pathlib import Path
-root=Path(__file__).resolve().parent.parent
-if os.environ.get('INPUT_FIXTURE_HOLD'):
- (root/'entered').write_text('entered')
- deadline=time.monotonic()+8
- while not (root/'release').exists():
-  if time.monotonic()>deadline:raise SystemExit('fixture release timed out')
-  time.sleep(.01)
-print(root/'fixture.apk')
-''')
         first=subprocess.Popen(['sh',str(self.scripts/'android-install-input.sh')],env={**self.env,'INPUT_FIXTURE_HOLD':'1'},stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         try:
             self.wait_for(entered,first)
@@ -175,6 +186,7 @@ with acquire(root/'data/android/input-setup.lock'):
         self.assertEqual(self.state_value()['settings'],before);self.assertFalse(self.installs())
         self.assertEqual(self.calls(),[['shell','pm','list','packages','--user','0','dev.aiphone.input']])
         self.assertFalse((self.root/'resolved').exists());self.assertFalse(self.pending.exists())
+        self.assertFalse((self.root/'probe-prepared').exists())
 
     def test_unknown_write_is_observed_before_any_repeat(self):
         writes=[['shell','ime','enable'],['shell','ime','set'],['shell','settings','--user','0','put','secure','show_ime_with_hard_keyboard'],['shell','cmd','notification'],['shell','settings','--user','0','put','secure','enabled_accessibility_services'],['shell','settings','--user','0','put','secure','accessibility_enabled']]
@@ -231,6 +243,54 @@ with acquire(root/'data/android/input-setup.lock'):
         self.assertEqual(self.pending.stat().st_mode&0o777,0o600)
         self.assertEqual(json.loads(self.pending.read_text())['stage'],'configure')
         self.assertEqual(self.state_value()['pending_at_install'],{'format':1,'package':'dev.aiphone.input','serial':'emulator-fixture','user':'0','stage':'install_unknown'})
+
+    def test_notification_authority_precedes_delayed_secure_mirror(self):
+        self.reset(defer_notification_settings=True)
+        result=self.run_owner()
+        self.succeeded(result)
+        self.assertTrue(self.state_value()['notification_granted'])
+        self.assertEqual(self.state_value()['settings']['enabled_notification_listeners'],'other/.Listener')
+        self.assertEqual(sum(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()),1)
+        self.assertFalse(self.pending.exists())
+
+    def test_retry_observes_notification_authority_without_regrant(self):
+        self.reset(package=True,notification_granted=True,defer_notification_settings=True)
+        self.journal(stage='configure')
+        self.succeeded(self.run_owner())
+        self.assertFalse(any(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()))
+        self.assertFalse(self.installs());self.assertFalse(self.pending.exists())
+
+    def test_notification_mirror_is_never_used_as_permission_authority(self):
+        self.reset(package=True,notification_granted=False)
+        self.journal(stage='configure')
+        state=self.state_value();state['settings']['enabled_notification_listeners']=NOTIFICATION
+        self.state.write_text(json.dumps(state))
+        self.succeeded(self.run_owner())
+        self.assertEqual(sum(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()),1)
+        self.assertEqual(self.state_value()['notification_queries'],2)
+        self.assertFalse(any('enabled_notification_listeners' in a for a in self.calls()))
+
+    def test_unknown_notification_observation_never_authorizes_grant(self):
+        for values in ({'query_fail_at':1},{'notification_query_output':'private-provider-text'},{'notification_query_output':''}):
+            with self.subTest(values=values):
+                self.reset(package=True,**values);self.journal(stage='configure')
+                result=self.run_owner();self.failed(result)
+                self.assertIn('unknown',result.stderr);self.assertTrue(self.pending.exists())
+                self.assertFalse(any(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()))
+
+    def test_notification_grant_not_confirmed_is_never_repeated_in_one_attempt(self):
+        self.reset(deny_notifications=True,defer_notification_settings=True)
+        result=self.run_owner();self.failed(result)
+        self.assertIn('notification permission was not confirmed',result.stderr)
+        self.assertEqual(sum(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()),1)
+        self.assertEqual(self.state_value()['notification_queries'],2);self.assertTrue(self.pending.exists())
+
+    def test_notification_confirmation_unknown_then_resume_only_observes(self):
+        self.reset(query_fail_at=2,defer_notification_settings=True)
+        self.failed(self.run_owner());self.assertTrue(self.pending.exists())
+        self.succeeded(self.run_owner())
+        self.assertEqual(sum(a[:4]==['shell','cmd','notification','allow_listener'] for a in self.calls()),1)
+        self.assertEqual(len(self.installs()),1);self.assertFalse(self.pending.exists())
 
     def test_android_expanded_components_are_observed_without_duplicate_writes(self):
         self.reset(expanded_components=True,fail_at=['shell','cmd','notification'],after_apply=True)

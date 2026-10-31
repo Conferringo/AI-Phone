@@ -84,7 +84,9 @@ def inspect_rootfs(path=None, *, fileobj=None):
     for name in names:
         if any(str(parent) in links for parent in PurePosixPath(name).parents):
             raise ValueError('WSL archive writes through a link parent')
-    if set(files)!=REQUIRED or not licenses:raise ValueError('Incomplete WSL backend rootfs or license inventory')
+    if set(files)!=REQUIRED or not licenses:
+        missing=','.join(sorted(REQUIRED-set(files))) or 'none'
+        raise ValueError(f'Incomplete WSL backend rootfs or license inventory: missing={missing}; license_count={len(licenses)}')
     return {'entries':len(names),'uncompressed_bytes':total,'required_files':files,'base_license_files':sorted(licenses)}
 
 

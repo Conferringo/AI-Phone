@@ -35,6 +35,15 @@ def response(value=None, error=None):
     return subprocess.CompletedProcess([],1 if error else 0,stdout=json.dumps(value) if value else '',stderr=error or '')
 
 
+def container_query(name, inspection):
+    def query(argv, **_):
+        if argv[:3]==['docker','container','ls']:
+            identifier=hashlib.sha256(name.encode()).hexdigest() if argv[5]=='name=^/'+name+'$' else ''
+            return subprocess.CompletedProcess([],0,stdout=identifier,stderr='')
+        return inspection
+    return query
+
+
 class ProvisionOrderingTests(unittest.TestCase):
     def run_backend(self, root, query):
         commands=[];started=[];images=[]
@@ -63,7 +72,7 @@ class ProvisionOrderingTests(unittest.TestCase):
     def test_fresh_backend_does_not_create_desktop_before_api_provision(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)
-            calls,names=self.run_backend(root,lambda name:response(error='Error: No such object: '+name))
+            calls,names=self.run_backend(root,lambda *_,**__:response())
             self.assertFalse((root/'data/device-network/desktop').exists())
             self.assertFalse(any('compose.desktop.yaml' in call or call[:2]==['docker','start'] for call in calls))
             self.assertTrue(any(call[-2:]==['postgres','redis'] and '--no-build' in call and '--pull' in call and 'never' in call for call in calls))
@@ -74,8 +83,7 @@ class ProvisionOrderingTests(unittest.TestCase):
             with self.subTest(running=running),tempfile.TemporaryDirectory() as folder:
                 root=Path(folder);identity=observed(root,'ai-phone-desktop',running)
                 marker=root/'chat';marker.write_text('keep')
-                def query(name):return response(identity) if name=='ai-phone-desktop' else response(error='Error: No such object: '+name)
-                calls,names=self.run_backend(root,query)
+                calls,names=self.run_backend(root,container_query('ai-phone-desktop',response(identity)))
                 starts=[call for call in calls if call[:2]==['docker','start']]
                 self.assertEqual(starts,[] if running else [['docker','start',identity['id']]])
                 self.assertFalse(any('compose.desktop.yaml' in call or '--cpus' in call or '--memory' in call for call in calls))
@@ -88,9 +96,17 @@ class ProvisionOrderingTests(unittest.TestCase):
             unknown_id=observed(root,'ai-phone-desktop');unknown_id['id']=int('1'*64)
             for value in (response(foreign),response(malformed),response(unknown_id),response(error='Cannot connect to daemon')):
                 with self.subTest(value=value):
-                    with self.assertRaises(ValueError):self.run_backend(root,lambda _:value)
+                    with self.assertRaises(ValueError):self.run_backend(root,container_query('ai-phone-desktop',value))
                     self.assertEqual(self.effects,{'commands':[],'started':[],'images':[]})
                     self.assertFalse((root/'data').exists())
+
+    def test_failed_container_listing_leaves_backend_and_data_untouched(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            query=lambda *_,**__:response(error='Error: No such object: ai-phone-postgres-1')
+            with self.assertRaisesRegex(ValueError,'could not be verified'):self.run_backend(root,query)
+            self.assertEqual(self.effects,{'commands':[],'started':[],'images':[]})
+            self.assertFalse((root/'data').exists())
 
 
 client_host_identity=client_host.verify_container_ownership

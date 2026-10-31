@@ -188,14 +188,22 @@ def verified_container(root, value):
 
 def verify_container_ownership(root, query=None):
     existing={}
+    query=query or subprocess.run
     template='{"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}'
     for name in ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop'):
-        result=query(name) if query else subprocess.run(['docker','inspect','--format',template,name],capture_output=True,text=True)
-        if result.returncode:
-            missing=r'(?:Error: |Error response from daemon: )?No such (?:object|container): '+re.escape(name)
-            if re.fullmatch(missing,(result.stderr or '').strip()):continue
+        # Absence must come from a successful container query, not wrapper stderr.
+        result=query(['docker','container','ls','--all','--filter','name=^/'+name+'$','--no-trunc','--format','{{.ID}}'],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        identifier=result.stdout.strip()
+        if not identifier:continue
+        if re.fullmatch(r'[0-9a-f]{64}',identifier) is None:
             raise ValueError('Existing container state could not be verified; no containers or data were changed')
-        existing[name]=verified_container(root,json.loads(result.stdout))
+        result=query(['docker','container','inspect','--format',template,identifier],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        container=verified_container(root,json.loads(result.stdout))
+        if container['id']!=identifier:
+            raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        existing[name]=container
     return existing
 
 

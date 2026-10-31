@@ -99,7 +99,8 @@ class WslOwnershipChainTests(unittest.TestCase):
             def docker(argv,**kwargs):
                 docker_calls.append(list(map(str,argv)))
                 self.assertEqual(os.environ['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('DOCKER_CONTEXT',os.environ)
-                if argv[1]=='inspect':
+                if argv[1:3]==['container','ls']:text='a'*64
+                elif argv[1:3]==['container','inspect']:
                     text=json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':str(root)}})
                 elif argv[1]=='info':text='amd64'
                 elif argv[1:3]==['image','inspect']:
@@ -111,7 +112,7 @@ class WslOwnershipChainTests(unittest.TestCase):
             with patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value='/fixture/node'):
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             managed.assert_called_once_with(root)
-            self.assertEqual(len(docker_calls),12)
+            self.assertEqual(len(docker_calls),15)
             self.assertEqual([name for name,_ in captures],['assistant','web','channels','media'])
             for _,env in captures:
                 self.assertEqual(env['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('LIMA_HOME',env)

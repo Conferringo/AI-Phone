@@ -2,11 +2,14 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import tarfile
+import tempfile
 import uuid
 from artifact_io import digest
 from client_host_entry import archive_records
@@ -66,6 +69,37 @@ def engine_script(program):
             'export PATH\nexec "$engine/usr/bin/'+program+'" "$@"\n')
 
 
+def os_release_content(path):
+    try:
+        with os.fdopen(os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK),'rb') as source:
+            if not stat.S_ISREG(os.fstat(source.fileno()).st_mode):raise ValueError('Unverified factory OS release file')
+            content=source.read(65537)
+    except OSError as error:raise ValueError('Unverified factory OS release file') from error
+    if not content or len(content)>65536:raise ValueError('Unverified factory OS release file')
+    return content
+
+
+def normalize_os_release(root):
+    root=Path(root).resolve(strict=True);release=root/'etc/os-release'
+    if any(path.is_symlink() or not path.is_dir() for path in (root/'etc',root/'usr',root/'usr/lib')):
+        raise ValueError('Unverified factory OS release parent')
+    alias=release.is_symlink()
+    if alias and os.readlink(release) not in ('../usr/lib/os-release','/usr/lib/os-release'):
+        raise ValueError('Unexpected factory OS release link')
+    content=os_release_content(root/'usr/lib/os-release')
+    if not alias:
+        if os_release_content(release)!=content:raise ValueError('Factory OS release content differs')
+        return
+    # This pinned Ubuntu alias is materialized only in the owned factory image.
+    # Archive admission continues to require a regular file and its content hash.
+    with tempfile.NamedTemporaryFile(dir=release.parent,prefix='.aiphone-os-release-',delete=False) as output:
+        temporary=Path(output.name)
+        try:
+            output.write(content);output.flush();os.fchmod(output.fileno(),0o644);os.fsync(output.fileno())
+            os.replace(temporary,release)
+        finally:temporary.unlink(missing_ok=True)
+
+
 def dockerfile(plan):
     return f'''FROM {plan['engine_image']} AS engine
 COPY packages/ /packages/
@@ -78,6 +112,7 @@ COPY source.payload images.payload /opt/aiphone/bundle/
 COPY docker dockerd /usr/local/bin/
 COPY wsl.conf /etc/wsl.conf
 COPY engine-sources.json /usr/share/doc/aiphone-engine/source-records.json
+RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0,"/opt/aiphone/bootstrap");from wsl_backend_factory import normalize_os_release;normalize_os_release("/")'
 RUN chmod 755 /usr/local/bin/docker /usr/local/bin/dockerd && \\
     ln -s /opt/aiphone/engine/lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1 && \\
     mkdir -p /usr/local/lib/docker/cli-plugins && \\
