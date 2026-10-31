@@ -34,22 +34,13 @@ jobs:
           ./scripts/bootstrap.sh
           df -h .
       - name: Platform-aware Docker image store on disposable runner
-        run: |
-          set -euo pipefail
-          # Upgrade the factory's engine/CLI, not any end-user installation.
-          sudo apt-get install -y --only-upgrade docker-ce docker-ce-cli containerd.io docker-buildx-plugin
-          sudo python3 - <<'PY'
-          from pathlib import Path
-          import json
-          path=Path('/etc/docker/daemon.json')
-          value=json.loads(path.read_text()) if path.exists() else {}
-          value.setdefault('features',{})['containerd-snapshotter']=True
-          path.parent.mkdir(parents=True,exist_ok=True)
-          path.write_text(json.dumps(value)+'\n')
-          PY
-          sudo systemctl restart docker
-          docker version
-          docker info --format '{{.Driver}} {{json .DriverStatus}}'
+        uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5 # v5
+        with:
+          version: v29.9.2
+          context: ai-phone-linux-factory
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
       - name: Maintainer Android application compiler
         run: |
           set -euo pipefail

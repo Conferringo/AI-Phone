@@ -54,8 +54,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3342,
-      "sha256": "a9ab5902540389112a4ae7222c0c6d13630a48525c0fd853601e152ba8c230d6"
+      "size": 2862,
+      "sha256": "fe16ec9c793419d2739e95eaee5314506996b6a834f24c5ccc5584e62bd40565"
     },
     {
       "path": ".github/workflows/managed-host.yml",
