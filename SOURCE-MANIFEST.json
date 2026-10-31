@@ -2639,8 +2639,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1332,
-      "sha256": "944fd16b2eefd54038ed986ec8e883ef1502609e81bef942d2831ca4ac4c0a0f"
+      "size": 1394,
+      "sha256": "260d9c44b1bbd7a79f568a1cd7cb53a0a6fdd2758f709939bc97d116f09c453e"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -2656,6 +2656,11 @@
       "path": "docs/public/engineering/linux-image-runtime.md",
       "size": 6425,
       "sha256": "05332002ea78f72a2be797197929fbba72250af9053735d3cc210511b7415be7"
+    },
+    {
+      "path": "docs/public/engineering/macos-full-runtime.md",
+      "size": 4627,
+      "sha256": "a53a9c8835ef0bad8ec9da5bbe4c3ee102ab6dcd582a0bd9ca846088ce191546"
     },
     {
       "path": "docs/public/engineering/native-runtime-20261030.md",
@@ -3569,8 +3574,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6396,
-      "sha256": "19cfe5dc5ed39722cc13a1717a3b26d45ab7c5476f448738d3a26a4b81c2a2a0"
+      "size": 4461,
+      "sha256": "fb4e7c65a1602df80e8b96ded08adb4b0289fe7b704d408380f0ec12342399d9"
     },
     {
       "path": "docs/public/release-ux-audit-2026-10-29.md",
@@ -3584,8 +3589,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 7944,
-      "sha256": "977091cfec1a6bd7238bee9690396b6181e07b78570335fb261dc413bd5627da"
+      "size": 8201,
+      "sha256": "8d1feda47dc5adb0bcca78be0fced990ff75b22bf3a0ec4d2adedab1914c4f1a"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -3594,8 +3599,8 @@
     },
     {
       "path": "docs/public/solid-audit.md",
-      "size": 21541,
-      "sha256": "6b7b33751003614c6493e91662cdbb9e72e8294e0b5e50d0bbce5d1dc97f3a75"
+      "size": 22570,
+      "sha256": "23769b3c9d639af37100bc4afb9249e14de0eb98f71154681350adc824ef1e9f"
     },
     {
       "path": "docs/public/source-release.en.md",
@@ -4559,8 +4564,8 @@
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 1994,
-      "sha256": "b7f959d33c710d6c900af6592dffe5e186e9ee1ba278b1d6e8c59a3b7e78772d"
+      "size": 2278,
+      "sha256": "56e7a53fda89ba7abc93f13986517782c56598bb95543916d8e9b7ca4706230d"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -4694,8 +4699,8 @@
     },
     {
       "path": "scripts/test_prebuilt_web.py",
-      "size": 7674,
-      "sha256": "8d1eb745c7fc219a5ed7f1db6803502d946c3d0eeae8d41d6cae395dfe33fc60"
+      "size": 9115,
+      "sha256": "4c31afceaea95d7589bd12f59676f4b9906290818b0b775b85c62ed3ad781f92"
     },
     {
       "path": "scripts/test_preview_notices.py",

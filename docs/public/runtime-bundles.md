@@ -1,6 +1,6 @@
 # Runtime bundles
 
-AI Phone separates versioned application code, clean device baselines and persistent user data. Prebuilt web and native service components implement part of this distribution. Complete installers are not yet available; [release status](release-status.md) describes platform acceptance.
+AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon distribution](engineering/macos-full-runtime.md) assembles all nine required resource groups. Public installer availability and platform acceptance follow [release status](release-status.md).
 
 ## Package format
 
@@ -30,7 +30,7 @@ The staging entry validates bounded archive headers and inventory before writing
 
 Service launchers verify installed native components before choosing their command. A present but invalid component fails explicitly. macOS and Linux use the prebuilt Rust binaries when supplied, and the runner receives the matching OCR path. Source-only installations retain contributor build commands. The optional [JavaScript service component](engineering/js-runtime.md) supplies media, channels and setup helpers without first-run package installation. Its browser and guest-application assets, guest images, emulator and complete platform integration remain separate requirements.
 
-## Contributor build and verification
+## Component build and verification
 
 ```sh
 ./scripts/bootstrap.sh
@@ -40,6 +40,8 @@ python3 scripts/prebuilt_js.py --build
 python3 scripts/prepare_client_host.py --with-web-runtime --with-service-runtime --with-js-services --verify-web-runtime --verify-service-runtime
 python3 scripts/build_client.py --platform macos --with-web-runtime --with-service-runtime --with-js-services
 ```
+
+For the complete macOS distribution command and factory-resource requirements, use the [Apple Silicon build guide](engineering/macos-full-runtime.md#build). The commands above exercise individual components.
 
 Build on the matching host. Native services currently target macOS and Linux; Windows builds can carry the prebuilt web and JavaScript service components, while Android requires a separate privileged host runtime. Cross-compiling a client does not produce matching host services.
 
@@ -66,6 +68,6 @@ Non-macOS physical installation is waived for this release scope and remains unv
 
 客户端将版本化程序、干净设备基础和持久用户数据分开。网页组件包含 Next standalone、静态资源及对应宿主的 Bun；原生组件包含 Rust 助手、手机执行器与 OCR。macOS/Linux 启动已有原生组件时校验宿主、摘要和执行权限；组件损坏会明确失败，不回退到源码编译掩盖错误。
 
-真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux OCR 仍依赖系统 Python/Pillow、Tesseract 与语言数据，完整离线包须继续内置这些依赖。媒体/渠道离线组件另有真实归档运行证据，仍需完整镜像、模拟器、浏览器及其他宿主集成，完整安装包尚未提供。
+真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux OCR 仍依赖系统 Python/Pillow、Tesseract 与语言数据，完整离线包须继续内置这些依赖。macOS完整App/DMG已装配全部九类资源，并从只读映像验证包内运行；公开安装包、全新默认双设备创建及其他宿主仍依照各自发行门槛验收。
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.

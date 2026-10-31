@@ -19,6 +19,10 @@ class ClientDeliveryTests(unittest.TestCase):
             partial=delivery_metadata([name for name in FULL if name!=missing],'macos-arm64')
             self.assertFalse(partial['complete_device_bundle']);self.assertIn(missing,partial['missing_runtime_components'])
 
+    def test_the_exact_service_set_is_sufficient_for_a_server_but_not_for_device_hosting(self):
+        value=delivery_metadata(['web','native-services','js-services'],'macos-arm64')
+        self.assertTrue(value['server_included']);self.assertFalse(value['complete_device_bundle'])
+
     def test_component_presence_does_not_claim_an_unimplemented_host(self):
         for host in ('linux-x64','linux-arm64','windows-x64','android-arm64'):
             value=delivery_metadata(FULL,host);self.assertTrue(value['server_included']);self.assertFalse(value['complete_device_bundle']);self.assertIn('host-runtime',value['missing_runtime_components'])

@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
-from prebuilt_web import prepare_web, web_command
+from prebuilt_web import prepare_web, web_command, checked_routes
 from bootstrap_bun import bun_path
 from client_host_entry import web_links
 from check_prebuilt_web import verify, isolated_environment
@@ -15,6 +15,28 @@ from check_prebuilt_web import verify, isolated_environment
 ROOT=Path(__file__).resolve().parent.parent
 
 class PrebuiltWebTests(unittest.TestCase):
+    def test_route_manifest_headers_and_json_types_are_validated(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);app=self.fixture(root);standalone=app/'.next/standalone'
+            manifest=standalone/'apps/web/.next/server/app-paths-manifest.json'
+            manifest.unlink()
+            with self.assertRaises(ValueError):checked_routes(root,standalone)
+            for value in ([],None,{'/page':None}):
+                manifest.write_text(json.dumps(value))
+                with self.assertRaises(ValueError):checked_routes(root,standalone)
+            target=root/'routes.json';target.write_text(json.dumps({'/page':'app/page.js'}));manifest.unlink();manifest.symlink_to(target)
+            with self.assertRaises(ValueError):checked_routes(root,standalone)
+
+    def test_the_route_manifest_byte_limit_is_inclusive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);app=self.fixture(root);standalone=app/'.next/standalone'
+            manifest=standalone/'apps/web/.next/server/app-paths-manifest.json'
+            content=json.dumps({'/page':'app/page.js'}).encode();limit=4*1024**2
+            manifest.write_bytes(content+b' '*(limit-len(content)))
+            checked_routes(root,standalone)
+            with manifest.open('ab') as stream:stream.write(b' ')
+            with self.assertRaises(ValueError):checked_routes(root,standalone)
+
     def test_compiled_routes_must_match_the_public_source_selection(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);app=self.fixture(root)

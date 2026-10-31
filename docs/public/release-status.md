@@ -1,39 +1,35 @@
 # Release status / 发行状态
 
-Updated 2026-10-31. **Development; no complete product distribution is available.**
+Updated 2026-10-31. Source code and technical documentation are available. Public product installers are subject to the complete distribution and redistribution gates.
 
-Source, technical documentation and contributor build instructions are available. Product installers require the complete-device-bundle gate to pass.
+## Platform qualification
 
-The required user experience is: install the distribution, configure phone/computer/model in the client, then use the workbench. The package must contain matched system images, emulator and prebuilt services. Requiring users to acquire SDK/images, compile services or manually deploy a backend does not meet this standard.
-
-| Target | Development evidence | Remaining distribution gate |
+| Target | Verified scope | Remaining qualification |
 |---|---|---|
-| macOS ARM64 | Sealed Android runtime, network-denied extraction, isolated root/display/restart checks; native setup and recovery tests | Complete redistributable payload, 16 GiB device creation and full first-run acceptance |
-| Windows x64 | Native client compilation | Native phone + backend supervision, complete payload and first run |
-| Linux x64 | Managed worker under review | Full runtime acceptance and complete payload |
-| Linux ARM64 | Client compilation | Reviewed architecture-matched Android runtime and payload |
-| Android ARM64 root/KVM | Host scope selected | Kernel/permission checks, matching privileged runtime and both guests |
+| macOS Apple Silicon | Complete nine-component App/DMG compiled; mounted-file verification; portable runtime execution; native migration and role checks; workbench startup | Fresh default-size dual-device installation, upgrades, signing/notarization and full acceptance |
+| Windows x64 | Native client compilation | Complete independent host, matched runtime resources and first run |
+| Linux x64 | Native client compilation and managed-worker development | Complete offline host, payload and first run |
+| Linux ARM64 | Native client compilation | Matched Android runtime and complete independent host |
+| Android ARM64 root/KVM | Native client compilation; privileged host target defined | Kernel/runtime integration, matched payload and both guests |
 
-`config/release-policy.json` is the promotion gate owner. Binary publication is disabled and `self_contained_device_bundle` is false. A prior waiver of physical installer tests does not waive complete package contents or redistribution requirements. Source CI and client builds continue as development checks; they are not downloadable product releases.
+The required experience is installation followed by device/model configuration and workbench use. System images, emulator, services and execution runtimes belong in the distribution. [The Apple Silicon package structure](engineering/macos-full-runtime.md) implements this complete resource profile; [runtime bundles](runtime-bundles.md) documents the format and build interface.
 
-[Prebuilt runtime components](runtime-bundles.md) contain Next standalone, pinned Bun and host-matched Rust assistant/runner binaries with OCR. Relocated web startup, native version/OCR execution and 29 embedded database migrations have passed locally on macOS; the runtime database role cannot perform DDL. Matching macOS/Linux native-component CI has passed, including real OCR and staged execution. The optional [Android development component](engineering/android-runtime.md) now has macOS boot evidence. An optional [Linux desktop and service image component](engineering/linux-image-runtime.md) has real ARM64 offline-import, GUI, input, notification and audio-capture evidence. The [macOS container-host component](container-host-runtime.md) now has real staged startup, cold restart, preserved-container/file and restored-environment evidence. The [JavaScript service component](engineering/js-runtime.md) now has relocated archive execution, native image-library, channel authentication and read-only Android screenshot evidence in a WAN-denied macOS sandbox. Browser/app assets, complete assembly, per-platform integration and redistribution clearance remain distribution work. The optional [phone application component](engineering/phone-apps.md) now supplies source-bound, signature-verified input/launcher APKs and has network-denied staging/selection evidence; fresh-device APK installation remains unverified.
+`config/release-policy.json` owns promotion gates. Binary publication remains disabled and the all-platform `self_contained_device_bundle` gate remains false. Non-macOS physical installation is waived for this release scope; compilation, complete contents, privacy and redistribution checks remain required.
 
-[Thirteen model presets and local WhatsApp QR](model-and-channel-setup.md) are implemented with isolated protocol/transport fixtures and real QR-bootstrap evidence. The saved model connection passed authorized text, image and complete tool-roundtrip probes without sending chats or device state; other providers and WhatsApp account-level acceptance remain pending. Channel certification, long-running recovery, signed updates and full UI/language/media acceptance remain open. See [SOLID audit](solid-audit.md), [compatibility](compatibility.md), [bundle requirements](preview-release.md) and [database recovery](backup-restore.en.md).
+## Runtime and product acceptance
 
-The optional [portable installer tool component](engineering/installer-tools.md) now executes Python/Node directly instead of downloading those interpreters. Native staging, source extraction and runtime-path restoration passed in a network-denied macOS sandbox. This component is not yet a rebuilt complete installer; phone applications and the container host have separate component evidence, while full assembly and browser/application resources remain distribution work.
+- Android has real ARM64 boot/root/display/input and persistence evidence. Linux has offline import, GUI/input, notification and audio-capture evidence. Fresh default-size creation and the complete installer lifecycle require separate acceptance.
+- The complete macOS disk image contains the web, native services, phone applications, container host, JavaScript services, guest applications, Android runtime, Linux/data images and portable Python/Node. Mounted resources passed WAN/source/SDK-denied execution checks. The packaged assistant applied thirty migrations through schema version 32; its runtime role cannot perform DDL.
+- [Thirteen model presets and connection setup](model-and-channel-setup.md) have isolated protocol/transport checks. Recorded provider probes and WhatsApp QR/bootstrap evidence do not certify every provider account, channel delivery or current quota. User API credentials are not distribution inputs.
+- [Copilot](copilot-voice.md) has deterministic endpointing, durable correction receipts and voice-priority steering. Microphone capture, speech providers, streaming audio, spoken interruption and guest microphone routing are not available yet.
+- [Private installation state](engineering/private-install-state.md) separates checkpoints, file locks and atomic writes. Signed updates, complete long-running recovery and the full UI/language/media matrix remain open.
 
-The [guest application component](engineering/guest-apps.md) now supplies pinned Clash Meta APKs for ARM64 and x86_64 guests. Official APK size/hash, signer, package/version, ABI and privacy checks have local macOS evidence. Bundle selection avoids initialization downloads and reuses the desktop image's existing Clash Party application. Corresponding-source and complete-assembly review remain open.
+Architecture findings and remaining complexity are recorded in the [SOLID audit](solid-audit.md). Platform details, distribution requirements and recovery procedures are in [compatibility](compatibility.md), [bundle requirements](preview-release.md) and [database recovery](backup-restore.en.md). Component tests, compilation and installation acceptance are recorded independently.
 
-[Private installation state](engineering/private-install-state.md) now separates checkpoint policy from platform file locks and private atomic writes. Windows native acceptance is tracked independently from its still-incomplete full host; a client build is not a two-device installation result.
+## 中文
 
-Copilot has a [recorded-event input core and durable chat-wire integration](copilot-voice.md): audio-based endpointing, correction receipt links, stable retries, bounded retention and voice-priority dispatch have local and disposable-PostgreSQL regression evidence. Continuous voice is not available yet; actual capture, speech providers, streaming-audio transport, UI and spoken/guest-audio feedback remain upcoming development. Copilot and exploration are designed to coexist, with spoken instructions taking priority.
+源码和技术文档已公开；公开安装包依照完整发行与第三方再分发门槛提供。
 
----
+Apple Silicon完整App/DMG已编译，包含全部九类运行资源；只读映像文件逐项核对、系统隔离运行、包内原生程序迁移/数据库权限及工作台启动检查均已通过。默认规格双设备全新创建、升级、签名和完整产品验收仍待确认。Windows、Linux和root/KVM Android已具备客户端编译证据，完整独立宿主与配套运行资源仍需完成。
 
-# 中文状态
-
-当前没有完整产品安装包。源码、技术文档与贡献者构建说明已提供。完整包应包含系统镜像、模拟器与预构建服务，初始化时自动部署，再由用户配置设备资源与模型；不能把源码安装或连接客户端当成最终发行。
-
-二进制发布要求“完整设备包”门槛通过；当前仍有待完成的组件。Android 以 root＋KVM 为宿主范围。四平台运行组件、镜像/模拟器再分发依据、完整包校验与初始化验收都必须明确，不用编译通过、页面入口或文档代替运行事实。
-
-随包 Python/Node 已完成 macOS 系统禁网环境下的原生复制、源码展开与运行路径恢复，尚未重建为完整产品安装包；手机应用、容器宿主及媒体/渠道已有组件运行证据，完整装配仍需验收。私有检查点与文件权限已拆分为平台适配，Windows 原生行为以匹配 CI 为准。
+非macOS实机安装按本轮范围豁免；编译、完整内容、隐私与再分发检查继续保留。模型/渠道按各自协议及账号能力验收，测试替身不等于真实账号送达；Copilot的纠错和调度基础已接通，实际收音、语音识别/合成与设备麦克风路由尚未交付。所有发行门槛以版本配置及对应证据为准。

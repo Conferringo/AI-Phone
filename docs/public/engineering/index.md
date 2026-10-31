@@ -2,6 +2,7 @@
 
 These records support contributor review. Dated results apply to their recorded revision and scope; current availability is defined in [release status](../release-status.md). Product setup and capability guides are listed in the [documentation index](../index.md).
 
+- [Apple Silicon runtime distribution](macos-full-runtime.md)
 - [Native runtime review](native-runtime-20261030.md)
 - [Android runtime component](android-runtime.md)
 - [Linux desktop and service image component](linux-image-runtime.md)
