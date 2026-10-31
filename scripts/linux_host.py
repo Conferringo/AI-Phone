@@ -102,7 +102,7 @@ def start_execution_services(root, specs, run, start):
     channels=js_launch_spec(root,'channels');start('channels',channels['argv'],channels['environment'])
 
 
-def start_workbench_services(root, env, run, start):
+def start_web_service(root, env, run, start):
     from prebuilt_web import web_command
     prebuilt=(root/'runtime/manifest.json').is_file()
     if not prebuilt and not unit_state(root,'web'):run([root/'scripts/bun','run','build'])
@@ -112,6 +112,11 @@ def start_workbench_services(root, env, run, start):
     # Working directory belongs to the unit owner, so Next receives an explicit project path.
     if prebuilt:env.update({'PORT':'17860','HOSTNAME':'127.0.0.1'})
     start('web',web_command(root) if prebuilt else [node,str(root/'apps/web/node_modules/next/dist/bin/next'),'start',str(root/'apps/web'),'--hostname','127.0.0.1','--port','17860'])
+
+
+def start_workbench_services(root, env, run, start):
+    start_web_service(root,env,run,start)
+    node=shutil.which('node')
     start('lan',[node,str(root/'scripts/lan-server.mjs')])
 
 

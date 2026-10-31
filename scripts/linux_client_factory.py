@@ -46,6 +46,10 @@ def docker_image(reference):
 
 
 def check_docker():
+    try:
+        subprocess.run(['docker','buildx','version'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    except (OSError,subprocess.CalledProcessError) as error:
+        raise ValueError('Docker factory requires an executable Buildx plugin') from error
     version=json.loads(subprocess.check_output(['docker','version','--format','{{json .}}'],text=True))
     for role in ('Client','Server'):
         revision=str(version[role]['ApiVersion'])

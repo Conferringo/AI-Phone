@@ -22,7 +22,7 @@ MAX_SOURCE = 64 * 1024**2
 RESERVE = 4 * 1024**3
 ENTRIES = {'media': 'apps/device-stream/server.ts', 'channels': 'apps/channels/server.ts',
            'native-apps': 'apps/device-network/native-apps.ts', 'messaging-browser': 'apps/channels/install-browser.ts',
-           'device-setup': 'scripts/client-device-setup.ts'}
+           'device-setup': 'scripts/client-device-setup.ts', 'backend-qualification': 'scripts/wsl-desktop-qualification.ts'}
 BROWSER_SOURCES=tuple('scripts/'+name+'.py' for name in ('channel_browser','browser_engine','browser_lease','browser_pipe','installer_lock','private_files','windows_private'))
 
 
