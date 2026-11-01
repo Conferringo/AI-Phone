@@ -64,13 +64,16 @@ def desktop_home_mount(mounts):
     return homes[0]
 
 
-def verify_fixture_bind(run, identity, guest):
+def verify_fixture_bind(run, identity, guest, staged):
     result = run(['docker', 'container', 'inspect', '--format', '{{json .Mounts}}', identity],
                  capture_output=True, text=True, check=True)
     if len(result.stdout) > 16384:
         raise ValueError('CI desktop bind response exceeds its budget')
     home = desktop_home_mount(json.loads(result.stdout))
-    if home.get('Type') != 'bind' or home.get('RW') is not True or home.get('Source') != str(guest.resolve(strict=True)):
+    source = home.get('Source')
+    if home.get('Type') != 'bind' or home.get('RW') is not True or source not in (str(guest.resolve(strict=True)), str(staged / 'data/desktop/home')):
+        raise ValueError('CI desktop home belongs to a different fixture')
+    if Path(source).resolve(strict=True) != guest.resolve(strict=True):
         raise ValueError('CI desktop home belongs to a different fixture')
 
 
@@ -86,7 +89,7 @@ def cleanup_owned_fixture(home, staged, base_env, identity):
     containers = verify_container_ownership(staged, query=run)
     desktop = containers.get('ai-phone-desktop')
     if desktop is not None:
-        verify_fixture_bind(run, desktop['id'], guest)
+        verify_fixture_bind(run, desktop['id'], guest, staged)
     # Every container and bind is verified before stopping any owned process.
     run([sys.executable, staged / 'scripts/service_stop.py'], check=True)
     for container in containers.values():
@@ -109,8 +112,28 @@ def cleanup_fixture(home, staged, base_env, identity, *, failure=None):
         raise
 
 
+def require_ci_primary_group():
+    """Read-only CI contract: KVM access must not replace the passwd primary group."""
+    import grp
+    import pwd
+    uid = os.getuid()
+    if uid == 0 or os.geteuid() != uid:
+        raise ValueError('CI deployment requires the original non-root UID')
+    try:
+        account = pwd.getpwuid(uid)
+        kvm = grp.getgrnam('kvm').gr_gid
+        groups = os.getgroups()
+    except (KeyError, OSError) as error:
+        raise ValueError('CI user and KVM group could not be verified') from error
+    if account.pw_uid != uid or os.getgid() != account.pw_gid or os.getegid() != account.pw_gid:
+        raise ValueError('CI deployment requires its passwd identity and primary group')
+    if kvm != account.pw_gid and kvm not in groups:
+        raise ValueError('CI deployment requires KVM group access')
+
+
 def main():
     if os.environ.get('GITHUB_ACTIONS')!='true' or os.environ.get('RUNNER_OS')!='Linux':raise ValueError('Fresh-host acceptance is restricted to an ephemeral Linux CI runner')
+    require_ci_primary_group()
     root=Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory(prefix='ai-phone-host-acceptance-') as temp:
         home=Path(temp);home_info=home.lstat();identity=(home_info.st_dev,home_info.st_ino)

@@ -10,6 +10,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+if os.name != 'posix':
+    raise unittest.SkipTest('Linux fixture ownership requires POSIX before importing its owner')
+
 with ExitStack() as import_guards:
     for boundary in ('subprocess.run', 'subprocess.Popen', 'subprocess.check_call',
                      'subprocess.check_output', 'socket.socket', 'urllib.request.build_opener'):
@@ -128,6 +131,24 @@ class CleanupTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.cleanup_fixture()
         self.assertEqual(self.mutations(), [])
+
+    def test_verified_staged_data_symlink_source_is_accepted(self):
+        self.bind_source = str(self.staged / 'data/desktop/home')
+        self.assertNotEqual(self.bind_source, str(self.guest.resolve(strict=True)))
+        self.assertEqual(Path(self.bind_source).resolve(strict=True), self.guest.resolve(strict=True))
+        self.cleanup_fixture()
+        self.assertEqual(self.mutations()[-1],
+                         ['sudo', '-n', 'rm', '--one-file-system', '--recursive', '--force', '--', str(self.guest)])
+
+    def test_external_symlink_alias_is_refused_even_if_it_resolves_to_guest(self):
+        with tempfile.TemporaryDirectory(prefix='ai-phone-external-alias-') as external:
+            alias = Path(external) / 'home-alias'
+            alias.symlink_to(self.guest, target_is_directory=True)
+            self.bind_source = str(alias)
+            self.assertEqual(alias.resolve(strict=True), self.guest.resolve(strict=True))
+            with self.assertRaises(ValueError):
+                self.cleanup_fixture()
+            self.assertEqual(self.mutations(), [])
 
     def test_unknown_engine_query_is_not_absence(self):
         self.query_error = True

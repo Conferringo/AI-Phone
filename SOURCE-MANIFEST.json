@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 2452,
-      "sha256": "889abd82c44eedfc659ea7b2e695e05c61ee2ef2796918345dc26f8ef62187df"
+      "size": 2651,
+      "sha256": "a8f2983056515b003ac208ef5096813211ad933ac897dbf2da8f50fb4c280508"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -91,6 +91,11 @@
       "path": ".puppeteerrc.cjs",
       "size": 142,
       "sha256": "ea0a755c7c7f5e2e9500454e819734945f58cea151a0928464e7339b73f4c340"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 2334,
+      "sha256": "14d7209c9f380dfede2bcfa9b1df6300fc5e485baadaa11c017edacd4a32dbe6"
     },
     {
       "path": "CHANGELOG.md",
@@ -658,6 +663,11 @@
       "sha256": "74c41c166cfa42d43b4f66685069cf00c49f4089d914fc9186806b4bd58dbb57"
     },
     {
+      "path": "apps/client/src-tauri/src/bootstrap.rs",
+      "size": 24542,
+      "sha256": "c41d5c476ee29ef5d214ae26962254488c0138060edd304a5ba572158cba7a0a"
+    },
+    {
       "path": "apps/client/src-tauri/src/bootstrap/checkpoint.rs",
       "size": 5654,
       "sha256": "c9f51343c21e68987088b9021c0e8ce1673f776416135b116856803b09e57eb3"
@@ -686,11 +696,6 @@
       "path": "apps/client/src-tauri/src/bootstrap/tools.rs",
       "size": 23000,
       "sha256": "f5df9eed0d12292a35181736bc8a464753cc5d81a64e67fa23d89e383293a216"
-    },
-    {
-      "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 24542,
-      "sha256": "c41d5c476ee29ef5d214ae26962254488c0138060edd304a5ba572158cba7a0a"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -1273,6 +1278,11 @@
       "sha256": "023503c632375ce1f3196fa1249e1b7a79aedfa28b458036657ea0b389064b05"
     },
     {
+      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
+      "size": 590,
+      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
+    },
+    {
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/01-auto-send-sync.rs",
       "size": 615,
       "sha256": "8ff975b8f4b5c94c4cb823f27668446e3f8da5c0cf359e1bd8ac6a86334d1aa4"
@@ -1321,11 +1331,6 @@
       "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest/06-no-auto-send-sync-with-non-send-sync-ffi-parent.stderr",
       "size": 2887,
       "sha256": "808ac199325749e28e4c5ea6a459463d87c375443dc73c143a8fc1032575895f"
-    },
-    {
-      "path": "apps/client/src-tauri/vendor/glib/tests/subclass_compiletest.rs",
-      "size": 590,
-      "sha256": "06fd13974d96c0a21ce9a906010f82db1fdf1b17c192716510cc93ed2ef79547"
     },
     {
       "path": "apps/client/src-tauri/vendor/glib/tests/value.rs",
@@ -1548,6 +1553,11 @@
       "sha256": "3596710fa9ea4a6cf838371b8822383ee6c41fc6264768ade95438a58b319886"
     },
     {
+      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
+      "size": 248,
+      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
+    },
+    {
       "path": "apps/web/src/app/api/phone/[operation]/route.ts",
       "size": 2442,
       "sha256": "b49cf856843d05ca90e15bf0b19fa8eb182f3e78ccf9428c5bf0b0abd7648217"
@@ -1556,11 +1566,6 @@
       "path": "apps/web/src/app/api/phone/media/[kind]/route.ts",
       "size": 1279,
       "sha256": "c68779f38c663de44d3f5495035655a8c7f6e79bf8590675e1fb78ca8a8fb9ad"
-    },
-    {
-      "path": "apps/web/src/app/api/phone-system/[operation]/route.ts",
-      "size": 248,
-      "sha256": "8bbffe14628918b194d1927ca9b018bb50c934171be657e523559f69689d54ad"
     },
     {
       "path": "apps/web/src/app/api/proactive/[operation]/route.ts",
@@ -1703,21 +1708,6 @@
       "sha256": "f55ddf1357a6fc19cb925644ec607275506c002608e7a2d8621cac5a2539896f"
     },
     {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.d.ts",
-      "size": 316,
-      "sha256": "e7130e46ec7e3bae6a3c1a6b7064d8ca0e13384accd032f4e48e9ad329ba1126"
-    },
-    {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.js",
-      "size": 2496,
-      "sha256": "f6bc70fd8d2abad85ae685ea0b81692868755de37e48801c177a561aa92f8b13"
-    },
-    {
-      "path": "apps/web/src/components/knowledge/knowledgeGraphMotion.ts",
-      "size": 7724,
-      "sha256": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
-    },
-    {
       "path": "apps/web/src/components/knowledge-network.tsx",
       "size": 5082,
       "sha256": "1e75dd4b1317830ad623e65fca09e1a5dbe79c40e34021a7703ea7b065f4ba40"
@@ -1731,6 +1721,21 @@
       "path": "apps/web/src/components/knowledge-window.tsx",
       "size": 6483,
       "sha256": "68b142572476fbd43ee9962931dea4ca5576b030a59e002de2dfc5577a4f8494"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.d.ts",
+      "size": 316,
+      "sha256": "e7130e46ec7e3bae6a3c1a6b7064d8ca0e13384accd032f4e48e9ad329ba1126"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphLayout.js",
+      "size": 2496,
+      "sha256": "f6bc70fd8d2abad85ae685ea0b81692868755de37e48801c177a561aa92f8b13"
+    },
+    {
+      "path": "apps/web/src/components/knowledge/knowledgeGraphMotion.ts",
+      "size": 7724,
+      "sha256": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
     },
     {
       "path": "apps/web/src/components/language-window.tsx",
@@ -4504,8 +4509,8 @@
     },
     {
       "path": "scripts/linux_host_acceptance.py",
-      "size": 8177,
-      "sha256": "25eb44d607c44afaa93672dc88d85be0d13ce578319b35d0818adb11c0e3d0bb"
+      "size": 9270,
+      "sha256": "9322df6b8f46c5ebdef2551f0fef4f6416a701a6d5c7ba1a823a797bf5c3eb18"
     },
     {
       "path": "scripts/linux_host_runtime.py",
@@ -4913,14 +4918,19 @@
       "sha256": "10021e0a80913c5712d2c19830091f28e8ceb2d1cb465a1edc02e2392ef0863f"
     },
     {
+      "path": "scripts/test_linux_ci_primary_group.py",
+      "size": 6885,
+      "sha256": "c698d5f29a5105075b74dca764616a62e9e1ecce51764b06374de2d309679005"
+    },
+    {
       "path": "scripts/test_linux_client_factory.py",
       "size": 7878,
       "sha256": "85024599a3bb02b6aa8b68c073301f948c5a7e8649b7eb8ccddd3322f5519778"
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",
-      "size": 12895,
-      "sha256": "5455af8f675a34752b5c92cb5ad0022145b06a7c23fe54b1a714bd8f830d60ec"
+      "size": 14093,
+      "sha256": "62cdb88dcc5eac7e203134101b1e9a8f3928af56253f5f32f58a9fb213f9081a"
     },
     {
       "path": "scripts/test_linux_kvm_platform.py",
@@ -5201,11 +5211,6 @@
       "path": "skills/builtin/wechat/SKILL.md",
       "size": 9430,
       "sha256": "e13b27c0a17147830d12c729a8b9fe0938bc5b22dfa45035b4590ff8d82abf28"
-    },
-    {
-      "path": "AGENTS.md",
-      "size": 2334,
-      "sha256": "14d7209c9f380dfede2bcfa9b1df6300fc5e485baadaa11c017edacd4a32dbe6"
     }
   ]
 }

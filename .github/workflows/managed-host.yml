@@ -47,5 +47,8 @@ jobs:
       - name: Linux lifecycle regressions
         run: python3 -m unittest discover -s scripts -p test_linux_services.py -v
       - name: Deploy phone, desktop and backend from the client payload
-        run: sg kvm -c 'exec python3 scripts/linux_host_acceptance.py'
+        run: |
+          # Keep KVM supplementary access and restore the primary GID required by uidmap.
+          export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"
+          sg kvm -c 'exec sg "$AI_PHONE_CI_PRIMARY_GROUP" -c "exec python3 scripts/linux_host_acceptance.py"'
       # No guest disks, raw service logs, accounts, token files or screenshots uploaded.
