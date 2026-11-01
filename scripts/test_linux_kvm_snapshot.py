@@ -375,7 +375,7 @@ class CheckpointConsumerTests(GuardedTests):
             mocked('client_host.container_engine', side_effect=lambda *_: step('engine'))
             mocked('client_host.verify_container_ownership', side_effect=lambda *_: step('ownership'))
             mocked('release.install', side_effect=lambda **_: step('release'))
-            mocked('prebuilt_js.launch_spec', return_value={'argv': ['fixture-device-setup']})
+            mocked('prebuilt_services.device_setup_spec', return_value={'argv': ['fixture-device-setup']})
             mocked('client_host.execute', side_effect=lambda *_args, **_kwargs: step('device-setup'))
             mocked('linux_kvm_snapshot.emit_snapshot', side_effect=lambda phase: calls.append(phase))
             stack.enter_context(patch.dict(os.environ, {}, clear=True))

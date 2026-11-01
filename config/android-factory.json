@@ -48,6 +48,33 @@
           "channel": "stable"
         }
       }
+    },
+    "macos-arm64": {
+      "abi": "arm64-v8a",
+      "archives": {
+        "emulator": {
+          "url": "https://dl.google.com/android/repository/emulator-darwin_aarch64-16740729.zip",
+          "size_bytes": 416113219,
+          "vendor_sha1": "6c5e61b873e11c7d1d08683bea089f762baee070",
+          "sha256": "9e50ac521c38949d412f69250c0df9a4afa684d5be54ab4b80fc0205a73f5054",
+          "version": "37.2.13",
+          "file": "emulator.zip",
+          "channel": "stable",
+          "host_os": "macosx",
+          "host_arch": "aarch64"
+        },
+        "platform-tools": {
+          "url": "https://dl.google.com/android/repository/platform-tools_r37.0.1-darwin.zip",
+          "size_bytes": 16110554,
+          "vendor_sha1": "6ae73f4de6452dc57e62ec02b68eed92a4c21661",
+          "sha256": "ee39ad5967e95c2a07f04dbcbde96b1a0c916ba376096db5d2f498b7727a5d1d",
+          "version": "37.0.1",
+          "file": "platform-tools.zip",
+          "channel": "stable",
+          "host_os": "macosx",
+          "host_arch": null
+        }
+      }
     }
   },
   "images": {
@@ -57,6 +84,17 @@
       "vendor_sha1": "2d857d170c0d1b827149565da34b3383e5306f7f",
       "sha256": "6dd7de33e63ef105cf2fabea6badda1dbe7665c96d8908e5f6e1407e63ff4556",
       "file": "system-image.zip"
+    },
+    "arm64-v8a": {
+      "url": "https://dl.google.com/android/repository/sys-img/android/arm64-v8a-35_r02.zip",
+      "size_bytes": 769099654,
+      "vendor_sha1": "2026a06409db630b56711afdbffb457c1dbaed49",
+      "sha256": "1e6ae4fca6449c07278a333311f0ef29c5101d1e3e18ba48fbe9bd2dc5006926",
+      "version": "2",
+      "file": "system-image.zip",
+      "channel": "stable",
+      "api": 35,
+      "abi": "arm64-v8a"
     }
   },
   "redistribution_review_complete": false

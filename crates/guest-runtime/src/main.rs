@@ -46,6 +46,7 @@ async fn interrupted() -> Result<()> {
 async fn run(operation: &str) -> Result<()> {
     match operation {
         "audio-supervise" => return supervise_audio().await,
+        "home-identity" => return ai_phone_guest_runtime::home_identity::run().await,
         "record-notification" => return ai_phone_guest_runtime::notifications::record_from_env(),
         "capture" => {
             let mode = std::env::args().nth(2).ok_or("缺少采集模式")?;
@@ -92,7 +93,7 @@ async fn main() -> ExitCode {
     let stderr_only = operation.as_ref().is_ok_and(|value| {
         matches!(
             value.as_str(),
-            "capture" | "audio-supervise" | "record-notification"
+            "capture" | "audio-supervise" | "record-notification" | "home-identity"
         )
     });
     let result = match operation {

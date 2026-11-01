@@ -18,7 +18,7 @@ COPY infra/desktop/location.js /usr/local/lib/ai-phone/location.js
 COPY --from=guest-builder /build/target/release/desktop-bridge /usr/local/bin/desktop-bridge
 COPY LICENSE NOTICE docs/public/native-services-licenses.txt docs/public/native-services-license-inventory.json /usr/share/doc/ai-phone/
 COPY infra/desktop/start.sh /usr/local/bin/desktop-start
-COPY infra/desktop/home-identity.py infra/desktop/home-initialize.sh /usr/local/lib/ai-phone/
+COPY infra/desktop/home-initialize.sh /usr/local/lib/ai-phone/
 COPY infra/desktop/dunstrc /etc/xdg/dunst/dunstrc
 RUN ln -s /usr/local/bin/desktop-bridge /usr/local/bin/desktop-notification-record
 COPY infra/desktop/pulse.pa /etc/ai-phone-pulse.pa

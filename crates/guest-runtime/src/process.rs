@@ -4,6 +4,7 @@ use std::{ffi::OsString, future::Future, path::PathBuf, process::Stdio, time::Du
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     process::Command,
+    sync::watch,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -20,8 +21,10 @@ pub struct Request {
     pub input: Vec<u8>,
     pub cwd: Option<PathBuf>,
     pub env: Vec<(OsString, OsString)>,
-    pub timeout: Duration,
+    pub timeout: Option<Duration>,
     pub capture: Capture,
+    /// Opt-in cancellation. The owner reaps its process group before returning.
+    pub cancellation: Option<watch::Receiver<bool>>,
 }
 
 impl Request {
@@ -32,8 +35,9 @@ impl Request {
             input: vec![],
             cwd: None,
             env: vec![],
-            timeout: Duration::from_secs(8),
+            timeout: Some(Duration::from_secs(8)),
             capture: Capture::Bounded(65536),
+            cancellation: None,
         }
     }
 }
@@ -176,16 +180,43 @@ fn outcome(
     result.map_err(|_| Error::from("操作超时，结果可能未知，请先观察或核对文件"))?
 }
 
+fn cancelled(receiver: &Option<watch::Receiver<bool>>) -> bool {
+    receiver
+        .as_ref()
+        .is_some_and(|receiver| *receiver.borrow() || receiver.has_changed().is_err())
+}
+
+async fn interrupted(receiver: Option<watch::Receiver<bool>>) {
+    let Some(mut receiver) = receiver else {
+        return std::future::pending().await;
+    };
+    while !*receiver.borrow() {
+        if receiver.changed().await.is_err() {
+            return;
+        }
+    }
+}
+
 impl Runner for OsRunner {
     async fn execute(&self, request: Request) -> Result<Output> {
+        if cancelled(&request.cancellation) {
+            return Err("Process interrupted before execution".into());
+        }
         let mut child = command(&request).spawn()?;
-        let id = child.id().ok_or("命令没有进程编号")?;
-        let mut group = GroupGuard(rustix::process::Pid::from_raw(i32::try_from(id)?));
-        let result =
-            outcome(tokio::time::timeout(request.timeout, collect(&mut child, &request)).await);
+        let mut group = GroupGuard::for_child(&child)?;
+        let result = tokio::select! {
+            biased;
+            _ = interrupted(request.cancellation.clone()) => Err("Process interrupted; outcome may be unknown".into()),
+            result = async {
+                match request.timeout {
+                    Some(timeout) => outcome(tokio::time::timeout(timeout, collect(&mut child, &request)).await),
+                    None => collect(&mut child, &request).await,
+                }
+            } => result,
+        };
         if result.is_ok() {
             // Successful tools may deliberately leave a clipboard owner or requested GUI application.
-            group.0 = None;
+            group.disarm();
             return result;
         }
         let cleanup = stop_group(&mut child, &mut group, Duration::ZERO).await;
@@ -471,5 +502,30 @@ mod quiescence_tests {
             .await
             .unwrap();
         assert!(child.id().is_none());
+    }
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn cancelled_or_disconnected_request_is_rejected_before_spawn() {
+        assert!(Request::new("unused", &[]).cancellation.is_none());
+        for closed in [false, true] {
+            let (sender, receiver) = watch::channel(false);
+            if !closed {
+                sender.send_replace(true);
+            }
+            drop(sender);
+            // This nonexistent owned path could not execute even if a regression
+            // reached spawn; the exact error proves the pre-spawn gate won.
+            let root = tempfile::tempdir().unwrap();
+            let mut request =
+                Request::new(root.path().join("must-not-spawn").to_str().unwrap(), &[]);
+            request.cancellation = Some(receiver);
+            let error = OsRunner.execute(request).await.unwrap_err();
+            assert_eq!(error.to_string(), "Process interrupted before execution");
+        }
     }
 }

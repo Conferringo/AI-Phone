@@ -22,6 +22,15 @@ Resources are sealed by SHA-256 inventories. Runtime selection checks the host, 
 
 ## Build
 
+The complete factory requires an Apple Silicon build machine, an ARM64 Linux Docker build engine, Java 17 and the Android 35 application compiler SDK. These are maintainer tools; they are separate from the runtimes embedded for end users. Start from a fresh reviewed source checkout:
+
+```sh
+./scripts/bootstrap.sh
+python3 scripts/macos_client_factory.py --compiler-sdk "$ANDROID_HOME"
+```
+
+The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all nine runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
+
 Use a reviewed source checkout and architecture-matched factory resources. The distribution command is:
 
 ```sh
