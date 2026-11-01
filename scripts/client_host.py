@@ -129,10 +129,11 @@ def source_container_runtime(home, config, host):
 
 
 def source_container_definition(home, config, host, memory):
+    from container_host_runtime import mount_type
     image = config['container_hosts'][host['image']]
     return {'vmType': host['vm_type'], 'arch': host['vm_arch'], 'cpus': 4, 'memory': memory, 'disk': '64GiB',
             'images': [{'location': image['url'], 'arch': host['vm_arch'], 'digest': 'sha256:' + image['sha256']}],
-            'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
+            'mountType': mount_type(host['vm_type']), 'mounts': [{'location': str(home), 'writable': True}],
             'containerd': {'system': False, 'user': False}, 'propagateProxyEnv': False,
             'provision': [{'mode': 'system', 'script': '#!/bin/sh\nset -eu\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 docker-buildx\nsystemctl enable --now docker\nusermod -aG docker {{.User}}\n'}],
             'hostResolver': {'hosts': {'host.docker.internal': 'host.lima.internal'}},
@@ -259,7 +260,7 @@ def prepare_profile(root, home, request, host, android_sdk=None):
         if existing['phone']['template']!=host['phone_template']:
             raise ValueError('Existing phone architecture differs from this host; no devices were changed')
         return
-    value=dict(schema_version=1,local_entry=True,locale=request['locale'],sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
+    value=dict(schema_version=1,local_entry=True,locale=request['locale'],launch_path=os.environ.get('PATH',os.defpath),sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
                phone={'template':host['phone_template'],**request['phone']},desktop={'template':'debian13-openbox',**request['desktop']})
     profile=home/'request-profile.json';profile.write_text(json.dumps(value));profile.chmod(0o600)
     release.configure(root,profile)

@@ -157,7 +157,11 @@ class SealedControlConsumerTests(unittest.TestCase):
             blocked=subprocess.run(command,input=request,text=True,capture_output=True,env=environment,timeout=10)
             self.assertNotEqual(blocked.returncode,0);self.assertTrue(json.loads(blocked.stdout)['error'])
             self.assertEqual((alias/'keep').read_text(),'existing');self.assertFalse(alias.is_symlink())
-            self.assertFalse((root/'.tools').exists());self.assertFalse((root/'node_modules').exists())
+            cache=root/'.tools'
+            self.assertEqual(sorted(path.relative_to(cache).as_posix() for path in cache.rglob('*')),
+                             ['mihomo','mihomo/linux-arm64'])
+            self.assertTrue(all(path.is_dir() for path in cache.rglob('*')))
+            self.assertFalse((root/'node_modules').exists())
         self.assertEqual(digest(BUN),original)
 
 

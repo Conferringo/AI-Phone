@@ -15,6 +15,30 @@ async function rpc<I extends DescMessage,O extends DescMessage>(path:string,inpu
  if(!response.ok||response.headers.get('content-type')!=='application/x-protobuf')throw Error('Device setup failed: '+path+' HTTP '+response.status);
  return fromBinary(output,new Uint8Array(await response.arrayBuffer()));
 }
+// Only known provision-state values may become public stage labels.
+const provisionStages=new Map([
+ ['检查资源','check_resources'],
+ ['准备Clash客户端','prepare_network_app'],
+ ['准备基础镜像','prepare_base_image'],
+ ['安装Linux桌面和办公软件','install_desktop'],
+ ['启动桌面','start_desktop'],
+ ['验证画面与控制','verify_frame_control'],
+]);
+function provisionFailure(job:MessageShape<typeof DesktopProvisionJobSchema>|undefined,timedOut=false):Error{
+ const stage=provisionStages.get(job?.stage||'')||'unknown';
+ // Bounded symptom flags, never the backend's error, paths, argv or credentials.
+ const error=(job?.error||'').slice(0,4096);
+ const signals=[
+  ['permission',/permission denied|operation not permitted|access is denied|\beacces\b|\beperm\b/i],
+  ['bind_mount',/invalid mount config|error while mounting|error mounting|mount source|bind source|bind mount|mounts denied/i],
+  ['disk_budget',/no space left on device|not enough free space|insufficient disk|disk quota exceeded|6GiB可用空间/i],
+  ['image_missing',/bundled desktop image is missing|no such image|image not found/i],
+  ['runtime',/oci runtime|container runtime|cannot connect to the docker daemon|error during connect|failed to create shim task|unable to start container process/i],
+  ['frame_missing',/桌面没有返回可验证画面|desktop did not return a frame/i],
+ ] as const;
+ const flags=signals.filter(([,pattern])=>pattern.test(error)).map(([flag])=>flag).join(',')||'unknown';
+ return Error('Desktop provisioning '+(timedOut?'timed out':'failed')+' (stage='+stage+'; flags='+flags+')');
+}
 let state=await rpc('registry/state',RegistryRequestSchema,{},RegistryStateSchema);
 // A working desktop alone cannot authorize the two-device ready state.
 const runnerToken=(await readFile(join(root,'data/phone-runner/token'),'utf8')).trim();
@@ -42,7 +66,8 @@ if(desktop?.runtimeState==='managed'){
   const status=await rpc('desktop/state',RegistryRequestSchema,{},DeviceLinkStateSchema);
   const current=status.jobs.find(item=>item.id===job.id);
   if(current?.status==='completed')break;
-  if(current?.status==='failed'||Date.now()>deadline)throw Error('Desktop provisioning did not complete');
+  if(current?.status==='failed')throw provisionFailure(current);
+  if(Date.now()>deadline)throw provisionFailure(current,true);
   await delay(1000);
  }
  const frame=await rpc('desktop/observe',DesktopRequestSchema,{deviceId:id},DesktopObservationSchema);

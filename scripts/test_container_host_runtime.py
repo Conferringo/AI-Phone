@@ -155,4 +155,57 @@ class ContainerHostRuntimeTests(unittest.TestCase):
             with self.assertRaises(ValueError):package_inputs(packages,[row,row])
 
 
+class VmMountPolicyTests(unittest.TestCase):
+    def setUp(self):
+        # Definition construction must not access files, the network or a runtime.
+        for target in ('client_host.execute', 'client_host.subprocess.run', 'client_host.download', 'container_host_runtime.verify'):
+            blocked=patch(target,side_effect=AssertionError('Runtime action during definition construction'))
+            blocked.start();self.addCleanup(blocked.stop)
+        for method in ('open', 'mkdir', 'write_text'):
+            blocked=patch.object(Path,method,side_effect=AssertionError('Filesystem action during definition construction'))
+            blocked.start();self.addCleanup(blocked.stop)
+
+    def inputs(self,vm_type):
+        home=Path('/owned install')
+        source={'image':'fixture','vm_type':vm_type,'vm_arch':'x86_64' if vm_type=='qemu' else 'aarch64'}
+        config={'container_hosts':{'fixture':{'url':'https://example.invalid/image','sha256':'a'*64}}}
+        bundled={'vm_type':vm_type,'arch':source['vm_arch'],'packages':home/'packages','image':home/'image.iso','image_sha256':'a'*64}
+        return home,config,source,bundled
+
+    def test_source_and_bundled_use_the_same_supported_vm_mount_policy(self):
+        from client_host import source_container_definition
+        from container_host_runtime import definition
+        for vm_type,expected in (('qemu','9p'),('vz','virtiofs')):
+            with self.subTest(vm_type=vm_type):
+                home,config,source,bundled=self.inputs(vm_type)
+                for value in (source_container_definition(home,config,source,'4GiB'),definition(home,bundled,'4GiB')):
+                    self.assertEqual(value['vmType'],vm_type)
+                    self.assertEqual(value['mountType'],expected)
+                    self.assertEqual(value['mounts'],[{'location':str(home),'writable':True}])
+                    # Preserve Lima 2.2.1's symlink-compatible none security model.
+                    self.assertNotIn('9p',value['mounts'][0])
+
+    def test_both_definitions_use_the_single_mount_policy_owner(self):
+        from client_host import source_container_definition
+        from container_host_runtime import definition
+        home,config,source,bundled=self.inputs('qemu')
+        with patch('container_host_runtime.mount_type',return_value='fixture-mount') as policy:
+            self.assertEqual(source_container_definition(home,config,source,'4GiB')['mountType'],'fixture-mount')
+            self.assertEqual(definition(home,bundled,'4GiB')['mountType'],'fixture-mount')
+            self.assertEqual(policy.call_args_list,[unittest.mock.call('qemu'),unittest.mock.call('qemu')])
+
+    def test_unknown_vm_type_never_silently_chooses_a_transport(self):
+        from client_host import source_container_definition
+        from container_host_runtime import definition, mount_type
+        home,config,source,bundled=self.inputs('unknown')
+        for build in (lambda:mount_type('unknown'),lambda:source_container_definition(home,config,source,'4GiB'),lambda:definition(home,bundled,'4GiB')):
+            with self.assertRaisesRegex(ValueError,'Unsupported container host VM type'):build()
+
+    def test_legacy_bundled_definition_keeps_its_vz_default(self):
+        from container_host_runtime import definition
+        home,_,_,bundled=self.inputs('vz');del bundled['vm_type']
+        value=definition(home,bundled,'4GiB')
+        self.assertEqual((value['vmType'],value['mountType']),('vz','virtiofs'))
+
+
 if __name__=='__main__':unittest.main()

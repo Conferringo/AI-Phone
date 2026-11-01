@@ -2,19 +2,31 @@
 import json
 import os
 import platform
+import unicodedata
 from pathlib import Path
+
+
+def profile_launch_path(value):
+    if 'launch_path' not in value:
+        return None
+    path = value['launch_path']
+    if not isinstance(path, str) or not path.strip() or any(unicodedata.category(char) == 'Cc' for char in path):
+        raise ValueError('Profile launch_path must be a non-empty PATH string without control characters')
+    return path
 
 
 def runtime_env(root):
     root = Path(root)
-    from installer_tools import selected_environment
-    base_path=os.pathsep.join(dict.fromkeys([str(root/'.tools/bin'),'/opt/homebrew/bin','/usr/local/bin',*os.environ.get('PATH','/usr/bin:/bin:/usr/sbin:/sbin').split(os.pathsep)]))
-    tools=selected_environment(root,base_path)
-    from managed_engine import environment as managed_environment
-    managed=managed_environment(root)
     profile = root / 'data/deployment/profile.json'
     value = json.loads(profile.read_text()) if profile.exists() else {}
     if not isinstance(value,dict): raise ValueError('Invalid private host profile; expected a JSON object')
+    configured_path = profile_launch_path(value)
+    launch_path = configured_path if configured_path is not None else os.environ.get('PATH','/usr/bin:/bin:/usr/sbin:/sbin')
+    from installer_tools import selected_environment
+    base_path=os.pathsep.join(dict.fromkeys([str(root/'.tools/bin'),'/opt/homebrew/bin','/usr/local/bin',*launch_path.split(os.pathsep)]))
+    tools=selected_environment(root,base_path)
+    from managed_engine import environment as managed_environment
+    managed=managed_environment(root)
     legacy = {}
     if (root / '.env').exists():
         for line in (root / '.env').read_text().splitlines():
