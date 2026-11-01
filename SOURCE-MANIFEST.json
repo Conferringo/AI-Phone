@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 1751,
-      "sha256": "c442af36aa4a1e161b7bb6509dbe169f51c39958261020f2b1ac827347d57831"
+      "size": 2452,
+      "sha256": "889abd82c44eedfc659ea7b2e695e05c61ee2ef2796918345dc26f8ef62187df"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -2399,8 +2399,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 61049,
-      "sha256": "9fc676142874a55e812d0dbf2c63929ba52f883969524c1b897fed4b41824f91"
+      "size": 64422,
+      "sha256": "d866ac6416221f7dcaa0d0abdaa88afbe0e1c3b20c8a0a9d360a7c53222998de"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -4504,8 +4504,8 @@
     },
     {
       "path": "scripts/linux_host_acceptance.py",
-      "size": 3637,
-      "sha256": "5fa49b4ae4a77e7d72dbb6193525ea0718e02e712440e870a656046118919e11"
+      "size": 8177,
+      "sha256": "25eb44d607c44afaa93672dc88d85be0d13ce578319b35d0818adb11c0e3d0bb"
     },
     {
       "path": "scripts/linux_host_runtime.py",
@@ -4918,6 +4918,11 @@
       "sha256": "85024599a3bb02b6aa8b68c073301f948c5a7e8649b7eb8ccddd3322f5519778"
     },
     {
+      "path": "scripts/test_linux_host_acceptance_cleanup.py",
+      "size": 12895,
+      "sha256": "5455af8f675a34752b5c92cb5ad0022145b06a7c23fe54b1a714bd8f830d60ec"
+    },
+    {
       "path": "scripts/test_linux_kvm_platform.py",
       "size": 1621,
       "sha256": "0e8d529a4a03d2b94d8aaee7b831dd4b86b9359c03991d99b99ea6564c25c864"
@@ -5064,8 +5069,8 @@
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
-      "size": 14220,
-      "sha256": "3e222a25272a2535b1fa3198be2000478cfea805744dfd7ff9b0cf157323c00d"
+      "size": 14802,
+      "sha256": "a8bf238c4cd064a7bbb612d6386ee835a684761638d664976415f84a864a1929"
     },
     {
       "path": "scripts/test_wsl_initialize_diagnostics.py",
@@ -5144,8 +5149,8 @@
     },
     {
       "path": "scripts/wsl_initialize_diagnostics.py",
-      "size": 8528,
-      "sha256": "9da582460f6ca0c8572bcf8ac7597f81d5ad3d9785d11588061759ff9864425b"
+      "size": 8631,
+      "sha256": "28a8fa9be6a14d6a051f2199d3eeb2970ea364506c96f39029eb8df1fe2c07ab"
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",

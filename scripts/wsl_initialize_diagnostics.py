@@ -22,6 +22,7 @@ SIGNALS={
     'out_of_space':(b'no space left on device',),
 }
 DATABASE_SIGNALS={
+    **{code:SIGNALS[code] for code in ('executable_missing','library_load_failure','cgroup_message')},
     'compose_unavailable':(b"is not a docker command",b"failed to fetch metadata"),
     'configuration_missing':(b'required variable',b'set postgres_password',b'no configuration file provided'),
     'configuration_invalid':(b'invalid interpolation format',b'validating '),

@@ -184,6 +184,13 @@ pub async fn file_authorized(app: &App, run: Uuid, device: &str) -> Result<()> {
         Err("设备没有绑定给此Agent，数据线也未连接".into())
     }
 }
+async fn observation_directory(root: &std::path::Path) -> Result<PathBuf> {
+    let dir = root.join("data/desktop/observations");
+    tokio::fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(dir)
+}
 async fn save_observation(
     app: &App,
     device: &str,
@@ -194,10 +201,7 @@ async fn save_observation(
         .decode(value["png"].take().as_str().ok_or("电脑没有返回画面")?)
         .map_err(|e| e.to_string())?;
     let id = Uuid::now_v7();
-    let dir = app.root.join("data/desktop/observations");
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| e.to_string())?;
+    let dir = observation_directory(&app.root).await?;
     let path = dir.join(format!("{id}.png"));
     tokio::fs::write(&path, &png)
         .await
@@ -1298,6 +1302,7 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
         process(build, vec![], 2 * 1024 * 1024, 1800).await?;
     }
     install_step(app, id, "启动桌面").await?;
+    observation_directory(&app.root).await?;
     crate::device_network::prepare(app, &device).await?;
     let mut start = docker();
     start
@@ -1394,6 +1399,83 @@ pub async fn recover(app: Shared) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    struct ObservationDirectoryFixture(PathBuf);
+    impl ObservationDirectoryFixture {
+        fn new() -> Self {
+            let root =
+                std::env::temp_dir().join(format!("ai-phone-desktop-storage-{}", Uuid::new_v4()));
+            std::fs::create_dir(&root).unwrap();
+            Self(root)
+        }
+    }
+    impl Drop for ObservationDirectoryFixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[tokio::test]
+    async fn observation_directory_creates_writable_host_storage_without_guest_home() {
+        let fixture = ObservationDirectoryFixture::new();
+        let dir = observation_directory(&fixture.0).await.unwrap();
+        assert_eq!(dir, fixture.0.join("data/desktop/observations"));
+        assert!(dir.is_dir());
+        assert!(!fixture.0.join("data/desktop/home").exists());
+        let image = dir.join("fixture.png");
+        std::fs::write(&image, b"observation fixture").unwrap();
+        assert_eq!(std::fs::read(image).unwrap(), b"observation fixture");
+    }
+
+    #[tokio::test]
+    async fn observation_directory_rejects_blocking_files_without_replacing_them() {
+        for relative in ["data", "data/desktop", "data/desktop/observations"] {
+            let fixture = ObservationDirectoryFixture::new();
+            let blocked = fixture.0.join(relative);
+            std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();
+            std::fs::write(&blocked, b"keep existing content").unwrap();
+            assert!(observation_directory(&fixture.0).await.is_err());
+            assert_eq!(std::fs::read(blocked).unwrap(), b"keep existing content");
+        }
+    }
+
+    #[tokio::test]
+    async fn observation_directory_preserves_existing_home_and_observations() {
+        let fixture = ObservationDirectoryFixture::new();
+        let desktop = fixture.0.join("data/desktop");
+        let home = desktop.join("home");
+        let observations = desktop.join("observations");
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::create_dir(&observations).unwrap();
+        std::fs::write(home.join("notes.txt"), b"user file").unwrap();
+        std::fs::write(observations.join("retained.png"), b"retained observation").unwrap();
+        #[cfg(unix)]
+        let original_home_identity = {
+            use std::os::unix::fs::MetadataExt;
+            let metadata = std::fs::metadata(&home).unwrap();
+            (metadata.uid(), metadata.gid(), metadata.mode())
+        };
+        for _ in 0..2 {
+            assert_eq!(
+                observation_directory(&fixture.0).await.unwrap(),
+                observations
+            );
+        }
+        assert_eq!(std::fs::read(home.join("notes.txt")).unwrap(), b"user file");
+        assert_eq!(
+            std::fs::read(observations.join("retained.png")).unwrap(),
+            b"retained observation"
+        );
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let metadata = std::fs::metadata(&home).unwrap();
+            assert_eq!(
+                (metadata.uid(), metadata.gid(), metadata.mode()),
+                original_home_identity
+            );
+        }
+    }
+
     #[test]
     fn rejects_unsafe_names_and_coordinates() {
         for name in ["", "..", "../secret", "a/b", "a\\b", "a\nb"] {
