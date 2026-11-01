@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 9017,
-      "sha256": "031ff9d280d79edcb6117bfe7ad5727b8c3ca1b9312bef684e92405103257f85"
+      "size": 9040,
+      "sha256": "72773ae1fd0d58caa6ab65a08b4445cf359e02588920c1aaefd91b209c0390eb"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -2919,8 +2919,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4079,
-      "sha256": "25ec03172b5517d0b544e93546de0f1a92de05507cd44895f9298c45695a62b0"
+      "size": 4391,
+      "sha256": "21ba6ffb5db7357f71659134f4e3c817f05f6f395a719a78192824f817e9a081"
     },
     {
       "path": "docs/public/engineering/channel-browser.md",
@@ -2949,8 +2949,8 @@
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
-      "size": 5684,
-      "sha256": "b433315886e5a763f0966fdd7df3ddb1f9bde2123cefe7aefa0c919fe032260e"
+      "size": 5789,
+      "sha256": "9efe64aa6e8c634a47a5e81ade0fd4a58954d7501807efed40e19b4c3c148055"
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
@@ -4319,8 +4319,8 @@
     },
     {
       "path": "scripts/android_component_factory.py",
-      "size": 5635,
-      "sha256": "3086eca3e469075366452bd8a8bea290a8b2b09e41100dbbf378ca844f7fa61e"
+      "size": 6084,
+      "sha256": "292d6231555e893e557d266a87b51dea020a9e775fb1397dec8c60db6cccb3b5"
     },
     {
       "path": "scripts/android_factory_stock.py",
@@ -4339,8 +4339,8 @@
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 11886,
-      "sha256": "5463a20accea1ca5073f6564d3af03c9c152727bc2f0cc7d6f42e599eaafd939"
+      "size": 12162,
+      "sha256": "8e5e2b2413f980282a472126468409d6ce33e54616141f8342a84705deb15eec"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -4439,8 +4439,8 @@
     },
     {
       "path": "scripts/build_container_images.py",
-      "size": 6873,
-      "sha256": "2d4399f3ce1220ab34c7a26e83d6357fb25c7f29c16cd989bec2c33a55e0912f"
+      "size": 6948,
+      "sha256": "8d1fde4885e6f9fd55fea08969f10cde289d8ffbf3511f50462a9307831e0b71"
     },
     {
       "path": "scripts/build_native_services.py",
@@ -4559,8 +4559,8 @@
     },
     {
       "path": "scripts/container_images.py",
-      "size": 15536,
-      "sha256": "33a7e5582003bce65975c2d0476f7baa81a2cd29f5242588912a0d3abeb80e71"
+      "size": 16306,
+      "sha256": "4414ad25bbe7c213e0f5e310120b549f2d43ee556d84acf79587ca383ccd1253"
     },
     {
       "path": "scripts/copilot-input.test.ts",
@@ -5113,6 +5113,11 @@
       "sha256": "1de9029b02007c10edccfdd9aeeb403055149564f7ec9f92555221cda8518713"
     },
     {
+      "path": "scripts/test_android_compression_profiles.py",
+      "size": 1850,
+      "sha256": "0f56424a08923d64167a7236526893d6efe8f17b5396d758fa7908e4eab4dc55"
+    },
+    {
       "path": "scripts/test_android_input.py",
       "size": 20410,
       "sha256": "22bde03b9498e8c77ced578fb88dfeea19be090a73cced50f67ab08304749c0d"
@@ -5263,9 +5268,14 @@
       "sha256": "402d48d6ce2393c8f9acaa3a26bdc1f32e65300ecff35ad7c5b91c601aa6b6da"
     },
     {
+      "path": "scripts/test_image_import_stream.py",
+      "size": 4088,
+      "sha256": "0b0837fea98190e3fd73f13ed816f41af7081be6f1d0a5d2b038cd2edb0ac6c8"
+    },
+    {
       "path": "scripts/test_image_pipe_cleanup.py",
       "size": 6013,
-      "sha256": "6e73e26bd3fb520339759342bf6bc105afa1bf01b56de4da83712fa3be3bcaf8"
+      "sha256": "2ce5d0a4b06fd2ef963e3b333d25904b5197d02040f83e2007a598803bd2a977"
     },
     {
       "path": "scripts/test_install_language.py",

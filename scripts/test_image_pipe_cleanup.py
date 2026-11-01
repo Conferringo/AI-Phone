@@ -1,6 +1,6 @@
 """Body/pipe/child combined faults, with no real subprocess or image access."""
 import io
-import lzma
+import gzip
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -63,7 +63,7 @@ class ImagePipeCleanupTests(unittest.TestCase):
                     with tempfile.NamedTemporaryFile() as raw:
                         result=builder.save_images(['owned-ref'],raw,'arm64')
                         raw.seek(0)
-                        self.assertEqual(lzma.decompress(raw.read()),b'owned export fixture')
+                        self.assertEqual(gzip.decompress(raw.read()),b'owned export fixture')
         self.assertEqual(started.call_count,1)
         return result,order,stopped
 

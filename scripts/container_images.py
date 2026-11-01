@@ -8,6 +8,7 @@ from contextlib import contextmanager,nullcontext
 from dataclasses import dataclass
 import hashlib
 import json
+import lzma
 import os
 from pathlib import Path,PurePosixPath
 import re
@@ -92,6 +93,27 @@ class PreparedImages:
             file.seek(0)
             with tarfile.open(fileobj=file,mode='r:') as source:
                 with source.extractfile(self.manifest['archive']['path']) as body:yield body
+
+
+    @contextmanager
+    def import_archive(self,payload_file):
+        with self.archive(payload_file) as body:
+            if archive_codec(self.manifest)=='xz':
+                # The portable engine does not need an external xz executable.
+                with lzma.LZMAFile(body,mode='rb') as raw:yield BoundedImageArchive(raw)
+            else:yield body
+
+
+class BoundedImageArchive:
+    def __init__(self,source):
+        self.source=source;self.total=0
+
+    def read(self,size=-1):
+        remaining=MAX_RAW-self.total
+        limit=remaining+1 if size<0 else min(size,remaining+1)
+        data=self.source.read(limit);self.total+=len(data)
+        if self.total>MAX_RAW:raise ValueError('Raw image import exceeds budget')
+        return data
 
 
 
@@ -347,7 +369,7 @@ def activate(root, prepared, docker=docker_command):
             after=os.fstat(file.fileno())
             if (before.st_size,before.st_mtime_ns)!=(after.st_size,after.st_mtime_ns):
                 raise ValueError('Image capsule changed during initialization')
-            with prepared.archive(file) as source:docker(['image','load','--quiet'],source)
+            with prepared.import_archive(file) as source:docker(['image','load','--quiet'],source)
         if not all(present(row,arch,docker) for row in manifest['images'].values()):
             raise ValueError('Bundled images are not ready; initialization can be retried')
     atomic_selection(root,manifest)

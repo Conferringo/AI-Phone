@@ -213,7 +213,14 @@ def image_inventory(source, abi):
     return files,sources
 
 
-def build(sdk, image_archive, output, expected_image_sha256):
+def checked_compression(value):
+    if type(value) is not int or value not in (3,6):
+        raise ValueError('Unsupported Android compression preset')
+    return value
+
+
+def build(sdk, image_archive, output, expected_image_sha256, *, compression_preset=6):
+    compression_preset=checked_compression(compression_preset)
     sdk=Path(sdk);output=Path(output);abi=ABIS.get(host_key())
     if not abi:
         raise ValueError('Android runtime host not implemented')
@@ -226,7 +233,7 @@ def build(sdk, image_archive, output, expected_image_sha256):
         output.parent.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='.android-build-',dir=output.parent) as temp:
             archive=Path(temp)/'android.payload'
-            with archive.open('wb') as raw,lzma.LZMAFile(raw,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=6) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
+            with archive.open('wb') as raw,lzma.LZMAFile(raw,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=compression_preset) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
                 data=json.dumps(manifest,sort_keys=True).encode();header=tarfile.TarInfo(MANIFEST);header.size=len(data);target.addfile(header,io.BytesIO(data))
                 for row in files:
                     header=tarfile.TarInfo(row['path']);header.size=row['size'];header.mode=row['mode']

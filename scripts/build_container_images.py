@@ -1,4 +1,5 @@
 """Export reviewed images into one streamable capsule without exporting containers."""
+import gzip
 import json
 from pathlib import Path
 import shutil
@@ -37,7 +38,7 @@ def save_images(refs, raw, architecture):
     with tempfile.TemporaryFile() as log:
         child=subprocess.Popen(['docker','image','save','--platform','linux/'+architecture,*refs],stdout=subprocess.PIPE,stderr=log)
         with image_pipe(child,child.stdout,close_first=True):
-            with write_xz(ArchiveWriter(raw,Path(raw.name).parent)) as target:
+            with gzip.GzipFile(fileobj=ArchiveWriter(raw,Path(raw.name).parent),mode='wb',filename='',mtime=0,compresslevel=1) as target:
                 shutil.copyfileobj(child.stdout,target,1024**2)
             if child.wait()!=0:raise ValueError('Docker image export failed')
 
@@ -56,10 +57,10 @@ def bound_records(records, actual, architecture):
 
 def transformed_images(records, raw, architecture):
     folder=Path(raw.name).parent
-    with (folder/'docker-export.tar.xz').open('w+b') as source:
+    with (folder/'docker-export.tar.gz').open('w+b') as source:
         save_images([row['ref'] for row in records.values()],source,architecture)
         source.flush();source.seek(0)
-        records=bound_records(records,inventory(source,'xz'),architecture)
+        records=bound_records(records,inventory(source,'gzip'),architecture)
         source.seek(0)
         with read_tar(source,MAX_RAW,stream=True) as exported:
             oci=any(entry.name=='oci-layout' for entry in exported)
@@ -69,7 +70,7 @@ def transformed_images(records, raw, architecture):
             if oci:
                 result=transform(source,writer,records)
             else:
-                with decoded(source,MAX_RAW,expected='xz') as original:
+                with decoded(source,MAX_RAW,expected='gzip') as original:
                     shutil.copyfileobj(original,writer,1024**2)
                 result={'architecture':architecture,'images':records}
     if result['architecture']!=architecture:raise ValueError('Converted image architecture mismatch')
