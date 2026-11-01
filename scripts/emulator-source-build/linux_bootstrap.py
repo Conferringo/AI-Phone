@@ -26,6 +26,7 @@ REPO_COMMIT = "97dc5c1bd9527c2abe2183b16a4b7ef037dc34a7"
 REPO_LAUNCHER_BLOB = "2526ab03fdc8eb364e9fa2e50441c49690a721d5"
 GIB = 1024**3
 DISK_FLOOR = 2 * GIB
+CREDENTIAL_HINT = re.compile(r"(?i)\b(?:authorization|password|passwd|secret|token|api[-_ ]?key|private[-_ ]?key)\b|\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})")
 FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_work_required",
                    "work_outside_source_required", "linux_x64_required", "python_311_64bit_required",
                    "clean_builder_home_required", "required_tool_missing", "attempt_headroom",
@@ -319,14 +320,31 @@ def built_receipt(root):
     return {"artifact_bytes": artifact["bytes"], "artifact_sha256": artifact["sha256"]}
 
 
-def log_diagnostics(path, checkout):
-    result = {"recipe_frames": [], "signals": []}
+def read_log_tail(path, maximum):
     try:
         with path.open("rb") as source:
-            source.seek(max(0, path.stat().st_size - 65536))
-            text = source.read(65536).decode("utf-8", errors="replace")
+            source.seek(max(0, os.fstat(source.fileno()).st_size - maximum))
+            return source.read(maximum).decode("utf-8", errors="replace")
     except OSError:
-        return result
+        return ""
+
+
+def print_failure_log(root):
+    text = read_log_tail(root / "build/build.log", 8192)
+    if not text:
+        return
+    for value, replacement in ((str(root), "<build>"), (str(Path.home()), "<home>"),
+                               (os.environ.get("RUNNER_TRACKING_ID", ""), "<runner>")):
+        if value:
+            text = text.replace(value, replacement)
+    lines = ["[redacted credential-like line]" if CREDENTIAL_HINT.search(line) else line for line in text.splitlines()]
+    with contextlib.suppress(OSError, ValueError):
+        print("Redacted upstream build tail:\n" + "\n".join(lines)[-8192:], file=sys.stderr)
+
+
+def log_diagnostics(path, checkout):
+    result = {"recipe_frames": [], "signals": []}
+    text = read_log_tail(path, 65536)
     exceptions = re.findall(r"^(ModuleNotFoundError|ImportError|FileNotFoundError|PermissionError|TypeError|AttributeError|SyntaxError|ValueError|RuntimeError|AssertionError|CalledProcessError):", text, re.MULTILINE)
     if exceptions:
         result["exception"] = exceptions[-1]
@@ -418,6 +436,7 @@ def controlled_build(root):
         receipt.update(status="failed", reason=str(error))
         if receipt["stage"] == "source_build":
             receipt["build_diagnostics"] = build_diagnostics(root)
+            print_failure_log(root)
         raise
     except BuildInterrupted as error:
         reason = str(error) if str(error) in {"disk_floor", "command_timeout"} else "interrupted_or_unknown"

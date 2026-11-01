@@ -126,6 +126,7 @@ class ProducerLifecycleTests(unittest.TestCase):
             self.assertEqual(command[command.index("--crash") + 1], "none")
             self.assertEqual(command[command.index("--ccache") + 1], "none")
             self.assertIn("--qtwebengine", command)
+            self.assertIn("--verbose", command)
             self.assertNotIn("--task-disable", command)
             self.assertNotIn("PYTHONPATH", kwargs["env"])
             self.assertEqual(kwargs["cwd"], self.qemu)

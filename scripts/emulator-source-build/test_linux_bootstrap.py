@@ -1,6 +1,7 @@
 """Owned files and narrow process mocks; no Git, GPG, network, KVM or build execution."""
 import contextlib
 import hashlib
+import io
 import json
 from pathlib import Path
 import signal
@@ -325,6 +326,40 @@ class LifecycleTests(OwnedFixture):
 
     def public_receipt(self):
         return json.loads((self.root / "public-receipt.json").read_text(encoding="utf-8"))
+
+    def test_public_build_tail_keeps_errors_and_redacts_credentials_and_builder_paths(self):
+        build = self.root / "build"
+        build.mkdir()
+        key = "sk-" + "a" * 32
+        (build / "build.log").write_text(
+            'omitted-head\n' + 'x' * 9000 + '\nCMake Error at ' + str(self.root / 'checkout/source.cmake') + ': compiler missing\n'
+            'cache=' + str(Path.home() / '.cache') + '\nworker=owned-worker-fixture\n'
+            'api_key=private-key-sentinel\n' + key + '\n')
+        output = io.StringIO()
+        with patch.dict(bootstrap.os.environ, {"RUNNER_TRACKING_ID": "owned-worker-fixture"}), contextlib.redirect_stderr(output):
+            bootstrap.print_failure_log(self.root)
+        text = output.getvalue()
+        self.assertIn('CMake Error at <build>/checkout/source.cmake: compiler missing', text)
+        self.assertIn('cache=<home>/.cache', text)
+        self.assertIn('worker=<runner>', text)
+        self.assertNotIn('omitted-head', text)
+        self.assertNotIn(str(self.root), text)
+        self.assertNotIn(str(Path.home()), text)
+        self.assertNotIn('private-key-sentinel', text)
+        self.assertNotIn(key, text)
+        self.assertLess(len(text), 8400)
+
+    def test_missing_log_or_closed_diagnostic_stream_cannot_replace_build_failure(self):
+        output = io.StringIO()
+        with contextlib.redirect_stderr(output):
+            bootstrap.print_failure_log(self.root)
+        self.assertEqual(output.getvalue(), '')
+        build = self.root / "build"
+        build.mkdir()
+        (build / 'build.log').write_text('CMake Error: owned failure')
+        output.close()
+        with contextlib.redirect_stderr(output):
+            bootstrap.print_failure_log(self.root)
 
     def test_failed_upstream_keeps_fixed_diagnostics_without_log_contents(self):
         calls = []

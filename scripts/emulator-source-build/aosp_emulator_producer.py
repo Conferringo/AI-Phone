@@ -163,7 +163,7 @@ def checked_entry(checkout, target):
     records = recipe_inputs(checkout)
     qemu = checkout / "external/qemu"
     owner = qemu / "android/build/python/aemu/cmake.py"
-    required = {"--aosp", "--target", "--out", "--dist", "--sdk_build_number", "--crash", "--config", "--ccache", "--qtwebengine"}
+    required = {"--aosp", "--target", "--out", "--dist", "--sdk_build_number", "--crash", "--config", "--ccache", "--qtwebengine", "--verbose"}
     if not required <= declared_flags(owner):
         raise ValueError("Pinned checkout has an unreviewed build CLI")
     distribution = checked_distribution(qemu / "android/build/python/aemu/platform/toolchains.py", target)
@@ -232,7 +232,7 @@ def main():
     entry, recipe_files, distribution = checked_entry(checkout, host[1])
     command = [sys.executable, str(entry), "--aosp", str(checkout), "--target", host[1],
                "--out", str(work / "objs"), "--dist", str(work / "dist"), "--config", "release",
-               "--sdk_build_number", BUILD_ID, "--crash", "none", "--ccache", "none", "--qtwebengine"]
+               "--sdk_build_number", BUILD_ID, "--crash", "none", "--ccache", "none", "--qtwebengine", "--verbose"]
     receipt = {"format": 1, "producer": "aosp-source-main-emulator", "host": host[0], "target": host[1],
                "build_id": BUILD_ID, "source_lock_sha256": LOCK_SHA256, "projects": records,
                "recipe_files": recipe_files, "source_contract": SOURCE_CONTRACT,
