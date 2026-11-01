@@ -55,7 +55,8 @@ class MacFactoryEngineTests(unittest.TestCase):
                 execute.assert_called_once_with([binary.resolve(),'--version'],text=True,timeout=15)
                 firmware.unlink()
                 with self.assertRaisesRegex(ValueError,'firmware'):engine.qemu(root)
-            with patch.object(engine.shutil,'which',return_value=str(binary)),patch.object(engine.subprocess,'check_output',return_value='QEMU emulator version 12.0.0\n'),self.assertRaisesRegex(ValueError,'pinned'):engine.qemu(root)
+            for version in ('11.1.2','12.0.0'):
+                with patch.object(engine.shutil,'which',return_value=str(binary)),patch.object(engine.subprocess,'check_output',return_value='QEMU emulator version '+version+'\n'),self.assertRaisesRegex(ValueError,'pinned'):engine.qemu(root)
 
     def test_factory_definition_is_qemu_9p_with_pinned_firmware_and_explicit_store(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -115,6 +115,9 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+          # Hosted images cache an older formula catalog. Refresh it explicitly;
+          # the factory still requires the exact QEMU version in its policy.
+          brew update
           brew install qemu
           export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
