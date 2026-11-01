@@ -20,8 +20,6 @@ Clash Meta for Android is pinned to [v2.11.36](https://github.com/MetaCubeX/Clas
 
 Binary promotion remains subject to the existing redistribution gate. Corresponding-source, transitive native-component and complete-bundle delivery review remains pending; a pinned tag and a license copy alone do not clear that gate. Source-only commits do not include the APKs, guest profiles, subscriptions or user data.
 
-## Verification scope
+## Availability
 
-Local tests exercise both ABIs, exact source pins, rewritten artifact hashes, alias rejection, missing/corrupt files, failed publication, source changes during inspection, runtime profile selection and preservation of existing fixture data. The actual official APKs have passed the maintained SDK/signature/package/ABI and privacy checks.
-
-On macOS, the bundled Python staged the actual `js-services` + `guest-apps` source capsule inside an OS sandbox denying all network, original home-directory source and SDK access. The compiled application consumer verified both official APKs without creating a source download cache. A corrupted APK failed, and repeated staging retained a chat fixture. That diagnostic capsule did not include full guest images or create a new phone. Fresh-device installation and four-platform complete-host acceptance remain separate requirements.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.

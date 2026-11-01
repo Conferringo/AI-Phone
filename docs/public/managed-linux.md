@@ -11,15 +11,15 @@ The native client selects language, phone CPU/RAM/storage and desktop CPU/RAM. I
 - Distribution dependencies are installed through the OS's PolicyKit dialog when necessary. Passwords are not collected by AI Phone. KVM permission can be granted to the current user on the current device; no broad Docker group or global security-policy change is made.
 - A usable existing Docker engine may be reused. Otherwise an app-owned Lima/QEMU container host is downloaded and provisioned, mounting only the app installation directory. No global Docker context is changed. Linux virtiofs remains an upstream experimental path and needs acceptance on the actual distribution.
 
-## Lifecycle and evidence
+## Lifecycle
 
 Linux supervisors have one exclusive lock per service. Reopening setup reuses the same live service specification. Changed specifications or unknown ownership are rejected before replacing a running task. A process receipt includes its `/proc` start identity, UID and supervisor command; a reused PID never authorizes termination. Each supervisor restarts only its own child process. Stopping retains guest disks, chats, credentials and database files.
 
 Service startup does not compile over a live web/runner/assistant process. On resume, Android readiness is observed without reapplying its network/home/input settings. The two-device ready gate requires a real Android PNG, root identity and a real desktop PNG. HTTP readiness alone is insufficient.
 
-Real isolated Linux regressions cover preserved PIDs, child SIGKILL/restart, changed-command rejection and a forged old PID receipt. The `Managed Linux host acceptance` workflow uses the same source payload and Python entry point as the native installer, with both existing-engine and managed-engine cases. It only copies SDK license files already accepted in the hosted CI image; a new license prompt fails rather than auto-accepting. No private guest files or raw token-bearing logs are uploaded.
+The `Managed Linux host acceptance` workflow uses the same source payload and Python entry point as the native installer, with both existing-engine and managed-engine cases. It only copies SDK license files already accepted in the hosted CI image; a new license prompt fails rather than auto-accepting. No private guest files or raw token-bearing logs are uploaded.
 
-Host architecture differs on Windows and Android; see [integrated-host scope](integrated-hosts.md#platform-scope). Linux process regressions do not establish another platform's initialization, phone/backend bridge or dual-device lifecycle.
+Host architecture differs on Windows and Android; see [integrated-host scope](integrated-hosts.md#platform-scope). Initialization, phone/backend bridges and device lifecycles follow the corresponding host contract.
 
 ---
 
@@ -31,4 +31,4 @@ Host architecture differs on Windows and Android; see [integrated-host scope](in
 
 后台监督器用独占锁和真实进程启动身份保护已有任务；重复启动不替换运行进程，子进程崩溃只恢复所属服务。恢复已运行手机时只观察就绪，不重设网络或桌面。ready 要求真实手机 PNG/root 与电脑 PNG。数据目录与代码分离，停止不删除用户内容。
 
-真实隔离 Linux 进程回归只覆盖相应生命周期合同，不能代替整条安装与恢复验收，也不能证明其他平台的手机桥接和双设备运行能力。各宿主的架构差异见[一体化宿主约定](integrated-hosts.md#platform-scope)。
+安装、恢复、手机桥接和双设备生命周期按对应宿主集成。各宿主的架构差异见[一体化宿主约定](integrated-hosts.md#platform-scope)。

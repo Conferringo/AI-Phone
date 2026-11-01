@@ -22,9 +22,6 @@ def export(root,destination,*,draft=False,git=False):
         for name,content,mode in files:
             target=work/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(content);target.chmod(mode)
             manifest.append({'path':name,'size':len(content),'sha256':hashlib.sha256(content).hexdigest()})
-        agent_guide=root/'docs/public/contributor-agents.md'
-        if agent_guide.is_file():
-            content=agent_guide.read_bytes();(work/'AGENTS.md').write_bytes(content);manifest.append({'path':'AGENTS.md','size':len(content),'sha256':hashlib.sha256(content).hexdigest()})
         policy=json.loads((root/'config/release-policy.json').read_text())
         remote_review=policy.get('source_preview',{}).get('remote_review_authorized') is True
         marker='REVIEW-ONLY.txt' if remote_review else 'LOCAL-REVIEW-ONLY.txt'

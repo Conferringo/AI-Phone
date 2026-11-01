@@ -22,16 +22,12 @@ Windows publication flushes file data before a same-directory [MoveFileExW](http
 
 A symbolic-link substitution is preserved and rejected. An incomplete write cannot replace the previous JSON file. A publication error must be resolved from the resulting state before work is retried; a failed return does not justify discarding credentials or recreating devices.
 
-## Evidence and remaining acceptance
+## Availability
 
-macOS tests exercise actual process contention, release after forced process termination, checkpoint reuse, private modes, interrupted writes and temporary-file cleanup. A labelled disposable PostgreSQL instance passed the role/backup/restore regressions with the shared writer; production data was not a fixture.
-
-Windows-specific tests exercise real ACL creation, rejection of an added world-read grant, native error capture and process locks when run on a Windows worker. Failure diagnostics expose control/ACE metadata without account SIDs or file contents. Cross-platform mock tests cover native buffer limits, errors and handle cleanup. A macOS mock run does not establish Windows native behavior; inspect the matching CI run before recording that acceptance.
-
-These primitives are part of Windows host preparation. They do not establish complete Windows virtualization, guest creation, ordinary-user dependency aliases, long-path handling, audio or upgrade acceptance. Complete installers remain subject to the [distribution gates](../release-status.md).
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
 ## 中文
 
 检查点、凭据和运行选择共用一个私有原子 JSON 写入层；检查点与数据库策略不再直接承担操作系统文件锁与权限接口。macOS/Linux 保持私有模式与目录同步；Windows 使用当前用户和 SYSTEM 的受保护 DACL、非阻塞字节锁及写穿替换。原 JSON 格式、数据位置及凭据保持，失败不触发重建设备或清空用户数据。
 
-本机已实测进程互斥、强制终止后的锁释放、写入失败保留旧文件，以及隔离 PostgreSQL 的权限和备份恢复。Windows 真实 ACL/API 与进程锁必须以匹配 Windows CI 的结果为准；这不代表 Windows 双设备完整宿主已经交付。
+文件权限与锁保证私有状态的发布边界；完整虚拟化、设备创建、媒体与升级另有宿主集成要求。当前范围见[发行状态](../release-status.md)。

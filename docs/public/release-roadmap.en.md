@@ -1,44 +1,45 @@
-# Release gaps and capability roadmap
+# Roadmap
 
-Updated 2026-10-30. Source and technical documentation are public. Complete four-platform distributions remain in development; a connection shell or an online source bootstrap does not meet the product contract.
+AI Phone is developing complete local distributions for macOS Apple Silicon, Windows x64, Linux and root/KVM Android. Current downloads and platform limits are listed in [release status](release-status.md). Planned capabilities below are not included until their corresponding implementation and qualification are complete.
 
-## Remaining gates
+## Complete local installation
 
-Database runtime privileges, backup/restore and action-ledger retention have evidence. Remaining gates are owned by `config/release-policy.json`, with current conclusions in [release status](release-status.md). This is not a completion percentage.
+- Include clean Android and Linux baselines, matching emulators, prebuilt services and their execution environments in each distribution.
+- Create the phone, computer and model configuration from one client, with resumable resource preparation and device readiness checks.
+- Keep device resource presets configurable while preserving existing disks, accounts and conversations. The default workspace contains one phone and one computer.
+- Support interruption recovery, host restart and a complete update path. Non-macOS physical installation remains untested under the current maintainer waiver; compilation, complete package contents and redistribution review remain required.
 
-- **UI/platform acceptance:** first-run configuration and selected window flows have been exercised. The full window/language/input matrix, native audio, mobile keyboard safe areas and visual acceptance remain.
-- **Clean-host installation:** CLI and isolated installation tests exist. The default Android phone is still prepared by deployment tooling; the web Android provisioner targets the additional-instance path. A new configuration guide is not an end-to-end installer. Clean macOS hardware, interrupted installs and Windows/Linux host support need evidence.
-- **Licenses/assets:** original code uses Apache-2.0. The locked native Rust/Android notice-text gaps have been addressed. Full Bun/browser/emulator/guest-image redistribution, corresponding-source and asset review remain. Source scanning does not clear copyright or redistribution requirements.
-- **Complete device bundle:** ship clean Android/Linux baselines, matched emulator and prebuilt services; first setup must not ask users to acquire images or compile a backend. The prebuilt [web component](runtime-bundles.md) is one implemented part.
-- **Long-running recovery:** worker fault injection and restoration have evidence. Host sleep/wake, reboot, extended background operation and complete upgrade rollback remain.
+The installation contract is described in [distribution requirements](preview-release.md), [runtime bundles](runtime-bundles.md) and [self-contained hosts](integrated-hosts.md).
 
-Native CI has compiled macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 targets; current revision results remain separate. Android independent hosting targets root/KVM devices, not ordinary unrooted phones. Non-macOS physical installation tests are waived by the maintainer and remain unverified; complete contents, compilation, audits and redistribution checks are still required.
+## Responsiveness and sustained work
 
-## Delivery order
+Reduce cold-start time, control latency and input-to-response delay. Measure cold and warm operation separately across device capture, transport, model scheduling and playback. New user input should adjust the current task without waiting for a long-running foreground operation or recreating its conversation.
 
-1. Complete a clean macOS ARM64 host path: dependencies, resources, phone/desktop creation, model configuration, first task and file exchange, including interruption recovery.
-2. Prepare the audited source preview with bilingual docs, architecture, privacy/disclaimer, locked dependencies, notices and SHA256 manifests. The reviewed, state-free source is public on master; no user state or private development history is uploaded.
-3. Validate and sign the client candidates, with independent application and user-state directories.
-4. Implement Windows/Linux RuntimeProvider backends and accept each clean-host path before advertising support.
-5. Complete updates: verify versioned artifacts, back up state, drain new actions, migrate, check health, activate or roll back. A direct git pull over the working/user directory is not an upgrade strategy.
+Device actions retain their result identity across cancellation and recovery. Unknown outcomes are observed before retrying. Long-lived background tasks keep their checkpoints while notifications and user instructions are admitted through the same durable conversation path.
 
-## Models
+## Models and connections
 
-Keep model/API settings, external channels and memory within each Agent. Device bindings remain explicit; skills, knowledge and working files are shared. Live validation currently covers the configured DeepSeek service. Protocol compatibility does not guarantee vision or tool competence.
+Keep model/API settings, application connections and memory within each Agent. Device bindings are explicit; skills, knowledge and work files are shared.
 
-Next: model discovery with manual-ID fallback, separate text/vision/tool/context checks tied to configuration revision, then provider-specific contract tests and live regressions. Native Anthropic Messages is implemented alongside Responses and Chat Completions, with 13 presets and isolated protocol tests. New-provider live API qualification, OAuth and additional local vision integrations still need evidence.
+Extend model discovery with manual-ID fallback, configuration-bound capability checks, provider-specific protocol tests, OAuth and local-model integration. Protocol compatibility does not establish every model's visual or tool competence. Supported protocols and providers are listed in [model setup](model-and-channel-setup.md) and [compatibility](compatibility.md).
 
-## Voice and calling — planned, not implemented
+## Copilot voice
 
-The [Copilot implementation contract](copilot-voice.md) defines continuous listening, 1.5-second commits, transcript corrections, steering, spoken feedback and a separate guest-audio path. These capabilities remain planned.
+The [Copilot contract](copilot-voice.md) defines continuous listening, 1.5-second commits, transcript corrections, same-conversation steering and interruptible spoken feedback. The durable input foundation exists; microphone capture, real speech providers and playback interruption remain unshipped.
 
-- **V1:** per-Agent STT/TTS adapters, independent microphone/device/playback tracks, local and cloud providers, transcription fallback and clear recording state.
-- **V2:** endpoint detection, echo handling, interruptible playback, ordered transcription receipts and playback generations. Reuse the durable conversation/steering path; interruptions must not replay device side effects.
-- **V3:** a mock/SIP CallSession and TelephonyProvider. Persist intent before dialing, deduplicate callbacks, query uncertain results, bound DTMF and duration, and reject late audio after hangup.
-- **V4:** user-configured telephone services or physical devices, explicit recipient/cost/recording scope and verified call-state evidence. Regional telecom/recording requirements need review before release.
+1. Add per-Agent streaming STT/TTS adapters with independent microphone, device-audio and playback tracks.
+2. Integrate continuous capture, endpoint detection and ordered transcription with the existing conversation path.
+3. Add echo handling, low-latency spoken feedback and playback generations so new speech stops obsolete output.
+4. Provide an explicit guest-microphone route for voice messages and designated app-call tests.
 
-An emulator dialer, root access or a device identity does not provide a carrier line, phone number or working eSIM. Public provider webhooks conflict with the current LAN-only/no-tunnel deployment boundary; they must not be silently enabled. An explicitly configured internal SIP service is a separate deployment option.
+## Calls and extensions
 
-Suggested responsibilities: DeviceRuntime owns devices, AgentRuntime execution and continuous input, MediaSession audio, TelephonyProvider the line. PostgreSQL owns durable sessions and the action ledger; Redis remains reserved for optional caching. New business APIs start with protobuf, with separate negotiated media transport. Voice must preserve the existing run/device/epoch/action identity boundaries.
+A call capability needs its own session, line provider and verified dial/answer/mute/hangup lifecycle. SIP or user-configured telephone services and physical devices are separate extensions. An emulator, root access, device name or eSIM screen does not provide a carrier line or telephone number. Recipient, cost and recording scope must be explicit before real-call delivery.
 
-Apache-2.0 applies to original code only. Third-party assets retain their licenses. Disclaimers describe actual scope and data flows; they cannot substitute for authorization or abuse controls. See the [source comparison](comparative-research-2026-10-29.md) and [UI audit](release-ux-audit-2026-10-29.md).
+Optional [companion applications](companion-extension.md), additional devices and system templates can extend the core workspace independently. Existing user state must remain compatible across extensions and program updates.
+
+## Updates and distribution
+
+Use signed versioned artifacts, compatibility/capacity checks, consistent backup, explicit migration, health checks and activation/rollback. A direct Git pull over user state is a contributor operation, not an update strategy. See [application and user-data boundaries](distribution.en.md) and [backup/recovery](backup-restore.en.md).
+
+Original code remains Apache-2.0. Third-party software, images and assets retain their own licences and source obligations. Distribution review and physical installation scope are recorded separately from compilation and protocol support.

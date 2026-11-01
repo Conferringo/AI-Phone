@@ -43,16 +43,7 @@ installation result. The Windows independent-host policy remains disabled until
 that integration has its own evidence. Binary redistribution is reviewed through
 the [release requirements](preview-release.md) and [third-party notices](../../THIRD_PARTY_NOTICES.md).
 
-Contributor checks use the project-local Bun and isolated fixtures:
-
-```sh
-./scripts/bootstrap.sh
-PYTHONPATH=scripts python3 -m unittest test_wsl_backend test_wsl_backend_review test_wsl_runtime test_native_services.NativeHostToolsTests
-./scripts/bun test ./apps/device-stream ./scripts/wsl-desktop-qualification.test.ts
-```
-
-Full qualification requires the dedicated workflow and its actual capacity
-budget; these unit checks do not start a personal device or qualify Windows boot.
+Contributor setup and automated checks are described in [Contributing](../../CONTRIBUTING.md).
 
 ## Windows 后端
 

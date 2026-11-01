@@ -21,7 +21,7 @@ See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [a
 
 ## Source and user data
 
-Versioned code is separate from device disks, accounts, conversations, attachments and keys. Source export uses an allowlist with privacy and licence checks. Public contributor instructions come from a dedicated guide. Local environment files, private Skills, screenshots and evidence must stay outside public commits.
+Versioned code is separate from device disks, accounts, conversations, attachments and keys. Source export uses an allowlist with privacy and licence checks. Development and validation requirements are maintained in [Contributing](../../CONTRIBUTING.md). Local environment files, private Skills, screenshots and evidence must stay outside public commits.
 
 ```sh
 python3 scripts/check_source.py
@@ -34,4 +34,4 @@ Export requires a new destination and produces a source manifest and local revie
 
 Source CI checks protobuf, TypeScript, Rust, isolated UI/adapters, archive/installation contracts and a production web build. Prebuilt component verification stages and executes actual packaged files. Disposable PostgreSQL fixtures exercise migrations, role restrictions, backup/restore and worker recovery; restart tests run sequentially. CI does not use real devices, account credentials or paid model calls.
 
-Native CI builds macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 clients on matching workers. A passing client build establishes compilation and inspected contents, not complete two-device hosting. Exact results and engineering scope belong in [review evidence](engineering/index.md); user-facing capability limits belong in [compatibility](compatibility.md).
+Native CI builds macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 clients on matching workers. A passing client build establishes compilation and inspected contents, not complete two-device hosting. Runtime formats and ownership are described in [runtime components](engineering/index.md); current availability is maintained in [release status](release-status.md) and [compatibility](compatibility.md).

@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from source_export import export
+from check_source import check
 
 class SourceExportTests(unittest.TestCase):
     def fixture(self,root):
@@ -20,7 +21,7 @@ class SourceExportTests(unittest.TestCase):
             root=Path(folder)/'source';root.mkdir();self.fixture(root);out=Path(folder)/'review'
             report=export(root,out,draft=True,git=True)
             self.assertFalse(report['remote_created']);self.assertFalse((out/'data').exists());self.assertFalse((out/'.env').exists())
-            self.assertEqual((out/'AGENTS.md').read_text(),'Public instructions');self.assertFalse((out/'scripts/clear-requested-chat.ts').exists());self.assertFalse((out/'scripts/verify-old.ts').exists());self.assertTrue((out/'scripts/runtime.py').exists())
+            self.assertFalse((out/'AGENTS.md').exists());self.assertFalse((out/'scripts/clear-requested-chat.ts').exists());self.assertFalse((out/'scripts/verify-old.ts').exists());self.assertTrue((out/'scripts/runtime.py').exists())
             self.assertEqual(subprocess.check_output(['git','rev-list','--count','HEAD'],cwd=out,text=True).strip(),'1')
             self.assertEqual(subprocess.check_output(['git','remote'],cwd=out,text=True),'')
             self.assertEqual(subprocess.check_output(['git','branch','--show-current'],cwd=out,text=True).strip(),'master')
@@ -55,5 +56,38 @@ class SourceExportTests(unittest.TestCase):
             for content in ['path='+'/Users/'+'privateuser/project/', 'origin=http://'+'192.168.99.123:17860']:
                 (root/'scripts/runtime.py').write_text(content)
                 with self.assertRaisesRegex(ValueError,'Source checks failed'):export(root,Path(folder)/'out')
+
+    def test_development_metadata_is_excluded_while_runtime_skills_remain(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            internal=['apps/web/AGENTS.md','apps/web/agents.md','apps/web/AGENTS.override.md','apps/web/CLAUDE.md','apps/web/.codex/config.toml','apps/web/.agents/private.md']
+            for name in internal:
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Private developer configuration')
+            skill=root/'skills/builtin/phone-use/SKILL.md';skill.parent.mkdir(parents=True);skill.write_text('Runtime phone-use instructions')
+            out=Path(folder)/'review';export(root,out)
+            for name in ['AGENTS.md','docs/public/contributor-agents.md',*internal]:
+                self.assertFalse((out/name).exists(),name)
+            self.assertEqual((out/'skills/builtin/phone-use/SKILL.md').read_text(),skill.read_text())
+            manifest=json.loads((out/'SOURCE-MANIFEST.json').read_text());names={item['path'] for item in manifest['files']}
+            self.assertFalse(names.intersection({'AGENTS.md','docs/public/contributor-agents.md',*internal}))
+            self.assertIn('skills/builtin/phone-use/SKILL.md',names)
+
+    def test_repository_index_rejects_private_metadata_and_preserves_local_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            subprocess.run(['git','init','--initial-branch=master'],cwd=root,check=True,stdout=subprocess.DEVNULL)
+            subprocess.run(['git','add','--','AGENTS.md','scripts/runtime.py'],cwd=root,check=True)
+            with self.assertRaisesRegex(ValueError,'private-development-metadata'):check(root,repository=True)
+            subprocess.run(['git','rm','--cached','--','AGENTS.md'],cwd=root,check=True,stdout=subprocess.DEVNULL)
+            self.assertTrue(check(root,repository=True)['source_scan_passed'])
+            self.assertEqual((root/'AGENTS.md').read_text(),'Private local collaborator instructions')
+            self.assertEqual(subprocess.check_output(['git','ls-files'],cwd=root,text=True).splitlines(),['scripts/runtime.py'])
+    def test_repository_index_rejects_state_outside_the_source_allowlist(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            subprocess.run(['git','init','--initial-branch=master'],cwd=root,check=True,stdout=subprocess.DEVNULL)
+            subprocess.run(['git','add','--','data/private.txt'],cwd=root,check=True)
+            with self.assertRaisesRegex(ValueError,'outside-source-allowlist'):check(root,repository=True)
+            self.assertEqual((root/'data/private.txt').read_text(),'DO_NOT_EXPORT')
 
 if __name__=='__main__':unittest.main()

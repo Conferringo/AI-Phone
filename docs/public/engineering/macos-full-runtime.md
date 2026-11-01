@@ -37,16 +37,12 @@ Factory inputs must satisfy their source pins and redistribution requirements. T
 
 `server_included` describes the inspected service set. `runtime_payload_complete` and `complete_device_bundle` describe the matched host's complete resource inventory. These fields are independent of installation acceptance, signing and binary-publication gates.
 
-## Qualification
+## Availability
 
-The 2026-10-31 local build produced a 2.82 GiB application and a 2.70 GiB disk image. All 1,675 application files were compared with the read-only mounted image. Its source/runtime archive contains 9,557 files; portable installer tools contain 1,660 files.
-
-The mounted distribution supplied Python, web, native services and OCR for an isolated execution check. The operating system denied WAN access, the original checkout and the host SDK; denial probes were checked explicitly. The web page, thirteen script assets, PNG output, native version commands, OCR and JavaScript component identities passed without package installation or compilation. The packaged assistant also applied all thirty migrations through schema version 32 to a disposable PostgreSQL instance; the runtime role was unprivileged and could not perform DDL.
-
-The compiled application opened the workbench against the retained local installation. This verifies the native entry and rendering path. A fresh default-size Android/Linux deployment, installation upgrades, Developer ID signing/notarization and full platform/UI/model/channel acceptance remain separate qualification items. See [release status](../release-status.md).
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
 ## 中文
 
 macOS 发行结构内置客户端、Android 与 Linux 基础、服务程序及运行环境。终端用户无需另行安装编译器、包管理器、Android SDK 或 Docker。首次部署要求 Apple Silicon、macOS 14.4、12 GiB 内存和35 GiB可用空间；持久用户数据与程序版本分离。
 
-本地完整 App 和磁盘映像已编译，并核对映像中全部1,675个文件。系统隔离下，使用包内 Python 实际启动网页、原生服务/OCR并校验JS组件；外网、本机源码与SDK被拒绝访问。随包助手已在临时数据库应用30项迁移（最新版本32），运行角色无DDL权限。全新默认双设备创建、升级、签名及全部平台/模型/渠道/界面验收仍按发行门槛逐项确认。
+组件清单、首次双设备创建、升级与签名分别受发行条件约束。当前安装包供应与各平台可用范围统一见[发行状态](../release-status.md)。

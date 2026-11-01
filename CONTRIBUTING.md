@@ -20,7 +20,7 @@ cargo test --workspace --locked
 
 ## Changes
 
-Follow SOLID at real ownership boundaries: separate domain policy from transport/persistence, give each mutable resource one lifecycle owner, and preserve cancellation, error and unknown-outcome contracts across adapters. Avoid speculative base classes and wrapper layers. Pin behavior before refactoring and reproduce defects before fixing them. See the [SOLID audit and remaining work](docs/public/solid-audit.md); the current repository is not yet a clean-code certification. Do not suppress diagnostics or weaken tests to claim completion.
+Follow SOLID at real ownership boundaries: separate domain policy from transport/persistence, give each mutable resource one lifecycle owner, and preserve cancellation, error and unknown-outcome contracts across adapters. Avoid speculative base classes and wrapper layers. Pin behavior before refactoring and reproduce defects before fixing them. The [architecture](docs/public/architecture.en.md) describes the ownership boundaries. Do not suppress diagnostics or weaken tests to claim completion.
 
 Explain the problem, resulting behavior, tests and remaining limits. Update both language guides and the compatibility matrix when support changes. UI labels belong in the shared locale dictionary. Keep errors visible, drafts persistent and controls keyboard-accessible. Do not add disconnected buttons or duplicate configuration entrances.
 

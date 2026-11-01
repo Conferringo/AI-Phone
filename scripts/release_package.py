@@ -2,7 +2,7 @@
 import hashlib
 import io
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import tarfile
 import os
@@ -14,6 +14,14 @@ OMIT_FILES = {'.DS_Store', 'Thumbs.db', 'desktop.ini', 'cleanup-retired-projects
 OMIT_SUFFIXES = {'.payload', '.pyc', '.log', '.dump', '.apk', '.jks', '.keystore', '.tsbuildinfo', '.qcow2', '.img', '.tar', '.gz', '.tgz', '.zip', '.xz', '.zst', '.sqlite', '.db', '.key'}
 SECRET = re.compile(rb'(?<![A-Za-z0-9_-])(?:sk-[A-Za-z0-9_-]{24,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,})')
 OMIT_TREES = ('apps/android-bridge', 'apps/web/src/app/lab', 'apps/client/src-tauri/gen')
+PRIVATE_METADATA_NAMES = {'agents.md', 'agents.override.md', 'claude.md', 'gemini.md', 'copilot-instructions.md', '.cursorrules', 'contributor-agents.md'}
+PRIVATE_METADATA_PARTS = {'.agents', '.claude', '.codex'}
+
+
+def private_metadata(name):
+    parts = PurePosixPath(name).parts
+    return bool(parts) and (parts[-1].casefold() in PRIVATE_METADATA_NAMES
+                            or any(part.casefold() in PRIVATE_METADATA_PARTS for part in parts))
 
 
 def source_candidates(root):
@@ -26,7 +34,7 @@ def source_candidates(root):
             kept=[]
             for directory in dirs:
                 path=Path(base)/directory;relative=path.relative_to(root).as_posix()
-                if directory in OMIT_PARTS or any(relative==p or relative.startswith(p+'/') for p in OMIT_TREES):continue
+                if directory in OMIT_PARTS or private_metadata(relative) or any(relative==p or relative.startswith(p+'/') for p in OMIT_TREES):continue
                 if path.is_symlink():raise ValueError('Symlink not allowed in release: '+relative)
                 kept.append(directory)
             dirs[:]=kept
@@ -38,6 +46,7 @@ def select_files(root):
     for path in sorted(set(source_candidates(root))):
         rel = path.relative_to(root)
         name = rel.as_posix()
+        if private_metadata(name): continue
         if rel.parts[0]=='scripts' and path.name.startswith('verify-') and path.suffix in ('.ts','.py'): continue
         if any(part in OMIT_PARTS for part in rel.parts) or path.name in OMIT_FILES or path.suffix in OMIT_SUFFIXES: continue
         if path.name.startswith('._'): continue

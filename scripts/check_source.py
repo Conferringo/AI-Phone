@@ -4,12 +4,23 @@ import json
 import hashlib
 from pathlib import Path
 import re
-from release_package import select_files
+import subprocess
+from release_package import private_metadata, select_files
 from native_backports import verified_backports
 
 ROOT=Path(__file__).resolve().parent.parent
 
-def check(root=ROOT,require_license=True):
+def repository_issues(root, names):
+    try:
+        result=subprocess.run(['git','--no-optional-locks','-c','core.fsmonitor=false','-C',str(root),'ls-files','-z'],stdin=subprocess.DEVNULL,capture_output=True,timeout=10,check=True)
+    except (OSError,subprocess.SubprocessError) as error:
+        raise ValueError('Cannot inspect the source repository index') from error
+    allowed=names|{'SOURCE-MANIFEST.json'}
+    return [{'file':name,'rule':'private-development-metadata' if private_metadata(name) else 'outside-source-allowlist'}
+            for name in result.stdout.decode('utf-8').split('\0') if name and name not in allowed]
+
+
+def check(root=ROOT,require_license=True,*,repository=False):
     root=Path(root);files=select_files(root);issues=[]
     verified_backports(root)
     patterns={'developer-home':rb'/Users/[A-Za-z0-9._-]+/','private-lan-origin':rb'https?://(?:172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.)'}
@@ -19,6 +30,7 @@ def check(root=ROOT,require_license=True):
         for label,pattern in patterns.items():
             if re.search(pattern,content):issues.append({'file':name,'rule':label})
     names={name for name,_,_ in files}
+    if repository:issues.extend(repository_issues(root,names))
     for required in ['README.md','README.en.md','SECURITY.md','DISCLAIMER.md','PRIVACY.md','THIRD_PARTY_NOTICES.md','.github/workflows/source.yml']+(['LICENSE'] if require_license else []):
         if required not in names:issues.append({'file':required,'rule':'required-public-file'})
     for name in names:
@@ -42,6 +54,6 @@ def check(root=ROOT,require_license=True):
     return {'files':len(files),'private_state_included':False,'license_present':'LICENSE' in names,'source_scan_passed':True}
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--draft',action='store_true',help='Prepare local review before the project licence is selected');args=parser.parse_args()
-    try:print(json.dumps(check(require_license=not args.draft)))
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--draft',action='store_true',help='Prepare local review before the project licence is selected');parser.add_argument('--repository',action='store_true',help='Require the Git index to contain only public source files');args=parser.parse_args()
+    try:print(json.dumps(check(require_license=not args.draft,repository=args.repository)))
     except (ValueError,OSError) as error:raise SystemExit(str(error))

@@ -63,3 +63,22 @@ desktop.ini
 *.payload
 .coverage*
 coverage.xml
+
+# Local coding-agent instructions and private development context.
+AGENTS.md
+AGENTS.override.md
+CLAUDE.md
+GEMINI.md
+.cursorrules
+.agents/
+.claude/
+.codex/
+/docs/*.md
+/docs/history/
+/docs/design/
+/DESIGN.md
+/apps/android-bridge/
+/apps/web/src/app/lab/
+/scripts/verify-*.ts
+/scripts/verify-*.py
+/scripts/cleanup-retired-projects.py
