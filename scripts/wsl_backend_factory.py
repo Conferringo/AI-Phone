@@ -118,6 +118,9 @@ RUN chmod 755 /usr/local/bin/docker /usr/local/bin/dockerd && \\
     mkdir -p /usr/local/lib/docker/cli-plugins && \\
     ln -s /opt/aiphone/engine/usr/libexec/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
 RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0,"/opt/aiphone/bootstrap");from wsl_engine_inputs import relocate_links;relocate_links("/opt/aiphone/engine")'
+# runc init rebuilds its environment; musl must resolve without wrapper exports.
+RUN test ! -e /etc/ld-musl-x86_64.path && test ! -L /etc/ld-musl-x86_64.path && printf '%s\\n' '/opt/aiphone/engine/lib:/opt/aiphone/engine/usr/lib' > /etc/ld-musl-x86_64.path
+RUN /usr/bin/env -i PATH=/usr/bin:/bin /opt/aiphone/engine/usr/bin/runc --version
 RUN /usr/local/bin/docker --version && /usr/local/bin/docker compose version && /usr/local/bin/dockerd --version
 RUN /opt/aiphone/tools/python/bin/python3 -I -B /opt/aiphone/bootstrap/wsl_backend_entry.py --verify
 ENTRYPOINT ["/opt/aiphone/tools/python/bin/python3", "-I", "-B", "/opt/aiphone/bootstrap/wsl_backend_entry.py"]
