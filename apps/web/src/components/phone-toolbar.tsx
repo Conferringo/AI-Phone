@@ -3,14 +3,14 @@ import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import{useRef,useState}from'react';
 import{ScanLine,LoaderCircle,Volume2,VolumeX,Smartphone}from'lucide-react';
-import{Button}from'./ui/button';import{usePhoneAudio}from'./phone-audio';
+import{Button}from'./ui/button';import type{DeviceAudioControls}from'./device-audio';
 export type RotationMode='automatic'|'portrait'|'landscape';
 export type RotationPolicy={automatic:boolean;rotation:number};
-export function PhoneToolbar({deviceId,rotate,capture,landscape,onInteract,kind="phone"}:{kind?:"phone"|"desktop";deviceId:string;rotate:(mode:RotationMode)=>Promise<void>;capture:()=>Promise<void>;landscape:boolean;onInteract:()=>void}){
+export function PhoneToolbar({audio,rotate,capture,landscape,onInteract,kind="phone"}:{kind?:"phone"|"desktop";audio:DeviceAudioControls;rotate:(mode:RotationMode)=>Promise<void>;capture:()=>Promise<void>;landscape:boolean;onInteract:()=>void}){
  const {t}=useI18n();
 
- const audio=usePhoneAudio(deviceId,kind==="desktop"?`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}&kind=audio`:`/api/phone/media/audio?device=${encodeURIComponent(deviceId)}`),[busy,setBusy]=useState(''),[error,setError]=useState('');
- useWorkbenchNotice(error||audio.error);
+ const [busy,setBusy]=useState(''),[error,setError]=useState('');
+ useWorkbenchNotice(error);
  const pending=useRef(false);
  async function action(name:string,work:()=>Promise<void>){if(pending.current)return;pending.current=true;setBusy(name);setError('');onInteract();try{await work();}catch(issue){setError(issue instanceof Error?issue.message:t("操作失败"));}finally{pending.current=false;setBusy('');}}
  const volume=audio.enabled?Math.round(audio.volume*100):0;

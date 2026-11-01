@@ -5,10 +5,10 @@ import {join,resolve} from 'node:path';
 
 // A separate process confines module mocks; no browser/React-rendering claim is made.
 const sourceRoot=resolve(process.env.AI_PHONE_TEST_SOURCE_ROOT||join(import.meta.dir,'..'));
-const candidateRoot=resolve(import.meta.dir,'..');
+const candidateRoot=resolve(process.env.AI_PHONE_TEST_CANDIDATE_ROOT||join(import.meta.dir,'..'));
 const cases=[
  'slow-history','history-failure','projection-order','binding-dispose',
- 'unknown-post','late-post','projection-callback-failure','invalid-receipt','snapshot-contract',
+ 'window-auto-receipts','window-auto-single','window-auto-missing','window-auto-failure','window-receipts','unknown-post','late-post','projection-callback-failure','invalid-receipt','snapshot-contract',
  'accepted-storage-fault','acceptance-write-reload','projection-cleanup-fault','invalid-status','invalid-media','duplicate-receipt','invalid-user-receipt','history-contract','accepted-failed-fifo','history-proof',
 ];
 test.each(cases)('accepted chat projection: %s',(mode)=>{
@@ -17,6 +17,8 @@ test.each(cases)('accepted chat projection: %s',(mode)=>{
   const env:Record<string,string>={
    AI_PHONE_TEST_SOURCE_ROOT:sourceRoot,AI_PHONE_TEST_CANDIDATE_ROOT:candidateRoot,
    AI_PHONE_TEST_PROTOBUF:Bun.resolveSync('@bufbuild/protobuf',sourceRoot),
+   AI_PHONE_TEST_PROTOCOL:join(candidateRoot,'packages/protocol/src/gen/ai_phone/v1/assistant_pb.ts'),
+   AI_PHONE_TEST_OUTBOX:join(sourceRoot,'apps/web/src/lib/chat-outbox.ts'),
   };
   for(const key of ['AI_PHONE_TEST_HOOK','AI_PHONE_TEST_OUTBOX'])if(process.env[key])env[key]=process.env[key]!;
   for(const key of ['PATH','SYSTEMROOT','WINDIR','TMPDIR','TEMP','TMP'])if(process.env[key])env[key]=process.env[key]!;

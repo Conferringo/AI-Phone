@@ -17,7 +17,7 @@ assert(root&&candidate&&process.env.AI_PHONE_TEST_PROTOBUF);
 const load=(base:string,path:string)=>import(pathToFileURL(join(base,path)).href);
 const protobuf=await import(pathToFileURL(process.env.AI_PHONE_TEST_PROTOBUF!).href);
 mock.module('@bufbuild/protobuf',()=>protobuf);
-const assistant=await load(root,'packages/protocol/src/gen/ai_phone/v1/assistant_pb.ts');
+const assistant=await import(pathToFileURL(process.env.AI_PHONE_TEST_PROTOCOL||join(root,'packages/protocol/src/gen/ai_phone/v1/assistant_pb.ts')).href);
 const system=await load(root,'packages/protocol/src/gen/ai_phone/v1/system_pb.ts');
 mock.module('@ai-phone/protocol/ai_phone/v1/assistant_pb',()=>assistant);
 mock.module('@ai-phone/protocol/ai_phone/v1/system_pb',()=>system);
@@ -98,7 +98,56 @@ const users=()=>snapshot.chat.messages.filter((m:any)=>m.role==='user').map((m:a
 const visibleInputs=()=>{render();return[...users(),...view.entries.filter((item:any)=>!users().includes(item.id)).map((item:any)=>item.id)];};
 const canonical=()=>state({revision:BigInt(ledger.size+2),messages:[snapshot.chat.messages[0],...Array.from(ledger.values(),value=>value.message)]});
 const mode=process.argv[2];
-if(mode==='slow-history'){
+if(['window-auto-receipts','window-auto-single','window-auto-missing','window-auto-failure'].includes(mode)){
+ const count=mode==='window-auto-missing'?70:mode==='window-auto-single'?73:100;
+ const stored=Array.from({length:count},(_,index)=>({...input('recovered-'+index),status:'accepted',error:''}));
+ for(let index=0;index<count;index++){
+  if(mode==='window-auto-missing'&&index<20)continue;
+  const item=stored[index];
+  ledger.set(item.id,{message:create(ChatMessageSchema,{id:'message-'+item.id,requestId:item.id,role:'user',text:item.text,ordinal:BigInt(index+3)})});
+ }
+ disk.set('ai-phone:outbox:phone:conversation',JSON.stringify(stored));mount();
+ assert.equal(histories.length,1,'Restoring accepted inputs must start canonical recovery');
+ if(mode==='window-auto-failure'){
+  history(0,{message:'fixture canonical read unavailable'},503);await flush();render();
+  assert.equal(histories.length,1,'A failed read must not create an automatic retry loop');
+  assert.equal(saved().length,count);assert(view.error);view.retry();await until(()=>histories.length===2);
+ }
+ let index=histories.length-1,rounds=0;
+ while(saved().length&&rounds++<8){
+  const request=histories[index].request;
+  assert.equal(request.limit,40);assert(request.receiptRequestIds.length<=32);
+  const tail=Array.from(ledger.values(),value=>value.message).slice(-40),selected=new Map(tail.map(message=>[message.id,message]));
+  for(const id of request.receiptRequestIds){const item=ledger.get(id);if(item)selected.set(item.message.id,item.message);}
+  const window=protobuf.create(assistant.ChatMessageWindowSchema,{kind:assistant.ChatWindowKind.TAIL,pageMessageIds:tail.map(message=>message.id),nextBeforeMessageId:tail[0]?.id||'',hasOlder:true});
+  history(index,state({messages:[snapshot.chat.messages[0],...selected.values()],revision:BigInt(count+2),messageWindow:window}));await flush();render();
+  if(!saved().length){assert.equal(histories.length,index+1,'Receipt recovery must stop once every accepted input is projected');break;}
+  if(mode==='window-auto-missing'&&request.receiptRequestIds.length===20){
+   assert.equal(histories.length,index+1,'An unchanged complete receipt sweep must stop without a hot loop');break;
+  }
+  assert(histories.length>index+1,'Canonical recovery must automatically continue to the next bounded receipt batch');
+  index=histories.length-1;
+ }
+ assert.equal(saved().length,mode==='window-auto-missing'?20:0,'Only canonically observed receipts may leave the durable accepted queue');
+ assert.equal(sends.length,0,'Restoring accepted receipts must never send the user input again');
+ assert(rounds<8,'Canonical recovery must be finite');unmount();
+}else if(mode==='window-receipts'){
+ mount();callbackFails=true;for(let i=0;i<70;i++)view.submit(input('receipt-'+i));
+ await until(()=>sends.length===70&&histories.length===70);render();assert.equal(view.entries.length,70);
+ let round=0;
+ while(saved().length&&round++<5){
+  const index=histories.length-1,request=histories[index].request;
+  assert.equal(request.limit,40);assert(request.receiptRequestIds.length<=32);assert.equal(request.deviceId,binding.deviceId);
+  const all=Array.from(ledger.values(),value=>value.message),tail=all.slice(-40);
+  const selected=new Map(tail.map(message=>[message.id,message]));
+  for(const id of request.receiptRequestIds){const item=ledger.get(id);if(item)selected.set(item.message.id,item.message);}
+  const window=protobuf.create(assistant.ChatMessageWindowSchema,{kind:assistant.ChatWindowKind.TAIL,pageMessageIds:tail.map(message=>message.id),nextBeforeMessageId:tail[0].id,hasOlder:true});
+  history(index,state({messages:[snapshot.chat.messages[0],...selected.values()],revision:72n,messageWindow:window}));await flush();render();
+  if(saved().length){view.retry();await until(()=>histories.length>index+1);}
+ }
+ assert.equal(saved().length,0,'Accepted receipts outside the latest tail must be recoverable in bounded batches');
+ assert.equal(sends.length,70,'History reconciliation must never re-post an accepted input');unmount();
+}else if(mode==='slow-history'){
  mount();for(const id of ['one','two','three'])view.submit(input(id));
  await until(()=>sends.length===3&&saved().length===0);render();
  assert.deepEqual(users(),['one','two','three']);assert.equal(histories.length,3);assert.equal(view.entries.length,0);

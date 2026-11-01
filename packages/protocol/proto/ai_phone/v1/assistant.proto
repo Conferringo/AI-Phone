@@ -30,7 +30,30 @@ message ChatMessage {
   // Historical operational notices are preserved separately from dialogue.
   string system_notice = 11;
 }
-message ChatHistoryRequest { string conversation_id = 1; string device_id = 2; }
+message ChatHistoryRequest {
+  string conversation_id = 1;
+  string device_id = 2;
+  // Zero retains the existing full snapshot for older clients. Window clients
+  // request 1..80 rows; ordinals locate pages and are never commit cursors.
+  uint32 limit = 3;
+  string before_message_id = 4;
+  repeated string watch_message_ids = 5;
+  repeated string receipt_request_ids = 6;
+}
+enum ChatWindowKind {
+  CHAT_WINDOW_KIND_UNSPECIFIED = 0;
+  CHAT_WINDOW_KIND_TAIL = 1;
+  CHAT_WINDOW_KIND_BEFORE = 2;
+}
+// Present only for a partial snapshot. Messages are authoritative ID upserts;
+// absence from this window never deletes already loaded conversation history.
+message ChatMessageWindow {
+  ChatWindowKind kind = 1;
+  string next_before_message_id = 2;
+  bool has_older = 3;
+  // Pagination describes this base page, excluding watched heads and receipts.
+  repeated string page_message_ids = 4;
+}
 enum RunNoticeKind {
   RUN_NOTICE_KIND_UNSPECIFIED = 0;
   RUN_NOTICE_KIND_SYSTEM_FAILURE = 1;
@@ -48,6 +71,7 @@ message ChatState {
   string device_id = 9;
   uint64 revision = 10;
   RunNoticeKind notice_kind = 11;
+  ChatMessageWindow message_window = 12;
 }
 message ChatSendRequest {
   string conversation_id = 1;

@@ -8,7 +8,7 @@ use std::{future::Future, panic::AssertUnwindSafe, str::FromStr};
 #[path = "model_recovery_tests.rs"]
 mod model_recovery;
 
-async fn database_case<F, Fut>(test: F)
+pub(crate) async fn database_case<F, Fut>(test: F)
 where
     F: FnOnce(Shared) -> Fut,
     Fut: Future<Output = ()>,
@@ -572,7 +572,7 @@ async fn concurrent_supplements_and_retries_keep_the_accepted_order() {
     }).await;
 }
 
-async fn wait_for_blocked_query(app: &App, pattern: &str) {
+pub(crate) async fn wait_for_blocked_query(app: &App, pattern: &str) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             let waiting: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND state='active' AND wait_event_type='Lock' AND query LIKE $1)")

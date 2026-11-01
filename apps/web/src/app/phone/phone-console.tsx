@@ -22,7 +22,6 @@ import {
 } from "@ai-phone/protocol/ai_phone/v1/phone_runtime_pb";
 import {
   RunNoticeKind,
-  ChatHistoryRequestSchema,
   ChatMessageSchema,
   ChatStateSchema,
   ChatRunRequestSchema,
@@ -74,9 +73,12 @@ import {useDesktopExploration,DesktopExploreToggle} from '@/components/desktop-e
 import {DesktopSurface} from '@/components/desktop-surface';
 import { PhoneStreamImage } from "@/components/phone-stream-image";
 import { PhoneToolbar,type RotationMode } from "@/components/phone-toolbar";
+import {useDeviceAudio} from '@/components/device-audio';
 import { clientId } from "@/lib/client-id";
 import {useChatOutbox} from "@/components/use-chat-outbox";
 import {acceptInputReceipt,acceptSnapshot,type AcceptedInput,type ChatSnapshot} from "@/lib/chat-snapshot";
+import {readChatHistory} from "@/lib/chat-history-reader";
+import {useChatHistoryPages} from "@/components/use-chat-history-pages";
 
 type Screen = MessageShape<typeof DeviceObservationSchema>;
 type Chat = MessageShape<typeof ChatStateSchema>;
@@ -164,6 +166,8 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
   const phoneAvailable=selectedDevice.kind==='phone'&&selectedDevice.runtimeState==='managed',desktopAvailable=selectedDevice.kind==='desktop'&&selectedDevice.runtimeState==='managed',runtimeAvailable=phoneAvailable||desktopAvailable;
   const scope={phoneId:deviceId,ownerId:'local-user'};
   const desktopExploration=useDesktopExploration(deviceId,runtimeAvailable&&deviceId!=='phone-local-01');
+  const audio=useDeviceAudio(deviceId,selectedDevice.kind==='desktop'?`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}&kind=audio`:`/api/phone/media/audio?device=${encodeURIComponent(deviceId)}`);
+  useWorkbenchNotice(audio.error);
 
   const [image, setImage] = useState("");
   const [phoneError, setPhoneError] = useState("");
@@ -177,6 +181,8 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
   const wheelAt = useRef(0);
   const [chatSnapshot,setChatSnapshot]=useState<ChatSnapshot>({chat:null,order:0});
   const chat=chatSnapshot.chat;
+  const historyChat=useRef<Chat|null>(null);historyChat.current=chat;
+  const historyWatchOffset=useRef(0);
   const [displayCut,setDisplayCut]=useState<{ids:string[];runId:string;at:number;text:string}|null>(null);
   useEffect(()=>{try{const value=JSON.parse((localStorage.getItem(`ai-phone:chat-display-cut:${deviceId}`)??(deviceId==='phone-local-01'?localStorage.getItem('ai-phone:chat-display-cut'):null))||'null');if(value&&Array.isArray(value.ids)&&value.ids.every((id:unknown)=>typeof id==='string')&&typeof value.at==='number'&&typeof value.runId==='string')setDisplayCut(value);}catch{}},[deviceId]);
   function refreshChatDisplay(){
@@ -192,8 +198,8 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
   const [historyError, setHistoryError] = useState("");
   const historyGeneration=useRef(0);
   const beginHistory=useCallback(()=>++historyGeneration.current,[]);
-  const acceptChat=useCallback((next:Chat,order=++historyGeneration.current)=>{
-    setChatSnapshot(previous=>acceptSnapshot(previous,next,order));
+  const acceptChat=useCallback((next:Chat,order=++historyGeneration.current,beforeMessageId='')=>{
+    setChatSnapshot(previous=>acceptSnapshot(previous,next,order,beforeMessageId));
   },[]);
   const acknowledgeInput=useCallback((receipt:AcceptedInput,order:number)=>{
     setChatSnapshot(previous=>acceptInputReceipt(previous,receipt,order));
@@ -265,38 +271,25 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
       observing.current = false;
     }
   }, [deviceId,phoneAvailable,focused]);
-  const fetchChat = useCallback(async (signal?: AbortSignal) => {
-    if (fetchingChat.current) return;
-    fetchingChat.current = true;
-    const requested = conversation.current, generation=beginHistory();
-    try {
-      const next = await rpc(
-        "assistant",
-        "history",
-        ChatHistoryRequestSchema,
-        create(ChatHistoryRequestSchema, { conversationId: requested,deviceId }),
-        ChatStateSchema,
-        signal,
-      );
-      if (signal?.aborted || requested !== conversation.current) return;
-      conversation.current = next.conversationId;
-      acceptChat(next,generation);
-      setHistoryError("");
-    } catch (e) {
-      if (!signal?.aborted)
-        setHistoryError(e instanceof Error ? e.message : t("读取对话失败"));
-    } finally {
-      fetchingChat.current = false;
-    }
-  }, [deviceId,acceptChat,beginHistory]);
+  const fetchChat=useCallback((signal?:AbortSignal,beforeMessageId='')=>readChatHistory(
+    {conversation,fetching:fetchingChat,latest:historyChat,watchOffset:historyWatchOffset},deviceId,
+    {begin:beginHistory,accept:acceptChat,error:setHistoryError},signal,beforeMessageId,
+  ),[deviceId,acceptChat,beginHistory]);
+  const historyPages=useChatHistoryPages(fetchChat,chatSnapshot);
   useEffect(() => {
-    const abort=new AbortController();let phoneTimer:ReturnType<typeof setTimeout>,chatTimer:ReturnType<typeof setTimeout>;
+    const abort=new AbortController();let phoneTimer:ReturnType<typeof setTimeout>;
     const phone=async()=>{if(focused&&document.visibilityState==="visible")await observe(abort.signal);if(!abort.signal.aborted)phoneTimer=setTimeout(phone,streamHealthy.current?500:250);};
-    const messages=async()=>{if((focused||current)&&document.visibilityState==="visible")await fetchChat(abort.signal);if(!abort.signal.aborted)chatTimer=setTimeout(messages,700);};
-    const visibility=()=>{const shown=document.visibilityState==="visible";setVisible(shown);if(!shown)streamHealthy.current=false;else {void observe(abort.signal);void fetchChat(abort.signal);}};
-    void phone();void messages();document.addEventListener("visibilitychange",visibility);
-    return()=>{abort.abort();clearTimeout(phoneTimer);clearTimeout(chatTimer);document.removeEventListener("visibilitychange",visibility);};
-  },[observe,fetchChat,focused,current]);
+    const visibility=()=>{const shown=document.visibilityState==="visible";setVisible(shown);if(!shown)streamHealthy.current=false;else void observe(abort.signal);};
+    void phone();document.addEventListener("visibilitychange",visibility);
+    return()=>{abort.abort();clearTimeout(phoneTimer);document.removeEventListener("visibilitychange",visibility);};
+  },[observe,focused]);
+  useEffect(() => {
+    const abort=new AbortController();let chatTimer:ReturnType<typeof setTimeout>;
+    const messages=async()=>{if(document.visibilityState==="visible")await fetchChat(abort.signal);if(!abort.signal.aborted)chatTimer=setTimeout(messages,700);};
+    const visibility=()=>{if(document.visibilityState==="visible")void fetchChat(abort.signal);};
+    void messages();document.addEventListener("visibilitychange",visibility);
+    return()=>{abort.abort();clearTimeout(chatTimer);document.removeEventListener("visibilitychange",visibility);};
+  },[fetchChat]);
   useEffect(
     () => () => {
       if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
@@ -451,7 +444,7 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
     <div ref={container} className="device-session" data-landscape={landscape} onPointerDownCapture={()=>{if(focused)onActivate(deviceId);}} onFocusCapture={()=>{if(focused)onActivate(deviceId);}}>
       <div className="workspace-panes">
         <section className="device-pane" onClick={()=>{if(!focused)onSelect();}} data-focused={focused} data-kind={selectedDevice.kind} aria-label={selectedDevice.name} style={{...stageStyle,'--device-aspect':desktopAvailable?1.6:size.width/size.height,gridColumn:screenColumn,gridRow:'1 / -1'} as CSSProperties}>
-          <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} deviceId={deviceId} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/><WindowTrigger label={t("数据线")} open={activeFeature==='cable'} onOpen={()=>openFeature('cable')}><Cable size={17} className={linked?'cable-connected':undefined}/></WindowTrigger></div>}</header>
+          <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} audio={audio} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/><WindowTrigger label={t("数据线")} open={activeFeature==='cable'} onOpen={()=>openFeature('cable')}><Cable size={17} className={linked?'cable-connected':undefined}/></WindowTrigger></div>}</header>
         {!focused&&<button className="device-front" aria-label={`转到${selectedDevice.name}`} onClick={onSelect}/> }
         {desktopAvailable?<DesktopSurface deviceId={deviceId} active={focused}/>:phoneAvailable?<>
           <div className="device-screen" data-scene-device={deviceId} style={{aspectRatio:`${size.width}/${size.height}`,'--device-aspect':size.width/size.height} as CSSProperties}>
@@ -544,12 +537,15 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
               if (e)
                 follow.current =
                   e.scrollHeight - e.scrollTop - e.clientHeight < 80;
+              if(e)historyPages.revalidate(e);
             }}
           >
             <div className="message-list">
+              {chatSnapshot.history?.hasOlder&&<Button className="self-center" variant="ghost" size="sm" type="button" disabled={historyPages.loading} onClick={historyPages.more}>{historyPages.loading&&<LoaderCircle size={14} className="spinning"/>}{t("较早消息")}</Button>}
               {displayedMessages.map((message) => (
                 <article
                   key={message.requestId||message.id}
+                  data-message-id={message.id}
                   className={`message message-${message.role}`}
                   aria-label={message.role === "user" ? t("你") : t("助手")}
                 >

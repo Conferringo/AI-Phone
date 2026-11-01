@@ -11,6 +11,8 @@ AI Phone accepts new input while the Agent is working. An input receipt means th
 5. New assistant fragments get new message IDs. Previous text and tool events retain their original positions. The frontend scopes execution traces by message and ignores older history snapshots after a newer receipt. A confirmed user receipt can appear immediately while history refresh runs independently. If projection fails, accepted input remains visible in the local outbox without being sent again; it does not block later queued input.
 6. Context projection preserves user constraints and tool/result pairing. “Continue” inherits the current task's evidence requirements; an explicit correction takes priority. This is not a claim of unlimited context or permanent recall across unrelated tasks.
 
+Device focus changes presentation, not task ownership. Each mounted device keeps its own conversation projection and enabled audio stream while another device is focused. Closing the application or removing a device has a separate resource lifecycle. The current worker executes tasks serially; keeping a task alive does not imply parallel model/tool execution. Background history reads use [bounded protobuf windows](protocol-boundaries.md), and accepted input receipts outside the current page are reconciled in batches without resending the input.
+
 ## 用户体验
 
 可以连续补充，不必等回复结束。普通回车换行，Command/Ctrl + 回车发送。新草稿不会被上一条请求的回执清空。发送失败时消息仍在本机，点击「重试」继续；刷新后待发送消息使用原标识恢复。已显示的回复、可核验的进展和操作记录保留，不展示或虚构隐藏思维链。
@@ -27,4 +29,4 @@ These are independently implemented behavior contracts based on public documenta
 
 ## Verification scope
 
-See the current batch in `docs/project-tracker.md`. Regression coverage includes concurrent input, repeated receipts, completion races, slow HTTP model interruption, unknown operation results, compaction, reload recovery and message-level rendering. Real DeepSeek latency and physical device actions are not simulated as proof of this test suite.
+Regression coverage includes concurrent input, repeated receipts, completion races, slow HTTP model interruption, unknown operation results, compaction, reload recovery, per-device background projection and message-level rendering. Hook/PCM fixtures use modeled React and Web Audio lifecycles; they do not certify browser speakers or physical devices. Platform acceptance remains listed in [release status](release-status.md).

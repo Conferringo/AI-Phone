@@ -15,7 +15,7 @@ pub(crate) async fn recover_interrupted_runs(db: &PgPool) -> Result<(), sqlx::Er
 
 pub(crate) async fn claim_due_run(app: &App) -> Result<Option<(Uuid, Uuid)>, sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY CASE WHEN origin='user' AND (step=0 OR jsonb_array_length(steering)>0) THEN 0 WHEN origin='notification' THEN 1 WHEN origin='user' THEN 2 ELSE 3 END,COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
+    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY CASE WHEN origin='user' AND (step=0 OR jsonb_array_length(steering)>0) THEN 0 WHEN origin='notification' THEN 1 WHEN origin='user' THEN 2 WHEN origin='device-handoff' THEN 3 ELSE 4 END,COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
     if let Some((id, _)) = row {
         sqlx::query("UPDATE runs SET status='running',heartbeat_at=now(),loop_state=CASE WHEN next_wake_at IS NOT NULL THEN jsonb_set(loop_state,'{wait_completed_at_ms}',to_jsonb(floor(extract(epoch FROM next_wake_at)*1000)::bigint)) ELSE loop_state END,next_wake_at=NULL,error='' WHERE id=$1").bind(id).execute(&mut *tx).await?;
     }
@@ -4411,4 +4411,4 @@ mod process_recovery_tests {
 
 #[cfg(test)]
 #[path = "steering_tests.rs"]
-mod steering_regressions;
+pub(crate) mod steering_regressions;
