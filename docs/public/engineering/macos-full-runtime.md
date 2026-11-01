@@ -31,6 +31,8 @@ python3 scripts/macos_client_factory.py --compiler-sdk "$ANDROID_HOME"
 
 The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all nine runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
 
+The `Native client checks` workflow also provides the manual `complete_macos_factory` mode. Its disposable Apple Silicon runner creates a separate QEMU/TCG ARM engine from the pinned Lima, Alpine and offline engine packages, then invokes the same complete factory. QEMU and its firmware are build-machine tools and are not added to the installed client's VZ runtime. The builder forwards Docker commands only into its fresh engine and stops that engine after assembly or failure. It retains text qualification receipts; binary publication remains a separate resource/source review. This software build route does not establish physical-Mac dual-device startup acceptance.
+
 Use a reviewed source checkout and architecture-matched factory resources. The distribution command is:
 
 ```sh
@@ -47,6 +49,8 @@ Factory inputs must satisfy their source pins and redistribution requirements. T
 `server_included` describes the inspected service set. `runtime_payload_complete` and `complete_device_bundle` describe the matched host's complete resource inventory. These fields are independent of installation acceptance, signing and binary-publication gates.
 
 ## Availability
+
+The hosted Mac factory cross-compiles the desktop bridge to a static Linux ARM executable on the build host. Its dedicated image context binds the binary digest to the guest sources and Cargo lock; the desktop image also runs a read-only version probe. Other image builds retain their native Linux compilation path. The application carries the resulting guest runtime and does not need an end-user compiler.
 
 Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 

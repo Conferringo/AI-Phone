@@ -14,6 +14,7 @@ import tarfile
 from artifact_io import digest
 from host_platform import host_key
 from linux_client_factory import fetch,run,check_docker,prepare_tools,prepare_apps,prepare_images,run_checks
+from macos_guest_runtime import build as build_guest
 
 
 def compiler_environment(sdk):
@@ -71,6 +72,14 @@ def checked_delivery(components):
     return value
 
 
+def prepare_guest(root,cache):
+    provided=os.environ.get('AI_PHONE_FACTORY_GUEST_RUNTIME')
+    if provided:
+        from macos_guest_runtime import verify
+        guest=Path(provided);verify(root,guest,'arm64');return guest
+    return build_guest(root,cache/'guest-native')
+
+
 def compile_client(root,android,images,tools,env):
     run_checks(root,env=env)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','macos',
@@ -101,11 +110,12 @@ def build(root,compiler_sdk):
     check(root);cache=root/'.tools/complete-macos'
     if cache.exists():raise ValueError('Use a fresh factory checkout; existing outputs were preserved')
     cache.mkdir(parents=True);source=digest(root/'SOURCE-MANIFEST.json')
+    guest=prepare_guest(root,cache)
     tools,_python,tool_result=prepare_tools(root,cache)
     host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,env)
-    images,image_result=prepare_images(root,cache,source,architecture='arm64')
+    images,image_result=prepare_images(root,cache,source,architecture='arm64',guest_runtime=guest)
     artifact=compile_client(root,android,images,tools,env)
     if digest(root/'SOURCE-MANIFEST.json')!=source:raise ValueError('Factory source identity changed during assembly')
     result={'format':1,'host':'macos-arm64','source_commit':os.environ.get('GITHUB_SHA',''),
