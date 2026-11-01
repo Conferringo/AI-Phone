@@ -49,7 +49,7 @@ jobs:
       - name: Native guest interaction
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y xvfb openbox xterm x11-utils xdotool xclip ffmpeg python3-pil
+          sudo apt-get install --no-install-recommends -y xvfb openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
           test ! -e /home/ai
           test ! -e /tmp/.X0-lock
           git fetch --no-tags --depth=1 origin cccef152c552a860710b4c76bdc9262e01728eab

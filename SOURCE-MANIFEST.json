@@ -74,13 +74,13 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 2651,
-      "sha256": "a8f2983056515b003ac208ef5096813211ad933ac897dbf2da8f50fb4c280508"
+      "size": 3772,
+      "sha256": "2cff162b6cdef36b6677e101b2736d47a7e0d4204facaeef76c0478df12dc12c"
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 6880,
-      "sha256": "a27c02a0a1f1d9f8a552fa9f7533b843fb9b496cb827af11e2a4a6d42583dc42"
+      "size": 6898,
+      "sha256": "2918a285392d306d137d0277a58e57891c25ada576c70584faf078551d71770f"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",

@@ -25,9 +25,22 @@ jobs:
           persist-credentials: false
       - name: Ephemeral runner system dependencies
         run: |
-          # Reclaim only unused preinstalled tools on this disposable hosted runner.
-          # SDK license files remain available for the worker's explicit license check.
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          # This job installs its own SDK and toolchain; retain the runner's reviewed licences.
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
+          test "$ANDROID_HOME" = /usr/local/lib/android/sdk
+          test -d "$ANDROID_HOME/licenses"
+          (cd "$ANDROID_HOME/licenses" && find . -type f -print0 | sort -z | xargs -0 sha256sum) > "$RUNNER_TEMP/aiphone-sdk-licences.sha256"
+          test -s "$RUNNER_TEMP/aiphone-sdk-licences.sha256"
+          for folder in /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/local/lib/android/sdk; do
+            if [ -d "$folder" ]; then sudo du -sk "$folder"; fi
+          done
+          sudo rm -rf -- /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/powershell \
+            /usr/local/lib/android/sdk/ndk /usr/local/lib/android/sdk/build-tools /usr/local/lib/android/sdk/platforms \
+            /usr/local/lib/android/sdk/system-images /usr/local/lib/android/sdk/emulator /usr/local/lib/android/sdk/platform-tools \
+            /usr/local/lib/android/sdk/cmdline-tools /usr/local/lib/android/sdk/sources /usr/local/lib/android/sdk/extras
+          (cd "$ANDROID_HOME/licenses" && sha256sum --check "$RUNNER_TEMP/aiphone-sdk-licences.sha256")
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip openssh-client qemu-system-x86 qemu-utils ovmf virtiofsd tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim python3-pil libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl
           test -c /dev/kvm
