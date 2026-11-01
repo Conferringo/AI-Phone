@@ -26,12 +26,16 @@ jobs:
       - name: Disposable Linux build prerequisites
         run: |
           set -euo pipefail
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          # This backend-only job uses fixture phone protocols and does not run
+          # Android SDK tools. Keep assembly space by removing that unused SDK
+          # from this disposable runner, never from an end user's machine.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+          df -h .
       - name: Owned disposable image store
         uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
         with:

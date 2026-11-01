@@ -94,8 +94,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2561,
-      "sha256": "00b8a8168f36ae72044bbb18011f63f02610116c27a7c8301a449c49921d4d25"
+      "size": 2809,
+      "sha256": "22a28028061037d3be8a01b67f706bed5bd444d636778c2395eb5eb1e66d4583"
     },
     {
       "path": ".gitignore",
