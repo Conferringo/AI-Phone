@@ -2584,13 +2584,13 @@
     },
     {
       "path": "crates/assistant/src/skill_persistence_tests.rs",
-      "size": 12446,
-      "sha256": "12ffdc9b528a7abab3efd79e635a8668aae14c58cf5e7cbcf37ad96f2b73a788"
+      "size": 18793,
+      "sha256": "2d4523d97d00b218c86eedc9981d84bf62b9b3b840de71ace7c8d4ef559a02bf"
     },
     {
       "path": "crates/assistant/src/skill_resources.rs",
-      "size": 5671,
-      "sha256": "d44ff30e60fb0b690dbb49f083e1a6a9ac5b84aa0b409bccfe1c0a470938f43c"
+      "size": 6252,
+      "sha256": "12a05d214a017e6384477a33769f11c19c0222a1252d8601102a11f1831333a7"
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
@@ -2839,13 +2839,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 3084,
-      "sha256": "ff0146e4b001fcb17b5ac63f63e823d71c82f854b017a40b51d97bd5a7d68a0b"
+      "size": 3552,
+      "sha256": "119641787f5ef3c93c6143cce43cb97c279c8e73192a8b597b030b2a63665f9c"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 3110,
-      "sha256": "de33793ac1356b7b8edbf7a9addadde9c7327ae018fc68800a4ea6e5fb9c8c52"
+      "size": 3502,
+      "sha256": "eb8a504504d0bd60c494a3e6e682aa39151f912c17229e18f9aaddf769bcb757"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
