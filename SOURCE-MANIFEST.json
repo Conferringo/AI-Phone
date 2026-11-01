@@ -4529,8 +4529,8 @@
     },
     {
       "path": "scripts/linux_services.py",
-      "size": 5753,
-      "sha256": "f209f14fc635e9bcf2c12bf92774b1259297dffbf3eef7950e364f06af3923a4"
+      "size": 8046,
+      "sha256": "5d0f2f22e12bedd27624e49951ac4c9929035aa39287899966095cac1d33ccab"
     },
     {
       "path": "scripts/locale.test.ts",
@@ -5211,6 +5211,11 @@
       "path": "skills/builtin/wechat/SKILL.md",
       "size": 9430,
       "sha256": "e13b27c0a17147830d12c729a8b9fe0938bc5b22dfa45035b4590ff8d82abf28"
+    },
+    {
+      "path": "scripts/test_linux_resume_spec.py",
+      "size": 11725,
+      "sha256": "64e51a493ac54f601cb57e96575883e5439a9ed4fc37cc4983efdf3601cb9ea2"
     }
   ]
 }

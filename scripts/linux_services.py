@@ -13,6 +13,10 @@ import threading
 import time
 from database import atomic_json
 
+_SPEC_SERVICES = ('emulator', 'runner', 'media', 'assistant', 'channels', 'web', 'lan')
+_SPEC_ENV_FIELDS = ('PATH', 'JAVA_HOME', 'AI_PHONE_JAVA_HOME', 'AI_PHONE_SDK_ROOT',
+                    'AI_PHONE_ADB', 'AI_PHONE_PROJECT_ROOT', 'AI_PHONE_DATA_ROOT')
+
 
 def folder_for(root, name):
     if not re.fullmatch(r'[a-z][a-z0-9-]{0,39}',name):raise ValueError('Invalid service name')
@@ -57,6 +61,51 @@ def unit_state(root, name):
     except (OSError,ValueError):return None
 
 
+def spec_shape(value):
+    return (isinstance(value, dict) and set(value) == {'command', 'environment'}
+            and isinstance(value['command'], list) and isinstance(value['environment'], dict))
+
+
+def verified_spec(folder, name, receipt):
+    value = read_receipt(folder, name + '.spec')
+    if not spec_shape(value):
+        return None
+    if not all(isinstance(part, str) for part in value['command']):
+        return None
+    if not all(isinstance(text, str) for text in value['environment'].values()):
+        return None
+    digest = hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+    return value if digest == receipt.get('spec_sha256') else None
+
+
+def spec_conflict_summary(folder, name, receipt, requested):
+    summary = {'format': 1, 'service': name if name in _SPEC_SERVICES else 'other',
+               'evidence': 'unverified_spec'}
+    try:
+        previous = verified_spec(folder, name, receipt)
+    except (OSError, ValueError, TypeError):
+        return summary
+    if previous is None:
+        return summary
+    before, after = previous['environment'], requested['environment']
+    missing = object()
+    changed = {key for key in before.keys() | after.keys()
+               if before.get(key, missing) != after.get(key, missing)}
+    summary.update(evidence='verified_spec', command_changed=previous['command'] != requested['command'],
+                   environment_fields=[key for key in _SPEC_ENV_FIELDS if key in changed],
+                   other_environment_changes=len(changed.difference(_SPEC_ENV_FIELDS)))
+    return summary
+
+
+def report_spec_conflict(folder, name, receipt, requested):
+    try:
+        summary = spec_conflict_summary(folder, name, receipt, requested)
+        print('AI_PHONE_SERVICE_SPEC ' + json.dumps(summary, sort_keys=True), file=sys.stderr, flush=True)
+    except Exception:
+        # Evidence is best effort; the original mismatch still refuses this resume.
+        return
+
+
 def start_unit(root, name, command, environment):
     root=Path(root).resolve();folder=folder_for(root,name)
     folder.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -69,7 +118,9 @@ def start_unit(root, name, command, environment):
             deadline=time.monotonic()+5
             while not (old:=unit_state(root,name)) and time.monotonic()<deadline:time.sleep(.05)
             if not old:raise ValueError('Service ownership is unknown; no process was changed')
-            if old.get('spec_sha256')!=digest:raise ValueError('A running task has a different service configuration; stop the owned installation before upgrading')
+            if old.get('spec_sha256')!=digest:
+                report_spec_conflict(folder, name, old, spec)
+                raise ValueError('A running task has a different service configuration; stop the owned installation before upgrading')
             return False
         atomic_json(folder/(name+'.spec.json'),spec)
         log=os.open(folder/(name+'.log'),os.O_WRONLY|os.O_CREAT|os.O_APPEND,0o600)
