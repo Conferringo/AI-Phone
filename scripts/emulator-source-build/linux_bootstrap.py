@@ -319,6 +319,54 @@ def built_receipt(root):
     return {"artifact_bytes": artifact["bytes"], "artifact_sha256": artifact["sha256"]}
 
 
+def log_diagnostics(path, checkout):
+    result = {"recipe_frames": [], "signals": []}
+    try:
+        with path.open("rb") as source:
+            source.seek(max(0, path.stat().st_size - 65536))
+            text = source.read(65536).decode("utf-8", errors="replace")
+    except OSError:
+        return result
+    exceptions = re.findall(r"^(ModuleNotFoundError|ImportError|FileNotFoundError|PermissionError|TypeError|AttributeError|SyntaxError|ValueError|RuntimeError|AssertionError|CalledProcessError):", text, re.MULTILINE)
+    if exceptions:
+        result["exception"] = exceptions[-1]
+    for name in producer.RECIPE_BLOBS:
+        expression = r'File "' + re.escape(str(checkout / "external/qemu" / name)) + r'", line ([0-9]{1,7}),'
+        lines = re.findall(expression, text)
+        if lines:
+            result["recipe_frames"].append({"file": name, "line": int(lines[-1])})
+    signals = {"argument_error": "error: unrecognized arguments:", "cmake_error": "CMake Error",
+               "ninja_error": "ninja: build stopped:", "missing_file": "No such file or directory",
+               "disk_full": "No space left on device"}
+    result["signals"] = [name for name, marker in signals.items() if marker in text]
+    return result
+
+
+def producer_diagnostics(root):
+    try:
+        path = root / "build/build-result.json"
+        if path.stat().st_size > 1024**2:
+            return {"producer_status": "invalid"}
+        value = json.loads(path.read_bytes())
+    except (OSError, ValueError):
+        return {"producer_status": "unavailable"}
+    identity = {"source_lock_sha256": producer.LOCK_SHA256, "build_id": producer.BUILD_ID, "target": "linux_x86_64"}
+    if not isinstance(value, dict) or any(value.get(key) != expected for key, expected in identity.items()):
+        return {"producer_status": "invalid"}
+    status = value.get("build_status")
+    result = {"producer_status": status if status in ("failed", "unknown", "built") else "invalid"}
+    code = value.get("returncode")
+    if status == "failed" and type(code) is int and -128 <= code <= 255:
+        result["upstream_returncode"] = code
+    return result
+
+
+def build_diagnostics(root):
+    return {**producer_diagnostics(root),
+            "upstream": log_diagnostics(root / "build/build.log", root / "checkout"),
+            "producer": log_diagnostics(root / "private-build.log", root / "checkout")}
+
+
 def publish_receipt(root, value):
     temporary = root / "public-receipt.next"
     with temporary.open("x", encoding="utf-8") as output:
@@ -368,6 +416,8 @@ def controlled_build(root):
         receipt.update(stage="complete", status="built")
     except BuildFailure as error:
         receipt.update(status="failed", reason=str(error))
+        if receipt["stage"] == "source_build":
+            receipt["build_diagnostics"] = build_diagnostics(root)
         raise
     except BuildInterrupted as error:
         reason = str(error) if str(error) in {"disk_floor", "command_timeout"} else "interrupted_or_unknown"

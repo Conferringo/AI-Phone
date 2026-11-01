@@ -326,6 +326,107 @@ class LifecycleTests(OwnedFixture):
     def public_receipt(self):
         return json.loads((self.root / "public-receipt.json").read_text(encoding="utf-8"))
 
+    def test_failed_upstream_keeps_fixed_diagnostics_without_log_contents(self):
+        calls = []
+
+        def run(command, arguments, cwd, **kwargs):
+            calls.append(arguments)
+            if "--build" not in arguments:
+                return ""
+            build = self.root / "build"
+            build.mkdir()
+            result = {"build_status": "failed", "returncode": 2,
+                      "source_lock_sha256": bootstrap.producer.LOCK_SHA256,
+                      "build_id": bootstrap.producer.BUILD_ID, "target": "linux_x86_64",
+                      "api_key": "private-key-sentinel"}
+            (build / "build-result.json").write_text(json.dumps(result))
+            recipe = self.root / "checkout/external/qemu/android/build/python/cmake.py"
+            (build / "build.log").write_text(
+                'private-key-sentinel\n  File "' + str(recipe) + '", line 91, in main\n'
+                "ModuleNotFoundError: No module named 'private-key-sentinel'\n")
+            raise bootstrap.BuildFailure("command_failed")
+
+        with patch.object(bootstrap.SourceCommand, "run", autospec=True, side_effect=run):
+            with self.assertRaisesRegex(bootstrap.BuildFailure, "command_failed"):
+                bootstrap.controlled_build(self.root)
+        receipt = self.public_receipt()
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(receipt["status"], "failed")
+        self.assertEqual(receipt["build_diagnostics"], {
+            "producer_status": "failed", "upstream_returncode": 2,
+            "upstream": {"exception": "ModuleNotFoundError", "recipe_frames": [
+                {"file": "android/build/python/cmake.py", "line": 91}], "signals": []},
+            "producer": {"recipe_frames": [], "signals": []}})
+        self.assertNotIn("private-", json.dumps(receipt))
+        self.assertNotIn(str(self.root), json.dumps(receipt))
+
+    def test_invalid_or_absent_producer_result_does_not_mask_original_failure(self):
+        for value in (None, "broken-json", json.dumps({"build_status": "failed", "returncode": True}),
+                      json.dumps({"source_lock_sha256": "0" * 64, "returncode": "private-key-sentinel"})):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                build = root / "build"
+                build.mkdir()
+                if value is not None:
+                    (build / "build-result.json").write_text(value)
+                result = bootstrap.build_diagnostics(root)
+                self.assertNotIn("upstream_returncode", result)
+                self.assertNotIn("private-", json.dumps(result))
+
+    def test_diagnostic_tail_is_bounded_and_ignores_unpinned_traceback_frames(self):
+        log = self.root / "log"
+        recipe = self.root / "checkout/external/qemu/android/build/python/cmake.py"
+        log.write_text('ModuleNotFoundError: private-head\n' + 'x' * 70000 + '\n'
+                       '  File "/private-key-sentinel.py", line 99, in private\n'
+                       '  File "' + str(recipe) + '", line 12, in main\n'
+                       'CMake Error: private-tail\nNo space left on device\n')
+        result = bootstrap.log_diagnostics(log, self.root / "checkout")
+        self.assertEqual(result, {"recipe_frames": [{"file": "android/build/python/cmake.py", "line": 12}],
+                                  "signals": ["cmake_error", "disk_full"]})
+        self.assertNotIn("private-", json.dumps(result))
+
+    def test_short_log_keeps_its_first_byte_and_latest_pinned_error_location(self):
+        log = self.root / "short.log"
+        recipe = self.root / "checkout/external/qemu/android/build/python/cmake.py"
+        log.write_text('CMake Error: private-message\nModuleNotFoundError: private-first\n'
+                       '  File "' + str(recipe) + '", line 11, in main\n'
+                       '  File "' + str(recipe) + '", line 82, in main\n'
+                       'FileNotFoundError: private-last\n')
+        self.assertEqual(bootstrap.log_diagnostics(log, self.root / "checkout"), {
+            "exception": "FileNotFoundError", "recipe_frames": [{"file": "android/build/python/cmake.py", "line": 82}],
+            "signals": ["cmake_error"]})
+
+    def test_producer_identity_and_numeric_exit_contract(self):
+        build = self.root / "build"
+        build.mkdir()
+        path = build / "build-result.json"
+        identity = {"source_lock_sha256": bootstrap.producer.LOCK_SHA256,
+                    "build_id": bootstrap.producer.BUILD_ID, "target": "linux_x86_64"}
+        for status, code, expected in [("failed", -128, -128), ("failed", 255, 255), ("failed", True, None),
+                                      ("failed", "private-key-sentinel", None), ("failed", -129, None),
+                                      ("failed", 256, None), ("unknown", 2, None)]:
+            with self.subTest(status=status, code=code):
+                path.write_text(json.dumps({**identity, "build_status": status, "returncode": code}))
+                result = bootstrap.producer_diagnostics(self.root)
+                self.assertEqual(result["producer_status"], status)
+                self.assertEqual(result.get("upstream_returncode"), expected)
+        for value in ([], {**identity, "target": "private-key-sentinel"}):
+            path.write_text(json.dumps(value))
+            self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "invalid"})
+
+    def test_receipt_byte_budget_accepts_the_limit_and_rejects_larger_input(self):
+        build = self.root / "build"
+        build.mkdir()
+        path = build / "build-result.json"
+        value = {"source_lock_sha256": bootstrap.producer.LOCK_SHA256,
+                 "build_id": bootstrap.producer.BUILD_ID, "target": "linux_x86_64", "build_status": "unknown"}
+        text = json.dumps(value)
+        path.write_text(text + ' ' * (1024**2 - len(text)))
+        self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "unknown"})
+        with path.open('a') as output:
+            output.write(' ')
+        self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "invalid"})
+
     def test_plan_then_single_build_keep_only_sanitized_receipt(self):
         calls = []
 
