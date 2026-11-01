@@ -81,3 +81,7 @@ The bundled JavaScript service component retains locked production package files
 ## Guest Clash application resources
 
 The guest application component uses the official Clash Meta for Android v2.11.36 ARM64 and x86_64 APKs from MetaCubeX/ClashMetaForAndroid, commit `043a6072225405b285a73e3d7b7e53431ccfc04c`. Its upstream GPL-3.0 text is preserved in [the vendor license](docs/public/vendor/clash-meta-license.txt); original third-party terms apply separately from AI Phone's Apache-2.0 source license. Pinned artifacts, maintainer verification and the pending corresponding-source/transitive review are described in [guest application resources](docs/public/engineering/guest-apps.md). The APKs are not part of a source export; binary promotion remains gated on complete distribution review.
+
+## Emulator source-producer test inputs
+
+Two small verbatim AOSP Emulator inputs at commit `d1bfd6eb0ea9f697dc4cc1d258887c8b4220b155` are included for producer contract tests. The Android Open Source Project copyright and Apache-2.0 header in `toolchains.py` are preserved. Exact source URLs, Git blob identities and SHA-256 digests are recorded in [fixture provenance](scripts/emulator-source-build/fixtures/provenance.json). This attribution does not qualify any SDK binary or dependency for redistribution.
