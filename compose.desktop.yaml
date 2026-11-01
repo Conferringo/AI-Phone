@@ -4,7 +4,8 @@ services:
     image: ${AI_PHONE_DESKTOP_IMAGE:-ai-phone-desktop:20261028}
     pull_policy: ${AI_PHONE_IMAGE_PULL_POLICY:-missing}
     build:
-      context: ./infra/desktop
+      context: .
+      dockerfile: infra/desktop/Dockerfile
       additional_contexts:
         clash_apps: ./.tools/clash-apps/${AI_PHONE_CLASH_DESKTOP_DIR:-linux}
       args:

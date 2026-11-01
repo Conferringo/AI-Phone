@@ -131,6 +131,28 @@ def require_ci_primary_group():
         raise ValueError('CI deployment requires KVM group access')
 
 
+def verify_native_media(staged, base_env):
+    from runtime_config import runtime_env
+    from client_host import verify_container_ownership
+    env = {**base_env, **runtime_env(staged)}
+
+    def query(argv, **options):
+        return subprocess.run(argv, cwd=staged, env=env, timeout=30, **options)
+
+    containers = verify_container_ownership(staged, query=query)
+    desktop = containers.get('ai-phone-desktop')
+    if desktop is None:
+        raise ValueError('The owned desktop image is unavailable for media qualification')
+    image = query(['docker', 'container', 'inspect', '--format', '{{.Image}}', desktop['id']],
+                  capture_output=True, text=True, check=True).stdout.strip()
+    if re.fullmatch('sha256:[0-9a-f]{64}', image) is None:
+        raise ValueError('The owned desktop image identity is invalid')
+    env.update({'AI_PHONE_TEST_DESKTOP_MEDIA': '1', 'AI_PHONE_TEST_DESKTOP_IMAGE': image})
+    env.pop('AI_PHONE_TEST_GUEST_BINARY', None)
+    subprocess.run([sys.executable, '-m', 'unittest', '-v', 'test_desktop_media'],
+                   cwd=staged / 'scripts', env=env, check=True, timeout=120)
+
+
 def main():
     if os.environ.get('GITHUB_ACTIONS')!='true' or os.environ.get('RUNNER_OS')!='Linux':raise ValueError('Fresh-host acceptance is restricted to an ephemeral Linux CI runner')
     require_ci_primary_group()
@@ -162,6 +184,8 @@ def main():
             after={name:unit_state(staged,name)['pid'] for name in before}
             if before!=after:raise ValueError('Resume replaced an already running owned service')
             print('LINUX_HOST_RESUME: all seven supervisor PIDs preserved',flush=True)
+            verify_native_media(staged, env)
+            print('LINUX_HOST_MEDIA: native recovery, PCM tone and capture lease',flush=True)
         finally:
             cleanup_fixture(home,staged,env,identity,failure=sys.exception())
 

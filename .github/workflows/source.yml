@@ -24,7 +24,7 @@ jobs:
           node-version: '22'
       - name: Pinned Rust with formatting
         run: |
-          rustup toolchain install 1.96.0 --profile minimal --component rustfmt
+          rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
       - name: Fixed Bun and locked dependencies
         run: |
@@ -45,6 +45,39 @@ jobs:
         run: |
           cargo fmt --all --check
           cargo test --workspace --locked
+          cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Native guest interaction
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y xvfb openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
+          test ! -e /home/ai
+          test ! -e /tmp/.X0-lock
+          git fetch --no-tags --depth=1 origin cccef152c552a860710b4c76bdc9262e01728eab
+          git show cccef152c552a860710b4c76bdc9262e01728eab:infra/desktop/bridge.py > "$RUNNER_TEMP/legacy-desktop-bridge.py"
+          printf '%s  %s\n' 6d06c4759b7dae2686c4af1f91d09419e9ddc42911409792c87fb2be4eeaddc1 "$RUNNER_TEMP/legacy-desktop-bridge.py" | sha256sum --check --status
+          nonce=$(cat /proc/sys/kernel/random/uuid)
+          sudo install -d -o "$(id -u)" -g "$(id -g)" /home/ai /home/ai/Files
+          printf '%s' "$nonce" > /home/ai/.aiphone-qualification-owner
+          export DISPLAY=:0 LANG=C.UTF-8 AI_PHONE_GUEST_QUALIFICATION="$nonce"
+          Xvfb :0 -screen 0 1280x800x24 -nolisten tcp -ac & xvfb=$!
+          wm=""
+          cleanup() {
+            if [ -n "$wm" ]; then kill "$wm" 2>/dev/null || true; wait "$wm" 2>/dev/null || true; fi
+            kill "$xvfb" 2>/dev/null || true
+            wait "$xvfb" 2>/dev/null || true
+            if [ "$(cat /home/ai/.aiphone-qualification-owner 2>/dev/null)" = "$nonce" ]; then
+              rm -rf /home/ai/Files/qualification-"$nonce"
+              rm /home/ai/.aiphone-qualification-owner
+            fi
+          }
+          trap cleanup EXIT
+          for n in $(seq 1 100); do xdpyinfo >/dev/null 2>&1 && break; sleep .05; done
+          openbox & wm=$!
+          for n in $(seq 1 100); do xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id' && break; sleep .05; done
+          ./scripts/bun .github/scripts/guest-control-qualification.ts \
+            "$PWD/target/debug/desktop-bridge" "$RUNNER_TEMP/legacy-desktop-bridge.py" \
+            "$RUNNER_TEMP/guest-control-qualification.json"
+          cat "$RUNNER_TEMP/guest-control-qualification.json"
       - name: Production web build
         run: |
           python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"

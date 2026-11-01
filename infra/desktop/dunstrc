@@ -12,4 +12,4 @@ timeout = 8
 always_run_script = true
 
 [agent-inbox]
-script = /usr/local/lib/ai-phone/notification-record.py
+script = /usr/local/bin/desktop-notification-record

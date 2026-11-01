@@ -67,7 +67,11 @@ def build_image(root,role,reference,*,workspace=None,clash=None):
     if role=='desktop':
         if not workspace or clash is None:raise ValueError('Desktop factory needs its workspace and Clash application')
         command+=['--build-arg','WORKSPACE_IMAGE='+workspace,'--build-context','clash_apps='+str(Path(clash).resolve())]
-    run([*command,Path(root)/'infra'/role],root)
+    context=Path(root)/'infra'/role
+    if role=='desktop':
+        command+=['--file',str(context/'Dockerfile')]
+        context=Path(root)
+    run([*command,context],root)
     return reference
 
 
