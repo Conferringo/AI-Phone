@@ -1914,13 +1914,13 @@
     },
     {
       "path": "apps/web/src/lib/chat-snapshot.ts",
-      "size": 2291,
-      "sha256": "6917b77f0f305dd80718274bb37173812990b8b099e3696cb4461bed3d69df06"
+      "size": 2439,
+      "sha256": "c33cb863cb4690d852e27c98585cb62627ca91ebdd1c52b3d3d37566707da14f"
     },
     {
       "path": "apps/web/src/lib/chat-window.ts",
-      "size": 4662,
-      "sha256": "2bc2c1a72cbf2c1a1225461c6e8fef500eaf6c6efbe784878d47367752a73d17"
+      "size": 5098,
+      "sha256": "3df0e04d536e1ecf11f80e71812b5f6aa842d722911964be998bd7f2981a7c06"
     },
     {
       "path": "apps/web/src/lib/chat-wire.ts",
@@ -4434,8 +4434,8 @@
     },
     {
       "path": "scripts/chat-window.test.ts",
-      "size": 4832,
-      "sha256": "df469562d56cb32fd33c454044d970f4b726a5a636ad583ba0d8202a947eb2d3"
+      "size": 7340,
+      "sha256": "676e86e18ea8f3a307648a1436f1155b80e7e3e8f547f0af67d8cfacc7db1d2c"
     },
     {
       "path": "scripts/check_native_services.py",

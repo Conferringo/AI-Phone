@@ -52,3 +52,32 @@ test('legacy full snapshots retain their existing replacement and stale protecti
  expect(acceptSnapshot(previous,full([message('older',0n)]),6)).toBe(previous);
  const next=full([message('new',2n)]);expect(acceptSnapshot(previous,next,7).chat).toBe(next);
 });
+
+test.each([ChatWindowKind.TAIL,ChatWindowKind.BEFORE])('a later-issued lower-revision window adds history without rolling back known state (%s)',kind=>{
+ const newest=acceptSnapshot({chat:null,order:0},window([message('current',10n,'done')],ChatWindowKind.TAIL,{revision:20n,runStatus:'succeeded'}),10);
+ const delayed=window([message('older',1n),message('current',10n,'working')],kind,{revision:19n,runStatus:'running'});
+ const next=acceptSnapshot(newest,delayed,11,'current');
+ expect(next.chat.messages.map((m:any)=>m.id)).toEqual(['older','current']);
+ expect(next.chat.messages[1].text).toBe('done');
+ expect(next.chat.runStatus).toBe('succeeded');expect(next.chat.revision).toBe(20n);
+});
+
+test('a newer database revision wins even when its request was issued earlier',()=>{
+ const previous=acceptSnapshot({chat:null,order:0},window([message('current',10n,'working')],ChatWindowKind.TAIL,{revision:19n}),11);
+ const next=acceptSnapshot(previous,window([message('current',10n,'done')],ChatWindowKind.TAIL,{revision:20n,runStatus:'succeeded'}),10);
+ expect(next.chat.messages[0].text).toBe('done');expect(next.chat.runStatus).toBe('succeeded');
+});
+
+test('a row discovered in an old window keeps its own revision rather than the current header revision',()=>{
+ let value=acceptSnapshot({chat:null,order:0},window([message('current',10n,'done')],ChatWindowKind.TAIL,{revision:20n,runStatus:'succeeded'}),10);
+ value=acceptSnapshot(value,window([message('older',1n,'old')],ChatWindowKind.BEFORE,{revision:18n}),30,'current');
+ value=acceptSnapshot(value,window([message('older',1n,'updated')],ChatWindowKind.BEFORE,{revision:20n,runStatus:'succeeded'}),20,'current');
+ expect(value.chat.messages[0].text).toBe('updated');expect(value.chat.runStatus).toBe('succeeded');expect(value.chat.revision).toBe(20n);
+});
+
+test('a lower revision cannot overwrite known assistant state after a newer accepted input',()=>{
+ let value=acceptSnapshot({chat:null,order:0},window([message('current',3n,'done')],ChatWindowKind.TAIL,{runStatus:'succeeded'}),10);
+ value=acceptInputReceipt(value,{conversationId:'conversation',deviceId:'phone',message:create(ChatMessageSchema,{id:'receipt',requestId:'request',role:'user',ordinal:4n,text:'accepted'})},12);
+ value=acceptSnapshot(value,window([message('current',3n,'stale')],ChatWindowKind.TAIL,{revision:3n,runStatus:'running'}),13);
+ expect(value.chat.messages[0].text).toBe('done');expect(value.chat.runStatus).toBe('succeeded');expect(value.chat.revision).toBe(4n);
+});

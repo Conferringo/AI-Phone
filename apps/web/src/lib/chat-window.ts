@@ -1,6 +1,6 @@
 import {toBinary,type MessageShape} from '@bufbuild/protobuf';
 import {ChatMessageSchema,ChatWindowKind,type ChatStateSchema} from '@ai-phone/protocol/ai_phone/v1/assistant_pb';
-import type {ChatSnapshot,HistoryBoundary} from './chat-snapshot';
+import type {ChatSnapshot,HistoryBoundary,SnapshotVersion} from './chat-snapshot';
 type Chat=MessageShape<typeof ChatStateSchema>;
 type Message=Chat['messages'][number];
 export const HISTORY_LIMIT=40;
@@ -25,22 +25,24 @@ function sameMessage(a:Message,b:Message){
 }
 
 function messageVersions(previous:ChatSnapshot){
- if(previous.messageOrders)return new Map(previous.messageOrders);
- return new Map(previous.chat?.messages.map(message=>[message.id,previous.order] as const)??[]);
+ if(previous.messageVersions)return new Map(previous.messageVersions);
+ return new Map(previous.chat?.messages.map(message=>[message.id,{revision:previous.chat!.revision,order:previous.order}] as const)??[]);
 }
 
-function upsert(messages:Map<string,Message>,versions:Map<string,number>,incoming:Message,order:number){
+function isOlder(next:SnapshotVersion,known:SnapshotVersion){return next.revision<known.revision||next.revision===known.revision&&next.order<known.order;}
+
+function upsert(messages:Map<string,Message>,versions:Map<string,SnapshotVersion>,incoming:Message,version:SnapshotVersion,minimumRevision:bigint){
  const known=messages.get(incoming.id);
- if(known&&(versions.get(incoming.id)??0)>order)return;
+ if(known&&(version.revision<minimumRevision||isOlder(version,versions.get(incoming.id)!)))return;
  messages.set(incoming.id,known&&sameMessage(known,incoming)?known:incoming);
- versions.set(incoming.id,order);
+ versions.set(incoming.id,version);
 }
 
 function byOrdinal(a:Message,b:Message){return a.ordinal<b.ordinal?-1:a.ordinal>b.ordinal?1:0;}
 
 function mergeMessages(previous:ChatSnapshot,next:Chat,order:number){
  const messages=new Map(previous.chat?.messages.map(message=>[message.id,message])??[]),versions=messageVersions(previous);
- for(const incoming of next.messages)upsert(messages,versions,incoming,order);
+ for(const incoming of next.messages)upsert(messages,versions,incoming,{revision:next.revision,order},previous.chat?.revision??0n);
  return{messages:[...messages.values()].sort(byOrdinal),versions};
 }
 
@@ -63,7 +65,7 @@ function checkScope(previous:ChatSnapshot,next:Chat){
 }
 
 function nextHeader(previous:ChatSnapshot,next:Chat,order:number){
- return previous.chat&&order<(previous.headerOrder??previous.order)?previous.chat:next;
+ return previous.chat&&isOlder({revision:next.revision,order},{revision:previous.chat.revision,order:previous.headerOrder??previous.order})?previous.chat:next;
 }
 
 function newestRevision(previous:ChatSnapshot,next:Chat){return previous.chat&&previous.chat.revision>next.revision?previous.chat.revision:next.revision;}
@@ -74,5 +76,5 @@ export function mergeMessageWindow(previous:ChatSnapshot,next:Chat,order:number,
  if(kind!==ChatWindowKind.TAIL&&kind!==ChatWindowKind.BEFORE)throw Error('服务返回了无效的消息窗口');
  const merged=mergeMessages(previous,next,order),headerOrder=previous.headerOrder??previous.order;
  const header=nextHeader(previous,next,order),revision=newestRevision(previous,next);
- return{chat:{...header,messages:merged.messages,revision},order:Math.max(previous.order,order),headerOrder:Math.max(headerOrder,order),messageOrders:merged.versions,history:nextBoundary(previous,next,order,beforeMessageId)};
+ return{chat:{...header,messages:merged.messages,revision},order:Math.max(previous.order,order),headerOrder:header===next?order:headerOrder,messageVersions:merged.versions,history:nextBoundary(previous,next,order,beforeMessageId)};
 }
