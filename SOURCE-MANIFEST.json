@@ -2674,8 +2674,8 @@
     },
     {
       "path": "crates/guest-runtime/tests/media_owned_contract.rs",
-      "size": 7184,
-      "sha256": "34c1b45eecc50e69603c552664bc7bf02b8739659d1db8a612bcc22269fd0cac"
+      "size": 7397,
+      "sha256": "96f9865836044fdad77ef3c1a1bf53f0ff73a7e3b7491f994d216202e8b84e9a"
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
