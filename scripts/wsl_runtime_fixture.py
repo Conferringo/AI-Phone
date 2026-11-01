@@ -44,7 +44,7 @@ def checked_inputs(work,source,images):
     source_hash=source_input(source);prepared=stage(images)
     if source_hash!=manifest['provenance']['source_sha256'] or prepared.identity!=manifest['provenance']['images_sha256']:
         raise ValueError('Runtime qualification inputs differ from assembled rootfs')
-    with tarfile.open(source,'r:gz') as archive:_,records,_=archive_records(archive)
+    with tarfile.open(source,'r:*') as archive:_,records,_=archive_records(archive)
     budget=runtime_capacity(work,manifest['inventory']['uncompressed_bytes'],sum(row['size'] for row in records.values()),sum(row['size'] for row in prepared.manifest['images'].values()))
     return {'rootfs_sha256':manifest['rootfs']['sha256'],'source_sha256':source_hash,'images_sha256':prepared.identity,'required_free_bytes':budget}
 

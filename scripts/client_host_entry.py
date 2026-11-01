@@ -237,7 +237,7 @@ def stage_source(archive, installation):
     archive = Path(archive)
     releases, data = persistent_layout(Path(installation))
     destination = releases / file_hash(archive)
-    with tarfile.open(archive, 'r:gz') as source:
+    with tarfile.open(archive, 'r:*') as source:
         manifest, records, runtime = archive_records(source)
         if destination.exists():
             verify_existing(destination, records, data, runtime)

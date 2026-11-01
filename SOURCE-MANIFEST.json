@@ -2919,8 +2919,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 3770,
-      "sha256": "4e5b801c41b70c0861bd1b95a32a2219b55a584973e0b540d80841c967c5d5be"
+      "size": 4079,
+      "sha256": "25ec03172b5517d0b544e93546de0f1a92de05507cd44895f9298c45695a62b0"
     },
     {
       "path": "docs/public/engineering/channel-browser.md",
@@ -2949,8 +2949,8 @@
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
-      "size": 5033,
-      "sha256": "61893e53e2a4b6c929f4751e80e62ab4bb19af2a0ec0a2ceafbf0006a92f43ac"
+      "size": 5684,
+      "sha256": "b433315886e5a763f0966fdd7df3ddb1f9bde2123cefe7aefa0c919fe032260e"
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
@@ -4339,8 +4339,8 @@
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 11877,
-      "sha256": "7eba471382d1a7f3ae534e75f3fcf63ed482efaf28e15bca375f146d5b859ef8"
+      "size": 11886,
+      "sha256": "5463a20accea1ca5073f6564d3af03c9c152727bc2f0cc7d6f42e599eaafd939"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -4428,14 +4428,19 @@
       "sha256": "64afe969deb0661b23269697f95bd6ce427e9c56966678fc5246cdd533d60a5e"
     },
     {
+      "path": "scripts/build_capsule_codec.py",
+      "size": 4221,
+      "sha256": "854789081b18e0d1dd538b2b2a5e433cf086077c69cdb6b74098cbe3f43114ae"
+    },
+    {
       "path": "scripts/build_client.py",
       "size": 11899,
       "sha256": "7ebb6a4e58b550c7abba3e950afa82ce3d4fa1817a2a16a13063066b856d0423"
     },
     {
       "path": "scripts/build_container_images.py",
-      "size": 4920,
-      "sha256": "57e3ee527288e4c10a73c4bae8875272175bb60f08d4b4a1ca1eea87ec65e5eb"
+      "size": 6873,
+      "sha256": "2d4399f3ce1220ab34c7a26e83d6357fb25c7f29c16cd989bec2c33a55e0912f"
     },
     {
       "path": "scripts/build_native_services.py",
@@ -4539,8 +4544,8 @@
     },
     {
       "path": "scripts/client_host_entry.py",
-      "size": 14149,
-      "sha256": "7070ea0cbe268db77e9441897b16c5641ac4996f37cbaa2084165918bcf0a2ad"
+      "size": 14148,
+      "sha256": "ed7b80d62449b61abe1b7f1450daa6b79251aa5fa3b58a951062267a0f55f664"
     },
     {
       "path": "scripts/client_resources.py",
@@ -4554,8 +4559,8 @@
     },
     {
       "path": "scripts/container_images.py",
-      "size": 14051,
-      "sha256": "e3c7835e12064c8c95b5e81895a4bb7edd0d502b8b176a5cd589545fe681613d"
+      "size": 15536,
+      "sha256": "33a7e5582003bce65975c2d0476f7baa81a2cd29f5242588912a0d3abeb80e71"
     },
     {
       "path": "scripts/copilot-input.test.ts",
@@ -4928,6 +4933,11 @@
       "sha256": "627e86142380a6413582f17c1e44bb07716048a2ab781a319b2d4c70e4618388"
     },
     {
+      "path": "scripts/oci_layer_transform.py",
+      "size": 19409,
+      "sha256": "b9c7daa6989713558c67ee834b20b39c23a93b2c3f0b8d1fdf2104fde4deff6c"
+    },
+    {
       "path": "scripts/phone-lab-start.sh",
       "size": 136,
       "sha256": "5e7087841aa715c435121681e685586ca33ebb09c1bd6fd2584a53ac04e0fa22"
@@ -5014,8 +5024,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 8192,
-      "sha256": "632473bb23fc47d7fee5318ad2f2716baeef85330decf1ae9635c3dc7c872944"
+      "size": 8217,
+      "sha256": "8aaf36f8318ff6a0a87c8d8ad80fe1944246311801d24748b246b06ca79368d9"
     },
     {
       "path": "scripts/private_files.py",
@@ -5153,6 +5163,11 @@
       "sha256": "2ce96d99376aa71d96996be3f8eed2dff7e0a74fca40f1d399e78942e8078921"
     },
     {
+      "path": "scripts/test_build_capsule_codec.py",
+      "size": 3460,
+      "sha256": "384bc7524cd83fe2e20a9e10412ec0f0efcf7d712fc57974cd63a8f6abc04692"
+    },
+    {
       "path": "scripts/test_channel_browser.py",
       "size": 5926,
       "sha256": "4d3b757e76e8c275492d2cee81e4be331a30ac7c9281408b3122415a2c8eb7ba"
@@ -5179,8 +5194,8 @@
     },
     {
       "path": "scripts/test_client_payload.py",
-      "size": 6083,
-      "sha256": "b238e471d9db90c93f2bf1583f074baf68592810797cec2fc021a9af92890947"
+      "size": 6081,
+      "sha256": "3ca00af7ed3be92bd98ed8081920fa3947f05d3a4e53199fdc1d5290679d56c1"
     },
     {
       "path": "scripts/test_client_resources.py",
@@ -5233,9 +5248,24 @@
       "sha256": "9c6d9b0c28c0742ed8b2cf8e4ccf94fc4419f03fa59538e7f4aeef2fda9275ea"
     },
     {
+      "path": "scripts/test_docker_export_formats.py",
+      "size": 2883,
+      "sha256": "64afde07166dd153ad1286308fdffd0ecf5d13932cac43de6fa4c7290f653b73"
+    },
+    {
+      "path": "scripts/test_fresh_images_producer.py",
+      "size": 8449,
+      "sha256": "6e67dbff31d7b9ef343a98dff9a7e6353a1c94a4739bc7ca5926ae40582d6a6a"
+    },
+    {
       "path": "scripts/test_host_platform.py",
       "size": 1423,
       "sha256": "402d48d6ce2393c8f9acaa3a26bdc1f32e65300ecff35ad7c5b91c601aa6b6da"
+    },
+    {
+      "path": "scripts/test_image_pipe_cleanup.py",
+      "size": 6013,
+      "sha256": "6e73e26bd3fb520339759342bf6bc105afa1bf01b56de4da83712fa3be3bcaf8"
     },
     {
       "path": "scripts/test_install_language.py",
@@ -5363,6 +5393,16 @@
       "sha256": "e985bc05d933b7f2d762824c4fbb985349dddeb4e34c147915d5054a87a9618f"
     },
     {
+      "path": "scripts/test_oci_layer_transform.py",
+      "size": 26871,
+      "sha256": "286adb1b3d9592f55971d293f602f239a770f7a92a5d549f861dec37dd03e73f"
+    },
+    {
+      "path": "scripts/test_packaging_compression.py",
+      "size": 4066,
+      "sha256": "0a2da6925a2e885da96be2ee06ed43fed65b375cc915299d22226b93b345dd88"
+    },
+    {
       "path": "scripts/test_prebuilt_guest_apps.py",
       "size": 15270,
       "sha256": "f8daf7806fb011e00b9226a8bc0123a4c75ee3240fd675014ef997b417533fcb"
@@ -5374,8 +5414,8 @@
     },
     {
       "path": "scripts/test_prebuilt_phone.py",
-      "size": 17255,
-      "sha256": "682194a4c87ddc31521211eebbc181fa4a64676108afc78df31765c07c3fcf73"
+      "size": 17254,
+      "sha256": "886d252a82c0658224e64545b823bb14a2bc01933e05f1677995830a492fa196"
     },
     {
       "path": "scripts/test_prebuilt_web.py",
@@ -5404,8 +5444,8 @@
     },
     {
       "path": "scripts/test_runtime_integrity.py",
-      "size": 9317,
-      "sha256": "8d3db3d4d824065e9b5062908c8eb052b6feb6bade884d4e429a7e420a54b832"
+      "size": 9316,
+      "sha256": "630a9febbad2f478d0efc1ce00c6ce1bb4384e5d5bd94ceaea517d11bd771ba2"
     },
     {
       "path": "scripts/test_runtime_verification.py",
@@ -5519,8 +5559,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 11460,
-      "sha256": "3a1ee8fce66deee044efb564816a4cfcb573a235244d4f03c7861b9f22f01c5d"
+      "size": 11458,
+      "sha256": "3799c4a3f9ed6c8f90f7970fe6308c33daa47d8fe86b9b8b45b935d69fef8e60"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
@@ -5539,8 +5579,8 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9718,
-      "sha256": "9b3423f3e2437cb5153351a027bc863c2d47b98209cf8594f938e2fe0a988bed"
+      "size": 9717,
+      "sha256": "bf9d73c01363216ee5a86d6982d41690fddda6e15b518296dafba0f5f08ba603"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",

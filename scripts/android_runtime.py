@@ -3,7 +3,7 @@
 Development components remain private until their redistribution/source review is
 complete. This module never packages an AVD or reuses an existing guest data disk.
 """
-import gzip
+import lzma
 import hashlib
 import io
 import json
@@ -159,7 +159,7 @@ def stage(payload, home):
     if is_alias(destination):
         raise ValueError('Android component directory is a symlink')
     if destination.exists():verify_sdk(destination/'sdk');return destination/'sdk'
-    with tarfile.open(payload,'r|gz') as source:
+    with tarfile.open(payload,'r|*') as source:
         entries=iter(source);manifest=manifest_entry(source,entries);records=checked_files(manifest['files'],manifest['abi'])
         if shutil.disk_usage(folder).free<RESERVE+sum(row['size'] for row in records.values()):
             raise ValueError('Insufficient free space for Android runtime and recovery reserve')
@@ -226,7 +226,7 @@ def build(sdk, image_archive, output, expected_image_sha256):
         output.parent.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='.android-build-',dir=output.parent) as temp:
             archive=Path(temp)/'android.payload'
-            with archive.open('wb') as raw,gzip.GzipFile(fileobj=raw,mode='wb',mtime=0,filename='',compresslevel=3) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
+            with archive.open('wb') as raw,lzma.LZMAFile(raw,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=6) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
                 data=json.dumps(manifest,sort_keys=True).encode();header=tarfile.TarInfo(MANIFEST);header.size=len(data);target.addfile(header,io.BytesIO(data))
                 for row in files:
                     header=tarfile.TarInfo(row['path']);header.size=row['size'];header.mode=row['mode']

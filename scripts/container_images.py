@@ -19,10 +19,13 @@ from artifact_io import digest
 
 MANIFEST='IMAGES-MANIFEST.json'
 ARCHIVE='images.tar.gz'
+XZ_ARCHIVE='images.tar.xz'
+ARCHIVE_FORMATS={1:(ARCHIVE,'gzip'),2:(XZ_ARCHIVE,'xz')}
 ROLES=('workspace','desktop','postgres','redis')
 MAX_ARCHIVE=8*1024**3
 MAX_METADATA=8*1024**2
 RESERVE=4*1024**3
+MAX_RAW=MAX_ARCHIVE+64*1024**2
 
 
 def sha(value):
@@ -46,9 +49,12 @@ def checked_image(role,record):
     return record
 
 
-def checked_archive(archive):
-    if not isinstance(archive,dict) or archive.get('path')!=ARCHIVE:
+def checked_archive(archive,version=1):
+    path,codec=ARCHIVE_FORMATS[version]
+    if not isinstance(archive,dict) or archive.get('path')!=path:
         raise ValueError('Invalid image archive')
+    if (version==2 or 'codec' in archive) and archive.get('codec')!=codec:
+        raise ValueError('Invalid image archive codec')
     if type(archive.get('size')) is not int or not 0<archive['size']<=MAX_ARCHIVE:
         raise ValueError('Invalid image archive size')
     sha('sha256:'+str(archive.get('sha256')))
@@ -61,13 +67,17 @@ def checked_images(images):
 
 
 def checked_manifest(value):
-    if not isinstance(value,dict) or type(value.get('format')) is not int or value['format']!=1:
+    if not isinstance(value,dict) or type(value.get('format')) is not int or value['format'] not in ARCHIVE_FORMATS:
         raise ValueError('Invalid image manifest')
     if value.get('os')!='linux' or value.get('architecture') not in ('arm64','amd64') or value.get('redistribution')!='review-pending':
         raise ValueError('Unsupported image runtime')
     checked_images(value.get('images'))
-    checked_archive(value.get('archive'))
+    checked_archive(value.get('archive'),value['format'])
     return value
+
+
+def archive_codec(manifest):
+    return ARCHIVE_FORMATS[manifest['format']][1]
 
 
 @dataclass(frozen=True)
@@ -81,22 +91,27 @@ class PreparedImages:
         with (self.payload.open('rb') if payload_file is None else nullcontext(payload_file)) as file:
             file.seek(0)
             with tarfile.open(fileobj=file,mode='r:') as source:
-                with source.extractfile(ARCHIVE) as body:yield body
+                with source.extractfile(self.manifest['archive']['path']) as body:yield body
+
+
 
 
 def outer_manifest(source):
     entries={}
     for entry in source:
-        if entry.name not in (ARCHIVE,MANIFEST) or entry.name in entries or not entry.isfile():
+        if entry.name not in (ARCHIVE,XZ_ARCHIVE,MANIFEST) or entry.name in entries or not entry.isfile():
             raise ValueError('Invalid image capsule members')
         limit=MAX_METADATA if entry.name==MANIFEST else MAX_ARCHIVE
         if not 0<entry.size<=limit:
             raise ValueError('Image capsule exceeds budget')
         entries[entry.name]=entry
-    if set(entries)!={ARCHIVE,MANIFEST}:
+    if MANIFEST not in entries:
         raise ValueError('Incomplete image capsule')
     value=checked_manifest(json.load(source.extractfile(MANIFEST)))
-    if entries[ARCHIVE].size!=value['archive']['size']:
+    name=value['archive']['path']
+    if set(entries)!={name,MANIFEST}:
+        raise ValueError('Incomplete image capsule')
+    if entries[name].size!=value['archive']['size']:
         raise ValueError('Image archive integrity: size')
     return value
 
@@ -106,10 +121,10 @@ def stage(payload):
     try:
         with tarfile.open(payload,'r:') as source:
             manifest=outer_manifest(source)
-            with source.extractfile(ARCHIVE) as body:actual=hashlib.file_digest(body,'sha256').hexdigest()
+            with source.extractfile(manifest['archive']['path']) as body:actual=hashlib.file_digest(body,'sha256').hexdigest()
             if actual!=manifest['archive']['sha256']:
                 raise ValueError('Image archive integrity: digest')
-            with source.extractfile(ARCHIVE) as body:inspect_archive(body,manifest)
+            with source.extractfile(manifest['archive']['path']) as body:inspect_archive(body,manifest)
     except tarfile.TarError as error:raise ValueError('Invalid image capsule integrity') from error
     return PreparedImages(payload,manifest,digest(payload))
 
@@ -145,9 +160,12 @@ def checked_docker_file(entry, files):
         raise ValueError('Legacy Docker aliases are not accepted')
 
 
-def archive_metadata(source):
+def archive_metadata(source,codec=None):
     objects={};files=set();total=0;metadata=0
-    with tarfile.open(fileobj=source,mode='r|gz') as archive:
+    source.seek(0);magic=source.read(6);source.seek(0)
+    actual_codec='xz' if magic==b'\xfd7zXZ\x00' else 'gzip'
+    if codec is not None and actual_codec!=codec:raise ValueError('Image archive codec differs from its manifest')
+    with tarfile.open(fileobj=source,mode='r|xz' if actual_codec=='xz' else 'r|gz') as archive:
         for position,entry in enumerate(archive):
             if position>=20000:
                 raise ValueError('Docker archive exceeds entry budget')
@@ -210,8 +228,8 @@ def bind_indexes(indexes, objects, found):
             raise ValueError('Unlisted OCI artifact')
 
 
-def inventory(source):
-    objects,files=archive_metadata(source);rows=objects.get('manifest.json')
+def inventory(source,codec=None):
+    objects,files=archive_metadata(source,codec);rows=objects.get('manifest.json')
     if not isinstance(rows,list) or not rows or len(rows)>len(ROLES):
         raise ValueError('Invalid Docker image inventory')
     found={}
@@ -226,7 +244,7 @@ def inventory(source):
 
 
 def inspect_archive(source, manifest):
-    actual=inventory(source);expected=manifest['images']
+    actual=inventory(source,archive_codec(manifest));expected=manifest['images']
     if set(actual)!={row['ref'] for row in expected.values()}:
         raise ValueError('Docker archive references differ from the manifest')
     for record in expected.values():
@@ -244,19 +262,36 @@ def stop_child(child):
         child.kill();child.wait()
 
 
+@contextmanager
+def image_pipe(child,pipe,*,close_first=False):
+    primary=None
+    try:
+        yield pipe
+    except BaseException as error:
+        primary=error
+        raise
+    finally:
+        failures=[]
+        for operation in (('close','stop') if close_first else ('stop','close')):
+            try:
+                if operation=='stop':stop_child(child)
+                elif not pipe.closed:pipe.close()
+            except BaseException as error:
+                failures.append(error)
+        if failures:
+            raise BaseExceptionGroup('Image stream cleanup failed',([primary] if primary is not None else [])+failures)
+
+
 def docker_command(args, source=None):
     if source is None:
         result=subprocess.run(['docker',*args],capture_output=True,text=True,check=False)
         return result.stdout if result.returncode==0 else None
     with tempfile.TemporaryFile() as log:
         child=subprocess.Popen(['docker',*args],stdin=subprocess.PIPE,stdout=log,stderr=log)
-        try:
+        with image_pipe(child,child.stdin):
             shutil.copyfileobj(source,child.stdin,1024**2);child.stdin.close()
             if child.wait()!=0:
                 raise ValueError('Bundled image import did not complete; retry initialization')
-        finally:
-            stop_child(child)
-            if not child.stdin.closed:child.stdin.close()
     return ''
 
 

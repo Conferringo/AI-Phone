@@ -54,7 +54,7 @@ class PhoneAppTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);self.fixture(root);(root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
             prepare(root,with_phone_apps=True)
-            with tarfile.open(root/'apps/client/src-tauri/gen/host/source.payload','r:gz') as archive:
+            with tarfile.open(root/'apps/client/src-tauri/gen/host/source.payload','r:*') as archive:
                 self.assertIn('runtime/phone-apps/notification-access.jar',archive.getnames())
 
     def test_changed_sources_never_package_stale_apks(self):
