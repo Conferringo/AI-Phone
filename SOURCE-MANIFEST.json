@@ -2409,8 +2409,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 64422,
-      "sha256": "d866ac6416221f7dcaa0d0abdaa88afbe0e1c3b20c8a0a9d360a7c53222998de"
+      "size": 67384,
+      "sha256": "f9d9beffab895e2f9905d785fb00ca1fe93f0812dd7c6f4e33c5a21b851d7bd9"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -3739,8 +3739,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 2291,
-      "sha256": "aa55cde324721aba9b563c078530cde0b8fadfc05dc38882a4e71e7529619db2"
+      "size": 2351,
+      "sha256": "12bf608a254c2ba1d1fe5ff90f65881b4277d3d52de01ecaa56b8c4d9303fc26"
     },
     {
       "path": "infra/desktop/audio-service.py",
@@ -3761,6 +3761,16 @@
       "path": "infra/desktop/dunstrc",
       "size": 291,
       "sha256": "28ffc3bc976b6ecf3a4041a0f60d8bc613322e5810d9e35b984f7cac928172c2"
+    },
+    {
+      "path": "infra/desktop/home-identity.py",
+      "size": 5113,
+      "sha256": "c354561ce21d558c9325dd0d3a0b9790d5fbb125e5abfb496d3e2cf538e921ec"
+    },
+    {
+      "path": "infra/desktop/home-initialize.sh",
+      "size": 1725,
+      "sha256": "9f76dca020d94afac8e8c15938c55c2d4d8899cfb30c6dfad5a008c987fb5857"
     },
     {
       "path": "infra/desktop/location.js",
@@ -3794,8 +3804,8 @@
     },
     {
       "path": "infra/desktop/start.sh",
-      "size": 3534,
-      "sha256": "3502ad5d78c8f425f17fbdce5468baea500b0671ef557bf89a0ed45442758192"
+      "size": 2108,
+      "sha256": "6d28d8885149c09abe3fce0b518d065ea257d5efd5d6501494dbb13a02ee5f0d"
     },
     {
       "path": "infra/network/supervisor.sh",
@@ -4876,6 +4886,11 @@
       "path": "scripts/test_dependency_reporting.py",
       "size": 5396,
       "sha256": "ee005502934e2803a447a42ba0294436f53c7d0585af8ac234927ddfe14777e9"
+    },
+    {
+      "path": "scripts/test_desktop_home_identity.py",
+      "size": 13757,
+      "sha256": "d23cfa68ea161f8aa6c5e6ae578c9da90ed83c10530cc3e2fd89f40b2a2bd488"
     },
     {
       "path": "scripts/test_desktop_media.py",

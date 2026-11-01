@@ -191,6 +191,13 @@ async fn observation_directory(root: &std::path::Path) -> Result<PathBuf> {
         .map_err(|e| e.to_string())?;
     Ok(dir)
 }
+async fn guest_home_directory(root: &std::path::Path) -> Result<PathBuf> {
+    let dir = root.join("data/desktop/home");
+    tokio::fs::create_dir_all(&dir)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(dir)
+}
 async fn save_observation(
     app: &App,
     device: &str,
@@ -1303,6 +1310,7 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
     }
     install_step(app, id, "启动桌面").await?;
     observation_directory(&app.root).await?;
+    guest_home_directory(&app.root).await?;
     crate::device_network::prepare(app, &device).await?;
     let mut start = docker();
     start
@@ -1405,13 +1413,79 @@ mod tests {
             let root =
                 std::env::temp_dir().join(format!("ai-phone-desktop-storage-{}", Uuid::new_v4()));
             std::fs::create_dir(&root).unwrap();
-            Self(root)
+            Self(std::fs::canonicalize(root).unwrap())
         }
     }
     impl Drop for ObservationDirectoryFixture {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn guest_home_source_is_created_by_host_through_managed_data_alias() {
+        use std::os::unix::fs::{MetadataExt, symlink};
+        let fixture = ObservationDirectoryFixture::new();
+        let data = fixture.0.join("user/data");
+        let staged = fixture.0.join("releases/fixture");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::create_dir_all(&staged).unwrap();
+        symlink(&data, staged.join("data")).unwrap();
+        let owner = std::fs::metadata(&data).unwrap().uid();
+        let home = guest_home_directory(&staged).await.unwrap();
+        assert_eq!(home, staged.join("data/desktop/home"));
+        assert_eq!(home.canonicalize().unwrap(), data.join("desktop/home"));
+        assert_eq!(std::fs::metadata(&home).unwrap().uid(), owner);
+        assert!(!data.join("desktop/observations").exists());
+    }
+
+    #[tokio::test]
+    async fn guest_home_source_rejects_blocking_files_without_replacing_them() {
+        for relative in ["data", "data/desktop", "data/desktop/home"] {
+            let fixture = ObservationDirectoryFixture::new();
+            let blocked = fixture.0.join(relative);
+            std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();
+            std::fs::write(&blocked, b"preserved source blocker").unwrap();
+            assert!(guest_home_directory(&fixture.0).await.is_err());
+            assert_eq!(std::fs::read(blocked).unwrap(), b"preserved source blocker");
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn guest_home_source_preserves_existing_identity_permissions_and_content() {
+        use std::os::unix::fs::MetadataExt;
+        let fixture = ObservationDirectoryFixture::new();
+        let home = fixture.0.join("data/desktop/home");
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::write(home.join("notes.txt"), b"retained private file").unwrap();
+        let before = std::fs::metadata(&home).unwrap();
+        let identity = (
+            before.dev(),
+            before.ino(),
+            before.uid(),
+            before.gid(),
+            before.mode(),
+        );
+        for _ in 0..2 {
+            assert_eq!(guest_home_directory(&fixture.0).await.unwrap(), home);
+        }
+        let after = std::fs::metadata(&home).unwrap();
+        assert_eq!(
+            (
+                after.dev(),
+                after.ino(),
+                after.uid(),
+                after.gid(),
+                after.mode()
+            ),
+            identity
+        );
+        assert_eq!(
+            std::fs::read(home.join("notes.txt")).unwrap(),
+            b"retained private file"
+        );
     }
 
     #[tokio::test]
