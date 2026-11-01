@@ -2239,8 +2239,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 907,
-      "sha256": "7dc6ca74faa79a8d1a6607daf7a9eac210a07dfbbc51599fbd1300daf6a67d22"
+      "size": 972,
+      "sha256": "c33e19b997657b21d6fc2e4cbc6ce044ea7e6fd724f3756bc6d10650ad17a76c"
     },
     {
       "path": "crates/assistant/build.rs",
