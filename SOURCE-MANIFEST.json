@@ -2579,8 +2579,8 @@
     },
     {
       "path": "crates/phone-runner/src/main.rs",
-      "size": 50331,
-      "sha256": "ce6bca566f274a1f45e4f9c05725bdac3075963bfa575c28908fff183411019f"
+      "size": 57229,
+      "sha256": "5f4e9fb7f5bfea217d59a119b9fab1358a5510ab6f6959efc3871133eb57a2fd"
     },
     {
       "path": "docs/public/action-records.md",
