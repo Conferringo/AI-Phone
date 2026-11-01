@@ -1639,8 +1639,8 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 43571,
-      "sha256": "0c3cde5d251dca3177d9fcd3a8025a941f98eea5f82f2b297e1985071b2ca2f4"
+      "size": 43780,
+      "sha256": "cac7236e37dd16b8c43af700abebe5de6406faa3f5596d280537809c4dac1519"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
@@ -1854,8 +1854,8 @@
     },
     {
       "path": "apps/web/src/components/use-chat-outbox.ts",
-      "size": 3092,
-      "sha256": "b74d57cebad645bc3e35d61124259c4e3567c0d59d9e8824241f49d7c574a8cc"
+      "size": 7365,
+      "sha256": "bef7a39346d5e6a62e09fc3b23cb6adbf092a6160786817fe3fceff9b831df5f"
     },
     {
       "path": "apps/web/src/components/workbench-motion.ts",
@@ -1884,13 +1884,13 @@
     },
     {
       "path": "apps/web/src/lib/chat-outbox.ts",
-      "size": 3668,
-      "sha256": "3f54641de260ef537e2b0320b8b5034a96464da06d8c0f2c88031c466f9faf00"
+      "size": 4902,
+      "sha256": "d88f305072111eff5682ce4ee647ef27015e517ef699d4d3b49e8bd5c59c10a2"
     },
     {
       "path": "apps/web/src/lib/chat-snapshot.ts",
-      "size": 905,
-      "sha256": "bfb1ec40b5b366994a27dd42f45306fe7d352cff2ddf8c07be6b639216c68e40"
+      "size": 1798,
+      "sha256": "ba24b8b5753882d11107f2f360442c90a690c6ed681088495c34bc06fc882029"
     },
     {
       "path": "apps/web/src/lib/chat-wire.ts",
@@ -2669,13 +2669,13 @@
     },
     {
       "path": "docs/public/conversation-steering.md",
-      "size": 3332,
-      "sha256": "921f2781adf233d1c4acf64e350a3f3358261e5447fd4322d6c85994c38f4d75"
+      "size": 3940,
+      "sha256": "167afebecd80433a15e37ffb4dd3ea6c4325ca4723354b033eba7db482292bad"
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 17591,
-      "sha256": "0b63405aa9b8d687a4003f6aec1b43b30dfc9f0862c78e6a701a1c9642a25445"
+      "size": 18255,
+      "sha256": "c1f63a2d746fac22223200c35bad346be609f40cabbf264415ea27c71bfcb3a8"
     },
     {
       "path": "docs/public/core-retirement-2026-10-29.md",
@@ -4248,9 +4248,14 @@
       "sha256": "c51d009d2fefe4f453c9b064e47f250972493055204cff0dbb4f0c79b094f32c"
     },
     {
+      "path": "scripts/chat-outbox-projection.test.ts",
+      "size": 1715,
+      "sha256": "be07e957e2f5ca66d7c687610f90d6b40e019b523f20cacd58285019f189b988"
+    },
+    {
       "path": "scripts/chat-outbox.test.ts",
-      "size": 5418,
-      "sha256": "adfcae415b04e5b404d0290886f5ba70ed523fe3cfe5bae5676204513805c139"
+      "size": 5481,
+      "sha256": "25039e3070a76be65210ef88747661c6b3227532a612f47c48af0cc59977aab1"
     },
     {
       "path": "scripts/chat-snapshot.test.ts",
@@ -4386,6 +4391,11 @@
       "path": "scripts/execution-timeline.test.ts",
       "size": 3993,
       "sha256": "41fdee22a838034ff156648ac1c564ac9e1b68bce8ea284c5a599e4380311386"
+    },
+    {
+      "path": "scripts/fixtures/chat-outbox-hook.ts",
+      "size": 20452,
+      "sha256": "57dbd6d2eaa1fb13ef523e576f862651ea52078a94a3c0c187d712a4adabe9ca"
     },
     {
       "path": "scripts/fixtures/phone-grounding.html",

@@ -15,7 +15,7 @@ The [recorded-event regressions](../../scripts/copilot-input.test.ts) exercise t
 
 ## Experience
 
-Copilot has one toggle immediately to the right of Free exploration in each conversation composer. It keeps listening until switched off; it does not require holding a button. A compact listening indicator and live transcript replace explanatory banners. Manual typing keeps its existing Enter/newline and Cmd/Ctrl+Enter/send behavior. Microphone denial, provider errors and a disconnected transport remain visible and retryable.
+The intended Copilot control is one toggle immediately to the right of Free exploration in each conversation composer. The interaction contract below is planned; microphone capture and playback are not yet connected to the composer. Once implemented, it keeps listening until switched off and does not require holding a button. A compact listening indicator and live transcript replace explanatory banners. Manual typing keeps its existing Enter/newline and Cmd/Ctrl+Enter/send behavior. Microphone denial, provider errors and a disconnected transport remain visible and retryable.
 
 Copilot and Free exploration can coexist; this is the selected behavior. Spoken instructions have priority at the next safe execution boundary. Only one composer owns microphone capture at a time. Switching focus preserves the bound conversation; moving microphone ownership to another conversation is explicit and visible. A connection between two devices does not merge their conversations.
 
@@ -105,3 +105,8 @@ Do not couple the current offline-distribution completion gate to speculative ca
 模型配置归入原有Agent表单，允许语音识别＋现有文字模型＋语音合成，以及原生实时语音两类适配。不把普通文字模型当成语音模型；输入/输出/打断/重连能力分别探测。音频流协议仍须先定义protobuf、独立协商传输。多个补充、晚到识别、排队上限、上下文压缩和重连必须一起验证，不能靠重新开启session丢掉上下文。
 
 开发顺序：先验证纠错与1.5秒端点的事件契约，再接真实麦克风和流式识别，再做可打断语音反馈，最后接客体虚拟麦克风、语音消息与测试通话。前面的文字、语音与任务能力先可用，不等电话能力。每一阶段都要有真实证据；当前不增加未接通的按钮。
+
+
+## Technical references
+
+[DeepSeek Harness voice input](https://github.com/deepseek-ai/deepseek-harness/blob/ce7073d51254c26cd63b22a60835b8f948deb447/docs/subsystems/voice-input.md) separates provider selection, local inference and browser ownership, and fences stale transcript insertion with an editor revision. Its documented stop-to-transcribe draft flow is a narrower contract than continuous Copilot. AI Phone keeps the continuous capture, endpoint, accepted-input, task and playback lifetimes separate.

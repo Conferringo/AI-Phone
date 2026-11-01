@@ -8,7 +8,7 @@ AI Phone accepts new input while the Agent is working. An input receipt means th
 2. PostgreSQL stores every accepted user message. Conversation locks establish accepted order; a request lock and existing run/input receipts prevent duplicate execution across retries. `messages.ordinal` orders the transcript independently of transaction start time.
 3. A 700 ms quiet window combines short bursts before requesting the model. Input during a model request cancels only that obsolete request; it does not cancel the task or a running device action. The adapter releases the HTTP response on cancellation. The provider may still bill already-generated tokens.
 4. At a tool boundary, completed results remain recorded. Unstarted old calls receive explicit non-executed results. A running operation with an unknown result pauses for observation and is never automatically replayed.
-5. New assistant fragments get new message IDs. Previous text and tool events retain their original positions. The frontend scopes execution traces by message and ignores older history snapshots after a newer receipt.
+5. New assistant fragments get new message IDs. Previous text and tool events retain their original positions. The frontend scopes execution traces by message and ignores older history snapshots after a newer receipt. A confirmed user receipt can appear immediately while history refresh runs independently. If projection fails, accepted input remains visible in the local outbox without being sent again; it does not block later queued input.
 6. Context projection preserves user constraints and tool/result pairing. “Continue” inherits the current task's evidence requirements; an explicit correction takes priority. This is not a claim of unlimited context or permanent recall across unrelated tasks.
 
 ## 用户体验
@@ -21,6 +21,7 @@ AI Phone accepts new input while the Agent is working. An input receipt means th
 - [Claude Code interactive mode](https://code.claude.com/docs/en/interactive-mode): accept queued input while working and deliver it at appropriate execution boundaries.
 - [OpenClaw steering queue](https://docs.openclaw.ai/concepts/queue-steering): preserve FIFO input, paired tool outcomes and the distinction between a receipt and runtime consumption.
 - [Hermes tips](https://hermes-agent.nousresearch.com/docs/guides/tips): interruption and redirection are normal conversation operations; multiline drafts are buffered.
+- [DeepSeek Super-agent delivery](https://github.com/deepseek-ai/dsh-superagent-prototype/blob/6337fc823ce20251c8de8085948165c81aaa701e/src/app/delivery.ts): stable input identities, pending-inbox and durable-history deduplication, and separate acknowledgement from actual consumption. Its research prototype is a reference for these boundaries, not an AI Phone runtime dependency.
 
 These are independently implemented behavior contracts based on public documentation, not copied harness code or claims about the private internals of Dots/Grok.
 
