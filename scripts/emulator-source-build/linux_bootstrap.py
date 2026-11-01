@@ -32,7 +32,7 @@ FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_
                    "kvm_access_required", "repo_launcher_budget", "repo_launcher_identity",
                    "repo_key_declaration", "repo_tag_identity", "repo_commit_identity", "repo_checkout_identity",
                    "manifest_identity", "synced_manifest_identity", "manifest_checkout_identity",
-                   "installed_repo_identity", "installed_repo_dirty", "producer_receipt"}
+                   "installed_repo_identity", "installed_repo_dirty", "producer_receipt", "source_checkout_layout"}
 
 
 class BuildFailure(RuntimeError):
@@ -255,15 +255,39 @@ def local_manifest(root, command):
     return folder, revision
 
 
+def select_compiler_checkout(checkout, command):
+    metadata = checkout / ".repo"
+    folder = metadata / "projects/prebuilts/clang/host/linux-x86.git"
+    info = folder / "info"
+    if not folder.is_dir() or not folder.resolve().is_relative_to(metadata.resolve()) or not info.resolve().is_relative_to(metadata.resolve()):
+        raise BuildFailure("source_checkout_layout")
+    info.mkdir(exist_ok=True)
+    selected = info / "sparse-checkout"
+    if selected.exists() or selected.is_symlink():
+        raise BuildFailure("source_checkout_layout")
+    with selected.open("x", encoding="utf-8") as stream:
+        stream.write("/*\n!/*/\n/" + producer.SOURCE_CONTRACT["clang"] + "/\n")
+    git(command, folder, "config", "core.sparseCheckout", "true")
+    git(command, folder, "config", "core.sparseCheckoutCone", "true")
+
+
 def sync_sources(root, command, launcher, manifest, revision):
     checkout = root / "checkout"
     checkout.mkdir()
     command.run([sys.executable, str(launcher), "init", "-u", manifest.as_uri(), "-b", revision,
                  "-m", "source-lock.xml", "-g", "default,platform-linux", "--depth=1",
+                 "--partial-clone", "--clone-filter=blob:none",
                  "--repo-url", REPO_URL, "--repo-rev", REPO_COMMIT,
                  "--no-clone-bundle", "--no-tags", "--no-use-superproject"], checkout, timeout=1800, manifest_file=True)
-    command.run([sys.executable, str(launcher), "sync", "--jobs=2", "--detach", "--no-manifest-update",
-                 "--no-clone-bundle", "--no-tags", "--no-use-superproject"], checkout, timeout=10800)
+    sync = [sys.executable, str(launcher), "sync", "--jobs=2", "--detach", "--no-manifest-update",
+            "--no-clone-bundle", "--no-tags", "--no-use-superproject"]
+    deadline = time.monotonic() + 10800
+    command.run([*sync, "--network-only"], checkout, timeout=10800)
+    select_compiler_checkout(checkout, command)
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise BuildInterrupted("command_timeout")
+    command.run([*sync, "--local-only"], checkout, timeout=remaining)
     return checkout
 
 
@@ -329,6 +353,8 @@ def controlled_build(root):
             manifest, revision = local_manifest(root, command)
             enter_stage(root, receipt, "source_sync")
             checkout = sync_sources(root, command, launcher, manifest, revision)
+            receipt["source_selection"] = {"clone_filter": "blob:none", "compiler": producer.SOURCE_CONTRACT["clang"],
+                                            "compiler_root_files": "retained", "projects_omitted": 0}
             receipt["resources"]["after_sync"] = resource_snapshot(root)
             enter_stage(root, receipt, "source_proof")
             verified_sources(command, checkout, revision)

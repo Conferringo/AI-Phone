@@ -191,17 +191,64 @@ class RepoBoundaryTests(OwnedFixture):
         command = SimpleNamespace(run=Mock(return_value=""))
         manifest = self.root / "manifest"
         manifest.mkdir()
-        bootstrap.sync_sources(self.root, command, self.root / "pinned/repo", manifest, "1" * 40)
-        initial, synchronized = command.run.call_args_list
+        with patch.object(bootstrap, 'select_compiler_checkout') as select:
+            bootstrap.sync_sources(self.root, command, self.root / "pinned/repo", manifest, "1" * 40)
+        initial, fetched, synchronized = command.run.call_args_list
         init_args = initial.args[0]
         self.assertEqual(init_args[init_args.index("-u") + 1], manifest.resolve().as_uri())
         self.assertEqual(init_args[init_args.index("--repo-rev") + 1], bootstrap.REPO_COMMIT)
         self.assertEqual(init_args[init_args.index("-g") + 1], "default,platform-linux")
         self.assertIn("--depth=1", init_args)
+        self.assertIn("--partial-clone", init_args)
+        self.assertIn("--clone-filter=blob:none", init_args)
         self.assertNotIn("--no-repo-verify", init_args)
         self.assertTrue(initial.kwargs["manifest_file"])
         self.assertNotIn("manifest_file", synchronized.kwargs)
         self.assertIn("--no-manifest-update", synchronized.args[0])
+        self.assertIn('--network-only', fetched.args[0])
+        self.assertIn('--local-only', synchronized.args[0])
+        select.assert_called_once_with(self.root/'checkout', command)
+
+    def test_sparse_selection_keeps_root_files_and_the_pinned_compiler_only(self):
+        checkout=self.root/'checkout';folder=checkout/'.repo/projects/prebuilts/clang/host/linux-x86.git'
+        folder.mkdir(parents=True);command=SimpleNamespace(run=Mock(return_value=''))
+        bootstrap.select_compiler_checkout(checkout,command)
+        self.assertEqual((folder/'info/sparse-checkout').read_text(),'/*\n!/*/\n/clang-r487747c/\n')
+        self.assertEqual([call.args[0][-3:] for call in command.run.call_args_list],[['config','core.sparseCheckout','true'],['config','core.sparseCheckoutCone','true']])
+        with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
+            bootstrap.select_compiler_checkout(checkout,command)
+
+    def test_network_and_checkout_share_the_existing_sync_time_budget(self):
+        for elapsed,expired in ((10800.5,False),(10801,True),(10802,True)):
+            with self.subTest(elapsed=elapsed):
+                root=self.root/str(elapsed);root.mkdir();manifest=root/'manifest';manifest.mkdir()
+                command=SimpleNamespace(run=Mock(return_value=''))
+                with patch.object(bootstrap,'select_compiler_checkout'),patch.object(bootstrap.time,'monotonic',side_effect=[1,elapsed]):
+                    if expired:
+                        with self.assertRaisesRegex(bootstrap.BuildInterrupted,'command_timeout'):
+                            bootstrap.sync_sources(root,command,root/'pinned/repo',manifest,'1'*40)
+                    else:bootstrap.sync_sources(root,command,root/'pinned/repo',manifest,'1'*40)
+                self.assertEqual(len(command.run.call_args_list),2 if expired else 3)
+                if expired:self.assertIn('--network-only',command.run.call_args_list[-1].args[0])
+
+    def test_sparse_selection_requires_existing_project_metadata(self):
+        checkout=self.root/'checkout';checkout.mkdir()
+        with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
+            bootstrap.select_compiler_checkout(checkout,SimpleNamespace(run=Mock(return_value='')))
+        self.assertEqual(list(checkout.iterdir()),[])
+
+    def test_sparse_selection_rejects_a_git_or_info_directory_outside_owned_metadata(self):
+        for alias in ('project','info'):
+            with self.subTest(alias=alias):
+                checkout=self.root/alias;folder=checkout/'.repo/projects/prebuilts/clang/host/linux-x86.git'
+                outside=self.root/(alias+'-outside');outside.mkdir()
+                if alias=='project':
+                    folder.parent.mkdir(parents=True);folder.symlink_to(outside,target_is_directory=True)
+                else:
+                    folder.mkdir(parents=True);(folder/'info').symlink_to(outside,target_is_directory=True)
+                with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
+                    bootstrap.select_compiler_checkout(checkout,SimpleNamespace(run=Mock(return_value='')))
+                self.assertEqual(list(outside.iterdir()),[])
 
 
 class CommandOwnerTests(OwnedFixture):
