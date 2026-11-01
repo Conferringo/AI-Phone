@@ -36,6 +36,9 @@ jobs:
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
         run: ./scripts/bun test ./apps/channels ./apps/device-network ./apps/device-stream ./scripts/*.test.ts
+      - name: Pinned emulator producer contracts
+        working-directory: scripts/emulator-source-build
+        run: python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
       - name: Installer and archive tests
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Rust tests

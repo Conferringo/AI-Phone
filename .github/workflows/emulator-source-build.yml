@@ -1,0 +1,61 @@
+name: Linux Emulator source build (manual, unapproved output)
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Run one isolated Linux source build; output remains unapproved
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: emulator-source-build-linux
+  cancel-in-progress: false
+jobs:
+  linux-x64:
+    if: ${{ inputs.confirm }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Isolated producer and real process ownership contracts
+        working-directory: scripts/emulator-source-build
+        run: |
+          python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
+          python3 -B qualify_owned_session.py
+      - name: Prepare this disposable hosted runner
+        run: |
+          test '${{ runner.environment }}' = github-hosted
+          # Reclaim only these unused preinstalled tools on this ephemeral runner.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git build-essential python3 python3-pip gnupg ca-certificates qemu-system-x86 ninja-build ccache cmake pkg-config acl libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64
+          test -c /dev/kvm
+          test "$(stat -c '%G' /dev/kvm)" = kvm
+          sudo usermod -aG kvm "$(id -un)"
+          getfacl --omit-header --numeric --absolute-names /dev/kvm | python3 -c '
+          import sys
+          rows = {line.split("#", 1)[0].strip() for line in sys.stdin}
+          if not rows.intersection({"group::rw-", "group::rwx"}):
+              raise SystemExit("KVM owning group does not have read/write access")
+          masks = {line for line in rows if line.startswith("mask::")}
+          if masks and not masks.intersection({"mask::rw-", "mask::rwx"}):
+              raise SystemExit("KVM ACL mask does not permit read/write access")
+          '
+          build_parent="$(mktemp -d "$RUNNER_TEMP/emulator-source-XXXXXX")"
+          printf 'AI_PHONE_EMULATOR_SOURCE_WORK=%s\n' "$build_parent" >> "$GITHUB_ENV"
+      - name: Synchronize fixed sources, verify and build once
+        run: |
+          export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"
+          sg kvm -c 'exec sg "$AI_PHONE_CI_PRIMARY_GROUP" -c "exec python3 scripts/emulator-source-build/linux_bootstrap.py --work \"$AI_PHONE_EMULATOR_SOURCE_WORK/attempt\""'
+      - name: Upload only the sanitized result
+        if: ${{ always() && env.AI_PHONE_EMULATOR_SOURCE_WORK != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: emulator-source-linux-result
+          path: ${{ env.AI_PHONE_EMULATOR_SOURCE_WORK }}/attempt/public-receipt.json
+          if-no-files-found: error
+          retention-days: 7
