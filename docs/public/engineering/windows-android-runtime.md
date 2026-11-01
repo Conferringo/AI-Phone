@@ -18,6 +18,6 @@ python scripts/android_component_factory.py --work .tools/windows-android-compon
 
 Full Windows delivery still requires the application-owned Linux/backend environment, Windows acceleration setup, device-control bridge, initialization and recovery. A successful SDK receipt alone does not qualify that delivery.
 
-## Qualification snapshot — 2026-10-31
+## Availability
 
-[Windows build 41178729877](https://github.com/Conferringo/AI-Phone/actions/runs/41178729877) produced and relocated a 424-file component containing 2,916,859,281 uncompressed bytes. Its SHA-256 is `637f0a35e3510da8951b8a1f4a38ed166e296fd755d229c320de2899be48ec84`. The packaged emulator reported 37.2.13.0 and ADB reported 37.0.1. Native NTFS admission regressions passed. No Android guest was booted by this component check.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.

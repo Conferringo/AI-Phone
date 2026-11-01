@@ -20,11 +20,9 @@ Packaging binds APK sizes, SHA-256 hashes and signer metadata in `runtime/phone-
 
 The Android runtime and phone APKs are separate requirements: Java can be omitted only when both are supplied. An emulator-only capsule without the control applications stops before device creation. Startup installs only missing packages; existing input, launcher and application data retain their current device ownership.
 
-## Validation scope
+## Availability
 
-Both actual APKs have been compiled, signature-verified and checked for expected package identities. The component has been packaged, expanded into an isolated installation and selected by the included Python while OS network access is denied and PATH contains no Java/SDK compiler. An isolated chat fixture remains unchanged. This verifies artifact delivery and compiler independence; fresh Android installation and permission activation were not exercised in this batch.
-
-Tests cover source changes, changed files, identities, inventory, compressed private data, bounded headers, retained signing keys, failed compilers and staging. The full client still requires its container host, media/channel components, redistribution review and platform first-run acceptance. See [release status](../release-status.md).
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
 ---
 
@@ -34,4 +32,4 @@ Tests cover source changes, changed files, identities, inventory, compressed pri
 
 组件同时绑定源指纹、包名、签名摘要和文件摘要，损坏时明确停止，不回退编译。只有模拟器和两个 APK 都齐备才跳过 Java；仅有模拟器会在创建设备前停止。启动流程继续只安装缺失应用，保留已安装应用与数据。
 
-本批真实编译/签名校验、系统禁网环境下的封装、展开与无编译器选择通过，隔离聊天夹具保持。未在新 Android 上安装这两个 APK 或启用权限，不将组件检查写成整机验收。完整容器宿主、媒体/渠道、平台初始化与再分发审查继续推进。
+APK 交付、设备权限激活与完整初始化是独立环节。当前平台范围、签名与分发条件统一见[发行状态](../release-status.md)。

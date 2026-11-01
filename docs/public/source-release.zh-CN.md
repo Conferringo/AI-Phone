@@ -21,7 +21,7 @@ SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 
 
 ## 源码与用户数据
 
-版本化代码与设备盘、账号、聊天、附件、密钥分离。导出工具按白名单执行隐私和许可检查，公开协作约定使用专门文档。本地环境文件、私人 Skill、实机截图及证据不能进入公开提交。
+版本化代码与设备盘、账号、聊天、附件、密钥分离。导出工具按白名单执行隐私和许可检查，开发与验证流程见[贡献指南](../../CONTRIBUTING.md)。本地环境文件、私人 Skill、实机截图及证据不能进入公开提交。
 
 ```sh
 python3 scripts/check_source.py
@@ -34,4 +34,4 @@ python3 scripts/source_export.py --destination /path/to/new-review-directory --g
 
 Source CI 执行 protobuf、TypeScript、Rust、隔离前端与适配器、归档和安装契约、生产网页构建。预构建验证展开并执行实际包内文件。临时 PostgreSQL 检查迁移、受限角色、备份恢复与 worker 故障；重启测试按顺序运行，不使用真实设备、账号或付费模型。
 
-Native CI 在匹配环境构建 macOS ARM64、Windows x64、Linux x64/ARM64、Android ARM64 客户端。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。精确证据见[工程审阅](engineering/index.md)，使用范围见[兼容矩阵](compatibility.md)。
+Native CI 在匹配环境构建 macOS ARM64、Windows x64、Linux x64/ARM64、Android ARM64 客户端。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。运行组件及职责见[组件目录](engineering/index.md)，当前可用范围见[发行状态](release-status.md)与[兼容矩阵](compatibility.md)。

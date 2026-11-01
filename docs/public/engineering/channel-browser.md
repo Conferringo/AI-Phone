@@ -26,16 +26,10 @@ Container connections use direct networking or a container-reachable proxy. Host
 
 The security-pinned Puppeteer 25 integration uses the project-owned [`WhatsAppClient`](../../../apps/channels/whatsapp-client.ts) for browser closure and authentication callbacks. SDK initialization and message handling remain upstream implementations. Third-party source is unchanged. The SDK's optional archive path is checked with directory traversal, Unicode and hidden files, and pattern exclusions under the locked dependency versions.
 
-## Verification scope
+## Availability
 
-On macOS ARM64, bundled CPython 3.13.18 launched Chromium 156.0.8078.47 in an isolated Linux ARM64 container with `network=none`. Real page rendering, screenshots, profile persistence, host-launcher and container crash recovery, standard SDK initialization, pre-aborted launch, production-controller stop and explicit logout were exercised. Changing the code root while sharing the persistent data directory retained the fixture account; a delayed old logout was rejected.
-
-The compiled installation entry was executed with WAN denied and the original project unreadable except for verified runtime artifacts. Both preparation and verification used the image browser, without downloading host Chromium or creating account directories. These checks use intercepted local pages: real WhatsApp account authentication and delivery were not exercised. Windows descriptor transport, Android hosting and complete-client assembly retain their platform acceptance requirements. Chromium notices and corresponding-source obligations remain binary publication gates. See [runtime bundles](../runtime-bundles.md), [compatibility](../compatibility.md) and [SOLID audit](../solid-audit.md).
-
-## Scoped code review
-
-The production connection and runtime methods have CC/CRAP at most 7 under executable-line coverage; the host-browser selector measures 9/9.1. The existing proxy URL function remains CC/CRAP 10. The changed installation and source-input functions have CC at most 7 and CRAP below 8. Dryer found no candidates at similarity 0.8 in the connection/runtime boundary. Of 104 TypeScript mutation sites, 99 were caught; remaining review items cover Windows console visibility, SDK QR retry configuration, and equivalent or declared-SDK-contract expressions. This is not whole-repository or branch-coverage qualification. Larger installer validation/CLI functions retain separate audit debt.
+Browser transport, account authentication and message delivery are separate capabilities. Supported platforms and account-level limitations are described in [compatibility](../compatibility.md) and [release status](../release-status.md). Chromium attribution and corresponding-source requirements apply to binary distribution.
 
 ## 中文摘要
 
-完整包的新账号使用随附 Linux 镜像里的 Chromium，安装器在镜像导入后验证，不额外下载宿主浏览器。旧宿主档案保留原运行方式。停止保留档案，登出在确认关闭和归属后删除；未知结果保留数据并反馈失败。真实禁网测试已覆盖标准 SDK、生产控制器、代码目录切换后的档案保持和旧登出拒绝。尚未使用真实 WhatsApp 账号，也不代表全部平台和完整客户端验收完成。
+完整包的新账号使用随附 Linux 镜像里的 Chromium，安装器在镜像导入后验证，不额外下载宿主浏览器。旧宿主档案保留原运行方式。停止保留档案，登出在确认关闭和归属后删除；未知结果保留数据并反馈失败。账号兼容与当前平台范围见[兼容矩阵](../compatibility.md)和[发行状态](../release-status.md)。

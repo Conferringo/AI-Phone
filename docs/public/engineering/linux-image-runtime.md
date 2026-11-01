@@ -35,15 +35,11 @@ python3 scripts/build_client.py --platform macos \
 
 This is a maintainer workflow. Complete product users should receive the components inside the distribution and configure devices and a model in the client. Source-only builds exclude optional capsules. Preparing a capsule does not approve binary publication: licenses, notices, corresponding source and all other distribution gates remain independent.
 
-## Evidence and limits · 2026-10-30
+## Availability
 
-- The ARM64 development capsule is 1,225,004,032 bytes. Existing user containers and volumes were not exported or restarted.
-- An installer process denied outbound IP by an OS sandbox restored the new references through Docker's Unix socket, without registry pulls or builds. The shared Docker daemon itself was not globally disconnected.
-- A disposable, network-disabled desktop without host mounts returned a 1280×800 screen and exact native pointer coordinates, saved Chinese text, recorded a notification and generated a spreadsheet. Chromium and Clash were present.
-- Four real media checks passed: daemon crash recovery, disconnect cleanup, heartbeat expiration, and a played tone producing nonzero PCM at the host capture pipe. Browser autoplay and physical-speaker acceptance remain pending.
-- Isolated regressions cover validation, partial imports, conflicting references, package replacement and resource budgets. The three new packaging modules have CC ≤9, CRAP <10 and no duplication candidates at 0.8. A frozen-source run detected 179 of 183 selected mutations; four survived (a stricter minimum outer-member size and fixed metadata ordering/epoch variants). They are recorded rather than counted as detected. These checks do not close the repository-wide architecture audit.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
-The capsule remains `review-pending`; no complete product installer has been released. ARM64 evidence does not validate x64 images, Windows supervision, Android root/KVM hosts or a full offline first run. See [release status](../release-status.md) and [Android component](android-runtime.md).
+The component remains subject to complete host/media integration and third-party redistribution requirements. See the [Android component](android-runtime.md) for its separate resource contract.
 
 ---
 
@@ -53,4 +49,4 @@ Linux 桌面、Agent 工作环境、PostgreSQL 和 Redis 采用独立镜像组�
 
 安装前验证架构、SHA-256、OCI 配置绑定和镜像别名，按平台内容摘要命名，冲突即停止。流式导入的未知结果先观察，全部验证后才原子发布私有选择记录。正式选择禁止自动拉取或源码构建；归档、文件数量、累计元数据和恢复空间均有保护。
 
-ARM64 实际完成受限网络进程的镜像导入，以及隔离桌面的画面、光标、中文、通知、浏览器、Clash、表格验证。音频实测包含真实信号到达宿主捕获管道；网页自动播放和物理扬声器仍待验收。再分发为 review-pending，完整容器宿主、媒体/渠道运行环境和各平台初始化继续推进，不以局部通过代替产品完成。
+镜像资源与完整宿主、媒体输入输出及平台初始化分别配置和验收。当前安装包供应、平台范围及第三方再分发要求见[发行状态](../release-status.md)。

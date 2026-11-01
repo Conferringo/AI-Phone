@@ -24,13 +24,11 @@ python3 scripts/build_client.py --platform macos \
 
 The build passes one generated resource map to Tauri; artifact inspection uses the same map. Resource hashing and expanded native-file inspection stream bytes instead of loading a system image into memory. Capsule preparation verifies the manifest and host; installation verifies every extracted body before activation. Source-only builds exclude this optional resource and discard a previously prepared capsule.
 
-## Evidence and limits
+## Availability
 
-On macOS ARM64, an official Android 35 revision 2 image and the locally reviewed emulator/platform-tools baseline produced a 385-file, 3,005,776,039-byte development component. Its extraction succeeded inside an OS sandbox denying network access. An isolated emulator then completed cold boot in approximately 24 seconds, returned root UID 0, accepted input, produced a 720×1440 screenshot and preserved a test file across restart. The emulator used a diagnostic data disk of approximately 6 GiB; **this is not acceptance of the 16 GiB product preset**. A separate 16 GiB attempt correctly stopped when the host lacked the emulator's required free space. The 35 GiB fresh-install gate remains unchanged.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
-Real boot evidence currently covers macOS ARM64 only. Linux x64 packaging/creation uses the same admission contract but has no equivalent boot acceptance in this batch. Windows and privileged Android independent hosts remain incomplete. An Android-host ARM64 guest is distinct from the macOS ARM64 emulator binary and cannot reuse it.
-
-The development component is **not approved for public redistribution**. SDK terms, individual open-source notices, emulator/Qt/QEMU components and corresponding-source obligations need component-specific review. A successful local package or boot does not satisfy that release gate. See [Android SDK terms](https://developer.android.com/studio/terms) and the [AOSP licensing overview](https://source.android.com/docs/setup/contribute/licenses).
+Android-host ARM64 resources are distinct from macOS ARM64 emulator binaries. Factory artifacts remain subject to their own SDK terms, open-source notices and corresponding-source requirements. See [Android SDK terms](https://developer.android.com/studio/terms) and the [AOSP licensing overview](https://source.android.com/docs/setup/contribute/licenses).
 
 ---
 
@@ -38,6 +36,6 @@ The development component is **not approved for public redistribution**. SDK ter
 
 Android 镜像与模拟器采用独立组件，随原生客户端资源传入。安装器校验宿主、ABI、清单、大小、权限和摘要后激活；设备数据仍保存在用户目录。现有完整设备不覆盖，不完整状态会停止并保留。离线设备创建不调用 Java、SDK Manager 或 AVD Manager。其余服务、Linux 镜像和各平台完整运行环境尚未全部离线封装。
 
-本批已在 macOS ARM64 真实验证：禁止网络时展开；干净 Android 冷启动约 24 秒，root、输入、720×1440 画面和重启后文件保留通过。诊断盘实际约 6GiB，不能代替 16GB 生产预设验收；后者因磁盘容量要求停止。35GiB 全新部署门槛保持。Linux 的对应启动验证、Windows 与 root/KVM Android 独立宿主及完整原生安装仍有待完成。
+Android 宿主与模拟器程序必须匹配，不能将 macOS ARM64 模拟器用于 Android 宿主。当前平台供应、默认资源要求和首次安装范围统一见[发行状态](../release-status.md)。
 
 该开发组件仍需逐项完成再分发声明和对应源码审查，未作为正式安装包公开。运行验证不代表全平台或完整产品通过。

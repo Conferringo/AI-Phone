@@ -42,4 +42,4 @@ PostgreSQL使用Docker命名卷，**仅复制user不是完整备份**。备份�
 
 当前已有本地完整性检查、暂存和恢复工具，尚无经过认证的远端版本发现、自动运行版本切换和一键升级回退。不提供未接通的更新按钮。不能对用户运行目录直接git pull代替更新器；Git用于贡献者开发。
 
-完整包必须包含干净Android/Linux基础、模拟器、预编译服务与匹配运行环境，并附来源、声明和适用对应源码。账号和个人设备数据不属于这些基础镜像。详见[发行要求](preview-release.md)、[当前状态](release-status.md)、[备份恢复](backup-restore.zh-CN.md)和[原始设计基线](release-contract.zh-CN.md)。
+完整包必须包含干净Android/Linux基础、模拟器、预编译服务与匹配运行环境，并附来源、声明和适用对应源码。账号和个人设备数据不属于这些基础镜像。详见[发行要求](preview-release.md)、[当前状态](release-status.md)和[备份恢复](backup-restore.zh-CN.md)。

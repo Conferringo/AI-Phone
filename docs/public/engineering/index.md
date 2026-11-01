@@ -1,23 +1,31 @@
-# Engineering reviews
+# Runtime components
 
-These records support contributor review. Dated results apply to their recorded revision and scope; current availability is defined in [release status](../release-status.md). Product setup and capability guides are listed in the [documentation index](../index.md).
+Component formats, ownership and maintainer build interfaces are listed below. Availability and supported platforms are maintained in [release status](../release-status.md); setup and product guides are in [documentation](../index.md).
 
-- [Apple Silicon runtime distribution](macos-full-runtime.md)
-- [Native runtime review](native-runtime-20261030.md)
-- [Android runtime component](android-runtime.md)
-- [Linux desktop and service image component](linux-image-runtime.md)
+## Host and device systems
+
+- [Apple Silicon distribution](macos-full-runtime.md)
+- [Self-contained host lifecycle](../integrated-hosts.md)
+- [Offline container host](../container-host-runtime.md)
+- [Android runtime](android-runtime.md)
+- [Windows Android runtime](windows-android-runtime.md)
+- [Windows WSL backend](../windows-backend-runtime.md)
+- [Linux client factory](../linux-client-factory.md)
+- [Linux development bootstrap](../managed-linux.md)
+
+## Services and applications
+
+- [Linux desktop and service images](linux-image-runtime.md)
+- [Offline JavaScript services](js-runtime.md)
 - [Offline Linux OCR](linux-offline-ocr.md)
 - [Portable installer tools](installer-tools.md)
 - [Phone control applications](phone-apps.md)
-- [Guest application resources](guest-apps.md)
-- [Runtime packaging review](runtime-audit-20261030.md)
-- [SOLID audit and remaining boundaries](../solid-audit.md)
-- [CSS and hosted review](../css-review-2026-10-29.md)
-- [Core scope and language review](../core-retirement-2026-10-29.md)
-- [First-run and window review](../release-ux-audit-2026-10-29.md)
-- [Model/channel/platform maturity](../interface-audit-2026-10-29.md)
-- [Audio and recovery review](../release-stability-2026-10-29.md)
+- [Guest networking applications](guest-apps.md)
+- [Linked-device browser](channel-browser.md)
 
-- [Offline JavaScript services](js-runtime.md): source-bound media/channel dependencies, role selection, provenance and real relocated execution.
+## Persistent installation
 
-- [Private installation state](private-install-state.md): platform file ownership, atomic publication and nonblocking checkpoint locks.
+- [Private installation state](private-install-state.md)
+- [Runtime bundle format](../runtime-bundles.md)
+- [Backup and recovery](../backup-restore.en.md)
+- [Distribution requirements](../preview-release.md)

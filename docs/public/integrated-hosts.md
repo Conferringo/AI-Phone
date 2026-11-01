@@ -1,6 +1,6 @@
 # Self-contained host runtime
 
-The product target is an installed client that creates its phone, computer and model configuration without a manual server deployment. Source bootstrap and connection clients are separate developer/remote-access paths, not substitutes for the complete product. See the [release contract](release-contract.en.md) and [current installer availability](release-status.md).
+The product target is an installed client that creates its phone, computer and model configuration without a manual server deployment. Source bootstrap and connection clients are separate developer/remote-access paths, not substitutes for the complete product. See the [distribution requirements](preview-release.md) and [current installer availability](release-status.md).
 
 ## Platform scope
 
