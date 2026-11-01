@@ -55,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           stock="$RUNNER_TEMP/aiphone-android-stock"
-          python3 scripts/android_component_factory.py --work "$stock" --verify-programs --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json"
+          python3 scripts/android_component_factory.py --work "$stock" --verify-programs --compression-preset 3 --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json"
           # Qualification used only this job's fresh SDK/profile. The package
           # consumes the sealed payload; extraction and download scratch can go.
           rm -rf "$stock/installation"

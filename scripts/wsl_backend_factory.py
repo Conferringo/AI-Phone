@@ -45,7 +45,7 @@ def factory_plan(root):
 
 
 def source_input(payload):
-    with tarfile.open(payload,'r:gz') as source:
+    with tarfile.open(payload,'r:*') as source:
         manifest,records,_=archive_records(source)
         expected={'web','native-services','js-services'}
         if set(manifest['components'])!=expected:raise ValueError('WSL source must contain only its three backend components')
@@ -139,7 +139,7 @@ def validated_inputs(root,source,images,tools,packages):
 
 def payload_scripts(source,scripts):
     scripts.mkdir()
-    with tarfile.open(source,'r:gz') as archive:
+    with tarfile.open(source,'r:*') as archive:
         for entry in archive:
             if entry.isfile() and entry.name.startswith('scripts/') and '/' not in entry.name[8:]:
                 with archive.extractfile(entry) as body:(scripts/entry.name[8:]).write_bytes(body.read())

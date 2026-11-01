@@ -4,6 +4,10 @@ AI Phone separates its Android system/runtime from its small source archive. An 
 
 The component contains emulator executables, platform tools and an Android factory image. It never includes an existing AVD, account, application database, chat or ADB identity. The image archive is checked before packaging; file sizes, SHA-256 digests, executable permissions and host/ABI are bound by its manifest. Extraction accepts regular, inventoried files only, with separate limits of 20,000 files, 4 GiB per file and 8 GiB total, plus a 4 GiB recovery reserve. The source archive's existing limits remain unchanged.
 
+New source and Android capsules use XZ compression. Existing gzip capsules remain readable, and the content-addressed component directories keep old installations separate from newly admitted resources. Compression does not alter the device/user directory layout or approve redistribution of factory inputs.
+
+The complete factory uses compression preset 6. Component-only Mac validation selects preset 3 to reduce encoding work; both profiles preserve the exact uncompressed SDK/TAR bytes and use the same admission and executable checks. The selected profile and actual archive digest are recorded by the Mac producer.
+
 Initialization uses the selected CPU, memory and storage presets to create an AVD offline. A complete existing AVD is preserved; an incomplete one stops creation for recovery. A bundled SDK bypasses SDK Manager and AVD Manager. Java is omitted only when the [prebuilt control applications](phone-apps.md) are also included. This does **not** yet make every service, Linux image, application, browser or platform runtime independent of downloads.
 
 ## Engineering workflow

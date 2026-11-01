@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from android_runtime import ABIS,build as build_runtime
+from android_runtime import ABIS,build as build_runtime,checked_compression
 from android_sdk_archive import unpack_sdk
 from client_host import download
 from host_platform import host_key
@@ -46,7 +46,8 @@ def checked_revision(sdk,role,pin):
     if rows!=[pin['version']]:raise ValueError('SDK component revision differs from its stable pin')
 
 
-def build(root,work):
+def build(root,work,*,compression_preset=6):
+    compression_preset=checked_compression(compression_preset)
     root=Path(root).resolve();pins=policy(root);work=Path(work)
     mac=host_key()=='macos-arm64'
     stock=stock_identity(pins) if mac else None
@@ -61,10 +62,11 @@ def build(root,work):
             unpack_sdk(archives[role],folder/role,role);(folder/role/role).rename(sdk/role);checked_revision(sdk,role,pins[role])
         if mac:sdk_programs(sdk)
         pending=folder/'android.payload' if mac else output
-        result=build_runtime(sdk,archives['system-image'],pending,pins['system-image']['sha256'])
+        options={} if compression_preset==6 else {'compression_preset':compression_preset}
+        result=build_runtime(sdk,archives['system-image'],pending,pins['system-image']['sha256'],**options)
         if mac:
             if stock_identity(policy(root))!=stock:raise ValueError('Mac stock producer or policy changed during collection')
-            pending.rename(output);result['stock']=stock
+            pending.rename(output);result.update(stock=stock,compression_preset=compression_preset)
     return output,result
 
 
@@ -92,7 +94,9 @@ def qualify(root,payload,home,built=None):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent)
     parser.add_argument('--work',type=Path,required=True);parser.add_argument('--receipt',type=Path)
-    parser.add_argument('--verify-programs',action='store_true');args=parser.parse_args();output,result=build(args.root,args.work)
+    parser.add_argument('--verify-programs',action='store_true')
+    parser.add_argument('--compression-preset',type=int,choices=(3,6),default=6,help='XZ preset: 3 for component checks, 6 for complete distributions')
+    args=parser.parse_args();output,result=build(args.root,args.work,compression_preset=args.compression_preset)
     if args.verify_programs:result['qualification']=qualify(args.root,output,args.work/'installation',result)
     if args.receipt:
         args.receipt.parent.mkdir(parents=True,exist_ok=True);args.receipt.write_text(json.dumps(result,indent=2)+'\n')

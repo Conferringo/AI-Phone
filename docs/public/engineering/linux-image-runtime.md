@@ -6,7 +6,9 @@ The desktop contains Openbox, Chromium, LibreOffice, Chinese fonts/input support
 
 ## Validation and activation
 
-The outer tar contains `images.tar.gz` and `IMAGES-MANIFEST.json`. Export streams Docker's archive directly through compression into the capsule; import streams its verified body into `docker image load`, without another image-sized staging copy.
+New capsules use format 2: the outer tar contains `images.tar.xz` and `IMAGES-MANIFEST.json`. Format 1 capsules containing `images.tar.gz` remain readable. The installer decodes XZ into a bounded raw TAR stream for `docker image load`, so the portable engine needs no external XZ program. Legacy gzip is passed through. Neither path needs another image-sized staging copy.
+
+The maintainer exporter first seals and inspects a fresh Docker export. For OCI layouts, workspace/desktop gzip filesystem layers are represented by their exact uncompressed TAR bytes before outer XZ compression. Configuration bytes and root filesystem DiffIDs stay unchanged; PostgreSQL, Redis and proof-reachable objects retain their original bytes. Changed local manifests and references are rebound together. Docker Schema 2 image descriptors are supported, and valid classic exports pass through without changing their raw TAR. The exporter temporarily needs both compressed representations; the installation path does not.
 
 The manifest binds architecture, archive size/digest, image configuration and exported platform manifest. References use `ai-phone-bundle/<role>:sha-<platform-manifest-sha256>`. A multi-platform source index is provenance, not proof of the selected platform. OCI configuration bindings and the entire alias inventory are verified. Unnamed upstream attestations may refer only to exported subjects; foreign named images are rejected.
 

@@ -1,5 +1,5 @@
 """Build deterministic client resources; no network, history or user state."""
-import gzip
+import lzma
 import hashlib
 import io
 import json
@@ -37,7 +37,7 @@ def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, wi
     manifest = {'format': 2 if components else 1, 'components': components, 'files': [dict(path=name, size=len(data), sha256=hashlib.sha256(data).hexdigest(), mode=mode) for name, data, mode in files]}
     files.append(('HOST-MANIFEST.json', json.dumps(manifest, sort_keys=True).encode(), 420))
     archive = folder / 'source.payload'
-    with archive.with_suffix('.tmp').open('wb') as raw, gzip.GzipFile(fileobj=raw, mode='wb', mtime=0, filename='') as compressed, tarfile.open(fileobj=compressed, mode='w') as target:
+    with archive.with_suffix('.tmp').open('wb') as raw, lzma.LZMAFile(raw, mode='wb', format=lzma.FORMAT_XZ, check=lzma.CHECK_CRC64, preset=6) as compressed, tarfile.open(fileobj=compressed, mode='w') as target:
         for name, data, mode in files:
             entry = tarfile.TarInfo(name)
             entry.mode = mode
@@ -66,7 +66,7 @@ def prepare_android(folder, payload):
     if payload is None:
         android.unlink(missing_ok=True)
         return {}
-    with tarfile.open(payload,'r|gz') as source:manifest_entry(source,iter(source))
+    with tarfile.open(payload,'r|*') as source:manifest_entry(source,iter(source))
     if Path(payload).resolve()!=android.resolve():shutil.copyfile(payload,android)
     return {'android.payload':digest(android)}
 
@@ -104,7 +104,7 @@ def payload_components(root=ROOT):
     archive = root / 'apps/client/src-tauri/gen/host/source.payload'
     if not archive.exists():
         return []
-    with tarfile.open(archive, 'r:gz') as source:
+    with tarfile.open(archive, 'r:*') as source:
         entry = source.getmember('HOST-MANIFEST.json')
         if entry.size > 4 * 1024 * 1024:
             raise ValueError('Invalid source manifest size')

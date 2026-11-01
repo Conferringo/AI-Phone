@@ -7,7 +7,9 @@ import subprocess
 import tarfile
 import tempfile
 from artifact_io import digest
-from container_images import MANIFEST,ARCHIVE,ROLES,RESERVE,MAX_ARCHIVE,daemon_architecture,docker_command,image_ref,inventory,stage,stop_child
+from build_capsule_codec import write_xz, read_tar, decoded
+from container_images import MANIFEST,XZ_ARCHIVE,ROLES,RESERVE,MAX_ARCHIVE,MAX_RAW,checked_image,daemon_architecture,docker_command,image_ref,inventory,stage,image_pipe
+from oci_layer_transform import transform
 
 
 class ArchiveWriter:
@@ -22,16 +24,57 @@ class ArchiveWriter:
         return self.file.write(value)
 
 
+class RawArchiveWriter:
+    def __init__(self, target):
+        self.target=target;self.written=0
+
+    def write(self, value):
+        self.written+=len(value)
+        if self.written>MAX_RAW:raise ValueError('Raw image archive exceeds budget')
+        return self.target.write(value)
+
+
 def save_images(refs, raw, architecture):
     with tempfile.TemporaryFile() as log:
         child=subprocess.Popen(['docker','image','save','--platform','linux/'+architecture,*refs],stdout=subprocess.PIPE,stderr=log)
-        try:
+        with image_pipe(child,child.stdout,close_first=True):
             with gzip.GzipFile(fileobj=ArchiveWriter(raw,Path(raw.name).parent),mode='wb',filename='',mtime=0,compresslevel=1) as target:
                 shutil.copyfileobj(child.stdout,target,1024**2)
             if child.wait()!=0:raise ValueError('Docker image export failed')
-        finally:
-            child.stdout.close()
-            stop_child(child)
+
+
+def bound_records(records, actual, architecture):
+    if set(actual)!={row['ref'] for row in records.values()}:
+        raise ValueError('Exported image references differ from inspected images')
+    bound={}
+    for role,row in records.items():
+        entry=actual[row['ref']]
+        if entry['architecture']!=architecture or entry['export_digest']!=row['export_digest'] or row.get('config_digest',entry['config_digest'])!=entry['config_digest']:
+            raise ValueError('Exported image identity differs from inspected images')
+        bound[role]=checked_image(role,{**row,'config_digest':entry['config_digest']})
+    return bound
+
+
+def transformed_images(records, raw, architecture):
+    folder=Path(raw.name).parent
+    with (folder/'docker-export.tar.gz').open('w+b') as source:
+        save_images([row['ref'] for row in records.values()],source,architecture)
+        source.flush();source.seek(0)
+        records=bound_records(records,inventory(source,'gzip'),architecture)
+        source.seek(0)
+        with read_tar(source,MAX_RAW,stream=True) as exported:
+            oci=any(entry.name=='oci-layout' for entry in exported)
+        source.seek(0)
+        with write_xz(ArchiveWriter(raw,folder)) as target:
+            writer=RawArchiveWriter(target)
+            if oci:
+                result=transform(source,writer,records)
+            else:
+                with decoded(source,MAX_RAW,expected='gzip') as original:
+                    shutil.copyfileobj(original,writer,1024**2)
+                result={'architecture':architecture,'images':records}
+    if result['architecture']!=architecture:raise ValueError('Converted image architecture mismatch')
+    return result['images']
 
 
 def source_records(sources, architecture):
@@ -61,13 +104,12 @@ def header(name, size):
 
 
 def finish_metadata(path, records, architecture, size):
-    with tarfile.open(path,'r:') as source,source.extractfile(ARCHIVE) as body:
+    with tarfile.open(path,'r:') as source,source.extractfile(XZ_ARCHIVE) as body:
         import hashlib
         identity=hashlib.file_digest(body,'sha256').hexdigest()
-    with tarfile.open(path,'r:') as source,source.extractfile(ARCHIVE) as body:actual=inventory(body)
-    for row in records.values():
-        for key in ('config_digest','export_digest'):row[key]=actual[row['ref']][key]
-    return {'format':1,'os':'linux','architecture':architecture,'redistribution':'review-pending','images':records,'archive':{'path':ARCHIVE,'size':size,'sha256':identity}}
+    with tarfile.open(path,'r:') as source,source.extractfile(XZ_ARCHIVE) as body:actual=inventory(body)
+    records=bound_records(records,actual,architecture)
+    return {'format':2,'os':'linux','architecture':architecture,'redistribution':'review-pending','images':records,'archive':{'path':XZ_ARCHIVE,'codec':'xz','size':size,'sha256':identity}}
 
 
 def build(sources, output):
@@ -78,9 +120,9 @@ def build(sources, output):
     with tempfile.TemporaryDirectory(prefix='.images-build-',dir=output.parent) as temp:
         archive=Path(temp)/'images.payload'
         with archive.open('w+b') as raw:
-            raw.write(b'\0'*512);save_images([row['ref'] for row in records.values()],raw,arch);size=raw.tell()-512
+            raw.write(b'\0'*512);records=transformed_images(records,raw,arch);size=raw.tell()-512
             if size>MAX_ARCHIVE:raise ValueError('Image capsule exceeds budget')
-            raw.seek(0);raw.write(header(ARCHIVE,size));raw.seek(0,2);raw.write(b'\0'*(-size%512));raw.flush()
+            raw.seek(0);raw.write(header(XZ_ARCHIVE,size));raw.seek(0,2);raw.write(b'\0'*(-size%512));raw.flush()
             manifest=finish_metadata(archive,records,arch,size);data=json.dumps(manifest,sort_keys=True).encode()
             raw.write(header(MANIFEST,len(data)));raw.write(data);raw.write(b'\0'*(-len(data)%512));raw.write(b'\0'*1024)
         stage(archive);archive.replace(output)

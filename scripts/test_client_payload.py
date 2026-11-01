@@ -31,13 +31,13 @@ class ClientPayloadTests(unittest.TestCase):
             self.assertIn('source.payload',digests)
             archive=root/'apps/client/src-tauri/gen/host/source.payload'
             self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(),digests['source.payload'])
-            with tarfile.open(archive,'r:gz') as source:self.assertIn('scripts/client_host_entry.py',source.getnames())
+            with tarfile.open(archive,'r:*') as source:self.assertIn('scripts/client_host_entry.py',source.getnames())
 
     def test_prebuilt_runtime_paths_require_the_explicit_payload_contract(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);archive=self.bundle(root,[('runtime/web/node_modules/package/data/index.js',b'public runtime'),('runtime/manifest.json',b'{"format":1,"links":[]}')])
             with self.assertRaises(ValueError):stage_source(archive,root/'installation')
-            with tarfile.open(archive,'r:gz') as source:
+            with tarfile.open(archive,'r:*') as source:
                 records=[(item.name,source.extractfile(item).read()) for item in source.getmembers()]
             with tarfile.open(archive,'w:gz') as target:
                 for name,data in records:

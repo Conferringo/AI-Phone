@@ -35,7 +35,7 @@ class RuntimeIntegrityTests(unittest.TestCase):
             archive=Path(temp)/'truncated.payload'
             entry=tarfile.TarInfo('oversized');entry.size=201*1024*1024
             with gzip.open(archive,'wb') as output:output.write(entry.tobuf()+b'\0'*1024)
-            with tarfile.open(archive,'r:gz') as source:
+            with tarfile.open(archive,'r:*') as source:
                 with self.assertRaisesRegex(ValueError,'Invalid source payload entries'):
                     archive_records(source)
 
