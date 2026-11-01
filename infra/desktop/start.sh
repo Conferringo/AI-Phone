@@ -6,7 +6,7 @@ if [ ! -c /dev/net/tun ]; then mknod /dev/net/tun c 10 200; fi
 chmod 600 /dev/net/tun
 sh /usr/local/bin/device-network-start || printf '%s\n' 'Device network startup failed; check device configuration.' >&2
 export HOME=/home/ai
-python3 /usr/local/lib/ai-phone/home-identity.py
+/usr/local/bin/desktop-bridge home-identity
 runuser -u ai -- sh /usr/local/lib/ai-phone/home-initialize.sh prepare
 cd /home/ai/Files
 rm -f /tmp/.X0-lock

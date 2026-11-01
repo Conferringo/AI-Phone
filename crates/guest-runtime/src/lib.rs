@@ -3,6 +3,7 @@ pub mod actions;
 pub mod audio;
 pub mod cursor;
 pub mod files;
+pub mod home_identity;
 pub mod imaging;
 pub mod media;
 pub mod notifications;

@@ -8,6 +8,7 @@ from client_host_entry import checked_record, verify_file
 from host_platform import host_key
 from release_package import SECRET
 
+DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -25,6 +26,8 @@ def prepare_services(root, *, linux_ocr=None):
     receipt = cached_build(root, source_fingerprint(root))
     if receipt is None:
         raise ValueError('Build the matching native services before packaging')
+    if receipt['checks'].get('device_setup') != DEVICE_SETUP_CONTRACT:
+        raise ValueError('Native device setup capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -42,7 +45,7 @@ def prepare_services(root, *, linux_ocr=None):
                for name, data, mode in files]
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
-                'vision': vision_backend(linux_ocr), 'files': records}
+                'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -126,6 +129,23 @@ def launch_spec(root, role):
         environment = {'AI_PHONE_OCR': str(root / binary_path('vision'))} if role == 'runner' else {}
         return {'argv': command, 'environment': environment, 'prebuilt': True}
     return {'argv': [str(root / 'target/debug' / ('ai-phone-' + role))], 'environment': {}, 'prebuilt': False}
+
+
+def device_setup_spec(root):
+    root = Path(root).resolve()
+    folder = root / 'runtime/services'
+    if folder.exists() or folder.is_symlink():
+        manifest = load_manifest(root)
+        if manifest.get('device_setup') != DEVICE_SETUP_CONTRACT:
+            raise ValueError('Native device setup capability is missing; rebuild the complete client')
+        return {'argv': [str(root / binary_path('assistant')), '--setup-devices'], 'prebuilt': True}
+    # Source installs build the assistant during the preceding service phase.
+    # Require its read-only capability before any activation; old binaries must not
+    # interpret the new flag as a request to start a second server.
+    from build_native_services import device_setup_receipt
+    binary = root / 'target/debug/ai-phone-assistant'
+    device_setup_receipt(binary)
+    return {'argv': [str(binary), '--setup-devices'], 'prebuilt': False}
 
 
 if __name__ == '__main__':

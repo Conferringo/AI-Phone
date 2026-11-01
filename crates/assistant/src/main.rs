@@ -27,6 +27,7 @@ mod desktop;
 mod desktop_explore;
 mod device_exchange;
 mod device_network;
+mod device_setup;
 mod exploration_policy;
 mod history_window;
 mod http;
@@ -126,6 +127,29 @@ fn db_error(_: impl std::fmt::Display) -> Response {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+    if arguments
+        .iter()
+        .any(|arg| arg == "--device-setup-contract" || arg == "--setup-devices")
+    {
+        if arguments.len() != 1 {
+            return Err("device_setup_arguments".into());
+        }
+        if arguments[0] == "--device-setup-contract" {
+            println!("{}", device_setup::CONTRACT);
+            return Ok(());
+        }
+        let root = std::env::var_os("AI_PHONE_PROJECT_ROOT")
+            .map(PathBuf::from)
+            .ok_or("device_setup_owned_root_required")?;
+        let cancelled = CancellationToken::new();
+        let signal = tokio::spawn(device_setup::interrupt(cancelled.clone()));
+        let result = device_setup::run(&root, cancelled).await;
+        signal.abort();
+        result?;
+        println!("Owned phone frame/root and desktop frame verified; user conversations unchanged");
+        return Ok(());
+    }
     if std::env::args().any(|arg| arg == "--version") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return Ok(());

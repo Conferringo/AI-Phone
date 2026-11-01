@@ -9,7 +9,7 @@ use ai_phone_guest_runtime::{
 use base64::{Engine, engine::general_purpose::STANDARD};
 use image::{Rgb, RgbImage};
 use serde_json::{Value, json};
-use std::sync::Mutex;
+use std::{sync::Mutex, time::Duration};
 
 #[derive(Default)]
 struct State {
@@ -282,7 +282,7 @@ async fn guest_run_is_bounded_and_returns_nonzero_as_result() {
     let request = &requests[0];
     assert_eq!(request.program, "timeout");
     assert_eq!(request.args[0], "85");
-    assert_eq!(request.timeout.as_secs(), 90);
+    assert_eq!(request.timeout, Some(Duration::from_secs(90)));
     assert_eq!(
         request.cwd.as_deref(),
         Some(home.path().join("Files").canonicalize().unwrap().as_path())

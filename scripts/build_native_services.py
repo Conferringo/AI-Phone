@@ -11,7 +11,7 @@ from host_platform import host_key
 from release_package import select_files
 from check_native_services import version_receipt, vision_receipt
 from client_host_entry import checked_record, verify_file
-from prebuilt_services import SOURCE_FIXTURE
+from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner'}
@@ -20,7 +20,7 @@ PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner'}
 def source_fingerprint(root):
     records = []
     for name, data, _ in select_files(root):
-        if name in ('Cargo.toml', 'Cargo.lock', 'scripts/build_native_services.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json') or name.startswith(('crates/', 'packages/protocol/proto/', 'scripts/phone-vision/')):
+        if name in ('Cargo.toml', 'Cargo.lock', 'scripts/build_native_services.py', 'scripts/prebuilt_services.py', 'scripts/client_host.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json') or name.startswith(('crates/', 'packages/protocol/proto/', 'scripts/phone-vision/')):
             records.append([name, hashlib.sha256(data).hexdigest()])
     return hashlib.sha256(json.dumps(records, separators=(',', ':')).encode()).hexdigest()
 
@@ -65,6 +65,9 @@ def read_build_receipt(path):
         return None
     if not isinstance(value, dict) or type(value.get('format')) is not int or value.get('format') != 1:
         return None
+    checks = value.get('checks')
+    if not isinstance(checks, dict) or checks.get('device_setup') != DEVICE_SETUP_CONTRACT:
+        return None
     artifacts = value.get('artifacts')
     if not isinstance(artifacts, dict) or set(artifacts) != {'assistant', 'runner', 'vision'}:
         return None
@@ -96,6 +99,13 @@ def compile_rust(root, environment, versions):
     return {role: expected[package['name']] for role, package in versions.items()}
 
 
+def device_setup_receipt(binary):
+    result = subprocess.run([str(binary), '--device-setup-contract'], capture_output=True, text=True, timeout=10, check=False)
+    if result.returncode or result.stdout.strip() != DEVICE_SETUP_CONTRACT or result.stderr:
+        raise ValueError('Native device setup capability qualification failed')
+    return DEVICE_SETUP_CONTRACT
+
+
 def compile_vision(root):
     destination = root / 'target/release/phone-vision'
     if platform.system() == 'Darwin':
@@ -122,6 +132,7 @@ def build(root=ROOT):
     artifacts = compile_rust(root, environment, versions)
     checks = {role: version_receipt(path, versions[role]['name'], versions[role]['version'])
               for role, path in artifacts.items()}
+    checks['device_setup'] = device_setup_receipt(artifacts['assistant'])
     artifacts['vision'] = compile_vision(root)
     checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE)
     if platform.system() == 'Darwin':

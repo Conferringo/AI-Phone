@@ -213,7 +213,7 @@ async fn send_key(runner: &impl Runner, settings: &Settings, value: &str) -> Res
 async fn paste(runner: &impl Runner, settings: &Settings, value: &str) -> Result<()> {
     let mut request = Request::new("xclip", &["-selection", "clipboard"]);
     request.input = value.as_bytes().to_vec();
-    request.timeout = Duration::from_secs(5);
+    request.timeout = Some(Duration::from_secs(5));
     request.capture = Capture::Discard;
     request.env = settings.environment()?;
     process::checked(runner.execute(request).await?)?;

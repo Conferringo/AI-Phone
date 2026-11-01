@@ -107,7 +107,7 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
         let mut command = Request::new("timeout", &["85", "bash", "-lc", &script]);
         command.cwd = Some(files::work_path(&self.settings.home, "")?);
         command.env = self.settings.environment()?;
-        command.timeout = Duration::from_secs(90);
+        command.timeout = Some(Duration::from_secs(90));
         command.capture = Capture::Tail(65536);
         let output = self.runner.execute(command).await?;
         let mut bytes = output.stderr;

@@ -317,6 +317,6 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     import release
     release.install(root=root,observer=lambda phase,state:emit(phase,state),license_action=lambda manager,env,packages:sdk_licenses(manager,env,emit,packages),launch_client=False,minimum_free_gb=config['minimum_resume_free_gb'])
     emit('devices')
-    from prebuilt_js import launch_spec as js_launch_spec
-    execute(js_launch_spec(root, 'device-setup')['argv'],cwd=root)
+    from prebuilt_services import device_setup_spec
+    execute(device_setup_spec(root)['argv'],cwd=root)
     emit('ready','ready')
