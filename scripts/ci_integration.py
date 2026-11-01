@@ -10,6 +10,16 @@ import time
 
 ROOT=Path(__file__).resolve().parent.parent
 
+def assistant_test_executable(output):
+    rows=(json.loads(line) for line in output.splitlines())
+    binaries=[row['executable'] for row in rows
+              if row.get('reason')=='compiler-artifact' and row.get('executable')
+              and row.get('profile',{}).get('test') is True
+              and row.get('target',{}).get('kind')==['bin']
+              and row['target'].get('name')=='ai-phone-assistant']
+    if len(binaries)!=1:raise ValueError('Expected exactly one assistant unit-test executable')
+    return binaries[0]
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--container',required=True);parser.add_argument('--port',required=True,type=int);args=parser.parse_args()
     if not args.container.startswith('aiphone-') or args.port==55482:raise ValueError('Disposable container and non-production port required')
@@ -36,9 +46,7 @@ END $fixture$;""",text=True,stdout=subprocess.DEVNULL,check=True)
          'AI_PHONE_TEST_PG_CONTAINER':args.container,'AI_PHONE_TEST_PG_PORT':str(args.port)}
     subprocess.run(['cargo','build','-p','ai-phone-assistant','--locked'],cwd=ROOT,env=env,check=True)
     result=subprocess.run(['cargo','test','-p','ai-phone-assistant','--no-run','--locked','--message-format=json'],cwd=ROOT,env=env,capture_output=True,text=True,check=True)
-    binaries=[item['executable'] for line in result.stdout.splitlines() if (item:=json.loads(line)).get('reason')=='compiler-artifact' and item.get('executable') and item['target']['name']=='ai-phone-assistant']
-    if len(binaries)!=1:raise ValueError('Expected exactly one assistant test executable')
-    binary=binaries[0]
+    binary=assistant_test_executable(result.stdout)
     # Integration tests and the fault driver deliberately share a fixture cluster:
     # keep them sequential, because the latter restarts it.
     subprocess.run([binary,'--ignored','--skip','model_adapter::tests::live_model_capabilities','--skip','worker::process_recovery_tests::worker_child','--test-threads=1'],cwd=ROOT,env=env,check=True)

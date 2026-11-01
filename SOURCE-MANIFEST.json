@@ -4504,8 +4504,8 @@
     },
     {
       "path": "scripts/ci_integration.py",
-      "size": 4287,
-      "sha256": "28f8ee4910b1de57b4e60dc551802d42201540a8965537b437ad0538190e3ded"
+      "size": 4549,
+      "sha256": "2ee5020f3f5b5d5022a6e7602f858a06ce24f273562a4a1642ca6bf5064349e3"
     },
     {
       "path": "scripts/client-id.test.ts",
@@ -5156,6 +5156,11 @@
       "path": "scripts/test_channel_browser.py",
       "size": 5926,
       "sha256": "4d3b757e76e8c275492d2cee81e4be331a30ac7c9281408b3122415a2c8eb7ba"
+    },
+    {
+      "path": "scripts/test_ci_integration.py",
+      "size": 1830,
+      "sha256": "c6fcf17d0d34639ef43fd20051e4eb4f22b5879f9bd3369df6967c32a8c2519f"
     },
     {
       "path": "scripts/test_client_artifacts.py",
