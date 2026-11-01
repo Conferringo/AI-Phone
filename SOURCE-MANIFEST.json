@@ -2949,8 +2949,8 @@
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
-      "size": 5789,
-      "sha256": "9efe64aa6e8c634a47a5e81ade0fd4a58954d7501807efed40e19b4c3c148055"
+      "size": 6109,
+      "sha256": "f666ef2fbf945e6d6f277796b3a0b14d7eeb86944256ba2fe46c49aa1aded5e4"
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
@@ -4434,8 +4434,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11899,
-      "sha256": "7ebb6a4e58b550c7abba3e950afa82ce3d4fa1817a2a16a13063066b856d0423"
+      "size": 12057,
+      "sha256": "1f5ecf97670f99a9428c1e7cac85cd11af832e58c6f2db1b6cab162b62ace0c9"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4576,6 +4576,11 @@
       "path": "scripts/database.py",
       "size": 10957,
       "sha256": "453fe2efb6bb3f65c1810d01cbe98ffc39681f18c0da4e2195268f551c21ffce"
+    },
+    {
+      "path": "scripts/debian_compression.py",
+      "size": 3689,
+      "sha256": "0450634715188d97ec2f2a522679ebb027b93197dbca8b12c7b2f5e1092c5b45"
     },
     {
       "path": "scripts/dependency_inventory.py",
@@ -5226,6 +5231,11 @@
       "path": "scripts/test_database.py",
       "size": 7005,
       "sha256": "755677c3d099ff3f8281e13b63436572ff40ffe018b9c85e508b519b007d5ec8"
+    },
+    {
+      "path": "scripts/test_debian_compression.py",
+      "size": 8967,
+      "sha256": "9abe032c3ff5b9f0d936d1a7ff9209d923525bda3b8ab6e9af76edb3e55364fc"
     },
     {
       "path": "scripts/test_dependency_audit.py",

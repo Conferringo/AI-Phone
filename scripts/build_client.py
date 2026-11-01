@@ -87,7 +87,9 @@ def build_other(target, package_only=False):
             subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json','--bundles','deb','--ci','--no-sign','--','--locked'],cwd=client,env=env,check=True)
         source=native/f'target/release/bundle/deb/AI Phone_{version}_{arch}.deb'
         destination=dist/f'AI-Phone-{version}-linux-{arch}.deb'
-        shutil.copy2(source,destination)
+        from debian_compression import recompress
+        compression=recompress(source,destination)
+        print(json.dumps({'deb_compression':compression,'original_bytes':source.stat().st_size}))
         manifest=record(destination,'linux',arch,inspect_deb(destination))
     print(json.dumps({'artifact':str(destination),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 

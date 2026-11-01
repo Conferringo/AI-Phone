@@ -20,6 +20,8 @@ These JSON records describe local artifacts and installation state. Browser busi
 
 ## Maintainer workflow
 
+The Linux packager recompresses the DEB's outer control and data streams with XZ when this reduces the file size. Their uncompressed TAR bytes, including permissions and installation scripts, remain unchanged. Failed repacking preserves the previous installer; incompressible inputs retain the original representation.
+
 Use a clean source export and a dedicated builder engine. Build the workspace and desktop Dockerfiles with `infra/workspace` and `infra/desktop` as their contexts, never a user's installation root. The desktop's `clash_apps` named context must contain the matching verified package from `config/clash-apps.json`. Its installer is mounted during the build step rather than retained in an image layer.
 
 Review the built images and digest-pinned PostgreSQL/Redis defaults in `compose.yaml`. Record their references in a local JSON object with keys `workspace`, `desktop`, `postgres`, `redis`, then run:
