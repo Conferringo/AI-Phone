@@ -34,6 +34,12 @@ class OwnedFixture(unittest.TestCase):
 
 
 class BootstrapInputTests(OwnedFixture):
+    def test_resource_snapshot_reports_total_and_available_disk_separately(self):
+        with patch.object(bootstrap.Path, 'read_text', return_value='MemAvailable: 2048 kB\n'), patch.object(bootstrap.os, 'cpu_count', return_value=4):
+            with patch.object(bootstrap.shutil, 'disk_usage', return_value=SimpleNamespace(total=120*bootstrap.GIB,free=96*bootstrap.GIB)):
+                self.assertEqual(bootstrap.resource_snapshot(self.root), {'cpu_count':4,'memory_available_bytes':2048*1024,
+                    'disk_total_bytes':120*bootstrap.GIB,'disk_free_bytes':96*bootstrap.GIB})
+
     def linux_project_fixture(self):
         projects, unused_lock = bootstrap.producer.locked_projects()
         selected = [node for node in projects if "notdefault" not in node.get("groups", "").split(",")
@@ -120,6 +126,18 @@ class BootstrapInputTests(OwnedFixture):
 
 
 class RepoBoundaryTests(OwnedFixture):
+    def test_native_input_selection_keeps_linux_qt_and_the_pinned_compiler(self):
+        checkout = self.root / "checkout"
+        projects = ("prebuilts/clang/host/linux-x86", "prebuilts/android-emulator-build/qt")
+        for project in projects:
+            (checkout / ".repo/projects" / (project + ".git")).mkdir(parents=True)
+        command = SimpleNamespace(run=Mock(side_effect=lambda *args, capture=False, **kwargs: "tree" if capture else ""))
+        bootstrap.select_build_inputs(checkout, command)
+        qt = checkout / ".repo/projects/prebuilts/android-emulator-build/qt.git/info/sparse-checkout"
+        self.assertEqual(qt.read_text(), "/*\n!/*/\n/linux-x86_64/\n")
+        clang = checkout / ".repo/projects/prebuilts/clang/host/linux-x86.git/info/sparse-checkout"
+        self.assertEqual(clang.read_text(), "/*\n!/*/\n/clang-r487747c/\n")
+
     def test_installed_repo_mismatch_or_dirty_state_blocks_recipe(self):
         checkout = self.root / "checkout"
         manifest = checkout / ".repo/manifests"
@@ -192,8 +210,11 @@ class RepoBoundaryTests(OwnedFixture):
         command = SimpleNamespace(run=Mock(return_value=""))
         manifest = self.root / "manifest"
         manifest.mkdir()
-        with patch.object(bootstrap, 'select_compiler_checkout') as select:
-            bootstrap.sync_sources(self.root, command, self.root / "pinned/repo", manifest, "1" * 40)
+        phases = []
+        boundaries = []
+        command.run.side_effect = lambda *args, **kwargs: boundaries.append(phases[-1]) or ''
+        with patch.object(bootstrap, 'select_build_inputs') as select:
+            bootstrap.sync_sources(self.root, command, self.root / "pinned/repo", manifest, "1" * 40,on_phase=phases.append)
         initial, fetched, synchronized = command.run.call_args_list
         init_args = initial.args[0]
         self.assertEqual(init_args[init_args.index("-u") + 1], manifest.resolve().as_uri())
@@ -211,22 +232,32 @@ class RepoBoundaryTests(OwnedFixture):
         self.assertIn('--local-only', synchronized.args[0])
         self.assertIn('--detach', synchronized.args[0])
         select.assert_called_once_with(self.root/'checkout', command)
+        self.assertEqual(phases,['initialize','fetch','select_inputs','checkout'])
+        self.assertEqual(boundaries,['initialize','fetch','checkout'])
+
+    def test_sparse_selection_requires_the_locked_directory_to_be_a_tree(self):
+        checkout=self.root/'checkout';project='prebuilts/android-emulator-build/qt'
+        metadata=checkout/'.repo/projects'/(project+'.git');metadata.mkdir(parents=True)
+        with self.assertRaisesRegex(bootstrap.BuildFailure,'source_input_tree'):
+            bootstrap.select_input_project(checkout,SimpleNamespace(run=Mock(return_value='blob')),project,('linux-x86_64',),'a'*40)
+        self.assertFalse((metadata/'info/sparse-checkout').exists())
 
     def test_sparse_selection_keeps_root_files_and_the_pinned_compiler_only(self):
         checkout=self.root/'checkout';folder=checkout/'.repo/projects/prebuilts/clang/host/linux-x86.git'
-        folder.mkdir(parents=True);command=SimpleNamespace(run=Mock(return_value=''))
-        bootstrap.select_compiler_checkout(checkout,command)
+        folder.mkdir(parents=True);command=SimpleNamespace(run=Mock(return_value='tree'))
+        bootstrap.select_input_project(checkout,command,'prebuilts/clang/host/linux-x86',('clang-r487747c',),'1'*40)
         self.assertEqual((folder/'info/sparse-checkout').read_text(),'/*\n!/*/\n/clang-r487747c/\n')
-        self.assertEqual([call.args[0][-3:] for call in command.run.call_args_list],[['config','core.sparseCheckout','true'],['config','core.sparseCheckoutCone','true']])
+        self.assertEqual(command.run.call_args_list[0].args[0][-3:],['cat-file','-t','1'*40+':clang-r487747c'])
+        self.assertEqual([call.args[0][-3:] for call in command.run.call_args_list[1:]],[['config','core.sparseCheckout','true'],['config','core.sparseCheckoutCone','true']])
         with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
-            bootstrap.select_compiler_checkout(checkout,command)
+            bootstrap.select_input_project(checkout,command,'prebuilts/clang/host/linux-x86',('clang-r487747c',),'1'*40)
 
     def test_network_and_checkout_share_the_existing_sync_time_budget(self):
         for elapsed,expired in ((10800.5,False),(10801,True),(10802,True)):
             with self.subTest(elapsed=elapsed):
                 root=self.root/str(elapsed);root.mkdir();manifest=root/'manifest';manifest.mkdir()
                 command=SimpleNamespace(run=Mock(return_value=''))
-                with patch.object(bootstrap,'select_compiler_checkout'),patch.object(bootstrap.time,'monotonic',side_effect=[1,elapsed]):
+                with patch.object(bootstrap,'select_build_inputs'),patch.object(bootstrap.time,'monotonic',side_effect=[1,elapsed]):
                     if expired:
                         with self.assertRaisesRegex(bootstrap.BuildInterrupted,'command_timeout'):
                             bootstrap.sync_sources(root,command,root/'pinned/repo',manifest,'1'*40)
@@ -237,7 +268,7 @@ class RepoBoundaryTests(OwnedFixture):
     def test_sparse_selection_requires_existing_project_metadata(self):
         checkout=self.root/'checkout';checkout.mkdir()
         with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
-            bootstrap.select_compiler_checkout(checkout,SimpleNamespace(run=Mock(return_value='')))
+            bootstrap.select_input_project(checkout,SimpleNamespace(run=Mock(return_value='')),'prebuilts/clang/host/linux-x86',('clang-r487747c',),'1'*40)
         self.assertEqual(list(checkout.iterdir()),[])
 
     def test_sparse_selection_rejects_a_git_or_info_directory_outside_owned_metadata(self):
@@ -250,7 +281,7 @@ class RepoBoundaryTests(OwnedFixture):
                 else:
                     folder.mkdir(parents=True);(folder/'info').symlink_to(outside,target_is_directory=True)
                 with self.assertRaisesRegex(bootstrap.BuildFailure,'source_checkout_layout'):
-                    bootstrap.select_compiler_checkout(checkout,SimpleNamespace(run=Mock(return_value='')))
+                    bootstrap.select_input_project(checkout,SimpleNamespace(run=Mock(return_value='')),'prebuilts/clang/host/linux-x86',('clang-r487747c',),'1'*40)
                 self.assertEqual(list(outside.iterdir()),[])
 
 
@@ -326,6 +357,25 @@ class LifecycleTests(OwnedFixture):
 
     def public_receipt(self):
         return json.loads((self.root / "public-receipt.json").read_text(encoding="utf-8"))
+
+    def test_disk_interruption_retains_the_sync_phase_without_restarting_it(self):
+        def stop(*args,on_phase):
+            on_phase('checkout')
+            args[1].log.write(('Checkout '+str(self.root/'checkout/input')+'\n').encode())
+            args[1].log.flush()
+            raise bootstrap.BuildInterrupted('disk_floor')
+        self.sync.side_effect=stop
+        output=io.StringIO()
+        with contextlib.redirect_stderr(output),self.assertRaisesRegex(bootstrap.BuildInterrupted,'disk_floor'):
+            bootstrap.controlled_build(self.root)
+        receipt=self.public_receipt()
+        self.assertEqual(receipt['sync_phase'],'checkout')
+        self.assertEqual(receipt['resources']['sync_checkout'],SNAPSHOT)
+        self.assertEqual(receipt['status'],'unknown')
+        self.assertEqual(receipt['reason'],'disk_floor')
+        self.assertIn('Checkout <build>/checkout/input',output.getvalue())
+        self.assertNotIn(str(self.root),output.getvalue())
+        self.sync.assert_called_once()
 
     def test_public_build_tail_keeps_errors_and_redacts_credentials_and_builder_paths(self):
         build = self.root / "build"

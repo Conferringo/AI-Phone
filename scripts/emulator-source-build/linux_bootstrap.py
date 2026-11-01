@@ -26,6 +26,10 @@ REPO_COMMIT = "97dc5c1bd9527c2abe2183b16a4b7ef037dc34a7"
 REPO_LAUNCHER_BLOB = "2526ab03fdc8eb364e9fa2e50441c49690a721d5"
 GIB = 1024**3
 DISK_FLOOR = 2 * GIB
+LINUX_PREBUILT_TREES = {
+    "prebuilts/clang/host/linux-x86": (producer.SOURCE_CONTRACT["clang"],),
+    "prebuilts/android-emulator-build/qt": ("linux-x86_64",),
+}
 CREDENTIAL_HINT = re.compile(r"(?i)\b(?:authorization|password|passwd|secret|token|api[-_ ]?key|private[-_ ]?key)\b|\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})")
 FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_work_required",
                    "work_outside_source_required", "linux_x64_required", "python_311_64bit_required",
@@ -33,7 +37,8 @@ FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_
                    "kvm_access_required", "repo_launcher_budget", "repo_launcher_identity",
                    "repo_key_declaration", "repo_tag_identity", "repo_commit_identity", "repo_checkout_identity",
                    "manifest_identity", "synced_manifest_identity", "manifest_checkout_identity",
-                   "installed_repo_identity", "installed_repo_dirty", "producer_receipt", "source_checkout_layout"}
+                   "installed_repo_identity", "installed_repo_dirty", "producer_receipt", "source_checkout_layout",
+                   "source_input_tree"}
 
 
 class BuildFailure(RuntimeError):
@@ -159,8 +164,9 @@ def isolated_environment(root):
 def resource_snapshot(root):
     rows = Path("/proc/meminfo").read_text(encoding="ascii").splitlines()
     available = next((int(row.split()[1]) * 1024 for row in rows if row.startswith("MemAvailable:")), 0)
+    disk = shutil.disk_usage(root)
     return {"cpu_count": os.cpu_count() or 1, "memory_available_bytes": available,
-            "disk_free_bytes": shutil.disk_usage(root).free}
+            "disk_total_bytes": disk.total, "disk_free_bytes": disk.free}
 
 
 def host_requirements():
@@ -256,9 +262,9 @@ def local_manifest(root, command):
     return folder, revision
 
 
-def select_compiler_checkout(checkout, command):
+def select_input_project(checkout, command, project, directories, revision):
     metadata = checkout / ".repo"
-    folder = metadata / "projects/prebuilts/clang/host/linux-x86.git"
+    folder = metadata / "projects" / (project + ".git")
     info = folder / "info"
     if not folder.is_dir() or not folder.resolve().is_relative_to(metadata.resolve()) or not info.resolve().is_relative_to(metadata.resolve()):
         raise BuildFailure("source_checkout_layout")
@@ -266,15 +272,26 @@ def select_compiler_checkout(checkout, command):
     selected = info / "sparse-checkout"
     if selected.exists() or selected.is_symlink():
         raise BuildFailure("source_checkout_layout")
+    for name in directories:
+        if git(command, folder, "cat-file", "-t", revision + ":" + name, capture=True) != "tree":
+            raise BuildFailure("source_input_tree")
     with selected.open("x", encoding="utf-8") as stream:
-        stream.write("/*\n!/*/\n/" + producer.SOURCE_CONTRACT["clang"] + "/\n")
+        stream.write("/*\n!/*/\n" + "".join("/" + name + "/\n" for name in directories))
     git(command, folder, "config", "core.sparseCheckout", "true")
     git(command, folder, "config", "core.sparseCheckoutCone", "true")
 
 
-def sync_sources(root, command, launcher, manifest, revision):
+def select_build_inputs(checkout, command):
+    projects, _lock = producer.locked_projects()
+    revisions = {node.get("path"): node.get("revision") for node in projects}
+    for project, directories in LINUX_PREBUILT_TREES.items():
+        select_input_project(checkout, command, project, directories, revisions[project])
+
+
+def sync_sources(root, command, launcher, manifest, revision, *, on_phase=lambda phase: None):
     checkout = root / "checkout"
     checkout.mkdir()
+    on_phase("initialize")
     command.run([sys.executable, str(launcher), "init", "-u", manifest.as_uri(), "-b", revision,
                  "-m", "source-lock.xml", "-g", "default,platform-linux", "--depth=1",
                  "--partial-clone", "--clone-filter=blob:none",
@@ -283,8 +300,11 @@ def sync_sources(root, command, launcher, manifest, revision):
     sync = [sys.executable, str(launcher), "sync", "--jobs=2", "--no-manifest-update",
             "--no-clone-bundle", "--no-tags", "--no-use-superproject"]
     deadline = time.monotonic() + 10800
+    on_phase("fetch")
     command.run([*sync, "--network-only"], checkout, timeout=10800)
-    select_compiler_checkout(checkout, command)
+    on_phase("select_inputs")
+    select_build_inputs(checkout, command)
+    on_phase("checkout")
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         raise BuildInterrupted("command_timeout")
@@ -329,8 +349,8 @@ def read_log_tail(path, maximum):
         return ""
 
 
-def print_failure_log(root):
-    text = read_log_tail(root / "build/build.log", 8192)
+def print_failure_log(root, relative="build/build.log"):
+    text = read_log_tail(root / relative, 8192)
     if not text:
         return
     for value, replacement in ((str(root), "<build>"), (str(Path.home()), "<home>"),
@@ -400,6 +420,12 @@ def enter_stage(root, receipt, stage):
     publish_receipt(root, receipt)
 
 
+def enter_sync_phase(root, receipt, phase):
+    receipt["sync_phase"] = phase
+    receipt["resources"]["sync_" + phase] = resource_snapshot(root)
+    publish_receipt(root, receipt)
+
+
 def controlled_build(root):
     environment = isolated_environment(root)
     receipt = {"format": 1, "host": "linux-x64", "stage": "admission", "status": "unknown",
@@ -418,9 +444,10 @@ def controlled_build(root):
             enter_stage(root, receipt, "manifest")
             manifest, revision = local_manifest(root, command)
             enter_stage(root, receipt, "source_sync")
-            checkout = sync_sources(root, command, launcher, manifest, revision)
+            checkout = sync_sources(root, command, launcher, manifest, revision,
+                                    on_phase=lambda phase: enter_sync_phase(root, receipt, phase))
             receipt["source_selection"] = {"clone_filter": "blob:none", "compiler": producer.SOURCE_CONTRACT["clang"],
-                                            "compiler_root_files": "retained", "projects_omitted": 0}
+                                            "compiler_root_files": "retained", "qt": "linux-x86_64", "projects_omitted": 0}
             receipt["resources"]["after_sync"] = resource_snapshot(root)
             enter_stage(root, receipt, "source_proof")
             verified_sources(command, checkout, revision)
@@ -436,7 +463,6 @@ def controlled_build(root):
         receipt.update(status="failed", reason=str(error))
         if receipt["stage"] == "source_build":
             receipt["build_diagnostics"] = build_diagnostics(root)
-            print_failure_log(root)
         raise
     except BuildInterrupted as error:
         reason = str(error) if str(error) in {"disk_floor", "command_timeout"} else "interrupted_or_unknown"
@@ -447,6 +473,9 @@ def controlled_build(root):
         receipt.update(status="unknown", reason="interrupted_or_unknown")
         raise
     finally:
+        if receipt["status"] in {"failed", "unknown"} and receipt["stage"] in {"source_sync", "source_build"}:
+            relative = "private-build.log" if receipt["stage"] == "source_sync" else "build/build.log"
+            print_failure_log(root, relative)
         publish_receipt(root, receipt)
 
 
