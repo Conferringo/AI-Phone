@@ -19,6 +19,24 @@ def elf(machine=183,kind=1):
 
 
 class MacGuestRuntimeTests(unittest.TestCase):
+    def test_precompiled_context_is_materialized_inside_the_shared_factory_tree(self):
+        with tempfile.TemporaryDirectory(prefix='shared factory ') as shared,tempfile.TemporaryDirectory(prefix='unmounted compiler ') as outside:
+            root=Path(shared).resolve();(root/'Cargo.toml').write_text('fixture source')
+            source=Path(outside)/'context';binary=source/guest.BINARY;binary.parent.mkdir(parents=True);binary.write_bytes(elf())
+            manifest={'format':1,'target':guest.TARGET,'source_sha256':guest.source_identity(root),'sha256':digest(binary)}
+            (source/'manifest.json').write_text(json.dumps({**manifest,'unrelated':'private-fixture'}))
+            (source/'unrelated.env').write_text('private-fixture')
+            with patch.dict(guest.os.environ,{'AI_PHONE_FACTORY_GUEST_RUNTIME':str(source)}),patch.object(mac,'build_guest') as compile:
+                result=mac.prepare_guest(root,root/'.tools/complete-macos')
+            self.assertTrue(result.is_relative_to(root),'the remote Docker CLI can read only the factory mounts')
+            self.assertNotEqual(result,source)
+            self.assertEqual(guest.verify(root,result,'arm64'),manifest)
+            self.assertEqual((result/guest.BINARY).read_bytes(),binary.read_bytes())
+            self.assertEqual((result/guest.BINARY).stat().st_mode&0o777,0o755)
+            self.assertEqual({p.relative_to(result).as_posix() for p in result.rglob('*') if p.is_file()},{guest.BINARY,'manifest.json'})
+            self.assertEqual((source/'unrelated.env').read_text(),'private-fixture')
+            compile.assert_not_called()
+
     def test_rejects_wrong_architecture_dynamic_interpreters_and_bad_headers(self):
         with tempfile.TemporaryDirectory() as temporary:
             path=Path(temporary)/'bridge'
@@ -77,12 +95,9 @@ class MacGuestRuntimeTests(unittest.TestCase):
             self.assertEqual(command[command.index('--platform')+1],'linux/arm64')
 
     def test_precompiled_component_is_verified_before_it_can_replace_compilation(self):
-        with patch.dict(guest.os.environ,{'AI_PHONE_FACTORY_GUEST_RUNTIME':'fixture context'}),patch.object(guest,'verify') as verify,patch.object(mac,'build_guest') as compile:
-            self.assertEqual(mac.prepare_guest(Path('/fixture'),Path('/cache')),Path('fixture context'))
-            verify.assert_called_once_with(Path('/fixture'),Path('fixture context'),'arm64')
-            compile.assert_not_called()
-            verify.side_effect=ValueError('Guest component source mismatch')
+        with patch.dict(guest.os.environ,{'AI_PHONE_FACTORY_GUEST_RUNTIME':'fixture context'}),patch.object(guest,'verify',side_effect=ValueError('Guest component source mismatch')) as verify,patch.object(mac,'build_guest') as compile:
             with self.assertRaisesRegex(ValueError,'source'):mac.prepare_guest(Path('/fixture'),Path('/cache'))
+            verify.assert_called_once_with(Path('/fixture'),Path('fixture context'),'arm64')
             compile.assert_not_called()
 
 

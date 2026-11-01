@@ -75,8 +75,15 @@ def checked_delivery(components):
 def prepare_guest(root,cache):
     provided=os.environ.get('AI_PHONE_FACTORY_GUEST_RUNTIME')
     if provided:
-        from macos_guest_runtime import verify
-        guest=Path(provided);verify(root,guest,'arm64');return guest
+        from macos_guest_runtime import BINARY,verify
+        source=Path(provided);checked=verify(root,source,'arm64')
+        guest=cache/'guest-context';binary=guest/BINARY
+        binary.parent.mkdir(parents=True)
+        shutil.copyfile(source/BINARY,binary);binary.chmod(0o755)
+        manifest={'format':1,**{key:checked[key] for key in ('target','source_sha256','sha256')}}
+        (guest/'manifest.json').write_text(json.dumps(manifest,sort_keys=True)+'\n')
+        verify(root,guest,'arm64')
+        return guest
     return build_guest(root,cache/'guest-native')
 
 

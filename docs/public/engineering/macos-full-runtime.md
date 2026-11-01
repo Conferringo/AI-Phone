@@ -52,6 +52,8 @@ Factory inputs must satisfy their source pins and redistribution requirements. T
 
 The hosted Mac factory cross-compiles the desktop bridge to a static Linux ARM executable on the build host. Its dedicated image context binds the binary digest to the guest sources and Cargo lock; the desktop image also runs a read-only version probe. Other image builds retain their native Linux compilation path. The application carries the resulting guest runtime and does not need an end-user compiler.
 
+Precompiled guest inputs are verified and materialized inside the source checkout's shared factory directory before Docker is invoked. The image context contains only the executable and its source-bound manifest; external compiler caches are not engine mounts or package inputs.
+
 Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
 ## 中文

@@ -2964,8 +2964,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 5394,
-      "sha256": "876b8511eceb27a75bb8dec85fed47f8bcb8c42acb10bfe2905375825d883a89"
+      "size": 5674,
+      "sha256": "dcc75c4db8762a454a11480fa23778d0a667011b4ab6e9797a47a8195a9e2bf2"
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
@@ -4899,8 +4899,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 6766,
-      "sha256": "9dc7cdd900bf7731388c0b63f2e2bf911b5332cabee72e8c357e84127e77dd49"
+      "size": 7173,
+      "sha256": "63c300b7aadd617fb6ad3fdcf64419bb7d77f204f7808897978505b95bf7a464"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5399,8 +5399,8 @@
     },
     {
       "path": "scripts/test_macos_guest_runtime.py",
-      "size": 5931,
-      "sha256": "38b7bf76117657e04a7c8af7715b98a1c22c4545c483e572038a57bb4702feb0"
+      "size": 7390,
+      "sha256": "6134b621e9234b758701b246cfb926c6dc91bcd73c9d3a668b2a0d7fe465e5c8"
     },
     {
       "path": "scripts/test_managed_engine.py",
