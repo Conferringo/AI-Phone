@@ -133,7 +133,7 @@ QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[�
 4. 模型发现与能力检测、更多应用特化、Skill升级/回退。
 5. 语音输入/播报 → 可打断实时语音 → 通话沙盒 → 用户配置的真实通信线路。
 
-模拟器与eSIM界面不能提供运营商号码或蜂窝能力。电话方向尚未实现，具体阶段与验收条件见[路线](docs/public/release-roadmap.zh-CN.md)。当前产品门槛与本轮证据见[发行状态](docs/public/release-status.md)，不以源码上传代表正式产品验收完成。
+模拟器与eSIM界面不能提供运营商号码或蜂窝能力。电话方向尚未实现，具体阶段与验收条件见[路线](docs/public/release-roadmap.zh-CN.md)。当前产品门槛与验证证据见[发行状态](docs/public/release-status.md)，不以源码上传代表正式产品验收完成。
 
 ## 免责声明与许可
 

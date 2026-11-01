@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "host": "windows-x64",
+  "backend_host": "linux-x64",
+  "base_image": "ubuntu@sha256:78d4744ead1f5b19b04d0df558ab182a5300903900755e515b2ca4d10eb2044d",
+  "base_source": "https://hub.docker.com/_/ubuntu",
+  "base_license_inventory": "/usr/share/doc/*/copyright",
+  "engine_policy": "config/container-host-runtime.json",
+  "engine_host": "linux-x64",
+  "factory_capacity": "context + 4 * rootfs_budget + 4 GiB reserve",
+  "minimum_runtime_free_gb": 4,
+  "runtime_components": ["web", "native-services", "js-services", "container-images", "installer-tools"],
+  "redistribution_review_complete": false
+}

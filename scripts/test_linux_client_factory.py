@@ -41,9 +41,20 @@ class LinuxClientFactoryTests(unittest.TestCase):
         def probe(version=modern,info=store):
             import json
             return patch('linux_client_factory.subprocess.check_output',side_effect=[json.dumps(version),json.dumps(info)])
-        with probe():factory.check_docker()
-        for version,info in [({**modern,'Client':{'ApiVersion':'1.48'}},store),({**modern,'Server':{'ApiVersion':'1.48'}},store),(modern,{'DriverStatus':[['Backing Filesystem','extfs']]})]:
-            with probe(version,info),self.assertRaisesRegex(ValueError,'Docker'):factory.check_docker()
+        with patch('linux_client_factory.subprocess.run'):
+            with probe():factory.check_docker()
+            for version,info in [({**modern,'Client':{'ApiVersion':'1.48'}},store),({**modern,'Server':{'ApiVersion':'1.48'}},store),(modern,{'DriverStatus':[['Backing Filesystem','extfs']]})]:
+                with probe(version,info),self.assertRaisesRegex(ValueError,'Docker'):factory.check_docker()
+
+    def test_factory_refuses_missing_buildx_before_inspecting_other_inputs(self):
+        import json,subprocess
+        version=json.dumps({'Client':{'ApiVersion':'1.52'},'Server':{'ApiVersion':'1.52'}})
+        store=json.dumps({'DriverStatus':[['driver-type','io.containerd.snapshotter.v1']]})
+        for error in (FileNotFoundError('docker missing'),subprocess.CalledProcessError(1,['docker','buildx','version'])):
+            with patch('linux_client_factory.subprocess.run',side_effect=error) as run,patch('linux_client_factory.subprocess.check_output',side_effect=[version,store]) as inspect:
+                with self.assertRaisesRegex(ValueError,'Buildx'):factory.check_docker()
+                run.assert_called_once_with(['docker','buildx','version'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                inspect.assert_not_called()
 
     def test_sdk_directory_metadata_and_exact_file_budget(self):
         entry=zipfile.ZipInfo('emulator/');entry.external_attr=0o040755<<16

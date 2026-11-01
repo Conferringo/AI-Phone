@@ -1,9 +1,11 @@
 """Phone control applications are built once, verified and staged without Java."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import subprocess
+import sys
 import unittest
 import zipfile
 from unittest.mock import patch
@@ -12,30 +14,48 @@ from prepare_client_host import prepare
 
 class PhoneAppTests(unittest.TestCase):
     def fixture(self,root):
-        from prebuilt_phone import APPS,source_fingerprint
+        from prebuilt_phone import APPS,PROBE,source_fingerprint
         folder=root/'.tools/phone-apps';folder.mkdir(parents=True)
         records=[]
         for role in APPS:
             path=folder/(role+'.apk')
             with zipfile.ZipFile(path,'w') as apk:apk.writestr('classes.dex',('apk fixture '+role).encode())
             records.append({'path':'runtime/phone-apps/'+role+'.apk','size':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'mode':0o644})
+        path=folder/PROBE
+        with zipfile.ZipFile(path,'w') as archive:archive.writestr('classes.dex',b'probe fixture')
+        records.append({'path':'runtime/phone-apps/'+PROBE,'size':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'mode':0o644})
         manifest={'format':1,'source_sha256':source_fingerprint(root),'apps':{role:{'package':value,'signer_sha256':'a'*64} for role,value in APPS.items()},'files':records}
         (folder/'manifest.json').write_text(json.dumps(manifest));return folder
 
     def test_prepare_and_stage_choose_inventoried_apks_without_a_compiler(self):
-        from prebuilt_phone import prepare_apps,application,available
+        from prebuilt_phone import prepare_apps,application,available,notification_helper
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);self.fixture(root);(root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
-            self.assertEqual(len(prepare_apps(root)),3)
+            self.assertEqual(len(prepare_apps(root)),4)
             prepare(root,with_phone_apps=True)
             home=root/'install';(home/'user/data').mkdir(parents=True);(home/'user/data/chat').write_text('keep')
             staged=stage_source(root/'apps/client/src-tauri/gen/host/source.payload',home)
             self.assertTrue(available(staged));self.assertFalse(available(root))
+            with patch('prebuilt_phone.compile_probe',side_effect=AssertionError('bundled consumer cannot compile')):
+                with zipfile.ZipFile(notification_helper(staged)) as archive:self.assertEqual(archive.read('classes.dex'),b'probe fixture')
+            env={**os.environ,'JAVA_HOME':'/no-java','ANDROID_HOME':'/no-sdk','PATH':'/no-compilers'}
+            result=subprocess.run([sys.executable,str(Path(__file__).parent/'prebuilt_phone.py'),
+                '--root',str(staged),'--notification-probe'],env=env,capture_output=True,text=True,timeout=10)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(result.stdout.strip(),str(staged/'runtime/phone-apps/notification-access.jar'))
             for role in ('input','home'):
                 with zipfile.ZipFile(application(staged,role)) as apk:self.assertEqual(apk.read('classes.dex'),('apk fixture '+role).encode())
             self.assertEqual((home/'user/data/chat').read_text(),'keep')
             (staged/'runtime/phone-apps/input.apk').write_bytes(b'changed')
             with self.assertRaises(ValueError):application(staged,'input')
+
+    def test_offline_payload_contains_required_notification_probe(self):
+        import tarfile
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.fixture(root);(root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
+            prepare(root,with_phone_apps=True)
+            with tarfile.open(root/'apps/client/src-tauri/gen/host/source.payload','r:gz') as archive:
+                self.assertIn('runtime/phone-apps/notification-access.jar',archive.getnames())
 
     def test_changed_sources_never_package_stale_apks(self):
         from prebuilt_phone import prepare_apps,application
@@ -45,6 +65,40 @@ class PhoneAppTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'source'):prepare_apps(root)
             self.assertIsNone(application(root,'input'))
             with self.assertRaises(ValueError):application(root,'unknown')
+
+    def test_probe_source_changes_invalidate_the_component(self):
+        from prebuilt_phone import prepare_apps,PROBE_SOURCE
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.fixture(root)
+            path=root/PROBE_SOURCE;path.parent.mkdir(parents=True);path.write_text('changed probe')
+            with self.assertRaisesRegex(ValueError,'source'):prepare_apps(root)
+
+    def test_missing_tampered_and_unlisted_probe_never_fall_back_to_compiler(self):
+        from prebuilt_phone import notification_helper,PROBE
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=self.fixture(root);folder=root/'runtime/phone-apps'
+            folder.parent.mkdir();source.rename(folder)
+            path=folder/PROBE;original=path.read_bytes();manifest=folder/'manifest.json';value=json.loads(manifest.read_text())
+            with patch('prebuilt_phone.compile_probe') as compiler:
+                path.unlink()
+                with self.assertRaises((ValueError,OSError)):notification_helper(root)
+                path.write_bytes(b'tampered')
+                with self.assertRaises(ValueError):notification_helper(root)
+                path.write_bytes(original);value['files']=[row for row in value['files'] if row['path']!='runtime/phone-apps/'+PROBE]
+                manifest.write_text(json.dumps(value))
+                with self.assertRaises(ValueError):notification_helper(root)
+                compiler.assert_not_called()
+
+    def test_probe_inventory_and_zip_contents_have_separate_small_budgets(self):
+        from prebuilt_phone import MAX_PROBE,PROBE,inspect_probe,manifest
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);folder=self.fixture(root);value=json.loads((folder/'manifest.json').read_text())
+            value['files'][-1]['size']=MAX_PROBE+1;(folder/'manifest.json').write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError,'probe inventory'):manifest(folder)
+            for name,data in [('other',b'fixture'),('classes.dex',b' sk-'+b'A'*32),('classes.dex',b'x'*(MAX_PROBE+1))]:
+                with self.subTest(name=name,size=len(data)):
+                    with zipfile.ZipFile(folder/PROBE,'w',compression=zipfile.ZIP_DEFLATED) as archive:archive.writestr(name,data)
+                    with self.assertRaises(ValueError):inspect_probe(folder/PROBE)
 
     def test_present_invalid_components_never_fall_back_to_source_build(self):
         from prebuilt_phone import application
@@ -116,9 +170,13 @@ class PhoneAppTests(unittest.TestCase):
             with patch('prebuilt_phone.compile_app',side_effect=OSError('compiler failure')):
                 with self.assertRaises(OSError):build(root,{})
             self.assertFalse((root/'.tools/phone-apps').exists());self.assertEqual(list((root/'.tools').glob('.phone-app-build-*')),[])
-            with patch('prebuilt_phone.compile_app',side_effect=compile),patch('prebuilt_phone.check_apk',side_effect=lambda path,role,*_: {'package':'dev.aiphone.'+role,'signer_sha256':'a'*64}):
+            def probe(_root,work,_env):
+                path=work/'notification-access.jar'
+                with zipfile.ZipFile(path,'w') as archive:archive.writestr('classes.dex',b'probe fixture')
+                return path
+            with patch('prebuilt_phone.compile_app',side_effect=compile),patch('prebuilt_phone.compile_probe',side_effect=probe),patch('prebuilt_phone.check_apk',side_effect=lambda path,role,*_: {'package':'dev.aiphone.'+role,'signer_sha256':'a'*64}):
                 result=build(root,{'ANDROID_HOME':'/isolated-sdk'});self.assertEqual(result['source_sha256'],source_fingerprint(root));self.assertTrue(build(root,{})['reused'])
-            self.assertEqual((root/'chat-fixture').read_text(),'keep');self.assertEqual(len(prepare_apps(root)),3)
+            self.assertEqual((root/'chat-fixture').read_text(),'keep');self.assertEqual(len(prepare_apps(root)),4)
 
     def test_package_and_signer_results_are_checked_before_publication(self):
         from prebuilt_phone import check_apk

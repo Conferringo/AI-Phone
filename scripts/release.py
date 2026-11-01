@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
-from runtime_config import runtime_env
+from runtime_config import profile_launch_path, runtime_env
 from install_language import LOCALES, CATALOGS, choose_language
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,6 +24,7 @@ def run(args, root=ROOT, env=None):
 
 def validate(value):
     if not isinstance(value,dict): raise ValueError('Profile must be a JSON object')
+    profile_launch_path(value)
     for section in ('phone','desktop'):
         if not isinstance(value.get(section),dict) or not all(k in value[section] for k in ('template','cpus','memory_mb')):
             raise ValueError('Profile missing device fields: '+section)
@@ -61,7 +62,7 @@ def validate(value):
 
 def default_profile(root=ROOT):
     env = runtime_env(root)
-    return dict(schema_version=1, local_entry=True, locale='zh-CN', sdk_root=env['AI_PHONE_SDK_ROOT'],
+    return dict(schema_version=1, local_entry=True, locale='zh-CN', launch_path=env['PATH'], sdk_root=env['AI_PHONE_SDK_ROOT'],
                 java_home=env['JAVA_HOME'], host_proxy=env['AI_PHONE_HOST_PROXY'],
                 container_proxy=env['AI_PHONE_CONTAINER_PROXY'],
                 phone=dict(template='android35-x86_64' if env['AI_PHONE_ANDROID_ABI']=='x86_64' else 'android35-arm64', cpus=4, memory_mb=3072, storage_gb=16),

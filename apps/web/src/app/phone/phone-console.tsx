@@ -76,7 +76,7 @@ import { PhoneStreamImage } from "@/components/phone-stream-image";
 import { PhoneToolbar,type RotationMode } from "@/components/phone-toolbar";
 import { clientId } from "@/lib/client-id";
 import {useChatOutbox} from "@/components/use-chat-outbox";
-import {acceptSnapshot,type ChatSnapshot} from "@/lib/chat-snapshot";
+import {acceptInputReceipt,acceptSnapshot,type AcceptedInput,type ChatSnapshot} from "@/lib/chat-snapshot";
 
 type Screen = MessageShape<typeof DeviceObservationSchema>;
 type Chat = MessageShape<typeof ChatStateSchema>;
@@ -195,10 +195,13 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
   const acceptChat=useCallback((next:Chat,order=++historyGeneration.current)=>{
     setChatSnapshot(previous=>acceptSnapshot(previous,next,order));
   },[]);
-  const outbox=useChatOutbox(chat?.conversationId||'',deviceId,acceptChat,beginHistory);
+  const acknowledgeInput=useCallback((receipt:AcceptedInput,order:number)=>{
+    setChatSnapshot(previous=>acceptInputReceipt(previous,receipt,order));
+  },[]);
+  const outbox=useChatOutbox(chat?.conversationId||'',deviceId,acceptChat,beginHistory,acknowledgeInput);
   useWorkbenchNotice(error);
   useWorkbenchNotice(historyError,()=>void fetchChat());
-  useWorkbenchNotice(outbox.error||(outbox.entries[0]?.status==='failed'?outbox.entries[0].error||'发送失败':''),outbox.retry);
+  useWorkbenchNotice(outbox.error||outbox.entries.find(item=>item.error)?.error||'',outbox.retry);
   useWorkbenchNotice(chat?.noticeKind===RunNoticeKind.NEEDS_INPUT?'':chat?.error||'');
   useWorkbenchNotice(phoneError,()=>void observe());
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -578,7 +581,7 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
                     </div>
                   )}
                   {message.text&&<Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>}
-                  {pendingMessages.some(item=>item.id===message.requestId)&&<span className="message-delivery" role="status">{t(pendingMessages.find(item=>item.id===message.requestId)?.status==='failed'?'未发送':'发送中')}</span>}
+                  {pendingMessages.some(item=>item.id===message.requestId&&item.status!=='accepted')&&<span className="message-delivery" role="status">{t(pendingMessages.find(item=>item.id===message.requestId)?.status==='failed'?'未发送':'发送中')}</span>}
                 </article>
               ))}
             </div>

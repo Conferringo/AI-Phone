@@ -246,6 +246,13 @@ def prepare_host(root):
             for name, row in [('manifest.json', {})] + [(row['path'], row) for row in manifest['files']]]
 
 
+def mount_type(vm_type):
+    """One transport policy for newly constructed supported Lima definitions."""
+    if vm_type == 'qemu': return '9p'
+    if vm_type == 'vz': return 'virtiofs'
+    raise ValueError('Unsupported container host VM type')
+
+
 def selection(root):
     root = Path(root)
     folder = root / 'runtime/container-host'
@@ -255,17 +262,18 @@ def selection(root):
     value = policy(root)['runtime']
     linux = policy(root)['host'] == 'linux-x64'
     return {'command': folder / ('bin/limactl' if linux else 'lima/bin/limactl'), 'image': folder / 'image.iso',
-            'vm_type': 'qemu' if linux else 'vz', 'mount_type': '9p' if linux else 'virtiofs',
+            'vm_type': 'qemu' if linux else 'vz',
             'packages': folder / 'packages', 'arch': value['arch'], 'image_sha256': value['image']['sha256']}
 
 
 def definition(home, runtime, memory):
+    vm_type = runtime.get('vm_type', 'vz')
     packages = shlex.quote(str(runtime['packages']))
     script = '#!/bin/sh\nset -eu\npackages=' + packages + '\napk --no-network add "$packages"/*.apk\nrc-service docker start\n'
-    return {'minimumLimaVersion': '2.2.1', 'vmType': runtime.get('vm_type', 'vz'), 'arch': runtime['arch'],
+    return {'minimumLimaVersion': '2.2.1', 'vmType': vm_type, 'arch': runtime['arch'],
             'cpus': 4, 'memory': memory, 'disk': '64GiB',
             'images': [{'location': str(runtime['image']), 'arch': runtime['arch'], 'digest': 'sha256:' + runtime['image_sha256']}],
-            'mountType': runtime.get('mount_type', 'virtiofs'), 'mounts': [{'location': str(home), 'writable': True}],
+            'mountType': mount_type(vm_type), 'mounts': [{'location': str(home), 'writable': True}],
             'containerd': {'system': False, 'user': False}, 'propagateProxyEnv': False,
             'ssh': {'loadDotSSHPubKeys': False, 'forwardAgent': False},
             'env': {key: '' for key in ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy')},

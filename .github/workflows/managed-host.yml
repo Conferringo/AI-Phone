@@ -2,12 +2,6 @@ name: Managed Linux host acceptance
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - '.github/workflows/managed-host.yml'
-      - 'scripts/*host*'
-      - 'scripts/linux_services.py'
-      - 'scripts/android-*.sh'
-      - 'config/host-bootstrap.json'
 permissions:
   contents: read
 concurrency:
@@ -37,10 +31,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip openssh-client qemu-system-x86 qemu-utils ovmf virtiofsd tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim python3-pil libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl
           test -c /dev/kvm
-          sudo setfacl -m "u:$(id -u):rw" /dev/kvm
+          test "$(stat -c '%G' /dev/kvm)" = kvm
+          sudo usermod -aG kvm "$(id -un)"
+          # Validate group-object/mask access without printing the complete ACL.
+          getfacl --omit-header --numeric --absolute-names /dev/kvm | python3 -c '
+          import sys
+          rows = {line.split("#", 1)[0].strip() for line in sys.stdin}
+          if not rows.intersection({"group::rw-", "group::rwx"}):
+              raise SystemExit("KVM owning group does not have read/write access")
+          masks = {line for line in rows if line.startswith("mask::")}
+          if masks and not masks.intersection({"mask::rw-", "mask::rwx"}):
+              raise SystemExit("KVM ACL mask does not permit read/write access")
+          '
           df -h .
       - name: Linux lifecycle regressions
         run: python3 -m unittest discover -s scripts -p test_linux_services.py -v
       - name: Deploy phone, desktop and backend from the client payload
-        run: python3 scripts/linux_host_acceptance.py
+        run: |
+          # Keep KVM supplementary access and restore the primary GID required by uidmap.
+          export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"
+          sg kvm -c 'exec sg "$AI_PHONE_CI_PRIMARY_GROUP" -c "exec python3 scripts/linux_host_acceptance.py"'
       # No guest disks, raw service logs, accounts, token files or screenshots uploaded.

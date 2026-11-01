@@ -1,14 +1,16 @@
 # 本地安装与配置
 
-[English](getting-started.en.md) · 源码安装预览，2026-10-28
+[English](getting-started.en.md) · 开发者源码安装
 
-## macOS 客户端安装
+## 选择安装路径
 
-Preview.2客户端可选择语言与设备资源，准备本机依赖、手机和电脑，再进入模型配置；这条路径不要求手动部署服务。全新宿主仍未实测，其他平台仍为连接客户端。见[受管安装与恢复](integrated-hosts.md)。
+下载前请先查看[发行状态](release-status.md)中的安装包供应情况和各平台验收范围。产品目标是安装客户端后选择语言、设备资源并配置模型，具体见[一体化宿主约定](integrated-hosts.md)。
+
+下文是面向开发者的 macOS Apple Silicon 源码路径，需要准备列出的工具、下载依赖并编译服务，不等于完整发行包安装。Linux 开发者请阅读独立的[受管 Linux 安装指南](managed-linux.md)。
 
 ## 源码安装的支持范围
 
-服务器：macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux电脑使用Docker内的Debian 13/Openbox。Windows/Linux服务器与原生客户端正在发行路线中，不能用本机验证代替其他平台验收。
+这条源码路径使用 macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux 电脑使用 Docker 内的 Debian 13/Openbox。以下前置条件用于开发环境，不代表全新宿主安装已通过验收。
 
 安装器要求已有Node.js 22+、Bun（项目自动安装）、Rust 1.88+、Python 3.11+、Java 17、Docker Desktop、Xcode命令行工具，以及包含sdkmanager的Android SDK。可从各项目官方渠道安装。默认检测 `~/Library/Android/sdk`，兼容旧Homebrew路径；不要求相同用户名或固定局域网IP。全新镜像/编译预留35GiB磁盘，内存建议16GB以上。
 
@@ -21,7 +23,7 @@ Preview.2客户端可选择语言与设备资源，准备本机依赖、手机�
 5. 「配置中心 → Agent」填写模型/API/Key，保存前完成文字、图片及工具往返检测。授权设备，并在设备中选择默认Agent。Key可明文查看或编辑。
 6. 手机主系统由脚本创建；电脑在配置中心添加并安装系统。第三方Android浏览器等APK自动分发尚待授权与固定版本流程，新装镜像不能宣称包含所有应用。
 
-这是有前置依赖的源码引导安装。安装进度分阶段保存；下载、构建中断后可修复并重跑，只有输入和产物校验匹配才复用已完成步骤。已有AVD、账号和数据库密码保留；重试启动只补缺失服务。当前没有跨阶段整机事务回滚，保留错误与服务日志。见[恢复与安装重试](task-recovery.md)。
+这是有前置依赖的源码引导安装。安装进度分阶段保存。解决报告的下载或构建错误后，再次运行 `./ai-phone install`；只有输入和产物校验匹配才复用已完成步骤。已有AVD、账号和数据库密码保留；重试启动只补缺失服务。当前没有跨阶段整机事务回滚，保留错误与服务日志。见[恢复与安装重试](task-recovery.md)。
 
 ## 资源与网络
 
@@ -37,17 +39,19 @@ LAN地址见私有 `data/deployment.json`，只选私有网络接口。后端、
 
 ## 打包与分离目录
 
+将 `package` 输出的归档路径填入 `stage` 命令。
+
 ```sh
 ./ai-phone package
-./ai-phone stage --archive dist/ai-phone-0.1.0-preview.2-source.tar.gz --destination /path/to/AIPhone
+./ai-phone stage --archive /path/to/generated-source-bundle.tar.gz --destination /path/to/AIPhone
 ```
 
-打包采用源码白名单、排除私有数据、检查明显凭据，生成清单与SHA256；当前为带禁止公开标记的内部包。stage验证内容后放入版本目录，第一次创建current入口；后续版本只暂存，不热切换。user目录跨版本复用。SHA256不是发布者签名。见[发行设计](distribution.zh-CN.md)。
+打包采用源码白名单、排除私有数据、检查明显凭据，生成清单与SHA256；默认生成内部审阅包；发行门槛未满足时附带 `NOT-FOR-PUBLICATION.txt` 标记。stage验证内容后放入版本目录，第一次创建current入口；后续版本只暂存，不热切换。user目录跨版本复用。SHA256不是发布者签名。见[发行设计](distribution.zh-CN.md)。
 
 默认 `local_entry: true` 是同一可信局域网内的个人部署模式：能够访问网页的人可作为本机所有者进入。不要把这个入口作为多用户权限隔离；需要密码认证的既有部署可在私有配置中关闭本地入口，旧认证端点保留。
 
-已接入独立运行/迁移数据库角色；启动前显式执行迁移，运行服务不再使用bootstrap超级用户。见[数据库权限](database-roles.md)。`backup`与空目标`restore`已可使用，见[私有备份恢复](backup-restore.zh-CN.md)。
+运行服务与数据库迁移使用独立角色；启动前显式执行迁移，运行服务不使用bootstrap超级用户。见[数据库权限](database-roles.md)。使用 `backup` 备份、`restore` 恢复到空目标，见[私有备份恢复](backup-restore.zh-CN.md)。
 
 ## 无指向自主探索（开发中运行时）
 
-为已配置设备开启探索后，Agent自行选择应用与活动，不要求指定方向、轮换App或每轮产出心得；回复与安装开关仍有效。旧暂停任务单独保留，停止探索不会删除历史。见[无指向探索](autonomous-exploration.md)与[通知工作流](notification-workflows.md)。这些源码修复不覆盖当前公开的连接客户端预览安装包。
+为已配置设备开启探索后，Agent自行选择应用与活动，不要求指定方向、轮换App或每轮产出心得；回复与安装开关仍有效。旧暂停任务单独保留，停止探索不会删除历史。见[无指向探索](autonomous-exploration.md)与[通知工作流](notification-workflows.md)。本节描述开发中运行时，完整安装包可用性见[发行状态](release-status.md)。

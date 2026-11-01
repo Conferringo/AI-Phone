@@ -25,7 +25,19 @@ async function run(args:string[],input?:string,seconds=20){
 const adb=(...args:string[])=>run([root+'/scripts/android-adb',...args]);
 async function shell(t:Target,command:string){return t.kind==='phone'?adb('shell',command):run([docker,'exec','-i','ai-phone-desktop','sh','-c',command]);}
 async function put(t:Target,local:string,name:string){if(t.kind==='phone')await adb('push',local,remote+'/'+name);else if(resolve(local)!==resolve(folder(t),name))copyFileSync(local,folder(t)+'/'+name);}
-export function prepare(value:any){const t=target(value);mkdirSync(folder(t),{recursive:true,mode:0o700});if(t.kind==='desktop'){const alias=root+'/data/device-network/desktop';if(existsSync(alias)||(()=>{try{return lstatSync(alias).isSymbolicLink();}catch{return false;}})()){if(realpathSync(alias)!==realpathSync(folder(t)))throw Error('电脑网络目录属于其他设备');}else symlinkSync(folder(t),alias,'dir');}return {prepared:true};}
+export function prepare(value:any){
+ const t=target(value);
+ mkdirSync(folder(t),{recursive:true,mode:0o700});
+ if(t.kind==='desktop'){
+  const alias=root+'/data/device-network/desktop';
+  if(existsSync(alias)||(()=>{try{return lstatSync(alias).isSymbolicLink();}catch{return false;}})()){
+   if(realpathSync(alias)!==realpathSync(folder(t)))throw Error('电脑网络目录属于其他设备');
+  }else symlinkSync(folder(t),alias,'dir');
+  // The optional legacy core is a read-only bind; the host owns its source directory.
+  mkdirSync(root+'/.tools/mihomo/linux-arm64',{recursive:true,mode:0o755});
+ }
+ return {prepared:true};
+}
 export async function install(){
  const pins=json(root+'/config/mihomo-release.json');
  if(!pins.version||!pins.geoip)throw Error('核心发行清单不完整');

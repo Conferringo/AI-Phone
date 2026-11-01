@@ -11,6 +11,7 @@ RUN printf 'ai ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/ai-phone && chmod
 COPY location.js /usr/local/lib/ai-phone/location.js
 COPY bridge.py /usr/local/bin/desktop-bridge
 COPY start.sh /usr/local/bin/desktop-start
+COPY home-identity.py home-initialize.sh /usr/local/lib/ai-phone/
 COPY media-capture.py audio-service.py /usr/local/lib/ai-phone/
 COPY notification-record.py /usr/local/lib/ai-phone/
 COPY dunstrc /etc/xdg/dunst/dunstrc
@@ -24,5 +25,5 @@ RUN chmod 755 /usr/local/bin/ai-phone-clash
 COPY network-start.sh /usr/local/bin/device-network-start
 RUN chmod 755 /usr/local/bin/device-network-start
 ENV DISPLAY=:0 LANG=C.UTF-8 HOME=/home/ai XDG_RUNTIME_DIR=/tmp/ai-runtime PULSE_SERVER=unix:/tmp/ai-runtime/pulse/native
-WORKDIR /home/ai/Files
+WORKDIR /home/ai
 ENTRYPOINT ["/usr/local/bin/desktop-start"]

@@ -4,16 +4,19 @@ use tokio::{io::AsyncWriteExt, process::Command};
 static MUTATION: Mutex<()> = Mutex::const_new(());
 
 async fn invoke(app: &App, value: Value) -> Result<Value, String> {
-    let mut child = Command::new(app.root.join(".tools/bin/bun"))
-        .arg(app.root.join("apps/device-network/control.ts"))
-        .env("AI_PHONE_PROJECT_ROOT", &app.root)
-        .current_dir(&app.root)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|_| "网络管理进程不可用")?;
+    let mut child =
+        Command::new(std::env::var_os("AI_PHONE_PYTHON").unwrap_or_else(|| "python3".into()))
+            .arg(app.root.join("scripts/prebuilt_js.py"))
+            .args(["--role", "device-network", "--run", "--root"])
+            .arg(&app.root)
+            .env("AI_PHONE_PROJECT_ROOT", &app.root)
+            .current_dir(&app.root)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::null())
+            .kill_on_drop(true)
+            .spawn()
+            .map_err(|_| "网络管理进程不可用")?;
     child
         .stdin
         .take()

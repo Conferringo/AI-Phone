@@ -8,6 +8,9 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
+
+import linux_services
 
 from linux_services import start_unit, stop_unit, unit_state
 
@@ -63,6 +66,93 @@ class LinuxServiceTests(unittest.TestCase):
             self.assertFalse(stop_unit(self.root,'fixture'))
             self.assertIsNone(unrelated.poll())
         finally:unrelated.terminate();unrelated.wait()
+
+
+class ReadOnlyServiceStateTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='service-state-')
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.folder = self.root/'data/services'
+        self.value = {'format':1,'pid':42,'start_ticks':'123','root':str(self.root),'spec_sha256':'fixture'}
+        self.identity = patch('linux_services.process_start',return_value='123')
+        self.identity.start();self.addCleanup(self.identity.stop)
+        self.command = patch('linux_services.Path.read_bytes',return_value=str(Path(linux_services.__file__).resolve()).encode()+b'\0fixture\0')
+        self.command.start();self.addCleanup(self.command.stop)
+
+    def write_receipt(self, suffix=''):
+        self.folder.mkdir(parents=True,exist_ok=True)
+        path = self.folder/'fixture.json'
+        path.write_text(json.dumps(self.value)+suffix)
+        return path
+
+    def test_absent_inspection_and_stop_never_create_private_state(self):
+        self.assertIsNone(unit_state(self.root,'fixture'))
+        self.assertFalse((self.root/'data').exists())
+        self.assertFalse(stop_unit(self.root,'fixture'))
+        self.assertFalse((self.root/'data').exists())
+
+    def test_authentic_receipt_preserves_identity_and_rejects_pid_reuse(self):
+        self.write_receipt()
+        self.assertEqual(unit_state(self.root,'fixture'),self.value)
+        with patch('linux_services.process_start',return_value='reused'):
+            self.assertIsNone(unit_state(self.root,'fixture'))
+        with patch('linux_services.Path.read_bytes',return_value=b'other-service\0'):
+            self.assertIsNone(unit_state(self.root,'fixture'))
+
+    def test_unverified_process_cannot_authenticate_an_omitted_start_time(self):
+        self.value.pop('start_ticks')
+        self.write_receipt()
+        with patch('linux_services.process_start',return_value=None):
+            self.assertIsNone(unit_state(self.root,'fixture'))
+
+    def test_oversize_symlink_fifo_and_non_object_receipts_are_rejected(self):
+        path = self.write_receipt(' '*9000)
+        self.assertIsNone(unit_state(self.root,'fixture'))
+        path.unlink()
+        target = self.root/'foreign.json'
+        target.write_text(json.dumps(self.value))
+        path.symlink_to(target)
+        self.assertIsNone(unit_state(self.root,'fixture'))
+        path.unlink();os.mkfifo(path)
+        self.assertIsNone(unit_state(self.root,'fixture'))
+        path.unlink();path.write_text('[]')
+        self.assertIsNone(unit_state(self.root,'fixture'))
+
+    def test_opened_receipt_is_read_once_when_path_is_replaced(self):
+        path = self.write_receipt()
+        foreign = self.root/'foreign.json'
+        foreign.write_text(json.dumps(self.value)+' '*9000)
+        real_open = os.open
+        opens = []
+        def replace_after_open(name, flags, *args, **kwargs):
+            descriptor = real_open(name,flags,*args,**kwargs)
+            if str(name).endswith('fixture.json'):
+                opens.append((flags,kwargs.get('dir_fd')))
+                path.unlink();path.symlink_to(foreign)
+            return descriptor
+        with patch('linux_services.os.open',side_effect=replace_after_open):
+            self.assertEqual(unit_state(self.root,'fixture'),self.value)
+        self.assertEqual(len(opens),1)
+        self.assertTrue(opens[0][0]&os.O_NOFOLLOW)
+        self.assertIsNotNone(opens[0][1])
+
+    def test_service_directory_replacement_cannot_redirect_opened_receipt(self):
+        self.write_receipt()
+        foreign = self.root/'foreign'
+        foreign.mkdir();(foreign/'fixture.json').write_text(json.dumps(self.value)+' '*9000)
+        moved = self.root/'old-services'
+        real_open = os.open
+        replaced = []
+        def replace_directory(name, flags, *args, **kwargs):
+            descriptor = real_open(name,flags,*args,**kwargs)
+            if Path(name)==self.folder:
+                self.folder.rename(moved);self.folder.symlink_to(foreign)
+                replaced.append(True)
+            return descriptor
+        with patch('linux_services.os.open',side_effect=replace_directory):
+            self.assertEqual(unit_state(self.root,'fixture'),self.value)
+        self.assertEqual(replaced,[True])
 
 
 if __name__=='__main__':unittest.main()

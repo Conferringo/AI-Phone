@@ -11,5 +11,6 @@ def isolated_environment(root):
         raise ValueError('Use an isolated runtime without existing user state')
     allowed = ('HOME', 'USERPROFILE', 'SYSTEMROOT', 'TEMP', 'TMP', 'TMPDIR', 'LANG')
     environment = {k: v for k, v in os.environ.items() if k.upper() in allowed}
-    environment.update(PATH=os.defpath, AI_PHONE_PROJECT_ROOT=str(root))
+    environment.update(PATH=os.defpath, AI_PHONE_PROJECT_ROOT=str(root),
+                       BUN_RUNTIME_TRANSPILER_CACHE_PATH='0')
     return environment

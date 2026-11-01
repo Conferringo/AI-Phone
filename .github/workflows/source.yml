@@ -35,7 +35,7 @@ jobs:
       - name: protobuf, TypeScript and Rust
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
-        run: ./scripts/bun test ./apps/channels ./apps/device-network ./scripts/*.test.ts
+        run: ./scripts/bun test ./apps/channels ./apps/device-network ./apps/device-stream ./scripts/*.test.ts
       - name: Installer and archive tests
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Rust tests

@@ -44,7 +44,7 @@ class NativeHostTests(unittest.TestCase):
             command=home/'limactl';command.write_text('#!/bin/sh\nexit 0\n');command.chmod(0o755)
             def query(args,**kwargs):
                 return subprocess.CompletedProcess(args,1 if 'ai-phone' in args else 0,stdout='',stderr='unmatched instances')
-            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute:
+            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute,patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
                 activate_container_engine(root,home,command,{'fixture':True})
                 self.assertIn('--name=ai-phone',execute.call_args_list[0].args[0])
 
@@ -124,9 +124,11 @@ class NativeHostTests(unittest.TestCase):
 
     def test_foreign_database_is_refused_before_compose_can_change_anything(self):
         root=Path('/owned')
-        def result(owner): return subprocess.CompletedProcess([],0,stdout=json.dumps({'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}))
-        verify_container_ownership(root,lambda _:result('/owned'))
-        with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda _:result('/somebody-else'))
+        def result(owner,argv):
+            text='a'*64 if argv[:3]==['docker','container','ls'] else json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':owner}})
+            return subprocess.CompletedProcess([],0,stdout=text)
+        verify_container_ownership(root,lambda argv,**_:result('/owned',argv))
+        with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda argv,**_:result('/somebody-else',argv))
 
     def test_progress_observer_preserves_checkpoint_order_and_failure(self):
         with tempfile.TemporaryDirectory() as temp:

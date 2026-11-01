@@ -51,10 +51,10 @@ describe('continuous chat outbox',()=>{
   expect(box.entries[0].text).toBe('one');expect(box.entries[0].attachments[0].name).toBe('keep');
   expect(()=>box.enqueue(input('one'))).toThrow('重复');box.dispose();expect(()=>box.enqueue(input('two'))).toThrow('切换');
  });
- test('failure to remove an acknowledged receipt retains it for idempotent recovery',async()=>{
+ test('failure to persist acceptance keeps known acceptance and the original receipt for recovery',async()=>{
   let saved='[]',block=false;const disk={read:()=>saved,write:(value:string)=>{if(block)throw Error('disk full');saved=value;}};
   const box=new ChatOutbox(disk,async()=>{block=true;return true;},()=>{});
-  box.enqueue(input('confirmed'));await tick();expect(box.entries[0].status).toBe('failed');expect(JSON.parse(saved)[0].id).toBe('confirmed');
+  box.enqueue(input('confirmed'));await tick();expect(box.entries[0].status).toBe('accepted');expect(box.entries[0].error).toBe('disk full');expect(JSON.parse(saved)[0].id).toBe('confirmed');
   block=false;box.dispose();
  });
  test('repeated start and retry during an outstanding request never create concurrent sends',async()=>{

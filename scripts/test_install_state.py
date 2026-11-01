@@ -94,19 +94,21 @@ class ServiceResumeTests(LaunchdFixture):
             with patch('service_start.subprocess.run') as native:
                 result=start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True)
             self.assertEqual(result,['dev.aiphone.web.p2'])
-            self.assertEqual(calls,[], 'a registered stopped job needs no rebuild or new configuration')
+            self.assertEqual(calls,['android-install-input.sh'], 'only the input owner may observe skip or pending recovery; stopped services need no rebuild')
             native.assert_called_once_with(['launchctl','kickstart',f'gui/{os.getuid()}/dev.aiphone.web.p2'],check=True)
     def test_partial_install_only_starts_missing_jobs_and_missing_app(self):
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);calls=[];missing={'dev.aiphone.web.p2','dev.aiphone.lan'}
+            root=Path(folder);calls=[];packages=[];missing={'dev.aiphone.web.p2','dev.aiphone.lan'}
             def query(label):return subprocess.CompletedProcess([],1 if label in missing else 0,stdout='working directory = '+str(root)+'\nstate = running\n')
-            result=start_missing(root,query=query,execute=calls.append,package_installed=lambda package:package!='dev.aiphone.input')
-            self.assertEqual(calls,['android-ready.sh','android-install-input.sh','phone-web-start.sh','lan-start.sh']);self.assertEqual(set(result),missing)
+            result=start_missing(root,query=query,execute=calls.append,package_installed=lambda package:packages.append(package) or package!='dev.aiphone.input')
+            self.assertEqual(calls,['android-install-input.sh','phone-web-start.sh','lan-start.sh']);self.assertEqual(set(result),missing)
+            self.assertEqual(packages,['dev.aiphone.home','com.github.metacubex.clash.meta'])
     def test_existing_instance_is_not_restarted_and_foreign_instance_refused_first(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[]
             query=lambda label:subprocess.CompletedProcess([],0,stdout='working directory = '+str(root)+'\nstate = running\n')
-            self.assertEqual(start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True),[]);self.assertEqual(calls,[])
+            self.assertEqual(start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True),[]);self.assertEqual(calls,['android-install-input.sh'])
+            calls.clear()
             foreign=lambda label:subprocess.CompletedProcess([],0,stdout='working directory = '+str(root)+'-other\n')
             with self.assertRaisesRegex(ValueError,'Another checkout'):start_missing(root,query=foreign,execute=calls.append)
             self.assertEqual(calls,[])
@@ -114,7 +116,7 @@ class ServiceResumeTests(LaunchdFixture):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);calls=[];query=lambda _:subprocess.CompletedProcess([],1,stdout='')
             start_missing(root,query=query,execute=calls.append,package_installed=lambda _:True)
-            self.assertEqual(calls[:3],['android-create.sh','android-start.sh','android-ready.sh'])
+            self.assertEqual(calls[:4],['android-create.sh','android-start.sh','android-ready.sh','android-install-input.sh'])
             (root/'data').mkdir(exist_ok=True);(root/'data/restore-quarantine.json').write_text('{}');calls.clear()
             with self.assertRaisesRegex(ValueError,'quarantined'):start_missing(root,query=query,execute=calls.append)
             self.assertEqual(calls,[])

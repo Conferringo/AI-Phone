@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import shlex
 import shutil
 import subprocess
@@ -128,10 +129,11 @@ def source_container_runtime(home, config, host):
 
 
 def source_container_definition(home, config, host, memory):
+    from container_host_runtime import mount_type
     image = config['container_hosts'][host['image']]
     return {'vmType': host['vm_type'], 'arch': host['vm_arch'], 'cpus': 4, 'memory': memory, 'disk': '64GiB',
             'images': [{'location': image['url'], 'arch': host['vm_arch'], 'digest': 'sha256:' + image['sha256']}],
-            'mountType': 'virtiofs', 'mounts': [{'location': str(home), 'writable': True}],
+            'mountType': mount_type(host['vm_type']), 'mounts': [{'location': str(home), 'writable': True}],
             'containerd': {'system': False, 'user': False}, 'propagateProxyEnv': False,
             'provision': [{'mode': 'system', 'script': '#!/bin/sh\nset -eu\napt-get update\nDEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 docker-buildx\nsystemctl enable --now docker\nusermod -aG docker {{.User}}\n'}],
             'hostResolver': {'hosts': {'host.docker.internal': 'host.lima.internal'}},
@@ -155,14 +157,18 @@ def activate_container_engine(root, home, command, value):
     execute(['docker', 'info'], stdout=subprocess.DEVNULL)
     save_selection(root, home, state, command, bin_dir)
     os.environ['AI_PHONE_MANAGED_BIN'] = str(bin_dir)
+    from linux_kvm_snapshot import emit_snapshot
+    emit_snapshot('engine_ready')
 
 
 def container_engine(root, home, config, emit):
     """Reuse the selected engine or start the installation's authenticated host."""
     from host_platform import host_policy
     from container_host_runtime import selection, definition
+    from linux_kvm_snapshot import emit_snapshot
     runtime = selection(root)
     if runtime is None and os.environ.get('AI_PHONE_REQUIRE_MANAGED_ENGINE') != '1' and shutil.which('docker') and subprocess.run(['docker', 'info'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+        emit_snapshot('engine_ready')
         return
     emit('container-host')
     _, host = host_policy(root)
@@ -175,17 +181,35 @@ def container_engine(root, home, config, emit):
     activate_container_engine(root, home, command, value)
 
 
+def verified_container(root, value):
+    labels=value.get('labels') if isinstance(value,dict) else None
+    if not isinstance(labels,dict) or labels.get('com.docker.compose.project')!='ai-phone' or not isinstance(labels.get('com.docker.compose.project.working_dir'),str) or Path(labels['com.docker.compose.project.working_dir']).resolve()!=root.resolve():
+        from service_start import OwnershipConflict
+        raise OwnershipConflict('Another installation owns existing AI Phone containers; no containers or data were changed')
+    if not isinstance(value.get('id'),str) or re.fullmatch(r'[0-9a-f]{64}',value['id']) is None or type(value.get('running')) is not bool:
+        raise ValueError('Existing container state could not be verified; no containers or data were changed')
+    return {'id':value['id'],'running':value['running']}
+
+
 def verify_container_ownership(root, query=None):
-    for name in ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop'):
-        result = query(name) if query else subprocess.run(['docker', 'inspect', '--format', '{{json .Config.Labels}}', name], capture_output=True, text=True)
-        if result.returncode:
-            # A missing container is fine; an unreachable daemon is not.
-            if not query: execute(['docker', 'info'], stdout=subprocess.DEVNULL)
-            continue
-        labels = json.loads(result.stdout)
-        if not isinstance(labels, dict) or labels.get('com.docker.compose.project') != 'ai-phone' or Path(labels.get('com.docker.compose.project.working_dir', '')).resolve() != root.resolve():
-            from service_start import OwnershipConflict
-            raise OwnershipConflict('Another installation owns existing AI Phone containers; no containers or data were changed')
+    existing={}
+    query=query or subprocess.run
+    template='{"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}'
+    for name in ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop'):
+        # Absence must come from a successful container query, not wrapper stderr.
+        result=query(['docker','container','ls','--all','--filter','name=^/'+name+'$','--no-trunc','--format','{{.ID}}'],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        identifier=result.stdout.strip()
+        if not identifier:continue
+        if re.fullmatch(r'[0-9a-f]{64}',identifier) is None:
+            raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        result=query(['docker','container','inspect','--format',template,identifier],capture_output=True,text=True)
+        if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        container=verified_container(root,json.loads(result.stdout))
+        if container['id']!=identifier:
+            raise ValueError('Existing container state could not be verified; no containers or data were changed')
+        existing[name]=container
+    return existing
 
 
 def installation_reserve(root, home, config):
@@ -236,7 +260,7 @@ def prepare_profile(root, home, request, host, android_sdk=None):
         if existing['phone']['template']!=host['phone_template']:
             raise ValueError('Existing phone architecture differs from this host; no devices were changed')
         return
-    value=dict(schema_version=1,local_entry=True,locale=request['locale'],sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
+    value=dict(schema_version=1,local_entry=True,locale=request['locale'],launch_path=os.environ.get('PATH',os.defpath),sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
                phone={'template':host['phone_template'],**request['phone']},desktop={'template':'debian13-openbox',**request['desktop']})
     profile=home/'request-profile.json';profile.write_text(json.dumps(value));profile.chmod(0o600)
     release.configure(root,profile)
@@ -275,12 +299,15 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     if tools and mise is None:
         mise=download(config['mise'][host['mise']],home/'tools/bin/mise');mise.chmod(0o700)
     install_tools(home,mise,tools,emit)
+    from linux_kvm_snapshot import emit_snapshot
+    emit_snapshot('toolchain_ready')
     prepare_profile(root,home,request,host,android_sdk)
     from runtime_config import runtime_env
     os.environ.update(runtime_env(root))
     if not android_bundled:
         emit('sdk-tools')
         prepare_sdk(config['sdk_hosts'][host['sdk']],Path(os.environ['AI_PHONE_SDK_ROOT']),home/'cache')
+    emit_snapshot('sdk_tools_ready')
     container_engine(root,home,config,emit)
     verify_container_ownership(root)
     if image_runtime is not None:

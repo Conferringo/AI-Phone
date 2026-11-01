@@ -878,14 +878,15 @@ async fn action(
         runner.cursor.lock().await.status = if success { "completed" } else { "unknown" }.into();
     }
     grounding::record_scroll(&runner, scroll_attempt, success && !unknown).await;
-    let record = ledger.actions.get_mut(&request.action_id).unwrap();
+    let mut record = ledger.actions[&request.action_id].clone();
     record.completed = true;
     record.success = success;
     record.output = output.clone();
     record.unknown = unknown;
-    if let Err(e) = action_store::write(&runner.ledger_path, &request.action_id, record) {
+    if let Err(e) = action_store::write(&runner.ledger_path, &request.action_id, &record) {
         return err(StatusCode::INTERNAL_SERVER_ERROR, "persistence_failed", &e);
     }
+    ledger.actions.insert(request.action_id.clone(), record);
     action_store::trim(&mut ledger);
     if let Err(e) = save(&runner, &ledger) {
         return err(StatusCode::INTERNAL_SERVER_ERROR, "persistence_failed", &e);
@@ -1050,7 +1051,7 @@ mod observation_tests {
             Runner {
                 phone_id: "phone-local-01".into(),
                 serial: "emulator-5564".into(),
-                media_url: "http://127.0.0.1:17865".into(),
+                media_url: "http://127.0.0.1:0".into(),
                 adb: self.executable("adb", source),
                 token: "test-only".into(),
                 vision: self.0.join("unavailable-ocr"),
@@ -1129,6 +1130,164 @@ mod observation_tests {
         assert_eq!(runner.cursor.lock().await.status, "completed");
         // Only the first action executes ADB; replay returns the durable receipt.
         assert_eq!(std::fs::read_to_string(calls).unwrap().lines().count(), 1);
+    }
+
+    #[tokio::test]
+    async fn action_persistence_initial_failure_does_not_execute() {
+        let (fixture, runner, request) = persistence_fixture("initial", CompletionFault::None);
+        let hash = format!("{:x}", Sha256::digest(request.action_id.as_bytes()));
+        let blocked = runner
+            .ledger_path
+            .with_extension("actions")
+            .join(&hash[..2])
+            .join(format!("{hash}.tmp"));
+        std::fs::create_dir_all(blocked).unwrap();
+        persistence_failure(persistence_request(&runner, &request).await).await;
+        let replay = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(replay.replayed && replay.result_unknown && !replay.success);
+        assert!(!fixture.0.join("calls").exists());
+    }
+
+    #[tokio::test]
+    async fn action_persistence_completion_failure_does_not_publish_success() {
+        let (fixture, runner, request) =
+            persistence_fixture("completion", CompletionFault::Archive);
+        persistence_failure(persistence_request(&runner, &request).await).await;
+        let stored = action_store::read(&runner.ledger_path, &request.action_id)
+            .unwrap()
+            .unwrap();
+        assert!(!stored.completed && !stored.success);
+        let replay = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(replay.replayed && replay.result_unknown && !replay.success);
+        let mut recovered: Ledger =
+            serde_json::from_slice(&std::fs::read(&runner.ledger_path).unwrap()).unwrap();
+        action_store::migrate(&runner.ledger_path, &mut recovered).unwrap();
+        *runner.ledger.lock().await = recovered;
+        let after_restart = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(after_restart.replayed && after_restart.result_unknown && !after_restart.success);
+        assert_eq!(
+            std::fs::read_to_string(fixture.0.join("calls")).unwrap(),
+            "HOME\n"
+        );
+    }
+
+    #[tokio::test]
+    async fn action_persistence_snapshot_failure_keeps_durable_success() {
+        let (fixture, runner, request) = persistence_fixture("snapshot", CompletionFault::Snapshot);
+        persistence_failure(persistence_request(&runner, &request).await).await;
+        let stored = action_store::read(&runner.ledger_path, &request.action_id)
+            .unwrap()
+            .unwrap();
+        assert!(stored.completed && stored.success);
+        let replay = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(replay.replayed && replay.success && !replay.result_unknown);
+        let mut recovered: Ledger =
+            serde_json::from_slice(&std::fs::read(&runner.ledger_path).unwrap()).unwrap();
+        assert!(!recovered.actions[&request.action_id].completed);
+        action_store::migrate(&runner.ledger_path, &mut recovered).unwrap();
+        *runner.ledger.lock().await = recovered;
+        let after_restart = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(after_restart.replayed && after_restart.success && !after_restart.result_unknown);
+        assert_eq!(
+            std::fs::read_to_string(fixture.0.join("calls")).unwrap(),
+            "HOME\n"
+        );
+    }
+
+    #[tokio::test]
+    async fn action_persistence_success_never_executes_a_duplicate() {
+        let (fixture, runner, request) = persistence_fixture("success", CompletionFault::None);
+        let first = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(first.success && !first.replayed && !first.result_unknown);
+        let replay = persistence_result(persistence_request(&runner, &request).await).await;
+        assert!(replay.success && replay.replayed && !replay.result_unknown);
+        assert_eq!(
+            std::fs::read_to_string(fixture.0.join("calls")).unwrap(),
+            "HOME\n"
+        );
+    }
+
+    enum CompletionFault {
+        None,
+        Archive,
+        Snapshot,
+    }
+
+    fn persistence_fixture(
+        id: &str,
+        fault: CompletionFault,
+    ) -> (Fixture, Arc<Runner>, wire::DeviceActionRequest) {
+        let fixture = Fixture::new();
+        let hash = format!("{:x}", Sha256::digest(id.as_bytes()));
+        let injection = match fault {
+            CompletionFault::None => String::new(),
+            CompletionFault::Archive => {
+                format!("mkdir \"$base/ledger.actions/{}/{hash}.tmp\"", &hash[..2])
+            }
+            CompletionFault::Snapshot => "mkdir \"$base/ledger.tmp\"".into(),
+        };
+        // This is the only executable supplied to Runner. It accepts HOME only,
+        // never invokes a host ADB, and confines its writes to its own directory.
+        let script = format!(
+            r#"#!/bin/sh
+set -eu
+test "$*" = "-P 15037 -s emulator-5564 shell input keyevent KEYCODE_HOME"
+base=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+printf 'HOME\n' >> "$base/calls"
+{injection}
+printf 'home-completed'
+"#
+        );
+        let mut device = fixture.runner(&script);
+        device.media_url = "http://127.0.0.1:0".into();
+        let runner = Arc::new(device);
+        let request = wire::DeviceActionRequest {
+            phone_id: "phone-local-01".into(),
+            owner_id: OWNER.into(),
+            run_id: "persistence-fixture".into(),
+            action_id: id.into(),
+            control_epoch: 1,
+            controller: "manual".into(),
+            action: Some(wire::device_action_request::Action::Key(wire::KeyAction {
+                key: "HOME".into(),
+            })),
+            ..Default::default()
+        };
+        (fixture, runner, request)
+    }
+
+    async fn persistence_request(
+        runner: &Arc<Runner>,
+        request: &wire::DeviceActionRequest,
+    ) -> Response {
+        let mut headers = HeaderMap::new();
+        headers.insert("authorization", "Bearer test-only".parse().unwrap());
+        headers.insert("content-type", MEDIA.parse().unwrap());
+        action(
+            State(runner.clone()),
+            headers,
+            Ok(Bytes::from(request.encode_to_vec())),
+        )
+        .await
+    }
+
+    async fn persistence_failure(response: Response) {
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let bytes = axum::body::to_bytes(response.into_body(), 8192)
+            .await
+            .unwrap();
+        assert_eq!(
+            wire::ApiError::decode(bytes).unwrap().code,
+            "persistence_failed"
+        );
+    }
+
+    async fn persistence_result(response: Response) -> wire::DeviceActionResponse {
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 8192)
+            .await
+            .unwrap();
+        wire::DeviceActionResponse::decode(bytes).unwrap()
     }
 
     #[tokio::test]
