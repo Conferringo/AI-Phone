@@ -2589,18 +2589,18 @@
     },
     {
       "path": "crates/assistant/src/skill_persistence_tests.rs",
-      "size": 12446,
-      "sha256": "12ffdc9b528a7abab3efd79e635a8668aae14c58cf5e7cbcf37ad96f2b73a788"
+      "size": 18793,
+      "sha256": "2d4523d97d00b218c86eedc9981d84bf62b9b3b840de71ace7c8d4ef559a02bf"
     },
     {
       "path": "crates/assistant/src/skill_resources.rs",
-      "size": 5671,
-      "sha256": "d44ff30e60fb0b690dbb49f083e1a6a9ac5b84aa0b409bccfe1c0a470938f43c"
+      "size": 6252,
+      "sha256": "12a05d214a017e6384477a33769f11c19c0222a1252d8601102a11f1831333a7"
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 39460,
-      "sha256": "b071cb2897aec70a0d52110684a104b21b7efa39803e5af5a8f1badda958021f"
+      "size": 43245,
+      "sha256": "bf36dcb56056b0fa8342aec1b38c237785b4db2a823defb84348137c4d5f96a7"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -2619,8 +2619,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 194606,
-      "sha256": "4e7240980cb738e0f0e6f367d5a578a68ffce8fb807db4603d3745871b7744b4"
+      "size": 194605,
+      "sha256": "11b29daaf2b922a8c16840e5c5849ba38e6e2737c409a96292ba7bcd85fb6e56"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -2844,13 +2844,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 3084,
-      "sha256": "ff0146e4b001fcb17b5ac63f63e823d71c82f854b017a40b51d97bd5a7d68a0b"
+      "size": 3552,
+      "sha256": "119641787f5ef3c93c6143cce43cb97c279c8e73192a8b597b030b2a63665f9c"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 3110,
-      "sha256": "de33793ac1356b7b8edbf7a9addadde9c7327ae018fc68800a4ea6e5fb9c8c52"
+      "size": 3502,
+      "sha256": "eb8a504504d0bd60c494a3e6e682aa39151f912c17229e18f9aaddf769bcb757"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -2889,8 +2889,8 @@
     },
     {
       "path": "docs/public/conversation-steering.md",
-      "size": 4572,
-      "sha256": "22dfe435a4c37d55ddd6f74f0a85983952ccd5e310021903457a07fd373f13f9"
+      "size": 4681,
+      "sha256": "3e96b480ac094a859398bafb424c328125b0b82032ca0af1b089b8df960d4ab0"
     },
     {
       "path": "docs/public/copilot-voice.md",

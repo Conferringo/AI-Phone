@@ -877,3 +877,82 @@ async fn successive_inputs_interrupt_a_slow_model_without_canceling_the_run() {
     })
     .await;
 }
+
+async fn terminal_steering_snapshot(app: &Shared, run: Uuid) -> Value {
+    sqlx::query_scalar(
+        r#"SELECT jsonb_build_object(
+            'run', to_jsonb(r),
+            'messages', (SELECT jsonb_agg(to_jsonb(m) ORDER BY m.id)
+                         FROM messages m WHERE m.conversation_id=r.conversation_id),
+            'events', (SELECT jsonb_agg(to_jsonb(e) ORDER BY e.id)
+                       FROM harness_events e WHERE e.run_id=r.id),
+            'inputs', (SELECT jsonb_agg(to_jsonb(i) ORDER BY i.request_id)
+                       FROM run_inputs i WHERE i.run_id=r.id)
+        ) FROM runs r WHERE r.id=$1"#,
+    )
+    .bind(run)
+    .fetch_one(&app.db)
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; terminal status alone cannot prove no side effect"]
+async fn terminal_unknown_side_effects_keep_new_input_queued() {
+    for name in ["phone_tap", "computer_click", "workspace_run"] {
+        for status in ["failed", "canceled", "completed"] {
+            database_case(|app| async move {
+                let mut run = FixtureRun::start(&app, "保留已发布结果和新指令").await;
+                assert!(run.finish(&app, "正在核对实际操作结果。", RunDisposition::NeedsInput).await);
+                sqlx::query("UPDATE runs SET status='running' WHERE id=$1")
+                    .bind(run.id)
+                    .execute(&app.db)
+                    .await
+                    .unwrap();
+                let action = Uuid::now_v7();
+                let call = json!({
+                    "type": "function_call",
+                    "call_id": "terminal-unknown",
+                    "local_action_id": action.to_string(),
+                    "name": name,
+                    "arguments": "{}"
+                });
+                run.context.push(call.clone());
+                run.pending.push(call);
+                checkpoint(&app, run.id, &mut run.context, &run.pending, &run.answer, 2, &run.state)
+                    .await
+                    .unwrap();
+                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status) VALUES($1,$2,$3,'tool','实际结果未确认','已派发，缺少规范结果回执',$4)")
+                    .bind(action)
+                    .bind(run.id)
+                    .bind(run.message)
+                    .bind(status)
+                    .execute(&app.db)
+                    .await
+                    .unwrap();
+                let next = request("补充：先核对结果，不要重复操作");
+                accept(&app, &next).await;
+                let before = terminal_steering_snapshot(&app, run.id).await;
+                let memory = (run.context.clone(), run.pending.clone(), run.answer.clone(), run.message, run.epoch);
+                let error = run.consume(&app).await.unwrap_err();
+                assert!(error.starts_with("paused:unknown_outcome:"), "{name}/{status}");
+                assert_eq!(
+                    terminal_steering_snapshot(&app, run.id).await,
+                    before,
+                    "{name}/{status}: ledger, input queue and published messages must not change"
+                );
+                assert_eq!(
+                    (run.context.clone(), run.pending.clone(), run.answer.clone(), run.message, run.epoch),
+                    memory,
+                    "unknown action cannot be projected as not_executed"
+                );
+                assert_eq!(accept(&app, &next).await.run_id, run.id.to_string());
+                assert_eq!(
+                    terminal_steering_snapshot(&app, run.id).await,
+                    before,
+                    "exact input retry retains the same queued receipt"
+                );
+            }).await;
+        }
+    }
+}

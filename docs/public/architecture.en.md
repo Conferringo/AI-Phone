@@ -16,6 +16,10 @@ Successful input injection is not completion evidence. Unknown outcomes require 
 
 Responses, Chat Completions and native Anthropic Messages use the same engine. The latter translates tools, results and images; truncated, filtered, unterminated or malformed tool outputs are rejected. Providers must pass actual text, image and tool round-trip probes.
 
+## Skill storage
+
+PostgreSQL owns committed Skill text. Each installation serializes its file projection with a per-Skill operating-system lock, then atomically publishes `SKILL.md` and synchronizes it to disk. The blocking writer retains the lock until file operations finish, including after cancellation of its async caller. File I/O holds no database transaction; reads and startup reconcile the projection from durable text while preserving auxiliary resources.
+
 ## Devices and exchange
 
 The default is one phone and one computer. Root/sudo apply to guests, not arbitrary host execution. A persistent device link gates file exchange, with device/direction/path/hash checks; disconnecting rejects new transfers. Conversations and drafts remain per device, even for a shared Agent.

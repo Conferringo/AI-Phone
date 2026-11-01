@@ -1826,7 +1826,7 @@ async fn consume_steering(
         let output = if let Some(row) = existing {
             if let Some(result) = row.get::<Option<Value>, _>("result") {
                 result
-            } else if row.get::<String, _>("status") == "running" {
+            } else if row.get::<String, _>("status") != "queued" {
                 return Err("paused:unknown_outcome:上一条工具操作结果未知，已保留新指令；请先核对成果再继续，不能重放。".into());
             } else {
                 json!([{"type":"input_text","text":"{\"success\":false,\"not_executed\":true,\"error\":\"superseded_by_user\"}"}])
