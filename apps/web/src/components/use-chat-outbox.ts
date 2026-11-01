@@ -6,6 +6,7 @@ import {ApiErrorSchema} from '@ai-phone/protocol/ai_phone/v1/system_pb';
 import {ChatOutbox,type OutboxEntry,type OutboxInput} from '@/lib/chat-outbox';
 import {encodeChatSend} from '@/lib/chat-wire';
 import type {AcceptedInput} from '@/lib/chat-snapshot';
+import {historyRequest,receiptBatch} from '../lib/chat-window';
 
 type Chat=MessageShape<typeof ChatStateSchema>;
 type Binding=Pick<Chat,'conversationId'|'deviceId'>;
@@ -44,6 +45,7 @@ class BoundChatOutbox implements Binding{
   readonly box:ChatOutbox<AcceptedInput>;
   private disposed=false;
   private projection:AbortController|null=null;
+  private receiptOffset=0;
   constructor(readonly conversationId:string,readonly deviceId:string,private callbacks:ChatProjection){
     const key=`ai-phone:outbox:${deviceId}:${conversationId}`;
     this.box=new ChatOutbox({read:()=>localStorage.getItem(key),write:value=>localStorage.setItem(key,value)},this.send.bind(this),this.acknowledge.bind(this),this.changed.bind(this));
@@ -75,10 +77,12 @@ class BoundChatOutbox implements Binding{
     if(!this.active())return;
     try{this.callbacks.acknowledged(receipt,this.callbacks.beginHistory());}finally{void this.refresh();}
   }
+  private acceptedCount(){return this.box.entries.filter(item=>item.status==='accepted').length;}
   private async history(signal:AbortSignal){
-    const body=toBinary(ChatHistoryRequestSchema,create(ChatHistoryRequestSchema,{conversationId:this.conversationId,deviceId:this.deviceId}));
+    const batch=receiptBatch(this.box.entries,this.receiptOffset);this.receiptOffset=batch.next;
+    const body=toBinary(ChatHistoryRequestSchema,create(ChatHistoryRequestSchema,historyRequest(this.conversationId,this.deviceId,null,batch.ids)));
     const response=await fetch('/api/assistant/history',{method:'POST',headers:{'content-type':'application/x-protobuf'},body,signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});
-    return chatResponse(response,200);
+    return{chat:await chatResponse(response,200),count:batch.ids.length};
   }
   private projectHistory(chat:Chat,order:number){
     if(!sameBinding(chat,this.conversationId,this.deviceId))throw Error('对话状态与当前设备不一致');
@@ -86,14 +90,25 @@ class BoundChatOutbox implements Binding{
     this.box.projected(new Set(chat.messages.filter(message=>message.role==='user'&&message.requestId&&message.id&&message.ordinal>0n).map(message=>message.requestId)));
     this.callbacks.error('');
   }
+  private async recoverReceipts(control:AbortController){
+    let remaining=this.acceptedCount();
+    do{
+      const before=this.acceptedCount(),order=this.callbacks.beginHistory();
+      const {chat,count}=await this.history(control.signal);
+      if(!this.active(control))return;
+      this.projectHistory(chat,order);
+      const after=this.acceptedCount();
+      // Progress permits another sweep; missing canonical receipts get one
+      // bounded sweep, never an automatic send or an unbounded retry loop.
+      remaining=after<before?after:remaining-count;
+    }while(remaining>0&&this.active(control));
+  }
   private async refresh(){
     if(!this.active())return;
     this.projection?.abort();
     const control=new AbortController();this.projection=control;
     try{
-      const order=this.callbacks.beginHistory();
-      const chat=await this.history(control.signal);
-      if(this.active(control))this.projectHistory(chat,order);
+      await this.recoverReceipts(control);
     }catch(value){
       if(this.active(control))this.callbacks.error(failureMessage(value,'读取对话失败'));
     }finally{

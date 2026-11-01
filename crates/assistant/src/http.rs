@@ -58,16 +58,51 @@ async fn resolve(app: &App, id: &str, device: &str) -> Result<Uuid, Response> {
     Ok(canonical)
 }
 pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
-    let mut tx = app.db.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-        .execute(&mut *tx)
-        .await?;
-    let rows=sqlx::query("SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1 ORDER BY m.ordinal").bind(id).fetch_all(&mut *tx).await?;
+    let mut tx = crate::history_window::transaction(&app.db).await?;
+    let value = state_selected(&mut tx, id, None, None).await?;
+    tx.commit().await?;
+    Ok(value)
+}
+
+async fn message_rows(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+    selected: Option<&[Uuid]>,
+) -> Result<Vec<sqlx::postgres::PgRow>, sqlx::Error> {
+    const PROJECTION: &str = "SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1";
+    let statement = if selected.is_some() {
+        format!("{PROJECTION} AND m.id=ANY($2) ORDER BY m.ordinal")
+    } else {
+        format!("{PROJECTION} ORDER BY m.ordinal")
+    };
+    let query = sqlx::query(&statement).bind(id);
+    let query = match selected {
+        Some(ids) => query.bind(ids),
+        None => query,
+    };
+    query.fetch_all(&mut **tx).await
+}
+
+pub(crate) async fn current_run(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+) -> Result<Option<sqlx::postgres::PgRow>, sqlx::Error> {
+    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,created_at DESC,id DESC LIMIT 1")
+        .bind(id).fetch_optional(&mut **tx).await
+}
+
+pub(crate) async fn state_selected(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+    selected: Option<&[Uuid]>,
+    window: Option<wire::ChatMessageWindow>,
+) -> Result<wire::ChatState, sqlx::Error> {
+    let rows = message_rows(tx, id, selected).await?;
     let ids: Vec<Uuid> = rows
         .iter()
         .flat_map(|row| row.get::<Vec<Uuid>, _>("attachment_ids"))
         .collect();
-    let files=sqlx::query("SELECT id,name,media_type,size_bytes FROM attachments WHERE id=ANY($1) AND owner_id='local-user'").bind(&ids).fetch_all(&mut *tx).await?;
+    let files=sqlx::query("SELECT id,name,media_type,size_bytes FROM attachments WHERE id=ANY($1) AND owner_id='local-user'").bind(&ids).fetch_all(&mut **tx).await?;
     let files: HashMap<Uuid, wire::ChatAttachment> = files
         .iter()
         .map(|r| {
@@ -127,16 +162,20 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
             }
         })
         .collect();
-    let run=sqlx::query("SELECT id,status,error,loop_state,agent_id,agent_name,device_id,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,created_at DESC,id DESC LIMIT 1").bind(id).fetch_optional(&mut *tx).await?;
+    let run = current_run(tx, id).await?;
     let value = wire::ChatState {
-        revision: rows
-            .last()
-            .map(|r| r.get::<i64, _>("ordinal") as u64)
-            .unwrap_or(0),
+        revision: sqlx::query_scalar::<_, i64>(
+            "SELECT ordinal FROM messages WHERE conversation_id=$1 ORDER BY ordinal DESC LIMIT 1",
+        )
+        .bind(id)
+        .fetch_optional(&mut **tx)
+        .await?
+        .unwrap_or(0) as u64,
+        message_window: window,
         conversation_id: id.to_string(),
         device_id: sqlx::query_scalar("SELECT device_id FROM conversations WHERE id=$1")
             .bind(id)
-            .fetch_one(&mut *tx)
+            .fetch_one(&mut **tx)
             .await?,
         agent_id: run
             .as_ref()
@@ -166,9 +205,18 @@ pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> 
             .unwrap_or_default(),
         next_wake_at_ms: run.as_ref().map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
     };
-    tx.commit().await?;
     Ok(value)
 }
+fn history_response(result: Result<wire::ChatState, sqlx::Error>) -> Response {
+    match result {
+        Ok(v) => pb(StatusCode::OK, v),
+        Err(sqlx::Error::Protocol(code)) if code == "history_anchor_scope" => {
+            error(StatusCode::CONFLICT, &code, "分页位置已失效，请重新载入")
+        }
+        Err(e) => db_error(e),
+    }
+}
+
 pub async fn history(
     State(app): State<Shared>,
     headers: HeaderMap,
@@ -178,15 +226,21 @@ pub async fn history(
         Ok(v) => v,
         Err(e) => return e.into(),
     };
+    let window = match crate::history_window::Request::parse(&request) {
+        Ok(value) => value,
+        Err(code) => return error(StatusCode::BAD_REQUEST, code, "分页请求无效"),
+    };
     let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
         Ok(v) => v,
         Err(e) => return e,
     };
-    match state(&app, id).await {
-        Ok(v) => pb(StatusCode::OK, v),
-        Err(e) => db_error(e),
-    }
+    let result = match window {
+        Some(window) => crate::history_window::read(&app.db, id, window).await,
+        None => state(&app, id).await,
+    };
+    history_response(result)
 }
+
 pub async fn send(
     State(app): State<Shared>,
     headers: HeaderMap,

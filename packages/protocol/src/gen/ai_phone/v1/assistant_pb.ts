@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/assistant.proto.
  */
 export const file_ai_phone_v1_assistant: GenFile = /*@__PURE__*/
-  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEInoKDkNoYXRWb2ljZUlucHV0EhIKCnNlc3Npb25faWQYASABKAkSFAoMdXR0ZXJhbmNlX2lkGAIgASgJEhAKCHJldmlzaW9uGAMgASgNEg8KB2xpdGVyYWwYBCABKAkSGwoTY29ycmVjdHNfcmVxdWVzdF9pZBgFIAEoCSKFAgoLQ2hhdE1lc3NhZ2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIMCgR0ZXh0GAMgASgJEjAKC2F0dGFjaG1lbnRzGAQgAygLMhsuYWlfcGhvbmUudjEuQ2hhdEF0dGFjaG1lbnQSDgoGcnVuX2lkGAUgASgJEhIKCnJlcXVlc3RfaWQYBiABKAkSDwoHb3JkaW5hbBgHIAEoBBIOCgZhY3RpdmUYCCABKAgSFAoMaGFzX2FjdGl2aXR5GAkgASgIEioKBXZvaWNlGAogASgLMhsuYWlfcGhvbmUudjEuQ2hhdFZvaWNlSW5wdXQSFQoNc3lzdGVtX25vdGljZRgLIAEoCSJAChJDaGF0SGlzdG9yeVJlcXVlc3QSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhEKCWRldmljZV9pZBgCIAEoCSKYAgoJQ2hhdFN0YXRlEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIqCghtZXNzYWdlcxgCIAMoCzIYLmFpX3Bob25lLnYxLkNoYXRNZXNzYWdlEg4KBnJ1bl9pZBgDIAEoCRISCgpydW5fc3RhdHVzGAQgASgJEg0KBWVycm9yGAUgASgJEhcKD25leHRfd2FrZV9hdF9tcxgGIAEoAxIQCghhZ2VudF9pZBgHIAEoCRISCgphZ2VudF9uYW1lGAggASgJEhEKCWRldmljZV9pZBgJIAEoCRIQCghyZXZpc2lvbhgKIAEoBBIvCgtub3RpY2Vfa2luZBgLIAEoDjIaLmFpX3Bob25lLnYxLlJ1bk5vdGljZUtpbmQitQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCRIqCgV2b2ljZRgHIAEoCzIbLmFpX3Bob25lLnYxLkNoYXRWb2ljZUlucHV0IiAKDkNoYXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSp1Cg1SdW5Ob3RpY2VLaW5kEh8KG1JVTl9OT1RJQ0VfS0lORF9VTlNQRUNJRklFRBAAEiIKHlJVTl9OT1RJQ0VfS0lORF9TWVNURU1fRkFJTFVSRRABEh8KG1JVTl9OT1RJQ0VfS0lORF9ORUVEU19JTlBVVBACYgZwcm90bzM");
+  fileDesc("ChthaV9waG9uZS92MS9hc3Npc3RhbnQucHJvdG8SC2FpX3Bob25lLnYxIlIKDkNoYXRBdHRhY2htZW50EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKbWVkaWFfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgEInoKDkNoYXRWb2ljZUlucHV0EhIKCnNlc3Npb25faWQYASABKAkSFAoMdXR0ZXJhbmNlX2lkGAIgASgJEhAKCHJldmlzaW9uGAMgASgNEg8KB2xpdGVyYWwYBCABKAkSGwoTY29ycmVjdHNfcmVxdWVzdF9pZBgFIAEoCSKFAgoLQ2hhdE1lc3NhZ2USCgoCaWQYASABKAkSDAoEcm9sZRgCIAEoCRIMCgR0ZXh0GAMgASgJEjAKC2F0dGFjaG1lbnRzGAQgAygLMhsuYWlfcGhvbmUudjEuQ2hhdEF0dGFjaG1lbnQSDgoGcnVuX2lkGAUgASgJEhIKCnJlcXVlc3RfaWQYBiABKAkSDwoHb3JkaW5hbBgHIAEoBBIOCgZhY3RpdmUYCCABKAgSFAoMaGFzX2FjdGl2aXR5GAkgASgIEioKBXZvaWNlGAogASgLMhsuYWlfcGhvbmUudjEuQ2hhdFZvaWNlSW5wdXQSFQoNc3lzdGVtX25vdGljZRgLIAEoCSKiAQoSQ2hhdEhpc3RvcnlSZXF1ZXN0EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAkSDQoFbGltaXQYAyABKA0SGQoRYmVmb3JlX21lc3NhZ2VfaWQYBCABKAkSGQoRd2F0Y2hfbWVzc2FnZV9pZHMYBSADKAkSGwoTcmVjZWlwdF9yZXF1ZXN0X2lkcxgGIAMoCSKLAQoRQ2hhdE1lc3NhZ2VXaW5kb3cSKQoEa2luZBgBIAEoDjIbLmFpX3Bob25lLnYxLkNoYXRXaW5kb3dLaW5kEh4KFm5leHRfYmVmb3JlX21lc3NhZ2VfaWQYAiABKAkSEQoJaGFzX29sZGVyGAMgASgIEhgKEHBhZ2VfbWVzc2FnZV9pZHMYBCADKAki0AIKCUNoYXRTdGF0ZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSKgoIbWVzc2FnZXMYAiADKAsyGC5haV9waG9uZS52MS5DaGF0TWVzc2FnZRIOCgZydW5faWQYAyABKAkSEgoKcnVuX3N0YXR1cxgEIAEoCRINCgVlcnJvchgFIAEoCRIXCg9uZXh0X3dha2VfYXRfbXMYBiABKAMSEAoIYWdlbnRfaWQYByABKAkSEgoKYWdlbnRfbmFtZRgIIAEoCRIRCglkZXZpY2VfaWQYCSABKAkSEAoIcmV2aXNpb24YCiABKAQSLwoLbm90aWNlX2tpbmQYCyABKA4yGi5haV9waG9uZS52MS5SdW5Ob3RpY2VLaW5kEjYKDm1lc3NhZ2Vfd2luZG93GAwgASgLMh4uYWlfcGhvbmUudjEuQ2hhdE1lc3NhZ2VXaW5kb3citQEKD0NoYXRTZW5kUmVxdWVzdBIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDAoEdGV4dBgCIAEoCRIWCg5hdHRhY2htZW50X2lkcxgDIAMoCRISCgpyZXF1ZXN0X2lkGAQgASgJEhEKCWRldmljZV9pZBgFIAEoCRIQCghhZ2VudF9pZBgGIAEoCRIqCgV2b2ljZRgHIAEoCzIbLmFpX3Bob25lLnYxLkNoYXRWb2ljZUlucHV0IiAKDkNoYXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSpqCg5DaGF0V2luZG93S2luZBIgChxDSEFUX1dJTkRPV19LSU5EX1VOU1BFQ0lGSUVEEAASGQoVQ0hBVF9XSU5ET1dfS0lORF9UQUlMEAESGwoXQ0hBVF9XSU5ET1dfS0lORF9CRUZPUkUQAip1Cg1SdW5Ob3RpY2VLaW5kEh8KG1JVTl9OT1RJQ0VfS0lORF9VTlNQRUNJRklFRBAAEiIKHlJVTl9OT1RJQ0VfS0lORF9TWVNURU1fRkFJTFVSRRABEh8KG1JVTl9OT1RJQ0VfS0lORF9ORUVEU19JTlBVVBACYgZwcm90bzM");
 
 /**
  * @generated from message ai_phone.v1.ChatAttachment
@@ -166,6 +166,29 @@ export type ChatHistoryRequest = Message<"ai_phone.v1.ChatHistoryRequest"> & {
    * @generated from field: string device_id = 2;
    */
   deviceId: string;
+
+  /**
+   * Zero retains the existing full snapshot for older clients. Window clients
+   * request 1..80 rows; ordinals locate pages and are never commit cursors.
+   *
+   * @generated from field: uint32 limit = 3;
+   */
+  limit: number;
+
+  /**
+   * @generated from field: string before_message_id = 4;
+   */
+  beforeMessageId: string;
+
+  /**
+   * @generated from field: repeated string watch_message_ids = 5;
+   */
+  watchMessageIds: string[];
+
+  /**
+   * @generated from field: repeated string receipt_request_ids = 6;
+   */
+  receiptRequestIds: string[];
 };
 
 /**
@@ -174,6 +197,43 @@ export type ChatHistoryRequest = Message<"ai_phone.v1.ChatHistoryRequest"> & {
  */
 export const ChatHistoryRequestSchema: GenMessage<ChatHistoryRequest> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_assistant, 3);
+
+/**
+ * Present only for a partial snapshot. Messages are authoritative ID upserts;
+ * absence from this window never deletes already loaded conversation history.
+ *
+ * @generated from message ai_phone.v1.ChatMessageWindow
+ */
+export type ChatMessageWindow = Message<"ai_phone.v1.ChatMessageWindow"> & {
+  /**
+   * @generated from field: ai_phone.v1.ChatWindowKind kind = 1;
+   */
+  kind: ChatWindowKind;
+
+  /**
+   * @generated from field: string next_before_message_id = 2;
+   */
+  nextBeforeMessageId: string;
+
+  /**
+   * @generated from field: bool has_older = 3;
+   */
+  hasOlder: boolean;
+
+  /**
+   * Pagination describes this base page, excluding watched heads and receipts.
+   *
+   * @generated from field: repeated string page_message_ids = 4;
+   */
+  pageMessageIds: string[];
+};
+
+/**
+ * Describes the message ai_phone.v1.ChatMessageWindow.
+ * Use `create(ChatMessageWindowSchema)` to create a new message.
+ */
+export const ChatMessageWindowSchema: GenMessage<ChatMessageWindow> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_assistant, 4);
 
 /**
  * @generated from message ai_phone.v1.ChatState
@@ -233,6 +293,11 @@ export type ChatState = Message<"ai_phone.v1.ChatState"> & {
    * @generated from field: ai_phone.v1.RunNoticeKind notice_kind = 11;
    */
   noticeKind: RunNoticeKind;
+
+  /**
+   * @generated from field: ai_phone.v1.ChatMessageWindow message_window = 12;
+   */
+  messageWindow?: ChatMessageWindow | undefined;
 };
 
 /**
@@ -240,7 +305,7 @@ export type ChatState = Message<"ai_phone.v1.ChatState"> & {
  * Use `create(ChatStateSchema)` to create a new message.
  */
 export const ChatStateSchema: GenMessage<ChatState> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 4);
+  messageDesc(file_ai_phone_v1_assistant, 5);
 
 /**
  * @generated from message ai_phone.v1.ChatSendRequest
@@ -287,7 +352,7 @@ export type ChatSendRequest = Message<"ai_phone.v1.ChatSendRequest"> & {
  * Use `create(ChatSendRequestSchema)` to create a new message.
  */
 export const ChatSendRequestSchema: GenMessage<ChatSendRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 5);
+  messageDesc(file_ai_phone_v1_assistant, 6);
 
 /**
  * @generated from message ai_phone.v1.ChatRunRequest
@@ -304,7 +369,33 @@ export type ChatRunRequest = Message<"ai_phone.v1.ChatRunRequest"> & {
  * Use `create(ChatRunRequestSchema)` to create a new message.
  */
 export const ChatRunRequestSchema: GenMessage<ChatRunRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_assistant, 6);
+  messageDesc(file_ai_phone_v1_assistant, 7);
+
+/**
+ * @generated from enum ai_phone.v1.ChatWindowKind
+ */
+export enum ChatWindowKind {
+  /**
+   * @generated from enum value: CHAT_WINDOW_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CHAT_WINDOW_KIND_TAIL = 1;
+   */
+  TAIL = 1,
+
+  /**
+   * @generated from enum value: CHAT_WINDOW_KIND_BEFORE = 2;
+   */
+  BEFORE = 2,
+}
+
+/**
+ * Describes the enum ai_phone.v1.ChatWindowKind.
+ */
+export const ChatWindowKindSchema: GenEnum<ChatWindowKind> = /*@__PURE__*/
+  enumDesc(file_ai_phone_v1_assistant, 0);
 
 /**
  * @generated from enum ai_phone.v1.RunNoticeKind
@@ -330,5 +421,5 @@ export enum RunNoticeKind {
  * Describes the enum ai_phone.v1.RunNoticeKind.
  */
 export const RunNoticeKindSchema: GenEnum<RunNoticeKind> = /*@__PURE__*/
-  enumDesc(file_ai_phone_v1_assistant, 0);
+  enumDesc(file_ai_phone_v1_assistant, 1);
 

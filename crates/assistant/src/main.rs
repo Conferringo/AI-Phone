@@ -28,6 +28,7 @@ mod desktop_explore;
 mod device_exchange;
 mod device_network;
 mod exploration_policy;
+mod history_window;
 mod http;
 mod location;
 mod location_devices;

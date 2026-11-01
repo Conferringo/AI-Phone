@@ -854,7 +854,7 @@ mod tests {
             let scoped=wire::ChatHistoryRequest{device_id:desktop.clone(),..Default::default()};
             let desktop_chat:wire::ChatState=response(crate::http::history(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(scoped.encode_to_vec()))).await).await;
             assert_ne!(desktop_chat.conversation_id,conversation.to_string());assert!(desktop_chat.messages.is_empty());
-            let wrong=wire::ChatHistoryRequest{device_id:desktop.clone(),conversation_id:conversation.to_string()};
+            let wrong=wire::ChatHistoryRequest{device_id:desktop.clone(),conversation_id:conversation.to_string(),..Default::default()};
             assert_eq!(crate::http::history(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(wrong.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
             let pending=wire::ChatSendRequest{device_id:desktop.clone(),text:"must not touch phone".into(),request_id:Uuid::new_v4().to_string(),..Default::default()};
             assert_eq!(crate::http::send(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(pending.encode_to_vec()))).await.status(),StatusCode::CONFLICT);

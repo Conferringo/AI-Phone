@@ -384,5 +384,6 @@
   "语音片段或修订信息无效": "Invalid voice segment or revision",
   "语音输入需要文字且不能混入附件": "Voice input requires text without attachments",
   "语音更正与已接受的片段不一致，请保留文本并重新发送": "The voice correction conflicts with the accepted segment. Keep the text and send it again.",
-  "待发送消息格式无效": "Invalid queued message"
+  "待发送消息格式无效": "Invalid queued message",
+  "较早消息": "Earlier messages"
 }

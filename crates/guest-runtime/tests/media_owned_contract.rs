@@ -39,11 +39,11 @@ async fn media_child_fixture() {
         std::process::exit(0);
     }
     loop {
-        fs::write(
-            root.join(format!("{mode}.beat")),
-            format!("{:?}", Instant::now()),
-        )
-        .unwrap();
+        // Readers must observe a complete heartbeat. Truncating the live file
+        // can yield two empty reads even while the sentinel remains active.
+        let next = root.join(format!("{mode}.beat.next"));
+        fs::write(&next, format!("{:?}", Instant::now())).unwrap();
+        fs::rename(next, root.join(format!("{mode}.beat"))).unwrap();
         if listener.accept().is_ok() {
             return;
         }

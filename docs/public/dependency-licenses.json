@@ -3,7 +3,7 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "e0648c632f1b9879e91afc7ab54643b30231bad6fdaf7377a9e65cad2d7f86ce",
+    "Cargo.lock": "b0f7c30f1f6e8c91e105a13df5389d808c178d700ca4419e46753d17883db627",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
     "apps/client/src-tauri/Cargo.lock": "dc1813dbf94c5956224ce2f87624371da194ddea898f60ec2ab76bfc24c77431"
   },
@@ -4053,21 +4053,6 @@
       ]
     },
     {
-      "name": "matchers",
-      "version": "0.2.0",
-      "license": "MIT",
-      "repository": "https://github.com/hawkw/matchers",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a47129d738752a6ae52247fea645b42cb320d19e9327f1eb2d1a7f99d9455ad3"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "matchit",
       "version": "0.8.4",
       "license": "MIT AND BSD-3-Clause",
@@ -4364,21 +4349,6 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "nu-ansi-term",
-      "version": "0.50.3",
-      "license": "MIT",
-      "repository": "https://github.com/nushell/nu-ansi-term",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "284465860407420254e39be4e1bdcaaf2e7f2d18e06f9bab75bc75341a5d8501"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -6706,21 +6676,6 @@
       ]
     },
     {
-      "name": "sharded-slab",
-      "version": "0.1.7",
-      "license": "MIT",
-      "repository": "https://github.com/hawkw/sharded-slab",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "eafbfa606bc005ed7fd2f623d65af17ffe4ef7c017221ac14405bf4140771ea9"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "shlex",
       "version": "2.0.1",
       "license": "MIT OR Apache-2.0",
@@ -7686,25 +7641,6 @@
       ]
     },
     {
-      "name": "thread_local",
-      "version": "1.1.10",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/Amanieu/thread_local-rs",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "time",
       "version": "0.3.55",
       "license": "MIT OR Apache-2.0",
@@ -8204,36 +8140,6 @@
       ]
     },
     {
-      "name": "tracing-log",
-      "version": "0.2.0",
-      "license": "MIT",
-      "repository": "https://github.com/tokio-rs/tracing",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "tracing-subscriber",
-      "version": "0.3.23",
-      "license": "MIT",
-      "repository": "https://github.com/tokio-rs/tracing",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "tray-icon",
       "version": "0.24.2",
       "license": "MIT OR Apache-2.0",
@@ -8578,16 +8484,6 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "valuable",
-      "version": "0.1.1",
-      "license": "MIT",
-      "repository": "https://github.com/tokio-rs/valuable",
-      "notices": [],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {

@@ -61,6 +61,45 @@ pub fn context(trigger: Value) -> Vec<Value> {
     ]
 }
 
+async fn ready_conversation(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    device: &str,
+) -> std::result::Result<Option<Uuid>, sqlx::Error> {
+    sqlx::query("INSERT INTO conversations(id,owner_id,device_id) VALUES($1,'local-user',$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(device).execute(&mut **tx).await?;
+    // Serialize admission with user input and exploration configuration, while
+    // allowing a run writer to finish its message's FK key-share before we lock runs.
+    let conversation: Uuid = sqlx::query_scalar(
+        "SELECT id FROM conversations WHERE device_id=$1 AND owner_id='local-user' FOR NO KEY UPDATE",
+    )
+    .bind(device)
+    .fetch_one(&mut **tx)
+    .await?;
+    // The worker uses SKIP LOCKED. Keep a queued exploration from being claimed
+    // between this readiness decision and the handoff's durable admission.
+    sqlx::query("SELECT id FROM runs WHERE device_id=$1 AND status IN ('running','queued','paused') ORDER BY id FOR UPDATE")
+        .bind(device).fetch_all(&mut **tx).await?;
+    let busy: bool = sqlx::query_scalar(
+        "SELECT EXISTS(
+            SELECT 1 FROM runs r
+            WHERE r.device_id=$1 AND r.status IN ('running','queued','paused')
+              AND NOT (
+                r.status='queued' AND r.origin IN ('exploration','desktop-exploration')
+                AND NOT EXISTS (
+                    SELECT 1 FROM harness_events e
+                    JOIN jsonb_array_elements(r.pending_tools) p ON e.id::text=p->>'local_action_id'
+                    WHERE e.run_id=r.id AND e.kind='tool' AND e.status<>'queued' AND e.result IS NULL
+                )
+              )
+        )",
+    )
+    .bind(device)
+    .fetch_one(&mut **tx)
+    .await?;
+    // Queued exploration keeps its context, wake time and pending action IDs.
+    // Running/paused work and any dispatched action without a receipt still block.
+    Ok((!busy).then_some(conversation))
+}
+
 async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
     sqlx::query("UPDATE device_messages m SET status=CASE WHEN r.status='succeeded' THEN 'completed' WHEN r.status='canceled' THEN 'canceled' ELSE 'failed' END,error=r.error FROM runs r WHERE m.target_run_id=r.id AND m.status='running' AND r.status IN ('succeeded','failed','canceled','paused')").execute(&mut *tx).await?;
@@ -68,14 +107,9 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
     let rows=sqlx::query("SELECT m.* FROM device_messages m WHERE m.status='queued' ORDER BY created_at LIMIT 10 FOR UPDATE SKIP LOCKED").fetch_all(&mut *tx).await?;
     for row in rows {
         let device: String = row.get("target_device_id");
-        if sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM runs WHERE device_id=$1 AND status IN ('running','queued','paused'))").bind(&device).fetch_one(&mut *tx).await?{continue;}
-        sqlx::query("INSERT INTO conversations(id,owner_id,device_id) VALUES($1,'local-user',$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(&device).execute(&mut *tx).await?;
-        let conversation: Uuid = sqlx::query_scalar(
-            "SELECT id FROM conversations WHERE device_id=$1 AND owner_id='local-user' FOR UPDATE",
-        )
-        .bind(&device)
-        .fetch_one(&mut *tx)
-        .await?;
+        let Some(conversation) = ready_conversation(&mut tx, &device).await? else {
+            continue;
+        };
         let run = Uuid::now_v7();
         let mid = Uuid::now_v7();
         let trigger = json!({"source_device_id":row.get::<String,_>("source_device_id"),"target_device_id":device,"text":row.get::<String,_>("text")});
@@ -171,3 +205,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "handoff_tests.rs"]
+mod handoff_regressions;
