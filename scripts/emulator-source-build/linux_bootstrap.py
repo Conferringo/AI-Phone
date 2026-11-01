@@ -279,7 +279,7 @@ def sync_sources(root, command, launcher, manifest, revision):
                  "--partial-clone", "--clone-filter=blob:none",
                  "--repo-url", REPO_URL, "--repo-rev", REPO_COMMIT,
                  "--no-clone-bundle", "--no-tags", "--no-use-superproject"], checkout, timeout=1800, manifest_file=True)
-    sync = [sys.executable, str(launcher), "sync", "--jobs=2", "--detach", "--no-manifest-update",
+    sync = [sys.executable, str(launcher), "sync", "--jobs=2", "--no-manifest-update",
             "--no-clone-bundle", "--no-tags", "--no-use-superproject"]
     deadline = time.monotonic() + 10800
     command.run([*sync, "--network-only"], checkout, timeout=10800)
@@ -287,7 +287,7 @@ def sync_sources(root, command, launcher, manifest, revision):
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         raise BuildInterrupted("command_timeout")
-    command.run([*sync, "--local-only"], checkout, timeout=remaining)
+    command.run([*sync, "--local-only", "--detach"], checkout, timeout=remaining)
     return checkout
 
 

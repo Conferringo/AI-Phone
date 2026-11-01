@@ -206,7 +206,9 @@ class RepoBoundaryTests(OwnedFixture):
         self.assertNotIn("manifest_file", synchronized.kwargs)
         self.assertIn("--no-manifest-update", synchronized.args[0])
         self.assertIn('--network-only', fetched.args[0])
+        self.assertNotIn('--detach', fetched.args[0])
         self.assertIn('--local-only', synchronized.args[0])
+        self.assertIn('--detach', synchronized.args[0])
         select.assert_called_once_with(self.root/'checkout', command)
 
     def test_sparse_selection_keeps_root_files_and_the_pinned_compiler_only(self):
