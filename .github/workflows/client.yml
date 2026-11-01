@@ -51,8 +51,29 @@ jobs:
           path: audit.json
           if-no-files-found: error
           retention-days: 14
+      - name: Build and qualify embedded ARM Android runtime
+        run: |
+          set -euo pipefail
+          stock="$RUNNER_TEMP/aiphone-android-stock"
+          python3 scripts/android_component_factory.py --work "$stock" --verify-programs --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json"
+          # Qualification used only this job's fresh SDK/profile. The package
+          # consumes the sealed payload; extraction and download scratch can go.
+          rm -rf "$stock/installation"
+          rm "$stock/emulator.zip" "$stock/platform-tools.zip" "$stock/system-image.zip"
+          echo "AI_PHONE_FACTORY_ANDROID_PAYLOAD=$stock/android.payload" >> "$GITHUB_ENV"
+          echo "Pinned ARM emulator and ADB verified; Android system capsule ready."
       - name: Local unsigned bundle and privacy checks
-        run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime --with-js-services
+        run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime --with-js-services --android-runtime "$AI_PHONE_FACTORY_ANDROID_PAYLOAD"
+      - name: Check bundled runtime publication review
+        if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          policy=json.loads(Path('config/release-policy.json').read_text())
+          if policy['publication_gates']['asset_and_source_license_review'] is not True:
+              raise SystemExit('Bundled Android runtime requires redistribution/source review before artifact upload')
+          PY
       - name: Retain development artifact only on explicit request
         if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

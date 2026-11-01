@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7620,
-      "sha256": "236b9eca1ce9cb90502858672d885e3f0ccf79b6ef36ccea45702434be15e2fe"
+      "size": 9017,
+      "sha256": "031ff9d280d79edcb6117bfe7ad5727b8c3ca1b9312bef684e92405103257f85"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -2129,8 +2129,8 @@
     },
     {
       "path": "config/android-factory.json",
-      "size": 2305,
-      "sha256": "12cd35cd713c20b88b1e65cb7ef5ebf86dd22153d834c13dfb63e3c68e0fb841"
+      "size": 3781,
+      "sha256": "87746034d10767c74091224b1808f567bbd2682a4e4f13fdef9fdeea90345081"
     },
     {
       "path": "config/bun-runtime.json",
@@ -4319,8 +4319,13 @@
     },
     {
       "path": "scripts/android_component_factory.py",
-      "size": 4313,
-      "sha256": "c21d4a42067e364fa39b08cb278f580288b1262b9f166b83c23a013b161e6cb3"
+      "size": 5635,
+      "sha256": "3086eca3e469075366452bd8a8bea290a8b2b09e41100dbbf378ca844f7fa61e"
+    },
+    {
+      "path": "scripts/android_factory_stock.py",
+      "size": 5063,
+      "sha256": "da24455fd32693cbfd388b91fbd00844a9f72d0cfa28639f6ef4d9fd0400bcb5"
     },
     {
       "path": "scripts/android_input.py",
@@ -5096,6 +5101,11 @@
       "path": "scripts/test_android_input.py",
       "size": 20410,
       "sha256": "22bde03b9498e8c77ced578fb88dfeea19be090a73cced50f67ab08304749c0d"
+    },
+    {
+      "path": "scripts/test_android_macos_factory.py",
+      "size": 12795,
+      "sha256": "b61279b02f9b6c0a1a10a22c4b005851dd91de218c76e134ce132e9564c0cac0"
     },
     {
       "path": "scripts/test_android_notices.py",
