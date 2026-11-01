@@ -3,7 +3,7 @@ import {spawn} from 'node:child_process';
 /** The guest owns ffmpeg; this connection renews its lease until disposal. */
 export function guestCapture(kind:'screen'|'audio') {
   const child=spawn('docker',[
-    'exec','-i','-u','ai','ai-phone-desktop','python3','/usr/local/lib/ai-phone/media-capture.py',kind,
+    'exec','-i','-u','ai','ai-phone-desktop','/usr/local/bin/desktop-bridge','capture',kind,
   ],{stdio:['pipe','pipe','pipe']});
   let stopped=false;
   const heartbeat=setInterval(()=>{if(!stopped)child.stdin.write('1');},1000);

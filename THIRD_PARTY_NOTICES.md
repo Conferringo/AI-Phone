@@ -85,3 +85,9 @@ The guest application component uses the official Clash Meta for Android v2.11.3
 ## Emulator source-producer test inputs
 
 Two small verbatim AOSP Emulator inputs at commit `d1bfd6eb0ea9f697dc4cc1d258887c8b4220b155` are included for producer contract tests. The Android Open Source Project copyright and Apache-2.0 header in `toolchains.py` are preserved. Exact source URLs, Git blob identities and SHA-256 digests are recorded in [fixture provenance](scripts/emulator-source-build/fixtures/provenance.json). This attribution does not qualify any SDK binary or dependency for redistribution.
+
+## Native host and guest services
+
+The [native service licence collection](docs/public/native-services-licenses.txt) and [inventory](docs/public/native-services-license-inventory.json) identify the locked Rust service dependencies, full terms, copyright notices and source references. The Linux guest image retains these materials under `/usr/share/doc/ai-phone/`.
+
+Image processing enables PNG in image 0.25.10. The x11rb protocol bindings retain the separate xcb-proto copyright and permission notice. The host archive decoder links liblzma through xz2 and lzma-sys; the collection preserves the vendored XZ terms separately from the Rust wrapper licences. XZ command-line programs and shell utilities are not part of this static library build. This software includes code from [XZ Utils](https://tukaani.org/xz/).

@@ -1,0 +1,17 @@
+**
+!Cargo.toml
+!Cargo.lock
+!crates/**/Cargo.toml
+!crates/**/build.rs
+!crates/**/*.rs
+!packages/protocol/proto/**/*.proto
+!infra/desktop/Dockerfile
+!infra/desktop/*.sh
+!infra/desktop/*.pa
+!infra/desktop/dunstrc
+!infra/desktop/location.js
+!infra/desktop/home-identity.py
+!LICENSE
+!NOTICE
+!docs/public/native-services-licenses.txt
+!docs/public/native-services-license-inventory.json

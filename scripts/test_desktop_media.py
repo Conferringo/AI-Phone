@@ -21,13 +21,30 @@ class DesktopMediaTest(unittest.TestCase):
                         'mkdir -p /tmp/ai-runtime; chown ai:ai /tmp/ai-runtime; chmod 700 /tmp/ai-runtime; exec sleep 300'],
                        check=True, stdout=subprocess.DEVNULL)
         cls.addClassCleanup(lambda: subprocess.run(['docker', 'rm', '-f', cls.container], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
-        for name in ['media-capture.py', 'audio-service.py', 'pulse.pa']:
-            subprocess.run(['docker', 'cp', str(ROOT / 'infra/desktop' / name),
-                            f'{cls.container}:/tmp/{name}'], check=True)
+        subprocess.run(['docker', 'cp', str(ROOT / 'infra/desktop/pulse.pa'),
+                        f'{cls.container}:/tmp/pulse.pa'], check=True)
+        cls.select_native_bridge()
         cls.supervisor = subprocess.Popen(['docker', 'exec', '-u', 'ai', cls.container,
-                                          'python3', '/tmp/audio-service.py', '/tmp/pulse.pa'],
+                                          cls.bridge, 'audio-supervise', '/tmp/pulse.pa'],
                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         cls.wait_audio()
+
+    @classmethod
+    def select_native_bridge(cls):
+        cls.bridge = '/usr/local/bin/desktop-bridge'
+        override = os.environ.get('AI_PHONE_TEST_GUEST_BINARY')
+        if override:
+            source = Path(override).resolve(strict=True)
+            with source.open('rb') as binary:
+                if binary.read(4) != b'\x7fELF':
+                    raise AssertionError('AI_PHONE_TEST_GUEST_BINARY must be a matching native Linux ELF binary')
+            cls.bridge = '/tmp/desktop-bridge-' + uuid.uuid4().hex
+            subprocess.run(['docker', 'cp', str(source), f'{cls.container}:{cls.bridge}'], check=True)
+            subprocess.run(['docker', 'exec', cls.container, 'chmod', '755', cls.bridge], check=True)
+        header = subprocess.run(['docker', 'exec', '-u', 'ai', cls.container,
+                                 'head', '-c', '4', cls.bridge], check=True, capture_output=True).stdout
+        if header != b'\x7fELF':
+            raise AssertionError('A matched Rust guest image with native desktop-bridge is required; no Python fallback')
 
     @classmethod
     def tearDownClass(cls):
@@ -65,7 +82,7 @@ class DesktopMediaTest(unittest.TestCase):
 
     def capture(self):
         return subprocess.Popen(['docker', 'exec', '-i', '-u', 'ai', self.container,
-                                 'python3', '/tmp/media-capture.py', 'audio'],
+                                 self.bridge, 'capture', 'audio'],
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def test_disconnect_and_host_crash_release_guest(self):
@@ -83,6 +100,8 @@ class DesktopMediaTest(unittest.TestCase):
             child.stdin.close()
             child.stdout.close()
             child.stderr.close()
+            if not crash:
+                self.assertEqual(child.returncode, 0)
             self.assert_no_capture()
 
     def test_tone_reaches_the_host_capture_pipe(self):
@@ -105,9 +124,11 @@ class DesktopMediaTest(unittest.TestCase):
             drain=threading.Thread(target=child.stdout.read);drain.start()
             child.stdin.close();child.wait(timeout=8);drain.join(timeout=2);child.stdout.close();child.stderr.close()
             if tone is not None:tone.wait(timeout=5)
+        self.assertEqual(child.returncode, 0)
         self.assert_no_capture()
 
     def test_lost_heartbeat_expires(self):
+        started = time.monotonic()
         child = self.capture()
         self.assertGreater(len(child.stdout.read(9600)), 0)
         drain = threading.Thread(target=child.stdout.read)
@@ -117,6 +138,8 @@ class DesktopMediaTest(unittest.TestCase):
         child.stdin.close()
         child.stdout.close()
         child.stderr.close()
+        self.assertEqual(child.returncode, 0)
+        self.assertGreaterEqual(time.monotonic() - started, 5)
         self.assert_no_capture()
 
 

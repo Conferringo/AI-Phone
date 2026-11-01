@@ -92,10 +92,10 @@ def runtime_notice_blocks(root):
             blocks.append('\n--- '+path.name+' ---\n'+item['url']+'\n'+path.read_text())
     return blocks
 
-def client_notices(root=ROOT):
-    manifest=root/'apps/client/src-tauri/Cargo.toml'
+def rust_notices(root, manifest_name, component):
+    manifest=root/manifest_name
     metadata=json.loads(subprocess.check_output(['cargo','metadata','--manifest-path',str(manifest),'--locked','--format-version','1'],cwd=root))
-    owned=set(metadata['workspace_members']);blocks=['AI Phone native client dependency notices\n\nExact locked build graph, including platform/build dependencies. Component licences remain independent. This collection is not a final redistribution clearance.\n'];missing=[]
+    owned=set(metadata['workspace_members']);blocks=['AI Phone '+component+' dependency notices\n\nExact locked build graph, including platform/build dependencies. Component licences remain independent. This collection is not a final redistribution clearance.\n'];missing=[]
     for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])):
         if package['id'] in owned:continue
         folder=Path(package['manifest_path']).parent
@@ -110,6 +110,9 @@ def client_notices(root=ROOT):
         for path,url in supplement:blocks.append('\n--- '+path.name+' (pinned grant or linked full licence text) ---\n'+url+'\n'+path.read_text())
     blocks.extend(runtime_notice_blocks(root))
     return '\n'.join(blocks),missing
+
+def client_notices(root=ROOT):
+    return rust_notices(root,'apps/client/src-tauri/Cargo.toml','native client')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--client-notices-output',type=Path);args=parser.parse_args()
