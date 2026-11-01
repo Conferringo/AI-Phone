@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 9017,
-      "sha256": "031ff9d280d79edcb6117bfe7ad5727b8c3ca1b9312bef684e92405103257f85"
+      "size": 11679,
+      "sha256": "7d7c37e192f7d009a6ced9921d87aae51b934a77cc0a0cc40482fc7fd144b669"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -2178,6 +2178,11 @@
       "sha256": "b64f2d94731ea2d4cf9faba7a30ce50067d871dc1dad17e1d00cca1370e854fa"
     },
     {
+      "path": "config/macos-factory.json",
+      "size": 119,
+      "sha256": "9f44bde85635175629a027012be3c06ff16d883238a98c23a508f34425fcfd22"
+    },
+    {
       "path": "config/mihomo-release.json",
       "size": 1324,
       "sha256": "d9b60f402cd7c5df7a92794bda87785ede14c71647f360174cc47d5a77c0980d"
@@ -2959,8 +2964,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 4312,
-      "sha256": "c205d458f39fa576179f951389bc9dcf000e758937ec1f6722297fbc8c193018"
+      "size": 4985,
+      "sha256": "3e0fdef8c6140191061021fa5c15612b7a7f1e7a2bdb7e55db2f3668ea300f7e"
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
@@ -4898,6 +4903,16 @@
       "sha256": "744680090f66918629d8841d126afbd5ca3e434054406c6cb5fdbc08a7a75811"
     },
     {
+      "path": "scripts/macos_factory_engine.py",
+      "size": 9481,
+      "sha256": "010fd699c15cb0d059a7a7458985aaecbe70571cbb1cb80502885f9d3fd8471f"
+    },
+    {
+      "path": "scripts/macos_factory_qemu.py",
+      "size": 710,
+      "sha256": "515a3a14bdfad5d81fdd4e846c4860b684ac6c1bf9f372162c68e29b29f2ad41"
+    },
+    {
       "path": "scripts/macos_target.py",
       "size": 1384,
       "sha256": "56162a77788e39af06d9dadd40b1d75bff3bc2b5785c255303bc1de969bc538d"
@@ -5356,6 +5371,11 @@
       "path": "scripts/test_macos_disk_image.py",
       "size": 2139,
       "sha256": "f6c993131afe4491d68753c6c6740744aa6c56652e90fc84cfc3901025300755"
+    },
+    {
+      "path": "scripts/test_macos_factory_engine.py",
+      "size": 14926,
+      "sha256": "f72521c7466a53f0eff0e13cff793741e2c0f2a323990cee3092fe73242a7a7c"
     },
     {
       "path": "scripts/test_managed_engine.py",

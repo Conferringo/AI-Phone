@@ -9,13 +9,18 @@ on:
         description: Retain development-only build artifacts for maintainer inspection
         type: boolean
         default: false
+      complete_macos_factory:
+        description: Build all Mac device resources with an isolated ARM software engine
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
-  group: client-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: client-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.complete_macos_factory && 'complete' || 'components' }}
+  cancel-in-progress: ${{ !inputs.complete_macos_factory }}
 jobs:
   macos-arm64:
+    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
     runs-on: macos-15
     timeout-minutes: 45
     env:
@@ -84,7 +89,56 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  full-macos-arm64:
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_macos_factory
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Disposable Mac factory toolchain
+        run: |
+          set -euo pipefail
+          # This hosted job builds only macOS/ARM Linux, so no Android NDK is
+          # consumed. Reclaim only this disposable runner's unused compiler SDKs.
+          rm -rf "$ANDROID_HOME/ndk"
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+          brew install qemu
+          export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          df -h .
+      - name: Software engine and factory ownership regressions
+        run: PYTHONPATH=scripts python3 -m unittest test_macos_factory_engine test_macos_client_factory
+      - name: Build all nine resources and the complete Mac client
+        run: python3 scripts/macos_factory_engine.py --compiler-sdk "$ANDROID_HOME"
+      - name: Retain text qualification receipts
+        if: always() && hashFiles('dist/macos-factory-engine-report.json') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: complete-macos-build-receipt
+          path: |
+            dist/macos-factory-engine-report.json
+            dist/macos-full-factory-report.json
+          if-no-files-found: error
+          retention-days: 14
+      # No runtime binaries, signing keys, guest state or accounts are uploaded.
+
   desktop-packages:
+    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
     strategy:
       fail-fast: false
       matrix:
@@ -153,6 +207,7 @@ jobs:
           compression-level: 0
 
   android-arm64:
+    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
