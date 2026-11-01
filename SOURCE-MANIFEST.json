@@ -2594,8 +2594,8 @@
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 39460,
-      "sha256": "b071cb2897aec70a0d52110684a104b21b7efa39803e5af5a8f1badda958021f"
+      "size": 43245,
+      "sha256": "bf36dcb56056b0fa8342aec1b38c237785b4db2a823defb84348137c4d5f96a7"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -2614,8 +2614,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 194606,
-      "sha256": "4e7240980cb738e0f0e6f367d5a578a68ffce8fb807db4603d3745871b7744b4"
+      "size": 194605,
+      "sha256": "11b29daaf2b922a8c16840e5c5849ba38e6e2737c409a96292ba7bcd85fb6e56"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -2884,8 +2884,8 @@
     },
     {
       "path": "docs/public/conversation-steering.md",
-      "size": 4572,
-      "sha256": "22dfe435a4c37d55ddd6f74f0a85983952ccd5e310021903457a07fd373f13f9"
+      "size": 4681,
+      "sha256": "3e96b480ac094a859398bafb424c328125b0b82032ca0af1b089b8df960d4ab0"
     },
     {
       "path": "docs/public/copilot-voice.md",
