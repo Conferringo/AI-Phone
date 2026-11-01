@@ -89,9 +89,9 @@ class MacOSStockBoundaryTests(unittest.TestCase):
 
     def test_reserve_boundary_and_no_work_on_initial_space_failure(self):
         from android_factory_stock import RESERVE,reserve
-        with tempfile.TemporaryDirectory() as temporary:
+        with tempfile.TemporaryDirectory() as temporary,patch('android_component_factory.host_key',return_value='macos-arm64'):
             root=Path(temporary);config=fixture(root);needed=sum(p['size_bytes'] for p in factory.policy(root).values())
-            with patch('android_factory_stock.shutil.disk_usage',return_value=type('Usage',(),{'free':RESERVE+needed-1})()),patch('android_component_factory.host_key',return_value='macos-arm64'),patch('android_component_factory.download') as download:
+            with patch('android_factory_stock.shutil.disk_usage',return_value=type('Usage',(),{'free':RESERVE+needed-1})()),patch('android_component_factory.download') as download:
                 with self.assertRaisesRegex(ValueError,'reserve'):factory.build(root,root/'work')
                 download.assert_not_called();self.assertFalse((root/'work').exists())
             with patch('android_factory_stock.shutil.disk_usage',return_value=type('Usage',(),{'free':RESERVE+needed})()):reserve(root/'missing/child',needed)

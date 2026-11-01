@@ -60,10 +60,16 @@ def check_docker():
         raise ValueError('Docker factory requires the platform-aware containerd image store')
 
 
-def build_image(root,role,reference,*,workspace=None,clash=None):
+def image_architecture(value):
+    if value not in ('amd64','arm64'):raise ValueError('Unsupported factory image architecture')
+    return value
+
+
+def build_image(root,role,reference,*,workspace=None,clash=None,architecture='amd64'):
+    architecture=image_architecture(architecture)
     if role not in ('workspace','desktop'):raise ValueError('Unknown factory image role')
     if docker_image(reference) is not None:raise ValueError('Factory image reference already exists')
-    command=['docker','buildx','build','--platform','linux/amd64','--load','--provenance=false','--tag',reference]
+    command=['docker','buildx','build','--platform','linux/'+architecture,'--load','--provenance=false','--tag',reference]
     if role=='desktop':
         if not workspace or clash is None:raise ValueError('Desktop factory needs its workspace and Clash application')
         command+=['--build-arg','WORKSPACE_IMAGE='+workspace,'--build-context','clash_apps='+str(Path(clash).resolve())]
@@ -120,23 +126,26 @@ def prepare_apps(root,env):
     return {'phone':phone,'guest':guest}
 
 
-def database_images(root):
+def database_images(root,*,architecture='amd64'):
+    architecture=image_architecture(architecture)
     text=(root/'compose.yaml').read_text();result={}
     for role in ('postgres','redis'):
         matches=re.findall(r'\$\{AI_PHONE_'+role.upper()+r'_IMAGE:-([^}]+)\}',text)
         if len(matches)!=1 or re.fullmatch(role+r':[^@]+@sha256:[0-9a-f]{64}',matches[0]) is None:
             raise ValueError('Missing immutable database image pin')
-        reference=role+'@'+matches[0].split('@',1)[1];run(['docker','pull','--platform','linux/amd64',reference],root);result[role]=reference
+        reference=role+'@'+matches[0].split('@',1)[1];run(['docker','pull','--platform','linux/'+architecture,reference],root);result[role]=reference
     return result
 
 
-def prepare_images(root,cache,source):
+def prepare_images(root,cache,source,*,architecture='amd64'):
     from build_container_images import build
-    pins=json.loads((root/'config/clash-apps.json').read_text())['alternatives']['linux-amd64']
+    architecture=image_architecture(architecture)
+    apps=json.loads((root/'config/clash-apps.json').read_text())
+    pins=apps['linux'] if architecture=='arm64' else apps['alternatives']['linux-amd64']
     clash=cache/'clash';fetch(clash,pins['file'],pins)
-    namespace=image_namespace(source,uuid.uuid4().hex[:12]);sources=database_images(root)
-    sources['workspace']=build_image(root,'workspace',namespace+'/workspace:build')
-    sources['desktop']=build_image(root,'desktop',namespace+'/desktop:build',workspace=sources['workspace'],clash=clash)
+    namespace=image_namespace(source,uuid.uuid4().hex[:12]);sources=database_images(root,architecture=architecture)
+    sources['workspace']=build_image(root,'workspace',namespace+'/workspace:build',architecture=architecture)
+    sources['desktop']=build_image(root,'desktop',namespace+'/desktop:build',workspace=sources['workspace'],clash=clash,architecture=architecture)
     output=cache/'images.payload';return output,build(sources,output)
 
 
