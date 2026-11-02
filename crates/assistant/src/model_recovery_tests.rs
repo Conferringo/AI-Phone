@@ -363,6 +363,11 @@ async fn resumed_provider_request_uses_saved_key_and_strips_previous_protocol_me
             let encoded=body.to_string();assert!(!encoded.contains("OLD_"));assert!(encoded.contains("verified-original-result"));
             }
             assert_eq!(sqlx::query_scalar::<_,Value>("SELECT context FROM runs WHERE id=$1").bind(run.id).fetch_one(&app.db).await.unwrap(),json!(run.context));
+            // Each simulated provider failure must finish its claimed attempt,
+            // as the real worker does, before the next protocol can resume it.
+            finish_attempt(&app,run.id,run.message,&Err(error),false).await.unwrap();
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM device_execution_leases WHERE run_id=$1")
+                .bind(run.id).fetch_one(&app.db).await.unwrap(),0);
         }
         assert_eq!(captured.lock().unwrap().len(),3);server.abort();
     }).await;

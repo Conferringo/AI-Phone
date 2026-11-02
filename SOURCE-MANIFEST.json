@@ -2859,6 +2859,7 @@
     },
     {
       "path": "docs/public/architecture.en.md",
+<<<<<<< HEAD
       "size": 4266,
       "sha256": "b3511546d9237c72f66bd1eb6b6228b35312ba80a54a7c0f0ede257ec93030d2"
     },
@@ -2866,6 +2867,15 @@
       "path": "docs/public/architecture.zh-CN.md",
       "size": 4105,
       "sha256": "eb57b1557751e34c94fd0baa30c1cabd916526417a58f721b8763af87e53c5e5"
+=======
+      "size": 3777,
+      "sha256": "95a2b09c86e1a933fdec38caa9af2f3979a4738220df34c71e71cb40421fed51"
+    },
+    {
+      "path": "docs/public/architecture.zh-CN.md",
+      "size": 3705,
+      "sha256": "c834edbae6bf2b7e9ab4b1eff7e6cdf5fcf91dbcae3a1558c6ca7c6f6b7758b5"
+>>>>>>> origin/master
     },
     {
       "path": "docs/public/autonomous-exploration.md",
