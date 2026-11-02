@@ -5,22 +5,17 @@ use futures_util::FutureExt;
 use serde_json::{Value, json};
 use sqlx::Row;
 
+#[cfg(test)]
+#[path = "execution_tests.rs"]
+mod execution_tests;
+
 pub(crate) async fn recover_interrupted_runs(db: &PgPool) -> Result<(), sqlx::Error> {
-    // Preserve pending actions, model retry counters and the original wait deadline.
-    sqlx::query("UPDATE runs SET status='queued' WHERE status='running'")
-        .execute(db)
-        .await?;
-    Ok(())
+    crate::run_queue::recover(db).await
 }
 
 pub(crate) async fn claim_due_run(app: &App) -> Result<Option<(Uuid, Uuid)>, sqlx::Error> {
-    let mut tx = app.db.begin().await?;
-    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY CASE WHEN origin='user' AND (step=0 OR jsonb_array_length(steering)>0) THEN 0 WHEN origin='notification' THEN 1 WHEN origin='user' THEN 2 WHEN origin='device-handoff' THEN 3 ELSE 4 END,COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
-    if let Some((id, _)) = row {
-        sqlx::query("UPDATE runs SET status='running',heartbeat_at=now(),loop_state=CASE WHEN next_wake_at IS NOT NULL THEN jsonb_set(loop_state,'{wait_completed_at_ms}',to_jsonb(floor(extract(epoch FROM next_wake_at)*1000)::bigint)) ELSE loop_state END,next_wake_at=NULL,error='' WHERE id=$1").bind(id).execute(&mut *tx).await?;
-    }
-    tx.commit().await?;
-    Ok(row)
+    let active: Vec<Uuid> = app.active.lock().await.keys().copied().collect();
+    crate::run_queue::claim(&app.db, &active).await
 }
 
 async fn finish_attempt(
@@ -77,40 +72,58 @@ async fn finish_attempt(
             .bind(id).execute(&mut *tx).await?;
     }
     sqlx::query("UPDATE harness_events SET status=$2,finished_at=CASE WHEN $2 IN ('completed','failed','canceled') THEN now() ELSE NULL END WHERE id=$1").bind(id).bind(trace).execute(&mut *tx).await?;
+    sqlx::query("DELETE FROM device_execution_leases WHERE run_id=$1")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
     tx.commit().await
 }
 
 pub async fn work(app: Shared) {
+    let mut attempts = tokio::task::JoinSet::new();
     loop {
         if let Ok(Some((id, message))) = claim_due_run(&app).await {
             let cancel = CancellationToken::new();
-            *app.active.lock().await = Some((id, cancel.clone()));
-            let result=async {
-                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title) VALUES($1,$1,$2,'task','任务') ON CONFLICT(id) DO UPDATE SET status='running',finished_at=NULL").bind(id).bind(message).execute(&app.db).await.map_err(|_|"任务记录暂时无法保存，未开始后续操作".to_string())?;
-                std::panic::AssertUnwindSafe(execute(&app,id,&cancel)).catch_unwind().await.unwrap_or_else(|_|Err("paused:运行器异常，当前结果待核对，未自动重放".into()))
-            }.await;
-            // Do not abandon a claimed run when PostgreSQL is restarting. Only retry the
-            // idempotent result transaction; never execute the task/tools again here.
-            let mut reported = false;
-            while let Err(error) =
-                finish_attempt(&app, id, message, &result, cancel.is_cancelled()).await
-            {
-                if matches!(error, sqlx::Error::RowNotFound) {
-                    break;
+            app.active.lock().await.insert(id, cancel.clone());
+            attempts.spawn(attempt(app.clone(), id, message, cancel));
+        }
+        tokio::select! {
+            Some(result) = attempts.join_next(), if !attempts.is_empty() => {
+                match result {
+                    Ok(id) => { app.active.lock().await.remove(&id); }
+                    Err(_) => eprintln!("Task finalization stopped unexpectedly; device ownership retained until recovery"),
                 }
-                if !reported {
-                    eprintln!(
-                        "Task result persistence unavailable; holding the checkpoint until database recovery"
-                    );
-                    reported = true;
-                }
-                tokio::time::sleep(Duration::from_secs(1)).await;
             }
-            *app.active.lock().await = None;
-        } else {
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            _ = tokio::time::sleep(Duration::from_millis(250)) => {}
         }
     }
+}
+
+async fn attempt(app: Shared, id: Uuid, message: Uuid, cancel: CancellationToken) -> Uuid {
+    let result = async {
+        sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title) VALUES($1,$1,$2,'task','任务') ON CONFLICT(id) DO UPDATE SET status='running',finished_at=NULL")
+            .bind(id).bind(message).execute(&app.db).await
+            .map_err(|_| "任务记录暂时无法保存，未开始后续操作".to_string())?;
+        std::panic::AssertUnwindSafe(execute(&app, id, &cancel))
+            .catch_unwind().await
+            .unwrap_or_else(|_| Err("paused:运行器异常，当前结果待核对，未自动重放".into()))
+    }.await;
+    // Retain the device leases across a database outage. Retry only this
+    // idempotent finalization, never the model request or guest actions.
+    let mut reported = false;
+    while let Err(error) = finish_attempt(&app, id, message, &result, cancel.is_cancelled()).await {
+        if matches!(error, sqlx::Error::RowNotFound) {
+            break;
+        }
+        if !reported {
+            eprintln!(
+                "Task result persistence unavailable; holding the checkpoint until database recovery"
+            );
+            reported = true;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    id
 }
 
 async fn initial_context(
@@ -3245,6 +3258,7 @@ async fn tool(
             json!([{"type":"input_text","text":format!("真实手机屏幕 {}×{}（仅观察，未接管）",observation.width,observation.height)},{"type":"input_image","image_url":format!("data:image/png;base64,{}",STANDARD.encode(observation.png))}]),
         );
     }
+    crate::run_queue::reserve(&app.db, run, &phone_id).await?;
     if *epoch == 0 {
         let mut ready = false;
         for _ in 0..30 {
@@ -4223,7 +4237,7 @@ mod loop_persistence_tests {
             settings: settings::SettingsStore::test_configured(&root),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(Vec::new()),
         };
         let outcome=AssertUnwindSafe(async {
@@ -4402,7 +4416,7 @@ mod process_recovery_tests {
             phone_token: "unused".into(),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
         });
         work(app).await;

@@ -590,9 +590,7 @@ async fn run_command(
         }
         if let Err(e)=sqlx::query("UPDATE messages SET text='已停止。' WHERE id=(SELECT assistant_message_id FROM runs WHERE id=$1) AND text=''")
             .bind(id).execute(&app.db).await { return db_error(e); }
-        if let Some((active, token)) = &*app.active.lock().await
-            && *active == id
-        {
+        if let Some(token) = app.active.lock().await.get(&id) {
             token.cancel();
         }
     }
@@ -874,7 +872,7 @@ mod steering_tests {
             settings: settings::SettingsStore::test_configured(&root),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(Vec::new()),
         });
         let outcome = AssertUnwindSafe(async {

@@ -340,7 +340,7 @@ async fn committed_skill_survives_lost_commit_acknowledgement() {
                 settings: settings::SettingsStore::open(&app.root).unwrap(),
                 local: reqwest::Client::new(),
                 remote: reqwest::Client::new(),
-                active: Mutex::new(None),
+                active: Mutex::new(Default::default()),
                 login_attempts: Mutex::new(vec![]),
             };
             let latest = text("committed despite lost acknowledgement");

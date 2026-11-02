@@ -12,7 +12,9 @@ Business APIs use protobuf (`packages/protocol/proto`). Browser requests use `ap
 
 User/paired channel → durable run → pinned Agent/model revision → Skills/current observation → proposed tool → owner/device/run/epoch/action-ID checks → guest execution → post-action observation → persisted result → next round → independent completion audit.
 
-Successful input injection is not completion evidence. Unknown outcomes require observation before retrying. Skill reads are not phone actions; previews are not complete messages; drafts are not sent messages. The UI preserves public progress, actual tool I/O and audits without inventing private chain-of-thought. The current worker is serial; multiple configured Agents do not imply concurrent execution.
+Successful input injection is not completion evidence. Unknown outcomes require observation before retrying. Skill reads are not phone actions; previews are not complete messages; drafts are not sent messages. The UI preserves public progress, actual tool I/O and audits without inventing private chain-of-thought.
+
+Task attempts progress independently on different devices. PostgreSQL grants exclusive device leases during admission; an attempt retains its primary and borrowed devices until its result is committed. Model and guest I/O hold no SQL transaction. Cancellation targets a run, while foreground device changes leave other runs active. Cross-device control waits for an occupied device instead of taking another task's ownership; device messages provide durable handoff. Startup releases the previous process's leases while preserving checkpoints, unknown actions and wait deadlines.
 
 Responses, Chat Completions and native Anthropic Messages use the same engine. The latter translates tools, results and images; truncated, filtered, unterminated or malformed tool outputs are rejected. Providers must pass actual text, image and tool round-trip probes.
 
