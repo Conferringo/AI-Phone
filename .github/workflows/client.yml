@@ -69,6 +69,40 @@ jobs:
           echo "Pinned ARM emulator and ADB verified; Android system capsule ready."
       - name: Local unsigned bundle and privacy checks
         run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime --with-js-services --android-runtime "$AI_PHONE_FACTORY_ANDROID_PAYLOAD"
+      - name: Stage qualified core services for maintainer deployment
+        run: |
+          PYTHONPATH=scripts python3 - <<'PYCODE'
+          import os
+          from pathlib import Path
+          from prebuilt_services import prepare_services, load_manifest
+          root = Path.cwd()
+          destination = Path(os.environ['RUNNER_TEMP']) / 'core-services'
+          for name, content, mode in prepare_services(root):
+              path = destination / name
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(content)
+              path.chmod(mode)
+          load_manifest(destination)
+          notices = ['LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md',
+                     'docs/public/native-services-licenses.txt',
+                     'docs/public/native-services-license-inventory.json',
+                     'docs/public/licenses/fixtures/dejavu.txt']
+          notices.extend(path.relative_to(root).as_posix() for path in
+                         (root / 'docs/public/licenses/rust-runtime').rglob('*') if path.is_file())
+          for name in notices:
+              path = destination / name
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes((root / name).read_bytes())
+          PYCODE
+      # Core services only: no client, Android SDK, guest image or user state.
+      - name: Retain qualified core services
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: core-services-macos-arm64
+          path: ${{ runner.temp }}/core-services
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
       - name: Check bundled runtime publication review
         if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
         run: |
