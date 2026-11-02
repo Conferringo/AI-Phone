@@ -18,6 +18,7 @@ pub struct ExplorationWindow {
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct LoopState {
+    pub resume_requested: bool,
     pub stalls: u32,
     pub observation_recoveries: u32,
     pub model_retries: u32,
@@ -230,6 +231,17 @@ mod tests {
         assert!(122000 >= loaded["wake_at_ms"].as_u64().unwrap());
         assert!(wake_at(0, 0).is_err());
         assert!(wake_at(0, 301).is_err());
+    }
+    #[test]
+    fn explicit_resume_signal_survives_a_checkpoint_without_losing_prior_evidence() {
+        let saved = json!({"stalls":3,"model_retries":2,"last_issue":"old failure",
+            "recent_results":["completed-action"],"plan":{"goal":"same task"},"resume_requested":true});
+        let state: LoopState = serde_json::from_value(saved).unwrap();
+        let restored = serde_json::to_value(state).unwrap();
+        assert_eq!(restored["resume_requested"], true);
+        assert_eq!(restored["stalls"], 3);
+        assert_eq!(restored["recent_results"], json!(["completed-action"]));
+        assert_eq!(restored["plan"], json!({"goal":"same task"}));
     }
     #[test]
     fn repeated_failures_and_stalls_survive_restart() {

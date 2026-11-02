@@ -1899,6 +1899,31 @@ async fn persist_disposition(
     tx.commit().await.map_err(|e| e.to_string())?;
     Ok(true)
 }
+fn apply_explicit_resume(
+    context: &mut Vec<Value>,
+    state: &mut crate::agent_loop::LoopState,
+) -> bool {
+    if !std::mem::take(&mut state.resume_requested) {
+        return false;
+    }
+    context.push(json!({"role":"system","content":"[任务恢复] 用户已明确要求继续同一任务。保留原目标、已完成步骤和真实工具证据。先基于当前状态重新评估上次阻断，历史错误不能直接当作当前结论；不得为满足旧错误执行与原目标无关的操作。必要时用只读检查核对，已完成的动作不要重做；结果未知的副作用先观察，不直接重放。"}));
+    true
+}
+
+async fn prepare_run_context(
+    app: &App,
+    conversation: Uuid,
+    message: Uuid,
+    context: &mut Vec<Value>,
+    state: &mut crate::agent_loop::LoopState,
+) -> Result<bool, String> {
+    let initialized = context.is_empty();
+    if initialized {
+        *context = initial_context(app, conversation, message).await?;
+    }
+    Ok(apply_explicit_resume(context, state) || initialized)
+}
+
 async fn execute(
     app: &App,
     id: Uuid,
@@ -1936,8 +1961,7 @@ async fn execute(
     let mut epoch = row.get::<i64, _>("control_epoch") as u64;
     let mut state: crate::agent_loop::LoopState =
         serde_json::from_value(row.get("loop_state")).map_err(|e| e.to_string())?;
-    if context.is_empty() {
-        context = initial_context(app, conversation, message).await?;
+    if prepare_run_context(app, conversation, message, &mut context, &mut state).await? {
         checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
     loop {
@@ -3398,6 +3422,41 @@ async fn tool(
 #[cfg(test)]
 mod verification_tests {
     use super::*;
+
+    #[test]
+    fn explicit_resume_adds_one_system_notice_and_preserves_the_original_goal_and_evidence() {
+        let original = vec![
+            json!({"role":"user","content":"核对已经完成的GUI任务"}),
+            json!({"type":"function_call_output","call_id":"completed-action","output":"previous tool result"}),
+        ];
+        let mut context = original.clone();
+        let mut state: crate::agent_loop::LoopState = serde_json::from_value(json!({
+            "resume_requested":true,"stalls":1,"recent_results":["verified-action"],
+            "plan":{"goal":"same task"},"model_replay_boundary":2
+        }))
+        .unwrap();
+        assert!(apply_explicit_resume(&mut context, &mut state));
+        assert_eq!(&context[..original.len()], original.as_slice());
+        assert_eq!(context.last().unwrap()["role"], "system");
+        assert!(!state.resume_requested);
+        assert_eq!(
+            state.stalls, 1,
+            "retry counters belong to the resume transaction"
+        );
+        assert_eq!(state.recent_results, vec!["verified-action"]);
+        assert_eq!(state.plan, Some(json!({"goal":"same task"})));
+        assert_eq!(state.model_replay_boundary, 2);
+        let mut restored = serde_json::from_value(serde_json::to_value(state).unwrap()).unwrap();
+        assert!(!apply_explicit_resume(&mut context, &mut restored));
+        assert_eq!(context.len(), original.len() + 1);
+        let mut legacy: crate::agent_loop::LoopState =
+            serde_json::from_value(json!({"stalls":3})).unwrap();
+        assert!(!apply_explicit_resume(&mut context, &mut legacy));
+        assert_eq!(
+            legacy.stalls, 3,
+            "a process restart is not a user resume request"
+        );
+    }
     #[test]
     fn computer_desktop_words_do_not_require_unrelated_phone_actions() {
         let mut context = vec![
