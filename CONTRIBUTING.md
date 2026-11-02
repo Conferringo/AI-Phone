@@ -28,6 +28,13 @@ App-experience contributions must strip accounts, contacts, file names, private 
 
 Source packages are built with `./ai-phone package`. Do not use a blanket archive or upload the entire workspace. Public packaging additionally requires completed publication gates and a manual review of the resulting archive.
 
+After source changes, refresh the public file manifest and verify it before submitting:
+
+```sh
+python3 scripts/source_manifest.py --refresh
+python3 scripts/check_source.py --repository --manifest
+```
+
 `master` requires a pull request and passing Source, Native, Managed Linux host and WSL backend qualification checks from GitHub Actions, with the branch up to date. Administrators follow the same rule. Finish validation of one candidate before advancing the next; retain failures and fix their cause rather than weakening a check. Runtime checks build and boot isolated device backends before merge; they do not qualify a Windows installation.
 
 Workflows use pinned actions and read-only repository permissions. Automated tests use mocks, isolated databases and disposable guests; they do not control personal devices or call paid providers. Dependency audit failures name the affected package and advisory; the Native workflow retains a sanitized report for diagnosis. Passing source and native-build checks does not qualify a complete client release: full runtime resources, licensing, privacy and the publication gates are checked separately.
