@@ -19,8 +19,8 @@
   "files": [
     {
       "path": ".dockerignore",
-      "size": 380,
-      "sha256": "eb89d53aa741f2fbbd6b4fd92b726a8713280d2b40772b273a4317f8f7383162"
+      "size": 377,
+      "sha256": "70800187525ec68fe0dbec636b61937264ae407dbb331d758cdeea8669c15682"
     },
     {
       "path": ".env.example",

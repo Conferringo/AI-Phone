@@ -9,8 +9,8 @@
 !infra/desktop/*.sh
 !infra/desktop/*.pa
 !infra/desktop/dunstrc
+!infra/desktop/mimeapps.list
 !infra/desktop/location.js
-!infra/desktop/home-identity.py
 !LICENSE
 !NOTICE
 !docs/public/native-services-licenses.txt
