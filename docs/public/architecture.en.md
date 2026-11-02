@@ -16,6 +16,8 @@ Successful input injection is not completion evidence. Unknown outcomes require 
 
 Responses, Chat Completions and native Anthropic Messages use the same engine. The latter translates tools, results and images; truncated, filtered, unterminated or malformed tool outputs are rejected. Providers must pass actual text, image and tool round-trip probes.
 
+A Responses completion event with an explicit non-completed response status is rejected before its output can become tool proposals. Complete output is preserved verbatim for the existing evidence and provider-replay paths.
+
 ## Skill storage
 
 PostgreSQL owns committed Skill text. Each installation serializes its file projection with a per-Skill operating-system lock, then atomically publishes `SKILL.md` and synchronizes it to disk. The blocking writer retains the lock until file operations finish, including after cancellation of its async caller. File I/O holds no database transaction; reads and startup reconcile the projection from durable text while preserving auxiliary resources.

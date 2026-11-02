@@ -2529,8 +2529,8 @@
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
-      "size": 31240,
-      "sha256": "b837151e789fc9fae1ba64c0ec34ea917dce970141356e4a4036dcb16a165ba0"
+      "size": 34667,
+      "sha256": "4c0d1b9f2b1be5398b48d94dc2a912f0b566591a38f0cf7357d6d00d1e1b6e29"
     },
     {
       "path": "crates/assistant/src/model_context.rs",
@@ -2844,13 +2844,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 3552,
-      "sha256": "119641787f5ef3c93c6143cce43cb97c279c8e73192a8b597b030b2a63665f9c"
+      "size": 3777,
+      "sha256": "95a2b09c86e1a933fdec38caa9af2f3979a4738220df34c71e71cb40421fed51"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 3502,
-      "sha256": "eb8a504504d0bd60c494a3e6e682aa39151f912c17229e18f9aaddf769bcb757"
+      "size": 3705,
+      "sha256": "c834edbae6bf2b7e9ab4b1eff7e6cdf5fcf91dbcae3a1558c6ca7c6f6b7758b5"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
