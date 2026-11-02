@@ -64,7 +64,16 @@ fn command() -> Command {
         command.args(["timeout", "-k", "0.2", "4", "tesseract"]);
         command
     };
-    command.args(["stdin", "stdout", "-l", "chi_sim+eng", "--psm", "11", "tsv"]);
+    command.args([
+        "stdin",
+        "stdout",
+        "-l",
+        "chi_sim+eng",
+        "--psm",
+        "11",
+        "-c",
+        "tessedit_create_tsv=1",
+    ]);
     command.env("OMP_THREAD_LIMIT", "1");
     command
 }

@@ -2889,8 +2889,8 @@
     },
     {
       "path": "crates/vision/src/tesseract.rs",
-      "size": 9923,
-      "sha256": "da3fef5ca5fd933f7a96b7022e0418c2f16819b4dfd7f07ff4737d3de32cc34c"
+      "size": 10018,
+      "sha256": "1e322a09440c8da140ade5de859a6b5b9b000e96120b9030a55573b75e0c8b43"
     },
     {
       "path": "crates/vision/tests/capture.rs",
@@ -5054,8 +5054,8 @@
     },
     {
       "path": "scripts/phone-vision/README.md",
-      "size": 1110,
-      "sha256": "1f4e6c92e2da32b67b0d9807ec42bbdca7108251a273c8a51600ecf8c2ddfb46"
+      "size": 1319,
+      "sha256": "92c0f4f00aeb092099084b4d477c25b956781a4cc8d4887e62b1e4980a06ec27"
     },
     {
       "path": "scripts/phone-vision/generate-fixture.py",

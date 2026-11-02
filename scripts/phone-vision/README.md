@@ -1,6 +1,6 @@
 # Native OCR boundary
 
-The helper accepts bounded PNG bytes and returns text regions plus a 32×64 grayscale grid. macOS uses Apple Vision; Linux uses Tesseract/Pillow. Confidence and coordinate checks apply before regions reach the phone runner.
+The Rust helper accepts bounded PNG bytes and returns text regions plus a 32×64 grayscale grid. CPU recognition uses Tesseract with Chinese and English models, either in the managed OCR container or in the offline Linux component. The helper selects TSV output directly, so model-only qualification directories do not need Tesseract configuration files. Confidence and coordinate checks apply before regions reach the phone runner.
 
 `crates/phone-runner/fixtures/ocr-probe.png` is a generated 320×112 OCR self-test with ordinary rendered text `7319`. Its font and PNG hashes are recorded in `config/source-assets.json`; the DejaVu notice is retained without bundling a font file. Contributors can reproduce it with Pillow and the recorded font:
 
