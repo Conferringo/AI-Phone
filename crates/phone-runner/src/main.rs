@@ -30,6 +30,7 @@ mod cursor;
 mod gestures;
 mod grounding;
 mod location;
+mod native_tree;
 
 const OWNER: &str = "local-user";
 const MEDIA: &str = "application/x-protobuf";
@@ -262,18 +263,26 @@ async fn capture_ui_tree(runner: &Runner) -> String {
     // repeated idle waits and delay a usable screenshot indefinitely.
     tokio::time::timeout(UI_TREE_BUDGET, async {
         let _tree = runner.tree_lock.lock().await;
-        let capture = Uuid::new_v4().simple().to_string();
-        let path = format!("/data/local/tmp/ai-phone-window-{capture}.xml");
-        let marker = format!("__AI_PHONE_UI_TREE_{capture}__");
-        match adb(runner, ui_tree_command(&path, &marker)).await {
-            Ok((true, output, _)) => {
-                ui_tree_from_output(&output, &path, &marker).unwrap_or_default()
-            }
-            _ => String::new(),
-        }
+        capture_tree_sources(runner).await
     })
     .await
     .unwrap_or_default()
+}
+
+// The caller serializes requests and owns their end-to-end deadline.
+async fn capture_tree_sources(runner: &Runner) -> String {
+    let capture = Uuid::new_v4().simple().to_string();
+    if let Ok((true, output, _)) = adb(runner, native_tree::command(&capture)).await
+        && let Some(xml) = native_tree::from_output(&output, &capture)
+    {
+        return xml;
+    }
+    let path = format!("/data/local/tmp/ai-phone-window-{capture}.xml");
+    let marker = format!("__AI_PHONE_UI_TREE_{capture}__");
+    match adb(runner, ui_tree_command(&path, &marker)).await {
+        Ok((true, output, _)) => ui_tree_from_output(&output, &path, &marker).unwrap_or_default(),
+        _ => String::new(),
+    }
 }
 
 async fn dimensions(runner: &Runner) -> (u32, u32) {
@@ -1422,6 +1431,22 @@ printf 'home-completed'
     }
 
     #[tokio::test]
+    async fn live_native_hierarchy_avoids_the_legacy_idle_wait() {
+        let fixture = Fixture::new();
+        let legacy = fixture.0.join("legacy-called");
+        let runner = fixture.runner(&format!(
+            "#!/bin/sh\ncase \"$6\" in\n *dev.aiphone.input.DUMP_UI*) request=\"${{6##*request_id }}\"; printf 'Broadcast completed: result=-1, data=\"%s:{}\"\\n' \"$request\";;\n *) touch {}; exit 1;;\nesac\n",
+            STANDARD.encode(XML),
+            guest_quote(legacy.to_str().unwrap())
+        ));
+        assert_eq!(capture_tree_sources(&runner).await, XML);
+        assert!(
+            !legacy.exists(),
+            "a current native tree must avoid uiautomator"
+        );
+    }
+
+    #[tokio::test]
     async fn failed_adb_returns_empty_tree_and_each_attempt_has_a_unique_path() {
         let fixture = Fixture::new();
         let log = fixture.0.join("commands");
@@ -1434,8 +1459,20 @@ printf 'home-completed'
         let commands = std::fs::read_to_string(log).unwrap();
         let paths: Vec<_> = commands
             .lines()
+            .filter(|line| line.starts_with("tree="))
             .map(|line| line.split(';').next().unwrap())
             .collect();
+        assert_eq!(
+            commands.lines().count(),
+            4,
+            "both sources tried once per request"
+        );
+        let native: Vec<_> = commands
+            .lines()
+            .filter(|line| line.starts_with("am broadcast"))
+            .collect();
+        assert_eq!(native.len(), 2);
+        assert_ne!(native[0], native[1], "native requests must also be fresh");
         assert_eq!(paths.len(), 2);
         assert_ne!(paths[0], paths[1]);
         assert!(paths.iter().all(

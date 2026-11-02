@@ -15,6 +15,8 @@
 
 浏览器业务请求使用 `application/x-protobuf`，契约在 `packages/protocol/proto`；媒体字节和健康检查例外。流式业务事件使用protobuf WebSocket帧，不要与模型SSE混淆。
 
+Android无桌面入口的辅助服务提供按需、只读的原生控件层级请求，由系统`DUMP`权限保护。Rust优先接收绑定当前请求ID的完整回执，再使用UIAutomator及OCR后备；层级正文不包含密码文字。观察与动作校验分别负责数据读取和控制权，快速快照不替代动作后的结果核对。
+
 ## 一次真实操作
 
 用户或已配对渠道 → 持久run → 固定Agent与模型版本 → Skill/当前观察 → 模型提出动作 → owner/设备/run/epoch/action_id校验 → 客体执行 → 动作后观察 → 工具结果落盘 → 下一轮 → 独立完成核验。

@@ -21,6 +21,7 @@ import java.util.List;
 
 /** Passive WeChat activity feed. It never clicks, types, dismisses, or sends messages. */
 public final class PhoneAttention extends AccessibilityService {
+    private static PhoneAttention active;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final List<JSONObject> events=new ArrayList<>();
     private AtomicFile file;
@@ -38,15 +39,16 @@ public final class PhoneAttention extends AccessibilityService {
             if(old!=null)for(int i=Math.max(0,old.length()-80);i<old.length();i++)events.add(old.getJSONObject(i));
             badges[0]=saved.optBoolean("chat_badge");badges[1]=saved.optBoolean("contacts_badge");lastChat=saved.optString("chat_signature");
         }catch(Exception ignored){}
-        connected=true;handler.post(heartbeat);
+        connected=true;active=this;handler.post(heartbeat);
     }
     @Override public void onAccessibilityEvent(AccessibilityEvent event){
         if(!"com.tencent.mm".contentEquals(event.getPackageName()==null?"":event.getPackageName()))return;
         handler.removeCallbacks(scan);handler.postDelayed(scan,700);
     }
     @Override public void onInterrupt(){}
-    @Override public boolean onUnbind(Intent intent){connected=false;handler.removeCallbacksAndMessages(null);persist();return super.onUnbind(intent);}
-    @Override public void onDestroy(){connected=false;handler.removeCallbacksAndMessages(null);persist();super.onDestroy();}
+    @Override public boolean onUnbind(Intent intent){connected=false;if(active==this)active=null;handler.removeCallbacksAndMessages(null);persist();return super.onUnbind(intent);}
+    @Override public void onDestroy(){connected=false;if(active==this)active=null;handler.removeCallbacksAndMessages(null);persist();super.onDestroy();}
+    static AccessibilityNodeInfo activeRoot(){return active!=null&&active.connected?active.getRootInActiveWindow():null;}
     private static String text(CharSequence value){return value==null?"":value.toString();}
     private void inspect(){
         AccessibilityNodeInfo root=getRootInActiveWindow();

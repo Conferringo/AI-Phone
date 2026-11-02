@@ -123,7 +123,7 @@ fn parse_native(xml: &str, app: &str, width: u32, height: u32) -> Vec<Target> {
         let clickable = node.attribute("clickable") == Some("true");
         let scrollable = node.attribute("scrollable") == Some("true");
         let class = node.attribute("class").unwrap_or("");
-        let editable = class.ends_with("EditText");
+        let editable = node.attribute("editable") == Some("true") || class.ends_with("EditText");
         let own = node
             .attribute("text")
             .filter(|v| !v.is_empty())
@@ -903,6 +903,15 @@ mod tests {
         assert!(!targets[0].element.clickable);
         assert_eq!(grid.len(), 2048);
     }
+    #[test]
+    fn accessibility_editability_does_not_require_an_edit_text_class() {
+        let xml = r#"<hierarchy><node package="demo" class="android.view.View" editable="true" bounds="[10,20][400,200]"/><node package="demo" class="android.view.View" text="label" editable="false" bounds="[10,220][400,300]"/></hierarchy>"#;
+        let targets = parse_native(xml, "demo/Activity", 720, 1440);
+        assert_eq!(targets.len(), 2);
+        assert!(targets[0].element.editable);
+        assert!(!targets[1].element.editable);
+    }
+
     #[test]
     fn native_targets_decode_text_inherit_disabled_and_clip_to_visible_parent() {
         let xml = r#"<hierarchy><node package="test.app" bounds="[0,0][720,1440]" enabled="true">

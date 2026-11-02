@@ -199,8 +199,8 @@
     },
     {
       "path": "apps/android-input/AndroidManifest.xml",
-      "size": 1266,
-      "sha256": "49a52c361560c5a384634fc7cc04802fc9b0aaf0f3ab1b4d3d1b56acb20fec3e"
+      "size": 1386,
+      "sha256": "a4535eeca2205cea862e3f7a3d24025bd5d96bd1c4578903f4b1647ff5eeb0c8"
     },
     {
       "path": "apps/android-input/build.py",
@@ -209,8 +209,8 @@
     },
     {
       "path": "apps/android-input/res/xml/attention.xml",
-      "size": 459,
-      "sha256": "bf207da1c5372d14db03ebe3423a6bf840980f1c05fe56d17123a49cbf16537f"
+      "size": 417,
+      "sha256": "80fdf0997d8875037b625106d03979382e564ebd2c9e6ded73fe15723c3e40e4"
     },
     {
       "path": "apps/android-input/res/xml/method.xml",
@@ -219,13 +219,23 @@
     },
     {
       "path": "apps/android-input/src/dev/aiphone/input/PhoneAttention.java",
-      "size": 8171,
-      "sha256": "384cc03f1497a1d6d50782f45cf2dfd23c0dbc9d0d77e070de326c7dc801d641"
+      "size": 8403,
+      "sha256": "63899336213ef59bd5cc66839807105a2ec779f3fac899b811a9750f2f2d04c7"
     },
     {
       "path": "apps/android-input/src/dev/aiphone/input/PhoneNotifications.java",
       "size": 5387,
       "sha256": "9288680f9ac0148fbb02d233cd32a787ec75dce33d3a3deae740a6bf4d4da332"
+    },
+    {
+      "path": "apps/android-input/src/dev/aiphone/input/UiHierarchy.java",
+      "size": 2477,
+      "sha256": "a2f99ca53e1dd6886a9b86372588672f9b2968b6f7ec4325c1fc721820fd77bc"
+    },
+    {
+      "path": "apps/android-input/src/dev/aiphone/input/UiTreeReceiver.java",
+      "size": 1313,
+      "sha256": "6d1eb7f249bb1d566eb837e35c11f7efaa18195d8cf87c331ae2e8abbf1b1c92"
     },
     {
       "path": "apps/android-input/src/dev/aiphone/input/UnicodeIme.java",
@@ -2834,8 +2844,8 @@
     },
     {
       "path": "crates/phone-runner/src/grounding.rs",
-      "size": 39028,
-      "sha256": "717b16968cfb6adc5440045903bb0038867ed49ec82b08aeac0f7bb5779d5a49"
+      "size": 39609,
+      "sha256": "37932d41acd88a78761e2f3f5eab97b44c5b495db0a7263514d21667738351f9"
     },
     {
       "path": "crates/phone-runner/src/location.rs",
@@ -2844,8 +2854,13 @@
     },
     {
       "path": "crates/phone-runner/src/main.rs",
-      "size": 57229,
-      "sha256": "5f4e9fb7f5bfea217d59a119b9fab1358a5510ab6f6959efc3871133eb57a2fd"
+      "size": 58717,
+      "sha256": "6182805b67c714786d7a7ec495d8ec1e88d37ae603159db71a7b5b300de16cd6"
+    },
+    {
+      "path": "crates/phone-runner/src/native_tree.rs",
+      "size": 2979,
+      "sha256": "5e04321e213db8643fe8cce69a0733e759e61174043ce6774644e95b7ff0893d"
     },
     {
       "path": "docs/public/action-records.md",
@@ -2859,13 +2874,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 4711,
-      "sha256": "618b088c260065dcdcc269e95f6f5d3ddffb9acfa33ae3afe41dcd2562724304"
+      "size": 5125,
+      "sha256": "8893596baed63f112d425c7663ace7fbe40256155a958ed540ea1cf10042417d"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 4497,
-      "sha256": "72f8c5623e33dc3a96c54463ee539ecff25559d8aca2e228cbe1e87d76a24b74"
+      "size": 4850,
+      "sha256": "31457882f89157f21ef492739e0ae42bbd1959fc11de20b41c3a60f50fb4c089"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
