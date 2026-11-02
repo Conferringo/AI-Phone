@@ -1,6 +1,6 @@
 # Runtime bundles
 
-AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon distribution](engineering/macos-full-runtime.md) and [Linux x64 distribution](linux-client-factory.md) assemble all nine required resource groups. Public installer availability and platform acceptance follow [release status](release-status.md).
+AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon](engineering/macos-full-runtime.md) and [Linux x64](linux-client-factory.md) build guides define the nine resource groups required by a complete distribution. Published installers and platform qualification are listed in [release status](release-status.md).
 
 ## Package format
 
@@ -9,7 +9,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 | Component | Contents | Launch requirement |
 |---|---|---|
 | Web | Next.js standalone output, static/public assets, pinned host-matched Bun | Installed file hashes and contained dependency aliases must match |
-| Native services | Release Rust assistant and phone runner, matched OCR helper and generated OCR fixture | Host, hashes, inventory and executable permissions must match; macOS uses Apple Vision, Linux uses the [offline OCR closure](engineering/linux-offline-ocr.md) |
+| Native services | Release Rust assistant and phone runner, matched Rust PNG/OCR helper and generated fixture | Host, hashes, inventory and executable permissions must match; CPU Tesseract runs in the managed OCR service or the verified [Linux offline closure](engineering/linux-offline-ocr.md) |
 | Installer tools | Portable Python and Node in a separate native resource group | Compiled manifest digest, host, complete inventory and immutable activation must match |
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages; Linux also includes QEMU/SSH/firmware | Matching host runtime, ownership and persisted selection must match; [host component contract](container-host-runtime.md) |
@@ -31,7 +31,11 @@ The staging entry validates bounded archive headers and inventory before writing
 
 Service launchers verify installed native components before choosing their command. A present but invalid component fails explicitly. macOS and Linux use the prebuilt Rust binaries when supplied, and the runner receives the matching OCR path. Source-only installations retain contributor build commands. The bundled [JavaScript service component](engineering/js-runtime.md) supplies media, channels and setup helpers without first-run package installation. Browser and desktop applications are supplied by the included desktop image; Android applications and the emulator/image have their own component inventories. Complete platform behavior and publication are qualified separately from file presence.
 
+The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
+
 ## Component build and verification
+
+These commands are for maintainers building components. Native OCR qualification requires a prepared backend. For a build-only host Tesseract, set `AI_PHONE_TEST_TESSERACT` to its executable and `AI_PHONE_TEST_TESSDATA` to the directory produced by `scripts/prepare_ocr_models.py`. The pinned English and Simplified Chinese models work without Tesseract configuration files because the Rust helper selects TSV output directly. These qualification variables do not configure the installed client's OCR service.
 
 ```sh
 ./scripts/bootstrap.sh
@@ -69,6 +73,6 @@ Non-macOS physical installation is waived for this release scope and remains unv
 
 客户端将版本化程序、干净设备基础和持久用户数据分开。网页组件包含 Next standalone、静态资源及对应宿主的 Bun；原生组件包含 Rust 助手、手机执行器与 OCR。macOS/Linux 启动已有原生组件时校验宿主、摘要和执行权限；组件损坏会明确失败，不回退到源码编译掩盖错误。
 
-真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux x64 OCR 使用随包 Python/Pillow、Tesseract 与依赖，已通过隔离识别检查。macOS App/DMG 与 Linux x64 DEB 均已装配全部九类资源并完成包体校验，包内网页、原生程序及 OCR 已实际执行。公开安装包、完整产品行为与其他宿主仍依照各自发行门槛验收；编译和包体检查不等于实机安装验收。
+真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。手机与电脑共用 Rust PNG/OCR 流程；Tesseract 在隔离服务或 Linux 随包原生依赖中识别，Rust 负责画面摘要、文字边界和置信度解析。
 
-The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
+完整发行包须包含九类资源，并通过对应平台的包体、启动、首次配置、升级恢复及许可检查；组件编译和文件清单通过不能替代整包验收。安装包供应和平台验证范围统一见[发行状态](release-status.md)。

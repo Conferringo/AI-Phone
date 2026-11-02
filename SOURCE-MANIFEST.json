@@ -3029,8 +3029,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 3616,
-      "sha256": "e5615cf3134e9e5b24736d92637f29da9bc31679c1bc5ba0acc836caae6f61db"
+      "size": 3786,
+      "sha256": "273726c613dd10d1a30baf4b4c64eaa907b642f6e3b53fc2d27146c00055ccb9"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -4009,8 +4009,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 8885,
-      "sha256": "9cff25a18b681726b900ce3a86f5058b428966cf7bfa3a36171f3115ef045c95"
+      "size": 9503,
+      "sha256": "20fb99a1e3d1b916213ee88c2f9576bfc4a645ac0ff028d777349dff41081797"
     },
     {
       "path": "docs/public/simulated-location.md",
