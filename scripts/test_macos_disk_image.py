@@ -34,4 +34,62 @@ class MacOSDiskImageTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(),b'previous')
             self.assertEqual({p.name for p in root.iterdir()},{'AI Phone.app','client.dmg'})
 
+    def test_native_verification_error_is_visible_and_never_promotes_a_corrupt_image(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';app.mkdir()
+            output=root/'client.dmg';output.write_bytes(b'previous')
+            native_run=subprocess.run
+            def command(args,**kwargs):
+                if args[1]=='create':
+                    Path(args[-1]).write_bytes(b'corrupt image')
+                    return subprocess.CompletedProcess(args,0,stdout='',stderr='')
+                return native_run(args,**kwargs)
+            with patch('macos_disk_image.subprocess.run',side_effect=command):
+                with self.assertRaises(subprocess.CalledProcessError) as raised:build(app,output)
+            diagnostic=(raised.exception.stderr or raised.exception.stdout or '').strip()
+            self.assertTrue(diagnostic,'the real hdiutil verification error must be captured')
+            self.assertIn(diagnostic,'\n'.join(getattr(raised.exception,'__notes__',[])))
+            self.assertEqual(output.read_bytes(),b'previous')
+
+class DiskImageFailureDiagnosticsTests(unittest.TestCase):
+    def test_creation_failure_explains_native_cause_without_replacing_existing_image(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';app.mkdir()
+            output=root/'client.dmg';output.write_bytes(b'previous')
+            error=subprocess.CalledProcessError(1,['hdiutil','create'],stderr='hdiutil: create failed - Resource busy')
+            with patch('macos_disk_image.subprocess.run',side_effect=error):
+                with self.assertRaises(subprocess.CalledProcessError) as raised:build(app,output)
+            notes='\n'.join(getattr(raised.exception,'__notes__',[]))
+            self.assertIn('DMG create failed',notes)
+            self.assertIn('Resource busy',notes)
+            self.assertEqual(output.read_bytes(),b'previous')
+            self.assertEqual({p.name for p in root.iterdir()},{'AI Phone.app','client.dmg'})
+
+    def test_verification_failure_reports_checksum_error_and_preserves_existing_image(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';app.mkdir()
+            output=root/'client.dmg';output.write_bytes(b'previous')
+            def native(args,**kwargs):
+                if args[1]=='create':
+                    Path(args[-1]).write_bytes(b'unverified image')
+                    return subprocess.CompletedProcess(args,0,stdout='',stderr='')
+                raise subprocess.CalledProcessError(1,args,output='checksum mismatch')
+            with patch('macos_disk_image.subprocess.run',side_effect=native):
+                with self.assertRaises(subprocess.CalledProcessError) as raised:build(app,output)
+            notes='\n'.join(getattr(raised.exception,'__notes__',[]))
+            self.assertIn('DMG verify failed',notes)
+            self.assertIn('checksum mismatch',notes)
+            self.assertEqual(output.read_bytes(),b'previous')
+            self.assertEqual({p.name for p in root.iterdir()},{'AI Phone.app','client.dmg'})
+
+    def test_silent_native_failure_retains_exit_code_and_reports_missing_diagnostics(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';app.mkdir()
+            with patch('macos_disk_image.subprocess.run',side_effect=subprocess.CalledProcessError(7,['hdiutil','create'])):
+                with self.assertRaises(subprocess.CalledProcessError) as raised:build(app,root/'client.dmg')
+            self.assertEqual(raised.exception.returncode,7)
+            notes='\n'.join(getattr(raised.exception,'__notes__',[]))
+            self.assertIn('exit 7',notes)
+            self.assertIn('no native diagnostic output',notes)
+
 if __name__=='__main__':unittest.main()
