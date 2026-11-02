@@ -2449,8 +2449,8 @@
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
-      "size": 9394,
-      "sha256": "e51908f2cf4143f9eeef71718b16f709571c843bb1011b5f40038e721e53990a"
+      "size": 9426,
+      "sha256": "0311306de4c56fad75aeb50a4adac70b0b5a8e6c0f596f263088ea7b9eed0d95"
     },
     {
       "path": "crates/assistant/src/device_exchange.rs",
@@ -2499,8 +2499,8 @@
     },
     {
       "path": "crates/assistant/src/handoff_tests.rs",
-      "size": 17644,
-      "sha256": "7a9d92c270399dbd3e4253323415fd1f0fcdc4885037058127f9062d147d958d"
+      "size": 18105,
+      "sha256": "51f62f59a213dbcef9ac013c427756ddd9ea35eb38e7634c33c39cd2108e99d9"
     },
     {
       "path": "crates/assistant/src/history_window.rs",

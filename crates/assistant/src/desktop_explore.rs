@@ -96,10 +96,11 @@ async fn change_mode(
     let ids:Vec<Uuid>=sqlx::query_scalar("UPDATE runs SET status='canceled',error=$2,background_finalized=true,finished_at=now(),next_wake_at=NULL WHERE device_id=$1 AND origin='desktop-exploration' AND (status='paused' OR (NOT $3 AND status IN ('queued','running'))) RETURNING id").bind(device).bind(detail).bind(enabled).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("UPDATE harness_events SET status='canceled',finished_at=now() WHERE run_id=ANY($1) AND kind='task' AND status IN ('running','paused','waiting')").bind(&ids).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
-    if let Some((id, token)) = &*app.active.lock().await
-        && ids.contains(id)
-    {
-        token.cancel();
+    let active = app.active.lock().await;
+    for id in ids {
+        if let Some(token) = active.get(&id) {
+            token.cancel();
+        }
     }
     Ok(())
 }

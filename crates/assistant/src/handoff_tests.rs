@@ -221,13 +221,29 @@ async fn manual_desktop_pause_keeps_the_phone_worker_token_live() {
     database_case(|app| async move {
         let fixture = Fixture::new(app).await;
         let phone_token = CancellationToken::new();
-        *fixture.app.active.lock().await = Some((fixture.source_run, phone_token.clone()));
+        let desktop_token = CancellationToken::new();
+        fixture
+            .app
+            .active
+            .lock()
+            .await
+            .insert(fixture.source_run, phone_token.clone());
+        fixture
+            .app
+            .active
+            .lock()
+            .await
+            .insert(fixture.exploration, desktop_token.clone());
         crate::desktop_explore::pause(&fixture.app, COMPUTER, "manual takeover fixture")
             .await
             .unwrap();
         assert!(
             !phone_token.is_cancelled(),
             "manual computer control cannot cancel the phone run"
+        );
+        assert!(
+            desktop_token.is_cancelled(),
+            "desktop pause cancels its own exploration token"
         );
         let status: String = sqlx::query_scalar("SELECT status FROM runs WHERE id=$1")
             .bind(fixture.source_run)
@@ -241,9 +257,13 @@ async fn manual_desktop_pause_keeps_the_phone_worker_token_live() {
             .await
             .unwrap();
         assert_eq!(exploration, "canceled");
-        assert_eq!(
-            fixture.app.active.lock().await.as_ref().map(|r| r.0),
-            Some(fixture.source_run)
+        assert!(
+            fixture
+                .app
+                .active
+                .lock()
+                .await
+                .contains_key(&fixture.source_run)
         );
     })
     .await;
