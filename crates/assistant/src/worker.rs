@@ -6,6 +6,8 @@ use futures_util::FutureExt;
 use serde_json::{Value, json};
 use sqlx::Row;
 
+mod work_intent;
+
 #[cfg(test)]
 #[path = "execution_tests.rs"]
 mod execution_tests;
@@ -1398,113 +1400,9 @@ fn work_required_tools(context: &[Value]) -> Vec<&'static str> {
     if explanatory_request(&request) {
         return vec![];
     }
-    if request.contains("skill") || request.contains("技能") {
-        if ["创建", "新建", "写一个", "编写", "形成", "做个"]
-            .iter()
-            .any(|w| request.contains(w))
-        {
-            return vec!["skill_create"];
-        }
-        if ["安装", "导入", "下载"].iter().any(|w| request.contains(w)) {
-            return vec!["skill_install"];
-        }
-        if ["编辑", "修改", "更新", "完善"]
-            .iter()
-            .any(|w| request.contains(w))
-        {
-            return vec!["skill_edit"];
-        }
-        if ["启用", "停用", "禁用"].iter().any(|w| request.contains(w)) {
-            return vec!["skill_set_enabled", "skill_create", "skill_install"];
-        }
-    }
-    if request.contains("知识库")
-        && [
-            "保存", "创建", "新建", "整理", "更新", "编辑", "写入", "修改", "形成", "记入", "收录",
-        ]
-        .iter()
-        .any(|w| request.contains(w))
-    {
-        return vec!["knowledge_write"];
-    }
-    // An action verb and its work target must belong to the same positive
-    // clause. "执行手机检查，不浏览网页，最后报告结果" is not a file request.
-    let work_clauses: Vec<_> = request
-        .split(['。', '，', ',', '；', ';', '！', '!', '？', '?', '\n'])
-        .map(str::trim)
-        .filter(|clause| {
-            ![
-                "不要",
-                "无需",
-                "禁止",
-                "不得",
-                "不用",
-                "不必",
-                "不执行",
-                "不运行",
-                "不生成",
-                "不创建",
-                "不写入",
-                "不保存",
-                "不下载",
-                "不处理",
-                "不编写",
-                "不浏览",
-                "不搜索",
-            ]
-            .iter()
-            .any(|negative| clause.contains(negative))
-        })
-        .collect();
-    if work_clauses.iter().any(|clause| {
-        [
-            "文件", "脚本", "报告", "文档", "工作", "python", "node", "bun", "代码", "网页",
-            "资源", "pdf", "docx", "表格",
-        ]
-        .iter()
-        .any(|w| clause.contains(w))
-            && [
-                "执行", "运行", "生成", "创建", "写入", "保存", "下载", "处理", "编写",
-            ]
-            .iter()
-            .any(|w| clause.contains(w))
-    }) {
-        return vec![
-            "workspace_write",
-            "workspace_run",
-            "workspace_fetch",
-            "computer_run",
-            "computer_type",
-            "device_transfer",
-        ];
-    }
-    if work_clauses.iter().any(|clause| {
-        [
-            "找找",
-            "查找",
-            "检索",
-            "搜索",
-            "搜一下",
-            "查一下",
-            "调研",
-            "去官网",
-            "官网看看",
-        ]
-        .iter()
-        .any(|word| clause.contains(word))
-            && [
-                "github", "官网", "网站", "网页", "资料", "skill", "仓库", "项目",
-            ]
-            .iter()
-            .any(|word| clause.contains(word))
-    }) {
-        return vec!["workspace_fetch", "workspace_run"];
-    }
-    if request.contains("记住") {
-        return vec!["memory_save"];
-    }
-    vec![]
+    work_intent::required_tools(&request)
 }
+
 fn action_task(context: &[Value]) -> bool {
     computer_task(context)
         || phone_action_required(context)
@@ -3811,6 +3709,26 @@ mod verification_tests {
         assert!(phone_mutation_precondition(&context, &fresh[0]).is_ok());
         context.extend(request("改为只看屏幕，不再操作"));
         assert!(phone_mutation_precondition(&context, &fresh[0]).is_err());
+    }
+    #[test]
+    fn excluded_skill_actions_do_not_add_unrequested_completion_requirements() {
+        for text in [
+            "先skill_read computer-use，再computer_observe，点击Search并关闭查找。不安装下载。",
+            "只读取Skill，不安装、不修改、不创建，也不要记住内容。",
+            "读取computer-use技能，然后安装微信。",
+        ] {
+            assert!(work_required_tools(&request(text)).is_empty(), "{text}");
+        }
+        for (text, required) in [
+            ("安装这个Skill，但不要执行安装脚本", "skill_install"),
+            ("不要安装Skill，创建一个Skill", "skill_create"),
+            ("只读取Skill，把使用说明保存到知识库", "knowledge_write"),
+        ] {
+            assert!(
+                work_required_tools(&request(text)).contains(&required),
+                "{text}"
+            );
+        }
     }
     #[test]
     fn phone_checks_and_plain_result_reporting_do_not_require_unrequested_files() {

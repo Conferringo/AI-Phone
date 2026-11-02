@@ -2653,9 +2653,14 @@
       "sha256": "b1866d3acabd376b057315a85582c37c9c5be7e80316a4a15d19a4bf4b8e9c7a"
     },
     {
+      "path": "crates/assistant/src/worker/work_intent.rs",
+      "size": 5413,
+      "sha256": "71a053886b86f04e35bc815ac49ff93dd122594c2f75c6ad84ab70f9a1ba8038"
+    },
+    {
       "path": "crates/assistant/src/worker.rs",
-      "size": 206152,
-      "sha256": "56ebd8859ca224786ab0d846a5de74e1b6b6a0991f9e47f75bbbfe1e1cae426d"
+      "size": 203774,
+      "sha256": "2934ca2944a478592a4617574683abafde6ff90bcef4f78accebeb10ff4becd8"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
