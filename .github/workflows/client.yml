@@ -38,6 +38,12 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+      - name: Native OCR qualification tools
+        run: |
+          brew install tesseract
+          python3 scripts/prepare_ocr_models.py --destination "$RUNNER_TEMP/aiphone-ocr-models"
+          echo "AI_PHONE_TEST_TESSERACT=$(command -v tesseract)" >> "$GITHUB_ENV"
+          echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
       - name: Native tests and lint
         run: |
           PYTHONPATH=scripts python3 -m unittest test_native_services

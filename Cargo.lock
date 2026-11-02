@@ -101,6 +101,7 @@ dependencies = [
 name = "ai-phone-vision"
 version = "0.1.0"
 dependencies = [
+ "image",
  "serde",
  "serde_json",
  "tokio",

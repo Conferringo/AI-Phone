@@ -11,7 +11,7 @@ from runtime_config import runtime_env
 from prebuilt_services import launch_spec
 spec=launch_spec(root,'assistant');runtime={**runtime_env(root),**spec['environment']}
 environment={**os.environ,**runtime}
-subprocess.run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','postgres'],cwd=root,env=environment,check=True)
+subprocess.run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','--wait','postgres','ocr'],cwd=root,env=environment,check=True)
 if not spec['prebuilt']:
  subprocess.run(['cargo','build','-p','ai-phone-assistant','--locked'],cwd=root,env={**environment,'CARGO_BUILD_JOBS':'2'},check=True)
 subprocess.run([sys.executable,str(root/'scripts/database.py'),'prepare'],cwd=root,env=environment,check=True)

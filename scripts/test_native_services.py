@@ -31,7 +31,7 @@ class NativeServiceTests(unittest.TestCase):
         target=root/'target/release';target.mkdir(parents=True)
         fixture=root/SOURCE_FIXTURE;fixture.parent.mkdir(parents=True);fixture.write_bytes(b'generated image fixture')
         records={}
-        for role,name in [('assistant','ai-phone-assistant'),('runner','ai-phone-runner'),('vision','phone-vision')]:
+        for role,name in [('assistant','ai-phone-assistant'),('runner','ai-phone-runner'),('vision','ai-phone-vision')]:
             path=target/name;path.write_bytes(payload)
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
@@ -40,7 +40,7 @@ class NativeServiceTests(unittest.TestCase):
         return value
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
-        for system,backend in [('Darwin','macos-vision'),('Linux','linux-tesseract')]:
+        for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:
             with tempfile.TemporaryDirectory() as folder,patch('platform.system',return_value=system):
                 root=Path(folder);receipt=self.build_fixture(root)
                 files=prepare_services(root);mapping={name:(data,mode) for name,data,mode in files}
@@ -56,6 +56,21 @@ class NativeServiceTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as folder:
                 root=Path(folder);self.build_fixture(root,data)
                 with self.assertRaisesRegex(ValueError,'Private material'):prepare_services(root)
+
+    def test_ocr_qualification_accepts_a_real_label_not_concatenated_unrelated_regions(self):
+        from check_native_services import vision_receipt
+        def reply(regions):
+            return subprocess.CompletedProcess([],0,stdout=json.dumps({'width':320,'height':112,'grid':[0]*2048,'regions':regions}).encode(),stderr=b'')
+        rows=[{'text':'73','confidence':.99},{'text':'19','confidence':.99}]
+        with patch('check_native_services.subprocess.run',return_value=reply(rows)):
+            with self.assertRaisesRegex(ValueError,'generated digits'):
+                vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE)
+        for accepted in [rows+[{'text':'73 19','confidence':.99}],[{'text':'7319','confidence':.99}]]:
+            with patch('check_native_services.subprocess.run',return_value=reply(accepted)):
+                self.assertEqual(vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE)['fixture_text'],'7319')
+        with patch('check_native_services.subprocess.run',return_value=reply([{'text':'7319','confidence':.79}])):
+            with self.assertRaisesRegex(ValueError,'generated digits'):
+                vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE)
 
     def test_manifest_size_and_type_boundaries_fail_explicitly(self):
         # Metadata fixtures exercise a supported component host on every CI OS.
@@ -182,7 +197,7 @@ class NativeServiceTests(unittest.TestCase):
             receipt = {'format': 1, 'host': host_key(), 'source_sha256': fingerprint, 'artifacts': {}, 'checks': {'device_setup':'ai-phone-device-setup-v1'}}
             path = target / 'native-service-build.json'; path.write_text(json.dumps(receipt))
             self.assertIsNone(cached_build(root, fingerprint))
-            for role, name in [('assistant', 'ai-phone-assistant'), ('runner', 'ai-phone-runner'), ('vision', 'phone-vision')]:
+            for role, name in [('assistant', 'ai-phone-assistant'), ('runner', 'ai-phone-runner'), ('vision', 'ai-phone-vision')]:
                 file = target / name; file.write_bytes(name.encode())
                 receipt['artifacts'][role] = {'path': file.relative_to(root).as_posix(), 'size': file.stat().st_size,
                                              'sha256': hashlib.sha256(file.read_bytes()).hexdigest()}
@@ -248,7 +263,7 @@ class NativeLauncherTests(unittest.TestCase):
             shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
         (scripts / 'release.py').write_text('import os,shlex\nfrom pathlib import Path\nr=Path.cwd()\nfor k,v in {"AI_PHONE_PROJECT_ROOT":str(r),"AI_PHONE_DATA_ROOT":str(r/"data"),"AI_PHONE_SDK_ROOT":str(r/"sdk"),"AI_PHONE_JAVA_HOME":""}.items():print("export "+k+"="+shlex.quote(v))\n')
         (scripts / 'database.py').write_text('import os\nfrom pathlib import Path\np=Path(os.environ["AI_PHONE_TEST_LAUNCH_LOG"])\np.open("a").write("database prepare\\n")\n')
-        (scripts / 'build-phone-vision.sh').write_text('#!/bin/sh\nexit 72\n')
+        (scripts / 'build-vision.sh').write_text('#!/bin/sh\nexit 72\n')
         files = NativeServiceTests().component()
         program = b'#!/bin/sh\nprintf "service:%s\\n" "$*" >> "$AI_PHONE_TEST_LAUNCH_LOG"\n'
         for role in ROLES: files[binary_path(role)] = program

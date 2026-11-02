@@ -6,5 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 RUN pip install --no-cache-dir pypdf==6.21.2 python-docx==1.2.0 requests==2.34.2 pillow==13.0.0 openpyxl==3.1.5
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 RUN apt-get update && apt-get install -y --no-install-recommends chromium fonts-noto-cjk && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 CMD ["sleep", "infinity"]

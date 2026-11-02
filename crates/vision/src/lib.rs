@@ -1,5 +1,5 @@
 //! Bounded, cancellable invocation of the bundled OCR engine.
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{fmt, io, path::Path, process::Stdio, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -7,6 +7,8 @@ use tokio::{
 };
 
 const OUTPUT_LIMIT: usize = 262_144;
+#[cfg(feature = "native")]
+pub mod tesseract;
 
 #[derive(Debug)]
 pub enum Error {
@@ -31,14 +33,14 @@ impl fmt::Display for Error {
 }
 impl std::error::Error for Error {}
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Bounds {
     pub left: u32,
     pub top: u32,
     pub right: u32,
     pub bottom: u32,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Region {
     pub text: String,
     pub confidence: f32,
@@ -57,12 +59,26 @@ impl Region {
             && b.bottom.saturating_sub(b.top) > 3
     }
 }
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Capture {
     pub width: u32,
     pub height: u32,
     pub regions: Vec<Region>,
     pub grid: Vec<u8>,
+}
+
+/// The installer selects a bundled helper; development uses the same Rust executable.
+pub fn program(root: &Path) -> std::path::PathBuf {
+    std::env::var_os("AI_PHONE_OCR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            let bundled = root.join("runtime/services/bin/vision");
+            if bundled.is_file() {
+                bundled
+            } else {
+                root.join("target/debug/ai-phone-vision")
+            }
+        })
 }
 
 pub async fn recognize(
@@ -79,7 +95,15 @@ pub async fn recognize(
     Ok(capture)
 }
 
-async fn output(mut command: Command, input: &[u8]) -> Result<Vec<u8>, Error> {
+async fn output(command: Command, input: &[u8]) -> Result<Vec<u8>, Error> {
+    process_output(command, input, OUTPUT_LIMIT, Duration::from_secs(5)).await
+}
+async fn process_output(
+    mut command: Command,
+    input: &[u8],
+    limit: usize,
+    budget: Duration,
+) -> Result<Vec<u8>, Error> {
     let mut child = command
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -99,11 +123,11 @@ async fn output(mut command: Command, input: &[u8]) -> Result<Vec<u8>, Error> {
         let read = async {
             let mut bytes = vec![];
             stdout
-                .take((OUTPUT_LIMIT + 1) as u64)
+                .take((limit + 1) as u64)
                 .read_to_end(&mut bytes)
                 .await
                 .map_err(Error::Read)?;
-            if bytes.len() > OUTPUT_LIMIT {
+            if bytes.len() > limit {
                 return Err(Error::Failed);
             }
             Ok(bytes)
@@ -116,27 +140,31 @@ async fn output(mut command: Command, input: &[u8]) -> Result<Vec<u8>, Error> {
         }
         Ok(bytes)
     };
-    tokio::time::timeout(Duration::from_secs(5), work)
+    tokio::time::timeout(budget, work)
         .await
         .map_err(|_| Error::Timeout)?
+}
+
+fn search_text(text: &str) -> String {
+    text.split_whitespace().collect::<String>().to_lowercase()
 }
 
 impl Capture {
     /// Return up to twenty full-frame candidates. Equal labels remain distinct.
     pub fn find_text(&self, query: &str) -> Vec<&Region> {
-        let query = query.trim().to_lowercase();
+        let query = search_text(query);
         if query.is_empty() {
             return vec![];
         }
         let matches: Vec<_> = self
             .regions
             .iter()
-            .filter(|r| r.usable(self.width, self.height) && r.text.to_lowercase().contains(&query))
+            .filter(|r| r.usable(self.width, self.height) && search_text(&r.text).contains(&query))
             .collect();
         let exact: Vec<_> = matches
             .iter()
             .copied()
-            .filter(|r| r.text.trim().to_lowercase() == query)
+            .filter(|r| search_text(&r.text) == query)
             .take(20)
             .collect();
         if !exact.is_empty() {

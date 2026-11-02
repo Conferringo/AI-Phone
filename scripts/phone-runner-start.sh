@@ -13,7 +13,7 @@ from prebuilt_services import launch_spec
 spec=launch_spec(root,'runner');runtime={**runtime_env(root),**spec['environment']}
 environment={**os.environ,**runtime}
 if not spec['prebuilt']:
-    subprocess.run(['sh',str(root/'scripts/build-phone-vision.sh')],cwd=root,env=environment,check=True)
+    subprocess.run(['sh',str(root/'scripts/build-vision.sh')],cwd=root,env=environment,check=True)
     subprocess.run(['cargo','build','-p','ai-phone-runner','--locked'],cwd=root,env=environment,check=True)
 folder = root/'data/phone-runner'; folder.mkdir(mode=0o700, parents=True, exist_ok=True); folder.chmod(0o700)
 token = folder/'token'

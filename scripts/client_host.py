@@ -195,7 +195,7 @@ def verify_container_ownership(root, query=None):
     existing={}
     query=query or subprocess.run
     template='{"id":{{json .Id}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}'
-    for name in ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop'):
+    for name in ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop','ai-phone-ocr'):
         # Absence must come from a successful container query, not wrapper stderr.
         result=query(['docker','container','ls','--all','--filter','name=^/'+name+'$','--no-trunc','--format','{{.ID}}'],capture_output=True,text=True)
         if result.returncode:raise ValueError('Existing container state could not be verified; no containers or data were changed')

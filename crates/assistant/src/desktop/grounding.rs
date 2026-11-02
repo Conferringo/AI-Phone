@@ -28,27 +28,99 @@ fn query_text(args: &Value) -> Result<&str> {
     Ok(text)
 }
 
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+struct Viewport {
+    x: u32,
+    y: u32,
+    width: std::num::NonZeroU32,
+    height: std::num::NonZeroU32,
+}
+impl Viewport {
+    fn fits(&self, observation: &wire::DesktopObservation) -> bool {
+        self.width.get() >= 32
+            && self.height.get() >= 32
+            && self
+                .x
+                .checked_add(self.width.get())
+                .is_some_and(|right| right <= observation.width)
+            && self
+                .y
+                .checked_add(self.height.get())
+                .is_some_and(|bottom| bottom <= observation.height)
+    }
+}
+#[derive(serde::Deserialize)]
+struct Zoomed {
+    png: String,
+    width: std::num::NonZeroU32,
+    height: std::num::NonZeroU32,
+}
+fn viewport(args: &Value, observation: &wire::DesktopObservation) -> Result<Viewport> {
+    let viewport: Viewport =
+        if let Some(value) = args.get("region").filter(|value| !value.is_null()) {
+            serde_json::from_value(value.clone())
+                .map_err(|_| "定位区域需要x、y、width、height".to_string())?
+        } else {
+            Viewport {
+                x: 0,
+                y: 0,
+                width: std::num::NonZeroU32::new(observation.width).ok_or("无效画面宽度")?,
+                height: std::num::NonZeroU32::new(observation.height).ok_or("无效画面高度")?,
+            }
+        };
+    if !viewport.fits(observation) {
+        return Err("定位区域必须在当前画面内，宽高至少32像素".into());
+    }
+    Ok(viewport)
+}
+async fn frame(
+    observation: &wire::DesktopObservation,
+    viewport: &Viewport,
+) -> Result<(Vec<u8>, std::num::NonZeroU32, std::num::NonZeroU32)> {
+    if viewport.x == 0
+        && viewport.y == 0
+        && viewport.width.get() == observation.width
+        && viewport.height.get() == observation.height
+    {
+        return Ok((observation.png.clone(), viewport.width, viewport.height));
+    }
+    let value=helper("zoom",json!({"png":STANDARD.encode(&observation.png),"x":viewport.x,"y":viewport.y,"width":viewport.width,"height":viewport.height})).await?;
+    let zoomed: Zoomed =
+        serde_json::from_value(value).map_err(|_| "局部画面返回无效".to_string())?;
+    let png = STANDARD
+        .decode(zoomed.png)
+        .map_err(|_| "局部画面编码无效".to_string())?;
+    Ok((png, zoomed.width, zoomed.height))
+}
+fn project(
+    bounds: &ai_phone_vision::Bounds,
+    viewport: &Viewport,
+    width: std::num::NonZeroU32,
+    height: std::num::NonZeroU32,
+) -> ai_phone_vision::Bounds {
+    let horizontal = |edge: u32| u64::from(edge) * u64::from(viewport.width.get());
+    let vertical = |edge: u32| u64::from(edge) * u64::from(viewport.height.get());
+    ai_phone_vision::Bounds {
+        left: viewport.x + (horizontal(bounds.left) / u64::from(width.get())) as u32,
+        top: viewport.y + (vertical(bounds.top) / u64::from(height.get())) as u32,
+        right: viewport.x + horizontal(bounds.right).div_ceil(u64::from(width.get())) as u32,
+        bottom: viewport.y + vertical(bounds.bottom).div_ceil(u64::from(height.get())) as u32,
+    }
+}
 async fn find_text(
     app: &App,
     observation: &wire::DesktopObservation,
     args: &Value,
 ) -> Result<Value> {
     let text = query_text(args)?;
-    let bundled = app.root.join("runtime/services/bin/vision");
-    let vision = std::env::var_os("AI_PHONE_OCR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| {
-            if bundled.is_file() {
-                bundled
-            } else {
-                app.root.join("target/phone-vision/recognize")
-            }
-        });
+    let viewport = viewport(args, observation)?;
+    let (png, width, height) = frame(observation, &viewport).await?;
     let capture = ai_phone_vision::recognize(
-        &vision,
-        &observation.png,
-        observation.width,
-        observation.height,
+        &ai_phone_vision::program(&app.root),
+        &png,
+        width.get(),
+        height.get(),
     )
     .await
     .map_err(|error| error.to_string())?;
@@ -56,15 +128,14 @@ async fn find_text(
         .find_text(text)
         .iter()
         .map(|r| {
-            let b = &r.bounds;
-            json!({"text":r.text,"confidence":r.confidence,
-            "bounds":{"left":b.left,"top":b.top,"right":b.right,"bottom":b.bottom},
+            let b = project(&r.bounds, &viewport, width, height);
+            json!({"text":r.text,"confidence":r.confidence,"bounds":b,
             "center":[b.left+(b.right-b.left)/2,b.top+(b.bottom-b.top)/2]})
         })
         .collect();
     Ok(plain(
         json!({"success":true,"device_id":observation.device_id,
-        "source_observation_id":observation.observation_id,"source":"ocr",
+        "source_observation_id":observation.observation_id,"source":"ocr","search_region":viewport,
         "coordinate_space":"full_screen","candidates":candidates,
         "note":"文字位置不是可点击控件；结合当前截图核对目标、遮挡和同名结果。"}),
     ))
@@ -123,6 +194,59 @@ mod tests {
         }
     }
 
+    #[test]
+    fn crop_projection_preserves_full_screen_coordinates_and_rounded_edges() {
+        let viewport: Viewport =
+            serde_json::from_value(json!({"x":100,"y":200,"width":333,"height":500})).unwrap();
+        let width = std::num::NonZeroU32::new(533).unwrap();
+        let height = std::num::NonZeroU32::new(800).unwrap();
+        let b = project(
+            &ai_phone_vision::Bounds {
+                left: 0,
+                top: 0,
+                right: 533,
+                bottom: 800,
+            },
+            &viewport,
+            width,
+            height,
+        );
+        assert_eq!((b.left, b.top, b.right, b.bottom), (100, 200, 433, 700));
+        let b = project(
+            &ai_phone_vision::Bounds {
+                left: 1,
+                top: 1,
+                right: 2,
+                bottom: 2,
+            },
+            &viewport,
+            width,
+            height,
+        );
+        assert_eq!((b.left, b.top, b.right, b.bottom), (100, 200, 102, 202));
+    }
+    #[test]
+    fn optional_search_region_cannot_exceed_the_source_frame() {
+        let observation = wire::DesktopObservation {
+            width: 1280,
+            height: 800,
+            ..Default::default()
+        };
+        let full = viewport(&json!({}), &observation).unwrap();
+        assert_eq!(
+            (full.x, full.y, full.width.get(), full.height.get()),
+            (0, 0, 1280, 800)
+        );
+        for region in [
+            json!({"x":0}),
+            json!({"x":0,"y":0,"width":0,"height":40}),
+            json!({"x":0,"y":0,"width":31,"height":40}),
+            json!({"x":1270,"y":0,"width":32,"height":40}),
+            json!({"x":0,"y":u32::MAX,"width":32,"height":40}),
+        ] {
+            assert!(viewport(&json!({"region":region}), &observation).is_err());
+        }
+    }
     #[test]
     fn query_requires_bounded_nonempty_text() {
         assert_eq!(query_text(&json!({"text":" 设置 "})).unwrap(), "设置");

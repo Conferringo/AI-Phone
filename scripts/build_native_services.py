@@ -14,13 +14,13 @@ from client_host_entry import checked_record, verify_file
 from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner'}
+PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner', 'vision':'vision'}
 
 
 def source_fingerprint(root):
     records = []
     for name, data, _ in select_files(root):
-        if name in ('Cargo.toml', 'Cargo.lock', 'scripts/build_native_services.py', 'scripts/prebuilt_services.py', 'scripts/client_host.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json') or name.startswith(('crates/', 'packages/protocol/proto/', 'scripts/phone-vision/')):
+        if name in ('Cargo.toml', 'Cargo.lock', 'scripts/build_native_services.py', 'scripts/prebuilt_services.py', 'scripts/client_host.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json', 'config/ocr-models.json') or name.startswith(('crates/', 'packages/protocol/proto/', 'scripts/phone-vision/')):
             records.append([name, hashlib.sha256(data).hexdigest()])
     return hashlib.sha256(json.dumps(records, separators=(',', ':')).encode()).hexdigest()
 
@@ -45,7 +45,7 @@ def build_environment(root):
 
 
 def cached_artifact(root, role, record):
-    expected = {'assistant': 'ai-phone-assistant', 'runner': 'ai-phone-runner', 'vision': 'phone-vision'}
+    expected = {'assistant': 'ai-phone-assistant', 'runner': 'ai-phone-runner', 'vision': 'ai-phone-vision'}
     if not isinstance(record, dict) or record.get('path') != 'target/release/' + expected[role]:
         return False
     try:
@@ -84,7 +84,7 @@ def cached_build(root, fingerprint):
 
 
 def compile_rust(root, environment, versions):
-    command = ['cargo', 'build', '--release', '--locked', '--message-format=json']
+    command = ['cargo', 'build', '--release', '--locked', '--message-format=json', '--features', 'ai-phone-vision/native']
     for package in versions.values():
         command.extend(['-p', package['name']])
     result = subprocess.run(command, cwd=root, env=environment, capture_output=True, text=True)
@@ -106,19 +106,6 @@ def device_setup_receipt(binary):
     return DEVICE_SETUP_CONTRACT
 
 
-def compile_vision(root):
-    destination = root / 'target/release/phone-vision'
-    if platform.system() == 'Darwin':
-        from macos_target import swift_target
-        mapping = str(Path.home()) + '=/build-user'
-        subprocess.run(['swiftc', '-O', '-target', swift_target(root), '-file-prefix-map', mapping, '-debug-prefix-map', mapping,
-                        'scripts/phone-vision/main.swift', '-o', destination], cwd=root, check=True)
-    else:
-        shutil.copyfile(root / 'scripts/phone-vision/tesseract.py', destination)
-        destination.chmod(0o755)
-    return destination
-
-
 def build(root=ROOT):
     root = Path(root).resolve()
     environment, compiler = build_environment(root)
@@ -133,8 +120,8 @@ def build(root=ROOT):
     checks = {role: version_receipt(path, versions[role]['name'], versions[role]['version'])
               for role, path in artifacts.items()}
     checks['device_setup'] = device_setup_receipt(artifacts['assistant'])
-    artifacts['vision'] = compile_vision(root)
-    checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE)
+    checks['vision_version'] = checks.pop('vision')
+    checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE, qualification=True)
     if platform.system() == 'Darwin':
         from macos_target import verify_targets
         checks['macos_minimum_versions'] = verify_targets(root, artifacts)

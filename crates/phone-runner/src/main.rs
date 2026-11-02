@@ -956,9 +956,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap_or_else(|| PathBuf::from("adb"))
             }),
         token,
-        vision: std::env::var_os("AI_PHONE_OCR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| root.join("target/phone-vision/recognize")),
+        vision: ai_phone_vision::program(&root),
         grounding: Mutex::new(grounding::GroundingState::default()),
         ledger_path,
         ledger: Mutex::new(ledger),

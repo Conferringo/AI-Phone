@@ -18,6 +18,7 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       NEXT_TELEMETRY_DISABLED: '1'
+      AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
       AI_PHONE_REQUIRE_MANAGED_ENGINE: ${{ matrix.engine == 'managed' && '1' || '0' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262

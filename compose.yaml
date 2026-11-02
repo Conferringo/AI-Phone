@@ -19,6 +19,30 @@ services:
     mem_limit: 768m
     networks: [backend]
 
+  ocr:
+    image: ${AI_PHONE_WORKSPACE_IMAGE:-ai-phone-workspace:20261103}
+    pull_policy: ${AI_PHONE_IMAGE_PULL_POLICY:-missing}
+    container_name: ai-phone-ocr
+    healthcheck:
+      test: ["CMD-SHELL", "tesseract --version >/dev/null 2>&1 && test -r /usr/share/tesseract-ocr/5/tessdata/eng.traineddata && test -r /usr/share/tesseract-ocr/5/tessdata/chi_sim.traineddata"]
+      interval: 30s
+      timeout: 2s
+      start_period: 1s
+      start_interval: 1s
+      retries: 1
+    command: ["sleep", "infinity"]
+    user: "65534:65534"
+    network_mode: none
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    pids_limit: 32
+    cpus: 1
+    mem_limit: 256m
+    restart: unless-stopped
+
   redis:
     profiles: [cache]
     image: ${AI_PHONE_REDIS_IMAGE:-redis:8-alpine@sha256:becdda6c7f4b3fb42e42fd7f120bbf5c54c4caaaf16f26da24e4563d2c1f0576}

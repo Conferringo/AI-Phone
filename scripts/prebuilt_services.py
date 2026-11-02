@@ -31,8 +31,6 @@ def prepare_services(root, *, linux_ocr=None):
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
-        if role == 'vision' and linux_ocr is not None:
-            path = root / 'scripts/linux-ocr/vision.sh'
         data = path.read_bytes()
         if SECRET.search(data) or (str(Path.home()).rstrip('/\\') + '/').encode() in data:
             raise ValueError('Private material in native service: ' + role)
@@ -51,7 +49,7 @@ def prepare_services(root, *, linux_ocr=None):
 
 def vision_backend(linux_ocr):
     if linux_ocr is not None: return 'linux-tesseract-bundled'
-    return 'macos-vision' if platform.system() == 'Darwin' else 'linux-tesseract'
+    return 'container-tesseract'
 
 
 def read_manifest(root):

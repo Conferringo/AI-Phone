@@ -1117,8 +1117,8 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "computer_find_text",
-            "在最新截图中定位文字，返回原图坐标、边界和置信度；同名结果分别保留。找不到时返回空列表，不执行点击。适合定位小按钮或纠正点偏；文字区域不保证可点击。",
-            json!({"device_id":id,"observation_id":id,"text":id}),
+            "在最新截图中定位文字，返回原图坐标、边界和置信度；同名结果分别保留。小字或整屏未找到时，可用region指定目标附近的全屏像素区域进行放大识别；返回坐标仍为全屏坐标。找不到返回空列表，不执行点击；文字区域不保证可点击。",
+            json!({"device_id":id,"observation_id":id,"text":id,"region":{"type":"object","properties":{"x":num,"y":num,"width":num,"height":num},"required":["x","y","width","height"],"additionalProperties":false}}),
             vec!["device_id", "observation_id", "text"],
         ),
         f(

@@ -66,7 +66,7 @@ class LinuxOcrTests(unittest.TestCase):
             program.chmod(0o755)
             alias = root / 'alias'; alias.symlink_to(target, target_is_directory=True)
             with self.assertRaisesRegex(ValueError, 'alias'): ocr.verify(root, alias, host='linux-x64')
-            (root / 'scripts/linux-ocr/run.py').write_text('changed launcher')
+            (root / 'scripts/linux-ocr/Dockerfile').write_text('changed launcher')
             with self.assertRaisesRegex(ValueError, 'source'): ocr.verify(root, target, host='linux-x64')
 
     def test_archive_checksum_missing_members_paths_and_elf_abi_fail_before_activation(self):
@@ -85,7 +85,7 @@ class LinuxOcrTests(unittest.TestCase):
 
     def test_component_parent_paths_and_budget_are_bounded(self):
         from client_host_entry import checked_record
-        row = {'path': ocr.PREFIX + 'run.py', 'size': 1, 'sha256': 'a' * 64, 'mode': 0o644}
+        row = {'path': ocr.PREFIX + 'bin/tesseract', 'size': 1, 'sha256': 'a' * 64, 'mode': 0o644}
         self.assertEqual(ocr.bundled_records([row]), [checked_record(row)])
         for rows in ([row, row], [{**row, 'path': 'runtime/services/bin/other'}], [{**row, 'size': ocr.MAX_BYTES + 1}]):
             with self.assertRaises(ValueError): ocr.bundled_records(rows)

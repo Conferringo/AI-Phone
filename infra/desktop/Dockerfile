@@ -1,4 +1,4 @@
-ARG WORKSPACE_IMAGE=ai-phone-workspace:20261026
+ARG WORKSPACE_IMAGE=ai-phone-workspace:20261103
 ARG GUEST_RUNTIME_SOURCE=guest-builder
 FROM rust:1.96.0-bookworm@sha256:5e2214abe154fe26e39f64488952e5c991eeed1d6d6da7cc8381ae83927f0cfc AS guest-builder
 WORKDIR /build
