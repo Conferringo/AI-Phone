@@ -8,6 +8,8 @@ Android runs natively through Android Emulator, controlled by a Rust runner, ADB
 
 Business APIs use protobuf (`packages/protocol/proto`). Browser requests use `application/x-protobuf`; streaming business events use protobuf WebSocket frames. Media and health checks are separate. Model SSE is a separate transport.
 
+The service-only Android helper supplies live accessibility hierarchies through a read-only request protected by Android's `DUMP` permission. Rust accepts a complete reply bound to the current request ID before trying UIAutomator and OCR. Password text is excluded from the hierarchy. Observation and action validation remain separate: a fast hierarchy does not grant control or replace post-action verification.
+
 ## Execution
 
 User/paired channel → durable run → pinned Agent/model revision → Skills/current observation → proposed tool → owner/device/run/epoch/action-ID checks → guest execution → post-action observation → persisted result → next round → independent completion audit.
