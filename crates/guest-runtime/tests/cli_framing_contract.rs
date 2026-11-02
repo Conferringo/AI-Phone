@@ -5,6 +5,25 @@ use std::{
 };
 
 #[test]
+fn version_probe_needs_no_desktop_input_or_state() {
+    let root = tempfile::tempdir().unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_desktop-bridge"))
+        .arg("--version")
+        .current_dir(root.path())
+        .env_clear()
+        .stdin(Stdio::null())
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        "desktop-bridge 0.1.0\n"
+    );
+    assert!(output.stderr.is_empty());
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+}
+
+#[test]
 fn invalid_capture_mode_has_empty_raw_stdout_and_nonzero_exit() {
     let output = Command::new(env!("CARGO_BIN_EXE_desktop-bridge"))
         .args(["capture", "unknown-fixture-mode"])

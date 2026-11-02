@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 9040,
-      "sha256": "72773ae1fd0d58caa6ab65a08b4445cf359e02588920c1aaefd91b209c0390eb"
+      "size": 12560,
+      "sha256": "c048d06ff21e772e0b93c8679949c3daa4a2dad59729b4b512ff8f438a11c55c"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -169,8 +169,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 16622,
-      "sha256": "03007e8433cd9be9c025e7f9a846d4629104278c9f056d1261157e6dcd74fae2"
+      "size": 16993,
+      "sha256": "dbfcd6be9def9e31fe52e11c11b93692a5e77524b1d7a9a6c3acdacb64375d3a"
     },
     {
       "path": "ai-phone",
@@ -2178,6 +2178,11 @@
       "sha256": "b64f2d94731ea2d4cf9faba7a30ce50067d871dc1dad17e1d00cca1370e854fa"
     },
     {
+      "path": "config/macos-factory.json",
+      "size": 119,
+      "sha256": "9f44bde85635175629a027012be3c06ff16d883238a98c23a508f34425fcfd22"
+    },
+    {
       "path": "config/mihomo-release.json",
       "size": 1324,
       "sha256": "d9b60f402cd7c5df7a92794bda87785ede14c71647f360174cc47d5a77c0980d"
@@ -2204,8 +2209,8 @@
     },
     {
       "path": "config/rust-runtime-notices.json",
-      "size": 5099,
-      "sha256": "f89ea11c2e8d406064ea78249dcf8a1c0fadfc6739324a3568671ba09fdc8ba6"
+      "size": 5553,
+      "sha256": "5c5d7165bbcdec2e60148e741b5bbc32638998fb276e5bdf3a1d86a13ccf5ce7"
     },
     {
       "path": "config/source-assets.json",
@@ -2234,8 +2239,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 907,
-      "sha256": "7dc6ca74faa79a8d1a6607daf7a9eac210a07dfbbc51599fbd1300daf6a67d22"
+      "size": 972,
+      "sha256": "c33e19b997657b21d6fc2e4cbc6ce044ea7e6fd724f3756bc6d10650ad17a76c"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2584,13 +2589,13 @@
     },
     {
       "path": "crates/assistant/src/skill_persistence_tests.rs",
-      "size": 12446,
-      "sha256": "12ffdc9b528a7abab3efd79e635a8668aae14c58cf5e7cbcf37ad96f2b73a788"
+      "size": 18793,
+      "sha256": "2d4523d97d00b218c86eedc9981d84bf62b9b3b840de71ace7c8d4ef559a02bf"
     },
     {
       "path": "crates/assistant/src/skill_resources.rs",
-      "size": 5671,
-      "sha256": "d44ff30e60fb0b690dbb49f083e1a6a9ac5b84aa0b409bccfe1c0a470938f43c"
+      "size": 6252,
+      "sha256": "12a05d214a017e6384477a33769f11c19c0222a1252d8601102a11f1831333a7"
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
@@ -2679,8 +2684,8 @@
     },
     {
       "path": "crates/guest-runtime/src/main.rs",
-      "size": 3631,
-      "sha256": "86aee2fbff55615cb9b266e42e8ba21ddfd010e959d6c29578af012bb0627afd"
+      "size": 3802,
+      "sha256": "806ed278dcbc36538e61d5c0f7ae8df061a87df7dfe06f637e4a3b09abecc18e"
     },
     {
       "path": "crates/guest-runtime/src/media.rs",
@@ -2714,8 +2719,8 @@
     },
     {
       "path": "crates/guest-runtime/tests/cli_framing_contract.rs",
-      "size": 1961,
-      "sha256": "69fde219e5b6578b4d35da43fe9586d7a7cebae73a3924cc8bed51a0093bfc65"
+      "size": 2538,
+      "sha256": "2053020d0c31285013c91f53bb3c429386b17e49de64b15f0fc5ac86ab62aed2"
     },
     {
       "path": "crates/guest-runtime/tests/control_contract.rs",
@@ -2854,13 +2859,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 3084,
-      "sha256": "ff0146e4b001fcb17b5ac63f63e823d71c82f854b017a40b51d97bd5a7d68a0b"
+      "size": 3552,
+      "sha256": "119641787f5ef3c93c6143cce43cb97c279c8e73192a8b597b030b2a63665f9c"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 3110,
-      "sha256": "de33793ac1356b7b8edbf7a9addadde9c7327ae018fc68800a4ea6e5fb9c8c52"
+      "size": 3502,
+      "sha256": "eb8a504504d0bd60c494a3e6e682aa39151f912c17229e18f9aaddf769bcb757"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -2974,8 +2979,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 4312,
-      "sha256": "c205d458f39fa576179f951389bc9dcf000e758937ec1f6722297fbc8c193018"
+      "size": 5674,
+      "sha256": "dcc75c4db8762a454a11480fa23778d0a667011b4ab6e9797a47a8195a9e2bf2"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -3583,6 +3588,11 @@
       "sha256": "c392588658e638d0d415b7552cd987f18994bf6acfc58a2bd4b7a39107dae4dc"
     },
     {
+      "path": "docs/public/licenses/musl/COPYRIGHT",
+      "size": 6204,
+      "sha256": "f9bc4423732350eb0b3f7ed7e91d530298476f8fec0c6c427a1c04ade22655af"
+    },
+    {
       "path": "docs/public/licenses/native/074e6e32c86a4c0e-Apache-2.0.txt",
       "size": 10280,
       "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff"
@@ -3844,8 +3854,8 @@
     },
     {
       "path": "docs/public/native-client-licenses.txt",
-      "size": 4512681,
-      "sha256": "b8db6a01148bd18c2fc51cb8eefe24b3e049524df7d89d9b451a7c79dcaaeb20"
+      "size": 4519174,
+      "sha256": "d0b684cc17412394ac9f6194d994127ba4dd560b0f7a3e89dc79c1354f9029ae"
     },
     {
       "path": "docs/public/native-client.en.md",
@@ -3860,12 +3870,12 @@
     {
       "path": "docs/public/native-services-license-inventory.json",
       "size": 8040,
-      "sha256": "cfa0f6ef03ceb8826353727bb44ab73b1bc47c8fbc3bc5f6c7213f1a5403d397"
+      "sha256": "a4ccf651b2cf04c364fed70cff68b4068976f14d727b5f8a5c52650959dfe8ed"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 3517852,
-      "sha256": "5711701a428d61daa2e562c89c4f0c29f286ba9587761d7c503c00189ac6db91"
+      "size": 3524345,
+      "sha256": "202264604f48d3c042019029428ef9325cc20f9a2734951748b4c7cc3edee8c3"
     },
     {
       "path": "docs/public/network.md",
@@ -3984,8 +3994,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 2858,
-      "sha256": "d005e3b888ab4b90fd4fe5742ad294d1c2d4db6ef27b90144df57d8d81eec6e7"
+      "size": 2987,
+      "sha256": "c730f1f921141dfff1195b4c9b231d28f721143cc4e6c4d90939d61deffa7776"
     },
     {
       "path": "infra/desktop/clash-launch.sh",
@@ -4849,8 +4859,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 10223,
-      "sha256": "7f0d93075fe84321f6e6d8cfc81d109e9426f0fc8cc50f22b9fccdb82c435557"
+      "size": 10637,
+      "sha256": "a4e552b65ef696ee2c1382c350f60c04cbaa9f89ab20d6125ad4b8b289d51b77"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4909,13 +4919,28 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 6511,
-      "sha256": "d24431d4d80b1479741183d2699fe2ebcc429916870f3f65629aa1a1fb862548"
+      "size": 7305,
+      "sha256": "9cc27cbaa350106e2e7d934881764803b6e10e7478a9e7fb157c22b227780559"
     },
     {
       "path": "scripts/macos_disk_image.py",
       "size": 1085,
       "sha256": "744680090f66918629d8841d126afbd5ca3e434054406c6cb5fdbc08a7a75811"
+    },
+    {
+      "path": "scripts/macos_factory_engine.py",
+      "size": 9481,
+      "sha256": "010fd699c15cb0d059a7a7458985aaecbe70571cbb1cb80502885f9d3fd8471f"
+    },
+    {
+      "path": "scripts/macos_factory_qemu.py",
+      "size": 710,
+      "sha256": "515a3a14bdfad5d81fdd4e846c4860b684ac6c1bf9f372162c68e29b29f2ad41"
+    },
+    {
+      "path": "scripts/macos_guest_runtime.py",
+      "size": 4093,
+      "sha256": "7e21f4863fcc5a781dbb2c986cd3ed13bf6a5615ee5ee248ced4fa35e191c412"
     },
     {
       "path": "scripts/macos_target.py",
@@ -5384,13 +5409,23 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 7876,
-      "sha256": "a228f0aaa8c341787285a1913d854e4c687b92e7e179387958ef4be37cc3b4d2"
+      "size": 7968,
+      "sha256": "1a850cea352d8924f403566763537aafb757487a7743a330052566fdd6423a2a"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
       "size": 2139,
       "sha256": "f6c993131afe4491d68753c6c6740744aa6c56652e90fc84cfc3901025300755"
+    },
+    {
+      "path": "scripts/test_macos_factory_engine.py",
+      "size": 14983,
+      "sha256": "4917d4c1b57cc4a1467420be95fdd7e14ee346d9f83e9731753ff72e430804be"
+    },
+    {
+      "path": "scripts/test_macos_guest_runtime.py",
+      "size": 7390,
+      "sha256": "6134b621e9234b758701b246cfb926c6dc91bcd73c9d3a668b2a0d7fe465e5c8"
     },
     {
       "path": "scripts/test_managed_engine.py",

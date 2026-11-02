@@ -1,0 +1,7 @@
+{
+  "format": 1,
+  "qemu_version": "11.1.3",
+  "engine_memory": "3GiB",
+  "engine_cpus": 3,
+  "engine_disk": "48GiB"
+}
