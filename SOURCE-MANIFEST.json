@@ -2743,6 +2743,11 @@
       "sha256": "4f49e4606c0fd2f59f1430b9e34688c2bc2c5f34b9c59fe5f98342ec5b342113"
     },
     {
+      "path": "crates/host-runtime/src/bin/package-volumes.rs",
+      "size": 2151,
+      "sha256": "fd4454897ee6f89b70265becfc6b73b180d7aea21663aa0efe11fdbc781ae192"
+    },
+    {
       "path": "crates/host-runtime/src/capsule.rs",
       "size": 4004,
       "sha256": "763bbe566c571ec221f311c68253ed12c1054d1720abd60ada4b67c3175d524a"
@@ -2759,8 +2764,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2950,
-      "sha256": "b14ebd27ab26b779d1c16e66229086b6485361b46930dfca9654e5ac38f62dd5"
+      "size": 2967,
+      "sha256": "3bb320a7578c015ec76408a3a513f77be604628f05018e8db6645b75a71c2f84"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -2771,6 +2776,16 @@
       "path": "crates/host-runtime/src/manifest.rs",
       "size": 7547,
       "sha256": "842db95ceb59e7c53f4e3d27d6bb5426dbfbe029e4f5d745b6bd6594e2e421f0"
+    },
+    {
+      "path": "crates/host-runtime/src/package/tests.rs",
+      "size": 8085,
+      "sha256": "97d25ee08d10f3e2fccfc05c1b63847ddfc42b6409c5a47df047ef5fcd18db77"
+    },
+    {
+      "path": "crates/host-runtime/src/package.rs",
+      "size": 10629,
+      "sha256": "f0f59ec49a81ce352ef93b6b3644303f41dd9cbf3e527e16501366bd7a680dcf"
     },
     {
       "path": "crates/host-runtime/src/staging.rs",
@@ -2961,6 +2976,11 @@
       "path": "docs/public/engineering/macos-full-runtime.md",
       "size": 4312,
       "sha256": "c205d458f39fa576179f951389bc9dcf000e758937ec1f6722297fbc8c193018"
+    },
+    {
+      "path": "docs/public/engineering/package-delivery.md",
+      "size": 2195,
+      "sha256": "9a9f53f289c6adac678dc38272aaa2a703bae9b136fb744ebad67f4df12bbfed"
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
@@ -3924,8 +3944,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 8885,
-      "sha256": "9cff25a18b681726b900ce3a86f5058b428966cf7bfa3a36171f3115ef045c95"
+      "size": 9137,
+      "sha256": "1d99ef047373bbc1532cd1792a05fb80c8c56686e5309acc4f2a6257cb716dd6"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4829,8 +4849,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 10091,
-      "sha256": "0ca7b1c52748bebc4d481f22c49c7f3388726da3a5346d52a688785f311f4f40"
+      "size": 10223,
+      "sha256": "7f0d93075fe84321f6e6d8cfc81d109e9426f0fc8cc50f22b9fccdb82c435557"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4889,8 +4909,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 6379,
-      "sha256": "5f929d3a7c505c1e70458a0f1409dc1300efcf1ada4bf99cc9f778817145a77b"
+      "size": 6511,
+      "sha256": "d24431d4d80b1479741183d2699fe2ebcc429916870f3f65629aa1a1fb862548"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -4936,6 +4956,11 @@
       "path": "scripts/oci_layer_transform.py",
       "size": 19409,
       "sha256": "b9c7daa6989713558c67ee834b20b39c23a93b2c3f0b8d1fdf2104fde4deff6c"
+    },
+    {
+      "path": "scripts/package_delivery.py",
+      "size": 1657,
+      "sha256": "6eb462d48d764fe88b8d999bb7ad65cd075cab6a24fdf9d13f2fdbd48addb2ec"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -5359,8 +5384,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 7606,
-      "sha256": "5e2b0a89d431fc0e6482df654adb5f6880293e2b60f670b0bc886c3235944d48"
+      "size": 7876,
+      "sha256": "a228f0aaa8c341787285a1913d854e4c687b92e7e179387958ef4be37cc3b4d2"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
@@ -5406,6 +5431,11 @@
       "path": "scripts/test_oci_layer_transform.py",
       "size": 26871,
       "sha256": "286adb1b3d9592f55971d293f602f239a770f7a92a5d549f861dec37dd03e73f"
+    },
+    {
+      "path": "scripts/test_package_delivery.py",
+      "size": 2815,
+      "sha256": "594e511b4ab0b3ad0ed08fbe6e1e33979f61c77b869af4293fc32a4df194960b"
     },
     {
       "path": "scripts/test_packaging_compression.py",

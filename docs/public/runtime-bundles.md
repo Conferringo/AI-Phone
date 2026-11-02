@@ -33,6 +33,8 @@ Service launchers verify installed native components before choosing their comma
 
 ## Component build and verification
 
+Large complete installers use the native [delivery volume format](engineering/package-delivery.md), which preserves the original installer bytes and verifies each part before restoration.
+
 ```sh
 ./scripts/bootstrap.sh
 ./scripts/bun run build
@@ -69,6 +71,6 @@ Non-macOS physical installation is waived for this release scope and remains unv
 
 客户端将版本化程序、干净设备基础和持久用户数据分开。网页组件包含 Next standalone、静态资源及对应宿主的 Bun；原生组件包含 Rust 助手、手机执行器与 OCR。macOS/Linux 启动已有原生组件时校验宿主、摘要和执行权限；组件损坏会明确失败，不回退到源码编译掩盖错误。
 
-真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux x64 OCR 使用随包 Python/Pillow、Tesseract 与依赖，已通过隔离识别检查。macOS App/DMG 与 Linux x64 DEB 均已装配全部九类资源并完成包体校验，包内网页、原生程序及 OCR 已实际执行。公开安装包、完整产品行为与其他宿主仍依照各自发行门槛验收；编译和包体检查不等于实机安装验收。
+真实归档在空白目录验证网页资源、程序版本和 OCR。数据库验证只使用有专用标签且仅回环监听的临时实例，检查迁移、受限运行角色和 DDL 拒绝。Linux x64 OCR 使用随包 Python/Pillow、Tesseract 与依赖，已通过隔离识别检查。Linux x64 DEB 已装配九类资源并完成包体校验；macOS 提供对应组装路径，完整工厂仍待验证。网页、原生程序及 OCR 的组件执行结果与完整安装包分别验收。公开安装包、完整产品行为与其他宿主仍依照各自发行门槛验收；编译和包体检查不等于实机安装验收。
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.

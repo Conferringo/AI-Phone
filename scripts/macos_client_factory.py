@@ -107,9 +107,11 @@ def build(root,compiler_sdk):
     apps=prepare_apps(root,env)
     images,image_result=prepare_images(root,cache,source,architecture='arm64')
     artifact=compile_client(root,android,images,tools,env)
+    from package_delivery import prepare as prepare_delivery
+    package=prepare_delivery(root,artifact)
     if digest(root/'SOURCE-MANIFEST.json')!=source:raise ValueError('Factory source identity changed during assembly')
     result={'format':1,'host':'macos-arm64','source_commit':os.environ.get('GITHUB_SHA',''),
-            'source_manifest_sha256':source,'artifact':artifact,'tools':tool_result,
+            'source_manifest_sha256':source,'artifact':artifact,'package_delivery':package,'tools':tool_result,
             'container_host':host,'android':phone_runtime,'image_capsule_bytes':image_result['bytes'],
             'phone_apps_source_sha256':apps['phone']['source_sha256'],
             'physical_installation':'not-tested','binary_publication':False}
