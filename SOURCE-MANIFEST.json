@@ -79,8 +79,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 6898,
-      "sha256": "2918a285392d306d137d0277a58e57891c25ada576c70584faf078551d71770f"
+      "size": 6909,
+      "sha256": "02f7a69455d476bc565c6aa7ef09b5e6510881b20547dbf68ec6721f34b7d5f8"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -114,8 +114,8 @@
     },
     {
       "path": "CONTRIBUTING.md",
-      "size": 3481,
-      "sha256": "a4bcb39626813c3e0a1e11401c37d5ce0dc8ce51a71ff4363dd50878c6ed8720"
+      "size": 3682,
+      "sha256": "8735e705ea07213e02c009b8cb8aee00ca38999ff4d5a61cf5f1bec3159ee1a1"
     },
     {
       "path": "Cargo.lock",
@@ -4544,8 +4544,8 @@
     },
     {
       "path": "scripts/check_source.py",
-      "size": 3914,
-      "sha256": "7e0f417adaa943b3fca4a25aafd1b12e1e5994ee64b64355ead7ab1732c47bd7"
+      "size": 4984,
+      "sha256": "b23d938d827615df9d6a8c49539d3fb13e11c010ce2e0f78027055c4580c94ec"
     },
     {
       "path": "scripts/ci_integration.py",
@@ -5149,8 +5149,13 @@
     },
     {
       "path": "scripts/source_export.py",
-      "size": 3716,
-      "sha256": "8ad6660da49d52716ae95c58cfb76e9086baa6421e5d6baf5f2e20e33aea04ca"
+      "size": 3059,
+      "sha256": "8bcb45edbaae8b2ec8a3d9fa53c4b76b008ca904999c2dc5eefbb5d9db3757d8"
+    },
+    {
+      "path": "scripts/source_manifest.py",
+      "size": 1928,
+      "sha256": "6459cf778e893244a450341b4bd3eaa1af1bf8ad7c0df4896f60cc330804cd7a"
     },
     {
       "path": "scripts/state_backup.py",
@@ -5534,8 +5539,8 @@
     },
     {
       "path": "scripts/test_source_export.py",
-      "size": 8224,
-      "sha256": "0bf0478a0219b93e71be4aadf94d27f1c070729002aed0babf3f3930173fafb1"
+      "size": 14360,
+      "sha256": "3f23a7d766902ff7d07b541a73c1eea8c02de38ee41f939028bee2ed5268f134"
     },
     {
       "path": "scripts/test_state_backup.py",

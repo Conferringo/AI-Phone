@@ -4,8 +4,11 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import shutil
+import sys
 from source_export import export
 from check_source import check
+from source_manifest import refresh
 
 class SourceExportTests(unittest.TestCase):
     def fixture(self,root):
@@ -89,5 +92,86 @@ class SourceExportTests(unittest.TestCase):
             subprocess.run(['git','add','--','data/private.txt'],cwd=root,check=True)
             with self.assertRaisesRegex(ValueError,'outside-source-allowlist'):check(root,repository=True)
             self.assertEqual((root/'data/private.txt').read_text(),'DO_NOT_EXPORT')
+
+    def test_repository_rejects_corrupt_or_stale_export_manifests(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            out=Path(folder)/'preview';export(root,out,git=True)
+            self.assertTrue(check(out,repository=True)['source_scan_passed'])
+            manifest=out/'SOURCE-MANIFEST.json';original=manifest.read_text()
+            for content,rule in [('<<<<<<< conflict\n','source-manifest-invalid-json'),('[]','source-manifest-mismatch'),('{"format":1,"files":[]}','source-manifest-mismatch')]:
+                with self.subTest(rule=rule,content=content):
+                    manifest.write_text(content)
+                    with self.assertRaisesRegex(ValueError,rule):check(out,repository=True)
+            manifest.write_text(original)
+            (out/'scripts/runtime.py').write_text('changed public runtime')
+            with self.assertRaisesRegex(ValueError,'source-manifest-mismatch'):check(out,repository=True)
+
+    def test_explicit_manifest_gate_requires_a_manifest_but_exports_can_generate_one(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            self.assertTrue(check(root)['source_scan_passed'])
+            with self.assertRaisesRegex(ValueError,'source-manifest-unreadable'):check(root,manifest=True)
+            out=Path(folder)/'preview';export(root,out)
+            self.assertTrue(check(out,manifest=True)['source_scan_passed'])
+
+    def test_manifest_rejects_duplicate_entries_invalid_types_and_external_links(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            out=Path(folder)/'preview';export(root,out)
+            manifest=out/'SOURCE-MANIFEST.json';original=json.loads(manifest.read_text())
+            for field,value in [('format',True),('format',1.0),('files',original['files']+[original['files'][0]])]:
+                with self.subTest(field=field,value_type=type(value).__name__):
+                    changed={**original,field:value};manifest.write_text(json.dumps(changed))
+                    with self.assertRaisesRegex(ValueError,'source-manifest-mismatch'):check(out,manifest=True)
+            target=Path(folder)/'outside.json';target.write_text(json.dumps(original));manifest.unlink();manifest.symlink_to(target)
+            with self.assertRaisesRegex(ValueError,'source-manifest-symlink'):check(out,manifest=True)
+            with self.assertRaisesRegex(ValueError,'regular file'):refresh(out)
+            self.assertEqual(target.read_text(),json.dumps(original))
+
+    def test_refresh_matches_export_and_repairs_a_stale_manifest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            out=Path(folder)/'preview';export(root,out)
+            manifest=out/'SOURCE-MANIFEST.json';original=manifest.read_bytes()
+            self.assertEqual(json.loads(original)['format'],1)
+            refresh(out)
+            self.assertEqual(manifest.read_bytes(),original)
+            (out/'scripts/runtime.py').write_text('new public runtime')
+            manifest.write_text('<<<<<<< unresolved manifest\n')
+            refresh(out)
+            self.assertTrue(check(out,manifest=True)['source_scan_passed'])
+            self.assertFalse(json.loads(manifest.read_text())['product_ready'])
+
+    def test_product_readiness_requires_boolean_acceptance(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            for i,accepted in enumerate([False,1,'true',True]):
+                (root/'config/release-policy.json').write_text(json.dumps({'publication_gates':{'clean_host_install':accepted}}))
+                out=Path(folder)/str(i);export(root,out)
+                self.assertIs(json.loads((out/'SOURCE-MANIFEST.json').read_text())['product_ready'],accepted is True)
+
+    def test_manifest_cli_requires_and_refreshes_the_manifest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            for name in ['check_source.py','source_manifest.py','release_package.py','native_backports.py']:
+                shutil.copyfile(Path(__file__).parent/name,root/'scripts'/name)
+            command=[sys.executable,str(root/'scripts/check_source.py'),'--manifest']
+            missing=subprocess.run(command,capture_output=True,text=True)
+            self.assertNotEqual(missing.returncode,0)
+            self.assertIn('source-manifest-unreadable',missing.stderr)
+            generated=subprocess.run([sys.executable,str(root/'scripts/source_manifest.py'),'--refresh'],capture_output=True,text=True)
+            self.assertEqual(generated.returncode,0,generated.stderr)
+            verified=subprocess.run(command,capture_output=True,text=True)
+            self.assertEqual(verified.returncode,0,verified.stderr)
+
+    def test_publication_authorization_requires_an_explicit_boolean(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
+            for i,authorized in enumerate([None,False,1,'true',True]):
+                policy={'publication_gates':{'accepted':False},'source_preview':{'remote_publication_authorized':authorized}}
+                (root/'config/release-policy.json').write_text(json.dumps(policy))
+                out=Path(folder)/str(i);export(root,out)
+                self.assertIs(json.loads((out/'SOURCE-MANIFEST.json').read_text())['remote_publication_authorized'],authorized is True)
 
 if __name__=='__main__':unittest.main()

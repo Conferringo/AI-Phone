@@ -1,12 +1,12 @@
 """Export a new source-only review tree. No git history, user data or remote writes."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import subprocess
 import tempfile
 from check_source import check
 from release_package import select_files
+from source_manifest import build
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -18,14 +18,13 @@ def export(root,destination,*,draft=False,git=False):
     report=check(root,require_license=not draft);files=select_files(root)
     destination.parent.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.source-export-',dir=destination.parent) as folder:
-        work=Path(folder)/'source';work.mkdir();manifest=[]
+        work=Path(folder)/'source';work.mkdir()
         for name,content,mode in files:
             target=work/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(content);target.chmod(mode)
-            manifest.append({'path':name,'size':len(content),'sha256':hashlib.sha256(content).hexdigest()})
-        policy=json.loads((root/'config/release-policy.json').read_text())
-        remote_review=policy.get('source_preview',{}).get('remote_review_authorized') is True
+        value=build(root,files,draft=draft);manifest=value['files']
+        remote_review=value['remote_review_authorized']
         marker='REVIEW-ONLY.txt' if remote_review else 'LOCAL-REVIEW-ONLY.txt'
-        (work/'SOURCE-MANIFEST.json').write_text(json.dumps({'format':1,'version':policy.get('version'),'license':policy.get('source_preview',{}).get('license'),'remote_publication_authorized':not draft and policy.get('source_preview',{}).get('remote_publication_authorized') is True,'remote_review_authorized':remote_review,'kind':('private-source-review-draft' if remote_review else 'local-review-draft') if draft else 'source-preview','product_ready':all(v is True for v in policy['publication_gates'].values()),'product_gates':policy['publication_gates'],'files':manifest},indent=2)+'\n')
+        (work/'SOURCE-MANIFEST.json').write_text(json.dumps(value,indent=2)+'\n')
         if draft:(work/marker).write_text('Review candidate. Not a public product release; see SOURCE-MANIFEST.json for incomplete acceptance. Never upload user state.\n')
         if git:
             subprocess.run(['git','init','--initial-branch=master'],cwd=work,check=True,stdout=subprocess.DEVNULL)

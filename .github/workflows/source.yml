@@ -31,7 +31,7 @@ jobs:
           ./scripts/bootstrap.sh
           git diff --exit-code -- packages/protocol/src/gen infra/desktop/location.js
       - name: Source privacy and licence metadata
-        run: python3 scripts/check_source.py --repository
+        run: python3 scripts/check_source.py --repository --manifest
       - name: protobuf, TypeScript and Rust
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
