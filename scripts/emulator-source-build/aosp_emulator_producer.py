@@ -230,7 +230,8 @@ def main():
     host, checkout, work = checked_build_request(args)
     records, lock = project_inputs(checkout, host[2])
     entry, recipe_files, distribution = checked_entry(checkout, host[1])
-    command = [sys.executable, str(entry), "--aosp", str(checkout), "--target", host[1],
+    # This pinned CLI's source-root default is a Path; an explicit value stays a str.
+    command = [sys.executable, str(entry), "--target", host[1],
                "--out", str(work / "objs"), "--dist", str(work / "dist"), "--config", "release",
                "--sdk_build_number", BUILD_ID, "--crash", "none", "--ccache", "none", "--qtwebengine", "--verbose"]
     receipt = {"format": 1, "producer": "aosp-source-main-emulator", "host": host[0], "target": host[1],
