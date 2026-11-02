@@ -949,11 +949,43 @@ fn wechat_friend_request_action(frame: &Value, name: &str, arguments: &Value) ->
     }
     false
 }
-fn coordinate_grounding(
-    context: &[Value],
+// This rejection is produced before sending any device input. Remote failures
+// and unknown outcomes must keep their existing observation/recovery contract.
+fn phone_plan_rejection(message: impl Into<String>) -> Value {
+    json!([{"type":"input_text","text":json!({"success":false,"error":message.into(),"recoverable":true,"not_executed":true}).to_string()}])
+}
+fn contains_screen_point(bounds: &Value, x: u64, y: u64) -> bool {
+    bounds.as_array().is_some_and(|b| {
+        b.len() == 4
+            && x >= b[0].as_u64().unwrap_or(u64::MAX)
+            && y >= b[1].as_u64().unwrap_or(u64::MAX)
+            && x < b[2].as_u64().unwrap_or(0)
+            && y < b[3].as_u64().unwrap_or(0)
+    })
+}
+fn intercepts_coordinate_action(element: &Value, name: &str) -> bool {
+    match name {
+        "phone_tap" => element["clickable"] == true || element["editable"] == true,
+        "phone_swipe" => element["scrollable"] == true,
+        _ => false,
+    }
+}
+fn coordinate_interception<'a>(
+    observation: &'a Value,
     name: &str,
     arguments: &Value,
-) -> Result<String, String> {
+) -> Option<&'a Value> {
+    let (x, y) = if name == "phone_tap" {
+        (arguments["x"].as_u64()?, arguments["y"].as_u64()?)
+    } else {
+        (arguments["x1"].as_u64()?, arguments["y1"].as_u64()?)
+    };
+    observation["elements"].as_array()?.iter().find(|element| {
+        contains_screen_point(&element["bounds"], x, y)
+            && intercepts_coordinate_action(element, name)
+    })
+}
+fn coordinate_grounding(context: &[Value], name: &str, arguments: &Value) -> Result<String, Value> {
     if ![
         "phone_tap",
         "phone_swipe",
@@ -970,46 +1002,26 @@ fn coordinate_grounding(
     if ["phone_shake", "phone_rotate"].contains(&name) {
         return latest_grounding(context)
             .and_then(|v| v["observation_id"].as_str().map(str::to_owned))
-            .ok_or("请先观察当前手机".into());
+            .ok_or_else(|| phone_plan_rejection("请先观察当前手机"));
     }
     let reason = arguments["fallback_reason"].as_str().unwrap_or("").trim();
     if reason.chars().count() < 4 {
-        return Err(
-            "坐标兜底需要具体说明；优先使用phone_tap_element或phone_scroll，不能盲点".into(),
-        );
+        return Err(phone_plan_rejection(
+            "坐标兜底需要具体说明；优先使用phone_tap_element或phone_scroll，不能盲点",
+        ));
     }
-    let observation =
-        latest_grounding(context).ok_or("请先phone_observe取得带控件定位的当前画面")?;
-    let point = if name == "phone_tap" {
-        (arguments["x"].as_u64(), arguments["y"].as_u64())
-    } else {
-        (arguments["x1"].as_u64(), arguments["y1"].as_u64())
-    };
-    if let (Some(x), Some(y), Some(elements)) =
-        (point.0, point.1, observation["elements"].as_array())
-    {
-        for e in elements {
-            let b = &e["bounds"];
-            let inside = b.as_array().is_some_and(|b| b.len() == 4)
-                && x >= b[0].as_u64().unwrap_or(u64::MAX)
-                && y >= b[1].as_u64().unwrap_or(u64::MAX)
-                && x < b[2].as_u64().unwrap_or(0)
-                && y < b[3].as_u64().unwrap_or(0);
-            if inside
-                && ((name == "phone_tap" && (e["clickable"] == true || e["editable"] == true))
-                    || (name == "phone_swipe" && e["scrollable"] == true))
-            {
-                return Err(format!(
-                    "此位置已有控件{}，请使用{}并传回observation_id，不要绕过控件核对",
-                    e["id"],
-                    if name == "phone_tap" {
-                        "phone_tap_element"
-                    } else {
-                        "phone_scroll"
-                    }
-                ));
+    let observation = latest_grounding(context)
+        .ok_or_else(|| phone_plan_rejection("请先phone_observe取得带控件定位的当前画面"))?;
+    if let Some(element) = coordinate_interception(&observation, name, arguments) {
+        return Err(phone_plan_rejection(format!(
+            "此位置已有控件{}，请使用{}并传回observation_id，不要绕过控件核对",
+            element["id"],
+            if name == "phone_tap" {
+                "phone_tap_element"
+            } else {
+                "phone_scroll"
             }
-        }
+        )));
     }
     Ok(observation["observation_id"].as_str().unwrap().into())
 }
@@ -3358,7 +3370,10 @@ async fn tool(
         );
     }
     use wire::device_action_request::Action;
-    let observation_id = coordinate_grounding(&current, name, &arguments)?;
+    let observation_id = match coordinate_grounding(&current, name, &arguments) {
+        Ok(id) => id,
+        Err(rejection) => return Ok(rejection),
+    };
     if ["phone_tap_element", "phone_scroll"].contains(&name) {
         let current_id = latest_grounding(&current).ok_or("请先观察当前控件")?;
         if current_id["observation_id"] != arguments["observation_id"] {
@@ -3817,23 +3832,29 @@ mod verification_tests {
         context.extend(observe("current"));
         context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_text","text":json!({"observation_id":"snapshot","elements":[{"id":"n1","clickable":true,"bounds":[10,20,100,100]},{"id":"n2","scrollable":true,"bounds":[10,200,600,1100]}]}).to_string()}));
         assert!(coordinate_grounding(&context, "phone_tap", &json!({"x":20,"y":40})).is_err());
+        let rejected = coordinate_grounding(
+            &context,
+            "phone_tap",
+            &json!({"x":20,"y":40,"fallback_reason":"测试已识别按钮"}),
+        )
+        .unwrap_err();
         assert!(
-            coordinate_grounding(
-                &context,
-                "phone_tap",
-                &json!({"x":20,"y":40,"fallback_reason":"测试已识别按钮"})
-            )
-            .unwrap_err()
-            .contains("phone_tap_element")
+            tool_value(&rejected).unwrap()["error"]
+                .as_str()
+                .unwrap()
+                .contains("phone_tap_element")
         );
+        let rejected = coordinate_grounding(
+            &context,
+            "phone_swipe",
+            &json!({"x1":300,"y1":900,"fallback_reason":"测试已有滚动容器"}),
+        )
+        .unwrap_err();
         assert!(
-            coordinate_grounding(
-                &context,
-                "phone_swipe",
-                &json!({"x1":300,"y1":900,"fallback_reason":"测试已有滚动容器"})
-            )
-            .unwrap_err()
-            .contains("phone_scroll")
+            tool_value(&rejected).unwrap()["error"]
+                .as_str()
+                .unwrap()
+                .contains("phone_scroll")
         );
         assert_eq!(
             coordinate_grounding(
@@ -3853,6 +3874,134 @@ mod verification_tests {
             )
             .is_err()
         );
+    }
+    #[test]
+    fn coordinate_fallback_preserves_control_edges_and_supported_actions() {
+        for (x, y, blocked) in [
+            (10, 20, true),
+            (99, 99, true),
+            (9, 20, false),
+            (10, 19, false),
+            (100, 50, false),
+            (20, 100, false),
+        ] {
+            let mut context = request("操作手机");
+            context.extend(observe("current"));
+            context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_text","text":json!({"observation_id":"snapshot","elements":[{"id":"n1","editable":true,"bounds":[10,20,100,100]}]}).to_string()}));
+            let result = coordinate_grounding(
+                &context,
+                "phone_tap",
+                &json!({"x":x,"y":y,"fallback_reason":"核对画布上的实际位置"}),
+            );
+            assert_eq!(result.is_err(), blocked, "point {x},{y}");
+            assert!(
+                coordinate_grounding(
+                    &context,
+                    "phone_long_press",
+                    &json!({"x":x,"y":y,"fallback_reason":"核对可长按的实际位置"})
+                )
+                .is_ok()
+            );
+        }
+    }
+    #[test]
+    fn coordinate_fallback_ignores_incomplete_control_bounds() {
+        for bounds in [
+            json!([0, 0, null, 100]),
+            json!([0, 0, 100, null]),
+            json!([]),
+            json!([0, 0, 100]),
+        ] {
+            let mut context = request("操作手机");
+            context.extend(observe("current"));
+            context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_text","text":json!({"observation_id":"snapshot","elements":[{"id":"n1","clickable":true,"bounds":bounds}]}).to_string()}));
+            assert_eq!(
+                coordinate_grounding(
+                    &context,
+                    "phone_tap",
+                    &json!({"x":0,"y":0,"fallback_reason":"此处没有可定位控件"})
+                )
+                .unwrap(),
+                "snapshot"
+            );
+        }
+    }
+    #[test]
+    fn rejected_coordinate_input_keeps_the_observation_for_a_corrected_control() {
+        for (name, args, next) in [
+            (
+                "phone_tap",
+                json!({"x":20,"y":40,"fallback_reason":"使用当前已识别按钮"}),
+                "phone_tap_element",
+            ),
+            (
+                "phone_swipe",
+                json!({"x1":20,"y1":40,"fallback_reason":"使用当前已识别滚动区"}),
+                "phone_scroll",
+            ),
+        ] {
+            let mut context = request("操作当前手机");
+            context.extend(read_skill());
+            context.extend(observe("current"));
+            context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_text","text":json!({"observation_id":"snapshot","elements":[{"id":"n1","clickable":true,"scrollable":true,"bounds":[10,20,100,100]}]}).to_string()}));
+            let rejected = action("rejected", name, args.clone());
+            context.push(rejected[0].clone());
+            assert!(phone_mutation_precondition(&context, &rejected[0]).is_ok());
+            let output = coordinate_grounding(&context, name, &args).unwrap_err();
+            let value = tool_value(&output).unwrap();
+            assert_eq!(value["success"], false);
+            assert_eq!(value["not_executed"], true);
+            assert_eq!(value["recoverable"], true);
+            assert!(value["error"].as_str().unwrap().contains(next));
+            let mut pending = vec![];
+            assert!(!queue_post_action_observation(
+                &rejected[0],
+                &output,
+                &mut context,
+                &mut pending
+            ));
+            assert!(pending.is_empty());
+            context
+                .push(json!({"type":"function_call_output","call_id":"rejected","output":output}));
+            let corrected = action(
+                "corrected",
+                next,
+                json!({"observation_id":"snapshot","element_id":"n1","direction":"down"}),
+            );
+            context.push(corrected[0].clone());
+            assert!(phone_mutation_precondition(&context, &corrected[0]).is_ok());
+            assert_eq!(
+                latest_grounding(&context).unwrap()["observation_id"],
+                "snapshot"
+            );
+            assert!(!phone_action_verified(&context));
+        }
+    }
+    #[test]
+    fn local_grounding_failures_are_non_executed_but_remote_errors_are_not_reclassified() {
+        for (name, args) in [
+            ("phone_tap", json!({"x":20,"y":40})),
+            (
+                "phone_swipe",
+                json!({"x1":20,"y1":40,"fallback_reason":"无原生控件的画布"}),
+            ),
+            ("phone_rotate", json!({"rotation":1})),
+            ("phone_shake", json!({"amplitude":0.5})),
+        ] {
+            let output = coordinate_grounding(&[], name, &args).unwrap_err();
+            assert_eq!(tool_value(&output).unwrap()["not_executed"], true);
+        }
+        let mut context = request("操作当前手机");
+        context.extend(read_skill());
+        context.extend(observe("current"));
+        let uncertain = action("uncertain", "phone_tap", json!({"x":20,"y":40}));
+        context.push(uncertain[0].clone());
+        let output = recoverable_tool_failure("设备响应不可确认".into());
+        assert_ne!(tool_value(&output).unwrap()["not_executed"], true);
+        context.push(json!({"type":"function_call_output","call_id":"uncertain","output":output}));
+        let next = action("next", "phone_key", json!({"key":"BACK"}));
+        context.push(next[0].clone());
+        assert!(phone_mutation_precondition(&context, &next[0]).is_err());
     }
     #[test]
     fn actions_require_an_observation_output_known_before_their_generation() {
