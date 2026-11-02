@@ -18,6 +18,8 @@ Task attempts progress independently on different devices. PostgreSQL grants exc
 
 An occupied device returns `device_busy` before dispatching input, with a wait or handoff recommendation. It does not trigger screenshot recovery. Other errors retain their execution-status contract; unknown outcomes still require observation.
 
+Blocked attempts and successful waits do not consume the execution-failure budget or count as execution progress. Actual failures retain the same threshold, including invalid wait and plan requests.
+
 Responses, Chat Completions and native Anthropic Messages use the same engine. The latter translates tools, results and images; truncated, filtered, unterminated or malformed tool outputs are rejected. Providers must pass actual text, image and tool round-trip probes.
 
 A Responses completion event with an explicit non-completed response status is rejected before its output can become tool proposals. Complete output is preserved verbatim for the existing evidence and provider-replay paths.

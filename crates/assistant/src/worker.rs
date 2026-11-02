@@ -1,3 +1,4 @@
+use crate::agent_loop::ToolOutcome;
 use crate::tool_catalog::tools;
 use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -1073,7 +1074,7 @@ fn queue_post_action_observation(
     true
 }
 fn observation_retry_needed(call: &Value, value: &Value) -> bool {
-    if value["code"] == "device_busy" {
+    if tool_outcome(Some(value)) == ToolOutcome::Blocked {
         return false;
     }
     let name = call["name"].as_str().unwrap_or("");
@@ -1356,8 +1357,23 @@ fn tool_value(output: &Value) -> Option<Value> {
         .filter_map(|part| part["text"].as_str())
         .find_map(|text| serde_json::from_str(text).ok())
 }
+fn tool_outcome(value: Option<&Value>) -> ToolOutcome {
+    match value {
+        Some(value)
+            if value["success"] == false
+                && value["not_executed"] == true
+                && value["code"] == "device_busy" =>
+        {
+            ToolOutcome::Blocked
+        }
+        Some(value) if value["success"] == false || value["error"].is_string() => {
+            ToolOutcome::Failed
+        }
+        _ => ToolOutcome::Completed,
+    }
+}
 fn failed_output(output: &Value) -> bool {
-    tool_value(output).is_some_and(|value| value["success"] == false || value["error"].is_string())
+    tool_outcome(tool_value(output).as_ref()) != ToolOutcome::Completed
 }
 fn successful_call(call: &Value, context: &[Value]) -> bool {
     call["type"] == "function_call"
@@ -2158,13 +2174,14 @@ async fn execute(
         if let Some(call) = pending.first().cloned() {
             let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
             let name = call["name"].as_str().unwrap_or("");
-            let failed = failed_output(&result);
             let value = tool_value(&result);
+            let outcome = tool_outcome(value.as_ref());
+            let failed = outcome != ToolOutcome::Completed;
             let mut stalled = state.tool_result(
                 name,
                 call["arguments"].as_str().unwrap_or("{}"),
                 &result,
-                failed,
+                outcome,
             );
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
@@ -4247,12 +4264,73 @@ mod loop_persistence_tests {
     }
 
     #[test]
+    fn repeated_contention_and_waits_preserve_the_stall_budget() {
+        let output = recoverable_tool_failure("device_busy:设备正在执行其他任务".into());
+        let mut state = crate::agent_loop::LoopState {
+            stalls: 1,
+            last_issue: "之前的真实错误".into(),
+            ..Default::default()
+        };
+        for _ in 0..8 {
+            assert!(!state.tool_result(
+                "phone_observe",
+                "{}",
+                &output,
+                tool_outcome(tool_value(&output).as_ref())
+            ));
+            assert_eq!(
+                state.stalls, 1,
+                "known non-execution must not consume the failure budget"
+            );
+            assert!(!state.tool_result(
+                "task_wait",
+                "{}",
+                &json!({"wake_at_ms":1}),
+                ToolOutcome::Completed
+            ));
+        }
+        assert_eq!(state.last_issue, "之前的真实错误");
+        assert!(
+            state.recent_results.is_empty(),
+            "waiting is not execution progress"
+        );
+        assert!(!state.tool_result(
+            "phone_observe",
+            "{}",
+            &json!({"success":true,"frame":"new"}),
+            ToolOutcome::Completed
+        ));
+        assert_eq!(state.stalls, 0);
+        assert_eq!(state.recent_results.len(), 1);
+    }
+
+    #[test]
     fn ordinary_tool_errors_do_not_claim_non_execution() {
         let output = recoverable_tool_failure("文件读取失败".into());
         assert_eq!(
             tool_value(&output).unwrap(),
             json!({"success":false,"error":"文件读取失败","recoverable":true})
         );
+    }
+
+    #[test]
+    fn execution_failures_keep_their_budget_for_every_tool() {
+        let output = recoverable_tool_failure("执行失败".into());
+        let outcome = tool_outcome(tool_value(&output).as_ref());
+        assert_eq!(outcome, ToolOutcome::Failed);
+        let unknown = json!({"success":false,"code":"device_busy","unknown":true});
+        assert_eq!(tool_outcome(Some(&unknown)), ToolOutcome::Failed);
+        for name in ["phone_observe", "task_wait", "task_plan"] {
+            let mut state = crate::agent_loop::LoopState::default();
+            for attempt in 1..=3 {
+                assert_eq!(
+                    state.tool_result(name, "{}", &output, outcome),
+                    attempt == 3,
+                    "failure threshold for {name}"
+                );
+                assert_eq!(state.stalls, attempt);
+            }
+        }
     }
 
     #[tokio::test]
