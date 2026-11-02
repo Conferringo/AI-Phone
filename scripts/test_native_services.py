@@ -72,6 +72,23 @@ class NativeServiceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'generated digits'):
                 vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE)
 
+    def test_host_ocr_is_opt_in_for_build_qualification(self):
+        from check_native_services import vision_receipt
+        response={'width':320,'height':112,'grid':[0]*2048,
+                  'regions':[{'text':'7319','confidence':.99}]}
+        reply=subprocess.CompletedProcess([],0,stdout=json.dumps(response).encode(),stderr=b'')
+        tools={'AI_PHONE_TEST_TESSERACT':'/qualification/tesseract',
+               'AI_PHONE_TEST_TESSDATA':'/qualification/models'}
+        with patch.dict(os.environ,tools),patch('check_native_services.subprocess.run',return_value=reply) as run:
+            vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE)
+            environment=run.call_args.kwargs['env']
+            self.assertNotIn('AI_PHONE_TESSERACT',environment)
+            self.assertNotIn('TESSDATA_PREFIX',environment)
+            vision_receipt(Path('/fixture/vision'),ROOT/SOURCE_FIXTURE,qualification=True)
+            environment=run.call_args.kwargs['env']
+            self.assertEqual(environment['AI_PHONE_TESSERACT'],tools['AI_PHONE_TEST_TESSERACT'])
+            self.assertEqual(environment['TESSDATA_PREFIX'],tools['AI_PHONE_TEST_TESSDATA'])
+
     def test_manifest_size_and_type_boundaries_fail_explicitly(self):
         # Metadata fixtures exercise a supported component host on every CI OS.
         with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.platform.system',return_value='Darwin'):

@@ -99,18 +99,30 @@ async fn output(command: Command, input: &[u8]) -> Result<Vec<u8>, Error> {
     process_output(command, input, OUTPUT_LIMIT, Duration::from_secs(5)).await
 }
 async fn process_output(
-    mut command: Command,
+    command: Command,
     input: &[u8],
     limit: usize,
     budget: Duration,
 ) -> Result<Vec<u8>, Error> {
-    let mut child = command
+    read_child(spawn(command)?, input, limit, budget).await
+}
+
+fn spawn(mut command: Command) -> Result<tokio::process::Child, Error> {
+    command
         .kill_on_drop(true)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(Error::Launch)?;
+        .map_err(Error::Launch)
+}
+
+async fn read_child(
+    mut child: tokio::process::Child,
+    input: &[u8],
+    limit: usize,
+    budget: Duration,
+) -> Result<Vec<u8>, Error> {
     let mut stdin = child.stdin.take().expect("piped OCR stdin");
     let stdout = child.stdout.take().expect("piped OCR stdout");
     let work = async {
@@ -178,29 +190,10 @@ impl Capture {
 mod lifecycle_tests {
     use super::*;
 
-    fn sleeper(record: &Path) -> Command {
-        let mut command = Command::new("/bin/sh");
-        command.args(["-c", "echo $$ > \"$1\"; exec sleep 30", "ocr-test"]);
-        command.arg(record);
-        command
-    }
-    fn record() -> std::path::PathBuf {
-        let unique = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        std::env::temp_dir().join(format!("aiphone-ocr-child-{}-{unique}", std::process::id()))
-    }
-    async fn pid(record: &Path) -> String {
-        for _ in 0..100 {
-            if let Ok(value) = std::fs::read_to_string(record)
-                && !value.trim().is_empty()
-            {
-                return value.trim().into();
-            }
-            tokio::time::sleep(Duration::from_millis(5)).await;
-        }
-        panic!("OCR fixture did not start");
+    fn sleeper() -> tokio::process::Child {
+        let mut command = Command::new("/bin/sleep");
+        command.arg("30");
+        spawn(command).unwrap()
     }
     async fn assert_stopped(pid: &str) {
         for _ in 0..100 {
@@ -215,28 +208,34 @@ mod lifecycle_tests {
             }
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
+        // A failing contract must not leave its own sleeper behind.
+        std::process::Command::new("/bin/kill")
+            .args(["-KILL", pid])
+            .stderr(Stdio::null())
+            .status()
+            .unwrap();
         panic!("OCR child survived cancellation or timeout");
     }
     #[tokio::test]
     async fn canceling_recognition_stops_the_exact_child() {
-        let record = record();
-        let command = sleeper(&record);
-        let task = tokio::spawn(async move { output(command, b"").await });
-        let pid = pid(&record).await;
+        let child = sleeper();
+        let pid = child.id().unwrap().to_string();
+        let task = tokio::spawn(async move {
+            read_child(child, b"", OUTPUT_LIMIT, Duration::from_secs(5)).await
+        });
+        tokio::task::yield_now().await;
         task.abort();
         assert!(task.await.unwrap_err().is_cancelled());
         assert_stopped(&pid).await;
-        std::fs::remove_file(record).unwrap();
     }
     #[tokio::test]
     async fn deadline_stops_hung_recognition() {
-        let record = record();
+        let child = sleeper();
+        let pid = child.id().unwrap().to_string();
         assert!(matches!(
-            output(sleeper(&record), b"").await,
+            read_child(child, b"", OUTPUT_LIMIT, Duration::from_secs(5)).await,
             Err(Error::Timeout)
         ));
-        let pid = pid(&record).await;
         assert_stopped(&pid).await;
-        std::fs::remove_file(record).unwrap();
     }
 }

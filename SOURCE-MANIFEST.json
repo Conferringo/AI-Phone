@@ -59,8 +59,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 14608,
-      "sha256": "f1073386680ba4ea99ff638895bd90d38d51613de131fc12e5b747c3ec9f7c2a"
+      "size": 14974,
+      "sha256": "58fcb656aa0f42d7d0d4edd0fd1c2f248ae9c4282d03834871af15dad05bf3bd"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -69,8 +69,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 2862,
-      "sha256": "fe16ec9c793419d2739e95eaee5314506996b6a834f24c5ccc5584e62bd40565"
+      "size": 2912,
+      "sha256": "2087886a386177ab84215e9ba04e5463930c91dc7dbc8e3a2f187588bf43f11b"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -2879,8 +2879,8 @@
     },
     {
       "path": "crates/vision/src/lib.rs",
-      "size": 7549,
-      "sha256": "3a442dec5ce30364468c432a9f16802e19d86e4dd9ce3177a812b92b5e4f0c89"
+      "size": 7344,
+      "sha256": "22415364ef85564239a5cbcab9ba8e9c9edb6075422db29850de7b8f776260a1"
     },
     {
       "path": "crates/vision/src/main.rs",
@@ -5484,8 +5484,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 34313,
-      "sha256": "8d584f1504e3e07c6c7c092d56ecb6a662e40eb031978657c5f6186b19ad7606"
+      "size": 35483,
+      "sha256": "9400729b33f26e8ab7927bcbe85e3fd272e8ebc0c46f91fa1be1effba5f88a18"
     },
     {
       "path": "scripts/test_notification_probe.py",
