@@ -89,6 +89,10 @@ fn operation() -> Result<String> {
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("--version") {
+        println!("desktop-bridge {}", env!("CARGO_PKG_VERSION"));
+        return ExitCode::SUCCESS;
+    }
     let operation = operation();
     let stderr_only = operation.as_ref().is_ok_and(|value| {
         matches!(

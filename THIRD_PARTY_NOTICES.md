@@ -6,7 +6,7 @@ Original AI Phone code is licensed under **Apache-2.0**. Third-party software, d
 
 The public **source export** contains project source, lockfiles, attribution records and selected upstream licence texts. It excludes SDK archives, guest images, prebuilt runtime components and personal data.
 
-A **complete client bundle** includes the web application, native services, phone integration APKs, container host, JavaScript services, guest applications, Android runtime, container images and installer tools. The compiled macOS and Linux bundles contain these nine resource groups, including server binaries and Android/Linux baselines. Their inventories and qualification are documented in [runtime bundles](docs/public/runtime-bundles.md) and [release status](docs/public/release-status.md). Those package contents have a broader attribution and corresponding-source scope than the source export.
+A **complete client bundle** includes the web application, native services, phone integration APKs, container host, JavaScript services, guest applications, Android runtime, container images and installer tools. Complete macOS and Linux inventories require all nine resource groups, including server binaries and Android/Linux baselines. Their contents and qualification are documented in [runtime bundles](docs/public/runtime-bundles.md) and [release status](docs/public/release-status.md). Those package contents have a broader attribution and corresponding-source scope than the source export.
 
 Public binary distribution remains pending the [release requirements](docs/public/preview-release.md). A successful build, file hash or copied licence text does not establish redistribution permission. Component review flags remain authoritative until the exact shipped binaries, notices and applicable corresponding-source delivery are qualified.
 
@@ -14,6 +14,7 @@ Public binary distribution remains pending the [release requirements](docs/publi
 
 | Component | Source / licence evidence | Distribution scope and obligations |
 | --- | --- | --- |
+| Static Linux ARM C runtime | [musl 1.2.5 copyright](docs/public/licenses/musl/COPYRIGHT), [Rust 1.96.0 build recipe and patches](https://github.com/rust-lang/rust/blob/1.96.0/src/ci/docker/scripts/musl.sh) | The Mac factory's Linux ARM desktop bridge uses Rust's musl target. The complete upstream copyright and terms are included in the native client and service notices |
 | Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 425 JavaScript packages across the server and native client, licence metadata and notice-file hashes. One legacy package (async 0.2.10) omits its SPDX field; its packaged MIT grant is retained and hashed. Redistribution/source-offer review remains open |
 | Knowledge motion + native app icon | Original AI Phone TypeScript/SVG implementations, Apache-2.0; hashes in config/source-assets.json | Original project implementation; source asset identities are recorded in the asset policy. |
 | Native OCR test glyphs | DejaVu Sans; Bitstream Vera grant and public-domain DejaVu changes | Generated diagnostic PNG only, no font binary. [Font notice](docs/public/licenses/fixtures/dejavu.txt); font/image hashes in config/source-assets.json |

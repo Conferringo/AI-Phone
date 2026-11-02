@@ -1,10 +1,12 @@
 ARG WORKSPACE_IMAGE=ai-phone-workspace:20261026
+ARG GUEST_RUNTIME_SOURCE=guest-builder
 FROM rust:1.96.0-bookworm@sha256:5e2214abe154fe26e39f64488952e5c991eeed1d6d6da7cc8381ae83927f0cfc AS guest-builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY packages/protocol/proto ./packages/protocol/proto
 RUN cargo build --release --locked -p ai-phone-guest-runtime && strip target/release/desktop-bridge
+FROM ${GUEST_RUNTIME_SOURCE} AS guest-runtime
 FROM ${WORKSPACE_IMAGE}
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
@@ -15,7 +17,8 @@ RUN useradd -m -u 1000 -s /bin/bash ai && mkdir -p /home/ai/Files /home/ai/Deskt
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo dunst libnotify-bin && rm -rf /var/lib/apt/lists/*
 RUN printf 'ai ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/ai-phone && chmod 440 /etc/sudoers.d/ai-phone
 COPY infra/desktop/location.js /usr/local/lib/ai-phone/location.js
-COPY --from=guest-builder /build/target/release/desktop-bridge /usr/local/bin/desktop-bridge
+COPY --from=guest-runtime /build/target/release/desktop-bridge /usr/local/bin/desktop-bridge
+RUN /usr/local/bin/desktop-bridge --version
 COPY LICENSE NOTICE docs/public/native-services-licenses.txt docs/public/native-services-license-inventory.json /usr/share/doc/ai-phone/
 COPY infra/desktop/start.sh /usr/local/bin/desktop-start
 COPY infra/desktop/home-initialize.sh /usr/local/lib/ai-phone/
