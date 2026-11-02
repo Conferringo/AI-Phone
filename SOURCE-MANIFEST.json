@@ -2874,13 +2874,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 5125,
-      "sha256": "8893596baed63f112d425c7663ace7fbe40256155a958ed540ea1cf10042417d"
+      "size": 5354,
+      "sha256": "3e94354f6a0901f6ded34b3f436faa10c18e3c27b865e27fcf6fc90e6808ce66"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 4850,
-      "sha256": "31457882f89157f21ef492739e0ae42bbd1959fc11de20b41c3a60f50fb4c089"
+      "size": 5058,
+      "sha256": "55ced65a8a7bc74c13faec286eb5d4740f7b10a0a5da2f017426d09bb969e457"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -4004,8 +4004,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 2987,
-      "sha256": "c730f1f921141dfff1195b4c9b231d28f721143cc4e6c4d90939d61deffa7776"
+      "size": 3376,
+      "sha256": "ae388c353582c637037add29e7eb1f9755c74a112bb11e07ac191edd8d687e7d"
     },
     {
       "path": "infra/desktop/clash-launch.sh",
@@ -4031,6 +4031,11 @@
       "path": "infra/desktop/location.ts",
       "size": 7484,
       "sha256": "725725d5e4daec1bbaf896cfc00f797ffa8f9f9181db0e66a5bdb2e52c2e1bc4"
+    },
+    {
+      "path": "infra/desktop/mimeapps.list",
+      "size": 145,
+      "sha256": "5648dc16a9adc54ddc9a85aa3d6590fd29280df7bbbad34d47de0538236f6da4"
     },
     {
       "path": "infra/desktop/network-start.sh",

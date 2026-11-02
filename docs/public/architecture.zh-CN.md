@@ -13,6 +13,8 @@
 | 渠道 | Bun、官方SDK/Bot API及本地WhatsApp适配 | Agent级凭据、私聊配对、入站排队、送达状态 |
 | 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、模型版本与审计；Redis预留，尚未分发任务 |
 
+文本和Markdown默认使用Mousepad打开，桌面包含文件类型检测工具；[用户的MIME关联设置](https://specifications.freedesktop.org/mime-apps/latest/file.html)优先于镜像默认值。
+
 浏览器业务请求使用 `application/x-protobuf`，契约在 `packages/protocol/proto`；媒体字节和健康检查例外。流式业务事件使用protobuf WebSocket帧，不要与模型SSE混淆。
 
 Android无桌面入口的辅助服务提供按需、只读的原生控件层级请求，由系统`DUMP`权限保护。Rust优先接收绑定当前请求ID的完整回执，再使用UIAutomator及OCR后备；层级正文不包含密码文字。观察与动作校验分别负责数据读取和控制权，快速快照不替代动作后的结果核对。

@@ -6,6 +6,8 @@ Next.js App Router/Turbopack, React, Tailwind, shadcn/ui and GSAP provide the wo
 
 Android runs natively through Android Emulator, controlled by a Rust runner, ADB and guest bridges. Native UI targets with OCR/screenshot fallback ground actions. Bun bridges use Android gRPC and FFmpeg/X11 for JPEG frames and PCM audio. Native touch indicators/pointers are captured in the same frame. The Linux computer uses Docker, Debian/Openbox and Xvfb. A native Rust guest service owns X11 capture and input, cursor receipts, audio-process supervision, capture leases and durable notifications. FFmpeg provides screen/audio encoding. The workbench supports screenshot-based control and read-only regional zoom.
 
+Text and Markdown files open in Mousepad by default. The desktop includes file-type detection; [personal MIME associations](https://specifications.freedesktop.org/mime-apps/latest/file.html) take precedence over image defaults.
+
 Business APIs use protobuf (`packages/protocol/proto`). Browser requests use `application/x-protobuf`; streaming business events use protobuf WebSocket frames. Media and health checks are separate. Model SSE is a separate transport.
 
 The service-only Android helper supplies live accessibility hierarchies through a read-only request protected by Android's `DUMP` permission. Rust accepts a complete reply bound to the current request ID before trying UIAutomator and OCR. Password text is excluded from the hierarchy. Observation and action validation remain separate: a fast hierarchy does not grant control or replace post-action verification.
