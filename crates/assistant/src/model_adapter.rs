@@ -168,6 +168,20 @@ struct ResponseStream {
     sse: crate::model_sse::SseDecoder,
 }
 impl ResponseStream {
+    fn completed(response: &Value) -> Result<Vec<Value>, String> {
+        // Compatible gateways may omit status; an explicit value must be completed.
+        if response
+            .get("status")
+            .is_some_and(|status| status != "completed")
+        {
+            return Err("模型未完成本轮回复；未将部分输出作为操作执行".into());
+        }
+        response["output"]
+            .as_array()
+            .cloned()
+            .ok_or("模型返回缺少完整输出".into())
+    }
+
     fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
         for data in self.sse.feed(chunk)? {
             if data.is_empty() || data == "[DONE]" {
@@ -176,11 +190,7 @@ impl ResponseStream {
             let event: Value = serde_json::from_str(&data).map_err(|_| "模型流格式无效")?;
             match event["type"].as_str() {
                 Some("response.completed") => {
-                    return event["response"]["output"]
-                        .as_array()
-                        .cloned()
-                        .map(Some)
-                        .ok_or("模型返回缺少完整输出".into());
+                    return Self::completed(&event["response"]).map(Some);
                 }
                 Some("response.failed" | "response.incomplete" | "error") => {
                     return Err("模型未完成本轮回复；未将部分输出作为操作执行".into());
@@ -673,6 +683,72 @@ mod tests {
         assert!(
             p.feed(b"data: {\"type\":\"response.incomplete\"}\n\n")
                 .is_err()
+        );
+    }
+    #[test]
+    fn responses_reject_explicit_non_completed_status_before_returning_tools() {
+        for status in [
+            json!("incomplete"),
+            json!("failed"),
+            json!("in_progress"),
+            Value::Null,
+        ] {
+            let mut parser = ResponseStream::default();
+            let event = json!({"type":"response.completed","response":{"status":status,"output":[{"type":"function_call","call_id":"unexecuted-fixture","name":"phone_tap","arguments":"{\"x\":1,\"y\":1}"}]}});
+            let bytes = format!("data: {event}\n\n");
+            assert!(
+                parser.feed(bytes.as_bytes()).is_err(),
+                "explicit non-completed status must not release tool proposals"
+            );
+        }
+    }
+
+    #[test]
+    fn responses_completed_status_preserves_the_exact_tool_proposal() {
+        let mut parser = ResponseStream::default();
+        let output = json!([{"type":"function_call","call_id":"unexecuted-fixture","name":"phone_tap","arguments":"{\"x\":1,\"y\":1}"}]);
+        let event = json!({"type":"response.completed","response":{"status":"completed","output":output.clone()}});
+        let actual = parser
+            .feed(format!("data: {event}\n\n").as_bytes())
+            .unwrap()
+            .unwrap();
+        assert_eq!(json!(actual), output);
+    }
+    #[tokio::test]
+    async fn http_completed_event_with_incomplete_status_does_not_release_tools() {
+        use axum::{Router, routing::post};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let event = json!({"type":"response.completed","response":{"status":"incomplete","output":[{"type":"function_call","call_id":"unexecuted-fixture","name":"phone_tap","arguments":"{\"x\":1,\"y\":1}"}]}});
+        let payload = format!("data: {event}\n\n");
+        let router = Router::new().route(
+            "/responses",
+            post(move || {
+                let payload = payload.clone();
+                async move { ([("content-type", "text/event-stream")], payload) }
+            }),
+        );
+        let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+        let config = ModelConfig {
+            api_key: String::new(),
+            base_url: format!("http://{address}"),
+            model: "fixture".into(),
+            provider: "compatible".into(),
+            protocol: "responses".into(),
+            proxy_url: String::new(),
+            verified_at_ms: 0,
+        };
+        let tool = json!({"type":"function","name":"phone_tap","parameters":{"type":"object","properties":{"x":{"type":"number"},"y":{"type":"number"}},"required":["x","y"]}});
+        let result = request(
+            &config,
+            json!({"input":[],"tools":[tool]}),
+            &CancellationToken::new(),
+        )
+        .await;
+        server.abort();
+        assert!(
+            result.is_err(),
+            "HTTP success cannot turn explicitly incomplete output into executable proposals"
         );
     }
     #[tokio::test]
