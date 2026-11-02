@@ -70,7 +70,7 @@ pub(crate) async fn reserve(db: &PgPool, run: Uuid, device: &str) -> Result<(), 
     .rows_affected();
     if acquired == 0 {
         return Err(
-            "设备正由其他任务使用或当前任务已停止；请等待后重新观察，或用device_message交接".into(),
+            "device_busy:设备正由其他任务使用或当前任务已停止；请先task_wait再重新观察，或用device_message交接".into(),
         );
     }
     Ok(())

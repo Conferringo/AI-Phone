@@ -2489,8 +2489,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 10667,
-      "sha256": "1d34ec2ca05f94870e95ca917cf61cb88c936121cee173efa4bd7c96b19edc76"
+      "size": 10916,
+      "sha256": "f9d6cccd069bd871e54c7689a71fe67e91fab8cd488ff4f255f08fd4f96beb37"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2589,8 +2589,8 @@
     },
     {
       "path": "crates/assistant/src/run_queue.rs",
-      "size": 3385,
-      "sha256": "3c7077d4e0fe169a478fa4ca06001a70b44bbab11452c884acb75a732e5ee3f4"
+      "size": 3403,
+      "sha256": "45a8e1a9e1f6abe2ffc2f91fa42a6a3ef6961005877410a0a0d83cd2d36c25ef"
     },
     {
       "path": "crates/assistant/src/settings.rs",
@@ -2634,8 +2634,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 194354,
-      "sha256": "6411df2ebc261e2c98687dd160af95a1c9163966568d03f81333ffb486ac8165"
+      "size": 196204,
+      "sha256": "ab7e07dbb122a966326bde83b8a03fdbfb469085db579f5f35704e77c2feeaa4"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -2859,13 +2859,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 4266,
-      "sha256": "b3511546d9237c72f66bd1eb6b6228b35312ba80a54a7c0f0ede257ec93030d2"
+      "size": 4511,
+      "sha256": "3b670ae36e580c079edf71c5891654415cf82665fdda27548ee5a3d3bcb6dca2"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 4105,
-      "sha256": "eb57b1557751e34c94fd0baa30c1cabd916526417a58f721b8763af87e53c5e5"
+      "size": 4315,
+      "sha256": "20fec6bafdbd5cfa302d16f584916fad9c2c8c80e0949fe1dd745bbd417d1db8"
     },
     {
       "path": "docs/public/autonomous-exploration.md",

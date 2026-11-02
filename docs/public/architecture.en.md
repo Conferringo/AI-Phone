@@ -16,6 +16,8 @@ Successful input injection is not completion evidence. Unknown outcomes require 
 
 Task attempts progress independently on different devices. PostgreSQL grants exclusive device leases during admission; an attempt retains its primary and borrowed devices until its result is committed. Model and guest I/O hold no SQL transaction. Cancellation targets a run, while foreground device changes leave other runs active. Cross-device control waits for an occupied device instead of taking another task's ownership; device messages provide durable handoff. Startup releases the previous process's leases while preserving checkpoints, unknown actions and wait deadlines.
 
+An occupied device returns `device_busy` before dispatching input, with a wait or handoff recommendation. It does not trigger screenshot recovery. Other errors retain their execution-status contract; unknown outcomes still require observation.
+
 Responses, Chat Completions and native Anthropic Messages use the same engine. The latter translates tools, results and images; truncated, filtered, unterminated or malformed tool outputs are rejected. Providers must pass actual text, image and tool round-trip probes.
 
 A Responses completion event with an explicit non-completed response status is rejected before its output can become tool proposals. Complete output is preserved verbatim for the existing evidence and provider-replay paths.

@@ -1072,6 +1072,19 @@ fn queue_post_action_observation(
     pending.insert(0, observation);
     true
 }
+fn observation_retry_needed(call: &Value, value: &Value) -> bool {
+    if value["code"] == "device_busy" {
+        return false;
+    }
+    let name = call["name"].as_str().unwrap_or("");
+    let recoverable = value["success"] == false && value["recoverable"] == true;
+    (name == "phone_observe" && recoverable)
+        || (phone_mutation(call)
+            && ((value["not_executed"] == true && value["next_tool"] == "phone_observe")
+                    // The runner returns this prefix only before dispatching input.
+                    || (recoverable
+                        && value["error"].as_str().is_some_and(|error| error.starts_with("stale_target:")))))
+}
 // Recovery only acquires new evidence; a rejected action is never replayed.
 fn recover_observation(
     call: &Value,
@@ -1081,16 +1094,7 @@ fn recover_observation(
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<bool> {
     let value = tool_value(result)?;
-    let name = call["name"].as_str().unwrap_or("");
-    let retry = (name == "phone_observe"
-        && value["success"] == false
-        && value["recoverable"] == true)
-        || (phone_mutation(call)
-            && ((value["not_executed"] == true && value["next_tool"] == "phone_observe")
-                    // The runner returns this prefix only before dispatching input.
-                    || (value["success"] == false && value["recoverable"] == true
-                        && value["error"].as_str().is_some_and(|error| error.starts_with("stale_target:")))));
-    if !retry {
+    if !observation_retry_needed(call, &value) {
         return None;
     }
     if state.observation_recoveries >= 4 {
@@ -1673,6 +1677,14 @@ fn fatal_tool_error(error: &str) -> bool {
         || error.contains("结果未知")
         || error.contains("勿直接重放")
         || error.contains("未知副作用")
+}
+fn recoverable_tool_failure(error: String) -> Value {
+    let detail = if let Some(message) = error.strip_prefix("device_busy:") {
+        json!({"success":false,"error":message,"code":"device_busy","recoverable":true,"not_executed":true,"next_tool":"task_wait"})
+    } else {
+        json!({"success":false,"error":error,"recoverable":true})
+    };
+    json!([{"type":"input_text","text":detail.to_string()}])
 }
 fn now_ms() -> u64 {
     std::time::SystemTime::now()
@@ -2846,9 +2858,7 @@ async fn recorded_tool(
     }
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content) VALUES($1,$2,$3,'tool',$4,$5) ON CONFLICT(id) DO UPDATE SET status='running'").bind(id).bind(run).bind(message).bind(title).bind(format!("输入\n{input}")).execute(&app.db).await.map_err(|e|e.to_string())?;
     let result = match tool(app, run, message, call, epoch, cancel).await {
-        Err(error) if !fatal_tool_error(&error) => Ok(
-            json!([{"type":"input_text","text":json!({"success":false,"error":error,"recoverable":true}).to_string()}]),
-        ),
+        Err(error) if !fatal_tool_error(&error) => Ok(recoverable_tool_failure(error)),
         other => other,
     };
     let (status, output) = match &result {
@@ -4210,6 +4220,41 @@ mod loop_persistence_tests {
         );
         assert_eq!(state.observation_recoveries, 1);
     }
+    #[test]
+    fn device_contention_reports_a_non_executed_wait() {
+        let output = recoverable_tool_failure("device_busy:设备正由其他任务使用".into());
+        let value = tool_value(&output).unwrap();
+        assert!(failed_output(&output));
+        assert_eq!(value["code"], "device_busy");
+        assert_eq!(value["not_executed"], true);
+        assert_eq!(value["next_tool"], "task_wait");
+        assert!(!value["error"].as_str().unwrap().contains("device_busy:"));
+    }
+
+    #[test]
+    fn device_contention_does_not_schedule_screenshot_recovery() {
+        let call = json!({"name":"phone_observe"});
+        let output = recoverable_tool_failure("device_busy:设备正由其他任务使用".into());
+        let mut context = vec![];
+        let mut pending = vec![];
+        let mut state = crate::agent_loop::LoopState::default();
+        assert_eq!(
+            recover_observation(&call, &output, &mut context, &mut pending, &mut state),
+            None
+        );
+        assert!(pending.is_empty());
+        assert_eq!(state.observation_recoveries, 0);
+    }
+
+    #[test]
+    fn ordinary_tool_errors_do_not_claim_non_execution() {
+        let output = recoverable_tool_failure("文件读取失败".into());
+        assert_eq!(
+            tool_value(&output).unwrap(),
+            json!({"success":false,"error":"文件读取失败","recoverable":true})
+        );
+    }
+
     #[tokio::test]
     #[ignore = "requires AI_PHONE_TEST_DATABASE_URL; creates and removes its own isolated database"]
     async fn wait_finish_steering_and_long_checkpoints_are_durable() {

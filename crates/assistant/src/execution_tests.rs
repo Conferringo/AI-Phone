@@ -64,11 +64,14 @@ async fn distinct_devices_run_together_and_borrowed_devices_cannot_be_stolen() {
         let mut expected = [phone.0, desktop.0];
         expected.sort();
         assert_eq!(claimed, expected);
-        assert!(
-            crate::run_queue::reserve(&app.db, phone.0, "fixture-desktop")
-                .await
-                .is_err()
-        );
+        let busy = crate::run_queue::reserve(&app.db, phone.0, "fixture-desktop")
+            .await
+            .unwrap_err();
+        assert!(!fatal_tool_error(&busy));
+        let result = tool_value(&recoverable_tool_failure(busy)).unwrap();
+        assert_eq!(result["code"], "device_busy");
+        assert_eq!(result["not_executed"], true);
+        assert_eq!(result["next_tool"], "task_wait");
         sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1")
             .bind(desktop.0)
             .execute(&app.db)
