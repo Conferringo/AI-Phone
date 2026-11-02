@@ -112,7 +112,10 @@ class WslOwnershipChainTests(unittest.TestCase):
             with patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value='/fixture/node'):
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             managed.assert_called_once_with(root)
-            self.assertEqual(len(docker_calls),15)
+            self.assertEqual(len(docker_calls),17)
+            self.assertEqual([argv[5] for argv in docker_calls if argv[1:3]==['container','ls']],
+                             ['name=^/'+name+'$' for name in
+                              ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop','ai-phone-ocr')])
             self.assertEqual([name for name,_ in captures],['assistant','web','channels','media'])
             for _,env in captures:
                 self.assertEqual(env['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('LIMA_HOME',env)

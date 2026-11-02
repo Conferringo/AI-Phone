@@ -5304,8 +5304,8 @@
     },
     {
       "path": "scripts/test_container_ownership.py",
-      "size": 6260,
-      "sha256": "68b8729bc6e93c55cc35e3d2858626cff1179aaf9245c1e9f88c0fb75d688bc4"
+      "size": 6289,
+      "sha256": "90c8462a42d73bda7e30cd5deb6ec66be70599c020e274f375571daed8facc70"
     },
     {
       "path": "scripts/test_database.py",
@@ -5409,8 +5409,8 @@
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",
-      "size": 14093,
-      "sha256": "62cdb88dcc5eac7e203134101b1e9a8f3928af56253f5f32f58a9fb213f9081a"
+      "size": 14546,
+      "sha256": "ab8c4b4c494fe32c931505eee66222cc0ee3c11c962a442c74cf437d84c173ea"
     },
     {
       "path": "scripts/test_linux_kvm_platform.py",
@@ -5589,8 +5589,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9698,
-      "sha256": "8db73e3c8be4612f0a46b9b7f9fd2fa3e77bd59013e57be9015e5c8b9198b2df"
+      "size": 9966,
+      "sha256": "bc9af1a07fa7f522948c70a6a44380a088c2b091cb43d3502e10dd707c9e5ff0"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",

@@ -35,7 +35,7 @@ class CleanupTests(unittest.TestCase):
         self.guest.mkdir(parents=True)
         (self.staged / 'data').symlink_to(self.data, target_is_directory=True)
         self.calls = []
-        names = ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop')
+        names = ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop', 'ai-phone-ocr')
         self.ids = {name: hashlib.sha256(name.encode()).hexdigest() for name in names}
         self.effects = {
             (sys.executable, str(self.staged / 'scripts/service_stop.py')): 'service',
@@ -48,7 +48,7 @@ class CleanupTests(unittest.TestCase):
         self.foreign = None
         self.bind_source = str(self.guest.resolve())
         self.bind_rw = True
-        self.fail = None
+        self.command_failure = None
         self.query_error = False
         self.mutate_after_remove = False
         self.owner_env = {'PATH': str(self.home / 'bin'), 'LIMA_HOME': str(self.home / 'lima')}
@@ -70,7 +70,7 @@ class CleanupTests(unittest.TestCase):
     def command(self, argv, **options):
         argv = list(map(str, argv))
         self.calls.append((argv, options))
-        if self.fail and argv[:len(self.fail)] == self.fail:
+        if self.command_failure and argv[:len(self.command_failure)] == self.command_failure:
             raise subprocess.CalledProcessError(1, argv)
         query = {('docker', 'container', 'ls'): self.query_list,
                  ('docker', 'container', 'inspect'): self.query_inspect}.get(tuple(argv[:3]))
@@ -112,7 +112,7 @@ class CleanupTests(unittest.TestCase):
     def test_all_ownership_and_bind_queries_finish_before_any_stop(self):
         self.cleanup_fixture()
         self.runtime.assert_called_once_with(self.staged)
-        queries = [args for args, _ in self.calls[:7]]
+        queries = [args for args, _ in self.calls[:2 * len(self.ids) + 1]]
         self.assertTrue(all(args[:2] == ['docker', 'container'] for args in queries))
         self.assertEqual(queries[-1][-2:], ['{{json .Mounts}}', self.ids['ai-phone-desktop']])
         expected = [[sys.executable, str(self.staged / 'scripts/service_stop.py')]]
@@ -130,6 +130,13 @@ class CleanupTests(unittest.TestCase):
         self.foreign = 'ai-phone-desktop'
         with self.assertRaises(ValueError):
             self.cleanup_fixture()
+        self.assertEqual(self.mutations(), [])
+
+    def test_foreign_ocr_refuses_cleanup_after_all_other_containers_are_owned(self):
+        self.foreign = 'ai-phone-ocr'
+        with self.assertRaises(ValueError):
+            self.cleanup_fixture()
+        self.assertEqual(self.calls[-1][0][-1], self.ids['ai-phone-ocr'])
         self.assertEqual(self.mutations(), [])
 
     def test_verified_staged_data_symlink_source_is_accepted(self):
@@ -190,14 +197,14 @@ class CleanupTests(unittest.TestCase):
         for prefix in [['docker', 'stop'], ['docker', 'rm'], [sys.executable]]:
             with self.subTest(prefix=prefix):
                 self.calls.clear()
-                self.fail = prefix
+                self.command_failure = prefix
                 with self.assertRaises(subprocess.CalledProcessError):
                     self.cleanup_fixture()
                 self.assertFalse(any(args[0] == 'sudo' for args, _ in self.calls))
 
     def test_both_original_and_cleanup_failure_remain_visible(self):
         original = ValueError('fixture deployment failed')
-        self.fail = ['docker', 'stop']
+        self.command_failure = ['docker', 'stop']
         with self.assertRaises(BaseExceptionGroup) as caught:
             self.cleanup_fixture(failure=original)
         self.assertIs(caught.exception.exceptions[0], original)
@@ -205,7 +212,7 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(any(args[0] == 'sudo' for args, _ in self.calls))
 
     def test_sudo_failure_is_not_swallowed(self):
-        self.fail = ['sudo']
+        self.command_failure = ['sudo']
         with self.assertRaises(subprocess.CalledProcessError):
             self.cleanup_fixture()
 
@@ -220,7 +227,7 @@ class CleanupTests(unittest.TestCase):
         self.cleanup_fixture()
         self.assertFalse(any(args[0] == 'sudo' for args, _ in self.calls))
         removed = [args[-1] for args, _ in self.calls if args[:2] == ['docker', 'rm']]
-        self.assertEqual(removed, [self.ids['ai-phone-postgres-1'], self.ids['ai-phone-redis-1']])
+        self.assertEqual(removed, [identity for name, identity in self.ids.items() if name != 'ai-phone-desktop'])
 
     def test_guest_symlink_is_rejected_before_external_queries(self):
         self.guest.rmdir()
