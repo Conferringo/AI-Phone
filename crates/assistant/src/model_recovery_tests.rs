@@ -63,6 +63,34 @@ async fn explicit_resume_refreshes_saved_key_and_resets_retry_budget() {
     }).await;
 }
 
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; checkpoint preserves evidence without model or device calls"]
+async fn explicit_resume_checkpoint_consumes_the_notice_once() {
+    database_case(|app| async move {
+        let mut run = FixtureRun::start(&app, "continue the same task").await;
+        run.context.push(json!({"type":"function_call_output","call_id":"verified-action","output":"verified result"}));
+        run.pending.push(json!({"call_id":"unknown-action","name":"computer_click","arguments":"{}"}));
+        checkpoint(&app, run.id, &mut run.context, &run.pending, &run.answer, 1, &run.state).await.unwrap();
+        pause(&app, run.id).await;
+        assert_eq!(resume(&app, run.id).await.0, StatusCode::OK);
+        let row = sqlx::query("SELECT context,loop_state FROM runs WHERE id=$1").bind(run.id).fetch_one(&app.db).await.unwrap();
+        let mut context: Vec<Value> = serde_json::from_value(row.get("context")).unwrap();
+        let mut state = serde_json::from_value(row.get("loop_state")).unwrap();
+        assert!(prepare_run_context(&app, run.conversation, run.message, &mut context, &mut state).await.unwrap());
+        assert_eq!(&context[..run.context.len()], run.context.as_slice());
+        assert_eq!(context.len(), run.context.len() + 1);
+        sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run.id).execute(&app.db).await.unwrap();
+        checkpoint(&app, run.id, &mut context, &run.pending, &run.answer, 1, &state).await.unwrap();
+        let saved = sqlx::query("SELECT context,pending_tools,loop_state FROM runs WHERE id=$1").bind(run.id).fetch_one(&app.db).await.unwrap();
+        let mut restored: Vec<Value> = serde_json::from_value(saved.get("context")).unwrap();
+        let mut restored_state = serde_json::from_value(saved.get("loop_state")).unwrap();
+        assert_eq!(restored, context);
+        assert_eq!(saved.get::<Value,_>("pending_tools"), json!(run.pending));
+        assert!(!prepare_run_context(&app, run.conversation, run.message, &mut restored, &mut restored_state).await.unwrap());
+        assert_eq!(restored, context, "an ordinary restart must not append another recovery notice");
+    }).await;
+}
+
 async fn pause(app: &Shared, run: Uuid) {
     sqlx::query("UPDATE runs SET status='paused',error='HTTP 402',loop_state=jsonb_set(loop_state,'{notice_kind}','\"system_failure\"'::jsonb) WHERE id=$1")
         .bind(run).execute(&app.db).await.unwrap();

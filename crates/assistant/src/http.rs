@@ -621,7 +621,7 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
     let conversation =
         crate::registry::refresh_paused_model(&mut tx, &app.settings, id, expected).await?;
     if conversation.is_some() {
-        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',next_wake_at=NULL WHERE id=$1")
+        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',next_wake_at=NULL,loop_state=jsonb_set(loop_state,'{resume_requested}','true'::jsonb) WHERE id=$1")
             .bind(id).execute(&mut *tx).await?;
     }
     tx.commit().await?;
@@ -929,6 +929,26 @@ mod steering_tests {
             sqlx::query("UPDATE attachments SET storage_key='../escape.txt' WHERE id=$1").bind(text_id).execute(&app.db).await.unwrap();
             assert_eq!(submit(&app, &invalid).await.0, StatusCode::BAD_REQUEST);
             sqlx::query("UPDATE attachments SET storage_key=$2 WHERE id=$1").bind(text_id).bind(&text_key).execute(&app.db).await.unwrap();
+
+            sqlx::query("UPDATE runs SET context=$2,pending_tools=$3 WHERE id=$1").bind(run)
+                .bind(json!([{"role":"user","content":"original goal"},{"type":"function_call_output","call_id":"verified-action","output":"verified result"}]))
+                .bind(json!([{"call_id":"unknown-action","name":"computer_click","arguments":"{}"}]))
+                .execute(&app.db).await.unwrap();
+            let context_before: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            let pending_before: Value = sqlx::query_scalar("SELECT pending_tools FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            let messages_before: i64 = sqlx::query_scalar("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET status='paused',loop_state=$2 WHERE id=$1").bind(run).bind(json!({"stalls":3,"recent_results":["verified-action"],"plan":{"goal":"current task"}})).execute(&app.db).await.unwrap();
+            assert_eq!(resume_paused(&app, run).await.unwrap(), Some(Uuid::parse_str(&original_state.conversation_id).unwrap()));
+            let resumed = sqlx::query("SELECT context,pending_tools,loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            assert_eq!(resumed.get::<Value,_>("context"), context_before);
+            assert_eq!(resumed.get::<Value,_>("pending_tools"), pending_before);
+            let loop_state: Value = resumed.get("loop_state");
+            assert_eq!(loop_state["resume_requested"], true);
+            assert_eq!(loop_state["stalls"], 0);
+            assert_eq!(loop_state["recent_results"], json!(["verified-action"]));
+            assert_eq!(loop_state["plan"], json!({"goal":"current task"}));
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap(), messages_before);
+            assert_eq!(resume_paused(&app, run).await.unwrap(), None, "an already queued resume cannot enqueue another entry notice");
 
             sqlx::query("UPDATE runs SET status='paused',next_wake_at=now()+interval '1 hour' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             let resume = wire::ChatSendRequest { text: "按这条指令继续".into(), request_id: Uuid::new_v4().to_string(), ..Default::default() };

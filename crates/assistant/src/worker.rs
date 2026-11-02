@@ -6,6 +6,8 @@ use futures_util::FutureExt;
 use serde_json::{Value, json};
 use sqlx::Row;
 
+mod work_intent;
+
 #[cfg(test)]
 #[path = "execution_tests.rs"]
 mod execution_tests;
@@ -1398,113 +1400,9 @@ fn work_required_tools(context: &[Value]) -> Vec<&'static str> {
     if explanatory_request(&request) {
         return vec![];
     }
-    if request.contains("skill") || request.contains("技能") {
-        if ["创建", "新建", "写一个", "编写", "形成", "做个"]
-            .iter()
-            .any(|w| request.contains(w))
-        {
-            return vec!["skill_create"];
-        }
-        if ["安装", "导入", "下载"].iter().any(|w| request.contains(w)) {
-            return vec!["skill_install"];
-        }
-        if ["编辑", "修改", "更新", "完善"]
-            .iter()
-            .any(|w| request.contains(w))
-        {
-            return vec!["skill_edit"];
-        }
-        if ["启用", "停用", "禁用"].iter().any(|w| request.contains(w)) {
-            return vec!["skill_set_enabled", "skill_create", "skill_install"];
-        }
-    }
-    if request.contains("知识库")
-        && [
-            "保存", "创建", "新建", "整理", "更新", "编辑", "写入", "修改", "形成", "记入", "收录",
-        ]
-        .iter()
-        .any(|w| request.contains(w))
-    {
-        return vec!["knowledge_write"];
-    }
-    // An action verb and its work target must belong to the same positive
-    // clause. "执行手机检查，不浏览网页，最后报告结果" is not a file request.
-    let work_clauses: Vec<_> = request
-        .split(['。', '，', ',', '；', ';', '！', '!', '？', '?', '\n'])
-        .map(str::trim)
-        .filter(|clause| {
-            ![
-                "不要",
-                "无需",
-                "禁止",
-                "不得",
-                "不用",
-                "不必",
-                "不执行",
-                "不运行",
-                "不生成",
-                "不创建",
-                "不写入",
-                "不保存",
-                "不下载",
-                "不处理",
-                "不编写",
-                "不浏览",
-                "不搜索",
-            ]
-            .iter()
-            .any(|negative| clause.contains(negative))
-        })
-        .collect();
-    if work_clauses.iter().any(|clause| {
-        [
-            "文件", "脚本", "报告", "文档", "工作", "python", "node", "bun", "代码", "网页",
-            "资源", "pdf", "docx", "表格",
-        ]
-        .iter()
-        .any(|w| clause.contains(w))
-            && [
-                "执行", "运行", "生成", "创建", "写入", "保存", "下载", "处理", "编写",
-            ]
-            .iter()
-            .any(|w| clause.contains(w))
-    }) {
-        return vec![
-            "workspace_write",
-            "workspace_run",
-            "workspace_fetch",
-            "computer_run",
-            "computer_type",
-            "device_transfer",
-        ];
-    }
-    if work_clauses.iter().any(|clause| {
-        [
-            "找找",
-            "查找",
-            "检索",
-            "搜索",
-            "搜一下",
-            "查一下",
-            "调研",
-            "去官网",
-            "官网看看",
-        ]
-        .iter()
-        .any(|word| clause.contains(word))
-            && [
-                "github", "官网", "网站", "网页", "资料", "skill", "仓库", "项目",
-            ]
-            .iter()
-            .any(|word| clause.contains(word))
-    }) {
-        return vec!["workspace_fetch", "workspace_run"];
-    }
-    if request.contains("记住") {
-        return vec!["memory_save"];
-    }
-    vec![]
+    work_intent::required_tools(&request)
 }
+
 fn action_task(context: &[Value]) -> bool {
     computer_task(context)
         || phone_action_required(context)
@@ -2001,6 +1899,31 @@ async fn persist_disposition(
     tx.commit().await.map_err(|e| e.to_string())?;
     Ok(true)
 }
+fn apply_explicit_resume(
+    context: &mut Vec<Value>,
+    state: &mut crate::agent_loop::LoopState,
+) -> bool {
+    if !std::mem::take(&mut state.resume_requested) {
+        return false;
+    }
+    context.push(json!({"role":"system","content":"[任务恢复] 用户已明确要求继续同一任务。保留原目标、已完成步骤和真实工具证据。先基于当前状态重新评估上次阻断，历史错误不能直接当作当前结论；不得为满足旧错误执行与原目标无关的操作。必要时用只读检查核对，已完成的动作不要重做；结果未知的副作用先观察，不直接重放。"}));
+    true
+}
+
+async fn prepare_run_context(
+    app: &App,
+    conversation: Uuid,
+    message: Uuid,
+    context: &mut Vec<Value>,
+    state: &mut crate::agent_loop::LoopState,
+) -> Result<bool, String> {
+    let initialized = context.is_empty();
+    if initialized {
+        *context = initial_context(app, conversation, message).await?;
+    }
+    Ok(apply_explicit_resume(context, state) || initialized)
+}
+
 async fn execute(
     app: &App,
     id: Uuid,
@@ -2038,8 +1961,7 @@ async fn execute(
     let mut epoch = row.get::<i64, _>("control_epoch") as u64;
     let mut state: crate::agent_loop::LoopState =
         serde_json::from_value(row.get("loop_state")).map_err(|e| e.to_string())?;
-    if context.is_empty() {
-        context = initial_context(app, conversation, message).await?;
+    if prepare_run_context(app, conversation, message, &mut context, &mut state).await? {
         checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
     loop {
@@ -2806,6 +2728,7 @@ async fn recorded_tool(
     }
     let title = match name {
         "computer_observe" => "观察电脑",
+        "computer_find_text" => "定位电脑文字",
         "computer_click" => "点击电脑",
         "computer_type" => "电脑输入",
         "computer_key" => "电脑按键",
@@ -3499,6 +3422,41 @@ async fn tool(
 #[cfg(test)]
 mod verification_tests {
     use super::*;
+
+    #[test]
+    fn explicit_resume_adds_one_system_notice_and_preserves_the_original_goal_and_evidence() {
+        let original = vec![
+            json!({"role":"user","content":"核对已经完成的GUI任务"}),
+            json!({"type":"function_call_output","call_id":"completed-action","output":"previous tool result"}),
+        ];
+        let mut context = original.clone();
+        let mut state: crate::agent_loop::LoopState = serde_json::from_value(json!({
+            "resume_requested":true,"stalls":1,"recent_results":["verified-action"],
+            "plan":{"goal":"same task"},"model_replay_boundary":2
+        }))
+        .unwrap();
+        assert!(apply_explicit_resume(&mut context, &mut state));
+        assert_eq!(&context[..original.len()], original.as_slice());
+        assert_eq!(context.last().unwrap()["role"], "system");
+        assert!(!state.resume_requested);
+        assert_eq!(
+            state.stalls, 1,
+            "retry counters belong to the resume transaction"
+        );
+        assert_eq!(state.recent_results, vec!["verified-action"]);
+        assert_eq!(state.plan, Some(json!({"goal":"same task"})));
+        assert_eq!(state.model_replay_boundary, 2);
+        let mut restored = serde_json::from_value(serde_json::to_value(state).unwrap()).unwrap();
+        assert!(!apply_explicit_resume(&mut context, &mut restored));
+        assert_eq!(context.len(), original.len() + 1);
+        let mut legacy: crate::agent_loop::LoopState =
+            serde_json::from_value(json!({"stalls":3})).unwrap();
+        assert!(!apply_explicit_resume(&mut context, &mut legacy));
+        assert_eq!(
+            legacy.stalls, 3,
+            "a process restart is not a user resume request"
+        );
+    }
     #[test]
     fn computer_desktop_words_do_not_require_unrelated_phone_actions() {
         let mut context = vec![
@@ -3521,6 +3479,15 @@ mod verification_tests {
         assert!(
             finish_rejection(&context, "已打开表格").is_some(),
             "observation alone is not an action"
+        );
+        context.extend(action(
+            "locate",
+            "computer_find_text",
+            json!({"candidates":[{"text":"打开","center":[200,300]}]}),
+        ));
+        assert!(
+            finish_rejection(&context, "已打开表格").is_some(),
+            "locating text is not GUI execution"
         );
         context.extend(action("click", "computer_click", json!({})));
         assert!(finish_rejection(&context, "已打开桌面表格").is_none());
@@ -3801,6 +3768,26 @@ mod verification_tests {
         assert!(phone_mutation_precondition(&context, &fresh[0]).is_ok());
         context.extend(request("改为只看屏幕，不再操作"));
         assert!(phone_mutation_precondition(&context, &fresh[0]).is_err());
+    }
+    #[test]
+    fn excluded_skill_actions_do_not_add_unrequested_completion_requirements() {
+        for text in [
+            "先skill_read computer-use，再computer_observe，点击Search并关闭查找。不安装下载。",
+            "只读取Skill，不安装、不修改、不创建，也不要记住内容。",
+            "读取computer-use技能，然后安装微信。",
+        ] {
+            assert!(work_required_tools(&request(text)).is_empty(), "{text}");
+        }
+        for (text, required) in [
+            ("安装这个Skill，但不要执行安装脚本", "skill_install"),
+            ("不要安装Skill，创建一个Skill", "skill_create"),
+            ("只读取Skill，把使用说明保存到知识库", "knowledge_write"),
+        ] {
+            assert!(
+                work_required_tools(&request(text)).contains(&required),
+                "{text}"
+            );
+        }
     }
     #[test]
     fn phone_checks_and_plain_result_reporting_do_not_require_unrequested_files() {

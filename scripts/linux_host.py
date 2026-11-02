@@ -94,11 +94,11 @@ def start_guest(root, child_env, run, start):
 def start_execution_services(root, specs, run, start):
     from prebuilt_js import launch_spec as js_launch_spec
     if not unit_state(root,'runner') and not specs['runner']['prebuilt']:
-        run(['sh',root/'scripts/build-phone-vision.sh']);run(['cargo','build','-p','ai-phone-runner','--locked'])
+        run(['sh',root/'scripts/build-vision.sh']);run(['cargo','build','-p','ai-phone-runner','--locked'])
     start('runner',specs['runner']['argv'],specs['runner']['environment'])
     media=js_launch_spec(root,'media');start('media',media['argv'],media['environment'])
     if not unit_state(root,'assistant'):
-        run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','--wait','postgres','redis'])
+        run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','--wait','postgres','redis','ocr'])
         if not specs['assistant']['prebuilt']:run(['cargo','build','-p','ai-phone-assistant','--locked'])
         run([sys.executable,root/'scripts/database.py','prepare'])
         run([*specs['assistant']['argv'],'--migrate'])

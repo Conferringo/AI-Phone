@@ -22,13 +22,16 @@ def version_receipt(program, name, version):
     return {'program': name, 'version': version, 'state_created': False}
 
 
-def vision_receipt(program, fixture, *, python=None):
+def vision_receipt(program, fixture, *, qualification=False):
     png = Path(fixture).read_bytes()
     expected = struct.unpack('>II', png[16:24])
     with tempfile.TemporaryDirectory(prefix='aiphone-service-vision-') as folder:
         root = Path(folder)
         environment = isolated_environment(root)
-        if python is not None: environment['AI_PHONE_PYTHON'] = str(python)
+        if qualification and os.environ.get('AI_PHONE_TEST_TESSERACT'):
+            environment['AI_PHONE_TESSERACT'] = os.environ['AI_PHONE_TEST_TESSERACT']
+        if qualification and os.environ.get('AI_PHONE_TEST_TESSDATA'):
+            environment['TESSDATA_PREFIX'] = os.environ['AI_PHONE_TEST_TESSDATA']
         result = subprocess.run([Path(program).resolve()], input=png, cwd=root,
                                 env=environment, capture_output=True, timeout=10)
         if result.returncode:
@@ -36,26 +39,20 @@ def vision_receipt(program, fixture, *, python=None):
         value = json.loads(result.stdout)
         if (value['width'], value['height']) != expected or len(value['grid']) != 2048:
             raise ValueError('Bundled OCR returned an invalid image/grid size')
-        text = ''.join(row['text'] for row in value['regions']).replace(' ', '')
-        if text != '7319':
+        labels = {''.join(row['text'].split()) for row in value['regions'] if row.get('confidence',0)>=.8}
+        text = '7319'
+        if text not in labels:
             raise ValueError('Bundled OCR did not recognize the generated digits')
     return {'fixture_text': text, 'width': expected[0], 'height': expected[1], 'grid': 2048}
 
 
-def verify(root, *, tool_runtime=None):
+def verify(root):
     from prebuilt_services import load_manifest, binary_path, FIXTURE
     root = Path(root).resolve()
     value = load_manifest(root)
     checks = {role: version_receipt(root / binary_path(role), 'ai-phone-' + role, value['versions'][role])
               for role in ('assistant', 'runner')}
-    python = None
-    if value.get('vision') == 'linux-tesseract-bundled':
-        from installer_tools import verify as verify_tools
-        if tool_runtime is None: raise ValueError('Bundled OCR verification requires portable installer tools')
-        tools = verify_tools(tool_runtime); info = tools['tools']['python']
-        if not info['version'].startswith('3.13.'): raise ValueError('Bundled OCR requires Python 3.13')
-        python = Path(tool_runtime) / info['executable']
-    checks['vision'] = vision_receipt(root / binary_path('vision'), root / FIXTURE, python=python)
+    checks['vision'] = vision_receipt(root / binary_path('vision'), root / FIXTURE, qualification=value.get('vision')!='linux-tesseract-bundled')
     return checks
 
 

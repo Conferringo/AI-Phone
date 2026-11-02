@@ -3,7 +3,6 @@ use std::{
     collections::{HashSet, VecDeque},
     time::Instant,
 };
-use tokio::io::AsyncWriteExt;
 
 const MAX_TARGETS: usize = 160;
 const MAX_AGE: Duration = Duration::from_secs(60);
@@ -198,92 +197,27 @@ fn parse_native(xml: &str, app: &str, width: u32, height: u32) -> Vec<Target> {
     targets
 }
 
-#[derive(Deserialize)]
-struct OcrBox {
-    left: u32,
-    top: u32,
-    right: u32,
-    bottom: u32,
-}
-#[derive(Deserialize)]
-struct OcrRegion {
-    text: String,
-    confidence: f32,
-    bounds: OcrBox,
-}
-#[derive(Deserialize)]
-struct OcrCapture {
-    width: u32,
-    height: u32,
-    regions: Vec<OcrRegion>,
-    grid: Vec<u8>,
-}
 async fn ocr(
     runner: &Runner,
     png: &[u8],
     width: u32,
     height: u32,
 ) -> Result<(Vec<Target>, Vec<u8>), String> {
-    let mut child = Command::new(&runner.vision)
-        .kill_on_drop(true)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|error| {
-            format!(
-                "本机OCR启动失败（{:?}: {error}），原生控件仍可用",
-                error.kind()
-            )
-        })?;
-    let mut input = child.stdin.take().ok_or("OCR input unavailable")?;
-    let mut output = child
-        .stdout
-        .take()
-        .ok_or("OCR output unavailable")?
-        .take(262145);
-    let mut bytes = vec![];
-    let status = tokio::time::timeout(Duration::from_secs(5), async {
-        tokio::try_join!(
-            async move {
-                input.write_all(png).await?;
-                input.shutdown().await?;
-                drop(input);
-                Ok::<(), std::io::Error>(())
-            },
-            output.read_to_end(&mut bytes),
-            child.wait()
-        )
-    })
-    .await
-    .map_err(|_| "本机OCR超时".to_string())?
-    .map_err(|_| "本机OCR读取失败".to_string())?;
-    if !status.2.success() || bytes.len() > 262144 {
-        return Err("本机OCR失败".into());
-    }
-    let capture: OcrCapture =
-        serde_json::from_slice(&bytes).map_err(|_| "OCR数据无效".to_string())?;
-    if capture.width != width || capture.height != height || capture.grid.len() != 2048 {
-        return Err("OCR画面尺寸不匹配".into());
-    }
+    let capture = ai_phone_vision::recognize(&runner.vision, png, width, height)
+        .await
+        .map_err(|error| format!("{error}，原生控件仍可用"))?;
     let mut targets = vec![];
     for r in capture.regions.into_iter().take(MAX_TARGETS) {
+        if !r.usable(width, height) {
+            continue;
+        }
         let b = wire::PhoneBounds {
             left: r.bounds.left,
             top: r.bounds.top,
             right: r.bounds.right,
             bottom: r.bounds.bottom,
         };
-        if !r.confidence.is_finite()
-            || r.confidence < 0.80
-            || r.text.trim().is_empty()
-            || b.right > width
-            || b.bottom > height
-            || b.right <= b.left + 3
-            || b.bottom <= b.top + 3
-            || b.top < height / 25
-            || b.bottom > height - height / 25
-        {
+        if b.top < height / 25 || b.bottom > height - height / 25 {
             continue;
         }
         let key = format!("{}|{}", r.text, rect_key(&b));

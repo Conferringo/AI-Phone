@@ -13,9 +13,13 @@
 | 渠道 | Bun、官方SDK/Bot API及本地WhatsApp适配 | Agent级凭据、私聊配对、入站排队、送达状态 |
 | 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、模型版本与审计；Redis预留，尚未分发任务 |
 
+文本和Markdown默认使用Mousepad打开，桌面包含文件类型检测工具；[用户的MIME关联设置](https://specifications.freedesktop.org/mime-apps/latest/file.html)优先于镜像默认值。
+
 浏览器业务请求使用 `application/x-protobuf`，契约在 `packages/protocol/proto`；媒体字节和健康检查例外。流式业务事件使用protobuf WebSocket帧，不要与模型SSE混淆。
 
 Android无桌面入口的辅助服务提供按需、只读的原生控件层级请求，由系统`DUMP`权限保护。Rust优先接收绑定当前请求ID的完整回执，再使用UIAutomator及OCR后备；层级正文不包含密码文字。观察与动作校验分别负责数据读取和控制权，快速快照不替代动作后的结果核对。
+
+手机与电脑共用有界Rust OCR管线，负责PNG解码、画面摘要及原生Tesseract TSV解析。Tesseract在无网络、只读的独立服务中运行并复用workspace镜像，或使用已验证的Linux离线依赖；Agent任务工具与识别服务分离。`computer_find_text`按最新授权截图定位标签，返回全屏边界、置信度及来源observation_id，不执行输入。同名标签分别保留，文字区域不代表可点击控件；仅在需要时识别，沿用5秒时限。可指定像素区域放大小字，结果自动映射回原截图坐标。
 
 ## 一次真实操作
 

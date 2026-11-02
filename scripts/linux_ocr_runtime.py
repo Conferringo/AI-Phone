@@ -14,13 +14,10 @@ REQUIRED = frozenset({'bin/tesseract', LOADER, 'lib/libtesseract.so.5', 'tessdat
     'python/PIL/_imaging.cpython-313-x86_64-linux-gnu.so', 'source-records.json', 'licenses/tesseract-ocr.copyright'})
 SOURCE = ('config/linux-ocr.json', 'scripts/linux_ocr_runtime.py', 'scripts/linux_dependencies.py',
     'scripts/linux_dependency_factory.py',
-    'scripts/phone-vision/tesseract.py', 'scripts/linux-ocr/run.py', 'scripts/linux-ocr/tesseract.sh',
-    'scripts/linux-ocr/vision.sh', 'scripts/linux-ocr/Dockerfile', 'scripts/linux-ocr/collect.py')
+    'scripts/linux-ocr/Dockerfile', 'scripts/linux-ocr/collect.py')
 PROFILE = DependencyProfile('config/linux-ocr.json', SOURCE,
     frozenset({'bin', 'lib', 'tessdata', 'python', 'licenses', 'source-records.json'}), REQUIRED,
-    (('run.py', 'scripts/linux-ocr/run.py', 0o644),
-     ('launchers/tesseract', 'scripts/linux-ocr/tesseract.sh', 0o755),
-     ('vision.py', 'scripts/phone-vision/tesseract.py', 0o644)))
+    ())
 archive_member = partial(dependencies.archive_member, profile=PROFILE)
 bundled_records = partial(dependencies.bundled_records, prefix=PREFIX)
 build = partial(dependencies.build, profile=PROFILE)

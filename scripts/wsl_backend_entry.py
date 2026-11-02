@@ -54,7 +54,7 @@ def verify():
     with tempfile.TemporaryDirectory(prefix='aiphone-wsl-verify-') as temporary:
         root=staged(Path(temporary)/'installation')
         js(root,root)
-        checks={'native':native(root,tool_runtime=TOOLS),'web':web(root),'js_integrity':True}
+        checks={'native':native(root),'web':web(root),'js_integrity':True}
         images=stage(BUNDLE/'images.payload').manifest
         if images['architecture']!='amd64':raise ValueError('WSL images are not amd64')
         checks['image_roles']=sorted(images['images'])
@@ -104,7 +104,7 @@ def start_backend(root,run,observer=None):
     private_token(root,'assistant');private_token(root,'phone-runner');private_token(root,'channels')
     compose=['docker','compose','-f','compose.yaml','-f','compose.dev.yaml']
     observe(observer,'database_start')
-    run([*compose,'up','-d','--wait','--no-build','--pull','never','postgres','redis'])
+    run([*compose,'up','-d','--wait','--no-build','--pull','never','postgres','redis','ocr'])
     observe(observer,'database_prepare')
     assistant=launch_spec(root,'assistant')
     if not unit_state(root,'assistant'):

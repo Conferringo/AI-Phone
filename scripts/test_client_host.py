@@ -130,6 +130,18 @@ class NativeHostTests(unittest.TestCase):
         verify_container_ownership(root,lambda argv,**_:result('/owned',argv))
         with self.assertRaisesRegex(ValueError, 'Another installation'): verify_container_ownership(root,lambda argv,**_:result('/somebody-else',argv))
 
+    def test_foreign_ocr_is_refused_after_other_services_are_absent(self):
+        calls=[]
+        def query(argv,**kwargs):
+            calls.append(argv)
+            if argv[:3]==['docker','container','ls']:
+                present='name=^/ai-phone-ocr$' in argv
+                return subprocess.CompletedProcess([],0,stdout='a'*64 if present else '')
+            return subprocess.CompletedProcess([],0,stdout=json.dumps({'id':'a'*64,'running':True,'labels':{'com.docker.compose.project':'ai-phone','com.docker.compose.project.working_dir':'/another-installation'}}))
+        with self.assertRaisesRegex(ValueError,'Another installation'):
+            verify_container_ownership(Path('/owned'),query)
+        self.assertTrue(any('name=^/ai-phone-ocr$' in argv for argv in calls))
+
     def test_progress_observer_preserves_checkpoint_order_and_failure(self):
         with tempfile.TemporaryDirectory() as temp:
             events=[]

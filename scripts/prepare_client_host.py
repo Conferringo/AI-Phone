@@ -95,7 +95,7 @@ def verify_prepared_services(root=ROOT, *, pg_container=None, pg_port=None):
     from check_native_services import verify, database_receipt
     with tempfile.TemporaryDirectory(prefix='aiphone-bundled-services-') as folder:
         staged = stage_source(root / 'apps/client/src-tauri/gen/host/source.payload', Path(folder) / 'installation')
-        result = verify(staged, tool_runtime=root / 'apps/client/src-tauri/gen/host/tools')
+        result = verify(staged)
         if pg_container is not None:
             result['database'] = database_receipt(staged, pg_container, pg_port)
         return result

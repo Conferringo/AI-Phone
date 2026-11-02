@@ -12,7 +12,7 @@ from unittest.mock import patch
 from client_host import verify_container_ownership, write_container_wrapper
 
 
-NAMES = ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop')
+NAMES = ('ai-phone-postgres-1', 'ai-phone-redis-1', 'ai-phone-desktop', 'ai-phone-ocr')
 IDENTIFIER = 'a' * 64
 
 
@@ -88,7 +88,7 @@ class ContainerOwnershipTests(unittest.TestCase):
                 self.assertEqual(verify_container_ownership(root, query), {
                     'ai-phone-desktop': {'id': IDENTIFIER, 'running': running},
                 })
-                self.assertEqual(len(calls), 4)
+                self.assertEqual(len(calls), len(NAMES) + 1)
 
     def test_ambiguous_or_non_full_list_ids_are_refused_without_inspection(self):
         for output in ('a' * 12, 'A' * 64, 'not-an-id', IDENTIFIER + '\n' + IDENTIFIER,

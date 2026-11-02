@@ -38,6 +38,12 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+      - name: Native OCR qualification tools
+        run: |
+          brew install tesseract
+          python3 scripts/prepare_ocr_models.py --destination "$RUNNER_TEMP/aiphone-ocr-models"
+          echo "AI_PHONE_TEST_TESSERACT=$(command -v tesseract)" >> "$GITHUB_ENV"
+          echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
       - name: Native tests and lint
         run: |
           PYTHONPATH=scripts python3 -m unittest test_native_services
@@ -153,7 +159,10 @@ jobs:
           # Hosted images cache an older formula catalog. Refresh it explicitly;
           # the factory still requires the exact QEMU version in its policy.
           brew update
-          brew install qemu
+          brew install qemu tesseract
+          python3 scripts/prepare_ocr_models.py --destination "$RUNNER_TEMP/aiphone-ocr-models"
+          echo "AI_PHONE_TEST_TESSERACT=$(command -v tesseract)" >> "$GITHUB_ENV"
+          echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
           export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
           test -f "$ANDROID_HOME/platforms/android-35/android.jar"
@@ -226,7 +235,9 @@ jobs:
         run: python -m unittest test_client_payload test_runtime_integrity test_prebuilt_web test_native_services test_js_dependencies test_js_vendor test_prebuilt_js test_private_files test_windows_private test_windows_acl test_database.DatabaseUnitTests
       - name: Linux native libraries
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+        run: |
+          sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          echo "AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract" >> "$GITHUB_ENV"
       - name: Windows inspection tools
         if: runner.os == 'Windows'
         shell: pwsh

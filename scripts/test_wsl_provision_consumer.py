@@ -75,7 +75,7 @@ class ProvisionOrderingTests(unittest.TestCase):
             calls,names=self.run_backend(root,lambda *_,**__:response())
             self.assertFalse((root/'data/device-network/desktop').exists())
             self.assertFalse(any('compose.desktop.yaml' in call or call[:2]==['docker','start'] for call in calls))
-            self.assertTrue(any(call[-2:]==['postgres','redis'] and '--no-build' in call and '--pull' in call and 'never' in call for call in calls))
+            self.assertTrue(any(call[-3:]==['postgres','redis','ocr'] and '--no-build' in call and '--pull' in call and 'never' in call for call in calls))
             self.assertEqual(names,['assistant','web','channels','media'])
 
     def test_existing_desktop_only_resumes_exact_verified_id_without_recreation(self):

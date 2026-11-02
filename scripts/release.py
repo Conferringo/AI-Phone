@@ -284,10 +284,10 @@ def install_guest_images(state, root, env):
     proxy = env['AI_PHONE_CONTAINER_PROXY']
     state.phase('workspace-image', fingerprint(root, ['infra/workspace']),
                 lambda: run(['docker', 'build', '--build-arg', 'HTTP_PROXY='+proxy, '--build-arg', 'HTTPS_PROXY='+proxy,
-                             '-t', 'ai-phone-workspace:20261026', '-f', 'infra/workspace/Dockerfile', 'infra/workspace'], env=env, root=root),
-                lambda: image_id('ai-phone-workspace:20261026'))
+                             '-t', 'ai-phone-workspace:20261103', '-f', 'infra/workspace/Dockerfile', 'infra/workspace'], env=env, root=root),
+                lambda: image_id('ai-phone-workspace:20261103'))
     state.phase('desktop-image', fingerprint(root, ['infra/desktop', 'crates/guest-runtime', 'Cargo.toml', 'Cargo.lock', '.dockerignore', 'compose.desktop.yaml', 'config/clash-apps.json'],
-                                           {'workspace_image': image_id('ai-phone-workspace:20261026')}),
+                                           {'workspace_image': image_id('ai-phone-workspace:20261103')}),
                 lambda: run(['docker', 'compose', '-f', 'compose.desktop.yaml', 'build', 'desktop'], env=env, root=root),
                 lambda: image_id('ai-phone-desktop:20261028'))
 

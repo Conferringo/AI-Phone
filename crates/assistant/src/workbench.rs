@@ -336,7 +336,9 @@ async fn skill_edit(
 }
 pub fn workspace_image() -> String {
     std::env::var("AI_PHONE_WORKSPACE_IMAGE")
-        .unwrap_or_else(|_| "ai-phone-workspace:20261026".into())
+        .ok()
+        .filter(|image| !image.is_empty())
+        .unwrap_or_else(|| "ai-phone-workspace:20261103".into())
 }
 
 pub async fn initialize(db: &PgPool, root: &std::path::Path) -> Result<(), String> {
