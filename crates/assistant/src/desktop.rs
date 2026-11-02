@@ -230,6 +230,9 @@ async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Resu
     available(app, device).await?;
     if let Some(r) = run {
         authorized(app, r, device).await?;
+        if take {
+            crate::run_queue::reserve(&app.db, r, device).await?;
+        }
     }
     if take && run.is_none() {
         crate::desktop_explore::pause(app, device, "你已接管电脑，自主探索已暂停").await?;
@@ -370,6 +373,7 @@ pub async fn action(
     available(app, &r.device_id).await?;
     if let Some(id) = run {
         authorized(app, id, &r.device_id).await?;
+        crate::run_queue::reserve(&app.db, id, &r.device_id).await?;
     }
     let mut input = action_value(&r)?;
     let id = uuid(&r.action_id)?;

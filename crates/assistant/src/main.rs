@@ -42,6 +42,7 @@ mod phone_system;
 mod proactive;
 mod registry;
 mod run_notice;
+mod run_queue;
 mod settings;
 mod setup;
 mod tool_catalog;
@@ -58,7 +59,7 @@ struct App {
     settings: settings::SettingsStore,
     local: reqwest::Client,
     remote: reqwest::Client,
-    active: Mutex<Option<(Uuid, CancellationToken)>>,
+    active: Mutex<std::collections::HashMap<Uuid, CancellationToken>>,
     login_attempts: Mutex<Vec<std::time::Instant>>,
 }
 type Shared = Arc<App>;
@@ -232,7 +233,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .connect_timeout(Duration::from_secs(15))
             .timeout(Duration::from_secs(180))
             .build()?,
-        active: Mutex::new(None),
+        active: Mutex::new(Default::default()),
         login_attempts: Mutex::new(Vec::new()),
     });
     workbench::initialize(&app.db, &app.root).await?;

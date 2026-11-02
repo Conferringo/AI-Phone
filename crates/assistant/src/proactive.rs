@@ -184,16 +184,24 @@ pub async fn route(
     }
 }
 pub async fn cancel_stopped(app: &App) {
-    if let Some((id, token)) = &*app.active.lock().await
-        && sqlx::query_scalar::<_, bool>("SELECT status='canceled' FROM runs WHERE id=$1")
-            .bind(id)
-            .fetch_one(&app.db)
+    let active = app.active.lock().await.clone();
+    if active.is_empty() {
+        return;
+    }
+    let ids: Vec<Uuid> = active.keys().copied().collect();
+    let stopped: Vec<Uuid> =
+        sqlx::query_scalar("SELECT id FROM runs WHERE id=ANY($1) AND status='canceled'")
+            .bind(ids)
+            .fetch_all(&app.db)
             .await
-            .unwrap_or(false)
-    {
-        token.cancel();
+            .unwrap_or_default();
+    for id in stopped {
+        if let Some(token) = active.get(&id) {
+            token.cancel();
+        }
     }
 }
+
 pub async fn stop_exploration(app: &App, reason: &str) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
     sqlx::query("SELECT id FROM conversations WHERE owner_id='local-user' AND device_id='phone-local-01' FOR UPDATE")
@@ -828,7 +836,7 @@ mod tests {
             settings: settings::SettingsStore::test_configured(&root),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
         });
         let outcome=AssertUnwindSafe(async {
@@ -844,7 +852,7 @@ mod tests {
             schedule(&app).await.unwrap();assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs").fetch_one(&app.db).await.unwrap(),1);
             sqlx::query("UPDATE proactive_state SET next_cycle_at=now()-interval '1 second'").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
             let second:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();assert_ne!(first,second,"second autonomous cycle needs no user message");
-            let cancel=CancellationToken::new();*app.active.lock().await=Some((second,cancel.clone()));
+            let cancel=CancellationToken::new();app.active.lock().await.insert(second,cancel.clone());
             let mut headers=HeaderMap::new();headers.insert("authorization","Bearer test".parse().unwrap());headers.insert("content-type",MEDIA.parse().unwrap());
             let input=wire::ChatSendRequest{text:"现在处理我的任务".into(),request_id:Uuid::new_v4().to_string(),..Default::default()};
             let response=crate::http::send(State(app.clone()),headers.clone(),Ok(Bytes::from(input.encode_to_vec()))).await;

@@ -4,6 +4,12 @@ use sha2::{Digest, Sha256};
 
 pub const SLICE_TURNS: i32 = 8;
 pub const ARCHIVED_OBSERVATION: &str = "AI_PHONE_VALIDATED_OBSERVATION_ARCHIVED:";
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ToolOutcome {
+    Completed,
+    Failed,
+    Blocked,
+}
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ExplorationWindow {
     first_step: i32,
@@ -46,8 +52,17 @@ impl LoopState {
         name: &str,
         arguments: &str,
         result: &Value,
-        failed: bool,
+        outcome: ToolOutcome,
     ) -> bool {
+        if outcome == ToolOutcome::Blocked {
+            return false;
+        }
+        if outcome == ToolOutcome::Failed {
+            return self.no_progress(&format!(
+                "工具{name}失败：{}",
+                result.to_string().chars().take(500).collect::<String>()
+            ));
+        }
         if name == "task_wait" {
             return false;
         }
@@ -60,12 +75,6 @@ impl LoopState {
             } else {
                 false
             };
-        }
-        if failed {
-            return self.no_progress(&format!(
-                "工具{name}失败：{}",
-                result.to_string().chars().take(500).collect::<String>()
-            ));
         }
         let signature = format!(
             "{:x}",

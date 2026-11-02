@@ -1,3 +1,4 @@
+use crate::agent_loop::ToolOutcome;
 use crate::tool_catalog::tools;
 use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -5,22 +6,17 @@ use futures_util::FutureExt;
 use serde_json::{Value, json};
 use sqlx::Row;
 
+#[cfg(test)]
+#[path = "execution_tests.rs"]
+mod execution_tests;
+
 pub(crate) async fn recover_interrupted_runs(db: &PgPool) -> Result<(), sqlx::Error> {
-    // Preserve pending actions, model retry counters and the original wait deadline.
-    sqlx::query("UPDATE runs SET status='queued' WHERE status='running'")
-        .execute(db)
-        .await?;
-    Ok(())
+    crate::run_queue::recover(db).await
 }
 
 pub(crate) async fn claim_due_run(app: &App) -> Result<Option<(Uuid, Uuid)>, sqlx::Error> {
-    let mut tx = app.db.begin().await?;
-    let row:Option<(Uuid,Uuid)>=sqlx::query_as("SELECT id,assistant_message_id FROM runs WHERE status='queued' AND (next_wake_at IS NULL OR next_wake_at<=now()) ORDER BY CASE WHEN origin='user' AND (step=0 OR jsonb_array_length(steering)>0) THEN 0 WHEN origin='notification' THEN 1 WHEN origin='user' THEN 2 WHEN origin='device-handoff' THEN 3 ELSE 4 END,COALESCE(heartbeat_at,created_at),id FOR UPDATE SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
-    if let Some((id, _)) = row {
-        sqlx::query("UPDATE runs SET status='running',heartbeat_at=now(),loop_state=CASE WHEN next_wake_at IS NOT NULL THEN jsonb_set(loop_state,'{wait_completed_at_ms}',to_jsonb(floor(extract(epoch FROM next_wake_at)*1000)::bigint)) ELSE loop_state END,next_wake_at=NULL,error='' WHERE id=$1").bind(id).execute(&mut *tx).await?;
-    }
-    tx.commit().await?;
-    Ok(row)
+    let active: Vec<Uuid> = app.active.lock().await.keys().copied().collect();
+    crate::run_queue::claim(&app.db, &active).await
 }
 
 async fn finish_attempt(
@@ -77,40 +73,58 @@ async fn finish_attempt(
             .bind(id).execute(&mut *tx).await?;
     }
     sqlx::query("UPDATE harness_events SET status=$2,finished_at=CASE WHEN $2 IN ('completed','failed','canceled') THEN now() ELSE NULL END WHERE id=$1").bind(id).bind(trace).execute(&mut *tx).await?;
+    sqlx::query("DELETE FROM device_execution_leases WHERE run_id=$1")
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
     tx.commit().await
 }
 
 pub async fn work(app: Shared) {
+    let mut attempts = tokio::task::JoinSet::new();
     loop {
         if let Ok(Some((id, message))) = claim_due_run(&app).await {
             let cancel = CancellationToken::new();
-            *app.active.lock().await = Some((id, cancel.clone()));
-            let result=async {
-                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title) VALUES($1,$1,$2,'task','任务') ON CONFLICT(id) DO UPDATE SET status='running',finished_at=NULL").bind(id).bind(message).execute(&app.db).await.map_err(|_|"任务记录暂时无法保存，未开始后续操作".to_string())?;
-                std::panic::AssertUnwindSafe(execute(&app,id,&cancel)).catch_unwind().await.unwrap_or_else(|_|Err("paused:运行器异常，当前结果待核对，未自动重放".into()))
-            }.await;
-            // Do not abandon a claimed run when PostgreSQL is restarting. Only retry the
-            // idempotent result transaction; never execute the task/tools again here.
-            let mut reported = false;
-            while let Err(error) =
-                finish_attempt(&app, id, message, &result, cancel.is_cancelled()).await
-            {
-                if matches!(error, sqlx::Error::RowNotFound) {
-                    break;
+            app.active.lock().await.insert(id, cancel.clone());
+            attempts.spawn(attempt(app.clone(), id, message, cancel));
+        }
+        tokio::select! {
+            Some(result) = attempts.join_next(), if !attempts.is_empty() => {
+                match result {
+                    Ok(id) => { app.active.lock().await.remove(&id); }
+                    Err(_) => eprintln!("Task finalization stopped unexpectedly; device ownership retained until recovery"),
                 }
-                if !reported {
-                    eprintln!(
-                        "Task result persistence unavailable; holding the checkpoint until database recovery"
-                    );
-                    reported = true;
-                }
-                tokio::time::sleep(Duration::from_secs(1)).await;
             }
-            *app.active.lock().await = None;
-        } else {
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            _ = tokio::time::sleep(Duration::from_millis(250)) => {}
         }
     }
+}
+
+async fn attempt(app: Shared, id: Uuid, message: Uuid, cancel: CancellationToken) -> Uuid {
+    let result = async {
+        sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title) VALUES($1,$1,$2,'task','任务') ON CONFLICT(id) DO UPDATE SET status='running',finished_at=NULL")
+            .bind(id).bind(message).execute(&app.db).await
+            .map_err(|_| "任务记录暂时无法保存，未开始后续操作".to_string())?;
+        std::panic::AssertUnwindSafe(execute(&app, id, &cancel))
+            .catch_unwind().await
+            .unwrap_or_else(|_| Err("paused:运行器异常，当前结果待核对，未自动重放".into()))
+    }.await;
+    // Retain the device leases across a database outage. Retry only this
+    // idempotent finalization, never the model request or guest actions.
+    let mut reported = false;
+    while let Err(error) = finish_attempt(&app, id, message, &result, cancel.is_cancelled()).await {
+        if matches!(error, sqlx::Error::RowNotFound) {
+            break;
+        }
+        if !reported {
+            eprintln!(
+                "Task result persistence unavailable; holding the checkpoint until database recovery"
+            );
+            reported = true;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    id
 }
 
 async fn initial_context(
@@ -1059,6 +1073,19 @@ fn queue_post_action_observation(
     pending.insert(0, observation);
     true
 }
+fn observation_retry_needed(call: &Value, value: &Value) -> bool {
+    if tool_outcome(Some(value)) == ToolOutcome::Blocked {
+        return false;
+    }
+    let name = call["name"].as_str().unwrap_or("");
+    let recoverable = value["success"] == false && value["recoverable"] == true;
+    (name == "phone_observe" && recoverable)
+        || (phone_mutation(call)
+            && ((value["not_executed"] == true && value["next_tool"] == "phone_observe")
+                    // The runner returns this prefix only before dispatching input.
+                    || (recoverable
+                        && value["error"].as_str().is_some_and(|error| error.starts_with("stale_target:")))))
+}
 // Recovery only acquires new evidence; a rejected action is never replayed.
 fn recover_observation(
     call: &Value,
@@ -1068,16 +1095,7 @@ fn recover_observation(
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<bool> {
     let value = tool_value(result)?;
-    let name = call["name"].as_str().unwrap_or("");
-    let retry = (name == "phone_observe"
-        && value["success"] == false
-        && value["recoverable"] == true)
-        || (phone_mutation(call)
-            && ((value["not_executed"] == true && value["next_tool"] == "phone_observe")
-                    // The runner returns this prefix only before dispatching input.
-                    || (value["success"] == false && value["recoverable"] == true
-                        && value["error"].as_str().is_some_and(|error| error.starts_with("stale_target:")))));
-    if !retry {
+    if !observation_retry_needed(call, &value) {
         return None;
     }
     if state.observation_recoveries >= 4 {
@@ -1339,8 +1357,23 @@ fn tool_value(output: &Value) -> Option<Value> {
         .filter_map(|part| part["text"].as_str())
         .find_map(|text| serde_json::from_str(text).ok())
 }
+fn tool_outcome(value: Option<&Value>) -> ToolOutcome {
+    match value {
+        Some(value)
+            if value["success"] == false
+                && value["not_executed"] == true
+                && value["code"] == "device_busy" =>
+        {
+            ToolOutcome::Blocked
+        }
+        Some(value) if value["success"] == false || value["error"].is_string() => {
+            ToolOutcome::Failed
+        }
+        _ => ToolOutcome::Completed,
+    }
+}
 fn failed_output(output: &Value) -> bool {
-    tool_value(output).is_some_and(|value| value["success"] == false || value["error"].is_string())
+    tool_outcome(tool_value(output).as_ref()) != ToolOutcome::Completed
 }
 fn successful_call(call: &Value, context: &[Value]) -> bool {
     call["type"] == "function_call"
@@ -1660,6 +1693,14 @@ fn fatal_tool_error(error: &str) -> bool {
         || error.contains("结果未知")
         || error.contains("勿直接重放")
         || error.contains("未知副作用")
+}
+fn recoverable_tool_failure(error: String) -> Value {
+    let detail = if let Some(message) = error.strip_prefix("device_busy:") {
+        json!({"success":false,"error":message,"code":"device_busy","recoverable":true,"not_executed":true,"next_tool":"task_wait"})
+    } else {
+        json!({"success":false,"error":error,"recoverable":true})
+    };
+    json!([{"type":"input_text","text":detail.to_string()}])
 }
 fn now_ms() -> u64 {
     std::time::SystemTime::now()
@@ -2133,13 +2174,14 @@ async fn execute(
         if let Some(call) = pending.first().cloned() {
             let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
             let name = call["name"].as_str().unwrap_or("");
-            let failed = failed_output(&result);
             let value = tool_value(&result);
+            let outcome = tool_outcome(value.as_ref());
+            let failed = outcome != ToolOutcome::Completed;
             let mut stalled = state.tool_result(
                 name,
                 call["arguments"].as_str().unwrap_or("{}"),
                 &result,
-                failed,
+                outcome,
             );
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
@@ -2833,9 +2875,7 @@ async fn recorded_tool(
     }
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content) VALUES($1,$2,$3,'tool',$4,$5) ON CONFLICT(id) DO UPDATE SET status='running'").bind(id).bind(run).bind(message).bind(title).bind(format!("输入\n{input}")).execute(&app.db).await.map_err(|e|e.to_string())?;
     let result = match tool(app, run, message, call, epoch, cancel).await {
-        Err(error) if !fatal_tool_error(&error) => Ok(
-            json!([{"type":"input_text","text":json!({"success":false,"error":error,"recoverable":true}).to_string()}]),
-        ),
+        Err(error) if !fatal_tool_error(&error) => Ok(recoverable_tool_failure(error)),
         other => other,
     };
     let (status, output) = match &result {
@@ -3245,6 +3285,7 @@ async fn tool(
             json!([{"type":"input_text","text":format!("真实手机屏幕 {}×{}（仅观察，未接管）",observation.width,observation.height)},{"type":"input_image","image_url":format!("data:image/png;base64,{}",STANDARD.encode(observation.png))}]),
         );
     }
+    crate::run_queue::reserve(&app.db, run, &phone_id).await?;
     if *epoch == 0 {
         let mut ready = false;
         for _ in 0..30 {
@@ -4196,6 +4237,102 @@ mod loop_persistence_tests {
         );
         assert_eq!(state.observation_recoveries, 1);
     }
+    #[test]
+    fn device_contention_reports_a_non_executed_wait() {
+        let output = recoverable_tool_failure("device_busy:设备正由其他任务使用".into());
+        let value = tool_value(&output).unwrap();
+        assert!(failed_output(&output));
+        assert_eq!(value["code"], "device_busy");
+        assert_eq!(value["not_executed"], true);
+        assert_eq!(value["next_tool"], "task_wait");
+        assert!(!value["error"].as_str().unwrap().contains("device_busy:"));
+    }
+
+    #[test]
+    fn device_contention_does_not_schedule_screenshot_recovery() {
+        let call = json!({"name":"phone_observe"});
+        let output = recoverable_tool_failure("device_busy:设备正由其他任务使用".into());
+        let mut context = vec![];
+        let mut pending = vec![];
+        let mut state = crate::agent_loop::LoopState::default();
+        assert_eq!(
+            recover_observation(&call, &output, &mut context, &mut pending, &mut state),
+            None
+        );
+        assert!(pending.is_empty());
+        assert_eq!(state.observation_recoveries, 0);
+    }
+
+    #[test]
+    fn repeated_contention_and_waits_preserve_the_stall_budget() {
+        let output = recoverable_tool_failure("device_busy:设备正在执行其他任务".into());
+        let mut state = crate::agent_loop::LoopState {
+            stalls: 1,
+            last_issue: "之前的真实错误".into(),
+            ..Default::default()
+        };
+        for _ in 0..8 {
+            assert!(!state.tool_result(
+                "phone_observe",
+                "{}",
+                &output,
+                tool_outcome(tool_value(&output).as_ref())
+            ));
+            assert_eq!(
+                state.stalls, 1,
+                "known non-execution must not consume the failure budget"
+            );
+            assert!(!state.tool_result(
+                "task_wait",
+                "{}",
+                &json!({"wake_at_ms":1}),
+                ToolOutcome::Completed
+            ));
+        }
+        assert_eq!(state.last_issue, "之前的真实错误");
+        assert!(
+            state.recent_results.is_empty(),
+            "waiting is not execution progress"
+        );
+        assert!(!state.tool_result(
+            "phone_observe",
+            "{}",
+            &json!({"success":true,"frame":"new"}),
+            ToolOutcome::Completed
+        ));
+        assert_eq!(state.stalls, 0);
+        assert_eq!(state.recent_results.len(), 1);
+    }
+
+    #[test]
+    fn ordinary_tool_errors_do_not_claim_non_execution() {
+        let output = recoverable_tool_failure("文件读取失败".into());
+        assert_eq!(
+            tool_value(&output).unwrap(),
+            json!({"success":false,"error":"文件读取失败","recoverable":true})
+        );
+    }
+
+    #[test]
+    fn execution_failures_keep_their_budget_for_every_tool() {
+        let output = recoverable_tool_failure("执行失败".into());
+        let outcome = tool_outcome(tool_value(&output).as_ref());
+        assert_eq!(outcome, ToolOutcome::Failed);
+        let unknown = json!({"success":false,"code":"device_busy","unknown":true});
+        assert_eq!(tool_outcome(Some(&unknown)), ToolOutcome::Failed);
+        for name in ["phone_observe", "task_wait", "task_plan"] {
+            let mut state = crate::agent_loop::LoopState::default();
+            for attempt in 1..=3 {
+                assert_eq!(
+                    state.tool_result(name, "{}", &output, outcome),
+                    attempt == 3,
+                    "failure threshold for {name}"
+                );
+                assert_eq!(state.stalls, attempt);
+            }
+        }
+    }
+
     #[tokio::test]
     #[ignore = "requires AI_PHONE_TEST_DATABASE_URL; creates and removes its own isolated database"]
     async fn wait_finish_steering_and_long_checkpoints_are_durable() {
@@ -4223,7 +4360,7 @@ mod loop_persistence_tests {
             settings: settings::SettingsStore::test_configured(&root),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(Vec::new()),
         };
         let outcome=AssertUnwindSafe(async {
@@ -4402,7 +4539,7 @@ mod process_recovery_tests {
             phone_token: "unused".into(),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
         });
         work(app).await;

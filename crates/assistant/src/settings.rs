@@ -864,7 +864,7 @@ mod tests {
             settings: store,
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(Vec::new()),
         });
         let result = AssertUnwindSafe(async {

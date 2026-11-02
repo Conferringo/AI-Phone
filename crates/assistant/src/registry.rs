@@ -763,7 +763,7 @@ mod tests {
             settings: settings::SettingsStore::test_configured(&root),
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
-            active: Mutex::new(None),
+            active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
         });
         let seen = Arc::new(StdMutex::new(Vec::<String>::new()));
@@ -880,7 +880,7 @@ mod tests {
             // Its setup status and task execution must still resolve the registered model.
             sqlx::query("TRUNCATE runs,messages,agents,model_connections,devices,agent_device_bindings,registry_meta CASCADE").execute(&db).await.unwrap();
             let fresh_root=root.join("fresh-instance");
-            let fresh=Arc::new(App{db:db.clone(),root:fresh_root.clone(),token:"registry-test".into(),phone_token:"unused".into(),settings:settings::SettingsStore::open(&fresh_root).unwrap(),local:reqwest::Client::new(),remote:reqwest::Client::new(),active:Mutex::new(None),login_attempts:Mutex::new(vec![])});
+            let fresh=Arc::new(App{db:db.clone(),root:fresh_root.clone(),token:"registry-test".into(),phone_token:"unused".into(),settings:settings::SettingsStore::open(&fresh_root).unwrap(),local:reqwest::Client::new(),remote:reqwest::Client::new(),active:Mutex::new(Default::default()),login_attempts:Mutex::new(vec![])});
             initialize(&db,&fresh.settings).await.unwrap();assert!(!configured(&fresh).await);
             let checked=check_model(&fresh,MODEL,1,draft.clone()).await;
             let _:wire::RegistryState=response(call(&fresh,"model-save",wire::ConnectionSaveRequest{id:MODEL.to_string(),expected_revision:1,name:"新实例模型".into(),draft:Some(draft),verification_id:checked.verification_id}).await).await;
