@@ -2806,6 +2806,7 @@ async fn recorded_tool(
     }
     let title = match name {
         "computer_observe" => "观察电脑",
+        "computer_find_text" => "定位电脑文字",
         "computer_click" => "点击电脑",
         "computer_type" => "电脑输入",
         "computer_key" => "电脑按键",
@@ -3521,6 +3522,15 @@ mod verification_tests {
         assert!(
             finish_rejection(&context, "已打开表格").is_some(),
             "observation alone is not an action"
+        );
+        context.extend(action(
+            "locate",
+            "computer_find_text",
+            json!({"candidates":[{"text":"打开","center":[200,300]}]}),
+        ));
+        assert!(
+            finish_rejection(&context, "已打开表格").is_some(),
+            "locating text is not GUI execution"
         );
         context.extend(action("click", "computer_click", json!({})));
         assert!(finish_rejection(&context, "已打开桌面表格").is_none());

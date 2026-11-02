@@ -1,3 +1,4 @@
+mod grounding;
 use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
@@ -1054,29 +1055,8 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
     }
     let observation =
         stored_observation(app, args["observation_id"].as_str().unwrap_or("")).await?;
-    if name == "computer_zoom" {
-        if observation.device_id != device {
-            return Err("放大观察不属于当前电脑".into());
-        }
-        let epoch: i64 =
-            sqlx::query_scalar("SELECT epoch FROM desktop_controls WHERE device_id=$1")
-                .bind(device)
-                .fetch_one(&app.db)
-                .await
-                .map_err(|e| e.to_string())?;
-        if observation.epoch != epoch as u64
-            || now().saturating_sub(observation.captured_at_ms) > 60_000
-        {
-            return Err("观察已过期，请重新computer_observe".into());
-        }
-        let latest:Uuid=sqlx::query_scalar("SELECT id FROM desktop_observations WHERE device_id=$1 ORDER BY captured_at DESC LIMIT 1").bind(device).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-        if latest.to_string() != observation.observation_id {
-            return Err("请放大最新观察，不复用旧图".into());
-        }
-        let value=helper("zoom",json!({"png":STANDARD.encode(&observation.png),"x":args["x"],"y":args["y"],"width":args["width"],"height":args["height"]})).await?;
-        return Ok(
-            json!([{"type":"input_text","text":json!({"success":true,"device_id":device,"source_observation_id":observation.observation_id,"crop_origin":[args["x"],args["y"]],"scale":value["scale"],"width":value["width"],"height":value["height"],"coordinate_rule":"操作仍使用全屏坐标：x=局部x/scale+crop_origin[0]，y同理；放大不产生新观察授权。"}).to_string()},{"type":"input_image","image_url":format!("data:image/png;base64,{}",value["png"].as_str().ok_or("放大失败")?)}]),
-        );
+    if matches!(name, "computer_zoom" | "computer_find_text") {
+        return grounding::tool(app, name, device, &observation, args).await;
     }
     let int = |key: &str| args[key].as_i64().unwrap_or(0) as i32;
     let text = |key: &str| args[key].as_str().unwrap_or("").to_string();
@@ -1134,6 +1114,12 @@ pub fn catalog() -> Vec<Value> {
             "只读放大当前观察的局部，适合小字、表格和密集控件。返回原图偏移及倍率；点击仍用全屏坐标，不把局部坐标直接送入动作。",
             json!({"device_id":id,"observation_id":id,"x":num,"y":num,"width":num,"height":num}),
             vec!["device_id", "observation_id", "x", "y", "width", "height"],
+        ),
+        f(
+            "computer_find_text",
+            "在最新截图中定位文字，返回原图坐标、边界和置信度；同名结果分别保留。找不到时返回空列表，不执行点击。适合定位小按钮或纠正点偏；文字区域不保证可点击。",
+            json!({"device_id":id,"observation_id":id,"text":id}),
+            vec!["device_id", "observation_id", "text"],
         ),
         f(
             "computer_click",

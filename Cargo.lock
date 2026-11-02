@@ -31,6 +31,7 @@ name = "ai-phone-assistant"
 version = "0.1.0"
 dependencies = [
  "ai-phone-api",
+ "ai-phone-vision",
  "argon2",
  "axum",
  "base64 0.22.1",
@@ -82,6 +83,7 @@ name = "ai-phone-runner"
 version = "0.1.0"
 dependencies = [
  "ai-phone-api",
+ "ai-phone-vision",
  "axum",
  "base64 0.22.1",
  "fs2",
@@ -93,6 +95,15 @@ dependencies = [
  "sha2",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "ai-phone-vision"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

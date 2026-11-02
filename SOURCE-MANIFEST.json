@@ -119,13 +119,13 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 74946,
-      "sha256": "b0f7c30f1f6e8c91e105a13df5389d808c178d700ca4419e46753d17883db627"
+      "size": 75096,
+      "sha256": "c7ab1a9137eb10c006b49e5c9e87ed5bebc3da251a6e40303a43ae038e240a4c"
     },
     {
       "path": "Cargo.toml",
-      "size": 314,
-      "sha256": "2c3b563c8775ce007542385cc7b3a08ff9fb2e7a2e4d75ca156e74a90a313359"
+      "size": 331,
+      "sha256": "b007e97d364f0a82eefc156188759b4e60ac581de73010ded8bad8aa1e45ff97"
     },
     {
       "path": "DISCLAIMER.md",
@@ -2249,8 +2249,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 972,
-      "sha256": "c33e19b997657b21d6fc2e4cbc6ce044ea7e6fd724f3756bc6d10650ad17a76c"
+      "size": 1013,
+      "sha256": "22d7143f0bc32519ef8ec4d93e624daa72f78a2d3cb695aa28e6d6a74755fc7e"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2453,9 +2453,14 @@
       "sha256": "452b1cb2d60a48990fa4869f9f80931813a316bdbd08bf90727a70e913a70b4f"
     },
     {
+      "path": "crates/assistant/src/desktop/grounding.rs",
+      "size": 5123,
+      "sha256": "4706266ab039ad4c6517857a019bbe681500692235dc0f0ec3d24681d5826025"
+    },
+    {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 67547,
-      "sha256": "8dec065a95d4641c52863a5114f0b05a42b09a2e0ad257bd922afecd09a3e763"
+      "size": 66453,
+      "sha256": "422125a280fcfe8a4b9a9f1bd52d43d0922ee1ae15d8481675495714199af272"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2584,8 +2589,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 70055,
-      "sha256": "7ab4edecfa2001d8799ebd16d62fcf12d2c93581ba0495daf3593ef0edef497a"
+      "size": 70124,
+      "sha256": "152152efdf43a7dda67f8d13db8c3886961ab3fd5840e78e7df4ac0e8f2840d4"
     },
     {
       "path": "crates/assistant/src/registry.rs",
@@ -2629,8 +2634,8 @@
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
-      "size": 16369,
-      "sha256": "aeb1caf65b545398ff827ceb8989c77012065f9c9078a9e66782e0f133522e9d"
+      "size": 16403,
+      "sha256": "022f3940e711dd0ea055b3e03d7eba9b6393da14cece23d1b467d95e6665e582"
     },
     {
       "path": "crates/assistant/src/voice_input.rs",
@@ -2644,8 +2649,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 205779,
-      "sha256": "3eab92eb28a474eb28eedcb98a5ca89414441c5ab213258f63db18f07bbc2f11"
+      "size": 206152,
+      "sha256": "56ebd8859ca224786ab0d846a5de74e1b6b6a0991f9e47f75bbbfe1e1cae426d"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -2819,8 +2824,8 @@
     },
     {
       "path": "crates/phone-runner/Cargo.toml",
-      "size": 629,
-      "sha256": "e87a581ce3ac9642c8cdd3651853756bc6bb7b5c7500a59c9f4d780f092e0bc9"
+      "size": 670,
+      "sha256": "1e6e7e2d21fffaadd6e1a20e89c9657b1fa4b905edfb0e00235d9e47de7a3f2c"
     },
     {
       "path": "crates/phone-runner/fixtures/ocr-probe.png",
@@ -2844,8 +2849,8 @@
     },
     {
       "path": "crates/phone-runner/src/grounding.rs",
-      "size": 39609,
-      "sha256": "37932d41acd88a78761e2f3f5eab97b44c5b495db0a7263514d21667738351f9"
+      "size": 37742,
+      "sha256": "3256ea60112082baafa9fd7716817f88d947231d2209a15b1a6d02f2ccde619c"
     },
     {
       "path": "crates/phone-runner/src/location.rs",
@@ -2863,6 +2868,21 @@
       "sha256": "5e04321e213db8643fe8cce69a0733e759e61174043ce6774644e95b7ff0893d"
     },
     {
+      "path": "crates/vision/Cargo.toml",
+      "size": 351,
+      "sha256": "e79b478dc8913d7da62876e0889cdb4ce1986a9279bb3d73866534bb47d9b693"
+    },
+    {
+      "path": "crates/vision/src/lib.rs",
+      "size": 6685,
+      "sha256": "e84684239421287f633b0a056691ae9451ad6e2680815c6ed22d746c69e13134"
+    },
+    {
+      "path": "crates/vision/tests/capture.rs",
+      "size": 5129,
+      "sha256": "5219177b776a8448a841363cb4ebdfaf55958593707ad018fffd76cb2d3d8722"
+    },
+    {
       "path": "docs/public/action-records.md",
       "size": 2066,
       "sha256": "8cf40e7da6b5192d90df78421733ef541e3a233b0ce4a608e0287fe24aec86a4"
@@ -2874,13 +2894,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 5354,
-      "sha256": "3e94354f6a0901f6ded34b3f436faa10c18e3c27b865e27fcf6fc90e6808ce66"
+      "size": 5747,
+      "sha256": "982915ac91aece1bad85c0ff52070beb22a9d6aabf97356b1c6c6631dcf759cf"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 5058,
-      "sha256": "55ced65a8a7bc74c13faec286eb5d4740f7b10a0a5da2f017426d09bb969e457"
+      "size": 5361,
+      "sha256": "f127ae8922035a836a6b06e1d1733802ae66c410e093d3b62f05e9512b9d024b"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -3880,7 +3900,7 @@
     {
       "path": "docs/public/native-services-license-inventory.json",
       "size": 8040,
-      "sha256": "a4ccf651b2cf04c364fed70cff68b4068976f14d727b5f8a5c52650959dfe8ed"
+      "sha256": "8069f147215f8ee1f03a46d17336884bbfe29855207c9b7a47d31864477d555c"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
@@ -5689,8 +5709,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 3618,
-      "sha256": "1b77924fb7facabcea6ce2941ad49fe66cd3065fd48031b5b93dac30af6237b8"
+      "size": 4013,
+      "sha256": "7e257debac97851df2ad5e959bc912c8f025bd66569ed6505504fc0d6bee2021"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",

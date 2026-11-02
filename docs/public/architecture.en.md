@@ -12,6 +12,8 @@ Business APIs use protobuf (`packages/protocol/proto`). Browser requests use `ap
 
 The service-only Android helper supplies live accessibility hierarchies through a read-only request protected by Android's `DUMP` permission. Rust accepts a complete reply bound to the current request ID before trying UIAutomator and OCR. Password text is excluded from the hierarchy. Observation and action validation remain separate: a fast hierarchy does not grant control or replace post-action verification.
 
+The phone and desktop share one bounded Rust OCR process adapter. `computer_find_text` locates labels in the latest authorized screenshot and returns full-screen bounds, confidence and the source observation ID. It performs no input; equal labels remain separate candidates, and OCR regions do not imply clickable controls. Recognition runs on demand, within the existing five-second budget.
+
 ## Execution
 
 User/paired channel → durable run → pinned Agent/model revision → Skills/current observation → proposed tool → owner/device/run/epoch/action-ID checks → guest execution → post-action observation → persisted result → next round → independent completion audit.

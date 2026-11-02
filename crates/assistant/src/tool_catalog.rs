@@ -293,6 +293,7 @@ mod tests {
             "phone_observe",
             "phone_tap_element",
             "computer_observe",
+            "computer_find_text",
             "skill_install",
             "task_finish",
         ] {
