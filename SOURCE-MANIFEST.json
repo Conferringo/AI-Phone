@@ -64,8 +64,8 @@
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
-      "size": 3023,
-      "sha256": "74649cf8345c6009bff6a6370ff9f2ea8901ade5ddf99914541ae621ce2dcb85"
+      "size": 4545,
+      "sha256": "c1f6992ffe4d0566b93f0c1ed6e8c1494b73f42869eac37a55c7af5f8a206a17"
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
@@ -4729,13 +4729,13 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 2107,
-      "sha256": "d014b9d6ff44d75b877038388178196446de01e6d4f07ebda6b27fa361b7ee6d"
+      "size": 4214,
+      "sha256": "1a72be45924bd86209cd7faccba73fea0d45a8f75306e9ee9dd206ec2ad6dc80"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",
-      "size": 12434,
-      "sha256": "f6e4830ee77cf540d422ca512f27b0e32b173f41f969cd0aece9c455c3f48d7e"
+      "size": 12521,
+      "sha256": "af1b7aadb2b04e23930f48704585a120115a15fc34b0fd952a19abb7a2428faa"
     },
     {
       "path": "scripts/emulator-source-build/fixtures/README.md",
@@ -4759,8 +4759,13 @@
     },
     {
       "path": "scripts/emulator-source-build/linux_bootstrap.py",
-      "size": 16686,
-      "sha256": "9bf1d2bf7c28e1f4589aebf93705c89c1dfee929aee385c14f2632ff0f280a46"
+      "size": 23275,
+      "sha256": "d3af961ba72eeec0faf5dbf0d661de0e1ad1543c1de19543c52f58ac8268dee5"
+    },
+    {
+      "path": "scripts/emulator-source-build/qualify_display_session.py",
+      "size": 4136,
+      "sha256": "76d5eb2493411e46886e1a492577942931f2edbaab42c895f3cbea7704d7b11c"
     },
     {
       "path": "scripts/emulator-source-build/qualify_owned_session.py",
@@ -4774,13 +4779,13 @@
     },
     {
       "path": "scripts/emulator-source-build/test_aosp_emulator_producer.py",
-      "size": 8383,
-      "sha256": "7c6cf979bdcace2704efe15fef79752d9db8e0d24036eefc3c1ceb3fef3aa37d"
+      "size": 8479,
+      "sha256": "344999c2ba0c0a75e0d4821416e79d28d285fae3b14aac868e4017899c984ff7"
     },
     {
       "path": "scripts/emulator-source-build/test_linux_bootstrap.py",
-      "size": 19559,
-      "sha256": "5772ba743cd2419f5a806f2c66fad26ccf90d8ba845b637ea2d680c11c349771"
+      "size": 35859,
+      "sha256": "82d484c0ad741f9b128e795384237faf8e6fe36c1ecebdc773b14f4d5e4ee61e"
     },
     {
       "path": "scripts/entry-language.test.ts",

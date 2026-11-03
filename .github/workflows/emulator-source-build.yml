@@ -29,10 +29,28 @@ jobs:
       - name: Prepare this disposable hosted runner
         run: |
           test '${{ runner.environment }}' = github-hosted
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
           # Reclaim only these unused preinstalled tools on this ephemeral runner.
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
+          df -B1 "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
+          source_sdk_licences="$RUNNER_TEMP/source-sdk-licences.sha256"
+          if [ -d /usr/local/lib/android/sdk/licenses ]; then
+            (cd /usr/local/lib/android/sdk/licenses && find . -type f -print0 | sort -z | xargs -0 sha256sum) > "$source_sdk_licences"
+          fi
+          for folder in /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/local/lib/android/sdk; do
+            if [ -d "$folder" ]; then sudo du -sk "$folder"; fi
+          done
+          sudo rm -rf -- /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/powershell \
+            /usr/local/lib/android/sdk/ndk /usr/local/lib/android/sdk/build-tools /usr/local/lib/android/sdk/platforms \
+            /usr/local/lib/android/sdk/system-images /usr/local/lib/android/sdk/emulator /usr/local/lib/android/sdk/platform-tools \
+            /usr/local/lib/android/sdk/cmdline-tools /usr/local/lib/android/sdk/sources /usr/local/lib/android/sdk/extras
+          if [ -s "$source_sdk_licences" ]; then
+            (cd /usr/local/lib/android/sdk/licenses && sha256sum --check "$source_sdk_licences")
+          fi
+          df -B1 "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends git build-essential python3 python3-pip gnupg ca-certificates qemu-system-x86 ninja-build ccache cmake pkg-config acl libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64
+          sudo apt-get install -y --no-install-recommends git build-essential python3 python3-pip gnupg ca-certificates qemu-system-x86 ninja-build ccache cmake pkg-config acl xvfb xauth x11-xserver-utils libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64
           test -c /dev/kvm
           test "$(stat -c '%G' /dev/kvm)" = kvm
           sudo usermod -aG kvm "$(id -un)"
@@ -47,6 +65,8 @@ jobs:
           '
           build_parent="$(mktemp -d "$RUNNER_TEMP/emulator-source-XXXXXX")"
           printf 'AI_PHONE_EMULATOR_SOURCE_WORK=%s\n' "$build_parent" >> "$GITHUB_ENV"
+      - name: Qualify the owned headless display before source synchronization
+        run: python3 -B scripts/emulator-source-build/qualify_display_session.py
       - name: Synchronize fixed sources, verify and build once
         run: |
           export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"
