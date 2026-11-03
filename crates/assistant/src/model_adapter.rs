@@ -12,6 +12,7 @@ pub async fn request(
 ) -> Result<Vec<Value>, String> {
     request_tracked(
         config,
+        &config.client()?,
         body,
         cancel,
         &mut crate::model_timing::Timing::default(),
@@ -21,6 +22,7 @@ pub async fn request(
 
 pub async fn request_tracked(
     config: &ModelConfig,
+    client: &reqwest::Client,
     mut body: Value,
     cancel: &CancellationToken,
     timing: &mut crate::model_timing::Timing,
@@ -52,7 +54,6 @@ pub async fn request_tracked(
     } else if messages_protocol {
         body = crate::anthropic_messages::request_body(&body)?;
     }
-    let client = config.client()?;
     let encoded = serde_json::to_vec(&body).map_err(|_| "模型请求编码失败")?;
     timing.request_started(encoded.len());
     let mut request = client
@@ -446,6 +447,104 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn sequential_model_calls_reuse_connections_without_sharing_credentials() {
+        use axum::{Router, body::Body, extract::ConnectInfo, http::HeaderMap, routing::post};
+        use std::{
+            net::SocketAddr,
+            sync::{Arc, Mutex},
+        };
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let received = Arc::new(Mutex::new(Vec::new()));
+        let captured = received.clone();
+        let response = format!(
+            "data: {}\n\n",
+            json!({"type":"response.completed","response":{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"pooled"}]}]}})
+        );
+        let router = Router::new().route(
+            "/v1/responses",
+            post(
+                move |ConnectInfo(peer): ConnectInfo<SocketAddr>, headers: HeaderMap| {
+                    captured
+                        .lock()
+                        .unwrap()
+                        .push((peer, headers["authorization"].to_str().unwrap().to_owned()));
+                    let response = response.clone();
+                    async move {
+                        let stream =
+                            futures_util::stream::iter([Ok::<_, std::io::Error>(response)]);
+                        (
+                            [("content-type", "text/event-stream")],
+                            Body::from_stream(stream),
+                        )
+                    }
+                },
+            ),
+        );
+        let server = tokio::spawn(async move {
+            axum::serve(
+                listener,
+                router.into_make_service_with_connect_info::<SocketAddr>(),
+            )
+            .await
+            .unwrap();
+        });
+        let root = std::env::temp_dir().join(format!("ai-phone-pool-{}", Uuid::new_v4()));
+        let store = crate::settings::SettingsStore::open(&root).unwrap();
+        let mut config = ModelConfig {
+            provider: "compatible".into(),
+            protocol: "responses".into(),
+            api_key: String::new(),
+            base_url: format!("http://{address}/v1"),
+            model: "fixture".into(),
+            proxy_url: String::new(),
+            verified_at_ms: 0,
+        };
+        for (credential, proxy) in [
+            ("fixture-one", String::new()),
+            ("fixture-two", String::new()),
+            ("fixture-proxy", format!("http://{address}")),
+            ("fixture-return", String::new()),
+        ] {
+            config.api_key = credential.into();
+            config.proxy_url = proxy;
+            let client = store.model_client(&config).unwrap();
+            let output = request_tracked(
+                &config,
+                &client,
+                json!({"input":[]}),
+                &CancellationToken::new(),
+                &mut crate::model_timing::Timing::default(),
+            )
+            .await
+            .unwrap();
+            assert_eq!(text(&output), "pooled");
+        }
+        server.abort();
+        let _ = server.await;
+        drop(store);
+        std::fs::remove_dir_all(root).unwrap();
+        let calls = received.lock().unwrap();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(
+            calls[0].0, calls[1].0,
+            "the second model call opened another TCP connection"
+        );
+        assert_ne!(
+            calls[0].0, calls[2].0,
+            "a different proxy reused the original routing pool"
+        );
+        assert_eq!(
+            calls[0].0, calls[3].0,
+            "returning to the direct route lost the idle connection"
+        );
+        assert_eq!(calls[0].1, "Bearer fixture-one");
+        assert_eq!(calls[1].1, "Bearer fixture-two");
+        assert_eq!(calls[2].1, "Bearer fixture-proxy");
+        assert_eq!(calls[3].1, "Bearer fixture-return");
+    }
+
+    #[tokio::test]
     async fn transport_timing_separates_headers_first_bytes_and_complete_output() {
         use axum::{Router, body::Body, routing::post};
         use futures_util::StreamExt;
@@ -473,6 +572,7 @@ mod tests {
         let mut timing = crate::model_timing::Timing::default();
         let output = request_tracked(
             &config,
+            &config.client().unwrap(),
             json!({"input":[]}),
             &CancellationToken::new(),
             &mut timing,
@@ -499,6 +599,7 @@ mod tests {
         let mut timing = crate::model_timing::Timing::default();
         let result = request_tracked(
             &config,
+            &config.client().unwrap(),
             json!({"input":[]}),
             &CancellationToken::new(),
             &mut timing,

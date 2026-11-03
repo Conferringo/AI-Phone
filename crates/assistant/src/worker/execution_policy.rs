@@ -6,7 +6,7 @@ use super::{
 use crate::tool_catalog::tools;
 use serde_json::{Value, json};
 
-pub const GUI_GUIDANCE: &str = "本轮设备操作和联网检索必须在真实设备中完成：手机用phone-use，电脑用computer-use；搜索资料应打开设备浏览器，应用内搜索使用对应应用。不得用模型内置搜索、命令抓取或工作容器替代。workspace_read/write/list、知识库和Skill管理仍可使用。直接执行下一步；工具已返回动作后的新画面时不重复观察，不输出冗长引导。";
+pub const GUI_GUIDANCE: &str = "需要设备操作或联网检索时，必须在真实设备中完成：手机用phone-use，电脑用computer-use；搜索资料应打开设备浏览器，应用内搜索使用对应应用。不得用模型内置搜索、命令抓取或工作容器替代。workspace_read/write/list、知识库和Skill管理仍可使用。直接执行下一步；工具已返回动作后的新画面时不重复观察，不输出冗长引导。普通聊天不做无关操作。";
 
 pub fn command_tool(name: &str) -> bool {
     matches!(
@@ -186,41 +186,41 @@ pub fn browser_frame(value: &Value) -> bool {
 }
 
 pub fn programming_request(request: &str) -> bool {
-    request
-        .to_lowercase()
-        .split(['。', '；', ';', '，', ',', '\n'])
-        .any(|clause| {
-            !["不要", "不用", "禁止", "别用", "do not", "don't", "without"]
-                .iter()
-                .any(|word| clause.contains(word))
-                && [
-                    "运行脚本",
-                    "编写脚本",
-                    "写个脚本",
-                    "用python",
-                    "用 python",
-                    "用代码",
-                    "运行代码",
-                    "用node",
-                    "用 node",
-                    "用bun",
-                    "用 bun",
-                    "run a script",
-                    "write code",
-                    "run code",
-                ]
-                .iter()
-                .any(|word| clause.contains(word))
-        })
+    super::work_intent::positive_clauses(&request.to_lowercase()).any(|clause| {
+        [
+            "运行脚本",
+            "编写脚本",
+            "写个脚本",
+            "用python",
+            "用 python",
+            "用代码",
+            "运行代码",
+            "用node",
+            "用 node",
+            "用bun",
+            "用 bun",
+            "run a script",
+            "write code",
+            "run code",
+        ]
+        .iter()
+        .any(|word| clause.contains(word))
+    })
 }
 
-pub fn gui_only(request: &str, device_task: bool, maintenance: bool) -> bool {
-    !maintenance && (lookup_request(request) || (device_task && !programming_request(request)))
+pub(super) fn command_execution(context: &[Value]) -> bool {
+    let request = latest_request(context);
+    !explanatory_request(&request)
+        && !lookup_request(&request)
+        && (maintenance_request(context) || programming_request(&request))
 }
 
 pub fn filter(mut tools: Value, restricted: bool) -> Value {
-    if restricted && let Some(items) = tools.as_array_mut() {
-        items.retain(|tool| !command_tool(tool["name"].as_str().unwrap_or("")));
+    if let Some(items) = tools.as_array_mut() {
+        items.retain(|tool| {
+            tool["type"] == "function"
+                && (!restricted || !command_tool(tool["name"].as_str().unwrap_or("")))
+        });
     }
     tools
 }
@@ -258,15 +258,12 @@ pub(super) fn lookup_evidence(context: &[Value]) -> bool {
 pub(super) fn gui_execution(context: &[Value]) -> bool {
     let request = latest_request(context);
     (!explanatory_request(&request) || lookup_request(&request))
-        && gui_only(
-            &request,
-            phone_task(context) || computer_task(context),
-            maintenance_request(context),
-        )
+        && !command_execution(context)
+        && (lookup_request(&request) || phone_task(context) || computer_task(context))
 }
 
 pub(super) fn execution_tools(context: &[Value]) -> Value {
-    filter(tools(), gui_execution(context))
+    filter(tools(), !command_execution(context))
 }
 
 pub(super) fn initial_observation(context: &[Value]) -> Option<(&'static str, Value)> {
@@ -346,8 +343,58 @@ mod execution_policy_tests {
     }
 
     #[test]
+    fn commands_need_a_positive_purpose_even_without_device_or_search_words() {
+        for text in [
+            "阿里巴巴最近发展怎么样",
+            "帮我了解一下今天的市场",
+            "OpenAI latest developments",
+            "在电脑浏览器搜索root教程",
+            "在手机搜索shell的资料",
+            "找root教程",
+            "了解一下shell的用法",
+            "不要用命令检查磁盘",
+            "Do not use shell to check disk",
+            "不要使用命令检查磁盘",
+        ] {
+            let catalog = execution_tools(&request(text));
+            assert!(
+                catalog
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|tool| { !command_tool(tool["name"].as_str().unwrap_or("")) }),
+                "ordinary request exposed a command shortcut: {text}"
+            );
+        }
+    }
+
+    #[test]
+    fn provider_native_search_is_never_part_of_the_registered_tool_contract() {
+        for restricted in [false, true] {
+            let catalog = filter(
+                json!([
+                    {"type":"web_search"},
+                    {"type":"google_search"},
+                    {"type":"function","name":"computer_observe"}
+                ]),
+                restricted,
+            );
+            assert_eq!(
+                catalog,
+                json!([{"type":"function","name":"computer_observe"}])
+            );
+        }
+    }
+
+    #[test]
     fn explicit_commands_and_local_programming_keep_the_harness() {
-        for text in ["用命令检查电脑磁盘", "用 Python 处理电脑里的本地表格"] {
+        for text in [
+            "用命令检查电脑磁盘",
+            "用 Python 处理电脑里的本地表格",
+            "Use shell to check disk space",
+            "执行ADB维护命令，打开系统设置验证",
+            "不要删除原件，但用命令检查电脑磁盘",
+        ] {
             assert!(
                 execution_tools(&request(text))
                     .as_array()
