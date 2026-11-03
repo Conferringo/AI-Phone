@@ -3049,8 +3049,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 5674,
-      "sha256": "dcc75c4db8762a454a11480fa23778d0a667011b4ab6e9797a47a8195a9e2bf2"
+      "size": 5902,
+      "sha256": "d32ac1426e26e5a4fe5cf73021357b4009b0724c86408a86623e032b11d144ff"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -3954,8 +3954,8 @@
     },
     {
       "path": "docs/public/network.md",
-      "size": 5035,
-      "sha256": "c26af43f0409ca42da7dff239d151e8e1f1d0cdfc2a2331aa9767f4f78aa1136"
+      "size": 5011,
+      "sha256": "28ec650a438ed89df570300cf9408d8b1851a9c7201cfb346d5d1b99af467902"
     },
     {
       "path": "docs/public/notification-workflows.md",

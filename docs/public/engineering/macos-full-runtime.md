@@ -9,7 +9,7 @@ The host requirement is an Apple Silicon Mac running macOS 14.4 or later, at lea
 | Resource | Included implementation |
 |---|---|
 | Web | Next.js standalone application and Bun 1.4.4 |
-| Agent and phone services | Host-native Rust assistant/runner and Apple Vision OCR |
+| Agent and phone services | Host-native Rust assistant/runner and CPU OCR helper using managed Tesseract |
 | Phone integration | Prebuilt input/notification and launcher applications |
 | Container host | App-owned Lima 2.2.1, Alpine boot image and offline Docker/Compose packages |
 | Media and connections | Compiled services and their locked production dependencies |
@@ -31,7 +31,7 @@ python3 scripts/macos_client_factory.py --compiler-sdk "$ANDROID_HOME"
 
 The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all nine runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
 
-The `Native client checks` workflow also provides the manual `complete_macos_factory` mode. Its disposable Apple Silicon runner creates a separate QEMU/TCG ARM engine from the pinned Lima, Alpine and offline engine packages, then invokes the same complete factory. QEMU and its firmware are build-machine tools and are not added to the installed client's VZ runtime. The builder forwards Docker commands only into its fresh engine and stops that engine after assembly or failure. It retains text qualification receipts; binary publication remains a separate resource/source review. This software build route does not establish physical-Mac dual-device startup acceptance.
+The `Native client checks` workflow also provides the manual `complete_macos_factory` mode. Its disposable Apple Silicon runner creates a separate QEMU/TCG ARM engine from the pinned Lima, Alpine and offline engine packages, then invokes the same complete factory. QEMU and its firmware are build-machine tools and are not added to the installed client's VZ runtime. The builder forwards Docker commands only into its fresh engine and stops that engine after assembly or failure. Qualification receipts are retained. With the explicit `retain_complete_candidate` option, a successful complete factory also stores a source-matched installer in an unpublished draft using the [delivery-volume contract](package-delivery.md). Public binary release remains a separate resource/source review. This software build route does not establish physical-Mac dual-device startup acceptance.
 
 Use a reviewed source checkout and architecture-matched factory resources. The distribution command is:
 
