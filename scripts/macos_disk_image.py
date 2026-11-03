@@ -3,7 +3,9 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 
 def _run_hdiutil(operation,*arguments):
     try:
@@ -12,6 +14,17 @@ def _run_hdiutil(operation,*arguments):
         diagnostic=f"{error.stderr or ''}\n{error.stdout or ''}".strip() or 'no native diagnostic output'
         error.add_note(f'DMG {operation} failed (exit {error.returncode}): {diagnostic}')
         raise
+
+def _create_image(content,image):
+    for attempt in range(2):
+        try:
+            _run_hdiutil('create','-srcfolder',str(content),'-volname','AI Phone','-format','ULMO',str(image))
+            return
+        except subprocess.CalledProcessError as error:
+            if attempt or image.exists() or error.returncode!=1 or 'hdiutil: create failed - Resource busy' not in (error.stderr or ''):
+                raise
+            print('DMG create returned Resource busy; retrying once.',file=sys.stderr)
+            time.sleep(0.5)
 
 def build(application,output):
     application=Path(application);output=Path(output)
@@ -23,6 +36,6 @@ def build(application,output):
         shutil.copytree(application,content/application.name,copy_function=os.link)
         (content/'Applications').symlink_to('/Applications',target_is_directory=True)
         image=folder/'client.dmg'
-        _run_hdiutil('create','-srcfolder',str(content),'-volname','AI Phone','-format','ULMO',str(image))
+        _create_image(content,image)
         _run_hdiutil('verify',str(image))
         image.replace(output)

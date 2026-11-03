@@ -5000,8 +5000,8 @@
     },
     {
       "path": "scripts/macos_disk_image.py",
-      "size": 1409,
-      "sha256": "08e582d53a11adee064f8cea2e85a3730615a2db1c2a654517555ca013e915ed"
+      "size": 1898,
+      "sha256": "9d6cd19a742ff262b6b282239a5e6279a5a2872e99052ef04c2f1d205a60b2ff"
     },
     {
       "path": "scripts/macos_factory_engine.py",
@@ -5500,8 +5500,8 @@
     },
     {
       "path": "scripts/test_macos_disk_image.py",
-      "size": 6175,
-      "sha256": "dff57bc35800e18fb133084bb1ba03e3106140a49a54476c6664005b72bc7bf9"
+      "size": 9054,
+      "sha256": "6eb0b0345b25bc1f8f6c411bddf1a49ce8b77a267401f178c11b3c39c27be98a"
     },
     {
       "path": "scripts/test_macos_factory_engine.py",

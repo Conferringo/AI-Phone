@@ -11,6 +11,22 @@ from macos_disk_image import build
 
 @unittest.skipUnless(platform.system()=='Darwin','macOS hdiutil required')
 class MacOSDiskImageTests(unittest.TestCase):
+    def test_transient_busy_creation_retries_once_then_builds_a_real_verified_image(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';(app/'Contents').mkdir(parents=True)
+            (app/'Contents/runtime.payload').write_bytes(b'immutable runtime fixture')
+            output=root/'client.dmg';native_run=subprocess.run;creates=[]
+            def native(args,**kwargs):
+                if args[1]=='create':
+                    creates.append(args)
+                    if len(creates)==1:raise subprocess.CalledProcessError(1,args,stderr='hdiutil: create failed - Resource busy')
+                return native_run(args,**kwargs)
+            with patch('macos_disk_image.subprocess.run',side_effect=native):build(app,output)
+            self.assertEqual(len(creates),2)
+            details=plistlib.loads(subprocess.check_output(['hdiutil','imageinfo','-plist',str(output)]))
+            self.assertEqual(details['Format'],'ULMO')
+            self.assertEqual((app/'Contents/runtime.payload').read_bytes(),b'immutable runtime fixture')
+
     def test_verified_image_contains_the_complete_app_and_applications_link(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);app=root/'AI Phone.app';(app/'Contents').mkdir(parents=True)
@@ -55,6 +71,29 @@ class MacOSDiskImageTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(),b'previous')
 
 class DiskImageFailureDiagnosticsTests(unittest.TestCase):
+    def test_busy_retry_is_bounded_and_preserves_the_existing_installer(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'AI Phone.app';app.mkdir();output=root/'client.dmg';output.write_bytes(b'previous')
+            def busy(args,**_kwargs):raise subprocess.CalledProcessError(1,args,stderr='hdiutil: create failed - Resource busy')
+            with patch('macos_disk_image.subprocess.run',side_effect=busy) as run:
+                with self.assertRaises(subprocess.CalledProcessError):build(app,output)
+                self.assertEqual(run.call_count,2)
+            self.assertEqual(output.read_bytes(),b'previous')
+
+    def test_partial_busy_creation_and_other_errors_are_not_replayed(self):
+        for partial,code,diagnostic in [(True,1,'hdiutil: create failed - Resource busy'),
+                                        (False,1,'hdiutil: create failed - Permission denied'),
+                                        (False,7,'hdiutil: create failed - Resource busy')]:
+            with self.subTest(partial=partial,code=code,diagnostic=diagnostic),tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);app=root/'AI Phone.app';app.mkdir();output=root/'client.dmg';output.write_bytes(b'previous')
+                def fail(args,**_kwargs):
+                    if partial:Path(args[-1]).write_bytes(b'partial image')
+                    raise subprocess.CalledProcessError(code,args,stderr=diagnostic)
+                with patch('macos_disk_image.subprocess.run',side_effect=fail) as run:
+                    with self.assertRaises(subprocess.CalledProcessError):build(app,output)
+                    self.assertEqual(run.call_count,1)
+                self.assertEqual(output.read_bytes(),b'previous')
+
     def test_creation_failure_explains_native_cause_without_replacing_existing_image(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);app=root/'AI Phone.app';app.mkdir()
