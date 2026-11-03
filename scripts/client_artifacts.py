@@ -110,7 +110,8 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
         'source_payload_included': True,
         'local_bootstrap': {'implemented_on': sorted(json.loads((root/'config/host-bootstrap.json').read_text())['hosts']), 'fresh_install_acceptance': 'pending', 'user_state_bundled': False},
         'payload': inspection}
-    from client_delivery import delivery_metadata
+    from client_delivery import delivery_metadata,installer_metadata
     manifest.update(delivery_metadata(payload_components(root),os_name+'-'+arch))
+    manifest['installer_delivery']=installer_metadata(path,os_name+'-'+arch)
     path.with_suffix(path.suffix+'.manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     return manifest

@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 
-ASSET_LIMIT=2*1024**3
+from client_delivery import ASSET_LIMIT
 
 
 def native(root,*arguments):

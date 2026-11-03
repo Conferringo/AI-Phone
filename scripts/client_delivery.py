@@ -1,5 +1,23 @@
-"""Facts about inspected runtime contents, separate from installation acceptance."""
+"""Facts about inspected installers and contents, separate from release approval."""
+from pathlib import Path
 from client_host_entry import COMPONENT_MANIFESTS
+
+ASSET_LIMIT=2*1024**3
+INSTALLER_FORMATS={'macos-arm64':{'dmg'},'windows-x64':{'exe'},
+                   'linux-x64':{'deb','appimage'},'linux-amd64':{'deb','appimage'},
+                   'linux-arm64':{'deb','appimage'},'android-arm64':{'apk'}}
+
+
+def installer_metadata(path,host):
+    path=Path(path);kind=path.suffix.lstrip('.').casefold()
+    if kind not in INSTALLER_FORMATS.get(host,set()):
+        raise ValueError('Unsupported single-file installer format')
+    if path.is_symlink() or not path.is_file():
+        raise ValueError('Installer must be one nonempty regular file')
+    size=path.stat().st_size
+    if size==0:raise ValueError('Installer must be one nonempty regular file')
+    return {'file':path.name,'format':kind,'size':size,'single_file':True,
+            'user_assembly_required':False,'github_asset_eligible':size<ASSET_LIMIT}
 
 SIDECARS={'android-runtime','container-images','installer-tools'}
 SERVICES={'web','native-services','js-services'}

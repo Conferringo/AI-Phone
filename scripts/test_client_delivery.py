@@ -1,10 +1,47 @@
 """Delivery facts describe embedded resources, independently of release approval."""
 import unittest
-from client_delivery import delivery_metadata
+from pathlib import Path
+import tempfile
+from client_delivery import delivery_metadata,installer_metadata
 
 FULL=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
 
 class ClientDeliveryTests(unittest.TestCase):
+    def test_complete_installer_is_one_regular_file_for_each_desktop_format(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            for host,name,kind in [('macos-arm64','AI-Phone.dmg','dmg'),('windows-x64','AI-Phone.exe','exe'),
+                                   ('linux-amd64','AI-Phone.deb','deb'),('linux-amd64','AI-Phone.AppImage','appimage')]:
+                with self.subTest(host=host,name=name):
+                    path=root/name;path.write_bytes(b'inspected full runtime fixture')
+                    value=installer_metadata(path,host)
+                    self.assertTrue(value['single_file']);self.assertTrue(value['github_asset_eligible'])
+                    self.assertFalse(value['user_assembly_required']);self.assertEqual(value['format'],kind)
+                    self.assertEqual(value['file'],name);self.assertEqual(value['size'],path.stat().st_size)
+                    self.assertNotIn('complete_device_bundle',value)
+                    self.assertNotIn('publication_ready',value)
+
+    def test_github_single_asset_boundary_is_not_replaced_by_a_volume_handoff(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path=Path(temporary)/'AI-Phone.dmg'
+            for size,accepted in [(2_147_483_647,True),(2_147_483_648,False)]:
+                with path.open('wb') as output:output.truncate(size)
+                value=installer_metadata(path,'macos-arm64')
+                self.assertTrue(value['single_file']);self.assertEqual(value['github_asset_eligible'],accepted)
+
+    def test_parts_archives_and_cross_platform_installers_cannot_pass(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            for name in ['AI-Phone.dmg.part-0001','AI-Phone.zip','AI-Phone.exe','AI-Phone.dmg.volumes.json']:
+                path=root/name;path.write_bytes(b'fixture')
+                with self.assertRaises(ValueError):installer_metadata(path,'macos-arm64')
+            path=root/'AI-Phone.dmg';path.touch()
+            with self.assertRaises(ValueError):installer_metadata(path,'macos-arm64')
+            path.unlink();path.mkdir()
+            with self.assertRaises(ValueError):installer_metadata(path,'macos-arm64')
+            path.rmdir();target=root/'target';target.write_bytes(b'fixture');path.symlink_to(target)
+            with self.assertRaises(ValueError):installer_metadata(path,'macos-arm64')
+
     def test_source_or_web_payload_is_not_mislabeled_as_an_embedded_server(self):
         for components in ([],['web'],['native-services'],['web','native-services']):
             value=delivery_metadata(components,'macos-arm64')
