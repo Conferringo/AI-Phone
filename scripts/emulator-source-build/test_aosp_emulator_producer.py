@@ -107,6 +107,9 @@ class ProducerLifecycleTests(unittest.TestCase):
         self.lock = self.root / "fixture-lock.xml"
         self.lock.write_text("<manifest/>\n", encoding="utf-8")
         self.entry = self.qemu / "android/build/python/cmake.py"
+        self.sdk = self.checkout / "prebuilts/android-emulator-build/system-images/darwin"
+        self.sdk.mkdir(parents=True)
+        (self.sdk / ".knownPackages").write_text("pinned metadata")
         self.context = contextlib.ExitStack()
         self.addCleanup(self.context.close)
         self.context.enter_context(patch.object(producer.platform, "system", return_value="Darwin"))
@@ -202,6 +205,100 @@ class ProducerLifecycleTests(unittest.TestCase):
         result = json.loads((self.work / "build-result.json").read_text(encoding="utf-8"))
         self.assertEqual(result["build_status"], "unknown")
         self.assertNotIn("artifact", result)
+
+    def test_nested_fixed_sdk_path_writes_are_isolated_before_source_postcheck(self):
+        original = self.sdk.stat().st_ino
+
+        def build(*args, **kwargs):
+            # The pinned upstream runner recomputes this path instead of honoring env.
+            (self.sdk / ".knownPackages").write_text("generated metadata")
+            (self.sdk / "package.xml").write_text("generated package")
+            return self.upstream_distribution()
+
+        def check(*args):
+            self.assertEqual((self.sdk / ".knownPackages").read_text(), "pinned metadata")
+            self.assertFalse((self.sdk / "package.xml").exists())
+            self.assertFalse(self.sdk.is_symlink())
+            self.assertEqual(self.sdk.stat().st_ino, original)
+            return [], self.lock
+
+        with patch.object(producer.subprocess, "run", side_effect=build), \
+             patch.object(producer, "project_inputs", side_effect=check):
+            self.run_main(build=True)
+        self.assertEqual((self.work / "sdk/package.xml").read_text(), "generated package")
+        self.assertEqual(json.loads((self.work / "build-result.json").read_text())["build_status"], "built")
+
+
+class SdkWorkspaceTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="aiphone-sdk-workspace-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name).resolve()
+        self.checkout = self.root / "checkout"
+        self.source = self.checkout / "prebuilts/android-emulator-build/system-images/linux"
+        self.source.mkdir(parents=True)
+        (self.source / ".knownPackages").write_bytes(b"pinned metadata")
+        generic = self.source.parent / "generic/system-images/android-30"
+        generic.mkdir(parents=True)
+        (generic / "source.properties").write_bytes(b"pinned image")
+        (self.source / "system-images").symlink_to("../generic/system-images", target_is_directory=True)
+        self.work = self.root / "work"
+        self.work.mkdir()
+        self.inode = self.source.stat().st_ino
+
+    def assert_original(self):
+        self.assertFalse(self.source.is_symlink())
+        self.assertEqual(self.source.stat().st_ino, self.inode)
+        self.assertEqual((self.source / ".knownPackages").read_bytes(), b"pinned metadata")
+        self.assertTrue((self.source / "system-images").is_symlink())
+        self.assertEqual((self.source / "system-images/android-30/source.properties").read_bytes(), b"pinned image")
+        self.assertFalse((self.source / "system-images/android-30/package.xml").exists())
+
+    def test_sdk_aliases_are_dereferenced_before_the_original_directory_moves(self):
+        with producer.isolated_sdk(self.checkout, self.work, "linux") as sdk:
+            self.assertEqual(sdk, self.work / "sdk")
+            self.assertTrue(self.source.is_symlink())
+            self.assertFalse((sdk / "system-images").is_symlink())
+            (self.source / ".knownPackages").write_text("generated metadata")
+            (self.source / "system-images/android-30/source.properties").write_text("generated metadata")
+            (self.source / "system-images/android-30/package.xml").write_text("generated package")
+        self.assert_original()
+        self.assertEqual((sdk / "system-images/android-30/package.xml").read_text(), "generated package")
+        self.assertFalse((self.work / "source-sdk").exists())
+
+    def test_upstream_interruption_restores_the_original_directory(self):
+        with self.assertRaises(KeyboardInterrupt):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                (self.source / ".knownPackages").write_text("generated metadata")
+                raise KeyboardInterrupt
+        self.assert_original()
+
+    def test_link_creation_failure_restores_the_original_directory(self):
+        with patch.object(Path, "symlink_to", side_effect=PermissionError("directory links unavailable")):
+            with self.assertRaises(PermissionError):
+                with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                    self.fail("upstream must not execute")
+        self.assert_original()
+
+    def test_preexisting_sdk_alias_is_rejected_without_moving_its_target(self):
+        original = self.work / "fixture-original"
+        self.source.rename(original)
+        self.source.symlink_to(original, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "pinned SDK directory"):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                self.fail("aliased input must not reach upstream")
+        self.assertEqual(self.source.readlink(), original)
+        self.assertEqual(original.stat().st_ino, self.inode)
+        self.assertFalse((self.work / "source-sdk").exists())
+
+    def test_unexpected_sdk_replacement_is_preserved_with_the_original_for_recovery(self):
+        with self.assertRaisesRegex(ValueError, "SDK path changed"):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                self.source.unlink()
+                self.source.mkdir()
+                (self.source / "unexpected").write_text("preserve")
+        self.assertEqual((self.source / "unexpected").read_text(), "preserve")
+        self.assertEqual((self.work / "source-sdk/.knownPackages").read_bytes(), b"pinned metadata")
 
 
 if __name__ == "__main__":

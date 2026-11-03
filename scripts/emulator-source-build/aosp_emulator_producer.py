@@ -1,12 +1,14 @@
 """Maintainer-only source-emulator producer; not a redistribution approval or installer."""
 import argparse
 import ast
+from contextlib import contextmanager
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
 import re
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -192,6 +194,27 @@ def checked_build_request(args):
     return host, checkout, work
 
 
+@contextmanager
+def isolated_sdk(checkout, work, group):
+    # Nested upstream tools recompute this SDK path and mutate its metadata.
+    # Keep the pinned directory intact, including its links into generic images.
+    source = checkout / "prebuilts/android-emulator-build/system-images" / group
+    sdk, original = work / "sdk", work / "source-sdk"
+    if source.is_symlink() or not source.is_dir():
+        raise ValueError("Expected a pinned SDK directory")
+    shutil.copytree(source, sdk, symlinks=False)
+    source.rename(original)
+    try:
+        source.symlink_to(sdk, target_is_directory=True)
+        yield sdk
+    finally:
+        if source.is_symlink() and source.readlink() == sdk:
+            source.unlink()
+        if source.exists() or source.is_symlink():
+            raise ValueError("SDK path changed; preserve the work tree and original directory for recovery")
+        original.rename(source)
+
+
 def build_once(checkout, work, lock, command, receipt, group, distribution):
     work.mkdir()
     (work / "source-lock.xml").write_bytes(lock.read_bytes())
@@ -205,7 +228,9 @@ def build_once(checkout, work, lock, command, receipt, group, distribution):
     environment["ANDROID_EMULATOR_HOME"] = str(work / "emulator-home")
     result = {**receipt, "build_status": "unknown"}
     try:
-        with (work / "build.log").open("xb") as log:
+        with isolated_sdk(checkout, work, group) as sdk, (work / "build.log").open("xb") as log:
+            environment["ANDROID_SDK_ROOT"] = str(sdk)
+            environment["ANDROID_HOME"] = str(sdk)
             completed = subprocess.run(command, cwd=checkout / "external/qemu", env=environment,
                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                 check=False)
