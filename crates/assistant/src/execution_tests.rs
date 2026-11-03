@@ -333,3 +333,27 @@ async fn timing_projection_is_message_scoped_and_legacy_reads_remain_complete() 
         assert!(cutoff.events.is_empty());
     }).await;
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; operational persistence errors must not retry a model"]
+async fn model_trace_database_failure_is_an_execution_failure() {
+    database_case(|app| async move {
+        app.db.close().await;
+        let run = Uuid::now_v7();
+        let start = super::model_trace::start(&app, run, Uuid::now_v7())
+            .await
+            .unwrap_err();
+        let finish = super::model_trace::finish(&app, Uuid::now_v7(), "failed", json!({}))
+            .await
+            .unwrap_err();
+        assert!(
+            fatal_tool_error(&start),
+            "a database failure must not enter model retry/prompt handling: {start}"
+        );
+        assert!(
+            fatal_tool_error(&finish),
+            "timing persistence must stop further execution: {finish}"
+        );
+    })
+    .await;
+}

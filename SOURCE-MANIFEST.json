@@ -2510,8 +2510,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 15233,
-      "sha256": "db3ab009e7b522fcb83754a4a81a09e7456a1bab993e71be9da3caa81668c895"
+      "size": 16078,
+      "sha256": "9240efd1335c6bd047308ace6d9b7d872d984a3c02b4b766692f6c72f13a5163"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2665,8 +2665,8 @@
     },
     {
       "path": "crates/assistant/src/worker/model_trace.rs",
-      "size": 910,
-      "sha256": "e0b537dc77403a56235c9d42df25534edfca86ef9f6bd91160241fa3ba3a336a"
+      "size": 1092,
+      "sha256": "203749c697fd56b4a8c87bef91b69b5a5a94f15780a1b36f2df26699e20d28c0"
     },
     {
       "path": "crates/assistant/src/worker/work_intent.rs",
