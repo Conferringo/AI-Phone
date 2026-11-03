@@ -265,23 +265,50 @@ async fn stalled_phone_model_does_not_block_desktop_and_cancel_is_per_run() {
 #[ignore = "real disposable PostgreSQL; rejected commands never dispatch to a guest"]
 async fn ordinary_search_rejects_stored_command_calls_before_dispatch() {
     database_case(|app| async move {
-        let (run,message) = queued(&app,"fixture-desktop","user").await;
-        sqlx::query("UPDATE runs SET context=$2 WHERE id=$1")
-            .bind(run).bind(json!([{"role":"user","content":[{"type":"input_text","text":"找智能安防相关的企业，记到电脑的表格里"}]}]))
-            .execute(&app.db).await.unwrap();
-        for name in ["computer_run","phone_shell","workspace_run","workspace_fetch"] {
-            // These invalid arguments are safe even if the policy regresses: no valid
-            // guest id, script rejected before container launch, and no network URL.
-            let call=json!({"name":name,"arguments":json!({"device_id":"unregistered-fixture","script":"x".repeat(16001),"url":"invalid-fixture-url"}).to_string()});
-            let output=tool(&app,run,message,&call,&mut 0,&CancellationToken::new()).await.unwrap();
-            let result=tool_value(&output).unwrap();
-            assert_eq!(result["code"],"visible_device_required","{name}");
-            assert_eq!(result["not_executed"],true);
-            assert_eq!(result["success"],false);
-            assert_eq!(result["next_tool"],"computer_observe");
+        let (run, message) = queued(&app, "fixture-desktop", "user").await;
+        for request in [
+            "找智能安防相关的企业，记到电脑的表格里",
+            "阿里巴巴最近发展怎么样",
+            "在电脑浏览器搜索root教程",
+        ] {
+            let context = json!([
+                {"role":"system","content":[{"type":"input_text","text":"[当前设备类型:desktop]"}]},
+                {"role":"user","content":[{"type":"input_text","text":request}]}
+            ]);
+            sqlx::query("UPDATE runs SET context=$2 WHERE id=$1")
+                .bind(run)
+                .bind(context)
+                .execute(&app.db)
+                .await
+                .unwrap();
+            for name in [
+                "computer_run",
+                "phone_shell",
+                "workspace_run",
+                "workspace_fetch",
+            ] {
+                // Invalid fixture arguments cannot launch a guest or fetch a URL,
+                // even if the command policy regresses.
+                let call = json!({"name":name,"arguments":json!({
+                    "device_id":"unregistered-fixture","script":"x".repeat(16001),
+                    "url":"invalid-fixture-url"
+                }).to_string()});
+                let output = tool(&app, run, message, &call, &mut 0, &CancellationToken::new())
+                    .await
+                    .unwrap();
+                let result = tool_value(&output).unwrap();
+                assert_eq!(
+                    result["code"], "visible_device_required",
+                    "{request}: {name}"
+                );
+                assert_eq!(result["not_executed"], true);
+                assert_eq!(result["success"], false);
+                assert_eq!(result["next_tool"], "computer_observe");
+            }
         }
         assert!(!app.root.join("data/workspaces").exists());
-    }).await;
+    })
+    .await;
 }
 
 async fn events(app: &Shared, request: wire::HarnessEventRequest) -> wire::HarnessEventList {
