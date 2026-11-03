@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 16256,
-      "sha256": "89fd95dff816863de23e522aa9217ee302b42dcddbbc4a1cd07ad8d16c081170"
+      "size": 18540,
+      "sha256": "308cb0f50f4365eec69021af1ac06a1cbea0ffad71ba3b75f61d2fe1240c60ef"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -3100,8 +3100,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 5902,
-      "sha256": "d32ac1426e26e5a4fe5cf73021357b4009b0724c86408a86623e032b11d144ff"
+      "size": 6326,
+      "sha256": "b6b0123307757d9ffab9e13af8db85ed7439fcda6f04bb4e93686559f2a6ceec"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -4854,6 +4854,11 @@
       "sha256": "96a8345ca726897b87d2cff156d8d23728516cd0862029619d295c072eee6818"
     },
     {
+      "path": "scripts/factory_image_candidate.py",
+      "size": 8713,
+      "sha256": "46b282be0613a7b62afca2f4ec264d16aff1bca3362d2bb162fc1aa1c4e4dca6"
+    },
+    {
       "path": "scripts/fixtures/background-conversations.ts",
       "size": 18639,
       "sha256": "a1ef123392c1c6addd3c45f99892328e8c6f880b526c54dfffa691230467708b"
@@ -5055,8 +5060,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 7305,
-      "sha256": "9cc27cbaa350106e2e7d934881764803b6e10e7478a9e7fb157c22b227780559"
+      "size": 8017,
+      "sha256": "7f33dde1be0ea059f3399e7d821434039c2aff6c2315fc91ea5efbf1882f82a5"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5065,8 +5070,8 @@
     },
     {
       "path": "scripts/macos_factory_engine.py",
-      "size": 9481,
-      "sha256": "010fd699c15cb0d059a7a7458985aaecbe70571cbb1cb80502885f9d3fd8471f"
+      "size": 10445,
+      "sha256": "a84b5c22fa58f0956a977bd6a8d196db1fe0e0b9ba4b65326226a652636e6cf6"
     },
     {
       "path": "scripts/macos_factory_qemu.py",
@@ -5245,8 +5250,8 @@
     },
     {
       "path": "scripts/retain-client-candidate.sh",
-      "size": 3467,
-      "sha256": "5ca1c5980b8b14ee0461eefbaf5edacc3dd7d842b723f7e087039a5a6706186c"
+      "size": 3827,
+      "sha256": "0e56f9cb73e185f659ba26955fdd23d29605204d39dc8640db0d8163f37d51f2"
     },
     {
       "path": "scripts/route-stroke.test.ts",
@@ -5479,6 +5484,11 @@
       "sha256": "8ed5a604bd63c64fd0475d408903720e2f8f666660f3a03cd758d82bb9be0efb"
     },
     {
+      "path": "scripts/test_factory_image_candidate.py",
+      "size": 9238,
+      "sha256": "57f454117d46967d443458fef0aa89d849cb72a42b73cbc254603bcfd4686c01"
+    },
+    {
       "path": "scripts/test_fresh_images_producer.py",
       "size": 11847,
       "sha256": "f4a5c428271a7ba750c1203a277d4b97b69897b09fb9aadc68450d26702d6ccf"
@@ -5580,8 +5590,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 7999,
-      "sha256": "a39dd258543bd7d0cbd44a33ea5c5780991f58ffcf44d19f67a58014689b9e87"
+      "size": 10445,
+      "sha256": "9261be87ed55b4940839d863e4f90e012eb163e279ae1dc596c068d15be56be6"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
@@ -5590,8 +5600,8 @@
     },
     {
       "path": "scripts/test_macos_factory_engine.py",
-      "size": 14983,
-      "sha256": "4917d4c1b57cc4a1467420be95fdd7e14ee346d9f83e9731753ff72e430804be"
+      "size": 16343,
+      "sha256": "beae50df068c07d118981c905b5d9eff035caee29641aba9d871ae72cd24966e"
     },
     {
       "path": "scripts/test_macos_guest_runtime.py",

@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       complete_macos_factory:
-        description: Build all Mac device resources with an isolated ARM software engine
+        description: Assemble the complete Mac client with native ARM64 image builders
         type: boolean
         default: false
       retain_complete_candidate:
@@ -133,8 +133,57 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  native-arm-images:
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_macos_factory
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    outputs:
+      candidate_tag: ${{ steps.retain.outputs.candidate_tag }}
+      metadata_sha256: ${{ steps.assemble.outputs.metadata_sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Disposable native image build space
+        run: |
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
+          test "$(uname -m)" = aarch64
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android/sdk
+          df -h .
+      - name: Owned native image store
+        uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: ai-phone-arm-image-factory
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Source and image handoff contracts
+        run: |
+          python3 scripts/check_source.py --repository --manifest
+          PYTHONPATH=scripts python3 -B -m unittest test_factory_image_candidate test_macos_client_factory
+      - name: Build and seal native ARM64 images
+        id: assemble
+        run: |
+          python3 scripts/factory_image_candidate.py build "$RUNNER_TEMP/arm-images" > "$RUNNER_TEMP/arm-images-result.json"
+          printf 'metadata_sha256=%s\n' "$(jq -er .metadata_sha256 "$RUNNER_TEMP/arm-images-result.json")" >> "$GITHUB_OUTPUT"
+      - name: Retain the source-bound unpublished handoff
+        id: retain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          report=$(jq -er .report "$RUNNER_TEMP/arm-images-result.json")
+          bash scripts/retain-client-candidate.sh "$report" factory-images
+
   full-macos-arm64:
     if: github.event_name == 'workflow_dispatch' && inputs.complete_macos_factory
+    needs: native-arm-images
     runs-on: macos-15
     timeout-minutes: 120
     permissions:
@@ -145,6 +194,8 @@ jobs:
       NEXT_TELEMETRY_DISABLED: '1'
       PYTHONDONTWRITEBYTECODE: '1'
       HOMEBREW_NO_AUTO_UPDATE: '1'
+      AI_PHONE_IMAGE_HANDOFF_TAG: ${{ needs.native-arm-images.outputs.candidate_tag }}
+      AI_PHONE_IMAGE_HANDOFF_IDENTITY: ${{ needs.native-arm-images.outputs.metadata_sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -162,10 +213,8 @@ jobs:
           rustup default 1.96.0
           rustup target add --toolchain 1.96.0 aarch64-unknown-linux-musl
           ./scripts/bootstrap.sh
-          # Hosted images cache an older formula catalog. Refresh it explicitly;
-          # the factory still requires the exact QEMU version in its policy.
           brew update
-          brew install qemu tesseract
+          brew install tesseract
           python3 scripts/prepare_ocr_models.py --destination "$RUNNER_TEMP/aiphone-ocr-models"
           echo "AI_PHONE_TEST_TESSERACT=$(command -v tesseract)" >> "$GITHUB_ENV"
           echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
@@ -174,21 +223,15 @@ jobs:
           test -f "$ANDROID_HOME/platforms/android-35/android.jar"
           test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
           df -h .
-      - name: Software engine and factory ownership regressions
-        run: PYTHONPATH=scripts python3 -m unittest test_macos_factory_engine test_macos_client_factory test_macos_guest_runtime
-      - name: Cross-compile the static Linux ARM guest bridge
+      - name: Factory ownership and image handoff regressions
+        run: PYTHONPATH=scripts python3 -m unittest test_macos_factory_engine test_macos_client_factory test_macos_guest_runtime test_factory_image_candidate
+      - name: Acquire the exact unpublished native image component
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          python3 scripts/macos_guest_runtime.py --work "$RUNNER_TEMP/guest-native"
-          echo "AI_PHONE_FACTORY_GUEST_RUNTIME=$RUNNER_TEMP/guest-native/context" >> "$GITHUB_ENV"
-      - name: Retain guest compiler qualification
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
-        with:
-          name: macos-linux-guest-receipt
-          path: ${{ runner.temp }}/guest-native/context/manifest.json
-          if-no-files-found: error
-          retention-days: 14
+          python3 scripts/factory_image_candidate.py fetch "$AI_PHONE_IMAGE_HANDOFF_TAG" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY" --work "$RUNNER_TEMP/mac-native-images"
       - name: Build all nine resources and the complete Mac client
-        run: python3 scripts/macos_factory_engine.py --compiler-sdk "$ANDROID_HOME"
+        run: python3 scripts/macos_factory_engine.py --compiler-sdk "$ANDROID_HOME" --image-candidate "$RUNNER_TEMP/mac-native-images" --image-metadata-sha256 "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
       - name: Retain text qualification receipts
         if: always() && hashFiles('dist/macos-factory-engine-report.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -204,6 +247,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/retain-client-candidate.sh dist/macos-full-factory-report.json
+      - name: Retire only this source-bound temporary image handoff
+        if: always() && env.AI_PHONE_IMAGE_HANDOFF_TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/factory_image_candidate.py discard "$AI_PHONE_IMAGE_HANDOFF_TAG" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
       # Candidate drafts contain only inspected installers and their inventories.
       # Signing keys, guest state and accounts never enter retention.
 

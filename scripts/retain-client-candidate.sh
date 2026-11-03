@@ -19,6 +19,11 @@ case "${2:-client}" in
     label='AI Phone source-emulator candidate'
     description='Unpublished source-emulator output for maintainer review. Redistribution, source closure and Android boot qualification remain unapproved.'
     ;;
+  factory-images)
+    planner=scripts/factory_image_candidate.py
+    label='AI Phone native factory images'
+    description='Temporary unpublished ARM64 image handoff for complete native client assembly. No user state or publication approval is included.'
+    ;;
   *) printf '%s\n' 'Unknown build candidate kind.' >&2; exit 1 ;;
 esac
 work="$(mktemp -d "$RUNNER_TEMP/build-candidate-XXXXXX")"
@@ -64,3 +69,6 @@ gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?
 jq --slurpfile pages "$work/assets.json" '.assets = ($pages[0] | add)' "$work/remote.json" > "$work/complete.json"
 python3 scripts/package_delivery.py verify-upload "$work/plan.json" --release "$work/complete.json"
 printf 'Unpublished candidate retained: %s\n' "$tag"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  printf 'candidate_tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+fi
