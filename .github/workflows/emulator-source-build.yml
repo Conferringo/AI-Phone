@@ -26,7 +26,6 @@ jobs:
     env:
       RUSTUP_TOOLCHAIN: 1.96.0
       CARGO_BUILD_JOBS: '2'
-      CARGO_TARGET_DIR: ${{ runner.temp }}/source-retention-target
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -46,6 +45,7 @@ jobs:
           test "$GITHUB_ACTIONS" = true
           test "$RUNNER_ENVIRONMENT" = github-hosted
           test "$RUNNER_OS" = Linux
+          printf 'CARGO_TARGET_DIR=%s/source-retention-target\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
           # Reclaim only these unused preinstalled tools on this ephemeral runner.
           df -B1 "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
           source_sdk_licences="$RUNNER_TEMP/source-sdk-licences.sha256"
