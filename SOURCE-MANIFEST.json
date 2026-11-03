@@ -4545,8 +4545,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 13070,
-      "sha256": "2309fcda15e8d192d67a7388946a636ff812aad312ea491e2c59e90dfb84352d"
+      "size": 13072,
+      "sha256": "caf02a41986a79b5a2c41dfb3c6f3a0208370a30afb6d30071e6523986cced46"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -5480,8 +5480,8 @@
     },
     {
       "path": "scripts/test_linux_client_packages.py",
-      "size": 3635,
-      "sha256": "7cb56356868cc0114ee89f599c666d84fda81bad56a0c239a9642317c4dcaf30"
+      "size": 3637,
+      "sha256": "f04cf7dfc542e77e0a528bc91eb5c57398c38980991c3b4a0044cdb30b3aa180"
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",

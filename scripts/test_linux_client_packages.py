@@ -25,7 +25,7 @@ class LinuxClientPackageTests(unittest.TestCase):
                 arguments=run.call_args.args[0];self.assertEqual(arguments[arguments.index('--bundles')+1],'deb,appimage')
                 self.assertEqual(run.call_args.kwargs['env']['CI'],env['CI'])
                 self.assertEqual(run.call_args.kwargs['env']['AI_PHONE_REAL_PATCHELF'],'/usr/bin/patchelf')
-                self.assertEqual(run.call_args.kwargs['env']['LDAI_COMP'],'xz')
+                self.assertEqual(run.call_args.kwargs['env']['LDAI_COMP'],'zstd')
                 self.assertEqual(len(value),2);self.assertEqual(record.call_count,2)
                 deb.assert_called_once_with(root/'dist/AI-Phone-fixture-linux-amd64.deb',root)
                 appimage.assert_called_once_with(root/'dist/AI-Phone-fixture-linux-amd64.AppImage','amd64',root)
