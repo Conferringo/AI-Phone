@@ -8,7 +8,7 @@ import subprocess
 import os
 import argparse
 from native_bundle import inspect_macos_bundle
-from client_artifacts import inspect_apk, inspect_deb, inspect_windows, record, notice_manifest
+from client_artifacts import inspect_apk, inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -40,6 +40,29 @@ def build_macos():
     manifest['source_commit']=os.environ.get('GITHUB_SHA','')
     destination.with_suffix('.dmg.manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
+
+def build_linux(root,version,env,command,package_only):
+    if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
+    arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
+    if not arch:raise SystemExit('Unsupported Linux architecture')
+    if not package_only:
+        patchelf=shutil.which('patchelf',path=env.get('PATH'))
+        if not patchelf:raise ValueError('Install native patchelf before building Linux AppImages')
+        env={**env,'PATCHELF':str(root/'scripts/linux-appimage-patchelf.sh'),'AI_PHONE_REAL_PATCHELF':patchelf,
+             'NO_STRIP':'1','LDAI_COMP':'xz'}
+        subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json','--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
+    variants=[('deb','deb',arch),('appimage','AppImage','aarch64' if arch=='arm64' else arch)]
+    results=[]
+    for kind,extension,label in variants:
+        source=root/f'apps/client/src-tauri/target/release/bundle/{kind}/AI Phone_{version}_{label}.{extension}'
+        destination=root/'dist'/f'AI-Phone-{version}-linux-{arch}.{extension}'
+        shutil.copy2(source,destination)
+        inspection=inspect_deb(destination,root) if kind=='deb' else inspect_appimage(destination,arch,root)
+        manifest=record(destination,'linux',arch,inspection,root=root)
+        results.append({'artifact':str(destination),'server_included':manifest['server_included'],
+                        'complete_device_bundle':manifest['complete_device_bundle']})
+    return results
+
 
 def build_other(target, package_only=False):
     version=json.loads((ROOT/'config/release-policy.json').read_text())['version']
@@ -81,15 +104,9 @@ def build_other(target, package_only=False):
         shutil.copy2(source,destination)
         manifest=record(destination,'windows','x64',inspect_windows(destination))
     else:
-        if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
-        arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
-        if not arch:raise SystemExit('Unsupported Linux architecture')
-        if not package_only:
-            subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json','--bundles','deb','--ci','--no-sign','--','--locked'],cwd=client,env=env,check=True)
-        source=native/f'target/release/bundle/deb/AI Phone_{version}_{arch}.deb'
-        destination=dist/f'AI-Phone-{version}-linux-{arch}.deb'
-        shutil.copy2(source,destination)
-        manifest=record(destination,'linux',arch,inspect_deb(destination))
+        results=build_linux(ROOT,version,env,command,package_only)
+        print(json.dumps({'artifacts':results,'remote_upload':False}))
+        return
     print(json.dumps({'artifact':str(destination),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 
 

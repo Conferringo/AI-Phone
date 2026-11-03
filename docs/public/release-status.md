@@ -8,7 +8,7 @@ Updated 2026-11-01. Source code and technical documentation are available. **Com
 | --- | --- | --- |
 | macOS Apple Silicon | Native client and complete runtime resource profile; internal App/DMG builds | Fresh default-size dual-device installation, upgrades, signing/notarization and complete product acceptance |
 | Windows x64 | Native client, Android runtime and portable tools; offline WSL2 backend component | Client-owned distro lifecycle, native Android/WSL bridge, acceleration setup and complete first run |
-| Linux x64 | Native client and complete Debian package factory | Complete installed-client dual-device lifecycle; physical installation remains untested |
+| Linux x64 | Native client and complete Debian package factory; AppImage build qualification pending | Complete installed-client dual-device lifecycle; physical installation remains untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
 | Android ARM64 root/KVM | Native client and privileged-host target | Kernel/runtime integration, matched resources and complete dual-guest initialization |
 
