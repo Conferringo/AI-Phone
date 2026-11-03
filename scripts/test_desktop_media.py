@@ -15,7 +15,7 @@ class DesktopMediaTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.container = 'ai-phone-media-test-' + uuid.uuid4().hex[:10]
-        subprocess.run(['docker', 'run', '-d', '--rm', '--init', '--network', 'none',
+        subprocess.run(['docker', 'run', '-d', '--rm', '--init', '--pull', 'never', '--network', 'none',
                         '--label', 'ai-phone.test=media', '--name', cls.container,
                         '--entrypoint', 'sh', os.environ.get('AI_PHONE_TEST_DESKTOP_IMAGE','ai-phone-desktop:20261028'), '-c',
                         'mkdir -p /tmp/ai-runtime; chown ai:ai /tmp/ai-runtime; chmod 700 /tmp/ai-runtime; exec sleep 300'],
@@ -104,14 +104,65 @@ class DesktopMediaTest(unittest.TestCase):
                 self.assertEqual(child.returncode, 0)
             self.assert_no_capture()
 
+    def generate_tone(self, duration):
+        path = '/tmp/aiphone-test-tone.wav'
+        generated = self.run_guest(
+            'ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y',
+            '-f', 'lavfi', '-i', f'sine=frequency=440:duration={duration}',
+            '-ar', '48000', '-ac', '2', path)
+        self.assertEqual(generated.returncode, 0, generated.stderr)
+        return path
+
+    def test_cold_first_tone_arrives_without_warming_the_capture(self):
+        import array
+        path = self.generate_tone(4)
+        # Restart only the test-owned daemon so every run starts with a fresh clock.
+        daemon = self.run_guest('pgrep', '-x', 'pulseaudio').stdout.strip()
+        self.assertTrue(daemon)
+        self.assertEqual(self.run_guest('kill', '-KILL', daemon).returncode, 0)
+        self.wait_audio()
+        opened = time.monotonic()
+        child = self.capture()
+        tone = None
+        audible = threading.Event()
+        first = []
+
+        def read():
+            while block := child.stdout.read(9600):
+                samples = array.array('h')
+                samples.frombytes(block[:len(block) // 2 * 2])
+                if not first and max((abs(value) for value in samples), default=0) > 1000:
+                    first.append(time.monotonic() - opened)
+                    audible.set()
+
+        reader = threading.Thread(target=read)
+        reader.start()
+        try:
+            time.sleep(.1)
+            tone = subprocess.Popen(
+                ['docker', 'exec', '-u', 'ai', self.container, 'paplay', path],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.assertTrue(audible.wait(3), 'Cold capture produced no audible test signal')
+            self.assertLess(first[0], .75, 'First audio was delayed by the idle sink clock')
+        finally:
+            child.stdin.close()
+            child.wait(timeout=8)
+            reader.join(timeout=2)
+            child.stdout.close()
+            child.stderr.close()
+            if tone is not None:
+                self.assertEqual(tone.wait(timeout=8), 0)
+        self.assertFalse(reader.is_alive(), 'Capture reader did not join')
+        self.assertEqual(child.returncode, 0)
+        self.assert_no_capture()
+
     def test_tone_reaches_the_host_capture_pipe(self):
         import array
-        generated=self.run_guest('ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-f','lavfi','-i','sine=frequency=440:duration=2','-ar','48000','-ac','2','/tmp/aiphone-test-tone.wav')
-        self.assertEqual(generated.returncode,0,generated.stderr)
+        path=self.generate_tone(2)
         child=self.capture();tone=None;peak=0
         try:
             self.assertTrue(child.stdout.read(9600))
-            tone=subprocess.Popen(['docker','exec','-u','ai',self.container,'paplay','/tmp/aiphone-test-tone.wav'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            tone=subprocess.Popen(['docker','exec','-u','ai',self.container,'paplay',path],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             deadline=time.monotonic()+3
             while time.monotonic()<deadline:
                 block=child.stdout.read(9600)

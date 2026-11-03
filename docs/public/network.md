@@ -1,43 +1,89 @@
-# Device networks / 设备独立网络
+# Device networking
 
-2026-10-28。网络由每台设备内部的 Clash 图形应用管理。网页配置中心没有订阅或节点设置。
+Each guest has its own Clash application. Android uses Clash Meta; the Linux
+desktop uses Clash Party. Manage subscriptions, nodes, VPN/TUN and startup inside
+the device. The web configuration center manages devices and Agents; network
+subscriptions stay in the guest application.
 
-## 使用方式
+## Configure a device
 
-- Android：桌面打开 **Clash Meta**，在「配置」导入自己的订阅，选择配置并启动 VPN；在应用内管理节点、更新和自动重启。
-- Linux：桌面打开 **Clash**（Clash Party），导入自己的订阅并启用 TUN。应用设置中可选择开机启动；关闭该选项后，AI Phone 不强制恢复代理。
-- 新设备预装客户端，默认没有订阅、节点或开发者账号，用户自行决定是否启动。已有设备的私有配置留在原设备中。
+- **Android:** open **Clash Meta**, import a subscription under Profiles, select
+  the profile and start the VPN. Updates and automatic restart use the app's
+  settings.
+- **Linux:** open **Clash**, import a subscription and enable TUN. The app's
+  startup preference controls whether it opens with the desktop.
 
-Android 使用系统 VPN，Linux 使用客体网络命名空间内的 TUN。桌面客户端在客体内以 root 运行以配置路由；不获得 macOS 宿主机执行权限。Linux 仅增加 NET_ADMIN，不使用 host network、privileged 或 Docker socket，不映射代理/控制端口到局域网。
+New devices contain no developer subscription, nodes or accounts. Existing
+application data and user-installed updates are preserved. Closing the app or
+disabling its VPN/TUN remains under the user's control.
 
-项目宿主默认直联，Android 不继承宿主 Clash。Agent 的模型代理是独立、显式的配置；已有模型代理不会被网络迁移清空。宿主自身的系统代理由用户管理，本项目不关闭其他项目或宿主 Clash。
+## Network boundaries
 
-## 生命周期
+The host defaults to direct access. An Agent's explicit model proxy is independent
+of guest networking. AI Phone does not change the host's system proxy or another
+application's Clash instance.
 
-安装器从官方发行下载固定版本的 Android APK 和 Linux deb，校验大小和 SHA256；版本、来源与 Android 签名指纹见 `config/clash-apps.json`。Linux 镜像内安装原版客户端，Android 创建流程幂等安装，已有应用数据和用户更新版本保留。
+Android uses its system VPN. The Linux app configures TUN as root inside the guest
+container, with `NET_ADMIN`. It does not receive host networking, privileged Docker
+access or the Docker socket; proxy and controller ports are not exposed to the
+LAN. Guest root does not grant host execution privileges.
 
-Linux 每次启动创建临时 `/dev/net/tun` 节点；桌面启动后根据原生应用的 XDG 自启选项打开客户端。代理路由由客户端自身管理，不由网页反复拉起。Android 使用客户端的原生自动重启选项。关闭应用/VPN 是用户可控操作。
+Root Android processes may fall outside the VPN's application routing. The supplied
+root `curl` wrapper uses the device-local proxy while the native VPN is active;
+that behavior does not establish VPN coverage for every root program. Check the
+affected application or process when diagnosing a route.
 
-`apps/device-network/control.ts` 和 `infra/network` 保留旧部署的迁移与诊断能力。标记为应用管理后，旧后台核心不会自动恢复，旧网页网络 API 已移除；不会用退役控制器误报原生客户端失败。旧配置仅作为私有备份保留。root curl 包装器在原生 Android VPN 运行时连接设备本地代理，不能据此承诺任意 root 程序都会自动经过 VPN。
+## Installation and startup
 
-## 本机真实验收
+Complete factory resources include the Android APKs and the Linux app in the
+desktop image. Source development setup can download the same pinned applications.
+Versions, origins, sizes, SHA-256 digests and Android signer identities are recorded
+in [`config/clash-apps.json`](../../config/clash-apps.json). See
+[release status](release-status.md) for complete installer availability.
 
-- Android Clash Meta 2.11.36 和 Linux Clash Party 2.0.4 的真实 GUI、独立 TUN 与国内/境外 HTTPS、固定哈希文件下载。
-- 手机客户端直接刷新原订阅成功，Linux 原生客户端导入订阅成功；未把缓存预置当作刷新成功。
-- 手机系统与 Linux 容器分别重启后，两端 GUI 核心/TUN 恢复，六项 HTTPS/下载检查再次通过。Linux 重启时 TUN 节点丢失的问题已定位并修复。
-- 空白隔离 Linux 容器实际启动，Clash 程序/桌面入口/TUN 节点齐全，没有开发者订阅或账号；Android 重复安装流程保留现有应用数据。
-- 普通 Android 应用通过外部 HTTPS 事件流收到随机测试消息并生成系统通知，后端监听与只读 Agent 摘要有真实验证；不向真实社交联系人发送测试消息。
+Linux recreates its temporary `/dev/net/tun` node on guest startup and opens Clash
+according to the application's XDG startup setting. The application owns its routes
+and core process. Android uses the native app's automatic restart preference.
+Subscriptions remain private device data and are excluded from distribution inputs.
 
-上述不是所有地区/订阅、微信实号推送、FCM、UDP、宿主整机重启/休眠或长期稳定性的认证。节点 DNS、分流和订阅更新由原生客户端及用户选择的服务决定。不能通过修改设备型号解除平台账号限制。
+## Verification scope
 
-## English
+The current ARM64 development deployment has verified native app startup, separate
+TUN routes, subscription import/refresh, HTTPS access, hashed downloads and recovery
+after guest restart. An isolated empty Linux first boot was also checked. An Android
+HTTPS event stream produced a system notification that the backend listener read.
 
-Clash is an application **inside each guest**, not a network page in the web configuration center. Android ships Clash Meta; Linux ships Clash Party. Import your own subscription and control VPN/TUN, nodes, updates and startup in the native app. Fresh devices contain no developer subscription or account.
+These checks do not certify clean-host installation, real WeChat push, FCM, every
+subscription or protocol, host sleep/restart, or long-duration recovery. DNS, routing
+and upstream availability depend on the selected profile and service. Device identity
+changes do not resolve platform account restrictions.
 
-The host defaults to direct access. Explicit Agent model proxies are separate. Guests never inherit a new host proxy automatically. Linux uses NET_ADMIN within its isolated container, with no host networking or exposed proxy/controller ports. The app's startup preference is respected; the retired background core is not restarted after handoff.
+## Third-party software
 
-Official app versions, sizes, hashes and sources are pinned in `config/clash-apps.json`. Source archives exclude APK/deb files, subscriptions and device disks. The installer downloads verified binaries separately. A network that cannot reach GitHub may set `AI_PHONE_BOOTSTRAP_PROXY` for installation downloads only.
+[Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid/tree/v2.11.36)
+and [Clash Party](https://github.com/mihomo-party-org/clash-party/tree/v2.0.4) are
+upstream GPLv3 projects. Distribution must include their applicable notices and
+corresponding-source requirements. A matching binary digest alone does not complete
+that review.
 
-Actual guest GUI/TUN, native subscription import/refresh, HTTPS, hashed downloads and guest restart recovery passed on the current ARM64 deployment. An empty isolated Linux first boot was also checked. This does not certify a fresh host installation, real WeChat push, every route/protocol or long-duration recovery.
+## 中文
 
-Upstream sources and GPLv3 licences: [Clash Meta for Android](https://github.com/MetaCubeX/ClashMetaForAndroid/tree/v2.11.36), [Clash Party](https://github.com/mihomo-party-org/clash-party/tree/v2.0.4). Binary/image redistribution still requires the applicable notices and corresponding-source obligations; a matching hash is not a completed licensing review.
+每台设备在系统内使用独立的 Clash 应用：Android 为 Clash Meta，Linux 为 Clash
+Party。打开设备桌面上的应用，导入订阅并启用 VPN/TUN；节点、更新和开机启动均由
+应用自身管理。网页配置中心不保存设备订阅。新设备没有开发者节点、订阅或账号，
+已有应用数据和用户更新保持。
+
+宿主默认直联，Agent 显式配置的模型代理独立生效。Android 使用系统 VPN；Linux
+仅在客体容器内使用 `NET_ADMIN` 配置 TUN，不开放宿主网络、Docker socket 或局域网
+代理端口。客体 root 不获得宿主执行权限。Android root 进程不一定经过应用 VPN；
+提供的 root `curl` 包装器在 VPN 运行时使用设备本地代理，不代表所有 root 程序。
+
+完整工厂资源包含 Android APK 和 Linux 桌面应用，源码开发安装也可下载相同的固定
+版本；来源、大小、摘要和 Android 签名见上方配置。用户订阅属于私有设备数据，不
+作为发行输入。Linux 启动时重建 TUN 节点并遵循应用自启设置，Android 遵循原生
+自动重启选项。完整安装包供应情况见[发行状态](release-status.md)。
+
+当前 ARM64 开发环境已验证应用、独立 TUN、订阅导入/刷新、HTTPS、哈希下载、客体
+重启恢复，以及 Android 事件流通知的后端接收。这不代表全新宿主、微信实号推送、
+FCM、所有地区/协议或长期稳定性验收。第三方客户端的 GPLv3 声明和对应源码义务
+分别适用。
