@@ -75,8 +75,8 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 3988,
-      "sha256": "c5ec6dddc82cec125a4daa263acd32493d5efaac127c5a45b676c91cebc80f92"
+      "size": 4695,
+      "sha256": "7f66b6ce10dfd582aa4a943b213d33f8b210ad65845c4bceda4fb225cf6927fd"
     },
     {
       "path": ".github/workflows/source.yml",
