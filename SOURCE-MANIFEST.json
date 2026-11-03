@@ -2765,8 +2765,8 @@
     },
     {
       "path": "crates/guest-runtime/src/paint.rs",
-      "size": 6289,
-      "sha256": "e47de7c7ebdb7ad3b6188551c16d1ac7262a0dea7247d5a0a4bae82437d1b5fb"
+      "size": 6473,
+      "sha256": "e742aa55005423ec701b1f26ab99a4ee9462cc5af772c0bd42fb3cf35b1415ac"
     },
     {
       "path": "crates/guest-runtime/src/process.rs",

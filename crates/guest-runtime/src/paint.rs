@@ -34,6 +34,22 @@ fn changed(before: &RgbImage, after: &RgbImage) -> bool {
         == 64
 }
 
+fn settled_state(
+    painted: bool,
+    transition: bool,
+    quiet: Duration,
+    elapsed: Duration,
+) -> Option<&'static str> {
+    let expired = elapsed >= DEADLINE;
+    if painted && quiet >= QUIET && (!transition || expired) {
+        Some("stable")
+    } else if expired {
+        Some(if painted { "changing" } else { "unchanged" })
+    } else {
+        None
+    }
+}
+
 pub async fn after(
     screen: &impl Screen,
     mut previous: RgbImage,
@@ -53,15 +69,12 @@ pub async fn after(
         // A new title can precede document layout by several quiet intervals.
         // Use the existing budget for transitions, without delaying ordinary input.
         let transition = screen.title().is_ok_and(|title| title != before_title);
-        let expired = now.duration_since(start) >= DEADLINE;
-        let state =
-            if painted && now.duration_since(last_change) >= QUIET && (!transition || expired) {
-                Some("stable")
-            } else if expired {
-                Some(if painted { "changing" } else { "unchanged" })
-            } else {
-                None
-            };
+        let state = settled_state(
+            painted,
+            transition,
+            now.duration_since(last_change),
+            now.duration_since(start),
+        );
         if let Some(state) = state {
             return Ok(Frame {
                 image,
