@@ -46,13 +46,20 @@ def supplemental_notices(root, package, folder):
         paths.append((path,item['url']))
     return paths
 
+def project_members(root):
+    manifest=root/'Cargo.toml'
+    if not manifest.exists():return set()
+    metadata=json.loads(subprocess.check_output(['cargo','metadata','--manifest-path',str(manifest),'--no-deps','--locked','--format-version','1'],cwd=root))
+    return set(metadata['workspace_members'])
+
 def inventory(root=ROOT):
+    owned=project_members(root)
     rust_packages={};locks={'Cargo.lock':checksum(root/'Cargo.lock'),'bun.lock':checksum(root/'bun.lock')}
     manifests=['Cargo.toml','apps/client/src-tauri/Cargo.toml']
     for manifest in manifests:
         if not (root/manifest).exists():continue
         metadata=json.loads(subprocess.check_output(['cargo','metadata','--manifest-path',str(root/manifest),'--locked','--format-version','1'],cwd=root))
-        workspace=set(metadata['workspace_members'])
+        workspace=owned|set(metadata['workspace_members'])
         lock=Path(manifest).with_name('Cargo.lock');locks[str(lock)]=checksum(root/lock)
         for package in metadata['packages']:
             if package['id'] in workspace:continue
@@ -95,7 +102,7 @@ def runtime_notice_blocks(root):
 def rust_notices(root, manifest_name, component):
     manifest=root/manifest_name
     metadata=json.loads(subprocess.check_output(['cargo','metadata','--manifest-path',str(manifest),'--locked','--format-version','1'],cwd=root))
-    owned=set(metadata['workspace_members']);blocks=['AI Phone '+component+' dependency notices\n\nExact locked build graph, including platform/build dependencies. Component licences remain independent. This collection is not a final redistribution clearance.\n'];missing=[]
+    owned=project_members(root)|set(metadata['workspace_members']);blocks=['AI Phone '+component+' dependency notices\n\nExact locked build graph, including platform/build dependencies. Component licences remain independent. This collection is not a final redistribution clearance.\n'];missing=[]
     for package in sorted(metadata['packages'],key=lambda p:(p['name'],p['version'])):
         if package['id'] in owned:continue
         folder=Path(package['manifest_path']).parent

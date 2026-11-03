@@ -21,6 +21,44 @@ The backend does not import the host's Docker context or Lima state. It owns
 lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
+## Native client resources
+
+Maintainer builds accept `--wsl-runtime /factory/backend.payload` for Windows. The resource preparer validates the sealed capsule and materializes its exact `rootfs.tar.gz` and manifest under the client's `host/wsl` directory. A compiled manifest digest binds that group to the executable. Artifact inspection rejects changed or additional group members. Source-only builds omit the group; end users do not run this preparation step.
+
+The Rust client passes the installed resource directly to the application-owned WSL registration lifecycle. The first import checks its image digest and capacity; a registered distribution resumes from its owned disk without another base-image copy or import. Cancellation and unknown import outcomes follow the same registration recovery contract. This stage does not mark services, the native phone bridge or a complete device deployment ready.
+
+## Native registration
+
+The Rust host runtime owns rootfs admission, WSL2 registration and registration
+recovery. It verifies the base-image digest once before a new import and records
+the application-owned directory before invoking `wsl.exe`. Registry reads use
+native Windows APIs through Microsoft's `windows-registry` crate. Recovery binds
+the distribution name, WSL version and actual registered directory to the saved
+owner record.
+
+| Saved state | Recovery |
+| --- | --- |
+| Prepared | Verify the base image before the first import |
+| Importing | Observe the registered directory; an absent or uncertain result is not replayed |
+| Registered | Reuse the existing guest without reimporting or rereading its base image |
+
+The registration stage preserves existing guest disks and rejects a changed base
+image or a foreign registration. It does not unregister distributions, change the
+default distribution, modify global WSL settings or shut down other environments.
+Native command cancellation waits for the owned process and its bounded output
+readers; an interrupted OS operation remains subject to registration recovery.
+
+`wsl-host import <rootfs> <installation> <sha256> <expanded-bytes>` is the native
+installer component interface, not an end-user deployment procedure. Its result
+keeps `backend_initialized=false` and `phone_ready=false`. Client first-run
+integration, WSL feature enablement, backend initialization and the native Android
+bridge still need to be connected before Windows independent deployment is enabled.
+The Windows CI job compiles this component and exercises its registry adapter;
+those checks do not establish a real WSL/WHPX guest installation.
+
+The command boundary follows [Microsoft's WSL import interface](https://learn.microsoft.com/en-us/windows/wsl/basic-commands#import-a-distribution).
+Registration directory identity follows the [documented VHD location lookup](https://learn.microsoft.com/en-us/windows/wsl/disk-space#how-to-locate-the-vhdx-file-and-disk-path-for-your-linux-distribution).
+
 ## Factory and qualification
 
 [`wsl-backend.yml`](../../.github/workflows/wsl-backend.yml) runs on each pull

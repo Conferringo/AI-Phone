@@ -19,9 +19,10 @@ def installer_metadata(path,host):
     return {'file':path.name,'format':kind,'size':size,'single_file':True,
             'user_assembly_required':False,'github_asset_eligible':size<ASSET_LIMIT}
 
-SIDECARS={'android-runtime','container-images','installer-tools'}
+CORE_SIDECARS={'android-runtime','container-images','installer-tools'}
+SIDECARS=CORE_SIDECARS|{'wsl-backend'}
 SERVICES={'web','native-services','js-services'}
-FULL_RUNTIME=set(COMPONENT_MANIFESTS)|SIDECARS
+FULL_RUNTIME=set(COMPONENT_MANIFESTS)|CORE_SIDECARS
 HOST_RUNTIMES={'macos-arm64':FULL_RUNTIME,'linux-x64':FULL_RUNTIME,'linux-amd64':FULL_RUNTIME}
 
 
@@ -33,10 +34,12 @@ def delivery_metadata(components,host):
         raise ValueError('Unknown or duplicate client component')
     required=HOST_RUNTIMES.get(host,FULL_RUNTIME|{'host-runtime'})
     missing=sorted(required-selected)
-    server=SERVICES<=selected
+    backend='wsl-backend' in selected
+    server=SERVICES<=selected or backend
     complete=not missing
     return {'prebuilt_components':components,'server_included':server,'runtime_payload_complete':complete,
             'complete_device_bundle':complete,'missing_runtime_components':missing,
             'deployment_mode':'embedded-local' if complete else 'component-bundle',
             'server_requirement':'None; the client initializes its local device runtime.' if complete else
-                'Client-managed source setup or a configured local/LAN service; complete device hosting is not included.'}
+                ('Bundled Linux backend; Windows device initialization is not complete.' if backend else
+                 'Client-managed source setup or a configured local/LAN service; complete device hosting is not included.')}

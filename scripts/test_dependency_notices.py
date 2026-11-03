@@ -39,4 +39,26 @@ class NoticeTests(unittest.TestCase):
             lock=root/'apps/client/src-tauri/Cargo.lock';lock.write_text(lock.read_text().replace('a'*64,'b'*64))
             with self.assertRaisesRegex(ValueError,'archive'):supplemental_notices(root,package,source)
 
+
+class OwnedCrateTests(unittest.TestCase):
+    def test_native_dependency_notices_distinguish_project_members_from_vendored_crates(self):
+        from dependency_inventory import rust_notices
+        import subprocess
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            (root/'Cargo.toml').write_text('[workspace]\nmembers=["crates/owned"]\nresolver="2"\n')
+            for name,folder in [('owned',root/'crates/owned'),('local-vendor',root/'vendor/lib'),('client',root/'apps/client')]:
+                folder.mkdir(parents=True);(folder/'src').mkdir();(folder/'src/lib.rs').write_text('')
+                body=f'[package]\nname="{name}"\nversion="0.1.0"\nedition="2024"\nlicense="MIT"\n'
+                if name=='client':body+='[workspace]\n[dependencies]\nowned={path="../../crates/owned"}\nlocal-vendor={path="../../vendor/lib"}\n'
+                elif name=='local-vendor':body+='[workspace]\n'
+                (folder/'Cargo.toml').write_text(body)
+            (root/'vendor/lib/LICENSE').write_text('Fixture third-party grant')
+            for path in ['Cargo.toml','apps/client/Cargo.toml']:
+                subprocess.run(['cargo','generate-lockfile','--offline','--manifest-path',str(root/path)],check=True,capture_output=True)
+            text,missing=rust_notices(root,'apps/client/Cargo.toml','fixture')
+            self.assertEqual(missing,[])
+            self.assertIn('Fixture third-party grant',text)
+            self.assertNotIn('owned 0.1.0',text)
+
 if __name__=='__main__':unittest.main()

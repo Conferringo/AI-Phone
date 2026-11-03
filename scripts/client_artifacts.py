@@ -38,7 +38,9 @@ def inspect_payload(files, root=ROOT):
     seen=set();result=[]
     for name,data in sorted(files.items()):
         relative=next((relative for relative in legal if name.endswith('/'+relative) or name==relative),None)
-        if '/host/tools/' in ('/'+name).casefold() and relative is None:raise ValueError('Unexpected installer tool resource: '+name)
+        if relative is None:
+            for group,label in [('tools','tool'),('wsl','WSL')]:
+                if '/host/'+group+'/' in ('/'+name).casefold():raise ValueError('Unexpected installer '+label+' resource: '+name)
         approved=public.get(relative)
         receipt=file_receipt(data,approved) if isinstance(data,Path) else inspect_stream(io.BytesIO(data),name,approved)
         if relative is not None:
