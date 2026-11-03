@@ -260,3 +260,76 @@ async fn stalled_phone_model_does_not_block_desktop_and_cancel_is_per_run() {
     })
     .await;
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; rejected commands never dispatch to a guest"]
+async fn ordinary_search_rejects_stored_command_calls_before_dispatch() {
+    database_case(|app| async move {
+        let (run,message) = queued(&app,"fixture-desktop","user").await;
+        sqlx::query("UPDATE runs SET context=$2 WHERE id=$1")
+            .bind(run).bind(json!([{"role":"user","content":[{"type":"input_text","text":"找智能安防相关的企业，记到电脑的表格里"}]}]))
+            .execute(&app.db).await.unwrap();
+        for name in ["computer_run","phone_shell","workspace_run","workspace_fetch"] {
+            // These invalid arguments are safe even if the policy regresses: no valid
+            // guest id, script rejected before container launch, and no network URL.
+            let call=json!({"name":name,"arguments":json!({"device_id":"unregistered-fixture","script":"x".repeat(16001),"url":"invalid-fixture-url"}).to_string()});
+            let output=tool(&app,run,message,&call,&mut 0,&CancellationToken::new()).await.unwrap();
+            let result=tool_value(&output).unwrap();
+            assert_eq!(result["code"],"visible_device_required","{name}");
+            assert_eq!(result["not_executed"],true);
+            assert_eq!(result["success"],false);
+            assert_eq!(result["next_tool"],"computer_observe");
+        }
+        assert!(!app.root.join("data/workspaces").exists());
+    }).await;
+}
+
+async fn events(app: &Shared, request: wire::HarnessEventRequest) -> wire::HarnessEventList {
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        "authorization",
+        "Bearer steering-fixture-token".parse().unwrap(),
+    );
+    headers.insert("content-type", MEDIA.parse().unwrap());
+    let response = crate::workbench::route(
+        axum::extract::State(app.clone()),
+        axum::extract::Path("events".into()),
+        headers,
+        Ok(axum::body::Bytes::from(request.encode_to_vec())),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(response.into_body(), 1_000_000)
+        .await
+        .unwrap();
+    wire::HarnessEventList::decode(bytes).unwrap()
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; protobuf timing and message scope"]
+async fn timing_projection_is_message_scoped_and_legacy_reads_remain_complete() {
+    database_case(|app| async move {
+        let (run,first)=queued(&app,"fixture-desktop","user").await;
+        let second=Uuid::now_v7();
+        sqlx::query("INSERT INTO messages(id,conversation_id,role) SELECT $2,conversation_id,'assistant' FROM runs WHERE id=$1").bind(run).bind(second).execute(&app.db).await.unwrap();
+        let old=super::model_trace::start(&app,run,first).await.unwrap();
+        let current=super::model_trace::start(&app,run,second).await.unwrap();
+        let canceled:String=sqlx::query_scalar("SELECT status FROM harness_events WHERE id=$1").bind(old).fetch_one(&app.db).await.unwrap();
+        assert_eq!(canceled,"canceled","new attempt closes stale running metadata");
+        let timing=json!({"preparation_ms":2,"headers_ms":5,"first_byte_ms":9,"model_ms":20,"elapsed_ms":22,"request_bytes":100,"unpublished":"fixture-private"});
+        super::model_trace::finish(&app,current,"completed",timing).await.unwrap();
+        let current_events=events(&app,wire::HarnessEventRequest{run_id:run.to_string(),message_id:second.to_string(),..Default::default()}).await;
+        assert_eq!(current_events.events.len(),1);
+        let event=&current_events.events[0];
+        assert_eq!(event.id,current.to_string());
+        let measured=event.model_timing.as_ref().unwrap();
+        assert_eq!(measured.preparation_ms,2);
+        assert_eq!(measured.first_byte_ms,Some(9));
+        assert_eq!(measured.request_bytes,100);
+        assert!(!format!("{current_events:?}").contains("fixture-private"));
+        let legacy=events(&app,wire::HarnessEventRequest{run_id:run.to_string(),..Default::default()}).await;
+        assert_eq!(legacy.events.len(),2,"empty new fields preserve old history queries");
+        let cutoff=events(&app,wire::HarnessEventRequest{run_id:run.to_string(),after_ms:u32::MAX as u64 * 1000,..Default::default()}).await;
+        assert!(cutoff.events.is_empty());
+    }).await;
+}

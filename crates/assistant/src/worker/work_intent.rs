@@ -64,7 +64,16 @@ const REQUIREMENTS: &[Requirement] = &[
             "去官网",
             "官网看看",
         ],
-        tools: &["workspace_fetch", "workspace_run"],
+        tools: &[
+            "computer_click",
+            "computer_type",
+            "computer_key",
+            "phone_tap_element",
+            "phone_input",
+            "phone_key",
+            "workspace_fetch",
+            "workspace_run",
+        ],
     },
     Requirement {
         targets: &["记住"],

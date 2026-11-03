@@ -385,5 +385,14 @@
   "语音输入需要文字且不能混入附件": "La saisie vocale nécessite du texte sans pièce jointe",
   "语音更正与已接受的片段不一致，请保留文本并重新发送": "La correction vocale ne correspond pas au segment accepté. Conservez le texte et renvoyez-le.",
   "待发送消息格式无效": "Message en attente invalide",
-  "较早消息": "Messages précédents"
+  "较早消息": "Messages précédents",
+  "等待模型": "En attente du modèle",
+  "耗时": "Durées",
+  "{count} 次模型调用": "{count} appels au modèle",
+  "准备请求": "Préparation",
+  "等待响应头": "Attente des en-têtes",
+  "等待首段数据": "Attente des premières données",
+  "读取模型流": "Lecture du flux",
+  "工具执行": "Exécution des outils",
+  "完成核验": "Vérification finale"
 }

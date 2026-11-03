@@ -385,5 +385,14 @@
   "语音输入需要文字且不能混入附件": "Spracheingaben benötigen Text ohne Anhänge",
   "语音更正与已接受的片段不一致，请保留文本并重新发送": "Die Sprachkorrektur widerspricht dem angenommenen Abschnitt. Behalten Sie den Text und senden Sie ihn erneut.",
   "待发送消息格式无效": "Ungültige Nachricht in der Warteschlange",
-  "较早消息": "Frühere Nachrichten"
+  "较早消息": "Frühere Nachrichten",
+  "等待模型": "Warte auf Modell",
+  "耗时": "Laufzeiten",
+  "{count} 次模型调用": "{count} Modellaufrufe",
+  "准备请求": "Vorbereitung",
+  "等待响应头": "Warten auf Header",
+  "等待首段数据": "Warten auf erste Daten",
+  "读取模型流": "Modellstream lesen",
+  "工具执行": "Werkzeuge",
+  "完成核验": "Abschlussprüfung"
 }
