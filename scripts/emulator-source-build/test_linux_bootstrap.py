@@ -457,6 +457,28 @@ class LifecycleTests(OwnedFixture):
         self.assertNotIn("private-", json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
+    def test_postcheck_failure_keeps_a_redacted_producer_trace_without_accepting_the_build(self):
+        def run(_command,arguments,_cwd,**_kwargs):
+            if '--build' not in arguments:return ''
+            build=self.root/'build';build.mkdir()
+            (build/'build-result.json').write_text(json.dumps({'build_status':'unknown','returncode':0,'verification_stage':'source_inputs',
+                'source_lock_sha256':bootstrap.producer.LOCK_SHA256,'build_id':bootstrap.producer.BUILD_ID,'target':'linux_x86_64'}))
+            (build/'build.log').write_text('Distribution task reached\n')
+            with (self.root/'private-build.log').open('a') as log:
+                log.write('api_key=private-sentinel\n'+str(self.root)+'/checkout\nValueError: Source checkout is not clean: external/qemu; status=generated-file.cc\n')
+            raise bootstrap.BuildFailure('command_failed')
+        output=io.StringIO()
+        with patch.object(bootstrap.SourceCommand,'run',autospec=True,side_effect=run),contextlib.redirect_stderr(output):
+            with self.assertRaises(bootstrap.BuildFailure):bootstrap.controlled_build(self.root)
+        receipt=self.public_receipt();diagnostics=receipt['build_diagnostics']
+        self.assertEqual(receipt['status'],'failed');self.assertEqual(diagnostics['upstream_returncode'],0)
+        self.assertEqual(diagnostics['verification_stage'],'source_inputs')
+        self.assertEqual(diagnostics['producer']['signals'],['source_changed'])
+        self.assertIn('Redacted producer tail',output.getvalue());self.assertIn('generated-file.cc',output.getvalue())
+        self.assertIn('Distribution task reached',output.getvalue())
+        self.assertNotIn('private-sentinel',output.getvalue());self.assertNotIn(str(self.root),output.getvalue())
+        self.assertNotIn('artifact_bytes',receipt)
+
     def test_invalid_or_absent_producer_result_does_not_mask_original_failure(self):
         for value in (None, "broken-json", json.dumps({"build_status": "failed", "returncode": True}),
                       json.dumps({"source_lock_sha256": "0" * 64, "returncode": "private-key-sentinel"})):
@@ -510,6 +532,27 @@ class LifecycleTests(OwnedFixture):
         for value in ([], {**identity, "target": "private-key-sentinel"}):
             path.write_text(json.dumps(value))
             self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "invalid"})
+
+    def test_post_build_stage_projects_only_fixed_values_and_an_observed_zero_exit(self):
+        build=self.root/'build';build.mkdir();path=build/'build-result.json'
+        identity={'source_lock_sha256':bootstrap.producer.LOCK_SHA256,'build_id':bootstrap.producer.BUILD_ID,'target':'linux_x86_64','build_status':'unknown'}
+        for stage in ('distribution','source_inputs','artifact_digest','complete'):
+            path.write_text(json.dumps({**identity,'returncode':0,'verification_stage':stage,'private':'private-sentinel'}))
+            self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'unknown','upstream_returncode':0,'verification_stage':stage})
+        for stage,code in [('private-sentinel',0),('source_inputs',True),('source_inputs',1)]:
+            path.write_text(json.dumps({**identity,'returncode':code,'verification_stage':stage}))
+            self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'unknown'})
+        path.write_text(json.dumps({**identity,'build_status':'private-sentinel','returncode':0,'verification_stage':'complete'}))
+        self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'invalid'})
+
+    def test_source_and_distribution_postcheck_signals_do_not_copy_error_contents(self):
+        log=self.root/'postcheck.log'
+        for line,signal in [('ValueError: Source checkout is not clean: external/qemu; status=private-sentinel','source_changed'),
+                            ('ValueError: Expected upstream distribution was not produced','distribution_missing'),
+                            ('ValueError: Source project revision mismatch: private-sentinel','source_revision')]:
+            log.write_text(line+'\n')
+            result=bootstrap.log_diagnostics(log,self.root/'checkout')
+            self.assertEqual(result['signals'],[signal]);self.assertNotIn('private-sentinel',json.dumps(result))
 
     def test_receipt_byte_budget_accepts_the_limit_and_rejects_larger_input(self):
         build = self.root / "build"

@@ -349,7 +349,7 @@ def read_log_tail(path, maximum):
         return ""
 
 
-def print_failure_log(root, relative="build/build.log"):
+def print_failure_log(root, relative="build/build.log", *, label="Redacted upstream build tail"):
     text = read_log_tail(root / relative, 8192)
     if not text:
         return
@@ -359,7 +359,7 @@ def print_failure_log(root, relative="build/build.log"):
             text = text.replace(value, replacement)
     lines = ["[redacted credential-like line]" if CREDENTIAL_HINT.search(line) else line for line in text.splitlines()]
     with contextlib.suppress(OSError, ValueError):
-        print("Redacted upstream build tail:\n" + "\n".join(lines)[-8192:], file=sys.stderr)
+        print(label+":\n" + "\n".join(lines)[-8192:], file=sys.stderr)
 
 
 def log_diagnostics(path, checkout):
@@ -375,8 +375,24 @@ def log_diagnostics(path, checkout):
             result["recipe_frames"].append({"file": name, "line": int(lines[-1])})
     signals = {"argument_error": "error: unrecognized arguments:", "cmake_error": "CMake Error",
                "ninja_error": "ninja: build stopped:", "missing_file": "No such file or directory",
-               "disk_full": "No space left on device"}
+               "disk_full": "No space left on device",
+               "distribution_missing": "ValueError: Expected upstream distribution was not produced",
+               "source_changed": "ValueError: Source checkout is not clean:",
+               "source_revision": "ValueError: Source project revision mismatch:"}
     result["signals"] = [name for name, marker in signals.items() if marker in text]
+    return result
+
+
+def producer_outcome(value):
+    status = value.get("build_status")
+    if status not in ("failed", "unknown", "built"):return {"producer_status":"invalid"}
+    result = {"producer_status": status}
+    code = value.get("returncode")
+    if status == "failed" and type(code) is int and -128 <= code <= 255:
+        result["upstream_returncode"] = code
+    stage=value.get("verification_stage")
+    if stage in ("distribution","source_inputs","artifact_digest","complete") and type(code) is int and code==0:
+        result.update(upstream_returncode=0,verification_stage=stage)
     return result
 
 
@@ -391,12 +407,7 @@ def producer_diagnostics(root):
     identity = {"source_lock_sha256": producer.LOCK_SHA256, "build_id": producer.BUILD_ID, "target": "linux_x86_64"}
     if not isinstance(value, dict) or any(value.get(key) != expected for key, expected in identity.items()):
         return {"producer_status": "invalid"}
-    status = value.get("build_status")
-    result = {"producer_status": status if status in ("failed", "unknown", "built") else "invalid"}
-    code = value.get("returncode")
-    if status == "failed" and type(code) is int and -128 <= code <= 255:
-        result["upstream_returncode"] = code
-    return result
+    return producer_outcome(value)
 
 
 def build_diagnostics(root):
@@ -429,6 +440,14 @@ def enter_sync_phase(root, receipt, phase):
 def with_display(arguments):
     return ["xvfb-run", "--auto-servernum",
             "--server-args=-screen 0 1280x800x24 -nolisten tcp", "--", *arguments]
+
+
+def print_build_failure(root,status,stage):
+    if status not in {"failed","unknown"}:return
+    if stage not in {"source_sync","source_build"}:return
+    relative="private-build.log" if stage=="source_sync" else "build/build.log"
+    print_failure_log(root,relative)
+    if stage=="source_build":print_failure_log(root,"private-build.log",label="Redacted producer tail")
 
 
 def controlled_build(root):
@@ -482,9 +501,7 @@ def controlled_build(root):
         receipt.update(status="unknown", reason="interrupted_or_unknown")
         raise
     finally:
-        if receipt["status"] in {"failed", "unknown"} and receipt["stage"] in {"source_sync", "source_build"}:
-            relative = "private-build.log" if receipt["stage"] == "source_sync" else "build/build.log"
-            print_failure_log(root, relative)
+        print_build_failure(root,receipt["status"],receipt["stage"])
         publish_receipt(root, receipt)
 
 

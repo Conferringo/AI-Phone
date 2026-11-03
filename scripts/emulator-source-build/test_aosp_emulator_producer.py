@@ -43,6 +43,14 @@ class RecipeContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not declare this native target"):
             producer.checked_distribution(source, "android_aarch64")
 
+    def test_changed_source_still_fails_with_bounded_status_evidence(self):
+        record={'path':'external/qemu','revision':'a'*40}
+        status='?? generated-file.cc\n M source.cc\n'+'z'*7000
+        with patch.object(producer,'git_read',side_effect=[record['revision'],status]):
+            with self.assertRaisesRegex(ValueError,'not clean') as failure:producer.verify_project(self.root,record)
+        self.assertIn('generated-file.cc',str(failure.exception))
+        self.assertLess(len(str(failure.exception)),4300)
+
     def test_missing_distribution_is_rejected_without_importing_source(self):
         source = self.root / "table.py"
         source.write_text("raise AssertionError('must not execute')\nclass Toolchain:\n AVAILABLE = {'linux-x86_64': 'toolchain.cmake'}\n DISTRIBUTION = {}\n", encoding="utf-8")
@@ -113,6 +121,48 @@ class ProducerLifecycleTests(unittest.TestCase):
             argv.append("--build")
         with patch.object(sys, "argv", argv):
             producer.main()
+
+    def upstream_distribution(self,*_args,**_kwargs):
+        folder=self.work/'dist';folder.mkdir()
+        (folder/('sdk-repo-darwin_aarch64-emulator-'+producer.BUILD_ID+'.zip')).write_bytes(b'owned mock artifact')
+        return SimpleNamespace(returncode=0)
+
+    def test_upstream_exit_is_separate_from_a_missing_distribution(self):
+        with patch.object(producer.subprocess,'run',return_value=SimpleNamespace(returncode=0)):
+            with self.assertRaisesRegex(ValueError,'distribution was not produced'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'distribution')
+        self.assertNotIn('artifact',result)
+
+    def test_source_postcheck_failure_is_not_misreported_as_a_failed_compiler(self):
+        with patch.object(producer.subprocess,'run',side_effect=self.upstream_distribution),\
+             patch.object(producer,'project_inputs',side_effect=[([],self.lock),ValueError('Source checkout is not clean: external/qemu')]):
+            with self.assertRaisesRegex(ValueError,'not clean'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'source_inputs')
+        self.assertNotIn('artifact',result)
+
+    def test_digest_failure_preserves_the_verified_stage_without_qualifying_the_artifact(self):
+        with patch.object(producer.subprocess,'run',side_effect=self.upstream_distribution),\
+             patch.object(producer,'sha256',side_effect=OSError('owned read failed')):
+            with self.assertRaises(OSError):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'artifact_digest')
+        self.assertNotIn('artifact',result)
+
+    def test_failed_upstream_preserves_the_actual_exit_and_has_no_verification_stage(self):
+        with patch.object(producer.subprocess,'run',return_value=SimpleNamespace(returncode=7)):
+            with self.assertRaisesRegex(ValueError,'Upstream build failed'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'failed')
+        self.assertEqual(result['returncode'],7)
+        self.assertNotIn('verification_stage',result)
 
     def test_plan_cannot_launch_upstream_or_create_work(self):
         with patch.object(producer.subprocess, "run", side_effect=AssertionError("Unexpected build")) as run:
