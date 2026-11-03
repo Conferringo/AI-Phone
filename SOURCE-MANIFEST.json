@@ -4865,8 +4865,8 @@
     },
     {
       "path": "scripts/factory_cache.py",
-      "size": 2838,
-      "sha256": "96a8345ca726897b87d2cff156d8d23728516cd0862029619d295c072eee6818"
+      "size": 4498,
+      "sha256": "041379806f67bafe7f5707d8db2496b1850a31c8e528f8857ff865539a806e05"
     },
     {
       "path": "scripts/factory_image_candidate.py",
@@ -5495,8 +5495,8 @@
     },
     {
       "path": "scripts/test_factory_cache.py",
-      "size": 4526,
-      "sha256": "8ed5a604bd63c64fd0475d408903720e2f8f666660f3a03cd758d82bb9be0efb"
+      "size": 7564,
+      "sha256": "723742fc5e2deb3cad16481e6e02d3f7cfb74cf5e073600588825f7f6beba8be"
     },
     {
       "path": "scripts/test_factory_image_candidate.py",
@@ -5850,8 +5850,8 @@
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
-      "size": 3400,
-      "sha256": "b8bd07cc1de68e159b0a0b52e289fc64a5cab81adf09d2f7cc91e46e2a2f362b"
+      "size": 3583,
+      "sha256": "454b2a116ea64f73ff53a8e0cce23d5c25179bb1bcf4ff1404cde50a2781fae4"
     },
     {
       "path": "scripts/wsl_engine_inputs.py",
