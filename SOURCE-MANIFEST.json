@@ -2805,8 +2805,8 @@
     },
     {
       "path": "crates/guest-runtime/tests/x11_paint.rs",
-      "size": 5277,
-      "sha256": "caeade2cdbe02b12280a0e47d37fc3bb106c0354d336bc6d066d4b936f9892a8"
+      "size": 5462,
+      "sha256": "393fe102c9eaa475f393a7a378ad447afd7d94c885a9d6d1c866b8770348647f"
     },
     {
       "path": "crates/host-runtime/Cargo.toml",

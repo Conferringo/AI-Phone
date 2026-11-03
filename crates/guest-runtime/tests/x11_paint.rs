@@ -44,7 +44,9 @@ fn exercise(wait: bool) -> (Value, image::RgbImage, Duration) {
                 &CreateWindowAux::new()
                     .background_pixel(0x1f3f7f)
                     .override_redirect(1)
-                    .event_mask(EventMask::BUTTON_RELEASE),
+                    // Select the press too: otherwise Openbox receives it on the
+                    // root and its implicit grab owns the matching release.
+                    .event_mask(EventMask::BUTTON_PRESS | EventMask::BUTTON_RELEASE),
             )?
             .check()?;
             conn.create_gc(gc, window, &CreateGCAux::new().foreground(0x00b428))?
