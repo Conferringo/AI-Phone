@@ -38,7 +38,7 @@ FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_
                    "repo_key_declaration", "repo_tag_identity", "repo_commit_identity", "repo_checkout_identity",
                    "manifest_identity", "synced_manifest_identity", "manifest_checkout_identity",
                    "installed_repo_identity", "installed_repo_dirty", "producer_receipt", "source_checkout_layout",
-                   "source_input_tree"}
+                   "source_input_tree", "process_stop_timeout"}
 
 
 class BuildFailure(RuntimeError):
@@ -75,6 +75,26 @@ def signal_session(process, requested):
         pass
 
 
+def group_active(process):
+    # The unreaped session leader reserves this group identity during cleanup.
+    for entry in Path('/proc').iterdir():
+        if not entry.name.isdecimal():continue
+        try:
+            if os.getpgid(int(entry.name))!=process.pid:continue
+            fields=(entry/'stat').read_text().rsplit(')',1)[1].split()
+        except (FileNotFoundError,ProcessLookupError):continue
+        if fields[3]==str(process.pid) and fields[0] not in {'Z','X'}:return True
+    return False
+
+
+def group_finished(process,timeout):
+    deadline=time.monotonic()+timeout
+    while group_active(process):
+        if time.monotonic()>=deadline:return False
+        time.sleep(.02)
+    return True
+
+
 class SourceCommand:
     def __init__(self, root, environment, log):
         self.root = root
@@ -93,18 +113,22 @@ class SourceCommand:
                 raise BuildInterrupted("command_timeout")
             time.sleep(.05)
 
-    def stop(self, process):
-        if observed_exit(process) is None:
+    def stop(self, process, graceful=False):
+        running=observed_exit(process) is None
+        if running:
             signal_session(process, signal.SIGTERM)
+        if running or graceful:
             deadline = time.monotonic() + 2
-            while observed_exit(process) is None and time.monotonic() < deadline:
+            active=lambda:group_active(process) if graceful else observed_exit(process) is None
+            while active() and time.monotonic() < deadline:
                 time.sleep(.02)
         # An exited leader stays unreaped until its remaining group has been stopped.
         # Short, successful Git commands therefore need no fixed grace delay.
         signal_session(process, signal.SIGKILL)
+        if not group_finished(process,10):raise BuildFailure('process_stop_timeout')
         process.wait(timeout=10)
 
-    def run(self, arguments, cwd, timeout=300, capture=False, manifest_file=False):
+    def run(self, arguments, cwd, timeout=300, capture=False, manifest_file=False, graceful=False):
         output = tempfile.TemporaryFile(dir=self.root / "tmp") if capture else contextlib.nullcontext(self.log)
         environment = {**self.environment, "GIT_ALLOW_PROTOCOL": "file:https" if manifest_file else "https"}
         with output as stream:
@@ -123,11 +147,11 @@ class SourceCommand:
                     value = data.decode("utf-8").strip()
             except BaseException as original:
                 try:
-                    self.stop(process)
+                    self.stop(process,graceful=graceful)
                 except BaseException as cleanup:
                     raise BaseExceptionGroup("Source command and owned-session stop failed", [original, cleanup])
                 raise
-            self.stop(process)
+            self.stop(process,graceful=graceful)
             return value
 
 
@@ -483,7 +507,7 @@ def controlled_build(root):
             enter_stage(root, receipt, "source_build")
             command.run(with_display([sys.executable, str(HERE / "aosp_emulator_producer.py"),
                          "--checkout", str(checkout), "--work", str(root / "build"), "--build"]),
-                        root, timeout=10800)
+                        root, timeout=10800,graceful=True)
             receipt.update(built_receipt(root))
         receipt["resources"]["after_build"] = resource_snapshot(root)
         receipt.update(stage="complete", status="built")

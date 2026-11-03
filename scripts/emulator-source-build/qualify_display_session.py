@@ -35,8 +35,10 @@ def probe(record, mode):
     identity = process_identity(pid)
     if identity is None or os.getsid(pid) != os.getsid(0):
         raise RuntimeError('Xvfb is outside the owned source-build session')
-    with record.open('x') as output:
+    pending=record.with_suffix('.next')
+    with pending.open('x') as output:
         json.dump({'display': display, 'pid': pid, 'start_ticks': identity[1]}, output)
+    pending.replace(record)
     if mode == 'hold':
         while True:
             time.sleep(.05)
@@ -66,12 +68,12 @@ class DisplaySessionQualification(unittest.TestCase):
                             raise bootstrap.BuildInterrupted('fixture_interruption')
                         with patch.object(command, 'wait', side_effect=interrupt):
                             with self.assertRaisesRegex(bootstrap.BuildInterrupted, 'fixture_interruption'):
-                                command.run(arguments, root)
+                                command.run(arguments, root,graceful=True)
                     elif mode == 'fail':
                         with self.assertRaisesRegex(bootstrap.BuildFailure, 'command_failed'):
-                            command.run(arguments, root, timeout=10)
+                            command.run(arguments, root, timeout=10,graceful=True)
                     else:
-                        command.run(arguments, root, timeout=10)
+                        command.run(arguments, root, timeout=10,graceful=True)
                 self.assertTrue(record.is_file(), (root / 'display.log').read_text())
                 value = json.loads(record.read_text())
                 current = process_identity(value['pid'])

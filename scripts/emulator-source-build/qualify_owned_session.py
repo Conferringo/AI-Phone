@@ -26,14 +26,21 @@ from pathlib import Path
 root=Path(sys.argv[1]); mode=sys.argv[2]
 child=os.fork()
 if child == 0:
-    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    def graceful_stop(*unused):
+        time.sleep(.05)
+        (root/'cleanup.done').write_text('released')
+        os._exit(0)
+    signal.signal(signal.SIGTERM, graceful_stop if mode == 'graceful' else signal.SIG_IGN)
     status=Path('/proc/self/stat').read_text().rsplit(')', 1)[1].split()
     record={'pid':os.getpid(),'start_ticks':status[19],'group':os.getpgrp(),'stdout_inode':os.fstat(1).st_ino}
-    (root/'child.json').write_text(json.dumps(record))
+    pending=root/'child.next';pending.write_text(json.dumps(record));pending.replace(root/'child.json')
     while True:
         (root/'heartbeat').write_text(str(time.monotonic_ns()))
         time.sleep(.01)
 while not (root/'heartbeat').exists(): time.sleep(.002)
+if mode == 'graceful':
+    os.kill(child,signal.SIGTERM)
+    os._exit(0)
 if mode == 'zero': os._exit(0)
 if mode == 'nonzero': os._exit(7)
 while True: time.sleep(.01)
@@ -154,13 +161,13 @@ class OwnedSessionQualification(unittest.TestCase):
                           'all_direct_children_reaped':all(process.returncode is not None for process in self.created),
                           'group_signals':[(pid,int(sig)) for pid,sig in SIGNALS[self.signal_start:]]}),flush=True)
 
-    def execute(self,mode,wait=None,start=None):
+    def execute(self,mode,wait=None,start=None,graceful=False):
         arguments=[sys.executable,'-I','-S','-B','-c',LEADER,str(self.root),mode]
         with contextlib.ExitStack() as context:
             context.enter_context(patch.object(bootstrap.subprocess,'Popen',side_effect=start or self.start))
             if wait:
                 context.enter_context(patch.object(self.command,'wait',side_effect=wait))
-            return self.command.run(arguments,self.root,timeout=3)
+            return self.command.run(arguments,self.root,timeout=3,**({'graceful':True} if graceful else {}))
 
     def assert_finished_and_sentinel_alive(self):
         wait_until(lambda:not self.child_running())
@@ -182,6 +189,12 @@ class OwnedSessionQualification(unittest.TestCase):
             self.execute('nonzero')
         self.assert_finished_and_sentinel_alive()
         self.assertEqual(self.created[-1].returncode,7)
+
+    def test_display_cleanup_finishes_before_the_completed_group_returns(self):
+        self.execute('graceful',graceful=True)
+        self.assertFalse(self.child_running())
+        self.assertEqual((self.root/'cleanup.done').read_text(),'released')
+        self.assert_finished_and_sentinel_alive()
 
     def test_cancel_reaps_group_and_preserves_cancel(self):
         def cancel(process,timeout):

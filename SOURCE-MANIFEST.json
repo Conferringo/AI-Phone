@@ -64,8 +64,8 @@
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
-      "size": 5898,
-      "sha256": "cba7c75095839d761dd5ecef81c27a55c3b45324b85d30c9d6d08e914c28a261"
+      "size": 5967,
+      "sha256": "035dd5f040354d4177019305a354e86050f5c959d907074308238c9027a56686"
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
@@ -4729,8 +4729,8 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 5033,
-      "sha256": "db3c1a41c1ca8b9412380da8d76664e7accc55c9eed512729323a398da1f1730"
+      "size": 5440,
+      "sha256": "48dbe3dce4deee15d8548ffc419202465e1de15f2c460efb067f89fdfa354c9c"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",
@@ -4759,18 +4759,18 @@
     },
     {
       "path": "scripts/emulator-source-build/linux_bootstrap.py",
-      "size": 24298,
-      "sha256": "68568ad086cb3188c07fb0966a635f85ed45e62fa6c5db2a37ffa529176e454a"
+      "size": 25328,
+      "sha256": "fabeb6a1705ccfcb2214d225b500a10fc2fc0569d0f65c40b49d42b45f3880c2"
     },
     {
       "path": "scripts/emulator-source-build/qualify_display_session.py",
-      "size": 4136,
-      "sha256": "76d5eb2493411e46886e1a492577942931f2edbaab42c895f3cbea7704d7b11c"
+      "size": 4247,
+      "sha256": "44d9c58f92cb7e7f651bf5ee67f4855fe1ae4559a36e94cc43e78a4caf45f9b6"
     },
     {
       "path": "scripts/emulator-source-build/qualify_owned_session.py",
-      "size": 10394,
-      "sha256": "cea77cb5e6f00d27155d46459a8a7cc32fa8b4012c495772dbc1474901648d3f"
+      "size": 11044,
+      "sha256": "962ec27faea38f97b2c2b0f2fa1db13d77a8934babf08588c3b0ded129c3562b"
     },
     {
       "path": "scripts/emulator-source-build/source-lock.xml",
@@ -4784,8 +4784,8 @@
     },
     {
       "path": "scripts/emulator-source-build/test_linux_bootstrap.py",
-      "size": 40412,
-      "sha256": "5372df6286831896e01239c59a47a4fe32442f290f33296c6caa8ad1b13c26d8"
+      "size": 41631,
+      "sha256": "947d319615c4fa373b29867386947dc9a1bfdbd4803b05f3d73eba98177e4156"
     },
     {
       "path": "scripts/entry-language.test.ts",

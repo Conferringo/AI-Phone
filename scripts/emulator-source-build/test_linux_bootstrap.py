@@ -304,6 +304,8 @@ class CommandOwnerTests(OwnedFixture):
         self.log = (self.root / "owned.log").open("wb")
         self.addCleanup(self.log.close)
         self.command = bootstrap.SourceCommand(self.root, self.environment, self.log)
+        group=patch.object(bootstrap,'group_active',return_value=False)
+        group.start();self.addCleanup(group.stop)
 
     def test_disk_floor_stops_only_the_new_owned_session(self):
         process = SimpleNamespace(pid=43210, returncode=None, poll=Mock(return_value=None), wait=Mock(return_value=-9))
@@ -318,6 +320,21 @@ class CommandOwnerTests(OwnedFixture):
             self.assertTrue(start.call_args.kwargs["start_new_session"])
             self.assertEqual([call.args for call in kill.call_args_list], [(43210, signal.SIGTERM), (43210, signal.SIGKILL)])
             process.wait.assert_called_once_with(timeout=10)
+
+    def test_unfinished_group_keeps_the_leader_unreaped_and_reports_cleanup_failure(self):
+        process=SimpleNamespace(pid=43210,returncode=None,wait=Mock())
+        exited=SimpleNamespace(si_pid=43210,si_code=bootstrap.os.CLD_EXITED,si_status=0)
+        with patch.object(bootstrap.os,'waitid',return_value=exited),patch.object(bootstrap.os,'getpgid',return_value=43210),\
+             patch.object(bootstrap.os,'getsid',return_value=43210),patch.object(bootstrap.os,'killpg'),\
+             patch.object(bootstrap,'group_finished',return_value=False):
+            with self.assertRaisesRegex(bootstrap.BuildFailure,'process_stop_timeout'):self.command.stop(process)
+        process.wait.assert_not_called()
+
+    def test_group_completion_uses_the_original_join_deadline(self):
+        with patch.object(bootstrap,'group_active',return_value=True),patch.object(bootstrap.time,'monotonic',side_effect=[10,20]),\
+             patch.object(bootstrap.time,'sleep') as sleep:
+            self.assertFalse(bootstrap.group_finished(SimpleNamespace(pid=43210),10))
+        sleep.assert_not_called()
 
     def test_owner_mismatch_preserves_original_and_cleanup_failure(self):
         process = SimpleNamespace(pid=43210, returncode=None, wait=Mock())
