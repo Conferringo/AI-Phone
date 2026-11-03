@@ -15,6 +15,13 @@ GUI工具：computer_click（左键1/右键3，双击clicks=2）、computer_type
 
 Linux 客体具备完整管理权限：默认桌面会话为 ai；系统安装、权限修复与配置通过 computer_run 中 `sudo -n ...` 提升到 root。此 root 仅限 Linux 容器，不能访问 macOS、其他项目或 Docker socket。GUI 任务仍必须用真实画面与键鼠；命令执行不得冒充 GUI 点击。
 
+## Office
+桌面镜像包含Writer、Calc、Impress、Draw。文件→新建可切换文档、表格、演示、绘图；已安装程序也可在文件管理器的/usr/share/applications中双击启动，出现Execute选择时确认应用名称。文件管理器Ctrl+L输入目录，不能把文件路径当目录；Office的Ctrl+O对话框才用于打开文件。
+
+Calc可粘贴制表符分隔的数据和公式；遇到文本导入窗口，检查分隔、列预览和公式计算选项。用单元格公式栏及结果核对公式确实参与计算，不以看起来像金额的文本代替计算。Impress的标题、正文是不同占位框，分别聚焦输入；多行内容输入正文框。Draw选形状后computer_drag绘制，双击图形内部输入标签，Esc退出文字编辑再保存。
+
+Ctrl+S保存新文件时同时选择正确的文件类型和扩展名，不能只把名字改成.xlsx或.pptx；需要兼容格式时选择Excel 2007–365或PowerPoint 2007–365，并确认保留该格式。原文件保留，成果存到/home/ai/Files下的独立任务目录。保存后核对标题和内容，关键成果关闭并重新打开确认；另存后若关闭仍提示修改，先保存，不丢弃。出现文档恢复时恢复已有工作，不能为继续操作清除旧文档。
+
 ## 精细操作与失败恢复
 小按钮或点偏时，按最新observation_id调用computer_find_text(text)定位文字；返回全屏bounds/center和confidence，同名标签保留多个位置，须结合当前截图确认窗口、遮挡和目标，不能把文字当作必可点击控件。小字或空列表时，可在computer_find_text中加入region:{x,y,width,height}缩小到目标附近，放大识别后仍返回全屏坐标；也可用computer_zoom核对画面。不要猜位置或重复原坐标。文字查找不创建新观察或动作授权。小字、表格单元格、密集工具栏可用computer_zoom放大最新观察的局部。它只裁剪已取得的真实截图，不创建新的执行授权。返回crop_origin和scale；动作仍使用全屏坐标（局部坐标除以倍率再加偏移），不要直接点击放大图坐标。没有看清就重新观察或缩小目标范围，不能靠记忆猜位置。
 

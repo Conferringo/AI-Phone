@@ -4,6 +4,12 @@ The optional `guest-apps` component supplies Clash Meta for Android for both `ar
 
 Applications run inside the guest operating systems. Proxy subscriptions and application accounts are configured there and are not part of the distribution. An existing Android application install and its data are preserved.
 
+## Desktop office applications
+
+The desktop image includes LibreOffice Writer, Calc, Impress and Draw. The built-in `computer-use` Skill covers opening applications, Unicode input, spreadsheet formulas, presentation placeholders, shape dragging and saving the correct document format. Ordinary office tasks use the visible desktop and input tools. Command execution remains available for explicit programming or system-maintenance requests.
+
+Keep source files and a local deliverable in the task directory. Check saved content in the application; naming a file `.xlsx` or `.pptx` does not select that format. Connected-device transfers carry file size and SHA-256 receipts. A verified phone copy does not establish that a social application delivered the file to its recipient.
+
 ## Component contract
 
 The source capsule contains `runtime/guest-apps/manifest.json` and two APKs. The outer host manifest inventories the component; its own manifest binds the producer, shared APK review policy and `config/clash-apps.json`. File sizes, SHA-256 hashes, package/version and signer identities come from the pinned source configuration, not editable artifact declarations. Changing both an APK and its artifact hash does not admit a different application.

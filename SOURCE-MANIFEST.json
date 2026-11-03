@@ -2595,8 +2595,8 @@
     },
     {
       "path": "crates/assistant/src/notification_policy.rs",
-      "size": 2781,
-      "sha256": "eaeaead251e64a441fe22a9ebe8e18defa03ad3905310f9cccd875adf2122c35"
+      "size": 2897,
+      "sha256": "955281e644881ede572d0a2fcd159ab9c232ae395476ae97e1ba468e8133756a"
     },
     {
       "path": "crates/assistant/src/persistence_tests.rs",
@@ -3095,8 +3095,8 @@
     },
     {
       "path": "docs/public/engineering/guest-apps.md",
-      "size": 3439,
-      "sha256": "03b18f96b6000c1ad87d5bc670af44d85aa884971a3ef9081ea31741513aa281"
+      "size": 4218,
+      "sha256": "76f12fd0093055541f4e8a36479142041fdeb0ff48e90566e7cf34ffa1fb3085"
     },
     {
       "path": "docs/public/engineering/index.md",
@@ -5920,8 +5920,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 4359,
-      "sha256": "a3e73bbf56287963764e32803ebe75cb0c709e24970b0274042310de60727b2c"
+      "size": 5661,
+      "sha256": "4ba45bd5a4313076160ef3829995deb590c8d25b51271902580d1d55c008987b"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
