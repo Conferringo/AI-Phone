@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 18540,
-      "sha256": "308cb0f50f4365eec69021af1ac06a1cbea0ffad71ba3b75f61d2fe1240c60ef"
+      "size": 19336,
+      "sha256": "9af73d53d5abbad084067c5f658f69f11b4ff30ad2f10b0faae5aea7a3dc860d"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
