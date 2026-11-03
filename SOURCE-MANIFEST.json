@@ -4595,8 +4595,8 @@
     },
     {
       "path": "scripts/build_container_images.py",
-      "size": 6867,
-      "sha256": "f0c1e1c91c53267c3ffc9794df450581e29bb213ddd9eb4d58e081d3996ba8ba"
+      "size": 6830,
+      "sha256": "5fd8a31e0448e00179bb3804a8f7e56333277a6153061fe0f5f66c84f3d50eb5"
     },
     {
       "path": "scripts/build_native_services.py",
@@ -4715,8 +4715,8 @@
     },
     {
       "path": "scripts/container_images.py",
-      "size": 16306,
-      "sha256": "4414ad25bbe7c213e0f5e310120b549f2d43ee556d84acf79587ca383ccd1253"
+      "size": 16363,
+      "sha256": "8d56137d8e6b303b2245993d3164b4ec30251993162d3546da814b464251dd35"
     },
     {
       "path": "scripts/copilot-input.test.ts",
@@ -4842,6 +4842,11 @@
       "path": "scripts/execution-timeline.test.ts",
       "size": 5176,
       "sha256": "51885060bfbf666e44ea94ac69917d9693b1463f54320d7e046f15e751c9925b"
+    },
+    {
+      "path": "scripts/factory_cache.py",
+      "size": 2838,
+      "sha256": "96a8345ca726897b87d2cff156d8d23728516cd0862029619d295c072eee6818"
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
@@ -5459,9 +5464,14 @@
       "sha256": "64afde07166dd153ad1286308fdffd0ecf5d13932cac43de6fa4c7290f653b73"
     },
     {
+      "path": "scripts/test_factory_cache.py",
+      "size": 4526,
+      "sha256": "8ed5a604bd63c64fd0475d408903720e2f8f666660f3a03cd758d82bb9be0efb"
+    },
+    {
       "path": "scripts/test_fresh_images_producer.py",
-      "size": 11220,
-      "sha256": "510fcc3e07e6c36c1ace155c349178306b7d7394a3f82270fa98be1bc1b551c6"
+      "size": 11847,
+      "sha256": "f4a5c428271a7ba750c1203a277d4b97b69897b09fb9aadc68450d26702d6ccf"
     },
     {
       "path": "scripts/test_host_platform.py",
@@ -5800,8 +5810,8 @@
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
-      "size": 3006,
-      "sha256": "a6274cb195401098e5fb3803b18c2ee77c5ba37cb7e501176279d0e53e7ed5e6"
+      "size": 3400,
+      "sha256": "b8bd07cc1de68e159b0a0b52e289fc64a5cab81adf09d2f7cc91e46e2a2f362b"
     },
     {
       "path": "scripts/wsl_engine_inputs.py",

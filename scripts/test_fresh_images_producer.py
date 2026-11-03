@@ -56,6 +56,16 @@ class FreshProducerTests(unittest.TestCase):
         self.assertEqual(len(names),len(set(names)))
         return result,files
 
+    def test_format_detection_does_not_add_a_full_export_decompression(self):
+        from build_capsule_codec import CapsuleReader
+        restart=CapsuleReader._restart;decodes=[]
+        def measured(reader):
+            if reader.codec=='gzip':decodes.append(reader.source)
+            return restart(reader)
+        with tempfile.TemporaryDirectory() as temp,patch.object(CapsuleReader,'_restart',measured):
+            self.run_build(Path(temp),fixtures.fixture())
+        self.assertEqual(len(decodes),3,'OCI catalog, bound-layer verification and emission need three passes; format detection must reuse catalog facts')
+
     def test_finished_capsule_is_decompressed_once_before_publication(self):
         value=fixtures.fixture();readers=[];native=tarfile.open
         def open_tar(*args,**kwargs):
