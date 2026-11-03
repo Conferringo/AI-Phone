@@ -3029,8 +3029,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 3616,
-      "sha256": "e5615cf3134e9e5b24736d92637f29da9bc31679c1bc5ba0acc836caae6f61db"
+      "size": 3786,
+      "sha256": "273726c613dd10d1a30baf4b4c64eaa907b642f6e3b53fc2d27146c00055ccb9"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -4009,8 +4009,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 8885,
-      "sha256": "9cff25a18b681726b900ce3a86f5058b428966cf7bfa3a36171f3115ef045c95"
+      "size": 9503,
+      "sha256": "20fb99a1e3d1b916213ee88c2f9576bfc4a645ac0ff028d777349dff41081797"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4969,8 +4969,8 @@
     },
     {
       "path": "scripts/macos_disk_image.py",
-      "size": 1085,
-      "sha256": "744680090f66918629d8841d126afbd5ca3e434054406c6cb5fdbc08a7a75811"
+      "size": 1409,
+      "sha256": "5a18130114148f9fa64b4e5d30f54ab5f120f9d5f7efbf96d63b950a7bec9217"
     },
     {
       "path": "scripts/macos_factory_engine.py",
@@ -5449,8 +5449,8 @@
     },
     {
       "path": "scripts/test_macos_disk_image.py",
-      "size": 2139,
-      "sha256": "f6c993131afe4491d68753c6c6740744aa6c56652e90fc84cfc3901025300755"
+      "size": 5998,
+      "sha256": "78f1e9f8af8ffd3f952bdb52f1e6c219ca7396d6d1b819254b786a7fef8efd25"
     },
     {
       "path": "scripts/test_macos_factory_engine.py",

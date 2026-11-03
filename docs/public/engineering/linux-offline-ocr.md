@@ -6,7 +6,7 @@ The Linux x64 OCR component provides Tesseract, its ELF dependency closure, Engl
 
 The phone and desktop use the same Rust PNG-to-regions pipeline. Rust owns image bounds, screen signatures, TSV parsing and confidence filtering. The native helper selects the included ELF loader, Tesseract libraries and language data for that process only. No global library-path change is required.
 
-The factory archive is pinned in `config/linux-ocr.json`. Admission checks archive bytes, regular-file paths, size/count budgets, ELF architecture and required language/configuration files. The component inventory binds source identity, hashes and permissions. Native service admission includes every OCR file; invalid components fail explicitly. A valid bundled OCR component removes the corresponding apt prerequisites from installation. Other Linux host prerequisites remain separate. The `tessdata/configs/tsv` configuration is required, and the adapter rejects output without a valid TSV header instead of treating it as empty regions.
+The factory archive is pinned in `config/linux-ocr.json`. Admission checks archive bytes, regular-file paths, size/count budgets, ELF architecture and required language/configuration files. The component inventory binds source identity, hashes and permissions. Native service admission includes every OCR file; invalid components fail explicitly. A valid bundled OCR component removes the corresponding apt prerequisites from installation. Other Linux host prerequisites remain separate. The sealed archive inventory includes `tessdata/configs/tsv`; the Rust helper selects TSV output directly with `tessedit_create_tsv=1`. It rejects output without a valid TSV header instead of treating it as empty regions.
 
 ## Maintainer build
 
@@ -34,4 +34,4 @@ Current platform support, installer availability and distribution requirements a
 
 Linux x64 OCR 组件内置 Tesseract、ELF 动态依赖、英文与简体中文字库和TSV配置。Rust负责PNG解码、画面摘要和结果解析，为识别进程选择自带加载器、库及字库，不执行Python或修改用户系统库。v1依赖归档同时保留Pillow等便携依赖文件。有效组件接入原生服务清单后，安装器不再通过 apt 重复安装 OCR。
 
-TSV 配置属于必需资源，适配器拒绝无效 TSV 头，不把错误格式当成空识别结果。当前宿主范围、完整安装包供应和分发要求统一见[发行状态](../release-status.md)。
+封装清单包含 TSV 配置文件；Rust 通过 `tessedit_create_tsv=1` 直接选择输出格式，不依赖该文件启用 TSV。适配器拒绝无效 TSV 头，不把错误格式当成空识别结果。当前宿主范围、完整安装包供应和分发要求统一见[发行状态](../release-status.md)。
