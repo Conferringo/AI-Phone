@@ -4529,8 +4529,8 @@
     },
     {
       "path": "scripts/build_container_images.py",
-      "size": 6948,
-      "sha256": "8d1fde4885e6f9fd55fea08969f10cde289d8ffbf3511f50462a9307831e0b71"
+      "size": 6867,
+      "sha256": "f0c1e1c91c53267c3ffc9794df450581e29bb213ddd9eb4d58e081d3996ba8ba"
     },
     {
       "path": "scripts/build_native_services.py",
@@ -5349,8 +5349,8 @@
     },
     {
       "path": "scripts/test_fresh_images_producer.py",
-      "size": 8449,
-      "sha256": "6e67dbff31d7b9ef343a98dff9a7e6353a1c94a4739bc7ca5926ae40582d6a6a"
+      "size": 11220,
+      "sha256": "510fcc3e07e6c36c1ace155c349178306b7d7394a3f82270fa98be1bc1b551c6"
     },
     {
       "path": "scripts/test_host_platform.py",

@@ -3,6 +3,7 @@ from copy import deepcopy
 import io
 import json
 from pathlib import Path
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -54,6 +55,50 @@ class FreshProducerTests(unittest.TestCase):
             names=archive.getnames();files={entry.name:archive.extractfile(entry).read() for entry in archive if entry.isfile()}
         self.assertEqual(len(names),len(set(names)))
         return result,files
+
+    def test_finished_capsule_is_decompressed_once_before_publication(self):
+        value=fixtures.fixture();readers=[];native=tarfile.open
+        def open_tar(*args,**kwargs):
+            mode=kwargs.get('mode',args[1] if len(args)>1 else 'r')
+            if mode in ('r|xz','r:xz'):readers.append(kwargs.get('fileobj'))
+            return native(*args,**kwargs)
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            with patch('tarfile.open',side_effect=open_tar):
+                result=self.run_build(root,value)
+            self.assertEqual(len(readers),1,'One final admission must verify the entire finished XZ archive without a duplicate decompression')
+            admitted=container_images.stage(root/'images.payload')
+            self.assertEqual(result['sha256'],admitted.identity)
+            self.assertEqual(result['images'],admitted.manifest['images'])
+
+    def test_final_admission_rejects_changed_compressed_bytes_and_keeps_previous_output(self):
+        finish=producer.finish_metadata
+        def changed(path,*args):
+            manifest=finish(path,*args)
+            with path.open('r+b') as output:
+                output.seek(512+manifest['archive']['size']//2)
+                byte=output.read(1);output.seek(-1,1);output.write(bytes([byte[0]^1]))
+            return manifest
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);destination=root/'images.payload';destination.write_bytes(b'previous immutable output')
+            with patch.object(producer,'finish_metadata',side_effect=changed),self.assertRaisesRegex(ValueError,'integrity'):
+                self.run_build(root,fixtures.fixture())
+            self.assertEqual(destination.read_bytes(),b'previous immutable output')
+            self.assertEqual(list(root.glob('.images-build-*')),[])
+
+    def test_final_admission_rejects_wrong_role_binding_with_valid_archive_digest(self):
+        finish=producer.finish_metadata
+        def changed(*args):
+            manifest=deepcopy(finish(*args));record=manifest['images']['desktop']
+            record['export_digest']='sha256:'+'f'*64
+            record['ref']=container_images.image_ref('desktop',record['export_digest'])
+            return manifest
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);destination=root/'images.payload';destination.write_bytes(b'previous immutable output')
+            with patch.object(producer,'finish_metadata',side_effect=changed),self.assertRaisesRegex(ValueError,'references'):
+                self.run_build(root,fixtures.fixture())
+            self.assertEqual(destination.read_bytes(),b'previous immutable output')
+            self.assertEqual(list(root.glob('.images-build-*')),[])
 
     def test_fresh_export_converts_only_local_layers_and_publishes_bound_refs(self):
         value=fixtures.fixture();original=deepcopy(value['records'])
