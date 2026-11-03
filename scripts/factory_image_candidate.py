@@ -175,13 +175,16 @@ def build(root, work, source):
     return stage(root, payload, source)
 
 
-if __name__ == '__main__':
+def main(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['build', 'plan', 'fetch', 'discard'])
     parser.add_argument('input')
     parser.add_argument('--identity')
     parser.add_argument('--work', type=Path)
-    args = parser.parse_args()
+    parser.add_argument('--result', type=Path, help='Write the machine-readable result separately from build logs')
+    args = parser.parse_args(arguments)
+    if args.operation == 'build' and args.result is None:
+        parser.error('build requires --result')
     source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     if args.operation == 'build':
         path = build(ROOT, Path(args.input), source)
@@ -195,4 +198,11 @@ if __name__ == '__main__':
         if args.identity is None: parser.error('--identity required')
         discard(args.input, args.identity, source)
         result = {'discarded': True}
-    print(json.dumps(result))
+    if args.result is not None:
+        args.result.write_text(json.dumps(result)+'\n')
+    else:
+        print(json.dumps(result))
+
+
+if __name__ == '__main__':
+    main()

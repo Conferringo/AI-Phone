@@ -171,8 +171,9 @@ jobs:
       - name: Build and seal native ARM64 images
         id: assemble
         run: |
-          python3 scripts/factory_image_candidate.py build "$RUNNER_TEMP/arm-images" > "$RUNNER_TEMP/arm-images-result.json"
-          printf 'metadata_sha256=%s\n' "$(jq -er .metadata_sha256 "$RUNNER_TEMP/arm-images-result.json")" >> "$GITHUB_OUTPUT"
+          python3 scripts/factory_image_candidate.py build "$RUNNER_TEMP/arm-images" --result "$RUNNER_TEMP/arm-images-result.json"
+          identity=$(jq -er .metadata_sha256 "$RUNNER_TEMP/arm-images-result.json")
+          printf 'metadata_sha256=%s\n' "$identity" >> "$GITHUB_OUTPUT"
       - name: Retain the source-bound unpublished handoff
         id: retain
         env:

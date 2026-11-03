@@ -1,6 +1,9 @@
 """Native image handoff retains source and byte identity without user state."""
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -11,6 +14,65 @@ import factory_image_candidate as candidate
 import test_container_images as fixtures
 
 SOURCE = 'a' * 40
+
+
+class FactoryImageCommandTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix='aiphone-image-command-')
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        (self.root/'dist').mkdir()
+        self.report = self.root/'dist'/'report.json'
+        self.report.write_text('{"fixture": true}\n')
+        subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
+        subprocess.run(['git', '-C', str(self.root), 'add', 'dist/report.json'], check=True)
+        subprocess.run(['git', '-C', str(self.root), '-c', 'user.name=Fixture',
+                        '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture'], check=True)
+        self.result = self.root/'result.json'
+
+    def command(self, *, fail=False, result=True):
+        arguments = ['build', str(self.root/'work')]
+        if result:
+            arguments += ['--result', str(self.result)]
+        script = '''
+import subprocess, sys
+from pathlib import Path
+import factory_image_candidate as candidate
+candidate.ROOT = Path(sys.argv[1])
+def build(*arguments):
+    print('image preparation log', flush=True)
+    subprocess.run([sys.executable, '-c', 'print("native child output")'], check=True)
+    if sys.argv[2] == 'fail':
+        raise RuntimeError('native producer failed')
+    return candidate.ROOT/'dist'/'report.json'
+candidate.build = build
+candidate.main(sys.argv[3:])
+'''
+        environment = {**os.environ, 'PYTHONPATH': str(Path(candidate.__file__).parent)}
+        return subprocess.run([sys.executable, '-B', '-c', script, str(self.root),
+                               'fail' if fail else 'success', *arguments],
+                              env=environment, capture_output=True, text=True)
+
+    def test_build_result_is_parseable_when_python_and_native_children_log(self):
+        process = self.command()
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertIn('image preparation log', process.stdout)
+        self.assertIn('native child output', process.stdout)
+        self.assertEqual(json.loads(self.result.read_bytes()), {
+            'report': 'dist/report.json', 'metadata_sha256': digest(self.report)})
+
+    def test_failed_native_producer_does_not_emit_a_success_receipt(self):
+        process = self.command(fail=True)
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn('native producer failed', process.stderr)
+        self.assertFalse(self.result.exists())
+
+    def test_missing_result_file_is_rejected_before_running_the_producer(self):
+        process = self.command(result=False)
+        self.assertEqual(process.returncode, 2)
+        self.assertIn('--result', process.stderr)
+        self.assertNotIn('image preparation log', process.stdout)
+        self.assertFalse(self.result.exists())
 
 
 class FactoryImageCandidateTests(unittest.TestCase):

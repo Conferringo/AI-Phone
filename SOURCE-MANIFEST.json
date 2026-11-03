@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 19336,
-      "sha256": "9af73d53d5abbad084067c5f658f69f11b4ff30ad2f10b0faae5aea7a3dc860d"
+      "size": 19372,
+      "sha256": "4aa5033773e305a26237586b1962fe2ca97f4c36e255afde9b087cc32932254f"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -4855,8 +4855,8 @@
     },
     {
       "path": "scripts/factory_image_candidate.py",
-      "size": 8713,
-      "sha256": "46b282be0613a7b62afca2f4ec264d16aff1bca3362d2bb162fc1aa1c4e4dca6"
+      "size": 9085,
+      "sha256": "020de8fc446419e28d7e872bd141511596ee6f0aaad024da9b2069d4a1116f30"
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
@@ -5485,8 +5485,8 @@
     },
     {
       "path": "scripts/test_factory_image_candidate.py",
-      "size": 9238,
-      "sha256": "57f454117d46967d443458fef0aa89d849cb72a42b73cbc254603bcfd4686c01"
+      "size": 12137,
+      "sha256": "8cbce278240af2d47e55970aa02efda8faaa0af4e981caef43cab22b620e714c"
     },
     {
       "path": "scripts/test_fresh_images_producer.py",
