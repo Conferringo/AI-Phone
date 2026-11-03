@@ -1,5 +1,6 @@
 """Full Linux factory contracts reject incomplete plans and unsafe SDK archives."""
 import os
+import json
 import shutil
 from pathlib import Path
 import tempfile
@@ -13,6 +14,27 @@ import android_sdk_archive as sdk_archive
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    def test_compiled_client_requires_both_complete_unchanged_linux_installers(self):
+        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'config').mkdir();(root/'dist').mkdir()
+            (root/'config/release-policy.json').write_text('{"version":"fixture"}')
+            artifacts=[]
+            for extension in ('deb','AppImage'):
+                artifact=root/f'dist/AI-Phone-fixture-linux-amd64.{extension}';artifact.write_bytes(extension.encode())
+                metadata={'complete_device_bundle':True,'sha256':digest(artifact),'prebuilt_components':full}
+                artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps(metadata));artifacts.append(artifact)
+            with patch.object(factory,'run') as run,patch.object(factory,'run_checks'),patch('prepare_client_host.payload_components',return_value=full):
+                value=factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                self.assertIsInstance(value,list);self.assertEqual({row['file'] for row in value},{path.name for path in artifacts})
+                self.assertTrue(all(row['delivery']['complete_device_bundle'] for row in value));self.assertEqual(run.call_count,1)
+                for artifact in artifacts:
+                    original=artifact.read_bytes();artifact.write_bytes(b'changed installer')
+                    with self.assertRaisesRegex(ValueError,'changed'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                    artifact.write_bytes(original)
+                metadata=artifacts[1].with_suffix('.AppImage.manifest.json');value=json.loads(metadata.read_text());value['complete_device_bundle']=False;metadata.write_text(json.dumps(value))
+                with self.assertRaisesRegex(ValueError,'incomplete'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+
     @unittest.skipUnless(os.name=='posix','Complete Linux factory uses its POSIX Bun entry')
     def test_nested_checks_find_project_bun_without_a_global_install(self):
         with tempfile.TemporaryDirectory(prefix='factory path ') as temporary:

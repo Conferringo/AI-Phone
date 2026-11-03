@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 15532,
-      "sha256": "07d3d4b82c774fa4e2dbc690b02686a009af539e2a09187ecd46f640b4de9f3f"
+      "size": 15598,
+      "sha256": "d7e1694ef0fa87dcc485a898e135979f6765d268b7f8d4ebca66959791eb6228"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -70,8 +70,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3322,
-      "sha256": "da2e784210df39c97b005339bd29ac019f6a56c12b85425ea69eb8c5ca05eab1"
+      "size": 3396,
+      "sha256": "c1d872fd8abcf24a9e19193efa24adfed989593e34698edfaa2e8b5276d90417"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -3925,8 +3925,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 3166,
-      "sha256": "2af12490034214948d53eab29c409f450062393dc0c2ae0c6a3dce55b99bdb66"
+      "size": 4088,
+      "sha256": "3c190d5dd522652c5881ffcea1adb59a41d05b63e3de39eaa308e63fbda91d49"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4040,8 +4040,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4000,
-      "sha256": "8040a114f9aa52da84f06fafd3c2fad1e24223acb94d6a32e60d5d4ad06736c6"
+      "size": 4038,
+      "sha256": "8b5ba48883861341678789a0c4fc75a49d819e74df369f4975efba30228b55ea"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4560,8 +4560,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11999,
-      "sha256": "8981037fc74b95116776c290b93be417a2ddc77d57ba859a77911da148d8cc96"
+      "size": 13072,
+      "sha256": "caf02a41986a79b5a2c41dfb3c6f3a0208370a30afb6d30071e6523986cced46"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4655,8 +4655,8 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6632,
-      "sha256": "44192ca65cbc75083eeb742c67113cbb912e4ad8ec664a33098385e9ac6b4c4e"
+      "size": 7982,
+      "sha256": "7e41c7241bf2f23d9f1dba3371bba6179338babcac4d5d693e99c52e3d65829f"
     },
     {
       "path": "scripts/client_delivery.py",
@@ -4919,6 +4919,11 @@
       "sha256": "58ce566d3d3df32599d6f610f29156f695bc63be0f9bedf107e9f0856f674e8a"
     },
     {
+      "path": "scripts/linux-appimage-patchelf.sh",
+      "size": 329,
+      "sha256": "72cf2a635a4fbdb94b6631baa7dc55f672b3b782f1997fd5fd202907efc28d59"
+    },
+    {
       "path": "scripts/linux-host/Dockerfile",
       "size": 541,
       "sha256": "517cc1f3ffc75773a089f41381af8336680095da4638a22b83300f154ca2dd1b"
@@ -4950,8 +4955,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 10637,
-      "sha256": "a4e552b65ef696ee2c1382c350f60c04cbaa9f89ab20d6125ad4b8b289d51b77"
+      "size": 10810,
+      "sha256": "701337aaf41f35627c027b1d830c62206dbac5914fcab054dfbbd12c20471083"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5075,8 +5080,8 @@
     },
     {
       "path": "scripts/package_delivery.py",
-      "size": 6968,
-      "sha256": "ea2ea4c1d366134ac4ab7b0d8ff1374f92e5db77d5a93b2ecbfcaae84153e901"
+      "size": 7576,
+      "sha256": "80c5612e1f93faf3275e0ddc320c15c35a52ba58736fb633cfce9d7d7bcdaa37"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -5299,6 +5304,16 @@
       "sha256": "c0a16a677a5f1566bcc4e101a7399aba3abfd894b24136215b4f5b29661bea98"
     },
     {
+      "path": "scripts/test_appimage_artifacts.py",
+      "size": 4763,
+      "sha256": "e09cf1954deaf7ed3d0bbe8bd145d188f117fd9a60d003c32085c5d04142aba5"
+    },
+    {
+      "path": "scripts/test_appimage_runtime_integrity.py",
+      "size": 1771,
+      "sha256": "7a4499d1fb80421059a0abdabdc4dc3a82c8a0d03d624565f1d458c60be4969b"
+    },
+    {
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
@@ -5325,8 +5340,8 @@
     },
     {
       "path": "scripts/test_candidate_retention.py",
-      "size": 5958,
-      "sha256": "4746af9533080d7ec956734b472a016099bc66d0d39dbff0b4c5f06996fdb62f"
+      "size": 7591,
+      "sha256": "8febe941da5829d5ae090e101242d530cb773bac55727a88ab47d387559f4efc"
     },
     {
       "path": "scripts/test_channel_browser.py",
@@ -5475,8 +5490,13 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 7878,
-      "sha256": "85024599a3bb02b6aa8b68c073301f948c5a7e8649b7eb8ccddd3322f5519778"
+      "size": 9990,
+      "sha256": "342158e0c301c87643baabb12290983bcf9047779bfff17247f7ed6a5b9f4948"
+    },
+    {
+      "path": "scripts/test_linux_client_packages.py",
+      "size": 3637,
+      "sha256": "f04cf7dfc542e77e0a528bc91eb5c57398c38980991c3b4a0044cdb30b3aa180"
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",

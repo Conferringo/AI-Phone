@@ -2,7 +2,7 @@
 
 The maintainer factory assembles the Linux x64 client from clean, pinned inputs. Users configure their devices and model in the installed client; they do not build containers or obtain Android SDK archives themselves.
 
-The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disposable Ubuntu 24.04 runner. It produces these resources before compiling the native Debian package:
+The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disposable Ubuntu 24.04 runner. It produces these resources before one native compilation generates Debian and AppImage packages:
 
 - Standalone web, Rust services, channel/media services and their production dependencies.
 - Phone control applications and architecture-matched Clash applications.
@@ -13,9 +13,11 @@ The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disp
 
 The [factory entry](../../scripts/linux_client_factory.py) uses fresh output directories and unique image references. It never exports a running container or reads guest disks, credentials or conversations. Android archives are fixed by size, Google-provided SHA-1 and the independently recorded SHA-256 in the [input inventory](../../config/android-factory.json). The [metadata selector](../../scripts/android_sdk_repository.py) requires the stable channel and its license identifier; archive ordering and numeric build IDs do not determine stability. Byte verification does not establish redistribution permission.
 
-The compiled package is inspected against all nine required runtime components. Its receipt includes the source identity, artifact hash and actual component inventory. `complete_device_bundle` describes inspected contents; it does not mean that installation, graphics, audio or virtualization has been accepted on every Linux host. Linux graphics/audio libraries and KVM access remain host prerequisites covered by the installer preflight.
+Each compiled package is unpacked and inspected against all nine required runtime components, source and licence files, and the native ELF architecture. AppImage inspection uses extraction mode without FUSE or starting the client. Its bundled graphics and media libraries have their own redistribution requirements. Each package has an independent source identity, artifact hash and component inventory in the factory receipt. `complete_device_bundle` describes inspected contents; it does not mean that installation, graphics, audio or virtualization has been accepted on every Linux host. Linux graphics/audio libraries and KVM access remain host prerequisites covered by the installer preflight.
 
-The workflow retains only a text qualification receipt. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Non-macOS physical installation is waived by the maintainer and must be disclosed as untested; compilation and payload inspection are still required.
+AppImage compression uses XZ. Its GUI libraries receive the normal AppImage relocation; the embedded host runtimes retain their verified bytes and original RPATHs through the [packaging adapter](../../scripts/linux-appimage-patchelf.sh). Post-packaging inspection requires those runtime bytes to match the sealed inputs.
+
+The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, both inspected packages and their checksums are retained in an unpublished maintainer draft. Internal transport volumes are permitted for oversized candidates; end-user installers must each satisfy the single-file delivery limit. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Non-macOS physical installation is waived by the maintainer and must be disclosed as untested; compilation and payload inspection are still required.
 
 ## Local maintainer build
 
@@ -26,7 +28,7 @@ Use a fresh Linux x64 checkout with Docker Buildx with client/engine API 1.49 or
 python3 scripts/linux_client_factory.py
 ```
 
-The factory writes the inspected Debian package and a JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
+The factory writes the inspected `.deb`, executable `.AppImage`, individual manifests and a combined JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
 
 ## Availability
 
