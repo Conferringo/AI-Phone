@@ -2219,6 +2219,11 @@
       "sha256": "5699fa79f3ae2576bf5ec9f220da98c4b22081190c3b9203c44054cc25093bad"
     },
     {
+      "path": "config/public-crypto-vectors.json",
+      "size": 2254,
+      "sha256": "93e032928e245f1968197cf8b9ecd83cef5a8ac5a9efac8d2d917ab662b08afd"
+    },
+    {
       "path": "config/release-policy.json",
       "size": 2018,
       "sha256": "edf94d0f610b8946753313f1af75bf55d59404804d8b4391f6d35af823f731c7"
@@ -3075,8 +3080,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 6298,
-      "sha256": "c3ad304e1665b78c48e201088692b06f4ae7b1fedb6100685646ccbf30098c24"
+      "size": 7182,
+      "sha256": "56b5e7bffd92e1c6b405c36655c1752aad63205edd5a1e25c7d9229e2f02431d"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -4705,8 +4710,8 @@
     },
     {
       "path": "scripts/client_resources.py",
-      "size": 3870,
-      "sha256": "bd180f96cdfef2aa525ceb5a45a3b4b13095fd63f2a5a25e3a30c741a8065f33"
+      "size": 4446,
+      "sha256": "1c63a18443b82000e74052e60ca25e3d31cbe1a3334a2c433ca36f887c21d9a2"
     },
     {
       "path": "scripts/container_host_runtime.py",
@@ -5209,6 +5214,11 @@
       "sha256": "61bb423e9b1c21fcd9b6bfcaa3dd70448ef4bd15ad2214631f0853a8074e5054"
     },
     {
+      "path": "scripts/public_vectors.py",
+      "size": 1164,
+      "sha256": "3a34e67f22c400e89616d92dfeb40cabaaf07cc1b1562da9989c5a1bc6f62eda"
+    },
+    {
       "path": "scripts/registry-setup.test.ts",
       "size": 4796,
       "sha256": "2e42f18ec5d9aac2b92bf6e1c39c307affa43684fbc5889bb85dcf8a1f9ee1ce"
@@ -5667,6 +5677,11 @@
       "path": "scripts/test_private_files.py",
       "size": 8465,
       "sha256": "2efad67c8d9a1e78d8f9aa0d083a7d838e77624775f8886f9c5fbe6b1718b67f"
+    },
+    {
+      "path": "scripts/test_public_vectors.py",
+      "size": 2267,
+      "sha256": "8f81c53d876864061b4d10548ea8c7c03d171a4e0cb1ea5b45b4342bd2bf2552"
     },
     {
       "path": "scripts/test_release.py",

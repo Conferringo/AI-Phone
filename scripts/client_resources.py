@@ -1,6 +1,7 @@
 """One inventory for native resource configuration and artifact inspection."""
 import json
 from pathlib import Path
+from public_vectors import WINDOW,mask_public_vectors
 
 
 def resource_map(root):
@@ -49,17 +50,27 @@ def public_build_digest(root,destination):
     return pins['hosts'][host]['node'].get('public_build_paths_sha256')
 
 
+def private_content(sample,boundary):
+    from release_package import SECRET
+    clean=mask_public_vectors(sample)
+    variants=[(clean,boundary),(clean.replace(b'\x00',b''),boundary-clean.count(b'\x00',0,boundary))]
+    return any((match:=SECRET.search(data)) is not None and match.start()<end for data,end in variants)
+
+
 def inspect_stream(source, name,public_build_digest=None):
     import hashlib
     import re
-    from release_package import SECRET
     digest=hashlib.sha256();size=0;tail=b'';build_path=False
     while chunk:=source.read(1024**2):
         sample=tail+chunk
-        if SECRET.search(sample) or SECRET.search(sample.replace(b'\x00',b'')):
+        # Hold a complete fixture-sized suffix; never reject a partial public
+        # string before its hash and terminating NUL can be checked.
+        if private_content(sample,max(0,len(sample)-WINDOW)):
             raise ValueError('Private material in bundle file: '+name)
         build_path=build_path or re.search(rb'/Users/[A-Za-z0-9._-]+/',sample) is not None
-        digest.update(chunk);size+=len(chunk);tail=sample[-4096:]
+        digest.update(chunk);size+=len(chunk);tail=sample[-WINDOW:]
+    if private_content(tail,len(tail)):
+        raise ValueError('Private material in bundle file: '+name)
     identity=digest.hexdigest()
     if (public_build_digest is not None and identity!=public_build_digest) or (build_path and identity!=public_build_digest):
         raise ValueError('Private material in bundle file: '+name)

@@ -64,3 +64,10 @@ Primary sources: [Python portable distributions](https://docs.astral.sh/python-b
 原生复制会检查全部文件、权限、架构和空间，取消、异常及并发发布均保持内容验证和暂存目录归属。服务优先使用选定的随包程序。Node 组件不含 npm/Corepack；公开上游构建路径仅按精确的已审阅文件摘要区分，凭据扫描保持开启。
 
 随包版本由配置与组件清单确定，当前基线为 Python 3.13.18 与 Node 22.23.4。平台范围、安装包供应和完整初始化条件统一见[发行状态](../release-status.md)。
+
+
+## Public cryptographic test vectors
+
+Artifact inspection recognizes only the complete, NUL-terminated public self-test strings pinned in `config/public-crypto-vectors.json`. Their SHA-256 digests are bound to GnuTLS 3.8.3's [immutable upstream source](https://github.com/gnutls/gnutls/blob/2f04c14daa086889b4e85f7056c39d23766ddaa1/lib/crypto-selftests-pk.c). The catalog records the source digest, symbols and encoded sizes; it contains no key bytes.
+
+Recognition affects scanning only. Bundled file bytes and their integrity receipts remain unchanged. The scanner retains a bounded suffix across chunks so it can verify an entire test string before classifying it. Changed strings, unknown private keys and adjacent API credentials remain failures, including UTF-16 credentials. Neither a library filename nor a public binary digest exempts a complete file from secret detection.
