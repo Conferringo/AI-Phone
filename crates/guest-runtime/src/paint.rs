@@ -6,7 +6,6 @@ use tokio::time::Instant;
 
 const SAMPLE: Duration = Duration::from_millis(40);
 const QUIET: Duration = Duration::from_millis(80);
-const WINDOW_QUIET: Duration = Duration::from_millis(240);
 const DEADLINE: Duration = Duration::from_millis(800);
 
 pub struct Frame {
@@ -51,20 +50,18 @@ pub async fn after(
             painted = true;
             last_change = now;
         }
-        // New windows commonly paint their frame before laying out the document.
-        // Ordinary typing/menu input retains the short quiet window.
-        let quiet = if screen.title().is_ok_and(|title| title != before_title) {
-            WINDOW_QUIET
-        } else {
-            QUIET
-        };
-        let state = if painted && now.duration_since(last_change) >= quiet {
-            Some("stable")
-        } else if now.duration_since(start) >= DEADLINE {
-            Some(if painted { "changing" } else { "unchanged" })
-        } else {
-            None
-        };
+        // A new title can precede document layout by several quiet intervals.
+        // Use the existing budget for transitions, without delaying ordinary input.
+        let transition = screen.title().is_ok_and(|title| title != before_title);
+        let expired = now.duration_since(start) >= DEADLINE;
+        let state =
+            if painted && now.duration_since(last_change) >= QUIET && (!transition || expired) {
+                Some("stable")
+            } else if expired {
+                Some(if painted { "changing" } else { "unchanged" })
+            } else {
+                None
+            };
         if let Some(state) = state {
             return Ok(Frame {
                 image,
@@ -195,6 +192,6 @@ mod tests {
             .unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
-        assert!(frame.wait_ms >= 400 && frame.wait_ms < 800);
+        assert!(frame.wait_ms >= 800 && frame.wait_ms < 1500);
     }
 }
