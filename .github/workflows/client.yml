@@ -318,19 +318,8 @@ jobs:
       - name: Required Windows filesystem contracts without skips
         if: runner.os == 'Windows'
         shell: pwsh
-        env:
-          PYTHONPATH: scripts
         run: |
-          @'
-          import unittest
-          cases = [
-              'test_android_windows_runtime.WindowsAndroidRuntimeTests.test_sdk_component_junction_never_imports_an_outside_tree',
-              'test_private_files.PrivateFileTests.test_native_windows_acl_rejects_an_extra_world_read_grant',
-          ]
-          suite = unittest.defaultTestLoader.loadTestsFromNames(cases)
-          result = unittest.TextTestRunner(verbosity=2).run(suite)
-          raise SystemExit(0 if result.wasSuccessful() and not result.skipped else 1)
-          '@ | python
+          python scripts/required_tests.py test_android_windows_runtime.WindowsAndroidRuntimeTests.test_sdk_component_junction_never_imports_an_outside_tree test_private_files.PrivateFileTests.test_native_windows_acl_rejects_an_extra_world_read_grant
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Native tests
         run: cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked --release

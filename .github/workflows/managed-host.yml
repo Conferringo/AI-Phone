@@ -63,7 +63,7 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           cargo build -p ai-phone-host-runtime --bin host-resources --locked
-          python3 -m unittest discover -s scripts -p test_linux_services.py -v
+          python3 scripts/required_tests.py test_linux_services
       - name: Deploy phone, desktop and backend from the client payload
         run: |
           # Keep KVM supplementary access and restore the primary GID required by uidmap.

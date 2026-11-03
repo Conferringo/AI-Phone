@@ -3,6 +3,10 @@ use std::{env, path::Path};
 
 fn main() {
     let arguments: Vec<_> = env::args_os().skip(1).collect();
+    if arguments.len() == 1 && arguments[0] == "--service-supervision-contract" {
+        println!("{}", ai_phone_host_runtime::supervision::CONTRACT);
+        return;
+    }
     #[cfg(target_os = "linux")]
     if arguments
         .first()

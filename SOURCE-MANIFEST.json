@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 19372,
-      "sha256": "4aa5033773e305a26237586b1962fe2ca97f4c36e255afde9b087cc32932254f"
+      "size": 19021,
+      "sha256": "6a37cd867f0429fbf9d9c9a9bac37bc94d7e13f571b48ffaab23aa8b2d95586a"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -75,13 +75,13 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 4003,
-      "sha256": "876ffe26477f9783375a72fd8fd65841afe40b56d75389979ad94796ba02a14e"
+      "size": 3988,
+      "sha256": "c5ec6dddc82cec125a4daa263acd32493d5efaac127c5a45b676c91cebc80f92"
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 7881,
-      "sha256": "2b4796491ead7d6eac56f35bfbbe36fd52f0e779ad6aead51d793feed561a4c4"
+      "size": 7930,
+      "sha256": "20b04f1a992e0d06d69498d1949d4e0da781a39a3c3fdf5783e5012f21ff4813"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -115,8 +115,8 @@
     },
     {
       "path": "CONTRIBUTING.md",
-      "size": 3682,
-      "sha256": "8735e705ea07213e02c009b8cb8aee00ca38999ff4d5a61cf5f1bec3159ee1a1"
+      "size": 4239,
+      "sha256": "2574c8be511800991f3dab6615091c8299a3900be0a14bae41d5e1c8aa451d63"
     },
     {
       "path": "Cargo.lock",
@@ -2805,8 +2805,8 @@
     },
     {
       "path": "crates/host-runtime/src/bin/host-resources.rs",
-      "size": 1566,
-      "sha256": "fe1d4068491496e6b9d1db8d7ecdbd4f9c327f895062310fa01aeebb39fd3e23"
+      "size": 1740,
+      "sha256": "7a88c2f1ed586d4d97eff75823a35b7fc895c557bb0ec2ccc1a7f97dd05152c9"
     },
     {
       "path": "crates/host-runtime/src/bin/package-volumes.rs",
@@ -2907,6 +2907,11 @@
       "path": "crates/host-runtime/tests/legacy_format1.rs",
       "size": 2347,
       "sha256": "d61dc8c268ae6f13e6016183261b26f70977d36f5733365ebab7d8aebe0ab081"
+    },
+    {
+      "path": "crates/host-runtime/tests/supervisor_contract.rs",
+      "size": 654,
+      "sha256": "2d9807354016059377bbd12451280161b7491c4dcaf0ba58d8e2acff114e0c52"
     },
     {
       "path": "crates/phone-runner/Cargo.toml",
@@ -3130,8 +3135,8 @@
     },
     {
       "path": "docs/public/engineering/service-supervision.md",
-      "size": 2717,
-      "sha256": "8aa495cee5a6992d9ece69229ae81a60425b89f3c64b585d0e1c573767584883"
+      "size": 2920,
+      "sha256": "8567c329e68420491677a24fbe9ba468986786b3456f558a087f8dc5c8fe36c4"
     },
     {
       "path": "docs/public/engineering/windows-android-runtime.md",
@@ -4685,8 +4690,8 @@
     },
     {
       "path": "scripts/ci_integration.py",
-      "size": 4549,
-      "sha256": "2ee5020f3f5b5d5022a6e7602f858a06ce24f273562a4a1642ca6bf5064349e3"
+      "size": 4524,
+      "sha256": "88c9b44f6e1d25d7bb98da65992d5607845c31dd63efc9575482b5d4415fd9d7"
     },
     {
       "path": "scripts/client-id.test.ts",
@@ -5030,8 +5035,8 @@
     },
     {
       "path": "scripts/linux_host.py",
-      "size": 7992,
-      "sha256": "10334e72e7798e53fcb9e04c7abf8d23d3bdf97c95b3f1f03406e5294833b42e"
+      "size": 8521,
+      "sha256": "a1793a22818d00d5a6034f458c01c0455c4841f225ab16175c8e2ec5f0aa9c2a"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -5205,8 +5210,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 7636,
-      "sha256": "8411cd0d6ac4cd0df5400ef6049bb75dbdccdeced110f373b4a641364390c886"
+      "size": 7670,
+      "sha256": "8906802ee3e06428985b5febf4aa3888eaa39a0e0dbda81ff7cbbe740e9cedef"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5262,6 +5267,11 @@
       "path": "scripts/request-body.test.ts",
       "size": 2833,
       "sha256": "7e3e593680f52f0801f04c8c00278444c5c297d539599642090b0b13143a5de8"
+    },
+    {
+      "path": "scripts/required_tests.py",
+      "size": 762,
+      "sha256": "23b7af72225971ab014bf3b0a205b84cfcb0e7cd49a2fed0a0abad42c19fd91e"
     },
     {
       "path": "scripts/retain-client-candidate.sh",
@@ -5600,8 +5610,8 @@
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 14028,
-      "sha256": "5df81a6f7517f12cc6df104e9c5f63efc3bccc60c38d7cdef6eaa4f1714ce4db"
+      "size": 15303,
+      "sha256": "9fccd50e3ab2ad85af5c12730b299b468a2ec981e5d3545d52cce01d5c43299e"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -5650,8 +5660,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 37362,
-      "sha256": "d223e92ece1cfc58a3bba4b6e099507e40580b6c48c8070072dee69cbd81397e"
+      "size": 40160,
+      "sha256": "db78a5da0a27487e3eff967dda983e3527eaed7f313f2d60e115f62af6de4db2"
     },
     {
       "path": "scripts/test_notification_probe.py",
@@ -5717,6 +5727,11 @@
       "path": "scripts/test_release_portability.py",
       "size": 2416,
       "sha256": "a14069194a87f501c13425ce784ab1543c12ef606be29bda1b5ed0ede97413db"
+    },
+    {
+      "path": "scripts/test_required_tests.py",
+      "size": 2216,
+      "sha256": "99b48dfbfdfa83b969252352878cb8965236aa1a1363977d21257e4ef15322fc"
     },
     {
       "path": "scripts/test_runtime_integrity.py",

@@ -4,6 +4,7 @@ import hashlib
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -54,6 +55,27 @@ class LinuxServiceTests(unittest.TestCase):
         self.assertTrue(stop_unit(self.root,'fixture'))
         self.assertFalse(unit_state(self.root,'fixture'))
         self.assertEqual((self.root/'data/chat-fixture').read_text(),'keep')
+
+    def test_source_supervisor_is_ready_before_workers_and_independent_of_assistant_builds(self):
+        from linux_host import prepare_supervision
+        self.supervisor.stop()
+        built=Path(__file__).resolve().parent.parent/'target/debug/host-resources'
+        compiler=[]
+        def build(args):
+            compiler.append(args)
+            target=self.root/'target/debug/host-resources';target.parent.mkdir(parents=True)
+            shutil.copy2(built,target)
+        prepare_supervision(self.root,False,build)
+        self.assertEqual(compiler,[['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked']])
+        self.assertTrue(start_unit(self.root,'fixture',self.argv,{}))
+        child=self.wait_child();receipt=unit_state(self.root,'fixture')
+        self.assertEqual(receipt['program'],str(self.root/'target/debug/host-resources'))
+        (self.root/'target/debug/ai-phone-assistant').write_bytes(b'later model server build')
+        prepare_supervision(self.root,False,build)
+        self.assertEqual(len(compiler),1)
+        self.assertEqual(unit_state(self.root,'fixture')['pid'],receipt['pid'])
+        self.assertTrue(Path('/proc',str(child)).exists())
+        self.assertTrue(stop_unit(self.root,'fixture'))
 
     def test_a_live_unit_is_not_replaced_by_a_different_command(self):
         start_unit(self.root,'fixture',self.argv,{})

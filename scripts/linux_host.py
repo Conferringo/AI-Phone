@@ -79,6 +79,15 @@ def private_token(root, section):
         with os.fdopen(os.open(token,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600),'w') as stream:stream.write(secrets.token_hex(32))
 
 
+def prepare_supervision(root, prebuilt, run):
+    from prebuilt_services import SOURCE_SUPERVISOR, supervisor_command
+    # The source supervisor must exist before even the emulator is launched.
+    # Keep its executable separate from the assistant built later in this startup.
+    if not prebuilt and not (root/SOURCE_SUPERVISOR).exists():
+        run(['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked'])
+    supervisor_command(root)
+
+
 def start_guest(root, child_env, run, start):
     run([root/'scripts/android-adb','start-server'])
     run(['sh',root/'scripts/android-create.sh'])
@@ -141,6 +150,7 @@ def start_missing(root):
         created=start_unit(root,name,argv,{**env,**(extra_env or {})})
         if created:started.append(name)
         return created
+    prepare_supervision(root,assistant_spec['prebuilt'],run)
     start_guest(root,child_env,run,start)
     for section in ['phone-runner','assistant','channels']:private_token(root,section)
     start_execution_services(root,{'runner':runner_spec,'assistant':assistant_spec},run,start)

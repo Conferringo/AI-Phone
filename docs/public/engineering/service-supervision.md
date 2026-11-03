@@ -4,7 +4,7 @@ Linux and the WSL backend run their application services under the Rust supervis
 
 ## Installation contract
 
-The native component inventory declares `ai-phone-linux-supervision-v1`. Packaging qualifies the executable through its read-only `--service-supervision-contract` entry. Installation selects the matching verified assistant executable before starting a service. Source installations qualify their newly built executable separately.
+The native component inventory declares `ai-phone-linux-supervision-v1`. Packaging qualifies the executable through its read-only `--service-supervision-contract` entry. Installation selects the matching verified assistant executable before starting a service. Source installations first build and qualify the independent `host-resources` executable, before starting even the emulator. Subsequent assistant compilation cannot replace a running supervisor executable; resuming an existing installation reuses its qualified supervisor.
 
 The installation controller retains its existing `data/services/<name>.lock` while publishing the command and environment specification. It transfers that same open lock to the supervisor as standard input. The supervisor checks the file identity and ownership, verifies the exact specification bytes, and publishes its PID, process start time, executable, root and specification identities atomically. Worker standard input is `/dev/null`; workers do not inherit the supervisor's lock.
 

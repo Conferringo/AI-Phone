@@ -50,8 +50,8 @@ END $fixture$;""",text=True,stdout=subprocess.DEVNULL,check=True)
     # Integration tests and the fault driver deliberately share a fixture cluster:
     # keep them sequential, because the latter restarts it.
     subprocess.run([binary,'--ignored','--skip','model_adapter::tests::live_model_capabilities','--skip','worker::process_recovery_tests::worker_child','--test-threads=1'],cwd=ROOT,env=env,check=True)
-    for name in ['test_database.py','test_state_backup.py']:
-        subprocess.run([sys.executable,'-m','unittest','discover','-s','scripts','-p',name],cwd=ROOT,env=env,check=True)
+    for name in ['test_database','test_state_backup']:
+        subprocess.run([sys.executable,'scripts/required_tests.py',name],cwd=ROOT,env=env,check=True)
     with tempfile.TemporaryDirectory(prefix='aiphone-ci-recovery-') as folder:
         subprocess.run([sys.executable,'scripts/verify_task_recovery.py','--pg-container',args.container,'--pg-port',str(args.port),'--test-binary',binary,'--output',str(Path(folder)/'run')],cwd=ROOT,env=env,check=True)
     print('PASS: isolated database, permissions, restore and worker-process recovery; no production device or provider calls')

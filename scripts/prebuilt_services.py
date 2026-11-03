@@ -13,6 +13,7 @@ SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
+SOURCE_SUPERVISOR = 'target/debug/host-resources'
 
 
 def binary_path(role):
@@ -158,7 +159,7 @@ def supervisor_command(root):
             raise ValueError('Native service supervision capability is missing; rebuild the complete client')
         return [str(root/binary_path('assistant'))]
     from build_native_services import contract_receipt
-    binary=root/'target/debug/ai-phone-assistant'
+    binary=root/SOURCE_SUPERVISOR
     contract_receipt(binary,'--service-supervision-contract',SERVICE_SUPERVISION_CONTRACT)
     return [str(binary)]
 

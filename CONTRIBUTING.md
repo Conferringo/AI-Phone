@@ -10,6 +10,7 @@ Use the documented stack and project-local Bun. Read [the public UI system](docs
 ./scripts/bootstrap.sh
 ./scripts/bun run check
 ./scripts/bun test ./apps/channels ./apps/device-network ./apps/device-stream ./scripts/*.test.ts
+cargo build -p ai-phone-host-runtime --bin host-resources --locked
 python3 -m unittest discover -s scripts -p 'test_*.py'
 cargo fmt --all --check
 cargo test --workspace --locked
@@ -17,6 +18,8 @@ cargo test --workspace --locked
 ```
 
 `scripts/verify-*` can control real devices or call a paid model. Inspect a script first and run it only against an explicitly designated idle test environment. Unit tests using mocks are not real platform certification.
+
+The general maintenance suite may skip cases that require another operating system or an explicitly provisioned fixture. Report passes and skips separately. Required CI steps use `scripts/required_tests.py` for PostgreSQL permissions and restore, isolated audio, Linux service lifecycle, and Windows NTFS/ACL checks on their matching hosts. These steps fail on any skip or an empty suite. A successful unit test does not replace a successful complete installation or physical audio check.
 
 ## Changes
 

@@ -43,6 +43,7 @@ jobs:
         run: |
           cargo build -p ai-phone-host-runtime --bin host-resources --locked
           python3 -m unittest discover -s scripts -p 'test_*.py'
+          python3 scripts/required_tests.py test_linux_services
       - name: Rust tests
         run: |
           cargo fmt --all --check
@@ -60,7 +61,7 @@ jobs:
           cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
           docker build --tag "$fixture_image" --file scripts/fixtures/native-audio.Dockerfile "$fixture_context"
           AI_PHONE_TEST_DESKTOP_MEDIA=1 AI_PHONE_TEST_DESKTOP_IMAGE="$fixture_image" \
-            python3 -m unittest discover -s scripts -p test_desktop_media.py -v
+            python3 scripts/required_tests.py test_desktop_media
       - name: Native guest interaction
         run: |
           sudo apt-get update
