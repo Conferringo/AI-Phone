@@ -197,6 +197,7 @@ struct Components {
     android: bool,
     images: bool,
     tools: Option<String>,
+    wsl: Option<String>,
 }
 
 fn verify_resources(folder: &Path) -> Result<Components, String> {
@@ -212,6 +213,7 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
             "android.payload",
             "images.payload",
             "tools/manifest.json",
+            "wsl/manifest.json",
         ]
         .contains(&name.as_str())
             || hash(&folder.join(name))? != *digest
@@ -223,6 +225,7 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
         android: expected.contains_key("android.payload"),
         images: expected.contains_key("images.payload"),
         tools: expected.get("tools/manifest.json").cloned(),
+        wsl: expected.get("wsl/manifest.json").cloned(),
     })
 }
 
@@ -325,11 +328,59 @@ fn run(
         serde_json::to_vec(&request).map_err(|e| e.to_string())?,
     )
     .map_err(|e| e.to_string())?;
+    #[cfg(target_os = "windows")]
+    if components.wsl.is_some() {
+        return register_windows_backend(manager, &folder, &resource, components.wsl.as_deref());
+    }
+    #[cfg(not(target_os = "windows"))]
+    if components.wsl.is_some() {
+        return Err("wsl_backend_host".into());
+    }
+    run_source_installer(manager, &folder, &resource, request_path, components)
+}
+
+#[cfg(target_os = "windows")]
+fn register_windows_backend(
+    manager: &Arc<ManagerState>,
+    folder: &Path,
+    resource: &Path,
+    identity: Option<&str>,
+) -> Result<(), String> {
+    let identity = identity.ok_or("wsl_backend_missing")?;
+    manager.set(folder, "backend", "running", "")?;
+    let cancelled = || manager.cancelled.load(Ordering::SeqCst);
+    let mut native = ai_phone_host_runtime::wsl::Native::new(&cancelled);
+    let mut installation = ai_phone_host_runtime::Installation::lock(folder)
+        .map_err(|error| error.code().to_string())?;
+    let registered = installation
+        .ensure_wsl_bundle(
+            &resource.join("wsl"),
+            identity,
+            &mut native,
+            &available_bytes,
+            &cancelled,
+        )
+        .map_err(|error| error.code().to_string())?;
+    // Registration preserves the imported disk; service and phone readiness have
+    // separate contracts. Do not publish a completed deployment checkpoint here.
+    if !registered.backend_initialized || !registered.phone_ready {
+        return Err("host_backend_pending".into());
+    }
+    Ok(())
+}
+
+fn run_source_installer(
+    manager: &Arc<ManagerState>,
+    folder: &Path,
+    resource: &Path,
+    request_path: PathBuf,
+    components: Components,
+) -> Result<(), String> {
     let runtime = if let Some(identity) = components.tools {
-        manager.set(&folder, "runtime", "running", "")?;
+        manager.set(folder, "runtime", "running", "")?;
         Some(tools::prepare(
             &resource.join("tools"),
-            &folder,
+            folder,
             &identity,
             &platform_key(std::env::consts::OS, std::env::consts::ARCH),
             &available_bytes,
@@ -339,11 +390,11 @@ fn run(
         None
     };
     let mise = if runtime.is_none() {
-        Some(prepare_runtime(manager, &folder)?)
+        Some(prepare_runtime(manager, folder)?)
     } else {
         None
     };
-    let layout = toolchain::Toolchain::new(&folder);
+    let layout = toolchain::Toolchain::new(folder);
     let mut command = if let Some(runtime) = &runtime {
         let mut command = Command::new(&runtime.python);
         command.args(["-I", "-S", "-B"]);
@@ -364,12 +415,12 @@ fn run(
         command
     };
     command
-        .current_dir(&folder)
+        .current_dir(folder)
         .arg(resource.join("entry.py"))
         .arg("--payload")
         .arg(resource.join("source.payload"))
         .arg("--home")
-        .arg(&folder)
+        .arg(folder)
         .arg("--request")
         .arg(request_path);
     if let Some(mise) = mise {
@@ -393,7 +444,7 @@ fn run(
         .env("MISE_YES", "1")
         .env("MISE_SELF_UPDATE_AVAILABLE", "false")
         .env("MISE_PARANOID", "1");
-    execute(manager, command, &folder)
+    execute(manager, command, folder)
 }
 
 pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {

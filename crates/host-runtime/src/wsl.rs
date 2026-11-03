@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod bundle;
 #[cfg(any(windows, test))]
 mod command;
 mod windows;

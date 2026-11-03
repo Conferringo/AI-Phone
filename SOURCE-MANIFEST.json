@@ -370,13 +370,13 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
-      "size": 116822,
-      "sha256": "4812ed9964a1c18c5dbb25667e75c74cd3cdfc0bb6aa7ee060a27368c1885f15"
+      "size": 120190,
+      "sha256": "4cd96c390920778f3b59f36af8835f3751c0db46ae848a0a6bd165558dc2b029"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
-      "size": 1081,
-      "sha256": "879f10943f2bd14b3c5467a349b594b126da9f589217aea3478c1a446edcb9fd"
+      "size": 1147,
+      "sha256": "3648e69f72f92338aa9684f84a325290103caa13c730b92812779b17db8d078d"
     },
     {
       "path": "apps/client/src-tauri/build.rs",
@@ -715,8 +715,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 24542,
-      "sha256": "c41d5c476ee29ef5d214ae26962254488c0138060edd304a5ba572158cba7a0a"
+      "size": 26339,
+      "sha256": "9571356e890305917d1d4cee2670916de7d0b6b9a72dbb25ca62a2a70cdae770"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -2849,6 +2849,11 @@
       "sha256": "2e59eee01ad595d8fa324d7810ea1891025dfc77a317f943a5a6370b492d97a9"
     },
     {
+      "path": "crates/host-runtime/src/wsl/bundle.rs",
+      "size": 7032,
+      "sha256": "3df8a4bf1ff3f4ca5c2b674cbf491ff4523ce6a3c3f3e854568393195a84552e"
+    },
+    {
       "path": "crates/host-runtime/src/wsl/command.rs",
       "size": 6493,
       "sha256": "06ab8f72729aa6ffc7c94541e59ae8401b5c45974d50b0cbb1df4ff6dda26e0a"
@@ -2865,8 +2870,8 @@
     },
     {
       "path": "crates/host-runtime/src/wsl.rs",
-      "size": 7888,
-      "sha256": "a80c977c75795cb1af5df1e73b4ccc32ada87d715475c0378ca9efd5391fdef8"
+      "size": 7900,
+      "sha256": "ba0d74c7157a0e831d4bba53f301f3e3e0ae3b9d33e9ab50096345fee4e73569"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -3015,8 +3020,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 431735,
-      "sha256": "b49443f069cdf1ed49d010353d3359433e1701a40585578a554239ac1058ca99"
+      "size": 432114,
+      "sha256": "8e7b6a16c487b38e96aa9c67267527a9c8f1121c317db2224ece220d2e8929c9"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3955,8 +3960,8 @@
     },
     {
       "path": "docs/public/native-client-licenses.txt",
-      "size": 4519174,
-      "sha256": "d0b684cc17412394ac9f6194d994127ba4dd560b0f7a3e89dc79c1354f9029ae"
+      "size": 4789361,
+      "sha256": "de3f99b3e2198de728c349215744b3fb07f650b6ff1044b341d4c2701d39c5dd"
     },
     {
       "path": "docs/public/native-client.en.md",
@@ -4090,8 +4095,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 5515,
-      "sha256": "bccf41f4cd0b46d746b29f4212f5914201ecd354daac7ba8477c0bc0e1d1dbf8"
+      "size": 6426,
+      "sha256": "f2017fbb755541b343d7f7936ff6b4a62c7829b02ce9521601cc62a45209a75f"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -4570,8 +4575,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11999,
-      "sha256": "8981037fc74b95116776c290b93be417a2ddc77d57ba859a77911da148d8cc96"
+      "size": 12284,
+      "sha256": "4a1356968f50f1ff74944e8588e117e7a0488b97d4fef919bc8955e696846883"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4665,13 +4670,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6632,
-      "sha256": "44192ca65cbc75083eeb742c67113cbb912e4ad8ec664a33098385e9ac6b4c4e"
+      "size": 6722,
+      "sha256": "851e1122def55fe4de097cca57c410cca8aa80bf447843f8e1735a43cf26392d"
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 2315,
-      "sha256": "ab1d4bc01f82da621b3f7136cc845f90f78eff423cf977371289f1d2fcab2a97"
+      "size": 2520,
+      "sha256": "a0fc11e457ad179288c135cf5476c097a5b8511a5df3aff6fb71335df849be2f"
     },
     {
       "path": "scripts/client_host.py",
@@ -4685,8 +4690,8 @@
     },
     {
       "path": "scripts/client_resources.py",
-      "size": 3522,
-      "sha256": "c7088eb7d19912b49afd81ca9318d454e1bf924acc1cf5c82696926fa7a02b68"
+      "size": 3870,
+      "sha256": "bd180f96cdfef2aa525ceb5a45a3b4b13095fd63f2a5a25e3a30c741a8065f33"
     },
     {
       "path": "scripts/container_host_runtime.py",
@@ -4715,8 +4720,8 @@
     },
     {
       "path": "scripts/dependency_inventory.py",
-      "size": 8451,
-      "sha256": "38481efdf4bebbd47aeda1603348ae1df441353f51729fcc358751693311a1f3"
+      "size": 8816,
+      "sha256": "d23be11fa4d1eaf7dd8b17f083ccbb683b6aedbf9daf859d6711c147d0f05eeb"
     },
     {
       "path": "scripts/dependency_report.py",
@@ -5165,8 +5170,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 8157,
-      "sha256": "c4a1a1b9ce0b1487faad7ae577d3e509a2140ea70614b389cd86ad586df4e59b"
+      "size": 8422,
+      "sha256": "8642aecd867b2226f2e7881b3e8f2dd85257e669f709db67b81d1c449a5ab985"
     },
     {
       "path": "scripts/prepare_ocr_models.py",
@@ -5400,8 +5405,8 @@
     },
     {
       "path": "scripts/test_dependency_notices.py",
-      "size": 3110,
-      "sha256": "58bdb15897685e81590b950bc40895ba1904226ad3cd3695eae4636d2ed5146e"
+      "size": 4618,
+      "sha256": "06a4c334d2bdeba7329392659ede83c416139dd81138bf024052e6ea4b027927"
     },
     {
       "path": "scripts/test_dependency_reporting.py",
@@ -5704,6 +5709,11 @@
       "sha256": "a811cbb7afc69362b00283d70743121948ef921229b4c4d35b8f3b4a8baf7468"
     },
     {
+      "path": "scripts/test_wsl_resources.py",
+      "size": 5206,
+      "sha256": "ff16a5ca80634c38ac08960e8f3450e36a6550f62f77692ff1abf88e76ef7d36"
+    },
+    {
       "path": "scripts/test_wsl_runtime.py",
       "size": 19799,
       "sha256": "93711dcca27ba626ad26b308b1b3d13796d08e018ef88ed02fabb536cce104f7"
@@ -5767,6 +5777,11 @@
       "path": "scripts/wsl_initialize_diagnostics.py",
       "size": 8631,
       "sha256": "28a8fa9be6a14d6a051f2199d3eeb2970ea364506c96f39029eb8df1fe2c07ab"
+    },
+    {
+      "path": "scripts/wsl_resources.py",
+      "size": 2850,
+      "sha256": "88e5b990e5447c039fecfee7a2ff848cc13217f87623fca3e0c67b03de18666a"
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",

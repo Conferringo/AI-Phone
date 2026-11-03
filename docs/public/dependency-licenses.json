@@ -5,7 +5,7 @@
   "locks": {
     "Cargo.lock": "bf8d3958bb3afb8a59297ef89fb90f3c1a81602f43beecc262aa82aeccccb038",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "dc1813dbf94c5956224ce2f87624371da194ddea898f60ec2ab76bfc24c77431"
+    "apps/client/src-tauri/Cargo.lock": "4cd96c390920778f3b59f36af8835f3751c0db46ae848a0a6bd165558dc2b029"
   },
   "rust": [
     {
@@ -607,10 +607,6 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
-        },
-        {
-          "file": "UNLICENSE",
-          "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c"
         }
       ],
       "workspaces": [
@@ -1857,7 +1853,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -1973,7 +1970,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -2196,7 +2194,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -3351,10 +3350,6 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "c77a4cf9da729987d0fe7ccd811e3bd27393914ddf3d23467c18cc22954513b3"
-        },
-        {
-          "file": "INLINE-MIT-NOTICES.txt",
-          "sha256": "bbb3f8dd47d61eea754b34833f2ee9f324caf781d04d9566e003597b335e907a"
         }
       ],
       "workspaces": [
@@ -3915,7 +3910,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -4011,26 +4007,11 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "69036b033e4bb951821964dbc3d9b1efe6913a6e36d9c1f206de4035a1a85cc4"
-        },
-        {
-          "file": "xz-5.2/COPYING",
-          "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c"
-        },
-        {
-          "file": "xz-5.2/COPYING.GPLv2",
-          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
-        },
-        {
-          "file": "xz-5.2/COPYING.GPLv3",
-          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
-        },
-        {
-          "file": "xz-5.2/COPYING.LGPLv2.1",
-          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -6100,6 +6081,33 @@
       ]
     },
     {
+      "name": "rustix",
+      "version": "1.1.6",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "repository": "https://github.com/bytecodealliance/rustix",
+      "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "377c2e7c53250cc5905c0b0532d35973392af16ffb9596a41d99d202cf3617c9"
+        },
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-Apache-2.0_WITH_LLVM-exception",
+          "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "rustls",
       "version": "0.23.46",
       "license": "Apache-2.0 OR ISC OR MIT",
@@ -7358,7 +7366,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -7540,7 +7549,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -9225,7 +9235,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -9283,7 +9294,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -9302,7 +9314,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -9359,7 +9372,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -10203,10 +10217,6 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "a72561f47c1f665535930f606739d9098a6186802d5e2e8ec491faf00f4add5b"
-        },
-        {
-          "file": "xcb-proto-1.17.0/COPYING",
-          "sha256": "c5ffbfeaa501071ceeb97b7de2c0d703fdaa35de01c0fb6cbac1c28453a3e9fd"
         }
       ],
       "workspaces": [
@@ -10229,7 +10239,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {

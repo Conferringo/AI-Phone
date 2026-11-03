@@ -26,7 +26,7 @@ def component_records(root,requested,linux_ocr=None):
     return components,[row for name in components for row in producers[name]()]
 
 
-def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, with_js_services=False, with_guest_apps=False, android_runtime=None, image_runtime=None, installer_tools=None, linux_ocr=None):
+def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, with_phone_apps=False, with_container_host=False, with_js_services=False, with_guest_apps=False, android_runtime=None, image_runtime=None, installer_tools=None, linux_ocr=None, wsl_runtime=None):
     if linux_ocr is not None and not with_service_runtime:
         raise ValueError('Bundled Linux OCR requires the native service component')
     folder = root / 'apps/client/src-tauri/gen/host'
@@ -52,6 +52,8 @@ def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, wi
     digests.update(prepare_images(folder,image_runtime))
     from installer_tools import prepare_resources
     digests.update(prepare_resources(folder,installer_tools))
+    from wsl_resources import prepare as prepare_wsl
+    digests.update(prepare_wsl(folder,wsl_runtime))
     (folder / 'integrity.json').write_text(json.dumps(digests, sort_keys=True))
     if (root/'apps/client/src-tauri/tauri.conf.json').exists():
         from client_resources import build_config
@@ -111,7 +113,7 @@ def payload_components(root=ROOT):
         components=json.load(source.extractfile(entry)).get('components', [])
     sidecar=archive.parent/'integrity.json'
     integrity=json.loads(sidecar.read_text()) if sidecar.exists() else {}
-    return components+(['android-runtime'] if 'android.payload' in integrity else [])+(['container-images'] if 'images.payload' in integrity else [])+(['installer-tools'] if 'tools/manifest.json' in integrity else [])
+    return components+(['android-runtime'] if 'android.payload' in integrity else [])+(['container-images'] if 'images.payload' in integrity else [])+(['installer-tools'] if 'tools/manifest.json' in integrity else [])+(['wsl-backend'] if 'wsl/manifest.json' in integrity else [])
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
@@ -124,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--android-runtime',type=Path)
     parser.add_argument('--images-runtime',type=Path)
     parser.add_argument('--installer-tools',type=Path)
+    parser.add_argument('--wsl-runtime',type=Path)
     parser.add_argument('--verify-web-runtime', action='store_true')
     parser.add_argument('--verify-service-runtime', action='store_true')
     parser.add_argument('--pg-container')
@@ -135,7 +138,7 @@ if __name__ == '__main__':
         parser.error('Verification requires --with-service-runtime')
     if (args.pg_container is None) != (args.pg_port is None) or (args.pg_container is not None and not args.verify_service_runtime):
         parser.error('Database fixture requires container/port and service verification')
-    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,with_guest_apps=args.with_guest_apps,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools)
+    result = prepare(with_web_runtime=args.with_web_runtime, with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,with_guest_apps=args.with_guest_apps,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools,wsl_runtime=args.wsl_runtime)
     if args.verify_web_runtime:
         result['web_runtime_verification'] = verify_prepared_web()
     if args.verify_service_runtime:

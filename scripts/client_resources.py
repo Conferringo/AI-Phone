@@ -9,7 +9,7 @@ def resource_map(root):
     integrity=native/'gen/host/integrity.json'
     if integrity.exists():
         expected=json.loads(integrity.read_text())
-        if set(expected)-{'source.payload','entry.py','android.payload','images.payload','tools/manifest.json'}:
+        if set(expected)-{'source.payload','entry.py','android.payload','images.payload','tools/manifest.json','wsl/manifest.json'}:
             raise ValueError('Unrecognized native resource')
         for name in ('android.payload','images.payload'):
             if name in expected:resources['gen/host/'+name]='host/'+name
@@ -20,6 +20,10 @@ def resource_map(root):
             if digest(folder/'manifest.json')!=expected['tools/manifest.json']:raise ValueError('Installer tools changed before packaging')
             manifest=verify(folder)
             for name in ['manifest.json',*[row['path'] for row in manifest['files']]]:resources['gen/host/tools/'+name]='host/tools/'+name
+        if 'wsl/manifest.json' in expected:
+            from wsl_resources import verify
+            verify(native/'gen/host/wsl',expected['wsl/manifest.json'])
+            for name in ['manifest.json','rootfs.tar.gz']:resources['gen/host/wsl/'+name]='host/wsl/'+name
     return resources
 
 
@@ -27,8 +31,11 @@ def build_config(root):
     native=Path(root)/'apps/client/src-tauri'
     target=native/'gen/host/resources.json'
     expanded=resource_map(root)
-    resources={source:destination for source,destination in expanded.items() if not source.startswith('gen/host/tools/')}
-    if len(resources)!=len(expanded):resources['gen/host/tools']='host/tools'
+    resources=dict(expanded)
+    for group in ['tools','wsl']:
+        members=[name for name in resources if name.startswith('gen/host/'+group+'/')]
+        for name in members:resources.pop(name)
+        if members:resources['gen/host/'+group]='host/'+group
     target.write_text(json.dumps({'bundle':{'resources':resources}},sort_keys=True)+'\n')
     return target
 
