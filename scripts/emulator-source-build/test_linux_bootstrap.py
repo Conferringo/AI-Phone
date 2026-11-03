@@ -542,7 +542,7 @@ class LifecycleTests(OwnedFixture):
                 (build / "build-result.json").write_text(json.dumps(result), encoding="utf-8")
             return ""
 
-        with patch.object(bootstrap.SourceCommand, "run", autospec=True, side_effect=run):
+        with patch.dict(bootstrap.os.environ, {"GITHUB_SHA": "a" * 40}), patch.object(bootstrap.SourceCommand, "run", autospec=True, side_effect=run):
             bootstrap.controlled_build(self.root)
         receipt = self.public_receipt()
         self.assertEqual(len(calls), 2)
@@ -554,9 +554,20 @@ class LifecycleTests(OwnedFixture):
         self.assertEqual(calls[1][4], sys.executable)
         self.assertEqual(receipt["status"], "built")
         self.assertEqual(receipt["selected_projects"], 66)
+        self.assertEqual(receipt["source_commit"], "a" * 40)
+        self.assertEqual(receipt["source_manifest_sha256"], bootstrap.producer.sha256(bootstrap.HERE.parents[1] / "SOURCE-MANIFEST.json"))
         self.assertEqual(receipt["redistribution"], "review-pending")
         self.assertEqual(receipt["android35_root_boot"], "not-executed")
         self.assertNotIn("private-", json.dumps(receipt))
+
+    def test_source_identity_never_projects_an_untrusted_environment_string(self):
+        self.sync.side_effect = bootstrap.BuildFailure("command_failed")
+        with patch.dict(bootstrap.os.environ, {"GITHUB_SHA": "private-source-sentinel"}):
+            with self.assertRaises(bootstrap.BuildFailure):
+                bootstrap.controlled_build(self.root)
+        receipt = self.public_receipt()
+        self.assertIsNone(receipt['source_commit'])
+        self.assertNotIn('private-source-sentinel', json.dumps(receipt))
 
     def test_sync_failure_does_not_launch_producer(self):
         self.sync.side_effect = bootstrap.BuildFailure("command_failed")

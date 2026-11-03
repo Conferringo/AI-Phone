@@ -7,6 +7,10 @@ on:
         type: boolean
         required: true
         default: false
+      retain_source_candidate:
+        description: Retain the verified build in an unpublished review draft
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -17,6 +21,12 @@ jobs:
     if: ${{ inputs.confirm }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    permissions:
+      contents: write
+    env:
+      RUSTUP_TOOLCHAIN: 1.96.0
+      CARGO_BUILD_JOBS: '2'
+      CARGO_TARGET_DIR: ${{ runner.temp }}/source-retention-target
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -26,6 +36,10 @@ jobs:
         run: |
           python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
           python3 -B qualify_owned_session.py
+      - name: Review source inventory before the controlled build
+        run: |
+          python3 scripts/check_source.py --repository --manifest
+          python3 -B -m unittest discover -s scripts -p 'test_*candidate*.py'
       - name: Prepare this disposable hosted runner
         run: |
           test '${{ runner.environment }}' = github-hosted
@@ -65,6 +79,11 @@ jobs:
           '
           build_parent="$(mktemp -d "$RUNNER_TEMP/emulator-source-XXXXXX")"
           printf 'AI_PHONE_EMULATOR_SOURCE_WORK=%s\n' "$build_parent" >> "$GITHUB_ENV"
+      - name: Prepare native artifact retention before source synchronization
+        if: ${{ inputs.retain_source_candidate }}
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          cargo build --release --locked -p ai-phone-host-runtime --bin package-volumes
       - name: Qualify the owned headless display before source synchronization
         run: python3 -B scripts/emulator-source-build/qualify_display_session.py
       - name: Synchronize fixed sources, verify and build once
@@ -79,3 +98,11 @@ jobs:
           path: ${{ env.AI_PHONE_EMULATOR_SOURCE_WORK }}/attempt/public-receipt.json
           if-no-files-found: error
           retention-days: 7
+      - name: Seal and retain source output on explicit request
+        if: ${{ success() && inputs.retain_source_candidate }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/source_emulator_candidate.py stage "$AI_PHONE_EMULATOR_SOURCE_WORK/attempt" > "$RUNNER_TEMP/source-candidate.json"
+          report=$(jq -er .report "$RUNNER_TEMP/source-candidate.json")
+          scripts/retain-client-candidate.sh "$report" source-emulator

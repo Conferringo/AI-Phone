@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Maintainer-only, unpublished complete installer retention on a disposable runner.
+# Maintainer-only, unpublished build output retention on a disposable runner.
 set -euo pipefail
 test "$GITHUB_ACTIONS" = true
 test "$RUNNER_ENVIRONMENT" = github-hosted
@@ -8,7 +8,20 @@ test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ ]]
 command -v gh jq python3 > /dev/null
 report="$1"
-work="$(mktemp -d "$RUNNER_TEMP/complete-candidate-XXXXXX")"
+case "${2:-client}" in
+  client)
+    planner=scripts/package_delivery.py
+    label='AI Phone complete candidate'
+    description='Unpublished complete installer candidate for maintainer verification. Physical installation and redistribution review remain separate requirements.'
+    ;;
+  source-emulator)
+    planner=scripts/source_emulator_candidate.py
+    label='AI Phone source-emulator candidate'
+    description='Unpublished source-emulator output for maintainer review. Redistribution, source closure and Android boot qualification remain unapproved.'
+    ;;
+  *) printf '%s\n' 'Unknown build candidate kind.' >&2; exit 1 ;;
+esac
+work="$(mktemp -d "$RUNNER_TEMP/build-candidate-XXXXXX")"
 nonce="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
 tag="candidate-${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}-$nonce"
 created=false
@@ -28,7 +41,7 @@ cleanup() {
 }
 trap cleanup EXIT
 python3 scripts/check_source.py --repository
-python3 scripts/package_delivery.py plan "$report" > "$work/plan.json"
+python3 "$planner" plan "$report" > "$work/plan.json"
 # A unique tag must be absent before this invocation can own its draft or cleanup.
 gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$work/existing.json"
 jq -e --arg tag "$tag" '[.[][] | select(.tag_name == $tag)] | length == 0' "$work/existing.json" > /dev/null
@@ -37,8 +50,8 @@ if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" > "$work/ref.json" 2> "$w
   exit 1
 fi
 grep -q '404' "$work/ref-error"
-jq -n --arg tag "$tag" --arg source "$GITHUB_SHA" \
-  '{tag_name:$tag,target_commitish:$source,draft:true,prerelease:true,name:("AI Phone complete candidate "+$source[0:12]),body:"Unpublished complete installer candidate for maintainer verification. Physical installation and redistribution review remain separate requirements."}' > "$work/request.json"
+jq -n --arg tag "$tag" --arg source "$GITHUB_SHA" --arg label "$label" --arg description "$description" \
+  '{tag_name:$tag,target_commitish:$source,draft:true,prerelease:true,name:($label+" "+$source[0:12]),body:$description}' > "$work/request.json"
 created=true
 gh api --method POST "repos/$GITHUB_REPOSITORY/releases" --input "$work/request.json" > "$work/release.json"
 release_id="$(jq -er '.id' "$work/release.json")"
@@ -50,4 +63,4 @@ gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$work/remote.json"
 gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" > "$work/assets.json"
 jq --slurpfile pages "$work/assets.json" '.assets = ($pages[0] | add)' "$work/remote.json" > "$work/complete.json"
 python3 scripts/package_delivery.py verify-upload "$work/plan.json" --release "$work/complete.json"
-printf 'Unpublished complete candidate retained: %s\n' "$tag"
+printf 'Unpublished candidate retained: %s\n' "$tag"

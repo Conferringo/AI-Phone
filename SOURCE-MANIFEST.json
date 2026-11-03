@@ -64,8 +64,8 @@
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
-      "size": 4545,
-      "sha256": "c1f6992ffe4d0566b93f0c1ed6e8c1494b73f42869eac37a55c7af5f8a206a17"
+      "size": 5868,
+      "sha256": "84aa8a60d763e84dbcc412ccdf6adb1432395cf5cb90a32b43aed9dafa74f313"
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
@@ -4729,8 +4729,8 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 4214,
-      "sha256": "1a72be45924bd86209cd7faccba73fea0d45a8f75306e9ee9dd206ec2ad6dc80"
+      "size": 4705,
+      "sha256": "b2cf2be816899137797116e810f0dd16c03c23b278df5e9fd8cec9bd70d9c5ec"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",
@@ -4759,8 +4759,8 @@
     },
     {
       "path": "scripts/emulator-source-build/linux_bootstrap.py",
-      "size": 23275,
-      "sha256": "d3af961ba72eeec0faf5dbf0d661de0e1ad1543c1de19543c52f58ac8268dee5"
+      "size": 23512,
+      "sha256": "d8e31233851d80ce3dfefdd45bb297441f65ec2b1e2a5d11e849b86d031e923a"
     },
     {
       "path": "scripts/emulator-source-build/qualify_display_session.py",
@@ -4784,8 +4784,8 @@
     },
     {
       "path": "scripts/emulator-source-build/test_linux_bootstrap.py",
-      "size": 35859,
-      "sha256": "82d484c0ad741f9b128e795384237faf8e6fe36c1ecebdc773b14f4d5e4ee61e"
+      "size": 36645,
+      "sha256": "b364133fdd6195e48a2e0c345ff6ea0bffd0304f6fbdbfd1cb6038a3a1c985be"
     },
     {
       "path": "scripts/entry-language.test.ts",
@@ -5179,8 +5179,8 @@
     },
     {
       "path": "scripts/retain-client-candidate.sh",
-      "size": 2969,
-      "sha256": "10df2a72fcf08ad8c5668ca5e7fe095976471c227ef8ec28a10d034f703c7a65"
+      "size": 3467,
+      "sha256": "5ca1c5980b8b14ee0461eefbaf5edacc3dd7d842b723f7e087039a5a6706186c"
     },
     {
       "path": "scripts/route-stroke.test.ts",
@@ -5216,6 +5216,11 @@
       "path": "scripts/smoke-protocol.ts",
       "size": 2123,
       "sha256": "7ffe65743e3ac709fcd0d9c6121eaf1140387091ee6182952934e719d7d1b245"
+    },
+    {
+      "path": "scripts/source_emulator_candidate.py",
+      "size": 6397,
+      "sha256": "09d5ef04ccb05918a4f8770b1cca521aa730f12ae456ee69d345fb22b216bf90"
     },
     {
       "path": "scripts/source_export.py",
@@ -5611,6 +5616,11 @@
       "path": "scripts/test_sdk_entrypoints.py",
       "size": 1835,
       "sha256": "11b9219cf07e16d3f4a11e3990a4c09d650854d35bcc3f80dc305b871472b49e"
+    },
+    {
+      "path": "scripts/test_source_emulator_candidate.py",
+      "size": 9686,
+      "sha256": "b6143cd64ffb17bd84a437c0e1ea2fbc986dfc98fbcc9df5b7ab4091213f4b78"
     },
     {
       "path": "scripts/test_source_export.py",

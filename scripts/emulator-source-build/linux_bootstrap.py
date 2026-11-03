@@ -433,7 +433,10 @@ def with_display(arguments):
 
 def controlled_build(root):
     environment = isolated_environment(root)
+    source = os.environ.get("GITHUB_SHA", "")
     receipt = {"format": 1, "host": "linux-x64", "stage": "admission", "status": "unknown",
+               "source_commit": source if re.fullmatch(r"[0-9a-f]{40}", source) else None,
+               "source_manifest_sha256": producer.sha256(HERE.parents[1] / "SOURCE-MANIFEST.json"),
                "source_lock_sha256": producer.LOCK_SHA256, "qemu_commit": producer.QEMU_REVISION,
                "repo_commit": REPO_COMMIT, "declared_projects": 75, "selected_projects": 66,
                "redistribution": "review-pending", "source_dependency_closure": "unverified",
