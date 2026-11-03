@@ -38,6 +38,14 @@ pub(crate) fn directory(path: &Path, recursive: bool) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn existing_directory(path: &Path) -> Result<()> {
+    let metadata = fs::symlink_metadata(path)?;
+    if !metadata.is_dir() || alias(&metadata) {
+        return Err(Error::Invalid("source_resource_directory"));
+    }
+    Ok(())
+}
+
 pub(crate) fn lock_file(path: &Path) -> Result<File> {
     if let Ok(metadata) = fs::symlink_metadata(path)
         && (alias(&metadata) || !metadata.is_file())

@@ -2810,8 +2810,8 @@
     },
     {
       "path": "crates/host-runtime/src/filesystem.rs",
-      "size": 8546,
-      "sha256": "456b34083e824e7a7137d5d83c2cb2f1e205234c0950e143fc67ab948b48af28"
+      "size": 8789,
+      "sha256": "572db5d145b2e4ab21edcfb90d43adeb363747bac7cc7fd14878c9768df8c94e"
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
@@ -2850,8 +2850,8 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
-      "size": 7032,
-      "sha256": "3df8a4bf1ff3f4ca5c2b674cbf491ff4523ce6a3c3f3e854568393195a84552e"
+      "size": 7659,
+      "sha256": "ac9c7870c3fbd89653237b274434139e51a0996ccae622fb6830919f2e5c8226"
     },
     {
       "path": "crates/host-runtime/src/wsl/command.rs",

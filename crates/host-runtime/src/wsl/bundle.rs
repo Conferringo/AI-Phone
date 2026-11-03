@@ -26,7 +26,7 @@ struct Inventory {
 }
 
 fn read(source: &Path, expected: &str) -> Result<Bundle> {
-    filesystem::directory(source, false)?;
+    filesystem::existing_directory(source)?;
     let bytes = filesystem::bounded_file(&source.join("manifest.json"))?;
     if !manifest::identity(expected) || format!("{:x}", Sha256::digest(&bytes)) != expected {
         return Err(Error::Invalid("wsl_bundle_changed"));
@@ -146,6 +146,21 @@ mod tests {
         assert!(resumed.reused);
         assert_eq!(host.imports, 1);
         assert_eq!(fs::read(user.join("chat")).unwrap(), b"keep");
+    }
+
+    #[test]
+    fn missing_resources_are_rejected_without_creating_a_bundle_directory() {
+        let root = tempfile::tempdir().unwrap();
+        let missing = root.path().join("missing resources");
+        let mut installation = Installation::lock(&root.path().join("install")).unwrap();
+        let mut host = Host::default();
+        assert!(
+            installation
+                .ensure_wsl_bundle(&missing, &"0".repeat(64), &mut host, &available, &|| false)
+                .is_err()
+        );
+        assert!(!missing.exists(), "resource admission must be read-only");
+        assert_eq!(host.imports, 0);
     }
 
     #[test]
