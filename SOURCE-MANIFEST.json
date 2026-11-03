@@ -100,8 +100,8 @@
     },
     {
       "path": ".gitignore",
-      "size": 1144,
-      "sha256": "99beb14ff96c8b59a77d30cb57bbc7bd3b36a924b2fa4d3e4639f706714a43bc"
+      "size": 1153,
+      "sha256": "d25a1c6bcd074b4a88c77c85620786a5f39cd7f672a807ca545077b621300e81"
     },
     {
       "path": ".puppeteerrc.cjs",
@@ -2429,9 +2429,14 @@
       "sha256": "7862b934d9b716b815da95ef0535ebd009b15539730d0ced99118796a67ebf38"
     },
     {
+      "path": "crates/assistant/migrations/0034_active_skill_lookup.sql",
+      "size": 254,
+      "sha256": "39d415e8ea1b62f520479c62f59ee09e192658ecbedbb16a078ba5cf4d7724ce"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
-      "size": 10232,
-      "sha256": "91fae28a381df10fb0bdc468340567272781d4760c1f1fbc8ad36fcd7bda0b96"
+      "size": 10262,
+      "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
     },
     {
       "path": "crates/assistant/src/anthropic_messages.rs",
@@ -2440,8 +2445,8 @@
     },
     {
       "path": "crates/assistant/src/app_learning.rs",
-      "size": 15870,
-      "sha256": "6a4d48ef7131c89bd04d05237bbae14fd720c9bb2ced34830ce8533ca2c76d5f"
+      "size": 19423,
+      "sha256": "9e728b96d6fe2aa53edd97965d5b1864dba3023f4ce75eafc8bfa89eac63e255"
     },
     {
       "path": "crates/assistant/src/auth.rs",
@@ -2455,8 +2460,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 13114,
-      "sha256": "6cb6464e5a189d6146e3b39057beb0b4a9eadb0e3c3ea4fbe6565ecf14d9a82c"
+      "size": 16206,
+      "sha256": "123d0fdfbdbe48662b13fc315513d16c3c86f7a4a330ed483425f9544bd02097"
     },
     {
       "path": "crates/assistant/src/database.rs",
@@ -2650,8 +2655,8 @@
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
-      "size": 16403,
-      "sha256": "022f3940e711dd0ea055b3e03d7eba9b6393da14cece23d1b467d95e6665e582"
+      "size": 16342,
+      "sha256": "e7ff120e58f0f7fa7e57357c2b1f51fc59c1c7db8dffe89c17037aef1acfb0b8"
     },
     {
       "path": "crates/assistant/src/voice_input.rs",
@@ -2680,8 +2685,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 209813,
-      "sha256": "89c962769ea235cebceee6d1fbf9974e2fa1d1322d57c7c939f19baf5709811e"
+      "size": 208573,
+      "sha256": "4f20ecb2466fa7f4eb1156313f65d8a9a55ededfea92a4b628ec9ce451cc3740"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -3079,6 +3084,11 @@
       "sha256": "21ba6ffb5db7357f71659134f4e3c817f05f6f395a719a78192824f817e9a081"
     },
     {
+      "path": "docs/public/engineering/app-learning.md",
+      "size": 2409,
+      "sha256": "cc36a86148da353de660fee15c83fb2632115e7328fab67d4d3a1cca1be42e85"
+    },
+    {
       "path": "docs/public/engineering/channel-browser.md",
       "size": 4675,
       "sha256": "e70b64f778e40f4cdceb0c8421cfa77d82b9d38e99b22a3e9644ddab49ea7a6e"
@@ -3090,8 +3100,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1378,
-      "sha256": "98349c88d100191dc8fea21d28d5487280a3080e54e7b462bac9c09812c4a2f4"
+      "size": 1438,
+      "sha256": "926dcb353d3a85ebec63303d123a668bb5d5c2c41c48f6f3355a8f7b2fce9232"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -4140,8 +4150,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 3376,
-      "sha256": "cdd1dca63f20ee03da004e27070c8e27e6dca11dd59f524f0af7b548e357c566"
+      "size": 3527,
+      "sha256": "e35a76d9b500c432d395b24823120f9a02068e0b5d54c38a655c14b3ddec77ef"
     },
     {
       "path": "infra/desktop/clash-launch.sh",
@@ -5255,8 +5265,8 @@
     },
     {
       "path": "scripts/release_package.py",
-      "size": 6047,
-      "sha256": "f56f576a652dc8e5ff28ee2ef874f4565e95b52393bc43bdaaf03d3fa00a7ddb"
+      "size": 6059,
+      "sha256": "339cd127559e5a1b0d82b98c491fca0407d6c4178d6d690e936f1f35bc2fd540"
     },
     {
       "path": "scripts/release_stage.py",
@@ -5755,8 +5765,8 @@
     },
     {
       "path": "scripts/test_source_export.py",
-      "size": 14360,
-      "sha256": "3f23a7d766902ff7d07b541a73c1eea8c02de38ee41f939028bee2ed5268f134"
+      "size": 14400,
+      "sha256": "dbfece30bb32e4853e92f795f783247cdea58c4508ff17f63d2c5de8dda04b6a"
     },
     {
       "path": "scripts/test_state_backup.py",
@@ -5915,8 +5925,8 @@
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
-      "size": 2496,
-      "sha256": "a294dcf87f36b66f492992aa53d541c9329a861faa8881169db4e3ed27e922f4"
+      "size": 2764,
+      "sha256": "850613202a93a4f0b0384da173e40c7abf29e7c45dc3716759df674cf2c4548b"
     },
     {
       "path": "skills/builtin/files-android/SKILL.md",

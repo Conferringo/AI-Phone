@@ -6,7 +6,7 @@ description: 通过有授权和SHA256校验的数据线在手机与Linux电脑�
 1. device_list取得本任务可用的手机和电脑ID。用户指示或主人已委托的通知工作需要跨设备处理时可用device_link连接二者，不得连接未授权设备。
 2. device_files检查源文件真实路径。电脑路径相对/home/ai/Files；手机文件在/sdcard共享存储，默认下载目录。微信附件需要先通过phone-use在正确会话下载。
 3. device_transfer传输，检查status=completed、bytes、sha256与实际target_path。单文件最高64MiB；返回的新目录是防覆盖设计，不猜目标路径。重复请求查device_transfer_status，未知结果不能重新发送。
-4. 手机→电脑后用computer_run处理，并通过computer_observe/GUI打开结果文件复查；不得用输入文件改名冒充处理成果。
+4. 手机→电脑后读取computer-use，用真实桌面的Writer、Calc、Impress、Draw或相应应用编辑、计算、排版和保存。普通办公不调用脚本生成文件后冒充GUI处理；只有用户明确要求编程、命令或系统维护时才使用computer_run，并如实区分。核对实际内容、公式、页数及目标文件，保留原件，不得用输入文件改名冒充处理成果。
 5. 电脑→手机后，在真实手机里用phone-use从该target_path选择文件，交付给用户指定的会话。传输completed只表示文件到达手机，不能说已经通过微信发送，更不能说对方已读。
 6. 发送前核对会话、文件名和内容；先回一次进度再交付成果。发送结果未知时先观察消息列表，禁止重复发附件。通知工作默认交付到最初收到请求的同一会话；确实无法从原始事件与真实界面确认来源时再询问对象。
 

@@ -63,7 +63,7 @@ class SourceExportTests(unittest.TestCase):
     def test_development_metadata_is_excluded_while_runtime_skills_remain(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)/'source';root.mkdir();self.fixture(root);(root/'LICENSE').write_text('licence fixture')
-            internal=['apps/web/AGENTS.md','apps/web/agents.md','apps/web/AGENTS.override.md','apps/web/CLAUDE.md','apps/web/.codex/config.toml','apps/web/.agents/private.md']
+            internal=['apps/web/agent.md','apps/web/AGENT.md','apps/web/AGENTS.md','apps/web/agents.md','apps/web/AGENTS.override.md','apps/web/CLAUDE.md','apps/web/.codex/config.toml','apps/web/.agents/private.md']
             for name in internal:
                 path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('Private developer configuration')
             skill=root/'skills/builtin/phone-use/SKILL.md';skill.parent.mkdir(parents=True);skill.write_text('Runtime phone-use instructions')
