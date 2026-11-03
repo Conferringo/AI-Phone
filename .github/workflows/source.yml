@@ -90,6 +90,9 @@ jobs:
           for n in $(seq 1 100); do xdpyinfo >/dev/null 2>&1 && break; sleep .05; done
           openbox & wm=$!
           for n in $(seq 1 100); do xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id' && break; sleep .05; done
+          cargo test -p ai-phone-guest-runtime --test x11_paint --locked -- --ignored --test-threads=1 --nocapture > "$RUNNER_TEMP/x11-paint.log"
+          cat "$RUNNER_TEMP/x11-paint.log"
+          grep -q 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/x11-paint.log"
           ./scripts/bun .github/scripts/guest-control-qualification.ts \
             "$PWD/target/debug/desktop-bridge" "$RUNNER_TEMP/legacy-desktop-bridge.py" \
             "$RUNNER_TEMP/guest-control-qualification.json"

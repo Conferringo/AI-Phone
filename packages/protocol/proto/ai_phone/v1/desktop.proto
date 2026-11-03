@@ -1,6 +1,12 @@
 syntax = "proto3";
 package ai_phone.v1;
 message DesktopRequest { string device_id = 1; }
+enum DesktopFrameState {
+  DESKTOP_FRAME_STATE_UNSPECIFIED = 0;
+  DESKTOP_FRAME_STATE_STABLE = 1;
+  DESKTOP_FRAME_STATE_CHANGING = 2;
+  DESKTOP_FRAME_STATE_UNCHANGED = 3;
+}
 message DesktopObservation {
   string device_id = 1;
   string observation_id = 2;
@@ -10,6 +16,9 @@ message DesktopObservation {
   uint32 height = 6;
   string title = 7;
   bytes png = 8;
+  // Bounded post-input paint observation, not application or navigation completion.
+  DesktopFrameState frame_state = 9;
+  uint32 frame_wait_ms = 10;
 }
 message DesktopActionRequest {
   string device_id = 1;
@@ -26,6 +35,8 @@ message DesktopActionRequest {
   uint32 clicks = 12;
   string key = 13;
   string text = 14;
+  // Automated input waits for repaint; interactive streamed control may omit it.
+  bool wait_for_paint = 15;
 }
 message DeviceFilesRequest { string device_id = 1; string path = 2; }
 message DeviceFile { string name = 1; string path = 2; bool directory = 3; uint64 bytes = 4; }

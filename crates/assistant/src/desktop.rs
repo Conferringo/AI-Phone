@@ -225,6 +225,13 @@ async fn save_observation(
         height: 800,
         title: title.into(),
         png,
+        frame_state: match value["frame_state"].as_str() {
+            Some("stable") => wire::DesktopFrameState::Stable,
+            Some("changing") => wire::DesktopFrameState::Changing,
+            Some("unchanged") => wire::DesktopFrameState::Unchanged,
+            _ => wire::DesktopFrameState::Unspecified,
+        } as i32,
+        frame_wait_ms: value["frame_wait_ms"].as_u64().unwrap_or_default() as u32,
     })
 }
 async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Result<i64> {
@@ -283,14 +290,19 @@ fn action_value(r: &wire::DesktopActionRequest) -> Result<Value> {
         return Err("无效输入".into());
     }
     Ok(
-        json!({"kind":r.kind,"x":r.x,"y":r.y,"to_x":r.to_x,"to_y":r.to_y,"amount":r.amount,"button":r.button.max(1),"clicks":r.clicks.max(1),"key":r.key,"text":r.text}),
+        json!({"kind":r.kind,"x":r.x,"y":r.y,"to_x":r.to_x,"to_y":r.to_y,"amount":r.amount,"button":r.button.max(1),"clicks":r.clicks.max(1),"key":r.key,"text":r.text,"wait_for_paint":r.wait_for_paint}),
     )
 }
 fn observation_meta(o: &wire::DesktopObservation) -> Value {
-    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title})
+    let state = wire::DesktopFrameState::try_from(o.frame_state)
+        .unwrap_or(wire::DesktopFrameState::Unspecified);
+    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
 }
-async fn stored_observation(app: &App, id: &str) -> Result<wire::DesktopObservation> {
-    let r=sqlx::query("SELECT *, (extract(epoch FROM captured_at)*1000)::bigint ms FROM desktop_observations WHERE id=$1").bind(uuid(id)?).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+async fn stored_observation(
+    connection: &mut sqlx::PgConnection,
+    id: &str,
+) -> Result<wire::DesktopObservation> {
+    let r=sqlx::query("SELECT *, (extract(epoch FROM captured_at)*1000)::bigint ms FROM desktop_observations WHERE id=$1").bind(uuid(id)?).fetch_one(connection).await.map_err(|e|e.to_string())?;
     Ok(wire::DesktopObservation {
         device_id: r.get("device_id"),
         observation_id: id.into(),
@@ -302,6 +314,7 @@ async fn stored_observation(app: &App, id: &str) -> Result<wire::DesktopObservat
         png: tokio::fs::read(r.get::<String, _>("png_path"))
             .await
             .map_err(|e| e.to_string())?,
+        ..Default::default()
     })
 }
 async fn cursor_write(app: &App, value: &wire::DeviceCursor) -> Result<()> {
@@ -366,6 +379,39 @@ async fn cursor_read(app: &App, device: &str) -> Result<wire::DeviceCursor> {
         Err(e) => Err(e.to_string()),
     }
 }
+async fn recorded_action(
+    connection: &mut sqlx::PgConnection,
+    id: Uuid,
+    fingerprint: &str,
+) -> Result<Option<wire::DesktopObservation>> {
+    let Some(old) = sqlx::query("SELECT input_hash,status,result FROM desktop_actions WHERE id=$1")
+        .bind(id)
+        .fetch_optional(&mut *connection)
+        .await
+        .map_err(|e| e.to_string())?
+    else {
+        return Ok(None);
+    };
+    if old.get::<String, _>("input_hash") != fingerprint {
+        return Err("操作编号已用于不同请求".into());
+    }
+    if old.get::<String, _>("status") != "completed" {
+        return Err("该操作已有执行记录，结果未知时不能重放，请重新观察".into());
+    }
+    let value: Value = old.get("result");
+    let mut observation = stored_observation(
+        connection,
+        value["observation_id"].as_str().ok_or("结果不完整")?,
+    )
+    .await?;
+    observation.frame_state = value["frame_state"]
+        .as_str()
+        .and_then(wire::DesktopFrameState::from_str_name)
+        .unwrap_or(wire::DesktopFrameState::Unspecified) as i32;
+    observation.frame_wait_ms = value["frame_wait_ms"].as_u64().unwrap_or_default() as u32;
+    Ok(Some(observation))
+}
+
 pub async fn action(
     app: &App,
     r: wire::DesktopActionRequest,
@@ -387,22 +433,8 @@ pub async fn action(
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
-    if let Some(old) =
-        sqlx::query("SELECT input_hash,status,result FROM desktop_actions WHERE id=$1")
-            .bind(id)
-            .fetch_optional(&mut *tx)
-            .await
-            .map_err(|e| e.to_string())?
-    {
-        if old.get::<String, _>("input_hash") != fingerprint {
-            return Err("操作编号已用于不同请求".into());
-        }
-        if old.get::<String, _>("status") == "completed" {
-            let value: Value = old.get("result");
-            return stored_observation(app, value["observation_id"].as_str().ok_or("结果不完整")?)
-                .await;
-        }
-        return Err("该操作已有执行记录，结果未知时不能重放，请重新观察".into());
+    if let Some(observation) = recorded_action(&mut tx, id, &fingerprint).await? {
+        return Ok(observation);
     }
     let expected = run
         .map(|v| v.to_string())
@@ -1053,18 +1085,28 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
             helper("run", json!({"script":args["script"]})).await?,
         ));
     }
-    let observation =
-        stored_observation(app, args["observation_id"].as_str().unwrap_or("")).await?;
+    let observation_id = args["observation_id"].as_str().unwrap_or("");
     if matches!(name, "computer_zoom" | "computer_find_text") {
+        let observation = {
+            let mut connection = app.db.acquire().await.map_err(|e| e.to_string())?;
+            stored_observation(&mut connection, observation_id).await?
+        };
         return grounding::tool(app, name, device, &observation, args).await;
     }
+    let epoch: i64 =
+        sqlx::query_scalar("SELECT epoch FROM desktop_observations WHERE id=$1 AND device_id=$2")
+            .bind(uuid(observation_id)?)
+            .bind(device)
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?;
     let int = |key: &str| args[key].as_i64().unwrap_or(0) as i32;
     let text = |key: &str| args[key].as_str().unwrap_or("").to_string();
     let r = wire::DesktopActionRequest {
         device_id: device.into(),
         action_id: call["local_action_id"].as_str().unwrap_or("").into(),
-        observation_id: observation.observation_id,
-        epoch: observation.epoch,
+        observation_id: observation_id.into(),
+        epoch: epoch as u64,
         kind: name.trim_start_matches("computer_").replace("type", "text"),
         x: int("x"),
         y: int("y"),
@@ -1075,6 +1117,7 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         clicks: args["clicks"].as_u64().unwrap_or(1) as u32,
         key: text("key"),
         text: text("text"),
+        wait_for_paint: true,
     };
     Ok(blocks(action(app, r, Some(run)).await?))
 }
@@ -1562,5 +1605,35 @@ mod tests {
             })
             .is_err()
         );
+    }
+
+    #[tokio::test]
+    #[ignore = "real disposable PostgreSQL; no Docker or device calls"]
+    async fn recorded_action_preserves_frame_receipt_and_never_admits_unknown_replay() {
+        crate::worker::steering_regressions::database_case(|app|async move{
+            let device="paint-cache-fixture";
+            sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','fixture','managed')").bind(device).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')").bind(device).execute(&app.db).await.unwrap();
+            let png=include_bytes!("../../phone-runner/fixtures/ocr-probe.png");
+            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Fixture","frame_state":"stable","frame_wait_ms":320})).await.unwrap();
+            let id=Uuid::now_v7();
+            sqlx::query("INSERT INTO desktop_actions(id,device_id,input_hash,status,result) VALUES($1,$2,'same-input','completed',$3)").bind(id).bind(device).bind(observation_meta(&observation)).execute(&app.db).await.unwrap();
+            let mut connection=app.db.acquire().await.unwrap();
+            for _ in 0..2 {
+                let cached=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
+                assert_eq!(cached.observation_id,observation.observation_id);assert_eq!(cached.png,png);
+                assert_eq!(cached.frame_state,wire::DesktopFrameState::Stable as i32);assert_eq!(cached.frame_wait_ms,320);
+            }
+            assert!(recorded_action(&mut connection,id,"different-input").await.is_err());
+            for status in ["running","unknown","failed"] {
+                sqlx::query("UPDATE desktop_actions SET status=$2 WHERE id=$1").bind(id).bind(status).execute(&mut *connection).await.unwrap();
+                assert!(recorded_action(&mut connection,id,"same-input").await.is_err());
+            }
+            assert!(recorded_action(&mut connection,Uuid::now_v7(),"new-input").await.unwrap().is_none());
+            sqlx::query("UPDATE desktop_actions SET status='completed',result=jsonb_build_object('observation_id',$2::text) WHERE id=$1").bind(id).bind(&observation.observation_id).execute(&mut *connection).await.unwrap();
+            let legacy=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
+            assert_eq!(legacy.frame_state,wire::DesktopFrameState::Unspecified as i32);assert_eq!(legacy.frame_wait_ms,0);
+            connection.close().await.unwrap();
+        }).await;
     }
 }

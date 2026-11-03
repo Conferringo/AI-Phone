@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 7930,
-      "sha256": "20b04f1a992e0d06d69498d1949d4e0da781a39a3c3fdf5783e5012f21ff4813"
+      "size": 8216,
+      "sha256": "e3aa6977078fb46f85e83678f64828e9718202b3898e54f296b2a01944647849"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -2475,8 +2475,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 66696,
-      "sha256": "89f1fb192082b97eadae2e589c822c4c0d9cca63ded32bebad32e1f4645766c3"
+      "size": 71090,
+      "sha256": "ac90f197b2c7b67fd429bd8fcbcdea380b9504bb2eec0fc75aa96c90e09fb714"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2700,8 +2700,8 @@
     },
     {
       "path": "crates/guest-runtime/src/actions.rs",
-      "size": 6829,
-      "sha256": "e41f322cae390a2833c133fca84234756c7474c2f96d91172b434ac736a77e2a"
+      "size": 6758,
+      "sha256": "6e7ef2cf62c26a9bb3434e910c5c682a43d84e02a36c892fd2e2d16ad98cd247"
     },
     {
       "path": "crates/guest-runtime/src/audio.rs",
@@ -2745,8 +2745,8 @@
     },
     {
       "path": "crates/guest-runtime/src/lib.rs",
-      "size": 478,
-      "sha256": "680240ed8f943a605de8bc0b4334cc667d36c08e7f61c4c088c3fecabd9ef2b5"
+      "size": 489,
+      "sha256": "9cbe5847f119e1d40ee4fa335247452cd99997241e28037e1da7ddb5f042686c"
     },
     {
       "path": "crates/guest-runtime/src/main.rs",
@@ -2764,14 +2764,19 @@
       "sha256": "566d25b54c5b3da9762d75dd78d2824ce2710e9e672f1a2c1472966de0ea404b"
     },
     {
+      "path": "crates/guest-runtime/src/paint.rs",
+      "size": 4930,
+      "sha256": "a06b37b24ea19e56cf42ca67618b9e69a12312a084dfeb83fbbdc34358722ede"
+    },
+    {
       "path": "crates/guest-runtime/src/process.rs",
       "size": 16628,
       "sha256": "763af742f6042e372671104efd0561f78b72b749f00a38c9d3b0a6ef30a35534"
     },
     {
       "path": "crates/guest-runtime/src/runtime.rs",
-      "size": 4013,
-      "sha256": "c6298adc74752977c89b419b50de4b3c0f5e36c1abdbdb30e4ddd78d34bd6ab7"
+      "size": 4668,
+      "sha256": "4e4f0b51cfd89bbaafe06619c1281e4e831b962fb99da072906a4fc0a10347b8"
     },
     {
       "path": "crates/guest-runtime/src/screen.rs",
@@ -2790,13 +2795,18 @@
     },
     {
       "path": "crates/guest-runtime/tests/control_contract.rs",
-      "size": 13018,
-      "sha256": "14263dd77ec40ce29cd8c070410aca579a97184a644f14af5f9acd5330e5a237"
+      "size": 14671,
+      "sha256": "783dd82c0b70b50205bd27e483ac9fb36da17a13a6ff07954a8d2d65fdda12ef"
     },
     {
       "path": "crates/guest-runtime/tests/media_owned_contract.rs",
       "size": 7397,
       "sha256": "96f9865836044fdad77ef3c1a1bf53f0ff73a7e3b7491f994d216202e8b84e9a"
+    },
+    {
+      "path": "crates/guest-runtime/tests/x11_paint.rs",
+      "size": 5277,
+      "sha256": "caeade2cdbe02b12280a0e47d37fc3bb106c0354d336bc6d066d4b936f9892a8"
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
@@ -2990,8 +3000,8 @@
     },
     {
       "path": "docs/public/action-records.md",
-      "size": 2066,
-      "sha256": "8cf40e7da6b5192d90df78421733ef541e3a233b0ce4a608e0287fe24aec86a4"
+      "size": 3490,
+      "sha256": "656722fce8449e97dcfe090581e87d6e992b08b5c00a87f763bdc040d53f3822"
     },
     {
       "path": "docs/public/android-client-licenses.txt",
@@ -4235,8 +4245,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/desktop.proto",
-      "size": 2652,
-      "sha256": "b92ab09d1b981a436a9a45e79cda9597ceb58c6abcd4b10daa9b32dd40fb12c5"
+      "size": 3086,
+      "sha256": "c3a8f5041b2fe1eac28296ca3a2d414eab53297c65ccfba13fe94bd65338ae3b"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/device_network.proto",
@@ -4300,8 +4310,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/desktop_pb.ts",
-      "size": 17995,
-      "sha256": "ed3ccf6d0a470c9bbada24a74e19f21c3359348379556537e2fd0065ad8b8eab"
+      "size": 19509,
+      "sha256": "ca1249577ade9bf26884f9a7b89162a35aec6fa66fd440482a042b4ad44d3b50"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/device_network_pb.ts",
@@ -5920,8 +5930,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 5661,
-      "sha256": "4ba45bd5a4313076160ef3829995deb590c8d25b51271902580d1d55c008987b"
+      "size": 5973,
+      "sha256": "3770c46e5eca9c1b826ba8a8207e6e78d6603fbae5c7e7552f0d1c35048ebff1"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
