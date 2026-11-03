@@ -2220,8 +2220,8 @@
     },
     {
       "path": "config/public-crypto-vectors.json",
-      "size": 2254,
-      "sha256": "93e032928e245f1968197cf8b9ecd83cef5a8ac5a9efac8d2d917ab662b08afd"
+      "size": 4522,
+      "sha256": "43ab112c7b222e28c01b4b6e5a0a329f1111edac3f268842fbf912888cc78bee"
     },
     {
       "path": "config/release-policy.json",
@@ -3080,8 +3080,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 7182,
-      "sha256": "56b5e7bffd92e1c6b405c36655c1752aad63205edd5a1e25c7d9229e2f02431d"
+      "size": 7484,
+      "sha256": "35f766de043df9da3772f03c7c363c23ce34ff445b52f1afbbe053813acace5f"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -5215,8 +5215,8 @@
     },
     {
       "path": "scripts/public_vectors.py",
-      "size": 1164,
-      "sha256": "3a34e67f22c400e89616d92dfeb40cabaaf07cc1b1562da9989c5a1bc6f62eda"
+      "size": 1273,
+      "sha256": "6b0218d8b4c57e9478f945065d47d9a13c3f9aaf490055ec7ed8e854f8583df3"
     },
     {
       "path": "scripts/registry-setup.test.ts",
@@ -5680,8 +5680,8 @@
     },
     {
       "path": "scripts/test_public_vectors.py",
-      "size": 2267,
-      "sha256": "8f81c53d876864061b4d10548ea8c7c03d171a4e0cb1ea5b45b4342bd2bf2552"
+      "size": 3735,
+      "sha256": "7922a8c616e6ecc1f566211b6b6e09cb7c57c0e54edc09ef0c9436121f6fb2b0"
     },
     {
       "path": "scripts/test_release.py",

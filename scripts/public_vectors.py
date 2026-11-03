@@ -1,11 +1,11 @@
-"""Recognize exact public self-test strings; never waive a complete vendor file."""
+"""Recognize exact public cryptographic strings; never waive a vendor file."""
 from functools import cache
 import hashlib
 import json
 from pathlib import Path
 
 WINDOW = 4096
-PREFIX = b'-----BEGIN '
+PREFIXES = (b'-----BEGIN ', b'sk-')
 
 
 @cache
@@ -20,13 +20,15 @@ def known_vectors():
 
 
 def mask_public_vectors(data):
-    accepted=known_vectors();cursor=0;masked=None
-    while (start:=data.find(PREFIX,cursor))>=0:
-        cursor=start+len(PREFIX)
-        end=data.find(b'\0',start,start+WINDOW)
-        if end<0:continue
-        length=end+1-start
-        if hashlib.sha256(data[start:end+1]).hexdigest() in accepted.get(length,()):
-            if masked is None:masked=bytearray(data)
-            masked[start:end+1]=b' '*length
+    accepted=known_vectors();masked=None
+    for prefix in PREFIXES:
+        cursor=0
+        while (start:=data.find(prefix,cursor))>=0:
+            cursor=start+len(prefix)
+            for length,identities in accepted.items():
+                end=start+length
+                if end<=len(data) and data[end-1]==0 and hashlib.sha256(data[start:end]).hexdigest() in identities:
+                    if masked is None:masked=bytearray(data)
+                    masked[start:end]=b' '*length
+                    break
     return data if masked is None else bytes(masked)

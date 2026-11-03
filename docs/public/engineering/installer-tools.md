@@ -66,8 +66,8 @@ Primary sources: [Python portable distributions](https://docs.astral.sh/python-b
 随包版本由配置与组件清单确定，当前基线为 Python 3.13.18 与 Node 22.23.4。平台范围、安装包供应和完整初始化条件统一见[发行状态](../release-status.md)。
 
 
-## Public cryptographic test vectors
+## Public cryptographic strings
 
-Artifact inspection recognizes only the complete, NUL-terminated public self-test strings pinned in `config/public-crypto-vectors.json`. Their SHA-256 digests are bound to GnuTLS 3.8.3's [immutable upstream source](https://github.com/gnutls/gnutls/blob/2f04c14daa086889b4e85f7056c39d23766ddaa1/lib/crypto-selftests-pk.c). The catalog records the source digest, symbols and encoded sizes; it contains no key bytes.
+Artifact inspection recognizes only the exact public byte spans pinned in `config/public-crypto-vectors.json`. GnuTLS self-test digests are bound to its [immutable upstream source](https://github.com/gnutls/gnutls/blob/2f04c14daa086889b4e85f7056c39d23766ddaa1/lib/crypto-selftests-pk.c). The libssh entries bind its OpenSSH format marker together with the following parser diagnostic, and three public security-key algorithm suffixes, to the [official 0.10.6 source archive](https://security.ubuntu.com/ubuntu/pool/main/libs/libssh/libssh_0.10.6.orig.tar.xz). Every span includes its terminating NUL; the marker alone is not accepted. The catalog records source-file digests, symbols and encoded sizes without key bytes.
 
 Recognition affects scanning only. Bundled file bytes and their integrity receipts remain unchanged. The scanner retains a bounded suffix across chunks so it can verify an entire test string before classifying it. Changed strings, unknown private keys and adjacent API credentials remain failures, including UTF-16 credentials. Neither a library filename nor a public binary digest exempts a complete file from secret detection.
