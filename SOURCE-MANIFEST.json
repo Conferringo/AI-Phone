@@ -2765,8 +2765,8 @@
     },
     {
       "path": "crates/guest-runtime/src/paint.rs",
-      "size": 4930,
-      "sha256": "a06b37b24ea19e56cf42ca67618b9e69a12312a084dfeb83fbbdc34358722ede"
+      "size": 6310,
+      "sha256": "2ca45fad66c54ffa09620f86b4e2d958dc579030eee9f55a490e732dd518f2c6"
     },
     {
       "path": "crates/guest-runtime/src/process.rs",
@@ -2775,8 +2775,8 @@
     },
     {
       "path": "crates/guest-runtime/src/runtime.rs",
-      "size": 4668,
-      "sha256": "4e4f0b51cfd89bbaafe06619c1281e4e831b962fb99da072906a4fc0a10347b8"
+      "size": 4775,
+      "sha256": "63a5f5f7dfde63279beb03d598d8b939cfb89414ef02d0f9e0bcd40cbf072981"
     },
     {
       "path": "crates/guest-runtime/src/screen.rs",
@@ -3000,8 +3000,8 @@
     },
     {
       "path": "docs/public/action-records.md",
-      "size": 3490,
-      "sha256": "656722fce8449e97dcfe090581e87d6e992b08b5c00a87f763bdc040d53f3822"
+      "size": 3533,
+      "sha256": "6891a6fdd1d06813a6214a970526253efeae75c76a302c389ee25c2dd72e64a4"
     },
     {
       "path": "docs/public/android-client-licenses.txt",

@@ -6,6 +6,7 @@ use tokio::time::Instant;
 
 const SAMPLE: Duration = Duration::from_millis(40);
 const QUIET: Duration = Duration::from_millis(80);
+const WINDOW_QUIET: Duration = Duration::from_millis(240);
 const DEADLINE: Duration = Duration::from_millis(800);
 
 pub struct Frame {
@@ -34,7 +35,11 @@ fn changed(before: &RgbImage, after: &RgbImage) -> bool {
         == 64
 }
 
-pub async fn after(screen: &impl Screen, mut previous: RgbImage) -> Result<Frame> {
+pub async fn after(
+    screen: &impl Screen,
+    mut previous: RgbImage,
+    before_title: &str,
+) -> Result<Frame> {
     let start = Instant::now();
     let mut last_change = start;
     let mut painted = false;
@@ -46,7 +51,14 @@ pub async fn after(screen: &impl Screen, mut previous: RgbImage) -> Result<Frame
             painted = true;
             last_change = now;
         }
-        let state = if painted && now.duration_since(last_change) >= QUIET {
+        // New windows commonly paint their frame before laying out the document.
+        // Ordinary typing/menu input retains the short quiet window.
+        let quiet = if screen.title().is_ok_and(|title| title != before_title) {
+            WINDOW_QUIET
+        } else {
+            QUIET
+        };
+        let state = if painted && now.duration_since(last_change) >= quiet {
             Some("stable")
         } else if now.duration_since(start) >= DEADLINE {
             Some(if painted { "changing" } else { "unchanged" })
@@ -79,6 +91,7 @@ mod tests {
     struct Frames {
         count: AtomicUsize,
         busy: bool,
+        transition: bool,
     }
     impl Screen for Frames {
         fn capture(&self) -> Result<RgbImage> {
@@ -86,6 +99,10 @@ mod tests {
             let mut image = RgbImage::new(32, 32);
             if self.busy {
                 image.fill(if count.is_multiple_of(2) { 255 } else { 0 });
+            } else if self.transition {
+                for p in image.pixels_mut().take(if count < 5 { 64 } else { 128 }) {
+                    *p = Rgb([255, 255, 255]);
+                }
             } else {
                 for p in image.pixels_mut().take((count * 32).min(128)) {
                     *p = Rgb([255, 255, 255]);
@@ -94,7 +111,11 @@ mod tests {
             Ok(image)
         }
         fn title(&self) -> Result<String> {
-            Ok(String::new())
+            Ok(if self.transition {
+                "New document".into()
+            } else {
+                String::new()
+            })
         }
         fn move_to(&self, _: i16, _: i16) -> Result<()> {
             unreachable!()
@@ -127,8 +148,9 @@ mod tests {
         let screen = Frames {
             count: AtomicUsize::new(0),
             busy: false,
+            transition: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32)).await.unwrap();
+        let frame = after(&screen, RgbImage::new(32, 32), "").await.unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
         assert!(frame.wait_ms < 800);
@@ -139,8 +161,9 @@ mod tests {
         let screen = Frames {
             count: AtomicUsize::new(0),
             busy: true,
+            transition: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32)).await.unwrap();
+        let frame = after(&screen, RgbImage::new(32, 32), "").await.unwrap();
         assert_eq!(frame.state, "changing");
         assert!(frame.wait_ms >= 800);
         assert!(frame.wait_ms < 1500);
@@ -151,11 +174,27 @@ mod tests {
         let screen = Frames {
             count: AtomicUsize::new(0),
             busy: false,
+            transition: false,
         };
         screen.count.store(4, Ordering::Relaxed);
         let baseline = screen.capture().unwrap();
-        let same = after(&screen, baseline).await.unwrap();
+        let same = after(&screen, baseline, "").await.unwrap();
         assert_eq!(same.state, "unchanged");
         assert!(same.wait_ms >= 800);
+    }
+
+    #[tokio::test]
+    async fn window_transition_waits_through_the_initial_frame_before_document_layout() {
+        let screen = Frames {
+            count: AtomicUsize::new(0),
+            busy: false,
+            transition: true,
+        };
+        let frame = after(&screen, RgbImage::new(32, 32), "Previous document")
+            .await
+            .unwrap();
+        assert_eq!(frame.state, "stable");
+        assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
+        assert!(frame.wait_ms >= 400 && frame.wait_ms < 800);
     }
 }

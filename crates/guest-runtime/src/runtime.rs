@@ -88,13 +88,16 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
 
     async fn perform_action(&self, args: Value) -> Result<Value> {
         let baseline = if args["wait_for_paint"] == true {
-            Some(self.screen.capture()?)
+            Some((
+                self.screen.capture()?,
+                self.screen.title().unwrap_or_default(),
+            ))
         } else {
             None
         };
         actions::execute(&self.screen, &self.runner, &self.settings, args).await?;
-        let mut observation = if let Some(before) = baseline {
-            let frame = paint::after(&self.screen, before).await?;
+        let mut observation = if let Some((before, title)) = baseline {
+            let frame = paint::after(&self.screen, before, &title).await?;
             let mut value = self.frame(&frame.image)?;
             value["frame_state"] = json!(frame.state);
             value["frame_wait_ms"] = json!(frame.wait_ms);
