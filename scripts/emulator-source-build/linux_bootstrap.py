@@ -38,7 +38,7 @@ FAILURE_REASONS = {"process_owner", "command_failed", "metadata_budget", "fresh_
                    "repo_key_declaration", "repo_tag_identity", "repo_commit_identity", "repo_checkout_identity",
                    "manifest_identity", "synced_manifest_identity", "manifest_checkout_identity",
                    "installed_repo_identity", "installed_repo_dirty", "producer_receipt", "source_checkout_layout",
-                   "source_input_tree"}
+                   "source_input_tree", "process_stop_timeout"}
 
 
 class BuildFailure(RuntimeError):
@@ -75,6 +75,26 @@ def signal_session(process, requested):
         pass
 
 
+def group_active(process):
+    # The unreaped session leader reserves this group identity during cleanup.
+    for entry in Path('/proc').iterdir():
+        if not entry.name.isdecimal():continue
+        try:
+            if os.getpgid(int(entry.name))!=process.pid:continue
+            fields=(entry/'stat').read_text().rsplit(')',1)[1].split()
+        except (FileNotFoundError,ProcessLookupError):continue
+        if fields[3]==str(process.pid) and fields[0] not in {'Z','X'}:return True
+    return False
+
+
+def group_finished(process,timeout):
+    deadline=time.monotonic()+timeout
+    while group_active(process):
+        if time.monotonic()>=deadline:return False
+        time.sleep(.02)
+    return True
+
+
 class SourceCommand:
     def __init__(self, root, environment, log):
         self.root = root
@@ -93,18 +113,22 @@ class SourceCommand:
                 raise BuildInterrupted("command_timeout")
             time.sleep(.05)
 
-    def stop(self, process):
-        if observed_exit(process) is None:
+    def stop(self, process, graceful=False):
+        running=observed_exit(process) is None
+        # A failed wrapper may exit before terminating its resource-owning child.
+        if running or graceful:
             signal_session(process, signal.SIGTERM)
             deadline = time.monotonic() + 2
-            while observed_exit(process) is None and time.monotonic() < deadline:
+            active=lambda:group_active(process) if graceful else observed_exit(process) is None
+            while active() and time.monotonic() < deadline:
                 time.sleep(.02)
         # An exited leader stays unreaped until its remaining group has been stopped.
         # Short, successful Git commands therefore need no fixed grace delay.
         signal_session(process, signal.SIGKILL)
+        if not group_finished(process,10):raise BuildFailure('process_stop_timeout')
         process.wait(timeout=10)
 
-    def run(self, arguments, cwd, timeout=300, capture=False, manifest_file=False):
+    def run(self, arguments, cwd, timeout=300, capture=False, manifest_file=False, graceful=False):
         output = tempfile.TemporaryFile(dir=self.root / "tmp") if capture else contextlib.nullcontext(self.log)
         environment = {**self.environment, "GIT_ALLOW_PROTOCOL": "file:https" if manifest_file else "https"}
         with output as stream:
@@ -123,11 +147,11 @@ class SourceCommand:
                     value = data.decode("utf-8").strip()
             except BaseException as original:
                 try:
-                    self.stop(process)
+                    self.stop(process,graceful=graceful)
                 except BaseException as cleanup:
                     raise BaseExceptionGroup("Source command and owned-session stop failed", [original, cleanup])
                 raise
-            self.stop(process)
+            self.stop(process,graceful=graceful)
             return value
 
 
@@ -349,7 +373,7 @@ def read_log_tail(path, maximum):
         return ""
 
 
-def print_failure_log(root, relative="build/build.log"):
+def print_failure_log(root, relative="build/build.log", *, label="Redacted upstream build tail"):
     text = read_log_tail(root / relative, 8192)
     if not text:
         return
@@ -359,7 +383,7 @@ def print_failure_log(root, relative="build/build.log"):
             text = text.replace(value, replacement)
     lines = ["[redacted credential-like line]" if CREDENTIAL_HINT.search(line) else line for line in text.splitlines()]
     with contextlib.suppress(OSError, ValueError):
-        print("Redacted upstream build tail:\n" + "\n".join(lines)[-8192:], file=sys.stderr)
+        print(label+":\n" + "\n".join(lines)[-8192:], file=sys.stderr)
 
 
 def log_diagnostics(path, checkout):
@@ -375,8 +399,24 @@ def log_diagnostics(path, checkout):
             result["recipe_frames"].append({"file": name, "line": int(lines[-1])})
     signals = {"argument_error": "error: unrecognized arguments:", "cmake_error": "CMake Error",
                "ninja_error": "ninja: build stopped:", "missing_file": "No such file or directory",
-               "disk_full": "No space left on device"}
+               "disk_full": "No space left on device",
+               "distribution_missing": "ValueError: Expected upstream distribution was not produced",
+               "source_changed": "ValueError: Source checkout is not clean:",
+               "source_revision": "ValueError: Source project revision mismatch:"}
     result["signals"] = [name for name, marker in signals.items() if marker in text]
+    return result
+
+
+def producer_outcome(value):
+    status = value.get("build_status")
+    if status not in ("failed", "unknown", "built"):return {"producer_status":"invalid"}
+    result = {"producer_status": status}
+    code = value.get("returncode")
+    if status == "failed" and type(code) is int and -128 <= code <= 255:
+        result["upstream_returncode"] = code
+    stage=value.get("verification_stage")
+    if stage in ("distribution","source_inputs","artifact_digest","complete") and type(code) is int and code==0:
+        result.update(upstream_returncode=0,verification_stage=stage)
     return result
 
 
@@ -391,12 +431,7 @@ def producer_diagnostics(root):
     identity = {"source_lock_sha256": producer.LOCK_SHA256, "build_id": producer.BUILD_ID, "target": "linux_x86_64"}
     if not isinstance(value, dict) or any(value.get(key) != expected for key, expected in identity.items()):
         return {"producer_status": "invalid"}
-    status = value.get("build_status")
-    result = {"producer_status": status if status in ("failed", "unknown", "built") else "invalid"}
-    code = value.get("returncode")
-    if status == "failed" and type(code) is int and -128 <= code <= 255:
-        result["upstream_returncode"] = code
-    return result
+    return producer_outcome(value)
 
 
 def build_diagnostics(root):
@@ -429,6 +464,14 @@ def enter_sync_phase(root, receipt, phase):
 def with_display(arguments):
     return ["xvfb-run", "--auto-servernum",
             "--server-args=-screen 0 1280x800x24 -nolisten tcp", "--", *arguments]
+
+
+def print_build_failure(root,status,stage):
+    if status not in {"failed","unknown"}:return
+    if stage not in {"source_sync","source_build"}:return
+    relative="private-build.log" if stage=="source_sync" else "build/build.log"
+    print_failure_log(root,relative)
+    if stage=="source_build":print_failure_log(root,"private-build.log",label="Redacted producer tail")
 
 
 def controlled_build(root):
@@ -464,7 +507,7 @@ def controlled_build(root):
             enter_stage(root, receipt, "source_build")
             command.run(with_display([sys.executable, str(HERE / "aosp_emulator_producer.py"),
                          "--checkout", str(checkout), "--work", str(root / "build"), "--build"]),
-                        root, timeout=10800)
+                        root, timeout=10800,graceful=True)
             receipt.update(built_receipt(root))
         receipt["resources"]["after_build"] = resource_snapshot(root)
         receipt.update(stage="complete", status="built")
@@ -482,9 +525,7 @@ def controlled_build(root):
         receipt.update(status="unknown", reason="interrupted_or_unknown")
         raise
     finally:
-        if receipt["status"] in {"failed", "unknown"} and receipt["stage"] in {"source_sync", "source_build"}:
-            relative = "private-build.log" if receipt["stage"] == "source_sync" else "build/build.log"
-            print_failure_log(root, relative)
+        print_build_failure(root,receipt["status"],receipt["stage"])
         publish_receipt(root, receipt)
 
 

@@ -87,8 +87,9 @@ def verify_project(checkout, record):
         raise ValueError("Missing or aliased source project")
     if git_read(folder, "rev-parse", "HEAD") != revision:
         raise ValueError("Source project revision mismatch: " + name)
-    if git_read(folder, "status", "--porcelain", "--untracked-files=all"):
-        raise ValueError("Source checkout is not clean: " + name)
+    changes=git_read(folder, "status", "--porcelain", "--untracked-files=all")
+    if changes:
+        raise ValueError("Source checkout is not clean: " + name + "; status=" + repr(changes[:4096]))
 
 
 def project_inputs(checkout, group):
@@ -208,14 +209,18 @@ def build_once(checkout, work, lock, command, receipt, group, distribution):
             completed = subprocess.run(command, cwd=checkout / "external/qemu", env=environment,
                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                 check=False)
+        result["returncode"]=completed.returncode
         if completed.returncode:
-            result.update(build_status="failed", returncode=completed.returncode)
+            result.update(build_status="failed")
             raise ValueError("Upstream build failed; preserve the work directory and inspect its log")
+        result["verification_stage"]="distribution"
         artifact = work / "dist" / ("sdk-repo-" + distribution + "-emulator-" + BUILD_ID + ".zip")
         if not artifact.is_file() or artifact.is_symlink():
             raise ValueError("Expected upstream distribution was not produced")
+        result["verification_stage"]="source_inputs"
         project_inputs(checkout, group)
-        result.update(build_status="built", artifact={"path": artifact.name, "bytes": artifact.stat().st_size, "sha256": sha256(artifact)})
+        result["verification_stage"]="artifact_digest"
+        result.update(build_status="built",verification_stage="complete", artifact={"path": artifact.name, "bytes": artifact.stat().st_size, "sha256": sha256(artifact)})
     finally:
         write_once(work / "build-result.json", result)
     return result
