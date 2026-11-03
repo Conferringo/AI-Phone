@@ -35,7 +35,7 @@ export class CopilotSession {
   private listeners=new Set<()=>void>();
   private state:CopilotState={enabled:false,opening:false,error:'',currentDeviceId:'',drafts:{}};
   private speaker=new CopilotOutput<Target>(async(target,text,signal)=>{
-    const p=target.profile,b=target.session.binding;
+    const b=target.session.binding,p=this.profiles.get(b.agentId)||target.profile;
     const audio=await settingsRpc('speech',VoiceSpeechRequestSchema,{deviceId:b.deviceId,agentId:b.agentId,configurationRevision:p.revision,text},VoiceAudioSchema,'voice',signal);
     await this.microphone?.play(audio.wav,signal);
   },message=>{this.outputError=message;this.publish();});

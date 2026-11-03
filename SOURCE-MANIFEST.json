@@ -2000,8 +2000,8 @@
     },
     {
       "path": "apps/web/src/lib/copilot-session.ts",
-      "size": 11449,
-      "sha256": "3e7dd4b2b053e6d4a18cd030f9befc4f0266f15d888ece76987782635632a0b8"
+      "size": 11479,
+      "sha256": "08287f87e3339b0da4c1dd8bbcbad9035ddc0e0b485f98638acc59d10fcca144"
     },
     {
       "path": "apps/web/src/lib/device-defaults-server.ts",
@@ -5010,8 +5010,8 @@
     },
     {
       "path": "scripts/fixtures/copilot-session.ts",
-      "size": 8486,
-      "sha256": "34fa8a64b7fea1a2a3abddd363bb7415d9b970f48c93fc4eca92407993f75142"
+      "size": 8872,
+      "sha256": "8802db8b8794c3be3707f8219828391a54e7f058e144bc3fdbb8039f46781d02"
     },
     {
       "path": "scripts/fixtures/desktop-input.ts",

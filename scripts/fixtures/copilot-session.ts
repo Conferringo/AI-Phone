@@ -20,6 +20,7 @@ class Mic implements MicrophonePort {
   close(){this.closed=true;this.frame=null;}
 }
 const transcriptions:Array<MessageShape<typeof VoiceTranscribeRequestSchema>>=[];
+const spokenRevisions:bigint[]=[];
 let speechQuota=true,late=false,releaseLate:()=>void=()=>{};
 const server=Bun.serve({port:0,hostname:'127.0.0.1',async fetch(request){
   const path=new URL(request.url).pathname,bytes=new Uint8Array(await request.arrayBuffer());
@@ -37,7 +38,7 @@ const server=Bun.serve({port:0,hostname:'127.0.0.1',async fetch(request){
     return response(VoiceTranscriptSchema,create(VoiceTranscriptSchema,{literal:prior?'不是，是北京':'打开天气',text:prior?'打开北京天气':'打开上海天气',correctsRequestId:prior?.requestId||''}));
   }
   if(path.endsWith('/speech')){
-    fromBinary(VoiceSpeechRequestSchema,bytes);
+    spokenRevisions.push(fromBinary(VoiceSpeechRequestSchema,bytes).configurationRevision);
     if(speechQuota)return new Response(toBinary(ApiErrorSchema,create(ApiErrorSchema,{code:'voice_error',message:'语音服务 HTTP 402'})),{status:402,headers:{'content-type':'application/x-protobuf'}});
     return response(VoiceAudioSchema,create(VoiceAudioSchema,{wav:wav([new Int16Array(1600)])}));
   }
@@ -73,6 +74,8 @@ try{
   // A synthesis failure must not stall subsequent speech input.
   phase='tts-quota';controller.register({...phone,replies:[...phone.replies,{id:'new',ordinal:2n,text:'正在处理。',complete:false}]});
   await wait(()=>!!controller.snapshot().error);
+  phase='tts-new-configuration';controller.profileChanged(create(VoiceSettingsSchema,{agentId:phone.agentId,revision:2n,configured:true,inputProtocol:2}));
+  await controller.retry();await wait(()=>spokenRevisions.length===2);assert(spokenRevisions[1]===2n,'Playback retry used superseded voice settings');
   phase='input-during-tts-failure';utterance(6000);await wait(()=>sent.length===4);
   assert(controller.snapshot().enabled,'Output failure disabled capture');
   phase='tts-after-next-input';speechQuota=false;controller.register({...phone,replies:[...phone.replies,{id:'next-reply',ordinal:3n,text:'已经收到。',complete:false}]});await wait(()=>mic.played.length===1);
