@@ -254,6 +254,18 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: '"C:\Program Files\7-Zip" >> $env:GITHUB_PATH'
+      - name: Native Windows host ownership and registry adapter
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          rustup component add clippy --toolchain 1.96.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --lib wsl:: --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo clippy -p ai-phone-host-runtime --all-targets --locked -- -D warnings
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build -p ai-phone-host-runtime --bin wsl-host --release --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Native tests
         run: cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked --release
       - name: Verify vendored upstream patch and packaging guards

@@ -3,7 +3,7 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "1c40a3e3a743729ac731eb768851eeca5e9efef33f9729c794a5d21b06a8a339",
+    "Cargo.lock": "bf8d3958bb3afb8a59297ef89fb90f3c1a81602f43beecc262aa82aeccccb038",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
     "apps/client/src-tauri/Cargo.lock": "dc1813dbf94c5956224ce2f87624371da194ddea898f60ec2ab76bfc24c77431"
   },
@@ -9211,6 +9211,25 @@
     },
     {
       "name": "windows-link",
+      "version": "0.100.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows-link",
       "version": "0.2.1",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/microsoft/windows-rs",
@@ -9249,6 +9268,44 @@
       ]
     },
     {
+      "name": "windows-registry",
+      "version": "0.100.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows-result",
+      "version": "0.100.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "windows-result",
       "version": "0.3.4",
       "license": "MIT OR Apache-2.0",
@@ -9284,6 +9341,25 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows-strings",
+      "version": "0.100.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {

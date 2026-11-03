@@ -2,7 +2,7 @@
 name = "ai-phone-host-runtime"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.95"
 license = "Apache-2.0"
 publish = false
 
@@ -19,3 +19,6 @@ tempfile = "3"
 [lints.rust]
 unsafe_code = "forbid"
 unused_must_use = "deny"
+
+[target."cfg(windows)".dependencies]
+windows-registry = "=0.100.0"

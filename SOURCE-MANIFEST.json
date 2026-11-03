@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 15532,
-      "sha256": "07d3d4b82c774fa4e2dbc690b02686a009af539e2a09187ecd46f640b4de9f3f"
+      "size": 16190,
+      "sha256": "2aaad941965c41fbe2cba4ab2a561cd48e35c98d7697fa0dce3d4189e2b12203"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
-      "size": 1150,
-      "sha256": "3205d79de11751d2e4747f46f68a20cb2f40a1a1e5763830c2a926425a2dfdef"
+      "size": 2506,
+      "sha256": "bb6e755c10ddaf2ab3ba4ced1d3c500b89ae86452a2a98336a0312c789d60a23"
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
@@ -120,8 +120,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 75106,
-      "sha256": "1c40a3e3a743729ac731eb768851eeca5e9efef33f9729c794a5d21b06a8a339"
+      "size": 76117,
+      "sha256": "bf8d3958bb3afb8a59297ef89fb90f3c1a81602f43beecc262aa82aeccccb038"
     },
     {
       "path": "Cargo.toml",
@@ -2775,8 +2775,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 452,
-      "sha256": "329cc8c4de42b13c21f7bbfcba7cd6364a6c817057f97058cb3118b2a31ac855"
+      "size": 520,
+      "sha256": "f2468518a32198fbedca3c7fc016aee180bd6e5f934f8b6678416473614835bf"
     },
     {
       "path": "crates/host-runtime/src/archive.rs",
@@ -2792,6 +2792,11 @@
       "path": "crates/host-runtime/src/bin/package-volumes.rs",
       "size": 2151,
       "sha256": "fd4454897ee6f89b70265becfc6b73b180d7aea21663aa0efe11fdbc781ae192"
+    },
+    {
+      "path": "crates/host-runtime/src/bin/wsl-host.rs",
+      "size": 1397,
+      "sha256": "75558b9684aee203d9af37d66879eadabbf693e7c8d3dcb51f39a314331affc1"
     },
     {
       "path": "crates/host-runtime/src/capsule.rs",
@@ -2810,8 +2815,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2967,
-      "sha256": "3bb320a7578c015ec76408a3a513f77be604628f05018e8db6645b75a71c2f84"
+      "size": 3047,
+      "sha256": "65bd534e9115597a33efeb06be58ed26ed86caf397995847038ce8f5761b3e98"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -2842,6 +2847,26 @@
       "path": "crates/host-runtime/src/tests.rs",
       "size": 17983,
       "sha256": "2e59eee01ad595d8fa324d7810ea1891025dfc77a317f943a5a6370b492d97a9"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/command.rs",
+      "size": 6493,
+      "sha256": "06ab8f72729aa6ffc7c94541e59ae8401b5c45974d50b0cbb1df4ff6dda26e0a"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/tests.rs",
+      "size": 11943,
+      "sha256": "3e2344422e5473867ed25bbd1107ae0740a040cf861f93e5ceadbdff12b36429"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/windows.rs",
+      "size": 5231,
+      "sha256": "d57bc368b5aa82f9802cb3039e83a95a4ba1edab5989cf87a49ebc114ba2de93"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl.rs",
+      "size": 7888,
+      "sha256": "a80c977c75795cb1af5df1e73b4ccc32ada87d715475c0378ca9efd5391fdef8"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -2990,8 +3015,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 429570,
-      "sha256": "4d428fc037a6e96c6a3c33e37a738a111940e910107842d0c0af6d51c3f40ff9"
+      "size": 431735,
+      "sha256": "b49443f069cdf1ed49d010353d3359433e1701a40585578a554239ac1058ca99"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3950,8 +3975,8 @@
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 3524345,
-      "sha256": "202264604f48d3c042019029428ef9325cc20f9a2734951748b4c7cc3edee8c3"
+      "size": 3575390,
+      "sha256": "4dc2e85e3a268f3d8fd724c8dc20379965133f5ac7363d49687b5d8a569076e9"
     },
     {
       "path": "docs/public/network.md",
@@ -4065,8 +4090,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 3476,
-      "sha256": "ecd2724e4e3bd5da10b559dc615f3b733264915affbfa0d535fdb6c850cd3889"
+      "size": 5515,
+      "sha256": "bccf41f4cd0b46d746b29f4212f5914201ecd354daac7ba8477c0bc0e1d1dbf8"
     },
     {
       "path": "infra/desktop/Dockerfile",
