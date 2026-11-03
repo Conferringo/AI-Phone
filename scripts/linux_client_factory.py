@@ -185,8 +185,10 @@ def build(root):
     apps=prepare_apps(root,dict(os.environ))
     images,image_result=prepare_images(root,cache,source)
     artifact=compile_client(root,android,images,tools,ocr)
+    from package_delivery import prepare as prepare_delivery
+    package=prepare_delivery(root,artifact)
     result={'format':1,'host':'linux-x64','source_commit':os.environ.get('GITHUB_SHA',''),'source_manifest_sha256':source,
-            'artifact':artifact,'tools':tool_result,'container_host':host,'android':phone_runtime,
+            'artifact':artifact,'package_delivery':package,'tools':tool_result,'container_host':host,'android':phone_runtime,
             'image_capsule_bytes':image_result['bytes'],'phone_apps_source_sha256':apps['phone']['source_sha256'],
             'physical_installation':'not-tested-maintainer-waiver','binary_publication':False}
     output=root/'dist/linux-full-factory-report.json';output.write_text(json.dumps(result,indent=2)+'\n');return result

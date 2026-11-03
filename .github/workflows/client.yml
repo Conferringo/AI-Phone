@@ -13,6 +13,10 @@ on:
         description: Build all Mac device resources with an isolated ARM software engine
         type: boolean
         default: false
+      retain_complete_candidate:
+        description: Retain the complete factory installer in an unpublished maintainer draft
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -133,6 +137,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.complete_macos_factory
     runs-on: macos-15
     timeout-minutes: 120
+    permissions:
+      contents: write
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -193,7 +199,13 @@ jobs:
             dist/macos-full-factory-report.json
           if-no-files-found: error
           retention-days: 14
-      # No runtime binaries, signing keys, guest state or accounts are uploaded.
+      - name: Retain the complete unpublished candidate on explicit request
+        if: success() && inputs.retain_complete_candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/retain-client-candidate.sh dist/macos-full-factory-report.json
+      # Candidate drafts contain only inspected installers and their inventories.
+      # Signing keys, guest state and accounts never enter retention.
 
   desktop-packages:
     if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
