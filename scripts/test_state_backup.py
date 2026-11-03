@@ -12,8 +12,8 @@ import uuid
 from unittest.mock import patch
 from database import credentials, prepare, MARKER, literal
 from state_backup import create_backup, read_backup, restore_backup, restore_state, write_state, fingerprints, psql, relocate_text
+from ci_integration import service_binary
 
-ROOT=Path(__file__).resolve().parent.parent
 QUIET=lambda *args,**kwargs:None
 
 class StateArchiveTests(unittest.TestCase):
@@ -58,7 +58,7 @@ class FullRestoreTests(unittest.TestCase):
         self.names=[];self.folder=tempfile.TemporaryDirectory(prefix='aiphone-state-test-');self.root=Path(self.folder.name)/'source';self.root.mkdir()
         self.source=self.new_database();(self.root/'.env').write_text(f'POSTGRES_DB={self.source}\nPOSTGRES_USER=ai_phone\nPOSTGRES_PASSWORD=isolated-fixture-password\n')
         prepare(self.root,self.container)
-        result=subprocess.run([str(ROOT/'target/debug/ai-phone-assistant'),'--migrate'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},capture_output=True)
+        result=subprocess.run([service_binary(),'--migrate'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},capture_output=True)
         self.assertEqual(result.returncode,0)
         psql(self.container,'ai_phone',self.source,"CREATE TABLE restore_fixture(id int PRIMARY KEY,content text); INSERT INTO restore_fixture VALUES(1,'retain account and message fixture'); UPDATE proactive_state SET exploring=true,notifications_enabled=true;")
         (self.root/'data/phone-runner').mkdir();(self.root/'data/phone-runner/ledger.actions').mkdir();(self.root/'data/phone-runner/ledger.actions/known.json').write_text('{"unknown":true}')
@@ -82,7 +82,7 @@ class FullRestoreTests(unittest.TestCase):
         self.assertEqual(source['restore_fixture'],restored['restore_fixture']);self.assertEqual(source['messages'],restored['messages'])
         self.assertEqual((out/'data/phone-runner/ledger.actions/known.json').read_text(),'{"unknown":true}')
         self.assertEqual(psql(self.container,'ai_phone',target,'SELECT exploring OR notifications_enabled FROM proactive_state;'),'f')
-        check=subprocess.run([str(ROOT/'target/debug/ai-phone-assistant'),'--database-check'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(out),'AI_PHONE_PG_PORT':self.port},capture_output=True)
+        check=subprocess.run([service_binary(),'--database-check'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(out),'AI_PHONE_PG_PORT':self.port},capture_output=True)
         self.assertEqual(check.returncode,0,check.stderr.decode())
         with self.assertRaises(ValueError):restore_backup(self.backup,out,pg_container=self.container,database=target)
     def test_failed_privilege_restore_rolls_back_schema_and_rows(self):
@@ -120,7 +120,7 @@ class FullRestoreTests(unittest.TestCase):
         target=self.new_database();out=Path(self.folder.name)/'fresh-restored'
         report=restore_backup(self.backup,out,pg_container=self.container,database=target)
         self.assertTrue(report['database_verified'])
-        check=subprocess.run([str(ROOT/'target/debug/ai-phone-assistant'),'--database-check'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(out),'AI_PHONE_PG_PORT':self.port},capture_output=True)
+        check=subprocess.run([service_binary(),'--database-check'],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(out),'AI_PHONE_PG_PORT':self.port},capture_output=True)
         self.assertEqual(check.returncode,0,check.stderr.decode())
 
     def test_corrupt_payload_and_occupied_database_are_refused(self):

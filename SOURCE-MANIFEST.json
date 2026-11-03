@@ -4700,8 +4700,8 @@
     },
     {
       "path": "scripts/ci_integration.py",
-      "size": 4524,
-      "sha256": "88c9b44f6e1d25d7bb98da65992d5607845c31dd63efc9575482b5d4415fd9d7"
+      "size": 4958,
+      "sha256": "10f97df6bec36d193e825ff56c67e79d95951048620f4bc7002276b3947137d5"
     },
     {
       "path": "scripts/client-id.test.ts",
@@ -5435,8 +5435,8 @@
     },
     {
       "path": "scripts/test_ci_integration.py",
-      "size": 1830,
-      "sha256": "c6fcf17d0d34639ef43fd20051e4eb4f22b5879f9bd3369df6967c32a8c2519f"
+      "size": 2938,
+      "sha256": "308a0ba873cc698891416033373989a60f1356e0c590c4e4f1562713a99848c2"
     },
     {
       "path": "scripts/test_client_artifacts.py",
@@ -5480,8 +5480,8 @@
     },
     {
       "path": "scripts/test_database.py",
-      "size": 7005,
-      "sha256": "755677c3d099ff3f8281e13b63436572ff40ffe018b9c85e508b519b007d5ec8"
+      "size": 7020,
+      "sha256": "2fa96fb383710cea4377548ef76e3b81b758958f4cebc1a3249d0b9a57172ce5"
     },
     {
       "path": "scripts/test_dependency_audit.py",
@@ -5770,8 +5770,8 @@
     },
     {
       "path": "scripts/test_state_backup.py",
-      "size": 11233,
-      "sha256": "4f4285b74f8ad48277ddead5b1368e9b5ac88ef3817b882fdb1b7c195353e5a8"
+      "size": 11150,
+      "sha256": "c60323ec1f303f83f24711273c01c56aa77a1aa038226780009f7bd2b57515c6"
     },
     {
       "path": "scripts/test_windows_acl.py",
@@ -5835,8 +5835,8 @@
     },
     {
       "path": "scripts/verify_task_recovery.py",
-      "size": 15919,
-      "sha256": "7682cc12300a4ad8e8cefeea859cf93a57f4db80e1d886fbe3025d19c5aff431"
+      "size": 15895,
+      "sha256": "1e12c715c279d45f3fd520491129661dcd359acd2b1ea297d1679728e04a528d"
     },
     {
       "path": "scripts/windows_private.py",

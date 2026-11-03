@@ -10,15 +10,20 @@ import time
 
 ROOT=Path(__file__).resolve().parent.parent
 
-def assistant_test_executable(output):
+def assistant_executable(output,*,testing):
     rows=(json.loads(line) for line in output.splitlines())
     binaries=[row['executable'] for row in rows
               if row.get('reason')=='compiler-artifact' and row.get('executable')
-              and row.get('profile',{}).get('test') is True
+              and row.get('profile',{}).get('test') is testing
               and row.get('target',{}).get('kind')==['bin']
               and row['target'].get('name')=='ai-phone-assistant']
-    if len(binaries)!=1:raise ValueError('Expected exactly one assistant unit-test executable')
+    if len(binaries)!=1:raise ValueError('Expected exactly one assistant executable for the requested Cargo profile')
     return binaries[0]
+
+def service_binary():
+    binary=os.environ.get('AI_PHONE_TEST_ASSISTANT_BINARY')
+    if not binary:raise ValueError('AI_PHONE_TEST_ASSISTANT_BINARY must identify the Cargo-selected service executable; use ci_integration.py')
+    return binary
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--container',required=True);parser.add_argument('--port',required=True,type=int);args=parser.parse_args()
@@ -44,9 +49,10 @@ END $fixture$;""",text=True,stdout=subprocess.DEVNULL,check=True)
     env={**os.environ,'AI_PHONE_TEST_DATABASE_URL':f'postgres://ai_phone:isolated-fixture-password@127.0.0.1:{args.port}/ai_phone',
          'AI_PHONE_TEST_PERSISTENCE_DATABASE_URL':f'postgres://aiphone_test:isolated-persistence-fixture@127.0.0.1:{args.port}/ai_phone',
          'AI_PHONE_TEST_PG_CONTAINER':args.container,'AI_PHONE_TEST_PG_PORT':str(args.port)}
-    subprocess.run(['cargo','build','-p','ai-phone-assistant','--locked'],cwd=ROOT,env=env,check=True)
+    built=subprocess.run(['cargo','build','-p','ai-phone-assistant','--locked','--message-format=json'],cwd=ROOT,env=env,capture_output=True,text=True,check=True)
+    env['AI_PHONE_TEST_ASSISTANT_BINARY']=assistant_executable(built.stdout,testing=False)
     result=subprocess.run(['cargo','test','-p','ai-phone-assistant','--no-run','--locked','--message-format=json'],cwd=ROOT,env=env,capture_output=True,text=True,check=True)
-    binary=assistant_test_executable(result.stdout)
+    binary=assistant_executable(result.stdout,testing=True)
     # Integration tests and the fault driver deliberately share a fixture cluster:
     # keep them sequential, because the latter restarts it.
     subprocess.run([binary,'--ignored','--skip','model_adapter::tests::live_model_capabilities','--skip','worker::process_recovery_tests::worker_child','--test-threads=1'],cwd=ROOT,env=env,check=True)

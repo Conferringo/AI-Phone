@@ -8,6 +8,7 @@ import unittest
 import uuid
 from database import prepare, credentials, env_values, MARKER, literal, password_matches
 from private_files import is_private
+from ci_integration import service_binary
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -44,7 +45,7 @@ class PostgreSQLRoleTests(unittest.TestCase):
         command='IFS= read -r PGPASSWORD; export PGPASSWORD; exec psql -X -h 127.0.0.1 -U "$1" -d "$2" -v ON_ERROR_STOP=1 -At'
         return subprocess.run(['docker','exec','-i',self.container,'sh','-c',command,'role-test',config['username'],self.name],input=config['password']+'\n'+"\\set VERBOSITY sqlstate\n"+sql,text=True,capture_output=True)
     def binary(self,flag):
-        return subprocess.run([str(ROOT/'target/debug/ai-phone-assistant'),flag],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},text=True,capture_output=True)
+        return subprocess.run([service_binary(),flag],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},text=True,capture_output=True)
     def test_fresh_install_runtime_crud_and_denied_ddl_role_elevation(self):
         prepare(self.root,self.container);migrated=self.binary('--migrate');self.assertEqual(migrated.returncode,0,migrated.stderr)
         self.assertEqual(self.binary('--database-check').returncode,0)
