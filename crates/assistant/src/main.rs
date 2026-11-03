@@ -37,6 +37,7 @@ mod location_motion;
 mod model_adapter;
 mod model_context;
 mod model_sse;
+mod model_timing;
 mod notification_policy;
 mod phone_system;
 mod proactive;

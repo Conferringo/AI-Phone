@@ -385,5 +385,14 @@
   "语音输入需要文字且不能混入附件": "Voice input requires text without attachments",
   "语音更正与已接受的片段不一致，请保留文本并重新发送": "The voice correction conflicts with the accepted segment. Keep the text and send it again.",
   "待发送消息格式无效": "Invalid queued message",
-  "较早消息": "Earlier messages"
+  "较早消息": "Earlier messages",
+  "等待模型": "Waiting for model",
+  "耗时": "Timing",
+  "{count} 次模型调用": "{count} model calls",
+  "准备请求": "Preparation",
+  "等待响应头": "Response headers",
+  "等待首段数据": "First data",
+  "读取模型流": "Model stream",
+  "工具执行": "Tools",
+  "完成核验": "Completion check"
 }
