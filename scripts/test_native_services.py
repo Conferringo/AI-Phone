@@ -35,9 +35,26 @@ class NativeServiceTests(unittest.TestCase):
             path=target/name;path.write_bytes(payload)
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
-               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1'}}
+               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1',
+                         'service_supervision':'ai-phone-linux-supervision-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
+
+    def test_supervisor_selection_requires_a_qualified_manifest_before_executing(self):
+        from prebuilt_services import supervisor_command, SERVICE_SUPERVISION_CONTRACT
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve();files=self.component()
+            for name,data in files.items():
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+                path.chmod(0o755 if '/bin/' in name else 0o644)
+            with self.assertRaisesRegex(ValueError,'supervision capability is missing'):
+                supervisor_command(root)
+            path=root/'runtime/services/manifest.json';value=json.loads(path.read_bytes())
+            value['service_supervision']=SERVICE_SUPERVISION_CONTRACT;path.write_text(json.dumps(value))
+            self.assertEqual(supervisor_command(root),[str(root/binary_path('assistant'))])
+            (root/binary_path('assistant')).write_bytes(b'changed program')
+            with self.assertRaisesRegex(ValueError,'integrity'):
+                supervisor_command(root)
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
         for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:

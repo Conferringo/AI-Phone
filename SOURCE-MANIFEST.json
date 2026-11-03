@@ -75,13 +75,13 @@
     },
     {
       "path": ".github/workflows/managed-host.yml",
-      "size": 3822,
-      "sha256": "aad714adf4c09f3b36a3ad94120fdb8043d541b7b5ef862c35aa51830682c15b"
+      "size": 4003,
+      "sha256": "876ffe26477f9783375a72fd8fd65841afe40b56d75389979ad94796ba02a14e"
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 7792,
-      "sha256": "6c36f9dc01c851c022a3916aefff8ce0596bc909f542b95e023435ed0deb4ed5"
+      "size": 7881,
+      "sha256": "2b4796491ead7d6eac56f35bfbbe36fd52f0e779ad6aead51d793feed561a4c4"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -120,8 +120,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 76117,
-      "sha256": "bf8d3958bb3afb8a59297ef89fb90f3c1a81602f43beecc262aa82aeccccb038"
+      "size": 76164,
+      "sha256": "606b955a1b6f11944c1156138378be7ce621c1994f34561e800e6af4f2a14424"
     },
     {
       "path": "Cargo.toml",
@@ -370,8 +370,8 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
-      "size": 120190,
-      "sha256": "4cd96c390920778f3b59f36af8835f3751c0db46ae848a0a6bd165558dc2b029"
+      "size": 120750,
+      "sha256": "21cafd72585f8102fcb08cc6a5ed007a67dd7f04ae47d5ac5df7f3b6f8f13fd1"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
@@ -2260,8 +2260,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1013,
-      "sha256": "22d7143f0bc32519ef8ec4d93e624daa72f78a2d3cb695aa28e6d6a74755fc7e"
+      "size": 1066,
+      "sha256": "17068b9ba1d8bd32bfd41055bb940dbfcaf0c505f72f84eeca274e63a70b4ce5"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2560,8 +2560,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 10036,
-      "sha256": "f1fdeaa6b90c37a5d5a77d3878d40c1d67f1a1931f168600ec2ffb2384e41b19"
+      "size": 10909,
+      "sha256": "52b83bd7d409d7f1538c3a73715710c2a1a57805067524157e4ae3d6970e456e"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -2795,8 +2795,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 520,
-      "sha256": "f2468518a32198fbedca3c7fc016aee180bd6e5f934f8b6678416473614835bf"
+      "size": 715,
+      "sha256": "d1aa5dbfd56769e1d113f739d27566f4e2a6e597acd1296745f09f27bd284468"
     },
     {
       "path": "crates/host-runtime/src/archive.rs",
@@ -2805,8 +2805,8 @@
     },
     {
       "path": "crates/host-runtime/src/bin/host-resources.rs",
-      "size": 982,
-      "sha256": "4f49e4606c0fd2f59f1430b9e34688c2bc2c5f34b9c59fe5f98342ec5b342113"
+      "size": 1566,
+      "sha256": "fe1d4068491496e6b9d1db8d7ecdbd4f9c327f895062310fa01aeebb39fd3e23"
     },
     {
       "path": "crates/host-runtime/src/bin/package-volumes.rs",
@@ -2835,8 +2835,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 3047,
-      "sha256": "65bd534e9115597a33efeb06be58ed26ed86caf397995847038ce8f5761b3e98"
+      "size": 3068,
+      "sha256": "c293c389d4d86ef8ba77bc870492c01c1581c0d7c991cf4dc0a3cd83334aef9f"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -2862,6 +2862,16 @@
       "path": "crates/host-runtime/src/staging.rs",
       "size": 4953,
       "sha256": "3d0dabbc6976bf26162f483e1b305860a0f75147907d81f1a58022478980862e"
+    },
+    {
+      "path": "crates/host-runtime/src/supervision/linux.rs",
+      "size": 8348,
+      "sha256": "26fee0afd281bd1ab85f9a6bfd549c89c29320aca0a291667fdaa91ee998e001"
+    },
+    {
+      "path": "crates/host-runtime/src/supervision/mod.rs",
+      "size": 483,
+      "sha256": "3c6e8fd96d5e56d84f448e739bb301fa6c430cf7ff899273e61cfda81c103abf"
     },
     {
       "path": "crates/host-runtime/src/tests.rs",
@@ -3040,8 +3050,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 432114,
-      "sha256": "8e7b6a16c487b38e96aa9c67267527a9c8f1121c317db2224ece220d2e8929c9"
+      "size": 432202,
+      "sha256": "6ae77d768bb9fdf78a783b4979b6ad11da26c1d3a87853c0e88bf640dbf1ef6b"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3075,8 +3085,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1323,
-      "sha256": "a65b8c040fabac52cb2035b5e5d6c0da2cf30145760b0e021abd5d139eb3aa02"
+      "size": 1378,
+      "sha256": "98349c88d100191dc8fea21d28d5487280a3080e54e7b462bac9c09812c4a2f4"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -3117,6 +3127,11 @@
       "path": "docs/public/engineering/private-install-state.md",
       "size": 3791,
       "sha256": "c9316afb0dd41c1e972d621780e7a7ee678df47f16de5ef9098960e22c3e149a"
+    },
+    {
+      "path": "docs/public/engineering/service-supervision.md",
+      "size": 2717,
+      "sha256": "8aa495cee5a6992d9ece69229ae81a60425b89f3c64b585d0e1c573767584883"
     },
     {
       "path": "docs/public/engineering/windows-android-runtime.md",
@@ -3980,8 +3995,8 @@
     },
     {
       "path": "docs/public/native-client-licenses.txt",
-      "size": 4789361,
-      "sha256": "de3f99b3e2198de728c349215744b3fb07f650b6ff1044b341d4c2701d39c5dd"
+      "size": 4802901,
+      "sha256": "d0eab7f8a694bd9576a64adcdac8d271a1024a7ca9463d15ff9524dd2779b3f9"
     },
     {
       "path": "docs/public/native-client.en.md",
@@ -3995,8 +4010,8 @@
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
-      "size": 8040,
-      "sha256": "06baedaa46a5e1d78ade303df1820e2c947f727f0af13266ca4e104c93bba61f"
+      "size": 8161,
+      "sha256": "e9f8a9b39551ca88ad7937d4f8d961bea73fa3ed664b0e9a40f52033d00fcda5"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
@@ -4605,8 +4620,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 6800,
-      "sha256": "f2ccc11f398ba29e09a96711a0dada74988a04c4081da4410d6c4b8c07f39103"
+      "size": 7057,
+      "sha256": "231811f35d0de28d50c7178e646476b671e6eb35054564bbada36755faf176ba"
     },
     {
       "path": "scripts/bun",
@@ -5040,8 +5055,8 @@
     },
     {
       "path": "scripts/linux_services.py",
-      "size": 8046,
-      "sha256": "5d0f2f22e12bedd27624e49951ac4c9929035aa39287899966095cac1d33ccab"
+      "size": 7012,
+      "sha256": "5cfa4365e20fdc44dd13712faae52bf02a8bdcaf5b1c360c67f7fbf54d282401"
     },
     {
       "path": "scripts/locale.test.ts",
@@ -5190,8 +5205,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 6688,
-      "sha256": "7585adb07ee819adc5b3fecfcb342326f4b959cd27b79bfd25eccd2150069168"
+      "size": 7636,
+      "sha256": "8411cd0d6ac4cd0df5400ef6049bb75dbdccdeced110f373b4a641364390c886"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5585,8 +5600,8 @@
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 7397,
-      "sha256": "714ea59bed7aa2e6676e1f4ced0694f9c3be4a7723c536ffb3b3497893b6c2e8"
+      "size": 14028,
+      "sha256": "5df81a6f7517f12cc6df104e9c5f63efc3bccc60c38d7cdef6eaa4f1714ce4db"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -5635,8 +5650,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 35483,
-      "sha256": "9400729b33f26e8ab7927bcbe85e3fd272e8ebc0c46f91fa1be1effba5f88a18"
+      "size": 36664,
+      "sha256": "e4c1964ce231dbc84abba9973e3319bc010f0d81f7fda668bb83b9365d1bc7a1"
     },
     {
       "path": "scripts/test_notification_probe.py",

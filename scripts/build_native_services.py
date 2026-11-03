@@ -11,7 +11,7 @@ from host_platform import host_key
 from release_package import select_files
 from check_native_services import version_receipt, vision_receipt
 from client_host_entry import checked_record, verify_file
-from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT
+from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT, SERVICE_SUPERVISION_CONTRACT
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner', 'vision':'vision'}
@@ -100,10 +100,14 @@ def compile_rust(root, environment, versions):
 
 
 def device_setup_receipt(binary):
-    result = subprocess.run([str(binary), '--device-setup-contract'], capture_output=True, text=True, timeout=10, check=False)
-    if result.returncode or result.stdout.strip() != DEVICE_SETUP_CONTRACT or result.stderr:
-        raise ValueError('Native device setup capability qualification failed')
-    return DEVICE_SETUP_CONTRACT
+    return contract_receipt(binary,'--device-setup-contract',DEVICE_SETUP_CONTRACT)
+
+
+def contract_receipt(binary,argument,expected):
+    result = subprocess.run([str(binary), argument], capture_output=True, text=True, timeout=10, check=False)
+    if result.returncode or result.stdout.strip() != expected or result.stderr:
+        raise ValueError('Native execution capability qualification failed')
+    return expected
 
 
 def build(root=ROOT):
@@ -120,6 +124,7 @@ def build(root=ROOT):
     checks = {role: version_receipt(path, versions[role]['name'], versions[role]['version'])
               for role, path in artifacts.items()}
     checks['device_setup'] = device_setup_receipt(artifacts['assistant'])
+    checks['service_supervision'] = contract_receipt(artifacts['assistant'],'--service-supervision-contract',SERVICE_SUPERVISION_CONTRACT)
     checks['vision_version'] = checks.pop('vision')
     checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE, qualification=True)
     if platform.system() == 'Darwin':

@@ -9,6 +9,7 @@ from host_platform import host_key
 from release_package import SECRET
 
 DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v1'
+SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -28,6 +29,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Build the matching native services before packaging')
     if receipt['checks'].get('device_setup') != DEVICE_SETUP_CONTRACT:
         raise ValueError('Native device setup capability was not qualified')
+    if receipt['checks'].get('service_supervision') != SERVICE_SUPERVISION_CONTRACT:
+        raise ValueError('Native service supervision capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -43,7 +46,8 @@ def prepare_services(root, *, linux_ocr=None):
                for name, data, mode in files]
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
-                'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT}
+                'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT,
+                'service_supervision': SERVICE_SUPERVISION_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -144,6 +148,19 @@ def device_setup_spec(root):
     binary = root / 'target/debug/ai-phone-assistant'
     device_setup_receipt(binary)
     return {'argv': [str(binary), '--setup-devices'], 'prebuilt': False}
+
+
+def supervisor_command(root):
+    root=Path(root).resolve()
+    if (root/'runtime/services').exists() or (root/'runtime/services').is_symlink():
+        manifest=load_manifest(root)
+        if manifest.get('service_supervision') != SERVICE_SUPERVISION_CONTRACT:
+            raise ValueError('Native service supervision capability is missing; rebuild the complete client')
+        return [str(root/binary_path('assistant'))]
+    from build_native_services import contract_receipt
+    binary=root/'target/debug/ai-phone-assistant'
+    contract_receipt(binary,'--service-supervision-contract',SERVICE_SUPERVISION_CONTRACT)
+    return [str(binary)]
 
 
 if __name__ == '__main__':

@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 from database import atomic_json
+from prebuilt_services import supervisor_command
 
 _SPEC_SERVICES = ('emulator', 'runner', 'media', 'assistant', 'channels', 'web', 'lan')
 _SPEC_ENV_FIELDS = ('PATH', 'JAVA_HOME', 'AI_PHONE_JAVA_HOME', 'AI_PHONE_SDK_ROOT',
@@ -56,9 +57,18 @@ def unit_state(root, name):
         start=process_start(value['pid'])
         if start is None or start!=value.get('start_ticks'):return None
         args=(Path('/proc')/str(value['pid'])/'cmdline').read_bytes().split(b'\0')
-        if str(Path(__file__).resolve()).encode() not in args or name.encode() not in args:return None
-        return value
+        return value if supervisor_matches(value,root,name,args) else None
     except (OSError,ValueError):return None
+
+
+def supervisor_matches(value,root,name,args):
+    if value.get('supervisor') != 'rust-v1':
+        return str(Path(__file__).resolve()).encode() in args and name.encode() in args
+    expected=[value.get('program'), '--supervise', str(Path(root).resolve()), name,
+              value.get('spec_sha256'), value.get('spec_content_sha256')]
+    return (all(isinstance(part,str) for part in expected)
+            and args == [part.encode() for part in expected]+[b'']
+            and os.readlink(Path('/proc')/str(value['pid'])/'exe') == value['program'])
 
 
 def spec_shape(value):
@@ -123,10 +133,12 @@ def start_unit(root, name, command, environment):
                 raise ValueError('A running task has a different service configuration; stop the owned installation before upgrading')
             return False
         atomic_json(folder/(name+'.spec.json'),spec)
+        content=hashlib.sha256((folder/(name+'.spec.json')).read_bytes()).hexdigest()
+        program=supervisor_command(root)
         log=os.open(folder/(name+'.log'),os.O_WRONLY|os.O_CREAT|os.O_APPEND,0o600)
         try:
-            child=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'supervise',str(root),name,str(fd),digest],
-                                   cwd=root,stdin=subprocess.DEVNULL,stdout=log,stderr=log,pass_fds=(fd,),start_new_session=True)
+            child=subprocess.Popen([*program,'--supervise',str(root),name,digest,content],
+                                   cwd=root,stdin=fd,stdout=log,stderr=log,start_new_session=True)
             # Reap supervisors started by this process without blocking installer exit.
             threading.Thread(target=child.wait,daemon=True).start()
         finally:os.close(log)
@@ -146,35 +158,3 @@ def stop_unit(root, name):
     while unit_state(root,name) and time.monotonic()<deadline:time.sleep(.05)
     if unit_state(root,name):raise ValueError('Owned service did not stop; no PID was force-killed')
     return True
-
-
-def supervise(root, name, fd, digest):
-    folder=folder_for(root,name);spec=json.loads((folder/(name+'.spec.json')).read_text())
-    if hashlib.sha256(json.dumps(spec,sort_keys=True).encode()).hexdigest()!=digest:raise ValueError('Service configuration changed during startup')
-    stopping=False
-    def stop(*_):
-        nonlocal stopping
-        stopping=True
-    signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
-    atomic_json(folder/(name+'.json'),{'format':1,'pid':os.getpid(),'start_ticks':process_start(os.getpid()),'root':str(root),'spec_sha256':digest})
-    try:
-        while not stopping:
-            child=subprocess.Popen(spec['command'],cwd=root,env={**os.environ,**spec['environment']},start_new_session=True)
-            while child.poll() is None and not stopping:time.sleep(.1)
-            if child.poll() is None:
-                os.killpg(child.pid,signal.SIGTERM)
-                try:child.wait(timeout=5)
-                except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);child.wait()
-            if not stopping:
-                # Keep failures visible in the private log; bounded restart rate.
-                print('Owned child exited:',name,child.returncode,flush=True)
-                for _ in range(20):
-                    if stopping:break
-                    time.sleep(.1)
-    finally:
-        (folder/(name+'.json')).unlink(missing_ok=True);os.close(fd)
-
-
-if __name__=='__main__':
-    if len(sys.argv)!=6 or sys.argv[1]!='supervise':raise SystemExit('Internal supervisor invocation only')
-    supervise(Path(sys.argv[2]).resolve(),sys.argv[3],int(sys.argv[4]),sys.argv[5])

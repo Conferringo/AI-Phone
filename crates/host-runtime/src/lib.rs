@@ -8,6 +8,7 @@ mod links;
 mod manifest;
 pub mod package;
 mod staging;
+pub mod supervision;
 pub mod wsl;
 
 use fs2::FileExt;

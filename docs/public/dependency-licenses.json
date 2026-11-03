@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "bf8d3958bb3afb8a59297ef89fb90f3c1a81602f43beecc262aa82aeccccb038",
+    "Cargo.lock": "606b955a1b6f11944c1156138378be7ce621c1994f34561e800e6af4f2a14424",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "4cd96c390920778f3b59f36af8835f3751c0db46ae848a0a6bd165558dc2b029"
+    "apps/client/src-tauri/Cargo.lock": "21cafd72585f8102fcb08cc6a5ed007a67dd7f04ae47d5ac5df7f3b6f8f13fd1"
   },
   "rust": [
     {
@@ -6719,7 +6719,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -7775,7 +7776,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
