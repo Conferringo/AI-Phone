@@ -4545,8 +4545,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 13058,
-      "sha256": "80416851ab7b7242971831af4b826a2d52f8df3edb9684409c8da5ace9f9d158"
+      "size": 13070,
+      "sha256": "2309fcda15e8d192d67a7388946a636ff812aad312ea491e2c59e90dfb84352d"
     },
     {
       "path": "scripts/build_container_images.py",

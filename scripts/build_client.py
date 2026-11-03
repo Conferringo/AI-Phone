@@ -50,7 +50,7 @@ def build_linux(root,version,env,command,package_only):
         if not patchelf:raise ValueError('Install native patchelf before building Linux AppImages')
         env={**env,'PATCHELF':str(root/'scripts/linux-appimage-patchelf.sh'),'AI_PHONE_REAL_PATCHELF':patchelf,
              'NO_STRIP':'1','LDAI_COMP':'xz'}
-        subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json','--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
+        subprocess.run(command+['build','--verbose','--config','src-tauri/gen/host/resources.json','--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
     variants=[('deb','deb',arch),('appimage','AppImage','aarch64' if arch=='arm64' else arch)]
     results=[]
     for kind,extension,label in variants:
