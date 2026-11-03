@@ -1,4 +1,4 @@
-"""One hosted Mac full-client build with a fresh, software-only ARM engine.
+"""Hosted complete Mac assembly with native images or an owned software engine.
 
 This is a maintainer tool. It uses only its new RUNNER_TEMP namespace, never
 selects a user's Docker context, and never publishes images or installers.
@@ -159,23 +159,35 @@ def engine_session(root,parent,policy,executable,firmware,receipt):
         if cleanable:shutil.rmtree(work)
 
 
-def build(root,compiler_sdk):
+def complete_client(root,compiler_sdk,environment,receipt,prebuilt_images):
+    argv=[sys.executable,root/'scripts/macos_client_factory.py','--compiler-sdk',Path(compiler_sdk).resolve()]
+    if prebuilt_images is not None:
+        folder,identity=prebuilt_images
+        argv+=['--image-candidate',folder,'--image-metadata-sha256',identity]
+    command(argv,root,environment,sys.stdout,timeout=6500)
+    report=json.loads((root/'dist/macos-full-factory-report.json').read_text())
+    if report['artifact']['delivery']['complete_device_bundle'] is not True:
+        raise ValueError('The full Mac factory did not produce a complete client')
+    receipt.update(phase='complete',complete_device_bundle=True,artifact=report['artifact'])
+
+
+def build(root,compiler_sdk,*,prebuilt_images=None):
     root=Path(root).resolve();parent=runner(root)
     from macos_client_factory import compiler_environment
     compiler_environment(compiler_sdk)
-    policy,executable,firmware=qemu(root)
     from android_factory_stock import reserve
     reserve(root,0)
     receipt={'format':1,'host':'macos-arm64','phase':'engine-inputs','engine_ready':False,
              'complete_device_bundle':False,'binary_publication':False,'physical_installation':'not-tested'}
     target=root/'dist/macos-factory-engine-report.json';target.parent.mkdir(exist_ok=True)
     try:
-        with engine_session(root,parent,policy,executable,firmware,receipt) as environment:
-            command([sys.executable,root/'scripts/macos_client_factory.py','--compiler-sdk',Path(compiler_sdk).resolve()],root,environment,sys.stdout,timeout=6500)
-            report=json.loads((root/'dist/macos-full-factory-report.json').read_text())
-            if report['artifact']['delivery']['complete_device_bundle'] is not True:
-                raise ValueError('The full Mac factory did not produce a complete client')
-            receipt.update(phase='complete',complete_device_bundle=True,artifact=report['artifact'])
+        if prebuilt_images is not None:
+            receipt.update(phase='complete-client',engine_cleanup_verified=True,engine_acceleration='not-required')
+            complete_client(root,compiler_sdk,dict(os.environ),receipt,prebuilt_images)
+        else:
+            policy,executable,firmware=qemu(root)
+            with engine_session(root,parent,policy,executable,firmware,receipt) as environment:
+                complete_client(root,compiler_sdk,environment,receipt,None)
         return receipt
     finally:
         if sys.exception() is not None:receipt['error_code']='factory_failed'
@@ -187,5 +199,9 @@ if __name__=='__main__':
     signal.signal(signal.SIGTERM,cancelled)
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler-sdk',type=Path,required=True)
+    parser.add_argument('--image-candidate',type=Path)
+    parser.add_argument('--image-metadata-sha256')
     options=parser.parse_args()
-    build(ROOT,options.compiler_sdk)
+    if (options.image_candidate is None)!=(options.image_metadata_sha256 is None):parser.error('Both image candidate and metadata digest required')
+    selected=(options.image_candidate,options.image_metadata_sha256) if options.image_candidate else None
+    build(ROOT,options.compiler_sdk,prebuilt_images=selected)
