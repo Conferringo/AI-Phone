@@ -33,6 +33,8 @@ Service launchers verify installed native components before choosing their comma
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
 
+Large installers use [verified delivery volumes](engineering/package-delivery.md) to preserve the complete installer across distribution size limits. Native verification binds each volume and the restored installer to their recorded digests.
+
 ## Component build and verification
 
 These commands are for maintainers building components. Native OCR qualification requires a prepared backend. For a build-only host Tesseract, set `AI_PHONE_TEST_TESSERACT` to its executable and `AI_PHONE_TEST_TESSDATA` to the directory produced by `scripts/prepare_ocr_models.py`. The pinned English and Simplified Chinese models work without Tesseract configuration files because the Rust helper selects TSV output directly. These qualification variables do not configure the installed client's OCR service.

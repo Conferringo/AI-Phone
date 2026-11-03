@@ -5,6 +5,7 @@ mod control;
 mod filesystem;
 mod links;
 mod manifest;
+pub mod package;
 mod staging;
 
 use fs2::FileExt;

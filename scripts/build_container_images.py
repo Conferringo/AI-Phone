@@ -107,8 +107,7 @@ def finish_metadata(path, records, architecture, size):
     with tarfile.open(path,'r:') as source,source.extractfile(XZ_ARCHIVE) as body:
         import hashlib
         identity=hashlib.file_digest(body,'sha256').hexdigest()
-    with tarfile.open(path,'r:') as source,source.extractfile(XZ_ARCHIVE) as body:actual=inventory(body)
-    records=bound_records(records,actual,architecture)
+    # build() admits the complete capsule once, before its atomic publication.
     return {'format':2,'os':'linux','architecture':architecture,'redistribution':'review-pending','images':records,'archive':{'path':XZ_ARCHIVE,'codec':'xz','size':size,'sha256':identity}}
 
 

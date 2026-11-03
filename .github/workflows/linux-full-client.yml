@@ -1,6 +1,11 @@
 name: Complete Linux client factory
 on:
   workflow_dispatch:
+    inputs:
+      retain_complete_candidate:
+        description: Retain the complete installer in an unpublished maintainer draft
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -10,6 +15,8 @@ jobs:
   linux-x64:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    permissions:
+      contents: write
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -60,5 +67,9 @@ jobs:
           path: dist/linux-full-factory-report.json
           if-no-files-found: error
           retention-days: 14
-      # No installer, guest disk, signing key or private state is uploaded here.
-      # Binary distribution is a separate license/source and release-policy gate.
+      - name: Retain the complete unpublished candidate on explicit request
+        if: success() && inputs.retain_complete_candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/retain-client-candidate.sh dist/linux-full-factory-report.json
+      # Public distribution retains its separate license/source and policy gates.
