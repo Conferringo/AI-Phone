@@ -46,6 +46,19 @@ jobs:
           cargo fmt --all --check
           cargo test --workspace --all-features --locked
           cargo clippy --workspace --all-features --all-targets --locked -- -D warnings
+      - name: Native audio onset and cleanup
+        run: |
+          fixture_image="ai-phone-audio-ci:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fixture_context=$(mktemp -d "$RUNNER_TEMP/aiphone-audio.XXXXXX")
+          cleanup() {
+            rm -rf -- "$fixture_context"
+            docker image rm "$fixture_image" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
+          docker build --tag "$fixture_image" --file scripts/fixtures/native-audio.Dockerfile "$fixture_context"
+          AI_PHONE_TEST_DESKTOP_MEDIA=1 AI_PHONE_TEST_DESKTOP_IMAGE="$fixture_image" \
+            python3 -m unittest discover -s scripts -p test_desktop_media.py -v
       - name: Native guest interaction
         run: |
           sudo apt-get update

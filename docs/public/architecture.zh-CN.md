@@ -15,6 +15,8 @@
 
 文本和Markdown默认使用Mousepad打开，桌面包含文件类型检测工具；[用户的MIME关联设置](https://specifications.freedesktop.org/mime-apps/latest/file.html)优先于镜像默认值。
 
+设备音频使用48kHz、双声道、有符号16位PCM；各设备的播放流独立于当前聚焦设备。电脑的PulseAudio监听使用50ms、无回绕的时钟窗口；Rust采集租约持有编码器，连接关闭时释放。
+
 浏览器业务请求使用 `application/x-protobuf`，契约在 `packages/protocol/proto`；媒体字节和健康检查例外。流式业务事件使用protobuf WebSocket帧，不要与模型SSE混淆。
 
 Android无桌面入口的辅助服务提供按需、只读的原生控件层级请求，由系统`DUMP`权限保护。Rust优先接收绑定当前请求ID的完整回执，再使用UIAutomator及OCR后备；层级正文不包含密码文字。观察与动作校验分别负责数据读取和控制权，快速快照不替代动作后的结果核对。

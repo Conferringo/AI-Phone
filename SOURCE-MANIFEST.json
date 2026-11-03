@@ -79,8 +79,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 7047,
-      "sha256": "addb5beb747862b763d16f54a64a7cde50667366d45e789497012269185e010d"
+      "size": 7792,
+      "sha256": "6c36f9dc01c851c022a3916aefff8ce0596bc909f542b95e023435ed0deb4ed5"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -2929,13 +2929,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 6128,
-      "sha256": "592eed92d87b3b0f39b511b785b6c3cf68be23d9cff50790759674661dded17e"
+      "size": 6403,
+      "sha256": "9eb845865bc85ac3cabcc130ba5819bd8ad377f2b1d0f2af907028edd3e82254"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 5642,
-      "sha256": "a8573eae444f461a15ce60b49dd05c4faa70fd1849c722e92f6efff9a297b623"
+      "size": 5876,
+      "sha256": "b1e71c409afd776537b1f3c3eb8b8b04ac7829898d572ff1fd6d8a9d18476806"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -4109,8 +4109,8 @@
     },
     {
       "path": "infra/desktop/pulse.pa",
-      "size": 243,
-      "sha256": "2dbb8a6566d11aca7ca888d23ffd804b20c8ea1ff90e25b790b2d770dbfeb9f3"
+      "size": 255,
+      "sha256": "ebe4538e10f8350fc682f203acdcfaabeb2005425edea1f4b22877f26b8312fe"
     },
     {
       "path": "infra/desktop/start.sh",
@@ -4818,6 +4818,11 @@
       "sha256": "b4050203d3910c6aa2bf79db30e0775a064437d3c62b771ef79c14dc46299fc9"
     },
     {
+      "path": "scripts/fixtures/native-audio.Dockerfile",
+      "size": 550,
+      "sha256": "c31013b230cabbd827c9a0534a83e6f3f74a2bd36324a283a374e4ec5ed1cfe7"
+    },
+    {
       "path": "scripts/fixtures/phone-grounding.html",
       "size": 1368,
       "sha256": "f2019c9307b3932e3c855c2b307d84f3633c4cd4550fd8f6d659fd23bc43a3bd"
@@ -5369,8 +5374,8 @@
     },
     {
       "path": "scripts/test_desktop_media.py",
-      "size": 7020,
-      "sha256": "07488e0d19827963bd0b3bf843b42727506529c1f74ea8eb6db4234d1246ba3a"
+      "size": 9042,
+      "sha256": "5969ea826545ce9ad46fcae1ffde874281824ceaeb30466630ddddf14b15349b"
     },
     {
       "path": "scripts/test_desktop_media_native_wiring.py",
