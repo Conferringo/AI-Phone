@@ -23,6 +23,6 @@ def build(application,output):
         shutil.copytree(application,content/application.name,copy_function=os.link)
         (content/'Applications').symlink_to('/Applications',target_is_directory=True)
         image=folder/'client.dmg'
-        _run_hdiutil('create','-srcfolder',str(content),'-volname','AI Phone','-format','UDZO',str(image))
+        _run_hdiutil('create','-srcfolder',str(content),'-volname','AI Phone','-format','ULMO',str(image))
         _run_hdiutil('verify',str(image))
         image.replace(output)

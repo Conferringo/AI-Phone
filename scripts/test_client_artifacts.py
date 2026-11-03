@@ -4,12 +4,30 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
-from client_artifacts import inspect_apk, inspect_payload
+from client_artifacts import inspect_apk, inspect_payload, record
 from release_package import SECRET
 
 
 class ClientPayloadTests(unittest.TestCase):
+    def test_record_keeps_installer_eligibility_separate_from_missing_device_resources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'config').mkdir();(root/'apps/client/src-tauri').mkdir(parents=True)
+            (root/'config/release-policy.json').write_text('{"version":"fixture"}')
+            (root/'config/host-bootstrap.json').write_text('{"hosts":{}}')
+            for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']:(root/name).write_bytes(b'fixture lock')
+            artifact=root/'AI-Phone.deb';artifact.write_bytes(b'inspected client fixture')
+            with patch('client_artifacts.notice_manifest',return_value={}),patch('prepare_client_host.payload_components',return_value=['web']):
+                value=record(artifact,'linux','amd64',[],root=root)
+            self.assertTrue(value['installer_delivery']['github_asset_eligible'])
+            self.assertTrue(value['installer_delivery']['single_file'])
+            self.assertFalse(value['complete_device_bundle'])
+            self.assertFalse(value['remote_upload'])
+            self.assertIn('android-runtime',value['missing_runtime_components'])
+            saved=json.loads(artifact.with_suffix('.deb.manifest.json').read_text())
+            self.assertEqual(saved,value)
+
     def fixture(self, root):
         folder=root/'apps/client/src-tauri';folder.mkdir(parents=True)
         (root/'LICENSE').write_text('Test licence')

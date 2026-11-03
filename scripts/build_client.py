@@ -31,8 +31,9 @@ def build_macos():
     manifest={'version':version,'kind':'native-client-preview','os':'macos','arch':'arm64','sha256':digest,'developer_id_signed':False,'notarized':False,'dependencies_license_review_complete':False,'remote_upload':False,'source_locks':{name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['bun.lock','apps/client/src-tauri/Cargo.lock']}}
     manifest['source_payload_included']=True
     from prepare_client_host import payload_components
-    from client_delivery import delivery_metadata
+    from client_delivery import delivery_metadata,installer_metadata
     manifest.update(delivery_metadata(payload_components(ROOT),'macos-arm64'))
+    manifest['installer_delivery']=installer_metadata(destination,'macos-arm64')
     manifest['local_bootstrap']={'implemented_on':sorted(json.loads((ROOT/'config/host-bootstrap.json').read_text())['hosts']),'fresh_install_acceptance':'pending','user_state_bundled':False}
     manifest['bundle']=inspected
     manifest['third_party_notices']=notice_manifest(ROOT)

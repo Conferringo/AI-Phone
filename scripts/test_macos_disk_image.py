@@ -1,6 +1,7 @@
 """Exercise actual disk-image contents; other build hosts explicitly skip this test."""
 import os
 import platform
+import plistlib
 from pathlib import Path
 import subprocess
 import tempfile
@@ -16,6 +17,8 @@ class MacOSDiskImageTests(unittest.TestCase):
             payload=b'complete reviewed runtime\x00'*1024
             (app/'Contents/runtime.payload').write_bytes(payload)
             output=root/'client.dmg';build(app,output)
+            details=plistlib.loads(subprocess.check_output(['hdiutil','imageinfo','-plist',str(output)]))
+            self.assertEqual(details['Format'],'ULMO')
             mount=root/'mounted';mount.mkdir()
             subprocess.run(['hdiutil','attach','-quiet','-readonly','-nobrowse','-mountpoint',str(mount),str(output)],check=True)
             try:

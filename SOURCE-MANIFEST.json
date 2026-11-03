@@ -14,7 +14,8 @@
     "database_runtime_role": true,
     "clean_host_install": false,
     "backup_restore": true,
-    "self_contained_device_bundle": false
+    "self_contained_device_bundle": false,
+    "single_file_installers_verified": false
   },
   "files": [
     {
@@ -2219,8 +2220,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 1900,
-      "sha256": "561ff3399847587dada3c7e68349f278192edcbb6daef3a834faed8f9370b4e9"
+      "size": 2018,
+      "sha256": "edf94d0f610b8946753313f1af75bf55d59404804d8b4391f6d35af823f731c7"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -3964,8 +3965,8 @@
     },
     {
       "path": "docs/public/preview-release.md",
-      "size": 2820,
-      "sha256": "e8af70f9474e907b5fb757aed38b27777b775f882a4900b5dd9b6860da1f3a9f"
+      "size": 3438,
+      "sha256": "5c60e3dfa7cfc288b20f361d4e72ba5b02e19d4e23df179e54c8ab9fb9a1aeb9"
     },
     {
       "path": "docs/public/protocol-boundaries.md",
@@ -4544,8 +4545,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 11899,
-      "sha256": "7ebb6a4e58b550c7abba3e950afa82ce3d4fa1817a2a16a13063066b856d0423"
+      "size": 11999,
+      "sha256": "8981037fc74b95116776c290b93be417a2ddc77d57ba859a77911da148d8cc96"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4639,13 +4640,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6536,
-      "sha256": "26cdb645af8c3bced16c339720f999abbb485214d87103a88507612ad8ca9ded"
+      "size": 6632,
+      "sha256": "44192ca65cbc75083eeb742c67113cbb912e4ad8ec664a33098385e9ac6b4c4e"
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 1434,
-      "sha256": "8cea4b558fe9afb8e3d958119c27fa21b82afd0710039705a706c8328b8cc704"
+      "size": 2315,
+      "sha256": "ab1d4bc01f82da621b3f7136cc845f90f78eff423cf977371289f1d2fcab2a97"
     },
     {
       "path": "scripts/client_host.py",
@@ -5000,7 +5001,7 @@
     {
       "path": "scripts/macos_disk_image.py",
       "size": 1409,
-      "sha256": "5a18130114148f9fa64b4e5d30f54ab5f120f9d5f7efbf96d63b950a7bec9217"
+      "sha256": "08e582d53a11adee064f8cea2e85a3730615a2db1c2a654517555ca013e915ed"
     },
     {
       "path": "scripts/macos_factory_engine.py",
@@ -5059,8 +5060,8 @@
     },
     {
       "path": "scripts/package_delivery.py",
-      "size": 6950,
-      "sha256": "3f2e108cd408b0f3e300cf5386f6192e81b410fb685d98535c84732eba448377"
+      "size": 6968,
+      "sha256": "ea2ea4c1d366134ac4ab7b0d8ff1374f92e5db77d5a93b2ecbfcaae84153e901"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -5324,13 +5325,13 @@
     },
     {
       "path": "scripts/test_client_artifacts.py",
-      "size": 3101,
-      "sha256": "055c69ce0422ab52d1ac2e0d482f4fb5868942b487862cff9ea4c0cca7ea9a05"
+      "size": 4454,
+      "sha256": "8d18b1b68966489dfb73f7833d158128f38781258d58507ad488301907241c70"
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 2820,
-      "sha256": "2cbe369301ee48feebb5da246a3df9cb6c16282e81f5d415205f4292fadf2f5c"
+      "size": 5329,
+      "sha256": "50057ec71b8bfa93db997981068559bc5edd42a82d6793064bd3e2a95634f184"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -5499,8 +5500,8 @@
     },
     {
       "path": "scripts/test_macos_disk_image.py",
-      "size": 5998,
-      "sha256": "78f1e9f8af8ffd3f952bdb52f1e6c219ca7396d6d1b819254b786a7fef8efd25"
+      "size": 6175,
+      "sha256": "dff57bc35800e18fb133084bb1ba03e3106140a49a54476c6664005b72bc7bf9"
     },
     {
       "path": "scripts/test_macos_factory_engine.py",
