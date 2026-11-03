@@ -46,6 +46,7 @@ mod run_notice;
 mod run_queue;
 mod settings;
 mod setup;
+mod speech;
 mod tool_catalog;
 mod voice_input;
 mod workbench;
@@ -299,6 +300,10 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .route("/v1/resume", post(http::resume))
         .layer(DefaultBodyLimit::max(65536));
     let routes = routes
+        .route(
+            "/v1/voice/{operation}",
+            post(speech::route).layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
+        )
         .route(
             "/v1/workbench/upload-file",
             post(workbench::upload_file).layer(DefaultBodyLimit::max(12 * 1024 * 1024)),

@@ -3,7 +3,7 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "606b955a1b6f11944c1156138378be7ce621c1994f34561e800e6af4f2a14424",
+    "Cargo.lock": "97f41833cbff1f4f3f76afa0abe6b5c2b69883e57114292eeb54f70ce289f67e",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
     "apps/client/src-tauri/Cargo.lock": "21cafd72585f8102fcb08cc6a5ed007a67dd7f04ae47d5ac5df7f3b6f8f13fd1"
   },
@@ -4124,6 +4124,21 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "mime_guess",
+      "version": "2.0.5",
+      "license": "MIT",
+      "repository": "https://github.com/abonander/mime_guess",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "816000f9c28f7005d931c77636eb79fa7020071eb0f6e6a995515dfccd3559cb"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -8281,6 +8296,25 @@
       "notices": [],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "unicase",
+      "version": "2.9.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/seanmonstar/unicase",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "4f6bd11a0f17fe5b085ace1daaedb7b002a08316850dd9577c246c6a68a68e8c"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -15465,6 +15499,5 @@
     "javascript": [
       "async@0.2.10"
     ]
-  },
-  "native_client_missing_notice_files": []
+  }
 }

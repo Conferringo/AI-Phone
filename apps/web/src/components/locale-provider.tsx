@@ -21,7 +21,10 @@ export function LocaleProvider({initialLocale,children}:{initialLocale:Locale;ch
  const setLocale=useCallback((value:Locale)=>{const next=normalizeLocale(value);update(next);document.cookie=`ai-phone-locale=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;},[]);
  useEffect(()=>{document.documentElement.lang=locale;document.documentElement.dir=localeDirection(locale);},[locale]);
  useEffect(()=>{try{retireClientStorage(localStorage);}catch{}},[]);
- const t=useCallback((value:string,values?:Values)=>interpolate(locale==='zh-CN'?value:(messages[locale]?.[value]??english[value as keyof typeof english]??value),values),[locale]);
+ const t=useCallback((value:string,values?:Values)=>{
+  const voiceHttp=/^语音服务 HTTP (\d{3})$/.exec(value),key=voiceHttp?'语音服务 HTTP {0}':value;
+  return interpolate(locale==='zh-CN'?key:(messages[locale]?.[key]??english[key as keyof typeof english]??key),voiceHttp?{...values,'0':voiceHttp[1]}:values);
+ },[locale]);
  return <Context.Provider value={{locale,setLocale,t}}>{children}</Context.Provider>;
 }
 export const useI18n=()=>useContext(Context);

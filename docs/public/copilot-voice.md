@@ -1,112 +1,71 @@
-# Copilot voice — implementation plan
+# Copilot voice
 
-Status: **recorded-event input and durable chat-wire integration implemented; microphone/STT/TTS are not shipped yet**. This contract extends the existing [continuous conversation and steering](conversation-steering.md). It does not replace the model adapter, device action ledger or conversation history.
+Copilot adds continuous microphone input and interruptible spoken replies to the existing conversation. Enable it beside Free exploration in the conversation composer. Both modes can remain active; spoken instructions have priority. Switching devices preserves a phrase's original destination; the next phrase follows the focused device. Already accepted tasks continue when capture stops or the view changes.
 
-## Implemented development boundary
+**Status:** browser capture, Agent-owned speech configuration, the Rust audio adapter, protobuf transport, durable corrections and playback are implemented. The complete path has isolated PCM/HTTP/database tests. Real microphones, speech-provider accuracy, echo suppression, native permission prompts and end-to-end latency still require acceptance. This is a bounded REST audio implementation, not a provider-native Realtime/WebRTC session.
 
-[`CopilotInput`](../../apps/web/src/lib/copilot-input.ts) owns a single capture lifetime bound to one conversation/device. Its deterministic input is normalized monotonic audio activity plus versioned transcript patches. Its output is an immutable commit for synchronous durable handoff, not a network acknowledgement or a completed Agent action. The capture owner must schedule `advance()` at the returned deadline; no microphone, browser speech service or provider is opened by this module.
+## Configure an Agent
 
-- Audio inactivity closes a segment at 1,500 ms. Partial/final transcription packets never move that deadline. Missing text remains `awaiting-transcript`; later ready segments wait for it to preserve spoken order.
-- A recognition revision replaces a draft. A semantic edit must name the prior draft revision and preserve literal speech separately. This module has no natural-language correction model or negation-deletion heuristic.
-- Revised text after a handoff emits a fresh request linked to the previous request. Failed handoffs freeze the original ID/body until explicit retry; subsequent recognition is a separate correction. Stopping ignores late events, retains unsent text and does not cancel already accepted Agent work.
-- At most 32 segments are retained. Final, successfully handed-off segments can be retired to make room; unresolved segments cause a visible capacity error rather than being dropped. The provider adapter must respect the capture lifetime, use unique utterance IDs and pause input on capacity errors. Results for retired/unknown IDs are ignored.
+Open **Configuration → Agent → Voice**. Enter the compatible API URL, API key, input protocol, recognition model, speech model and voice. The key is editable and can be shown in this form; it is stored in the private database and excluded from ordinary configuration projections. A local compatible service may leave the key empty. Voice configuration has its own revision and does not require a successful chat-model probe. The text/tool model remains independently configured.
 
-The [recorded-event regressions](../../scripts/copilot-input.test.ts) exercise timer boundaries, revisions, explicit/quoted corrections, late results, failure recovery, bounded retention, 300 consecutive segments and a three-message handoff into the existing `ChatOutbox` while its first network send remains unresolved. This is **local state/outbox evidence**. The accepted-input path now carries `ChatVoiceInput` through the durable Outbox, protobuf send/history API and PostgreSQL. Each capture has a session ID. A late correction must reference the latest accepted receipt for the same conversation, session and utterance, with an increasing revision; exact retries keep their original receipt. Conflicting branches roll back without appending a message. Both fresh model context and active steering include the receipt link as user content. Existing accepted messages remain unchanged. Microphone capture, a real streaming STT adapter, UI, provider credentials, reconnect negotiation, TTS/barge-in and guest audio routing remain unimplemented. Voice commits bypass the 700 ms typed-input quiet window, including when a previous text wait is already in progress. Typed-input batching remains unchanged. Disposable PostgreSQL tests cover correction persistence/history, retries/conflicts, fresh context after task completion and priority over exploration. These are backend contracts, not measured microphone-to-action latency.
+| Input protocol | Provider requests | Correction capability |
+|---|---|---|
+| Audio chat | `/chat/completions` with `input_audio` and text output | One request transcribes the phrase and interprets explicit spoken edits. The provider must support this audio-chat contract. |
+| Transcription | Multipart `/audio/transcriptions` | Literal transcription; short pauses may update the draft. Semantic spoken-edit interpretation is not supplied by this adapter. |
 
-## Experience
+Both use `/audio/speech` with WAV output for replies. These are compatibility contracts, not a claim that every provider or every audio model supports them. Model IDs and voices come from the selected service. Native Realtime providers need a separate adapter; do not enter their session-only model IDs into this REST configuration.
 
-The intended Copilot control is one toggle immediately to the right of Free exploration in each conversation composer. The interaction contract below is planned; microphone capture and playback are not yet connected to the composer. Once implemented, it keeps listening until switched off and does not require holding a button. A compact listening indicator and live transcript replace explanatory banners. Manual typing keeps its existing Enter/newline and Cmd/Ctrl+Enter/send behavior. Microphone denial, provider errors and a disconnected transport remain visible and retryable.
+## Continuous conversation
 
-Copilot and Free exploration can coexist; this is the selected behavior. Spoken instructions have priority at the next safe execution boundary. Only one composer owns microphone capture at a time. Switching focus preserves the bound conversation; moving microphone ownership to another conversation is explicit and visible. A connection between two devices does not merge their conversations.
+- AudioWorklet captures mono audio, locally resampled to 16 kHz PCM16. No provider request is made for silence or each audio frame.
+- **1,500 ms of microphone silence** seals a phrase. Only final recognized text is committed. Recognition/network time is additional; the UI does not promise delivery 1.5 seconds after speech regardless of the provider.
+- Audio-chat interpretation runs once per completed phrase, with a hard 28-second chunk boundary. Transcription mode can send phrase chunks after a short pause. Both have bounded audio queues; overflow or a provider failure pauses capture with an explicit retry.
+- The literal transcript and interpreted instruction remain separate. An explicit correction can link to the latest accepted instruction in the same capture session and conversation. Original messages and executed actions remain in history. Correction branches and foreign-session references are rejected in PostgreSQL.
+- The existing durable Outbox and protobuf chat API accept the instruction. Voice bypasses the additional typed-input quiet window; it does not create a second Agent loop or conversation store.
+- New speech stops obsolete playback. Reply text is synthesized in sentence-sized pieces, with one playback owner. A speech-output failure leaves input available; provider failures are not automatically retried.
+- Turning Copilot off stops microphone tracks, audio processing, pending recognition and playback. Unsent recognized text is restored to the text composer. Unrecognized buffered audio is discarded; already accepted Agent work continues.
 
-1. Voice activity updates a provisional transcript in the composer. Partial hypotheses revise that draft instead of creating a new message for every word.
-2. After **1,500 ms without speech**, commit one user message and return immediately to listening. Continued speech produces another message in the **same conversation**, steering an active run where possible. The endpoint timer uses audio activity, not the arrival time of a delayed transcript packet. Commit the latest usable transcript at that deadline while requesting finalization; a late final result becomes an explicit revision/correction, not a reset of the session. If no text is available, show recognition pending/error rather than inventing a message.
-3. Before commit, an explicit correction such as “no, I meant the other file” revises the draft while preserving the actual instruction. Quoted words and ordinary negation must not be mistaken for corrections. Recognition uncertainty stays editable; do not silently invent missing words.
-4. After commit, a correction is a new linked instruction with its own receipt. The conversation shows what was accepted and its correction. Already executed device actions remain in history. A pending plan may change; an uncertain send or click is observed before any retry.
-5. Agent feedback begins with a short useful acknowledgement when work takes time, then streams text and speech. New user speech stops obsolete playback immediately and steers subsequent reasoning. Listening remains active while the Agent operates a device.
-6. Switching Copilot off stops capture, endpoint timers and playback, closes the provider session, and discards unsent audio. Keep an unsent text draft. Already accepted work continues under the existing task controls; disabling a microphone is not canceling a task.
-
-## Runtime ownership
+## Ownership and persistence
 
 | Owner | Responsibility |
 |---|---|
-| Composer / capture session | Microphone, voice activity, echo handling, local draft revision, the 1.5-second timer and listening state |
-| Voice gateway | Negotiated audio formats, ordered streaming provider events, reconnect/resume, backpressure and credentials kept server-side |
-| Agent runtime | Durable accepted messages, priority steering, context compression, tasks, tools and device evidence |
-| Playback session | Synthesized audio queue, output device, interruption generation and bounded latency |
-| Guest media adapter | Separately routed phone/computer microphone input and device playback; never implicit host-microphone broadcast |
+| `Microphone` / `SpeechSegments` | Capture resources, local voice activity, phrase boundary and device pinning |
+| `CopilotSession` | One capture lifetime, per-conversation input cores and bounded recognition jobs |
+| `CopilotInput` / existing Outbox | Ordered final text, immutable submission receipts and recoverable drafts |
+| Rust `speech` module | Agent configuration, device binding and compatible provider requests |
+| Existing Agent runtime | Durable messages, steering, tools, real device evidence and task lifecycle |
+| `CopilotOutput` | Sentence offsets, playback interruption and explicit output retry |
 
-Voice connection, task execution and device control are independent state machines. A transcription stream reconnect does not create a new conversation or cancel a device action. Existing PostgreSQL messages/steering stay the durable source of truth. Do not add a second competing conversation store. Interim audio and hypotheses remain in bounded memory; raw recordings are not saved by default.
+The business audio contract is [voice.proto](../../packages/protocol/proto/ai_phone/v1/voice.proto); accepted speech metadata uses [assistant.proto](../../packages/protocol/proto/ai_phone/v1/assistant.proto). Browser requests and responses are protobuf, with bounded WAV bytes. Only the external provider adapter uses its provider's multipart/JSON format. Raw recordings and provisional recognition results are not archived by AI Phone. Accepted literal/text/correction metadata is private conversation data. Provider-side retention depends on the chosen service.
 
-Initial capture states are `off → connecting → listening ↔ speaking → committing → listening`, with a recoverable `error` state. Listening may continue while a previous commit is being acknowledged: use distinct utterance IDs rather than blocking the capture loop. Playback has its own generation; late chunks from an interrupted generation are ignored.
+HTTP clients reuse the existing bounded routing pools. Configuration and device binding are checked once per audio request, not per frame. There is no extra planning/reflection model call before transcription or every device action. Ownership, action IDs and unknown-result handling remain at the device execution boundary.
 
-Recognition revisions and semantic corrections are different. The reducer keeps the current literal hypothesis and intended draft separately. Prefer a voice adapter that can emit both in the same stream. A pipeline adapter may run a correction pass on stable utterances asynchronously, with a strict deadline; never add a model request for every audio chunk or block the 1.5-second commit waiting for it. Late intent corrections become linked steering events. Quoted negation, uncertain references and multiple self-corrections are required qualification cases. Provider choice must be measured against this complete path.
+## Microphone access
 
-## Accepted-input wire and upcoming stream contract
+Access is requested only when Copilot is enabled. The macOS bundle supplies a microphone purpose string; Android declares recording permission and uses the existing WebView permission flow. AI Phone requests audio, not camera or location. A browser needs a secure context: use localhost or a trusted HTTPS origin. A raw HTTP LAN address must not be assumed to support microphone capture. The application reports an unavailable microphone rather than silently switching to text.
 
-`ChatSendRequest.voice` and `ChatMessage.voice` are implemented in [assistant.proto](../../packages/protocol/proto/ai_phone/v1/assistant.proto). They identify the capture session, utterance, revision, literal speech and optional corrected receipt. Audio and the provider stream described below are **not implemented**:
+The native workbench has no additional arbitrary host-command capability for voice. Microphone input is not implicitly broadcast into either guest device. Sending voice messages, injecting audio into a guest microphone and placing calls are separate future device capabilities.
 
-- Bind a session once to authenticated user, Agent and conversation/device. Give each utterance an ID, each stream event an increasing sequence and each transcript an explicit revision/final flag. Negotiation pins provider/model and supported formats for that session.
-- Draft patches identify the utterance and previous revision. A stale or reordered patch cannot overwrite a newer draft. An end-of-speech event carries the last audio timestamp, allowing exact endpoint measurement.
-- A commit has a stable existing chat `request_id`, final text, the utterance identity and an optional correction target. Acknowledgement distinguishes accepted, consumed by the run and completed; UI does not claim an action at transcription time.
-- Retries reuse the same commit ID and exact body. Reconnect asks for the last acknowledged sequence and accepted IDs. If provider audio resumption is unavailable, retain the accepted transcript and begin a new segment; never fabricate that missing speech was recognized.
-- Bound the audio backlog and the unacknowledged commit queue. If either fills, surface the failure and preserve available text. Do not silently drop speech or resend it with a new ID. The existing 32-input steering limit still applies. Voice commits use zero additional quiet delay after the 1.5-second endpoint; the capture adapter must not send partial hypotheses as committed messages.
-- Before each model context compaction, retain the current task, recent corrections, pending inputs, action outcomes and unresolved operations. Compression does not clear the visible transcript or change a session ID. Verify that multiple interruptions and a reconnect preserve accepted order.
+## Qualification and remaining work
 
-New business messages must be defined in `packages/protocol/proto`, generated for Rust/TypeScript, and streamed as protobuf WebSocket frames. Audio is a separately negotiated media stream, not JSON/base64 added to every chat request. The first implementation reuses existing chat submission and steering rather than adding a parallel Agent loop.
+Local tests exercise real WAV containers, compatible HTTP bodies, quota failure without retry, final-only dispatch, repeated corrections, bounded retention, focus changes during a phrase, durable Outbox handoff, output failure independent of capture, interruption and late cancellation. Disposable PostgreSQL tests cover independent voice settings, revision conflicts, correction chains and permission/restore recovery. Synthetic PCM and a mock provider do **not** prove real speech quality or microphone playback.
 
-## Models and setup
+Acceptance still needs a configured speech service and a real microphone: multiple languages, quoted negation, repeated self-corrections, background noise, echo, long sessions, permission denial and device switching. Measure capture-to-final-text, silence-to-durable-acceptance, barge-in-to-playback-stop, first spoken reply and first real device action separately, including p50/p95 and network time. No measured end-to-end speed claim is made yet.
 
-Speech is configured within the existing Agent form, not in a second settings center. Its text model can stay unchanged. Support both a streaming STT → existing Agent → streaming TTS pipeline and a provider-native realtime adapter through one capability contract. A text/tool model is not assumed to accept audio.
+A provider-native streaming adapter, reconnect/resume, guest voice messages and explicit test-call support are follow-up capabilities. None is represented as shipped by this implementation.
 
-Probe input audio, partial/final transcription, output audio, interruption and session-resume capabilities independently. Show only options the selected adapter actually supports. Missing speech configuration must produce a concrete error; do not present a working Copilot toggle that silently falls back to text-only behavior. Provider implementations and actual account qualification remain pending.
+## References
 
-The installed client needs native microphone integration. Localhost and trusted-LAN browser capture need separate acceptance; an ordinary insecure LAN URL cannot be assumed to permit microphone capture. Request microphone access when the user enables Copilot, never at app startup. Internet access is only used for the configured speech/model service; no public callback or tunnel is required.
-
-## Latency budget and verification
-
-These are **engineering targets**, not measured results or promises about cloud providers:
-
-| Measurement | Initial target |
-|---|---|
-| Local speech-activity indicator | ≤100 ms from captured audio |
-| First provisional transcript | p95 ≤500 ms when the provider supports streaming partials |
-| Silence to commit dispatch | 1,500 ms plus ≤100 ms local scheduling; no extra debounce before chat dispatch |
-| Accepted correction to running-model cancellation signal | p95 ≤150 ms on the local service |
-| Speech onset to obsolete-playback stop | p95 ≤120 ms locally |
-| Committed input to first spoken feedback | p95 ≤1,200 ms on a qualified provider/network, measured separately from endpoint delay |
-
-Instrument capture, audio upload, first partial, final transcript, commit dispatch, durable acceptance, steering consumption, first output audio and first device action with monotonic timestamps. Report cold/warm sessions and p50/p95, including queue time. Do not claim a speedup from fewer lines of validation without end-to-end measurements.
-
-Authenticate and negotiate once at the stream boundary; do not rehash installer components, read all settings, write a database row, run a second model or perform device observation for every audio frame. Cache configuration by revision and reuse provider connections. Grounding and action identity checks remain at logical device actions. Interruption cancels obsolete model/voice work without replaying side effects. Release acceptance compares the real voice-and-action path, not isolated token speed.
-
-## Delivery slices
-
-1. **Text-correction contract:** deterministic recorded transcript events, timer boundaries, late final segments, duplicates, “not/no” ambiguity, multiple corrections and reconnect. Integrate with existing steering in an isolated conversation.
-2. **Continuous input:** one actual streaming STT adapter, capture lifecycle on native/browser, 1.5-second commits, bounded queues and real microphone testing. Keep user devices/accounts out of automated fixtures.
-3. **Spoken feedback:** actual streaming output, echo suppression, barge-in and playback generations; test text+voice and provider errors during tool execution.
-4. **Guest speech:** explicit output routing to a phone/computer virtual microphone, followed by real app voice-message tests. Host playback, guest microphone and guest audio must be independently selectable and avoid feedback loops.
-5. **Calls:** an app-call capability adapter and evidence for connect/mute/hangup; carrier/SIP integration is a separate extension. Root, an emulator or a changed device name does not supply a phone number or eSIM. Test calls only with explicitly designated test endpoints.
-
-Do not couple the current offline-distribution completion gate to speculative calling code. Publish support only after the corresponding slice has real evidence.
+[OpenAI audio APIs](https://developers.openai.com/api/docs/guides/audio), [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription), [browser microphone requirements](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), [macOS application bundle permissions](https://v2.tauri.app/distribute/macos-application-bundle/).
 
 ---
 
-# Copilot 实时语音开发契约
+# Copilot 语音
 
-**语音状态内核、持久消息协议与后端纠错接线已实现，真实语音模式尚未交付。** 未来入口放在自由探索右侧，开启后持续监听，1.5秒没有语音就提交；后续补充保持同一会话，并优先调整当前任务。按用户确认，与自主探索可同时开启，用户语音优先；一个麦克风同时只归属一个明确的对话。
+在对话输入区的自由探索右侧开启 Copilot，持续说话即可；可与自由探索同时开启，语音指令优先。配置位于原有配置中心的 Agent → 语音，识别模型、合成模型、音色和密钥独立于聊天模型，不要求先通过聊天额度探测。
 
-当前代码已验证音频时间分段、草稿版本、显式语义修正、迟到结果关联、冻结回执重试、停止保留文本和32段有界积压；300段连续回放与现有Outbox连续交接通过。语义修正由未来适配器明确提供，代码尚不能自行理解自然语音里的“说错了”。纠错关联现已接入持久Outbox、protobuf收发/历史与PostgreSQL事务；只能更正同对话、同采集会话/片段的最新已接受回执，原话和旧消息保留。重试/冲突回滚、跨任务迟到修订、模型上下文关联及探索优先调度已通过隔离数据库回归。语音跳过额外700ms文字等待，也能唤醒已开始的文字等待；不能将此当作端到端延迟。麦克风、真实STT/TTS、原生权限、语音插话/回声、设备内声音注入均未接通，没有未接通的产品按钮。
+当前已接通真实浏览器采集代码、Rust 兼容语音接口、protobuf 音频、持久纠错和可打断播放，并通过隔离 PCM、HTTP、Outbox、数据库链路验证。**真实麦克风、服务商识别质量、回声、原生权限提示及端到端延迟仍未验收。** 当前是有界 REST 语音链，不是原生 Realtime/WebRTC。
 
-识别中的文字在输入区修订，避免每个字都变成一条消息。“不是、说错了”等明确纠错在发送前修订草稿；普通否定或引用不能误删。发送后的纠错作为有回执的新指令进入现有steering，不抹掉已接受的消息和真实动作。停用只关闭语音采集与播放，保留文字草稿，已经接受的任务继续遵循原有控制。
+停顿 1.5 秒后结束语句，必须得到完整转录才发送；网络和识别耗时另计。音频对话协议一次完成转录及明确的口误修正；普通转写协议仅提供原话，不承诺理解“说错了”。发送后的修正以新消息关联原回执，同一会话不中断，原话和已执行操作保留。关闭只停采集与播放，已接受任务继续，已识别但未发送的文字回到输入框。音频默认不落盘，错误不自动重复请求。
 
-实时采集、语音网关、Agent任务、播放和客体麦克风分别负责自己的生命周期。连接、断线、重连不重建聊天；音频默认不落盘。临时识别不逐帧写数据库、不反复读取配置、不重做安装资源校验。鉴权和格式协商在会话入口完成；设备副作用仍在执行边界保留action_id、控制epoch与真实观察。响应速度用音频采集→识别→提交→执行/语音反馈的p50/p95衡量，表中时间均为待验收目标。
-
-模型配置归入原有Agent表单，允许语音识别＋现有文字模型＋语音合成，以及原生实时语音两类适配。不把普通文字模型当成语音模型；输入/输出/打断/重连能力分别探测。音频流协议仍须先定义protobuf、独立协商传输。多个补充、晚到识别、排队上限、上下文压缩和重连必须一起验证，不能靠重新开启session丢掉上下文。
-
-开发顺序：先验证纠错与1.5秒端点的事件契约，再接真实麦克风和流式识别，再做可打断语音反馈，最后接客体虚拟麦克风、语音消息与测试通话。前面的文字、语音与任务能力先可用，不等电话能力。每一阶段都要有真实证据；当前不增加未接通的按钮。
-
-
-## Technical references
-
-[DeepSeek Harness voice input](https://github.com/deepseek-ai/deepseek-harness/blob/ce7073d51254c26cd63b22a60835b8f948deb447/docs/subsystems/voice-input.md) separates provider selection, local inference and browser ownership, and fences stale transcript insertion with an editor revision. Its documented stop-to-transcribe draft flow is a narrower contract than continuous Copilot. AI Phone keeps the continuous capture, endpoint, accepted-input, task and playback lifetimes separate.
+切换设备不会把说到一半的内容发给另一设备，下一句跟随当前设备。新语音打断旧播放；合成失败不会堵塞输入。宿主麦克风不会自动传给手机或电脑客体；语音消息、设备内音频注入及电话能力仍是后续扩展。浏览器需本机地址或可信 HTTPS；普通局域网 HTTP 不保证麦克风可用。

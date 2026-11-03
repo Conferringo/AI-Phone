@@ -12,6 +12,7 @@ import {PhoneInstall} from './phone-install';
 import {DesktopInstall} from './desktop-install';
 import {AgentMemory} from './memory-window';
 import {AgentConnections} from './connections-dialog';
+import {AgentVoice} from './agent-voice';
 import {Button} from './ui/button';
 import {settingsRpc} from '@/lib/settings-client';
 import {presetDraft,modelPreset,modelPresets,modelIssue,setupProgress,hasDeviceFrame,type ModelPreset,type SetupStep} from '@/lib/registry-setup';
@@ -22,7 +23,7 @@ import './registry-window.css';
 export type Registry=MessageShape<typeof RegistryStateSchema>;
 type Config=MessageShape<typeof ModelDraftSchema>;
 type Tab='devices'|'agents';
-type Section='model'|'connections'|'memory';
+type Section='model'|'connections'|'memory'|'voice';
 type Form={id:string;revision:bigint;name:string;kind:string;defaultAgentId:string;modelId:string;modelRevision:bigint;deviceIds:string[];config:Config};
 const fresh=()=>presetDraft('deepseek');
 function record(state:Registry,tab:Tab,id:string):Form {
@@ -33,7 +34,7 @@ function record(state:Registry,tab:Tab,id:string):Form {
 }
 const formKey=(tab:Tab,id:string)=>`${tab}:${id}`;
 const deviceIcon=(kind:string)=>kind==='phone'?<Smartphone size={18}/>:<Monitor size={18}/>;
-export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceId}:{open:boolean;onClose:()=>void;onNeedsSetup:()=>void;onChange:(state:Registry)=>void;activeDeviceId:string}) {
+export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceId,voiceAgentId=''}:{open:boolean;onClose:()=>void;onNeedsSetup:()=>void;onChange:(state:Registry)=>void;activeDeviceId:string;voiceAgentId?:string}) {
  const {t}=useI18n();
 
  const [state,setState]=useState<Registry|null>(null),[tab,setTab]=useState<Tab>('devices'),[section,setSection]=useState<Section>('model');
@@ -48,6 +49,7 @@ export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceI
  const load=useCallback(async()=>{const g=++generation.current;try{const next=await settingsRpc('state',RegistryRequestSchema,{},RegistryStateSchema,'registry');if(!mounted.current||g!==generation.current)return;accept(next);setError('');setSelection(old=>({devices:old.devices||next.activeDeviceId,agents:old.agents||next.agents[0]?.id||''}));if(!initialized.current){initialized.current=true;const progress=setupProgress(next);if(!progress.ready){const nextStep=progress.modelReady?'devices':'agents';setOnboarding(true);setStep(nextStep);setTab(nextStep);setup.current();}}}catch(e){if(mounted.current&&g===generation.current)setError(e instanceof Error?e.message:t("读取失败"));}},[accept]);
  useEffect(()=>{void load();},[load]);
  useEffect(()=>{setSelection(old=>({...old,devices:activeDeviceId}));setTab('devices');setSection('model');},[activeDeviceId]);
+ useEffect(()=>{if(open&&voiceAgentId){setTab('agents');setSelection(old=>({...old,agents:voiceAgentId}));setSection('voice');}},[open,voiceAgentId]);
  useEffect(()=>{if(open&&!pending.current)void load();},[open,load]);
  useLayoutEffect(()=>{const panel=body.current;if(!open||!panel)return;const preference=matchMedia('(prefers-reduced-motion:reduce)');if(preference.matches)return;const animation=panel.animate([{opacity:.35,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:240,easing:'cubic-bezier(.2,.8,.2,1)'});const finish=()=>animation.finish();preference.addEventListener('change',finish);return()=>{preference.removeEventListener('change',finish);animation.cancel();};},[open,tab,section,selection,step]);
  const id=selection[tab],key=formKey(tab,id),saved=state?record(state,tab,id):null,form=drafts[key]??saved,dirty=!!drafts[key],isNew=form?.revision===0n;
@@ -78,7 +80,7 @@ export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceI
    {!state?<div className="registry-loading" role="status">{error||t("正在读取配置…")}</div>:<div className="registry-content" ref={body}>{onboarding&&step==='review'&&<SetupReview state={state} busy={!!busy} error={error} onStep={goStep} onFinish={()=>void finishSetup()}/>}<div className="registry-layout" data-single-setup={onboarding&&tab==='agents'&&rows.length===1} hidden={onboarding&&step==='review'}>
     <nav className="registry-list" aria-label={tab==='devices'?t("设备列表"):t("Agent 列表")}><div className="registry-entities">{rows.map(row=>{const d=state.devices.find(d=>d.id===row.id),a=state.agents.find(a=>a.id===row.id),m=state.models.find(m=>m.id===a?.modelConnectionId);return <button key={row.id} type="button" aria-pressed={id===row.id} disabled={!!busy} onClick={()=>choose(tab,row.id)}>{tab==='devices'?deviceIcon(d?.kind||drafts[formKey(tab,row.id)]?.kind||'phone'):<Sparkles size={18}/>}<span>{row.name}<small>{tab==='devices'?(d?.runtimeState==='managed'?t("已接入"):t("待安装")):(m?.profile?.model||t("未配置"))}</small></span>{drafts[formKey(tab,row.id)]&&<i aria-label={t("未保存")}/>}</button>;})}</div><button type="button" className="registry-add" disabled={!!busy||rows.length>=(tab==='devices'?(state.phoneLimit||1)+(state.desktopLimit||1):64)} onClick={add}><Plus size={16}/>{tab==='devices'?t("添加设备"):t("添加 Agent")}</button></nav>
     {form&&<div className="registry-detail">
-     {tab==='agents'&&!onboarding&&<nav className="registry-sections" aria-label={t("Agent 配置")}>{([['model',t("模型与设备")],['connections',t("连接应用")],['memory',t("记忆")]] as const).map(([value,label])=><button type="button" key={value} aria-pressed={section===value} disabled={!!busy||(isNew&&value!=='model')} onClick={()=>{setSection(value);setError('');}}>{label}</button>)}</nav>}
+     {tab==='agents'&&!onboarding&&<nav className="registry-sections" aria-label={t("Agent 配置")}>{([['model',t("模型与设备")],['connections',t("连接应用")],['memory',t("记忆")],['voice',t("语音")]] as const).map(([value,label])=><button type="button" key={value} aria-pressed={section===value} disabled={!!busy||(isNew&&value!=='model')} onClick={()=>{setSection(value);setError('');}}>{label}</button>)}</nav>}
      {error&&<div className="registry-alert" role="alert">{error}</div>}
      <form className="registry-form" hidden={section!=='model'} onSubmit={e=>{e.preventDefault();void save();}}>
       <div className="registry-scroll"><fieldset disabled={!!busy}>
@@ -101,7 +103,7 @@ export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceI
       </fieldset>{report&&<details className="registry-report" open={!report.ready}><summary>{report.ready?t("连接检测通过"):t("连接检测失败")}</summary>{report.checks.map(c=><p key={c.name}>{c.passed?'✓':'×'} {c.name} · {c.detail}</p>)}</details>}</div>
       <footer className="registry-save"><Button type="submit" disabled={!!busy||!dirty&&!configChanged}>{busy&&<LoaderCircle className="spinning" size={15}/>} {busy==='test'?t("验证连接…"):busy?t("保存中…"):t("保存")}</Button>{dirty&&<Button type="button" variant="ghost" disabled={!!busy} onClick={discard}>{t("撤销")}</Button>}{tab==='agents'&&!dirty&&!!model?.profile&&<Button type="button" variant="ghost" disabled={!!busy} onClick={()=>void save(true)}>{t("检测连接")}</Button>}{onboarding&&<Button type="button" variant="outline" disabled={!!busy||dirty} onClick={()=>goStep(tab==='agents'?'devices':'review')}>{t("下一步")}</Button>}{notice&&<span role="status"><Check size={14}/>{notice}</span>}</footer>
      </form>
-     {!onboarding&&state.agents.map(agent=><div className="registry-scoped" key={agent.id} hidden={tab!=='agents'||id!==agent.id||section==='model'}><div hidden={section!=='connections'}><AgentConnections agentId={agent.id} open={open&&tab==='agents'&&id===agent.id&&section==='connections'}/></div><div hidden={section!=='memory'}><AgentMemory agentId={agent.id} open={open&&tab==='agents'&&id===agent.id&&section==='memory'}/></div></div>)}
+     {!onboarding&&state.agents.map(agent=><div className="registry-scoped" key={agent.id} hidden={tab!=='agents'||id!==agent.id||section==='model'}><div hidden={section!=='connections'}><AgentConnections agentId={agent.id} open={open&&tab==='agents'&&id===agent.id&&section==='connections'}/></div><div hidden={section!=='memory'}><AgentMemory agentId={agent.id} open={open&&tab==='agents'&&id===agent.id&&section==='memory'}/></div><div hidden={section!=='voice'} className="registry-voice-panel"><AgentVoice agentId={agent.id} open={open&&tab==='agents'&&id===agent.id&&section==='voice'}/></div></div>)}
     </div>}
    </div></div>}
   </div>

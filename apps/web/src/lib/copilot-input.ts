@@ -11,6 +11,7 @@ export type VoicePatch = {
   /** A semantic edit must explicitly name the draft it replaces. Ordinary
    * negation/quoted words never trigger local string-deletion heuristics. */
   correction?: {baseRevision: number; text: string};
+  correctsRequestId?: string;
 };
 export type VoiceCommit = VoiceBinding & {
   requestId: string;
@@ -40,6 +41,7 @@ type Utterance = {
   final: boolean;
   accepted?: VoiceCommit;
   pending?: VoiceCommit;
+  correctsRequestId?: string;
 };
 export type VoiceDraft = {
   utteranceId: string;
@@ -78,7 +80,7 @@ function draftStatus(slot: Utterance): VoiceDraft['status'] {
   if (slot.pending) return 'handoff-pending';
   if (slot.accepted?.text === slot.text) return 'accepted';
   if (!slot.ended) return 'draft';
-  return slot.text ? 'handoff-pending' : 'awaiting-transcript';
+  return slot.text && slot.final ? 'handoff-pending' : 'awaiting-transcript';
 }
 
 /** One capture lifetime bound to one conversation. `accept` is a synchronous,
@@ -140,10 +142,12 @@ export class CopilotInput {
     if (!slot) return false; // Retired segment or an old provider session.
     if (patch.revision <= slot.revision && patch.revision > 0) return false;
     validatePatch(patch, slot);
+    if(patch.correctsRequestId && !this.slots.some(item=>item.accepted?.requestId===patch.correctsRequestId))throw Error('Unknown voice correction receipt');
     slot.revision = patch.revision;
     slot.literal = patch.literal;
     slot.text = boundedText(patch.correction?.text ?? patch.literal);
     slot.final = patch.final;
+    if(patch.correctsRequestId)slot.correctsRequestId=patch.correctsRequestId;
     this.flush();
     return true;
   }
@@ -172,6 +176,7 @@ export class CopilotInput {
   private prepare(slot: Utterance): VoiceCommit {
     const result: VoiceCommit = {...this.binding, requestId: this.receipt(), utteranceId: slot.id, revision: slot.revision, literal: slot.literal, text: slot.text};
     if (slot.accepted) result.correctsRequestId = slot.accepted.requestId;
+    else if(slot.correctsRequestId)result.correctsRequestId=slot.correctsRequestId;
     return result;
   }
 
@@ -189,7 +194,7 @@ export class CopilotInput {
   }
 
   private flushSlot(slot: Utterance): boolean {
-    if (!slot.ended) return false;
+    if (!slot.ended || !slot.final) return false;
     while (slot.pending || (slot.text && slot.accepted?.text !== slot.text)) {
       if (!this.enabled) return false;
       if (!this.deliver(slot)) return false;

@@ -96,7 +96,7 @@ pub async fn verify(
     let mut timing = crate::model_timing::Timing::default();
     let audit = async {
         let config = crate::settings::for_run(app, run).await?;
-        let client = app.settings.model_client(&config)?;
+        let client = app.settings.http_client(&config.proxy_url)?;
         let output = tokio::time::timeout(
             Duration::from_secs(60),
             crate::model_adapter::request_tracked(&config, &client, body, cancel, &mut timing),

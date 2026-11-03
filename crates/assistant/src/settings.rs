@@ -69,16 +69,7 @@ impl ModelConfig {
         Ok(format!("{base}{version}{suffix}"))
     }
     pub fn client(&self) -> Result<reqwest::Client, String> {
-        let mut builder = reqwest::Client::builder()
-            .no_proxy()
-            .redirect(reqwest::redirect::Policy::none())
-            .connect_timeout(Duration::from_secs(15))
-            .timeout(Duration::from_secs(180));
-        if !self.proxy_url.is_empty() {
-            builder =
-                builder.proxy(reqwest::Proxy::all(&self.proxy_url).map_err(|_| "代理地址无效")?);
-        }
-        builder.build().map_err(|_| "无法创建模型连接".into())
+        client_for_proxy(&self.proxy_url)
     }
     pub(crate) fn profile(&self, revision: u64) -> wire::ModelProfile {
         wire::ModelProfile {
@@ -100,6 +91,17 @@ impl ModelConfig {
             Sha256::digest(serde_json::to_vec(&normalized).expect("config serializes"))
         )
     }
+}
+fn client_for_proxy(proxy_url: &str) -> Result<reqwest::Client, String> {
+    let mut builder = reqwest::Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(180));
+    if !proxy_url.is_empty() {
+        builder = builder.proxy(reqwest::Proxy::all(proxy_url).map_err(|_| "代理地址无效")?);
+    }
+    builder.build().map_err(|_| "无法创建模型连接".into())
 }
 struct Verification {
     scope: String,
@@ -138,18 +140,18 @@ fn atomic_private(path: &Path, bytes: &[u8]) -> Result<(), String> {
     result.map_err(|_| "配置无法保存，请检查存储空间与权限".into())
 }
 impl SettingsStore {
-    pub(crate) fn model_client(&self, config: &ModelConfig) -> Result<reqwest::Client, String> {
+    pub(crate) fn http_client(&self, proxy_url: &str) -> Result<reqwest::Client, String> {
         let mut clients = self.model_clients.lock().map_err(|_| "模型连接池不可用")?;
-        if let Some(client) = clients.get(&config.proxy_url) {
+        if let Some(client) = clients.get(proxy_url) {
             return Ok(client.clone());
         }
-        let client = config.client()?;
+        let client = client_for_proxy(proxy_url)?;
         // Only routing is shared. Credentials remain on each request; idle pools
         // are bounded when users change models/proxies over a long session.
         if clients.len() >= 8 {
             clients.pop_first();
         }
-        clients.insert(config.proxy_url.clone(), client.clone());
+        clients.insert(proxy_url.into(), client.clone());
         Ok(client)
     }
 
@@ -494,7 +496,7 @@ impl SettingsStore {
             })
     }
 }
-fn normalize_url(raw: &str, proxy: bool) -> Result<String, String> {
+pub(crate) fn normalize_url(raw: &str, proxy: bool) -> Result<String, String> {
     let url = reqwest::Url::parse(raw.trim()).map_err(|_| "请输入完整的 http(s) 地址")?;
     if !["http", "https"].contains(&url.scheme())
         || url.host_str().is_none()
@@ -750,7 +752,7 @@ mod tests {
         };
         for port in 10000..10012 {
             config.proxy_url = format!("http://127.0.0.1:{port}");
-            store.model_client(&config).unwrap();
+            store.http_client(&config.proxy_url).unwrap();
         }
         let before: Vec<_> = store
             .model_clients
@@ -762,7 +764,7 @@ mod tests {
         assert_eq!(before.len(), 8);
         assert!(before.contains(&config.proxy_url));
         config.proxy_url = "http://[invalid".into();
-        assert!(store.model_client(&config).is_err());
+        assert!(store.http_client(&config.proxy_url).is_err());
         let after: Vec<_> = store
             .model_clients
             .lock()

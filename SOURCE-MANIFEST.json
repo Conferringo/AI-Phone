@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 8216,
-      "sha256": "e3aa6977078fb46f85e83678f64828e9718202b3898e54f296b2a01944647849"
+      "size": 8316,
+      "sha256": "d23baf9a267212b1fc8ed10bd6db50676e0c1f76229cb516c9f5d7d594346f1f"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -120,8 +120,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 76164,
-      "sha256": "606b955a1b6f11944c1156138378be7ce621c1994f34561e800e6af4f2a14424"
+      "size": 76604,
+      "sha256": "97f41833cbff1f4f3f76afa0abe6b5c2b69883e57114292eeb54f70ce289f67e"
     },
     {
       "path": "Cargo.toml",
@@ -350,8 +350,8 @@
     },
     {
       "path": "apps/client/android/AndroidManifest.xml",
-      "size": 1354,
-      "sha256": "ff13ac8189865eb15e3634c4e33a5fd5469aa339a5c9a9faefc68ffd7531110c"
+      "size": 1501,
+      "sha256": "d6065d1005a26eaa005af01c07ada74956d36a6582aa7d808595188a769156db"
     },
     {
       "path": "apps/client/android/MainActivity.kt",
@@ -377,6 +377,11 @@
       "path": "apps/client/src-tauri/Cargo.toml",
       "size": 1147,
       "sha256": "3648e69f72f92338aa9684f84a325290103caa13c730b92812779b17db8d078d"
+    },
+    {
+      "path": "apps/client/src-tauri/Info.plist",
+      "size": 328,
+      "sha256": "192cd8a0e960f0024a5ee9f96bdcbdbbe4689750a2d9852ba6790237d537af57"
     },
     {
       "path": "apps/client/src-tauri/build.rs",
@@ -1544,6 +1549,11 @@
       "sha256": "64302dd6c2bf3291d9806607f3e9cbdab32d25ffbbe9bc552166c0b0ebee584d"
     },
     {
+      "path": "apps/web/public/copilot-capture.js",
+      "size": 907,
+      "sha256": "61cc690da1dd8d7395d1bd8bbb94c0e343c3748cc2a6de2c450269b9248bb2f5"
+    },
+    {
       "path": "apps/web/src/app/api/assistant/[operation]/route.ts",
       "size": 2103,
       "sha256": "3f2db9990577aae94a94fde16d1a0f0de332b30d90a357b7611f79f8a0498b1b"
@@ -1614,6 +1624,11 @@
       "sha256": "f59559a53f92f183cadf4fc26821206b6347b2b1f7ed3dcb226ab35319a72099"
     },
     {
+      "path": "apps/web/src/app/api/voice/[operation]/route.ts",
+      "size": 246,
+      "sha256": "b130a57764e951d58d63be5db03d465973d0581cc80a59368b283d1d98712a8f"
+    },
+    {
       "path": "apps/web/src/app/api/workbench/[operation]/route.ts",
       "size": 1849,
       "sha256": "965a3e18dd34565d31b4b10889e35060494d1279732066042368df0cc4fe55a3"
@@ -1660,13 +1675,13 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 44479,
-      "sha256": "95b9542b5080b0f0cb812abb966b1e07aa9efe966fba76580efe392441dee187"
+      "size": 45884,
+      "sha256": "ef60f719adbb81b6e9558db16ba9a587adc4517da6dbeafdaae8f409dc196d2c"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
-      "size": 27872,
-      "sha256": "bc5fb78cfc244ec65a1dce97ada7bae95cb46e722ac65ca0b4efc824c5bd50dc"
+      "size": 27903,
+      "sha256": "424758f3d4ecb8300b327517baeb55d1d08837030a912af5e635c886c5db7c41"
     },
     {
       "path": "apps/web/src/app/setup/page.tsx",
@@ -1679,9 +1694,24 @@
       "sha256": "9a6eabaad4c53675a46e1dbc0fcb488e71a9e1afa0dff12bc820b825307a85a6"
     },
     {
+      "path": "apps/web/src/components/agent-voice.tsx",
+      "size": 5583,
+      "sha256": "5ba2b12a0e57e062a4df680f6a5ffac627f7a998320e7772fdc2e1ec087b1143"
+    },
+    {
       "path": "apps/web/src/components/connections-dialog.tsx",
       "size": 7412,
       "sha256": "733801c8a0cf94a28174acd84060f44f96089617fe5bc9c99bd4bdb2bfc638a7"
+    },
+    {
+      "path": "apps/web/src/components/copilot.css",
+      "size": 1888,
+      "sha256": "aee1c8ca009e96377a0a90ab0fe442bb788cc842a2c8d243cfa8620c9e0d682b"
+    },
+    {
+      "path": "apps/web/src/components/copilot.tsx",
+      "size": 2459,
+      "sha256": "92306520f3162533573c558a28c61aaddf82620f9f09b665e5d868098a54e033"
     },
     {
       "path": "apps/web/src/components/desktop-exploration.tsx",
@@ -1780,8 +1810,8 @@
     },
     {
       "path": "apps/web/src/components/locale-provider.tsx",
-      "size": 2355,
-      "sha256": "ab6639ed06986b714b2c92e6571fb6a4fa184b7b50040df04b8026c6198784cd"
+      "size": 2506,
+      "sha256": "f57a59a4b404437f9b354d9ada3273dee7b4f4842358b912dbe5eb174a74c3ad"
     },
     {
       "path": "apps/web/src/components/location-map.tsx",
@@ -1825,8 +1855,8 @@
     },
     {
       "path": "apps/web/src/components/proactive-controls.css",
-      "size": 3073,
-      "sha256": "a876a29137b74580062f129c031a9ff6458aa61c781156246812d40e9f6401ad"
+      "size": 3141,
+      "sha256": "1b041a74cec7d73744ef3aecffd91a66198359ce500050914e8ccdb115bbfb8b"
     },
     {
       "path": "apps/web/src/components/proactive-controls.tsx",
@@ -1845,8 +1875,8 @@
     },
     {
       "path": "apps/web/src/components/registry-window.tsx",
-      "size": 20275,
-      "sha256": "f04a6a5f5f9f00f109edf4b2f0fef9e4ba2b1df0ff51eaaa717260b18a2e30a8"
+      "size": 20700,
+      "sha256": "270e2fcb7a625f6cb28489f986f72a0e4f8f0b97169d416369e9350dee2a4e4d"
     },
     {
       "path": "apps/web/src/components/session-bootstrap.tsx",
@@ -1949,9 +1979,29 @@
       "sha256": "0f8c389375cb3a841d7e8fba901725965547caeba753556d1f0d57a8238e1354"
     },
     {
+      "path": "apps/web/src/lib/copilot-audio.ts",
+      "size": 4035,
+      "sha256": "df8c21f01c2c0ba0bbb7b8443b4c24fd73f5de3de4e917a215846b0d244ce53e"
+    },
+    {
+      "path": "apps/web/src/lib/copilot-capture.ts",
+      "size": 2985,
+      "sha256": "d0376019b6b43e854cb4ead40b04233594d7b2ddb90207c02d2520fb99033ddd"
+    },
+    {
       "path": "apps/web/src/lib/copilot-input.ts",
-      "size": 7800,
-      "sha256": "d5dc66b870102090e6c6b15ddc68d3c72a67bd80d43dfc5a01aba149b215fbbd"
+      "size": 8210,
+      "sha256": "c2e1106b5e9701b3ee732924fd833765c2aafc86248bc7823956e793e9e90ffb"
+    },
+    {
+      "path": "apps/web/src/lib/copilot-output.ts",
+      "size": 3411,
+      "sha256": "ad83dd3ceffd286718a3dfbe462579de8e97d7272cdb940cf6d3349c289b778f"
+    },
+    {
+      "path": "apps/web/src/lib/copilot-session.ts",
+      "size": 11449,
+      "sha256": "3e7dd4b2b053e6d4a18cd030f9befc4f0266f15d888ece76987782635632a0b8"
     },
     {
       "path": "apps/web/src/lib/device-defaults-server.ts",
@@ -2005,13 +2055,13 @@
     },
     {
       "path": "apps/web/src/lib/settings-client.ts",
-      "size": 873,
-      "sha256": "47b808f3395cc59d7a0bc82869828f9193b1314d18531fd1ec72771f686b8b05"
+      "size": 1000,
+      "sha256": "a0d7035afe55636e31fd45e05977293f930efb90f173bd2e85dbc55ed024ec6a"
     },
     {
       "path": "apps/web/src/lib/settings-server.ts",
-      "size": 2092,
-      "sha256": "28fef4fe3d6f0537864a87bedce2227496fb794013c1daa023e14a2f2c998d55"
+      "size": 2315,
+      "sha256": "5da220dcad6cd1dd27bb4804cc569d18268e6df0177e4f0a7b55f7ffb9933c60"
     },
     {
       "path": "apps/web/src/lib/utils.ts",
@@ -2030,48 +2080,48 @@
     },
     {
       "path": "apps/web/src/locales/ar.json",
-      "size": 20069,
-      "sha256": "a1c6930161591fa25f33fdcd8ad36ba48a6c281311a0d82660e2032d8aaa8aa1"
+      "size": 23641,
+      "sha256": "22b5a0ac1e8e85ce1cbb78edd39963561fa89ecfa444faa87dbfebb0daf53a5c"
     },
     {
       "path": "apps/web/src/locales/de.json",
-      "size": 17096,
-      "sha256": "12e219c4d9c52290fa2c8bca2d71e09d22d5b27a2dd473bd9da0169274b19829"
+      "size": 20110,
+      "sha256": "39f66f5999cb9225ccfad65768c526d61f56049ca0cce58ec41a26d600cebc0b"
     },
     {
       "path": "apps/web/src/locales/en.json",
-      "size": 15470,
-      "sha256": "feebf35447d7f841b145ff6bcf64cb51d881f627ed4c6a8b9c9bf354df4b2cbc"
+      "size": 18351,
+      "sha256": "ea05e1d969bd2dd2cee9ffca77db7f6c15365974c7a186c841d9a53f74094ec5"
     },
     {
       "path": "apps/web/src/locales/es.json",
-      "size": 17161,
-      "sha256": "c6e0632f66b397ec25e4450dd9678fbb33a46faeeb3bf0b065bd891a5d9cf36c"
+      "size": 20107,
+      "sha256": "a34b71a96892a62460905cba5c08ca326faf0184ad1fda3ca5cd5ca25c4a4f19"
     },
     {
       "path": "apps/web/src/locales/fr.json",
-      "size": 17678,
-      "sha256": "8ee81f9d7eb412779b9028f8959b7eac1dcd14854e069632f22b60b9d78116f7"
+      "size": 20712,
+      "sha256": "73b264f0ac620493785123e3227f76b85c2ea039c9b5b6a2fdf7323c6684362f"
     },
     {
       "path": "apps/web/src/locales/ja.json",
-      "size": 18752,
-      "sha256": "cb4cc807c694f2325540d7687f5ac61caeb632698b63fb39c7e6a3561c775ec6"
+      "size": 22175,
+      "sha256": "2c2c191d0744ea5f773a79bb04d86d14836147e03f70d8f7d6891531ebe8b0e4"
     },
     {
       "path": "apps/web/src/locales/ko.json",
-      "size": 16848,
-      "sha256": "770b431366e5a809cafffc8dc3a983b772a4d9c6f772db96fc8e644e2d412eeb"
+      "size": 20127,
+      "sha256": "8647b1e5dfdfdc990c1cbd50f95b41b5d89d2b9c6c5213e9eaa0bc0b01bde659"
     },
     {
       "path": "apps/web/src/locales/ru.json",
-      "size": 22900,
-      "sha256": "99cfcad37a72587bdb3d4a0117eba9dd6726764457ec2e374c78e6e15154dc09"
+      "size": 26978,
+      "sha256": "ffcedc075adbcc03d7cc57df80a54187627bae82cf73e7a00a34992fbcf7c96a"
     },
     {
       "path": "apps/web/src/locales/zh-TW.json",
-      "size": 15079,
-      "sha256": "cb2dd203d8fe3cda5e746c7b4cd0cb10a8ae8c53d7f50ce8b08444f70562ed4f"
+      "size": 17728,
+      "sha256": "c5053a7b2fe83dbbd4f53d0c039bfc7bad591409a96d81a8bf0cf18a0a640b8c"
     },
     {
       "path": "apps/web/src/proxy.ts",
@@ -2250,8 +2300,8 @@
     },
     {
       "path": "crates/api/build.rs",
-      "size": 1097,
-      "sha256": "54d0bbe729900e971fbcb2e57cb38f84867e318dd9298543b471ff77a9f8eb5a"
+      "size": 1148,
+      "sha256": "29469aebf255cd1e7490f29c60dc59659ad357f28e26dc4664c4cf63d74e4871"
     },
     {
       "path": "crates/api/src/lib.rs",
@@ -2260,8 +2310,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1066,
-      "sha256": "17068b9ba1d8bd32bfd41055bb940dbfcaf0c505f72f84eeca274e63a70b4ce5"
+      "size": 1079,
+      "sha256": "d82714c75395e9f9b252097bbdcdd79dad67981d5a7395563851c3c4d865f2e9"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2434,6 +2484,11 @@
       "sha256": "39d415e8ea1b62f520479c62f59ee09e192658ecbedbb16a078ba5cf4d7724ce"
     },
     {
+      "path": "crates/assistant/migrations/0035_agent_voice.sql",
+      "size": 575,
+      "sha256": "165f2bbdbbea6c2092e45342fbe5afbee8541846b0516b627246c2ed1ddda737"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
       "size": 10262,
       "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
@@ -2460,8 +2515,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 16206,
-      "sha256": "123d0fdfbdbe48662b13fc315513d16c3c86f7a4a330ed483425f9544bd02097"
+      "size": 16215,
+      "sha256": "8ed311f8bb045a898c6389634ae5dad7a39affa709e55b04253f82b6b0680db0"
     },
     {
       "path": "crates/assistant/src/database.rs",
@@ -2565,13 +2620,13 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 10909,
-      "sha256": "52b83bd7d409d7f1538c3a73715710c2a1a57805067524157e4ae3d6970e456e"
+      "size": 11063,
+      "sha256": "587e9d42ed2e7aee79db00d10889a19a0a0220cb7760a369cbb0543d648e22b5"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
-      "size": 42414,
-      "sha256": "18ee402202f5eedfdfd6439b050c1f63282537268eb5c05165c1c8b268c1c245"
+      "size": 42423,
+      "sha256": "535cd4afabd529574570ea8aff02c7181d3b623e944f7c14275b1cb5cc7d2e9f"
     },
     {
       "path": "crates/assistant/src/model_context.rs",
@@ -2630,8 +2685,8 @@
     },
     {
       "path": "crates/assistant/src/settings.rs",
-      "size": 41465,
-      "sha256": "5c6263f60ca89e6848923c1343d3f9f4a06f3b30ad498ef4759829ea134e1eb6"
+      "size": 41539,
+      "sha256": "4ff8e40d45ee1ba968f5d248007d3a4805d9c672cb8639d0f22a1074e40e4d47"
     },
     {
       "path": "crates/assistant/src/setup.rs",
@@ -2649,9 +2704,24 @@
       "sha256": "12a05d214a017e6384477a33769f11c19c0222a1252d8601102a11f1831333a7"
     },
     {
+      "path": "crates/assistant/src/speech/provider.rs",
+      "size": 10650,
+      "sha256": "73c7509f675e19fc68c6d99886417d6ec83bd04a8722aaf78fc5ea1bc35b608c"
+    },
+    {
+      "path": "crates/assistant/src/speech/tests.rs",
+      "size": 8750,
+      "sha256": "c96ea184d895205c7aff9fdfda9654992b247b15f68092d934ef76ceb07d7b98"
+    },
+    {
+      "path": "crates/assistant/src/speech.rs",
+      "size": 8109,
+      "sha256": "f9a29c139ef2554df46119f8c793468045f24bbda0bb9ebf19f256d296a5ab58"
+    },
+    {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 43940,
-      "sha256": "0ffcc8f617cafa05915e1d297656a01742b23b70acc9972eab31d1b02d29c79a"
+      "size": 45881,
+      "sha256": "3585f052b2d0cf0ff44a4180003ebe2edcb8dd07c2562a6c50da60d0c51aba7d"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -2660,8 +2730,8 @@
     },
     {
       "path": "crates/assistant/src/voice_input.rs",
-      "size": 6708,
-      "sha256": "3322a42d7963540811062a49dbe90b2d30abcefe1da3310c5e14cd2ee59ef0c2"
+      "size": 7226,
+      "sha256": "6e3d56585f3ba53026365ddc8456a69ea3076f89472c3c7737e5e33e24400d44"
     },
     {
       "path": "crates/assistant/src/workbench.rs",
@@ -2685,8 +2755,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 208573,
-      "sha256": "4f20ecb2466fa7f4eb1156313f65d8a9a55ededfea92a4b628ec9ce451cc3740"
+      "size": 208582,
+      "sha256": "1e24ba43119538d94eefc4319b02e0d30bc1b631e5c2476da1e24b855a5e9c7e"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -3060,8 +3130,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 18255,
-      "sha256": "c1f63a2d746fac22223200c35bad346be609f40cabbf264415ea27c71bfcb3a8"
+      "size": 9265,
+      "sha256": "9640d9f5540bff19afd3d8fd5a84ec4574a6d62b4b529483c019c4631081305d"
     },
     {
       "path": "docs/public/database-roles.md",
@@ -3070,8 +3140,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 432202,
-      "sha256": "6ae77d768bb9fdf78a783b4979b6ad11da26c1d3a87853c0e88bf640dbf1ef6b"
+      "size": 433054,
+      "sha256": "50b4059a83d3ec0afae95468fce6164b08d205c5a8c1b2e57574a0cdfa3d78c3"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -4040,8 +4110,8 @@
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 3575390,
-      "sha256": "4dc2e85e3a268f3d8fd724c8dc20379965133f5ac7363d49687b5d8a569076e9"
+      "size": 3588865,
+      "sha256": "4a94908e091595c8643b1e8809ebf9d050ed302c76f308fc78d758f8dbaf90d3"
     },
     {
       "path": "docs/public/network.md",
@@ -4284,6 +4354,11 @@
       "sha256": "829aa21549e7e0d81fdb0ab923e22cab492e177ab87446b70a385673b272cb2d"
     },
     {
+      "path": "packages/protocol/proto/ai_phone/v1/voice.proto",
+      "size": 1988,
+      "sha256": "016d63b4e81d4ad98d42e1a8893ee13d4e8421202af684fb72f2eccd1e8e634a"
+    },
+    {
       "path": "packages/protocol/proto/ai_phone/v1/workbench.proto",
       "size": 2377,
       "sha256": "9711251bcc1033a9316d228cb2b39218c7fd3da5c24dad8e88d6a9a5ddc3aa1a"
@@ -4347,6 +4422,11 @@
       "path": "packages/protocol/src/gen/ai_phone/v1/system_pb.ts",
       "size": 1118,
       "sha256": "e6c9aa3d79427c149977c8b04bb02979cfe55e1e5ff404a3f7706526d7d76b1d"
+    },
+    {
+      "path": "packages/protocol/src/gen/ai_phone/v1/voice_pb.ts",
+      "size": 11544,
+      "sha256": "72724ee8fcbb2c49b86f3801d2075bdf48b3becc78b0ccc9cdaf135c16456b36"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/workbench_pb.ts",
@@ -4764,14 +4844,29 @@
       "sha256": "8d56137d8e6b303b2245993d3164b4ec30251993162d3546da814b464251dd35"
     },
     {
+      "path": "scripts/copilot-audio.test.ts",
+      "size": 2159,
+      "sha256": "fd6cdecd20606c446871406b3624963b60e5cbdcabf0f50d771c49528f4abea7"
+    },
+    {
       "path": "scripts/copilot-input.test.ts",
-      "size": 15330,
-      "sha256": "60349aaea6c05935cf252982dc6209eea9be6764ba3097ab9fcd325aa250140d"
+      "size": 16339,
+      "sha256": "f894ce320498eb2a30426553fea3845a70a5c425e0cd426e87fcaa982fffd15f"
+    },
+    {
+      "path": "scripts/copilot-output.test.ts",
+      "size": 2603,
+      "sha256": "8370971133d4f4bcaa8f5b4db6b1892ffca0a3228d056f2b20127305271d32b5"
+    },
+    {
+      "path": "scripts/copilot-session.test.ts",
+      "size": 583,
+      "sha256": "119ac54ff110c176dab15a2fc42b0be5abbee167a23e81a5dd593b2f5a81f62d"
     },
     {
       "path": "scripts/copilot-wire.test.ts",
-      "size": 3975,
-      "sha256": "a8d2c86e401c2775b0c223a1450fae18e1e55f8081c5644ddc98b382ac5c78ab"
+      "size": 3974,
+      "sha256": "7ee0f5b3e61edee95e258431dbb46aace1f1ea05607bffbd1d17497394f3d8eb"
     },
     {
       "path": "scripts/database.py",
@@ -4900,8 +4995,8 @@
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
-      "size": 18639,
-      "sha256": "a1ef123392c1c6addd3c45f99892328e8c6f880b526c54dfffa691230467708b"
+      "size": 18894,
+      "sha256": "f80f44487dc035fdd1c4297d7a3f89803857f743abe26c8b6c94c239762417cf"
     },
     {
       "path": "scripts/fixtures/chat-history-watch.ts",
@@ -4912,6 +5007,11 @@
       "path": "scripts/fixtures/chat-outbox-hook.ts",
       "size": 24569,
       "sha256": "4e3502f68f38f8972b81b9a590a9c6754bd51ff4849d559f62a128391b661d8f"
+    },
+    {
+      "path": "scripts/fixtures/copilot-session.ts",
+      "size": 8486,
+      "sha256": "34fa8a64b7fea1a2a3abddd363bb7415d9b970f48c93fc4eca92407993f75142"
     },
     {
       "path": "scripts/fixtures/desktop-input.ts",

@@ -11,9 +11,16 @@ function fixture(accept?: (commit: VoiceCommit) => void) {
   }, () => `receipt-${++id}`);
   return {voice, sent};
 }
-const patch = (utteranceId: string, revision: number, literal: string, final = false) => ({utteranceId, revision, literal, final});
+const patch = (utteranceId: string, revision: number, literal: string, final = true) => ({utteranceId, revision, literal, final});
 
 describe('Copilot continuous input contract', () => {
+  test('an unfinished recognition cannot execute a partial command after silence', () => {
+    const {voice,sent}=fixture();voice.speech('a',0);
+    voice.transcript(patch('a',1,'发送这份表格',false));voice.advance(1500);
+    expect(sent).toEqual([]);
+    voice.transcript(patch('a',2,'不要发送这份表格',true));
+    expect(sent.map(v=>v.text)).toEqual(['不要发送这份表格']);
+  });
   test('uses audio silence, not a delayed transcript, for the 1500ms endpoint', () => {
     const {voice, sent} = fixture();
     voice.speech('first', 0);
@@ -197,26 +204,28 @@ describe('Copilot continuous input contract', () => {
     expect(sent[0].conversationId).toBe('original');
   });
 
-  test('unrecognized final segments and nonfinal accepted segments cannot be evicted as settled', () => {
-    const empty = fixture().voice;
-    for (let i = 0; i < 32; i++) {
-      empty.speech(`u${i}`, i * 1600);
-      empty.transcript(patch(`u${i}`, 1, '', true));
-      empty.advance(i * 1600 + 1500);
+  test('unfinished recognition preserves its position and bounds pending capture until the final arrives', () => {
+    const {voice,sent}=fixture();
+    voice.speech('unfinished',0);
+    voice.transcript(patch('unfinished',1,'仍待最终结果',false));voice.advance(1500);
+    for(let i=1;i<32;i++){
+      voice.speech(`done${i}`,i*1600);
+      voice.transcript(patch(`done${i}`,1,`补充${i}`,true));voice.advance(i*1600+1500);
     }
-    expect(() => empty.speech('overflow', 52000)).toThrow('capacity');
-    expect(empty.drafts[0].utteranceId).toBe('u0');
-    const {voice, sent} = fixture();
-    voice.speech('unfinished', 0);
-    voice.transcript(patch('unfinished', 1, '仍待最终结果'));
-    voice.advance(1500);
-    for (let i = 1; i < 34; i++) {
-      voice.speech(`done${i}`, i * 1600);
-      voice.transcript(patch(`done${i}`, 1, '已完成', true));
-      voice.advance(i * 1600 + 1500);
-    }
-    expect(voice.transcript(patch('unfinished', 2, '最终修正', true))).toBe(true);
-    expect(sent.at(-1)?.correctsRequestId).toBe(sent[0].requestId);
+    expect(sent).toEqual([]);
+    expect(()=>voice.speech('overflow',52000)).toThrow('capacity');
+    expect(voice.transcript(patch('unfinished',2,'最终修正',true))).toBe(true);
+    expect(sent).toHaveLength(32);expect(sent[0].text).toBe('最终修正');
+    expect(sent.at(-1)?.text).toBe('补充31');
+    expect(voice.speech('next',53000)).toBe(true);
+  });
+
+  test('explicit corrections in a later utterance remain linked to the prior accepted instruction',()=>{
+    const {voice,sent}=fixture();voice.speech('a',0);voice.transcript(patch('a',1,'打开上海天气'));voice.advance(1500);
+    voice.speech('b',1600);voice.transcript({...patch('b',1,'不是，说错了，北京'),correction:{baseRevision:0,text:'打开北京天气'},correctsRequestId:sent[0].requestId});voice.advance(3100);
+    expect(sent[1].text).toBe('打开北京天气');expect(sent[1].literal).toBe('不是，说错了，北京');expect(sent[1].correctsRequestId).toBe(sent[0].requestId);
+    voice.speech('c',3200);
+    expect(()=>voice.transcript({...patch('c',1,'坏引用'),correctsRequestId:'foreign'})).toThrow('receipt');
   });
 
   test('a failed handoff blocks later ready segments until explicit retry', () => {

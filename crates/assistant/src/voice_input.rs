@@ -52,13 +52,20 @@ impl VoiceInput {
         let latest: Option<(Uuid, i64)> = sqlx::query_as("SELECT request_id,revision FROM chat_voice_inputs WHERE conversation_id=$1 AND session_id=$2 AND utterance_id=$3 ORDER BY revision DESC LIMIT 1")
             .bind(conversation).bind(self.session).bind(&self.utterance).fetch_optional(&mut **tx).await?;
         let valid = match latest {
-            None => self.corrects.is_none(),
+            None => true,
             Some((previous, revision)) => {
                 self.corrects == Some(previous) && self.revision > revision
             }
         };
         if !valid {
             return Err(sqlx::Error::Protocol("voice_conflict".into()));
+        }
+        if let Some(previous) = self.corrects {
+            let current:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM chat_voice_inputs v WHERE v.request_id=$1 AND v.conversation_id=$2 AND v.session_id=$3 AND NOT EXISTS(SELECT 1 FROM chat_voice_inputs next WHERE next.corrects_request_id=v.request_id))")
+                .bind(previous).bind(conversation).bind(self.session).fetch_one(&mut **tx).await?;
+            if !current {
+                return Err(sqlx::Error::Protocol("voice_conflict".into()));
+            }
         }
         sqlx::query("INSERT INTO chat_voice_inputs(request_id,message_id,conversation_id,session_id,utterance_id,revision,literal,corrects_request_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)")
             .bind(request).bind(message).bind(conversation).bind(self.session).bind(&self.utterance).bind(self.revision).bind(&self.literal).bind(self.corrects).execute(&mut **tx).await?;

@@ -158,6 +158,46 @@ fn spoken(text: &str, session: &str, utterance: &str, revision: u32) -> wire::Ch
 }
 
 #[tokio::test]
+#[ignore = "real disposable PostgreSQL; no production model or device calls"]
+async fn later_spoken_corrections_link_new_utterances_without_forking_or_crossing_sessions() {
+    database_case(|app| async move {
+        let session = Uuid::new_v4().to_string();
+        let first = spoken("打开上海天气", &session, "first", 1);
+        let state = accept(&app, &first).await;
+        let mut correction = spoken("打开北京天气", &session, "second", 1);
+        correction.voice.as_mut().unwrap().literal = "不是，说错了，北京".into();
+        correction.voice.as_mut().unwrap().corrects_request_id = first.request_id.clone();
+        let corrected = accept(&app, &correction).await;
+        assert_eq!(corrected.run_id, state.run_id);
+        accept(&app, &correction).await;
+        let mut fork = spoken("坏分支", &session, "third", 1);
+        fork.voice.as_mut().unwrap().corrects_request_id = first.request_id.clone();
+        assert_eq!(submit(&app, &fork).await.0, StatusCode::CONFLICT);
+        fork.voice.as_mut().unwrap().corrects_request_id = correction.request_id.clone();
+        fork.voice.as_mut().unwrap().session_id = Uuid::new_v4().to_string();
+        assert_eq!(submit(&app, &fork).await.0, StatusCode::CONFLICT);
+        fork.voice.as_mut().unwrap().session_id = session;
+        fork.text = "打开天津天气".into();
+        accept(&app, &fork).await;
+        let history = crate::http::state(&app, Uuid::parse_str(&state.conversation_id).unwrap())
+            .await
+            .unwrap();
+        let users = history
+            .messages
+            .iter()
+            .filter(|m| m.role == "user")
+            .collect::<Vec<_>>();
+        assert_eq!(users.len(), 3);
+        assert_eq!(users[1].voice, correction.voice);
+        assert_eq!(
+            users[2].voice.as_ref().unwrap().corrects_request_id,
+            correction.request_id
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
 #[ignore = "real disposable PostgreSQL; no production data, model or device calls"]
 async fn voice_corrections_are_durable_ordered_and_scoped() {
     database_case(|app| async move {

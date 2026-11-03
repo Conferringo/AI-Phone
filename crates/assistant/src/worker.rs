@@ -2737,7 +2737,7 @@ async fn respond(
     if require_observation {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }
-    let client = app.settings.model_client(&config)?;
+    let client = app.settings.http_client(&config.proxy_url)?;
     crate::model_adapter::request_tracked(&config, &client, body, cancel, timing).await
 }
 
