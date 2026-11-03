@@ -30,7 +30,7 @@ if child == 0:
         time.sleep(.05)
         (root/'cleanup.done').write_text('released')
         os._exit(0)
-    signal.signal(signal.SIGTERM, graceful_stop if mode == 'graceful' else signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, graceful_stop if mode.startswith('graceful') else signal.SIG_IGN)
     status=Path('/proc/self/stat').read_text().rsplit(')', 1)[1].split()
     record={'pid':os.getpid(),'start_ticks':status[19],'group':os.getpgrp(),'stdout_inode':os.fstat(1).st_ino}
     pending=root/'child.next';pending.write_text(json.dumps(record));pending.replace(root/'child.json')
@@ -41,6 +41,7 @@ while not (root/'heartbeat').exists(): time.sleep(.002)
 if mode == 'graceful':
     os.kill(child,signal.SIGTERM)
     os._exit(0)
+if mode == 'graceful_nonzero': os._exit(7)
 if mode == 'zero': os._exit(0)
 if mode == 'nonzero': os._exit(7)
 while True: time.sleep(.01)
@@ -192,6 +193,13 @@ class OwnedSessionQualification(unittest.TestCase):
 
     def test_display_cleanup_finishes_before_the_completed_group_returns(self):
         self.execute('graceful',graceful=True)
+        self.assertFalse(self.child_running())
+        self.assertEqual((self.root/'cleanup.done').read_text(),'released')
+        self.assert_finished_and_sentinel_alive()
+
+    def test_failed_wrapper_does_not_own_the_remaining_child_termination(self):
+        with self.assertRaisesRegex(bootstrap.BuildFailure,'command_failed'):
+            self.execute('graceful_nonzero',graceful=True)
         self.assertFalse(self.child_running())
         self.assertEqual((self.root/'cleanup.done').read_text(),'released')
         self.assert_finished_and_sentinel_alive()

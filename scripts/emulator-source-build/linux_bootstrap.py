@@ -115,9 +115,9 @@ class SourceCommand:
 
     def stop(self, process, graceful=False):
         running=observed_exit(process) is None
-        if running:
-            signal_session(process, signal.SIGTERM)
+        # A failed wrapper may exit before terminating its resource-owning child.
         if running or graceful:
+            signal_session(process, signal.SIGTERM)
             deadline = time.monotonic() + 2
             active=lambda:group_active(process) if graceful else observed_exit(process) is None
             while active() and time.monotonic() < deadline:

@@ -307,6 +307,17 @@ class CommandOwnerTests(OwnedFixture):
         group=patch.object(bootstrap,'group_active',return_value=False)
         group.start();self.addCleanup(group.stop)
 
+    def test_failed_wrapper_still_terminates_the_owned_display_group(self):
+        process=SimpleNamespace(pid=43210,returncode=None,wait=Mock(return_value=7))
+        exited=SimpleNamespace(si_pid=43210,si_code=bootstrap.os.CLD_EXITED,si_status=7)
+        with patch.object(bootstrap.os,'waitid',return_value=exited),patch.object(bootstrap.os,'getpgid',return_value=43210),\
+             patch.object(bootstrap.os,'getsid',return_value=43210),patch.object(bootstrap.os,'killpg') as kill,\
+             patch.object(bootstrap.subprocess,'Popen',return_value=process):
+            with self.assertRaisesRegex(bootstrap.BuildFailure,'command_failed'):
+                self.command.run(['never-executed'],self.root,graceful=True)
+        self.assertEqual([call.args for call in kill.call_args_list],[(43210,signal.SIGTERM),(43210,signal.SIGKILL)])
+        process.wait.assert_called_once_with(timeout=10)
+
     def test_disk_floor_stops_only_the_new_owned_session(self):
         process = SimpleNamespace(pid=43210, returncode=None, poll=Mock(return_value=None), wait=Mock(return_value=-9))
         exited = SimpleNamespace(si_pid=43210, si_code=bootstrap.os.CLD_EXITED, si_status=0)

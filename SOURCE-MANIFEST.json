@@ -4729,8 +4729,8 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 5440,
-      "sha256": "48dbe3dce4deee15d8548ffc419202465e1de15f2c460efb067f89fdfa354c9c"
+      "size": 5616,
+      "sha256": "09641bf08d8ed15df5343c37f108c3cf19d21b89c4ae59e8a926da1f61071fcb"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",
@@ -4759,18 +4759,18 @@
     },
     {
       "path": "scripts/emulator-source-build/linux_bootstrap.py",
-      "size": 25328,
-      "sha256": "fabeb6a1705ccfcb2214d225b500a10fc2fc0569d0f65c40b49d42b45f3880c2"
+      "size": 25390,
+      "sha256": "e63688efa85bd2d7c77c407443cdb6f4a14278db25f824b69e2b5b1986fcfb6f"
     },
     {
       "path": "scripts/emulator-source-build/qualify_display_session.py",
-      "size": 4247,
-      "sha256": "44d9c58f92cb7e7f651bf5ee67f4855fe1ae4559a36e94cc43e78a4caf45f9b6"
+      "size": 4808,
+      "sha256": "3472e0e0323d4a8c45f26282c289834fd18a26a0fc251fbf6ba3d1a87140f53a"
     },
     {
       "path": "scripts/emulator-source-build/qualify_owned_session.py",
-      "size": 11044,
-      "sha256": "962ec27faea38f97b2c2b0f2fa1db13d77a8934babf08588c3b0ded129c3562b"
+      "size": 11487,
+      "sha256": "a68d0da9d8fa29fbf6cd33e51cdf4868cd119ba9936fcf14cb91de9568ce57e6"
     },
     {
       "path": "scripts/emulator-source-build/source-lock.xml",
@@ -4784,8 +4784,8 @@
     },
     {
       "path": "scripts/emulator-source-build/test_linux_bootstrap.py",
-      "size": 41631,
-      "sha256": "947d319615c4fa373b29867386947dc9a1bfdbd4803b05f3d73eba98177e4156"
+      "size": 42535,
+      "sha256": "4a062b4d55e19bf1c95c32f0065f70a8cbb171202bdc4519ced8308f399303cf"
     },
     {
       "path": "scripts/entry-language.test.ts",
