@@ -1,6 +1,8 @@
 """Native image handoff retains source and byte identity without user state."""
 import json
+import io
 import os
+from contextlib import chdir, redirect_stdout
 from pathlib import Path
 import subprocess
 import sys
@@ -94,6 +96,17 @@ class FactoryImageCandidateTests(unittest.TestCase):
         self.assertEqual(self.payload.read_bytes(), prepared.payload.read_bytes())
         self.assertFalse(plan['binary_publication'])
         self.assertFalse(json.loads(self.report.read_text())['user_state_bundled'])
+
+    def test_plan_cli_accepts_the_root_relative_path_emitted_by_the_build_command(self):
+        relative=self.report.relative_to(self.root)
+        output=io.StringIO()
+        with patch.object(candidate,'ROOT',self.root), \
+             patch.object(candidate.subprocess,'check_output',return_value=SOURCE+'\n'), \
+             redirect_stdout(output),chdir(self.root):
+            candidate.main(['plan',str(relative)])
+        expected=candidate.upload_plan(self.root,self.report,SOURCE)
+        self.assertEqual(json.loads(output.getvalue()),expected)
+        self.assertEqual(len(expected['files']),2)
 
     def test_changed_source_publication_or_component_kind_cannot_be_readmitted(self):
         original = json.loads(self.report.read_text())

@@ -93,7 +93,10 @@ def stage(root, payload, source):
 
 
 def upload_plan(root, report, source):
+    root = Path(root).resolve()
     report = Path(report)
+    if not report.is_absolute():
+        report = root/report
     admit(root, report.parent, digest(report), source)
     files = [delivery.file_record(root, path) for path in [report, report.parent/BODY]]
     return {'format': 1, 'kind': KIND, 'source_commit': source,

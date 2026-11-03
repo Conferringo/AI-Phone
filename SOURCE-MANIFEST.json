@@ -4870,8 +4870,8 @@
     },
     {
       "path": "scripts/factory_image_candidate.py",
-      "size": 9085,
-      "sha256": "020de8fc446419e28d7e872bd141511596ee6f0aaad024da9b2069d4a1116f30"
+      "size": 9179,
+      "sha256": "909d10c2c849e0e2e5862a5259344bd684f1277c56d587d72ba240417dff4ce4"
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
@@ -5500,8 +5500,8 @@
     },
     {
       "path": "scripts/test_factory_image_candidate.py",
-      "size": 12137,
-      "sha256": "8cbce278240af2d47e55970aa02efda8faaa0af4e981caef43cab22b620e714c"
+      "size": 12803,
+      "sha256": "bee97c5160d179bca8863399c79254be77a17859a316b1025385ab263960fb32"
     },
     {
       "path": "scripts/test_fresh_images_producer.py",
