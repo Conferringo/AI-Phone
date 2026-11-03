@@ -40,6 +40,7 @@ class NativeServiceTests(unittest.TestCase):
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
+    @unittest.skipUnless(os.name == 'posix', 'Native Linux/macOS component permissions require POSIX')
     def test_supervisor_selection_requires_a_qualified_manifest_before_executing(self):
         from prebuilt_services import supervisor_command, SERVICE_SUPERVISION_CONTRACT
         with tempfile.TemporaryDirectory() as folder:
@@ -55,6 +56,16 @@ class NativeServiceTests(unittest.TestCase):
             (root/binary_path('assistant')).write_bytes(b'changed program')
             with self.assertRaisesRegex(ValueError,'integrity'):
                 supervisor_command(root)
+
+    def test_windows_host_refuses_native_supervision_before_reading_a_manifest(self):
+        from prebuilt_services import supervisor_command
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve();(root/'runtime/services').mkdir(parents=True)
+            with patch('prebuilt_services.platform.system',return_value='Windows'), \
+                 patch('subprocess.run') as execute:
+                with self.assertRaisesRegex(ValueError,'host is not implemented'):
+                    supervisor_command(root)
+                execute.assert_not_called()
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
         for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:

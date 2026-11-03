@@ -5650,8 +5650,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 36664,
-      "sha256": "e4c1964ce231dbc84abba9973e3319bc010f0d81f7fda668bb83b9365d1bc7a1"
+      "size": 37362,
+      "sha256": "d223e92ece1cfc58a3bba4b6e099507e40580b6c48c8070072dee69cbd81397e"
     },
     {
       "path": "scripts/test_notification_probe.py",
