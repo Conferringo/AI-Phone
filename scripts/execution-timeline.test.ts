@@ -1,4 +1,4 @@
-import{test,expect}from'bun:test';import{createTraceLoader,mergeTimeline,timelineEntries,splitToolRecord,traceWaitingSeconds,type TimelineEvent}from'../apps/web/src/components/execution-timeline';
+import{test,expect}from'bun:test';import{createTraceLoader,mergeTimeline,timelineEntries,splitToolRecord,traceWaitingSeconds,tracePerformance,waitingForModel,type TimelineEvent}from'../apps/web/src/components/execution-timeline';
 const tick=()=>new Promise(resolve=>setTimeout(resolve,15));
 test('sixty collapsed historical runs make zero initial requests',async()=>{let calls=0;const loaders=Array.from({length:60},()=>createTraceLoader({enabled:false,poll:false,request:async()=>{calls++;return[];},onData(){},onError(){}}));await tick();expect(calls).toBe(0);loaders.forEach(loader=>loader.dispose());});
 test('expanded finished history fetches once without a polling interval',async()=>{let calls=0;const loader=createTraceLoader({enabled:true,poll:false,delayMs:1,request:async()=>++calls,onData(){},onError(){}});await tick();expect(calls).toBe(1);loader.dispose();});
@@ -13,3 +13,17 @@ test('countdown only represents a future scheduled wake for a live run',()=>{exp
 test('unchanged tool records retain identity and avoid reformatting every clock tick',()=>{const old=event('tool',10);const incoming={...old};expect(mergeTimeline([old],[incoming])[0]).toBe(old);});
 
 test('public summaries, operations and audits remain visible while private event kinds stay excluded',()=>{const entries=timelineEntries([event('summary',1,'summary'),event('tool',2),event('audit',3,'audit','completed'),event('private',4,'reasoning')]);expect(entries.map(value=>value.id)).toEqual(['summary','tool','audit']);});
+
+test('model timing is disjoint and does not add rows or fabricate historical measurements',()=>{
+ expect(tracePerformance([event('old',1)])).toBeNull();
+ const model={...event('model',1,'model','completed'),modelTiming:{preparationMs:10n,headersMs:20n,firstByteMs:35n,modelMs:100n,elapsedMs:110n,requestBytes:1024n}};
+ const tool={...event('click',120),finishedAtMs:150n};
+ expect(tracePerformance([model,tool])).toEqual({preparation:10,headers:20,firstByte:15,stream:65,tools:30,audits:0,requests:1});
+ expect(tracePerformance([model,tool,{...event('audit',160,'audit','completed'),finishedAtMs:190n},{...event('finish',155),title:'任务验收',finishedAtMs:200n}])?.audits).toBe(30);
+ expect(tracePerformance([model,tool,{...event('finish',155),title:'任务验收',finishedAtMs:200n}])?.tools).toBe(30);
+ expect(timelineEntries([model,tool]).map(value=>value.id)).toEqual(['click']);
+ expect(waitingForModel([model])).toBe(false);
+ expect(waitingForModel([{...model,status:'running'}])).toBe(true);
+ const corrected={...model,modelTiming:{...model.modelTiming,headersMs:21n}};
+ expect(mergeTimeline([model],[corrected])[0]).toBe(corrected);
+});

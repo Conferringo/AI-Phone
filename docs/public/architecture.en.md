@@ -32,6 +32,14 @@ Responses, Chat Completions and native Anthropic Messages use the same engine. T
 
 A Responses completion event with an explicit non-completed response status is rejected before its output can become tool proposals. Complete output is preserved verbatim for the existing evidence and provider-replay paths.
 
+## Visible execution and latency
+
+Ordinary device tasks use phone-use or computer-use. Online research runs in the device browser; application searches stay in that application. Command/fetch tools require an explicit programming or maintenance purpose; a request does not gain them because device or search keywords were absent. Research about programming does not authorize command-based fetching. The catalog contains registered functions only, without provider-native search tools, and dispatch rechecks the persisted request so queued legacy calls cannot bypass the policy. Lookup completion requires a successful visible interaction and a subsequent real device observation; browser research also requires browser-frame metadata. These checks establish execution provenance, not the factual accuracy of every claim.
+
+The engine obtains the first authorized observation before asking the model to plan, and reuses post-action frames. Model attempts record numeric preparation, response-header, first-stream-byte and total transport timings, including failed and interrupted calls. These values travel through protobuf into the existing execution trace alongside tool and completion-check durations. First-byte timing is not first-token timing or a measure of private reasoning. Legacy calls without measurements remain unmeasured. Message-scoped trace reads avoid retransmitting the full continuous-run history; stored conversation and operation records remain intact.
+
+Repeated model turns reuse HTTP connection pools by proxy route. Each request supplies its own credentials; routes, cancellation and per-request timeouts retain their boundaries. At most eight route pools are retained per service instance. This removes repeated connection setup without lowering model reasoning settings or skipping execution checks.
+
 ## Skill storage
 
 PostgreSQL owns committed Skill text. Each installation serializes its file projection with a per-Skill operating-system lock, then atomically publishes `SKILL.md` and synchronizes it to disk. The blocking writer retains the lock until file operations finish, including after cancellation of its async caller. File I/O holds no database transaction; reads and startup reconcile the projection from durable text while preserving auxiliary resources.

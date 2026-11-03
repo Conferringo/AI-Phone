@@ -941,7 +941,18 @@ pub async fn route(
             let Ok(id) = Uuid::parse_str(&input.run_id) else {
                 return issue("任务ID无效".into());
             };
-            let rows=match sqlx::query("SELECT e.id,e.message_id,e.kind,e.title,e.content,e.status,((extract(epoch FROM e.created_at)*1000)::bigint) at_ms,COALESCE((extract(epoch FROM e.finished_at)*1000)::bigint,0) end_ms FROM harness_events e JOIN runs r ON r.id=e.run_id JOIN conversations c ON c.id=r.conversation_id WHERE e.run_id=$1 AND c.owner_id='local-user' ORDER BY e.created_at,e.id").bind(id).fetch_all(&app.db).await{Ok(v)=>v,Err(e)=>return issue(e.to_string())};
+            let message = if input.message_id.is_empty() {
+                None
+            } else {
+                match Uuid::parse_str(&input.message_id) {
+                    Ok(value) => Some(value),
+                    Err(_) => return issue("消息ID无效".into()),
+                }
+            };
+            let Ok(after) = i64::try_from(input.after_ms) else {
+                return issue("时间范围无效".into());
+            };
+            let rows=match sqlx::query("SELECT e.id,e.message_id,e.kind,e.title,e.content,e.status,CASE WHEN e.kind='model' THEN e.result ELSE NULL END model_timing,((extract(epoch FROM e.created_at)*1000)::bigint) at_ms,COALESCE((extract(epoch FROM e.finished_at)*1000)::bigint,0) end_ms FROM harness_events e JOIN runs r ON r.id=e.run_id JOIN conversations c ON c.id=r.conversation_id WHERE e.run_id=$1 AND c.owner_id='local-user' AND (e.kind='task' OR (($2::uuid IS NULL OR e.message_id=$2) AND (extract(epoch FROM GREATEST(e.created_at,COALESCE(e.finished_at,e.created_at)))*1000)>$3)) ORDER BY e.created_at,e.id").bind(id).bind(message).bind(after).fetch_all(&app.db).await{Ok(v)=>v,Err(e)=>return issue(e.to_string())};
             pb(
                 StatusCode::OK,
                 wire::HarnessEventList {
@@ -961,6 +972,10 @@ pub async fn route(
                             status: r.get("status"),
                             created_at_ms: r.get::<i64, _>("at_ms") as u64,
                             finished_at_ms: r.get::<i64, _>("end_ms") as u64,
+                            model_timing: r
+                                .get::<Option<Value>, _>("model_timing")
+                                .as_ref()
+                                .and_then(crate::model_timing::wire),
                         })
                         .collect(),
                 },

@@ -34,6 +34,9 @@ def assemble(root):
     build_js(root)
     from prepare_client_host import prepare
     prepare(root,with_web_runtime=True,with_service_runtime=True,with_js_services=True,linux_ocr=ocr)
+    from factory_cache import retire_native_cache
+    retired=retire_native_cache(root,root/'apps/client/src-tauri/gen/host/source.payload')
+    (work/'cache-retirement.json').write_text(json.dumps(retired,sort_keys=True)+'\n')
     images,_=prepare_images(root,work,digest(root/'SOURCE-MANIFEST.json'))
     packages=work/'packages';packages.mkdir()
     for row in factory_plan(root)['engine_packages']:fetch(packages,row['file'],row)
@@ -53,6 +56,8 @@ def qualify(root):
         report['passed']=True;report['stage']='complete'
         return report
     finally:
+        retired=root/'.tools/wsl-backend-qualification/cache-retirement.json'
+        if retired.is_file():report['cache_retirement']=json.loads(retired.read_text())
         runtime=root/'.tools/wsl-backend-qualification/assembled/runtime-receipt.json'
         if runtime.is_file():report['runtime']=json.loads(runtime.read_text())
         (root/'dist/wsl-backend-qualification.json').write_text(json.dumps(report,indent=2)+'\n')

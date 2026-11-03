@@ -802,7 +802,15 @@ async fn successive_inputs_interrupt_a_slow_model_without_canceling_the_run() {
             let next = request(text);
             let (model, admitted_at) = tokio::time::timeout(Duration::from_secs(4), async {
                 tokio::join!(
-                    respond_to_current_input(&app, run.id, &run.context, &cancel, false, 0),
+                    respond_to_current_input(
+                        &app,
+                        run.id,
+                        run.message,
+                        &run.context,
+                        &cancel,
+                        false,
+                        0
+                    ),
                     async {
                         let body = received
                             .recv()
@@ -835,6 +843,11 @@ async fn successive_inputs_interrupt_a_slow_model_without_canceling_the_run() {
                 !cancel.is_cancelled(),
                 "interrupting model inference must not cancel the run or device actions"
             );
+            let traces: Vec<(String,Value)> = sqlx::query_as("SELECT status,result FROM harness_events WHERE run_id=$1 AND kind='model' ORDER BY created_at")
+                .bind(run.id).fetch_all(&app.db).await.unwrap();
+            assert!(!traces.is_empty());
+            assert!(traces.iter().all(|(status,_)|status=="canceled"),"steering must close model timing ownership");
+            assert!(traces.iter().all(|(_,timing)|timing["request_bytes"].as_u64().unwrap()>0));
             let queue: Value = sqlx::query_scalar("SELECT steering FROM runs WHERE id=$1")
                 .bind(run.id)
                 .fetch_one(&app.db)

@@ -116,6 +116,7 @@ struct State {
 pub struct SettingsStore {
     dir: PathBuf,
     state: SyncMutex<State>,
+    model_clients: SyncMutex<BTreeMap<String, reqwest::Client>>,
 }
 fn atomic_private(path: &Path, bytes: &[u8]) -> Result<(), String> {
     use std::os::unix::fs::OpenOptionsExt;
@@ -137,6 +138,21 @@ fn atomic_private(path: &Path, bytes: &[u8]) -> Result<(), String> {
     result.map_err(|_| "配置无法保存，请检查存储空间与权限".into())
 }
 impl SettingsStore {
+    pub(crate) fn model_client(&self, config: &ModelConfig) -> Result<reqwest::Client, String> {
+        let mut clients = self.model_clients.lock().map_err(|_| "模型连接池不可用")?;
+        if let Some(client) = clients.get(&config.proxy_url) {
+            return Ok(client.clone());
+        }
+        let client = config.client()?;
+        // Only routing is shared. Credentials remain on each request; idle pools
+        // are bounded when users change models/proxies over a long session.
+        if clients.len() >= 8 {
+            clients.pop_first();
+        }
+        clients.insert(config.proxy_url.clone(), client.clone());
+        Ok(client)
+    }
+
     pub fn open(root: &Path) -> Result<Self, String> {
         use std::os::unix::fs::PermissionsExt;
         let dir = root.join("data/model/revisions");
@@ -171,6 +187,7 @@ impl SettingsStore {
         }
         let store = Self {
             dir,
+            model_clients: SyncMutex::new(BTreeMap::new()),
             state: SyncMutex::new(State {
                 current,
                 models,
@@ -717,6 +734,45 @@ mod tests {
         let root = std::env::temp_dir().join(format!("aiphone-settings-{}", Uuid::new_v4()));
         let store = SettingsStore::open(&root).unwrap();
         (root, store)
+    }
+
+    #[tokio::test]
+    async fn model_pools_stay_bounded_and_invalid_routing_keeps_existing_pools() {
+        let (root, store) = store();
+        let mut config = ModelConfig {
+            api_key: String::new(),
+            base_url: "http://localhost/v1".into(),
+            model: "fixture".into(),
+            provider: "compatible".into(),
+            protocol: "responses".into(),
+            proxy_url: String::new(),
+            verified_at_ms: 0,
+        };
+        for port in 10000..10012 {
+            config.proxy_url = format!("http://127.0.0.1:{port}");
+            store.model_client(&config).unwrap();
+        }
+        let before: Vec<_> = store
+            .model_clients
+            .lock()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect();
+        assert_eq!(before.len(), 8);
+        assert!(before.contains(&config.proxy_url));
+        config.proxy_url = "http://[invalid".into();
+        assert!(store.model_client(&config).is_err());
+        let after: Vec<_> = store
+            .model_clients
+            .lock()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect();
+        assert_eq!(after, before);
+        drop(store);
+        fs::remove_dir_all(root).unwrap();
     }
     fn draft() -> wire::ModelDraft {
         wire::ModelDraft {

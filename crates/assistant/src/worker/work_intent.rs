@@ -64,7 +64,16 @@ const REQUIREMENTS: &[Requirement] = &[
             "去官网",
             "官网看看",
         ],
-        tools: &["workspace_fetch", "workspace_run"],
+        tools: &[
+            "computer_click",
+            "computer_type",
+            "computer_key",
+            "phone_tap_element",
+            "phone_input",
+            "phone_key",
+            "workspace_fetch",
+            "workspace_run",
+        ],
     },
     Requirement {
         targets: &["记住"],
@@ -73,7 +82,7 @@ const REQUIREMENTS: &[Requirement] = &[
     },
 ];
 
-fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
+pub(super) fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
     request
         .split(['。', '，', ',', '；', ';', '！', '!', '？', '?', '\n'])
         .flat_map(|clause| clause.split('但'))
@@ -81,6 +90,8 @@ fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
         .filter(|clause| {
             ![
                 "不要",
+                "不使用",
+                "别用",
                 "无需",
                 "禁止",
                 "不得",
@@ -108,6 +119,11 @@ fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
                 "不停用",
                 "不禁用",
                 "不记住",
+                "do not",
+                "don't",
+                "without",
+                "no shell",
+                "no terminal",
             ]
             .iter()
             .any(|negative| clause.contains(negative))
