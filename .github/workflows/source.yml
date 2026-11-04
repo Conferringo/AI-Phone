@@ -15,6 +15,9 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -31,7 +34,9 @@ jobs:
           ./scripts/bootstrap.sh
           git diff --exit-code -- packages/protocol/src/gen infra/desktop/location.js
       - name: Source privacy and licence metadata
-        run: python3 scripts/check_source.py --repository --manifest
+        run: |
+          python3 scripts/check_source.py --repository --manifest
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
       - name: protobuf, TypeScript and Rust
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
@@ -40,7 +45,10 @@ jobs:
         working-directory: scripts/emulator-source-build
         run: python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
       - name: Installer and archive tests
-        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+        run: |
+          cargo build -p ai-phone-host-runtime --bin host-resources --locked
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+          python3 scripts/required_tests.py test_linux_services
       - name: Rust tests
         run: |
           cargo fmt --all --check
@@ -58,7 +66,7 @@ jobs:
           cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
           docker build --tag "$fixture_image" --file scripts/fixtures/native-audio.Dockerfile "$fixture_context"
           AI_PHONE_TEST_DESKTOP_MEDIA=1 AI_PHONE_TEST_DESKTOP_IMAGE="$fixture_image" \
-            python3 -m unittest discover -s scripts -p test_desktop_media.py -v
+            python3 scripts/required_tests.py test_desktop_media
       - name: Native guest interaction
         run: |
           sudo apt-get update
@@ -87,6 +95,9 @@ jobs:
           for n in $(seq 1 100); do xdpyinfo >/dev/null 2>&1 && break; sleep .05; done
           openbox & wm=$!
           for n in $(seq 1 100); do xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id' && break; sleep .05; done
+          cargo test -p ai-phone-guest-runtime --test x11_paint --locked -- --ignored --test-threads=1 --nocapture > "$RUNNER_TEMP/x11-paint.log"
+          cat "$RUNNER_TEMP/x11-paint.log"
+          grep -q 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/x11-paint.log"
           ./scripts/bun .github/scripts/guest-control-qualification.ts \
             "$PWD/target/debug/desktop-bridge" "$RUNNER_TEMP/legacy-desktop-bridge.py" \
             "$RUNNER_TEMP/guest-control-qualification.json"

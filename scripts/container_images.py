@@ -251,7 +251,11 @@ def bind_indexes(indexes, objects, found):
 
 
 def inventory(source,codec=None):
-    objects,files=archive_metadata(source,codec);rows=objects.get('manifest.json')
+    return inventory_records(*archive_metadata(source,codec))
+
+
+def inventory_records(objects,files):
+    rows=objects.get('manifest.json')
     if not isinstance(rows,list) or not rows or len(rows)>len(ROLES):
         raise ValueError('Invalid Docker image inventory')
     found={}

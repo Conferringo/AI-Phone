@@ -1,9 +1,10 @@
 use crate::{
-    Result, Settings, actions, files, imaging,
+    Result, Settings, actions, files, imaging, paint,
     process::{Capture, OsRunner, Request, Runner},
     screen::{NativeScreen, Screen},
 };
 use base64::{Engine, engine::general_purpose::STANDARD};
+use image::RgbImage;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -43,11 +44,15 @@ struct RunRequest {
 
 impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
     pub fn observe(&self) -> Result<Value> {
+        self.frame(&self.screen.capture()?)
+    }
+
+    fn frame(&self, image: &RgbImage) -> Result<Value> {
         let title = self
             .screen
             .title()
             .unwrap_or_else(|_| "Linux desktop".into());
-        let bytes = imaging::png(&self.screen.capture()?)?;
+        let bytes = imaging::png(image)?;
         Ok(
             json!({"width": self.settings.width, "height": self.settings.height, "title": title, "png": STANDARD.encode(bytes)}),
         )
@@ -82,8 +87,25 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
     }
 
     async fn perform_action(&self, args: Value) -> Result<Value> {
+        let baseline = if args["wait_for_paint"] == true {
+            Some((
+                self.screen.capture()?,
+                self.screen.title().unwrap_or_default(),
+            ))
+        } else {
+            None
+        };
         actions::execute(&self.screen, &self.runner, &self.settings, args).await?;
-        let mut observation = self.observe()?;
+        let mut observation = if let Some((before, title)) = baseline {
+            let frame = paint::after(&self.screen, before, &title).await?;
+            let mut value = self.frame(&frame.image)?;
+            value["frame_state"] = json!(frame.state);
+            value["frame_wait_ms"] = json!(frame.wait_ms);
+            value
+        } else {
+            tokio::time::sleep(Duration::from_millis(120)).await;
+            self.observe()?
+        };
         observation["success"] = json!(true);
         Ok(observation)
     }

@@ -14,7 +14,7 @@ OMIT_FILES = {'.DS_Store', 'Thumbs.db', 'desktop.ini', 'cleanup-retired-projects
 OMIT_SUFFIXES = {'.payload', '.pyc', '.log', '.dump', '.apk', '.jks', '.keystore', '.tsbuildinfo', '.qcow2', '.img', '.tar', '.gz', '.tgz', '.zip', '.xz', '.zst', '.sqlite', '.db', '.key'}
 SECRET = re.compile(rb'(?<![A-Za-z0-9_-])(?:sk-[A-Za-z0-9_-]{24,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,})')
 OMIT_TREES = ('apps/android-bridge', 'apps/web/src/app/lab', 'apps/client/src-tauri/gen')
-PRIVATE_METADATA_NAMES = {'agents.md', 'agents.override.md', 'claude.md', 'gemini.md', 'copilot-instructions.md', '.cursorrules', 'contributor-agents.md'}
+PRIVATE_METADATA_NAMES = {'agent.md', 'agents.md', 'agents.override.md', 'claude.md', 'gemini.md', 'copilot-instructions.md', '.cursorrules', 'contributor-agents.md'}
 PRIVATE_METADATA_PARTS = {'.agents', '.claude', '.codex'}
 
 

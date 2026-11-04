@@ -267,7 +267,7 @@ async fn ordinary_search_rejects_stored_command_calls_before_dispatch() {
     database_case(|app| async move {
         let (run, message) = queued(&app, "fixture-desktop", "user").await;
         for request in [
-            "找智能安防相关的企业，记到电脑的表格里",
+            "找园艺相关的企业，记到电脑的表格里",
             "阿里巴巴最近发展怎么样",
             "在电脑浏览器搜索root教程",
         ] {

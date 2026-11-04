@@ -3,7 +3,8 @@ import {LanguageWindow,LanguageTrigger} from '@/components/language-window';
 import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchNotice} from '@/components/workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import {DeviceDefaultsProvider,creationDefaults,type DeviceDefaults} from '@/components/device-defaults';
-import { useCallback, useEffect, useRef, useState,type CSSProperties,type Dispatch,type SetStateAction } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState,type CSSProperties,type Dispatch,type SetStateAction } from "react";
+import {CopilotProvider,CopilotToggle,useCopilotBinding} from '@/components/copilot';
 import {
   create,
   fromBinary,
@@ -134,7 +135,9 @@ function DeviceWorkbench(){
  const previousLinks=useRef<string[]>([]);
  const receiveLinks=useCallback((ids:string[])=>{const previous=previousLinks.current;if(previous.join()===ids.join())return;capture();previousLinks.current=ids;setLinked(ids);if(previous.length&&ids.length===0){setFocus([current]);setFeature('');}else if(ids.length>1){setFocus(ids);}},[current,capture]);
  const close=(name:string)=>setFeature(old=>old===name?'':old);
- return <main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
+ const voiceAgentId=feature.startsWith('settings:voice:')?feature.slice('settings:voice:'.length):'';
+ const settingsOpen=feature==='settings'||!!voiceAgentId;
+ return <CopilotProvider currentDeviceId={current} onConfigure={id=>setFeature('settings:voice:'+id)}><main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
   <header className="workbench-navigation">
    <WorkbenchNotices activeFeature={feature}/>
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>
@@ -143,7 +146,7 @@ function DeviceWorkbench(){
     <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("工作文件")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
-    <WindowTrigger label={t("配置中心")} open={feature==='settings'} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
+    <WindowTrigger label={t("配置中心")} open={settingsOpen} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
    </nav>
    <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!states[current]} onClick={()=>refreshers.current[current]?.()}><RefreshCw size={18}/></Button>
   </header>
@@ -151,12 +154,12 @@ function DeviceWorkbench(){
    {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <DeviceNoticeScope key={d.id} id={d.id} name={d.name}><PhoneWorkspace deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} linked={linked.includes(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} current={current===d.id} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/></DeviceNoticeScope>;})}
   </div>
   <DeviceCableLine root={scene} devices={devices} linked={linked}/>
-  <RegistryWindow open={feature==='settings'} onClose={()=>close('settings')} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
+  <RegistryWindow open={settingsOpen} voiceAgentId={voiceAgentId} onClose={()=>setFeature(old=>old==='settings'||old.startsWith('settings:voice:')?'':old)} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
   <DeviceCable devices={devices} current={current} open={feature===`cable:${current}`} onClose={()=>close(`cable:${current}`)} onLinks={receiveLinks}/>
   <LanguageWindow open={feature==='language'} onClose={()=>close('language')}/>
   <LocationWindow open={feature==='location'} onClose={()=>close('location')} onEnabled={setLocationEnabled}/>
   <SkillsWindow open={feature==='skills'} onClose={()=>close('skills')}/><KnowledgeWindow open={feature==='knowledge'} onClose={()=>close('knowledge')}/><WorkspaceWindow open={feature==='files'} onClose={()=>close('files')}/>
- </main>;
+ </main></CopilotProvider>;
 }
 type SessionProps={linked:boolean;stageStyle:CSSProperties;onSelect:()=>void;deviceId:string;registry:Registry;focused:boolean;current:boolean;showChat:boolean;screenColumn:number;chatColumn:number;chatRow:number;onActivate:(id:string)=>void;onState:(id:string,value:SessionState)=>void;onOrientation:(id:string,value:boolean)=>void;registerRefresh:(id:string,refresh:(()=>void)|null)=>void;feature:string;setFeature:Dispatch<SetStateAction<string>>};
 function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,current,showChat,screenColumn,chatColumn,chatRow,onActivate,onState,onOrientation,registerRefresh,feature,setFeature}:SessionProps) {
@@ -205,6 +208,9 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
     setChatSnapshot(previous=>acceptInputReceipt(previous,receipt,order));
   },[]);
   const outbox=useChatOutbox(chat?.conversationId||'',deviceId,acceptChat,beginHistory,acknowledgeInput);
+  const recoverVoice=useCallback((value:string)=>setText(old=>old?old+'\n'+value:value),[]);
+  const voiceBinding=useMemo(()=>({deviceId,conversationId:chat?.conversationId||'',agentId:(chat&&['queued','running','paused'].includes(chat.runStatus)&&chat.agentId)||selectedDevice.defaultAgentId,ready:runtimeAvailable&&outbox.ready,submit:outbox.submit,recover:recoverVoice,replies:chat?.messages.filter(m=>m.role==='assistant').map(m=>({id:m.id,text:m.text,ordinal:m.ordinal,complete:!m.active}))||[]}),[deviceId,chat,selectedDevice.defaultAgentId,runtimeAvailable,outbox.ready,outbox.submit,recoverVoice]);
+  const voiceDraft=useCopilotBinding(voiceBinding);
   useWorkbenchNotice(error);
   useWorkbenchNotice(historyError,()=>void fetchChat());
   useWorkbenchNotice(outbox.error||outbox.entries.find(item=>item.error)?.error||'',outbox.retry);
@@ -639,6 +645,7 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
                 ))}
               </div>
             )}
+            {voiceDraft&&<div className="copilot-draft" role="status" dir="auto">{voiceDraft.text||t(voiceDraft.status==='awaiting-transcript'?'正在识别':'正在听')}</div>}
             <textarea
               aria-label={t("消息")}
               placeholder={runtimeAvailable?t("发送消息"):t("设备安装后即可对话")}
@@ -681,6 +688,7 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,cu
                 <Paperclip size={19} />
               </Button>
               {phoneAvailable&&deviceId==='phone-local-01'&&<ExplorationToggle/>}{runtimeAvailable&&deviceId!=='phone-local-01'&&<DesktopExploreToggle control={desktopExploration} focused={focused}/>}
+              {runtimeAvailable&&<CopilotToggle deviceId={deviceId} ready={outbox.ready} onActivate={()=>onActivate(deviceId)}/>}
               <div className="composer-submit">
                 {active&&!paused&&<span className="composer-progress" role="status"><span className="composer-pulse"/>{t(chat?.runStatus==='queued'?'待继续':'正在处理')}</span>}
                 {paused && (

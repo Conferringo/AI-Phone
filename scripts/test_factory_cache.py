@@ -3,6 +3,8 @@ import hashlib
 import io
 import json
 import os
+import socket
+import subprocess
 from pathlib import Path
 import tarfile
 import tempfile
@@ -10,6 +12,7 @@ import unittest
 from unittest.mock import patch
 from artifact_io import digest
 from factory_cache import retire_native_cache
+import factory_cache
 from prebuilt_services import binary_path,DEVICE_SETUP_CONTRACT
 
 class FactoryCacheTests(unittest.TestCase):
@@ -68,5 +71,40 @@ class FactoryCacheTests(unittest.TestCase):
             with self.environment(root),self.assertRaises(ValueError):retire_native_cache(root,payload)
             self.assertEqual(Path(outside,'keep').read_text(),'keep')
             self.assertTrue((root/'target/debug/deps/fixture').is_file())
+
+    def test_image_cache_retirement_targets_only_the_disposable_action_socket(self):
+        with tempfile.TemporaryDirectory(prefix='fc-',dir='/tmp') as temp:
+            root=Path(temp).resolve();payload=root/'images.payload';payload.write_bytes(b'sealed image fixture')
+            endpoint=root/'setup-docker-action/run-1234abcd/docker.sock';endpoint.parent.mkdir(parents=True)
+            with socket.socket(socket.AF_UNIX) as owned:
+                owned.bind(str(endpoint))
+                with self.environment(root),patch.dict(os.environ,{'DOCKER_HOST':'unix://'+str(endpoint),'DOCKER_CONTEXT':'foreign','DOCKER_TLS_VERIFY':'1'}), \
+                     patch.object(Path,'home',return_value=root),patch.object(factory_cache.subprocess,'run') as run:
+                    with patch.dict(os.environ,{'GITHUB_WORKSPACE':str(root/'other')}),self.assertRaises(ValueError):
+                        factory_cache.retire_image_build_cache(root,payload)
+                    run.assert_not_called()
+                    result=factory_cache.retire_image_build_cache(root,payload)
+                    self.assertEqual(run.call_args.args[0],['docker','--host','unix://'+str(endpoint),'builder','prune','--all','--force'])
+                    self.assertNotIn('DOCKER_CONTEXT',run.call_args.kwargs['env'])
+                    self.assertNotIn('DOCKER_TLS_VERIFY',run.call_args.kwargs['env'])
+                    run.side_effect=subprocess.CalledProcessError(1,['docker'])
+                    with self.assertRaises(subprocess.CalledProcessError):factory_cache.retire_image_build_cache(root,payload)
+                    run.side_effect=lambda *a,**k:payload.write_bytes(b'changed')
+                    with self.assertRaisesRegex(ValueError,'changed'):factory_cache.retire_image_build_cache(root,payload)
+                    payload.write_bytes(b'sealed image fixture')
+                self.assertEqual(payload.read_bytes(),b'sealed image fixture')
+                self.assertFalse(result['capacity_guard_changed']);self.assertFalse(result['docker_images_removed'])
+
+    def test_local_or_foreign_engine_never_reaches_cache_pruning(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();payload=root/'images.payload';payload.write_bytes(b'keep')
+            with patch.object(factory_cache.subprocess,'run') as run:
+                with patch.dict(os.environ,{},clear=True),self.assertRaises(ValueError):
+                    factory_cache.retire_image_build_cache(root,payload)
+                for endpoint in ['tcp://remote:2375','unix:///var/run/docker.sock','unix://'+str(root/'setup-docker-action/run-1234abcd/missing.sock')]:
+                    with self.environment(root),patch.dict(os.environ,{'DOCKER_HOST':endpoint}), \
+                         patch.object(Path,'home',return_value=root),self.assertRaises(ValueError):
+                        factory_cache.retire_image_build_cache(root,payload)
+                run.assert_not_called()
 
 if __name__=='__main__':unittest.main()

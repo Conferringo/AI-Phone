@@ -12,7 +12,7 @@ describe('Copilot durable protobuf handoff', () => {
     const first = new ChatOutbox({read: () => saved, write: value => {saved = value;}}, async () => new Promise(() => {}), () => {});
     const voice = new CopilotInput(binding, commit => first.enqueue(voiceOutboxInput(commit)), () => `request-${++receipt}`);
     voice.speech('one', 0);
-    voice.transcript({utteranceId: 'one', revision: 1, literal: '处理第一份', final: false});
+    voice.transcript({utteranceId: 'one', revision: 1, literal: '处理第一份', final: true});
     voice.advance(1500);
     voice.transcript({utteranceId: 'one', revision: 2, literal: '不是，说错了，第二份', final: true, correction: {baseRevision: 1, text: '处理第二份'}});
     first.dispose();

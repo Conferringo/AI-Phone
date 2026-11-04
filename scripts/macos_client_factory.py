@@ -104,25 +104,32 @@ def compile_client(root,android,images,tools,env):
             'delivery':checked_delivery(receipt['prebuilt_components'])}
 
 
-def build(root,compiler_sdk):
+def build(root,compiler_sdk,*,prebuilt_images=None):
     root=Path(root).resolve()
     if host_key()!='macos-arm64':raise ValueError('Complete macOS factory requires Apple Silicon')
     from android_factory_stock import reserve
     reserve(root,0)
     env=compiler_environment(compiler_sdk)
-    check_docker()
-    from container_images import daemon_architecture,docker_command
-    if daemon_architecture(docker_command)!='arm64':raise ValueError('Mac factory requires an ARM64 Linux build engine')
     from check_source import check
     check(root);cache=root/'.tools/complete-macos'
     if cache.exists():raise ValueError('Use a fresh factory checkout; existing outputs were preserved')
     cache.mkdir(parents=True);source=digest(root/'SOURCE-MANIFEST.json')
-    guest=prepare_guest(root,cache)
+    if prebuilt_images is None:
+        check_docker()
+        from container_images import daemon_architecture,docker_command
+        if daemon_architecture(docker_command)!='arm64':raise ValueError('Mac factory requires an ARM64 Linux build engine')
+        guest=prepare_guest(root,cache)
+    else:
+        from factory_image_candidate import admit
+        prepared=admit(root,*prebuilt_images,os.environ.get('GITHUB_SHA',''))
     tools,_python,tool_result=prepare_tools(root,cache)
     host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,env)
-    images,image_result=prepare_images(root,cache,source,architecture='arm64',guest_runtime=guest)
+    if prebuilt_images is None:
+        images,image_result=prepare_images(root,cache,source,architecture='arm64',guest_runtime=guest)
+    else:
+        images,image_result=prepared.payload,{'bytes':prepared.payload.stat().st_size}
     artifact=compile_client(root,android,images,tools,env)
     from package_delivery import prepare as prepare_delivery
     package=prepare_delivery(root,artifact)
@@ -142,5 +149,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent)
     parser.add_argument('--compiler-sdk',type=Path,required=True)
+    parser.add_argument('--image-candidate',type=Path)
+    parser.add_argument('--image-metadata-sha256')
     args=parser.parse_args()
-    print(json.dumps(build(args.root,args.compiler_sdk)))
+    if (args.image_candidate is None)!=(args.image_metadata_sha256 is None):parser.error('Both image candidate and metadata digest required')
+    selected=(args.image_candidate,args.image_metadata_sha256) if args.image_candidate else None
+    print(json.dumps(build(args.root,args.compiler_sdk,prebuilt_images=selected)))

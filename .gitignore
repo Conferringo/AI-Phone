@@ -65,6 +65,7 @@ desktop.ini
 coverage.xml
 
 # Local coding-agent instructions and private development context.
+agent.md
 AGENTS.md
 AGENTS.override.md
 CLAUDE.md

@@ -318,7 +318,7 @@ mod execution_policy_tests {
 
     #[test]
     fn ordinary_device_research_cannot_offer_a_command_shortcut() {
-        let catalog = execution_tools(&request("找智能安防相关的企业，记到电脑的表格里"));
+        let catalog = execution_tools(&request("找园艺相关的企业，记到电脑的表格里"));
         let names: Vec<_> = catalog
             .as_array()
             .unwrap()

@@ -5,6 +5,7 @@ use sqlx::Row;
 pub struct AuditResult {
     pub approved: bool,
     pub feedback: String,
+    experience: Option<Value>,
 }
 
 // A completion audit has no execution tools. Its input comes from this run's
@@ -84,18 +85,21 @@ pub async fn verify(
     }
     audit_input.extend(visual_inputs);
     let tool = json!({"type":"function","name":"audit_result","description":"只报告证据核验结果，不能执行操作。",
-        "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string"}},
+        "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string"},"experience":crate::tool_catalog::experience_schema()},
         "required":["approved","feedback"],"additionalProperties":false}});
+    audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。仅使用本轮同应用的真实observation_ids，verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
     let body = json!({"input":[
         {"role":"system","content":[{"type":"input_text","text":"你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"}]},
         {"role":"user","content":audit_input}
     ],"tools":[tool],"tool_choice":{"type":"function","name":"audit_result"},"parallel_tool_calls":false,
         "reasoning":{"effort":"none"},"max_output_tokens":1200,"stream":false,"store":false});
+    let mut timing = crate::model_timing::Timing::default();
     let audit = async {
         let config = crate::settings::for_run(app, run).await?;
+        let client = app.settings.http_client(&config.proxy_url)?;
         let output = tokio::time::timeout(
             Duration::from_secs(60),
-            crate::model_adapter::request(&config, body, cancel),
+            crate::model_adapter::request_tracked(&config, &client, body, cancel, &mut timing),
         )
         .await
         .map_err(|_| "结果核验超时；尚未确认完成")??;
@@ -103,6 +107,9 @@ pub async fn verify(
     };
     let result =
         tokio::select! {_ = cancel.cancelled() => Err("canceled".into()), result = audit => result};
+    if let Ok(report) = &result {
+        retain_learning(app, run, needs_input, report.experience.as_ref()).await;
+    }
     let (status, content) = match &result {
         Ok(result) => (
             if result.approved {
@@ -121,14 +128,37 @@ pub async fn verify(
             error.clone(),
         ),
     };
-    sqlx::query("UPDATE harness_events SET status=$2,content=$3,finished_at=now() WHERE id=$1")
-        .bind(event)
-        .bind(status)
-        .bind(content)
-        .execute(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
+    sqlx::query(
+        "UPDATE harness_events SET status=$2,content=$3,result=$4,finished_at=now() WHERE id=$1",
+    )
+    .bind(event)
+    .bind(status)
+    .bind(content)
+    .bind(timing.snapshot())
+    .execute(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     result
+}
+
+// Learning shares the completed audit's evidence and model call. A rejected
+// optional candidate never turns a valid user result into another tool loop.
+pub(crate) async fn retain_learning(
+    app: &App,
+    run: Uuid,
+    needs_input: bool,
+    candidate: Option<&Value>,
+) -> bool {
+    let Some(candidate) = candidate.filter(|_| !needs_input) else {
+        return false;
+    };
+    match crate::app_learning::save(app, run, candidate).await {
+        Ok(_) => true,
+        Err(_) => {
+            eprintln!("Optional app learning was not retained; user task result preserved");
+            false
+        }
+    }
 }
 
 // History is evidence about previous work, never proof of a new action.
@@ -164,6 +194,10 @@ fn parse_result(value: &Value) -> Result<AuditResult, String> {
     Ok(AuditResult {
         approved,
         feedback: feedback.chars().take(4000).collect(),
+        experience: report
+            .get("experience")
+            .filter(|v| approved && v.is_object())
+            .cloned(),
     })
 }
 
@@ -226,6 +260,25 @@ mod tests {
     fn audit_cannot_default_to_approved_on_missing_or_malformed_result() {
         assert!(parse_result(&json!({"output":[]})).is_err());
         assert!(parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":"{\"feedback\":\"done\"}"}]})).is_err());
+    }
+    #[test]
+    fn successful_audit_retains_optional_experience_without_requiring_another_model_turn() {
+        let candidate = json!({"app_id":"com.example.reader","title":"搜索","procedure":"点击当前可见搜索入口，输入后核对实际列表。","outcome":"verified","limitations":"仅限已观察版本","observation_ids":["before","after"]});
+        let result=parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":json!({"approved":true,"feedback":"界面与记录吻合","experience":candidate}).to_string()}]})).unwrap();
+        assert!(result.approved);
+        assert_eq!(result.experience, Some(candidate));
+    }
+    #[test]
+    fn rejected_or_absent_experience_does_not_create_learning_or_reject_a_valid_task() {
+        for (approved, experience) in [
+            (false, json!({"app_id":"com.example.fake"})),
+            (true, Value::Null),
+            (true, json!("invalid")),
+        ] {
+            let result=parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":json!({"approved":approved,"feedback":"核验结论","experience":experience}).to_string()}]})).unwrap();
+            assert_eq!(result.approved, approved);
+            assert!(result.experience.is_none());
+        }
     }
     #[test]
     fn evidence_retains_only_bounded_recent_images() {

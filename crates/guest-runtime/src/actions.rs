@@ -229,9 +229,7 @@ pub async fn execute(
     let input: Input = serde_json::from_value(value)?;
     input.action.validate(settings)?;
     let mut trace = Trace::new(&settings.home, input.action_id.as_deref());
-    perform(screen, runner, settings, &mut trace, input.action).await?;
-    tokio::time::sleep(Duration::from_millis(120)).await;
-    Ok(())
+    perform(screen, runner, settings, &mut trace, input.action).await
 }
 
 async fn perform(

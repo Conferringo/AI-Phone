@@ -8,7 +8,7 @@ import subprocess
 import os
 import argparse
 from native_bundle import inspect_macos_bundle
-from client_artifacts import inspect_apk, inspect_deb, inspect_windows, record, notice_manifest
+from client_artifacts import inspect_apk, inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -40,6 +40,29 @@ def build_macos():
     manifest['source_commit']=os.environ.get('GITHUB_SHA','')
     destination.with_suffix('.dmg.manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
+
+def build_linux(root,version,env,command,package_only):
+    if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
+    arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
+    if not arch:raise SystemExit('Unsupported Linux architecture')
+    if not package_only:
+        patchelf=shutil.which('patchelf',path=env.get('PATH'))
+        if not patchelf:raise ValueError('Install native patchelf before building Linux AppImages')
+        env={**env,'PATCHELF':str(root/'scripts/linux-appimage-patchelf.sh'),'AI_PHONE_REAL_PATCHELF':patchelf,
+             'NO_STRIP':'1','LDAI_COMP':'zstd'}
+        subprocess.run(command+['build','--verbose','--config','src-tauri/gen/host/resources.json','--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
+    variants=[('deb','deb',arch),('appimage','AppImage','aarch64' if arch=='arm64' else arch)]
+    results=[]
+    for kind,extension,label in variants:
+        source=root/f'apps/client/src-tauri/target/release/bundle/{kind}/AI Phone_{version}_{label}.{extension}'
+        destination=root/'dist'/f'AI-Phone-{version}-linux-{arch}.{extension}'
+        shutil.copy2(source,destination)
+        inspection=inspect_deb(destination,root) if kind=='deb' else inspect_appimage(destination,arch,root)
+        manifest=record(destination,'linux',arch,inspection,root=root)
+        results.append({'artifact':str(destination),'server_included':manifest['server_included'],
+                        'complete_device_bundle':manifest['complete_device_bundle']})
+    return results
+
 
 def build_other(target, package_only=False):
     version=json.loads((ROOT/'config/release-policy.json').read_text())['version']
@@ -81,15 +104,9 @@ def build_other(target, package_only=False):
         shutil.copy2(source,destination)
         manifest=record(destination,'windows','x64',inspect_windows(destination))
     else:
-        if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
-        arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
-        if not arch:raise SystemExit('Unsupported Linux architecture')
-        if not package_only:
-            subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json','--bundles','deb','--ci','--no-sign','--','--locked'],cwd=client,env=env,check=True)
-        source=native/f'target/release/bundle/deb/AI Phone_{version}_{arch}.deb'
-        destination=dist/f'AI-Phone-{version}-linux-{arch}.deb'
-        shutil.copy2(source,destination)
-        manifest=record(destination,'linux',arch,inspect_deb(destination))
+        results=build_linux(ROOT,version,env,command,package_only)
+        print(json.dumps({'artifacts':results,'remote_upload':False}))
+        return
     print(json.dumps({'artifact':str(destination),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 
 
@@ -106,11 +123,13 @@ if __name__=='__main__':
     parser.add_argument('--with-container-host',action='store_true',help='Include a matched Lima/ISO/offline engine component')
     parser.add_argument('--with-js-services',action='store_true',help='Include prebuilt media/channel services and their production dependencies')
     parser.add_argument('--with-guest-apps',action='store_true',help='Include pinned Android Clash applications for both guest ABIs')
+    parser.add_argument('--wsl-runtime',type=Path,help='Verified WSL backend capsule for the Windows native installer')
     parser.add_argument('--linux-ocr',type=Path,help='Verified offline Linux x64 OCR component')
     args=parser.parse_args()
     from check_source import check
     check(ROOT)
     from prepare_client_host import prepare
+    if args.wsl_runtime and (args.platform!='windows' or args.package_only):parser.error('WSL runtime requires a Windows native build')
     if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
     if args.with_service_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Native service component requires a matching macOS/Linux build')
     if args.linux_ocr and (args.platform!='linux' or not args.with_service_runtime):parser.error('Offline Linux OCR requires a matching Linux native service build')
@@ -132,7 +151,7 @@ if __name__=='__main__':
     if args.with_js_services:
         from prebuilt_js import build as build_js
         build_js(ROOT)
-    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,with_guest_apps=args.with_guest_apps,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools,linux_ocr=args.linux_ocr)
+    prepare(ROOT,with_web_runtime=args.with_web_runtime,with_service_runtime=args.with_service_runtime,with_phone_apps=args.with_phone_apps,with_container_host=args.with_container_host,with_js_services=args.with_js_services,with_guest_apps=args.with_guest_apps,android_runtime=args.android_runtime,image_runtime=args.images_runtime,installer_tools=args.installer_tools,linux_ocr=args.linux_ocr,wsl_runtime=args.wsl_runtime)
     if args.with_web_runtime:
         from prepare_client_host import verify_prepared_web
         print(json.dumps({'prebuilt_web':verify_prepared_web(ROOT)}))

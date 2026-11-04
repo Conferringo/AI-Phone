@@ -16,19 +16,35 @@ struct State {
     moves: Vec<(i16, i16)>,
     buttons: Vec<(u8, bool)>,
     fail_move_after: Option<usize>,
+    painted_after: Option<tokio::time::Instant>,
 }
 #[derive(Default)]
 struct FakeScreen {
     state: Mutex<State>,
     reported: Option<(i32, i32)>,
     fail_capture: bool,
+    paint_delay: Option<Duration>,
 }
 impl Screen for FakeScreen {
     fn capture(&self) -> Result<RgbImage> {
-        if self.fail_capture {
+        if self.fail_capture && !self.state.lock().unwrap().buttons.is_empty() {
             return Err("fixture capture lost after input".into());
         }
-        Ok(RgbImage::from_pixel(1280, 800, Rgb([31, 63, 127])))
+        let painted = self
+            .state
+            .lock()
+            .unwrap()
+            .painted_after
+            .is_some_and(|at| tokio::time::Instant::now() >= at);
+        Ok(RgbImage::from_pixel(
+            1280,
+            800,
+            if painted {
+                Rgb([0, 180, 40])
+            } else {
+                Rgb([31, 63, 127])
+            },
+        ))
     }
     fn title(&self) -> Result<String> {
         Ok("Fixture 窗口".into())
@@ -45,7 +61,13 @@ impl Screen for FakeScreen {
         Ok(())
     }
     fn button(&self, button: u8, down: bool) -> Result<()> {
-        self.state.lock().unwrap().buttons.push((button, down));
+        let mut state = self.state.lock().unwrap();
+        state.buttons.push((button, down));
+        if !down {
+            state.painted_after = self
+                .paint_delay
+                .map(|delay| tokio::time::Instant::now() + delay);
+        }
         Ok(())
     }
     fn pointer(&self) -> Result<(i32, i32)> {
@@ -93,6 +115,32 @@ fn runtime(home: &std::path::Path) -> DesktopRuntime<FakeScreen, FakeRunner> {
     }
 }
 const ACTION: &str = "1b729d02-7301-4672-9ac1-36f278fa5c60";
+
+#[tokio::test]
+async fn automated_click_waits_for_delayed_application_paint_without_repeating_input() {
+    let home = tempfile::tempdir().unwrap();
+    let mut app = runtime(home.path());
+    app.screen.paint_delay = Some(Duration::from_millis(220));
+    let result = value(
+        app.dispatch(
+            "action",
+            json!({"kind":"click","x":50,"y":60,"wait_for_paint":true}),
+        )
+        .await
+        .unwrap(),
+    );
+    let png = STANDARD.decode(result["png"].as_str().unwrap()).unwrap();
+    let image = image::load_from_memory(&png).unwrap().to_rgb8();
+    assert_eq!(
+        *image.get_pixel(0, 0),
+        Rgb([0, 180, 40]),
+        "the returned observation must contain the delayed application redraw"
+    );
+    assert_eq!(
+        app.screen.state.lock().unwrap().buttons,
+        [(1, true), (1, false)]
+    );
+}
 
 #[test]
 fn coordinates_keys_and_unicode_limits_validate_before_input() {
@@ -245,18 +293,23 @@ async fn chinese_paste_has_exact_utf8_bytes_and_no_shell_interpolation() {
 
 #[tokio::test]
 async fn observation_failure_after_click_never_replays_input() {
-    let home = tempfile::tempdir().unwrap();
-    let mut app = runtime(home.path());
-    app.screen.fail_capture = true;
-    assert!(
-        app.dispatch("action", json!({"kind":"click","x":50,"y":60}))
+    for wait in [false, true] {
+        let home = tempfile::tempdir().unwrap();
+        let mut app = runtime(home.path());
+        app.screen.fail_capture = true;
+        assert!(
+            app.dispatch(
+                "action",
+                json!({"kind":"click","x":50,"y":60,"wait_for_paint":wait})
+            )
             .await
             .is_err()
-    );
-    assert_eq!(
-        app.screen.state.lock().unwrap().buttons,
-        [(1, true), (1, false)]
-    );
+        );
+        assert_eq!(
+            app.screen.state.lock().unwrap().buttons,
+            [(1, true), (1, false)]
+        );
+    }
 }
 
 #[tokio::test]

@@ -35,9 +35,37 @@ class NativeServiceTests(unittest.TestCase):
             path=target/name;path.write_bytes(payload)
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
-               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1'}}
+               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1',
+                         'service_supervision':'ai-phone-linux-supervision-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
+
+    @unittest.skipUnless(os.name == 'posix', 'Native Linux/macOS component permissions require POSIX')
+    def test_supervisor_selection_requires_a_qualified_manifest_before_executing(self):
+        from prebuilt_services import supervisor_command, SERVICE_SUPERVISION_CONTRACT
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve();files=self.component()
+            for name,data in files.items():
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+                path.chmod(0o755 if '/bin/' in name else 0o644)
+            with self.assertRaisesRegex(ValueError,'supervision capability is missing'):
+                supervisor_command(root)
+            path=root/'runtime/services/manifest.json';value=json.loads(path.read_bytes())
+            value['service_supervision']=SERVICE_SUPERVISION_CONTRACT;path.write_text(json.dumps(value))
+            self.assertEqual(supervisor_command(root),[str(root/binary_path('assistant'))])
+            (root/binary_path('assistant')).write_bytes(b'changed program')
+            with self.assertRaisesRegex(ValueError,'integrity'):
+                supervisor_command(root)
+
+    def test_windows_host_refuses_native_supervision_before_reading_a_manifest(self):
+        from prebuilt_services import supervisor_command
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve();(root/'runtime/services').mkdir(parents=True)
+            with patch('prebuilt_services.platform.system',return_value='Windows'), \
+                 patch('subprocess.run') as execute:
+                with self.assertRaisesRegex(ValueError,'host is not implemented'):
+                    supervisor_command(root)
+                execute.assert_not_called()
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
         for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:
@@ -316,6 +344,37 @@ class NativeLauncherTests(unittest.TestCase):
 
 @unittest.skipUnless(os.name == 'posix', 'POSIX native service installation policy')
 class NativeHostToolsTests(unittest.TestCase):
+    def test_fresh_linux_source_start_prepares_a_supervisor_before_the_first_unit(self):
+        from linux_host import start_missing
+        from prebuilt_services import supervisor_command, SERVICE_SUPERVISION_CONTRACT
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve();events=[]
+            scripts=root/'scripts';scripts.mkdir()
+            adb=scripts/'android-adb';adb.write_text('#!/bin/sh\nprintf "package:fixture\\n"\n');adb.chmod(0o755)
+            data=root/'data';data.mkdir();(data/'existing-chat').write_bytes(b'preserve fixture history')
+            def execute(args,**_kwargs):
+                args=list(map(str,args));events.append(args)
+                if args[0]=='cargo' and 'ai-phone-host-runtime' in args:
+                    binary=root/'target/debug/host-resources';binary.parent.mkdir(parents=True,exist_ok=True)
+                    binary.write_text('#!/bin/sh\nprintf "%s\\n" "'+SERVICE_SUPERVISION_CONTRACT+'"\n');binary.chmod(0o755)
+                if args[0]=='cargo' and 'ai-phone-assistant' in args:
+                    binary=root/'target/debug/ai-phone-assistant';binary.write_bytes(b'later model server build')
+            def start(actual,name,_argv,_env):
+                self.assertEqual(actual,root)
+                self.assertEqual(supervisor_command(root),[str(root/'target/debug/host-resources')])
+                if name=='emulator':self.assertFalse((root/'target/debug/ai-phone-assistant').exists())
+                events.append(['start',name]);return True
+            with patch('linux_host.runtime_env',return_value={}),patch('linux_host.execute',side_effect=execute), \
+                 patch('linux_host.start_unit',side_effect=start),patch('linux_host.unit_state',return_value=None), \
+                 patch('linux_host.shutil.which',return_value='/fixture/node'), \
+                 patch('prebuilt_js.launch_spec',side_effect=lambda _root,role:{'argv':[role],'environment':{}}), \
+                 patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
+                self.assertEqual(start_missing(root),['emulator','runner','media','assistant','channels','web','lan'])
+            builds=[row for row in events if row[0]=='cargo' and 'ai-phone-host-runtime' in row]
+            self.assertEqual(len(builds),1)
+            self.assertLess(events.index(builds[0]),events.index(['start','emulator']))
+            self.assertEqual((data/'existing-chat').read_bytes(),b'preserve fixture history')
+
     def test_linux_native_dependencies_keep_ocr_without_requiring_a_compiler(self):
         from linux_host import system_packages,HostPrerequisite
         for distro,version,audio in [('ubuntu','24.04','libasound2t64'),('ubuntu','22.04','libasound2'),('debian','13','libasound2t64'),('debian','12','libasound2')]:
@@ -337,12 +396,15 @@ class NativeHostToolsTests(unittest.TestCase):
         for prebuilt,active in [(False,False),(False,True),(True,False),(True,True)]:
             with self.subTest(prebuilt=prebuilt,active=active),tempfile.TemporaryDirectory() as folder:
                 root=Path(folder).resolve();calls=[];units=[]
+                supervisor=root/'target/debug/host-resources'
+                if not prebuilt:
+                    supervisor.parent.mkdir(parents=True);supervisor.write_bytes(b'already qualified fixture')
                 spec=lambda _root,role:{'argv':[str(root/('runtime/services/bin/'+role if prebuilt else 'target/debug/ai-phone-'+role))],
                                           'environment':{'AI_PHONE_OCR':str(root/'runtime/services/bin/vision')} if prebuilt and role=='runner' else {},'prebuilt':prebuilt}
                 def start(actual,name,argv,env):
                     self.assertEqual(actual,root);units.append((name,argv,env));return not active
                 if prebuilt:(root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
-                with patch('prebuilt_services.launch_spec',side_effect=spec),patch('linux_host.runtime_env',return_value={'PATH':'/fixture'}),patch('linux_host.execute',side_effect=lambda args,**kwargs:calls.append([str(v) for v in args])),patch('linux_host.start_unit',side_effect=start),patch('linux_host.unit_state',return_value={'state':'running'} if active else None),patch('linux_host.subprocess.run',return_value=subprocess.CompletedProcess([],0,stdout='package:fixture')),patch('linux_host.shutil.which',return_value='/fixture/node'),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
+                with patch('prebuilt_services.launch_spec',side_effect=spec),patch('prebuilt_services.supervisor_command',return_value=[str(supervisor)]),patch('linux_host.runtime_env',return_value={'PATH':'/fixture'}),patch('linux_host.execute',side_effect=lambda args,**kwargs:calls.append([str(v) for v in args])),patch('linux_host.start_unit',side_effect=start),patch('linux_host.unit_state',return_value={'state':'running'} if active else None),patch('linux_host.subprocess.run',return_value=subprocess.CompletedProcess([],0,stdout='package:fixture')),patch('linux_host.shutil.which',return_value='/fixture/node'),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
                     started=start_missing(root)
                 expected=['emulator','runner','media','assistant','channels','web','lan']
                 self.assertEqual([row[0] for row in units],expected)

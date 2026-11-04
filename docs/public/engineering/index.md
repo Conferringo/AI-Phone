@@ -17,6 +17,8 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 
 - [Linux desktop and service images](linux-image-runtime.md)
 - [Offline JavaScript services](js-runtime.md)
+- [Native service supervision](service-supervision.md)
+- [Evidence-backed application experience](app-learning.md)
 - [Offline Linux OCR](linux-offline-ocr.md)
 - [Portable installer tools](installer-tools.md)
 - [Phone control applications](phone-apps.md)

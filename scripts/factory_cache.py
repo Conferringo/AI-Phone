@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import tarfile
 from artifact_io import digest
 from build_native_services import read_build_receipt,cached_artifact
@@ -53,4 +54,32 @@ def retire_native_cache(root,payload):
     return {'scope':'disposable-native-build-intermediates','retired':retired,
             'free_before':before,'free_after':shutil.disk_usage(root).free,
             'native_programs_preserved':True,'source_payload_preserved':True,
+            'docker_images_removed':False,'capacity_guard_changed':False}
+
+
+def image_factory_socket(root):
+    require_disposable()
+    if Path(os.environ.get('GITHUB_WORKSPACE','')).resolve()!=root:
+        raise ValueError('Image cache retirement requires this disposable workspace')
+    endpoint=os.environ.get('DOCKER_HOST','')
+    if not endpoint.startswith('unix://'):
+        raise ValueError('Image cache retirement requires the owned action socket')
+    path=Path(endpoint.removeprefix('unix://'))
+    expected=Path.home()/'setup-docker-action'
+    if (path.parent.parent!=expected or not path.parent.name.startswith('run-')
+            or path.name!='docker.sock' or path.is_symlink() or not path.is_socket()):
+        raise ValueError('Image cache retirement requires the owned action socket')
+    return endpoint
+
+
+def retire_image_build_cache(root,payload):
+    root=Path(root).resolve();endpoint=image_factory_socket(root);payload=Path(payload)
+    identity=digest(payload);before=shutil.disk_usage(root).free
+    foreign={'DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'}
+    environment={key:value for key,value in os.environ.items() if key not in foreign}
+    subprocess.run(['docker','--host',endpoint,'builder','prune','--all','--force'],
+                   check=True,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,env=environment)
+    if digest(payload)!=identity:raise ValueError('Sealed images changed during cache retirement')
+    return {'scope':'disposable-action-image-build-cache','free_before':before,
+            'free_after':shutil.disk_usage(root).free,'image_payload_preserved':True,
             'docker_images_removed':False,'capacity_guard_changed':False}

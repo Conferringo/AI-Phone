@@ -59,9 +59,24 @@ jobs:
           '
           df -h .
       - name: Linux lifecycle regressions
-        run: python3 -m unittest discover -s scripts -p test_linux_services.py -v
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          cargo build -p ai-phone-host-runtime --bin host-resources --locked
+          python3 scripts/required_tests.py test_linux_services
       - name: Deploy phone, desktop and backend from the client payload
         run: |
+          # Lifecycle tests are finished. The installer builds in its own fresh
+          # fixture; retire only this job's compiler cache, retaining its binary.
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
+          test "$PWD" = "$GITHUB_WORKSPACE"
+          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v1
+          du -sh target
+          rm -rf -- target/debug/build target/debug/deps target/debug/incremental target/debug/.fingerprint
+          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v1
+          df -h .
           # Keep KVM supplementary access and restore the primary GID required by uidmap.
           export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"
           sg kvm -c 'exec sg "$AI_PHONE_CI_PRIMARY_GROUP" -c "exec python3 scripts/linux_host_acceptance.py"'

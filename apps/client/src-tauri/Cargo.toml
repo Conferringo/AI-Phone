@@ -25,6 +25,7 @@ sha2 = "0.10"
 tokio = { version = "1", features = ["time"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+ai-phone-host-runtime = { path = "../../../crates/host-runtime" }
 windows-sys = { version = "=0.61.2", features = ["Win32_Storage_FileSystem", "Win32_System_SystemInformation"] }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]

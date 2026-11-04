@@ -1,12 +1,15 @@
 """Maintainer-only source-emulator producer; not a redistribution approval or installer."""
 import argparse
 import ast
+from contextlib import contextmanager
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -87,8 +90,9 @@ def verify_project(checkout, record):
         raise ValueError("Missing or aliased source project")
     if git_read(folder, "rev-parse", "HEAD") != revision:
         raise ValueError("Source project revision mismatch: " + name)
-    if git_read(folder, "status", "--porcelain", "--untracked-files=all"):
-        raise ValueError("Source checkout is not clean: " + name)
+    changes=git_read(folder, "status", "--porcelain", "--untracked-files=all")
+    if changes:
+        raise ValueError("Source checkout is not clean: " + name + "; status=" + repr(changes[:4096]))
 
 
 def project_inputs(checkout, group):
@@ -191,6 +195,50 @@ def checked_build_request(args):
     return host, checkout, work
 
 
+def copy_sdk_file(source, destination):
+    if not stat.S_ISREG(os.stat(source).st_mode):
+        raise shutil.SpecialFileError('Expected a regular pinned SDK file')
+    with open(source,'rb') as input_file,open(destination,'xb') as output:
+        while block:=input_file.read(1024**2):
+            if block.count(0)==len(block):
+                output.seek(len(block),os.SEEK_CUR)
+            else:
+                output.write(block)
+        output.truncate()
+    shutil.copystat(source,destination)
+    return destination
+
+
+def copy_sdk_tree(source, sdk):
+    copier=copy_sdk_file if platform.system()=='Linux' else shutil.copy2
+    shutil.copytree(source, sdk, symlinks=False, copy_function=copier)
+    files=[path.stat() for path in sdk.rglob('*') if path.is_file()]
+    allocated=sum(info.st_blocks*512 for info in files) if all(hasattr(info,'st_blocks') for info in files) else None
+    return {'backend':'sparse' if copier is copy_sdk_file else 'native',
+            'files':len(files),'logical_bytes':sum(info.st_size for info in files),'allocated_bytes':allocated}
+
+
+@contextmanager
+def isolated_sdk(checkout, work, group):
+    # Nested upstream tools recompute this SDK path and mutate its metadata.
+    # Keep the pinned directory intact, including its links into generic images.
+    source = checkout / "prebuilts/android-emulator-build/system-images" / group
+    sdk, original = work / "sdk", work / "source-sdk"
+    if source.is_symlink() or not source.is_dir():
+        raise ValueError("Expected a pinned SDK directory")
+    write_once(work/'sdk-copy.json',copy_sdk_tree(source,sdk))
+    source.rename(original)
+    try:
+        source.symlink_to(sdk, target_is_directory=True)
+        yield sdk
+    finally:
+        if source.is_symlink() and source.readlink() == sdk:
+            source.unlink()
+        if source.exists() or source.is_symlink():
+            raise ValueError("SDK path changed; preserve the work tree and original directory for recovery")
+        original.rename(source)
+
+
 def build_once(checkout, work, lock, command, receipt, group, distribution):
     work.mkdir()
     (work / "source-lock.xml").write_bytes(lock.read_bytes())
@@ -204,18 +252,24 @@ def build_once(checkout, work, lock, command, receipt, group, distribution):
     environment["ANDROID_EMULATOR_HOME"] = str(work / "emulator-home")
     result = {**receipt, "build_status": "unknown"}
     try:
-        with (work / "build.log").open("xb") as log:
+        with isolated_sdk(checkout, work, group) as sdk, (work / "build.log").open("xb") as log:
+            environment["ANDROID_SDK_ROOT"] = str(sdk)
+            environment["ANDROID_HOME"] = str(sdk)
             completed = subprocess.run(command, cwd=checkout / "external/qemu", env=environment,
                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                 check=False)
+        result["returncode"]=completed.returncode
         if completed.returncode:
-            result.update(build_status="failed", returncode=completed.returncode)
+            result.update(build_status="failed")
             raise ValueError("Upstream build failed; preserve the work directory and inspect its log")
+        result["verification_stage"]="distribution"
         artifact = work / "dist" / ("sdk-repo-" + distribution + "-emulator-" + BUILD_ID + ".zip")
         if not artifact.is_file() or artifact.is_symlink():
             raise ValueError("Expected upstream distribution was not produced")
+        result["verification_stage"]="source_inputs"
         project_inputs(checkout, group)
-        result.update(build_status="built", artifact={"path": artifact.name, "bytes": artifact.stat().st_size, "sha256": sha256(artifact)})
+        result["verification_stage"]="artifact_digest"
+        result.update(build_status="built",verification_stage="complete", artifact={"path": artifact.name, "bytes": artifact.stat().st_size, "sha256": sha256(artifact)})
     finally:
         write_once(work / "build-result.json", result)
     return result

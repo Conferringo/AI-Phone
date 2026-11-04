@@ -3,8 +3,9 @@ import contextlib
 import importlib.util
 import io
 import json
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -42,6 +43,14 @@ class RecipeContractTests(unittest.TestCase):
         source = EVIDENCE / "android/build/python/aemu/platform/toolchains.py"
         with self.assertRaisesRegex(ValueError, "does not declare this native target"):
             producer.checked_distribution(source, "android_aarch64")
+
+    def test_changed_source_still_fails_with_bounded_status_evidence(self):
+        record={'path':'external/qemu','revision':'a'*40}
+        status='?? generated-file.cc\n M source.cc\n'+'z'*7000
+        with patch.object(producer,'git_read',side_effect=[record['revision'],status]):
+            with self.assertRaisesRegex(ValueError,'not clean') as failure:producer.verify_project(self.root,record)
+        self.assertIn('generated-file.cc',str(failure.exception))
+        self.assertLess(len(str(failure.exception)),4300)
 
     def test_missing_distribution_is_rejected_without_importing_source(self):
         source = self.root / "table.py"
@@ -99,6 +108,9 @@ class ProducerLifecycleTests(unittest.TestCase):
         self.lock = self.root / "fixture-lock.xml"
         self.lock.write_text("<manifest/>\n", encoding="utf-8")
         self.entry = self.qemu / "android/build/python/cmake.py"
+        self.sdk = self.checkout / "prebuilts/android-emulator-build/system-images/darwin"
+        self.sdk.mkdir(parents=True)
+        (self.sdk / ".knownPackages").write_text("pinned metadata")
         self.context = contextlib.ExitStack()
         self.addCleanup(self.context.close)
         self.context.enter_context(patch.object(producer.platform, "system", return_value="Darwin"))
@@ -113,6 +125,48 @@ class ProducerLifecycleTests(unittest.TestCase):
             argv.append("--build")
         with patch.object(sys, "argv", argv):
             producer.main()
+
+    def upstream_distribution(self,*_args,**_kwargs):
+        folder=self.work/'dist';folder.mkdir()
+        (folder/('sdk-repo-darwin_aarch64-emulator-'+producer.BUILD_ID+'.zip')).write_bytes(b'owned mock artifact')
+        return SimpleNamespace(returncode=0)
+
+    def test_upstream_exit_is_separate_from_a_missing_distribution(self):
+        with patch.object(producer.subprocess,'run',return_value=SimpleNamespace(returncode=0)):
+            with self.assertRaisesRegex(ValueError,'distribution was not produced'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'distribution')
+        self.assertNotIn('artifact',result)
+
+    def test_source_postcheck_failure_is_not_misreported_as_a_failed_compiler(self):
+        with patch.object(producer.subprocess,'run',side_effect=self.upstream_distribution),\
+             patch.object(producer,'project_inputs',side_effect=[([],self.lock),ValueError('Source checkout is not clean: external/qemu')]):
+            with self.assertRaisesRegex(ValueError,'not clean'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'source_inputs')
+        self.assertNotIn('artifact',result)
+
+    def test_digest_failure_preserves_the_verified_stage_without_qualifying_the_artifact(self):
+        with patch.object(producer.subprocess,'run',side_effect=self.upstream_distribution),\
+             patch.object(producer,'sha256',side_effect=OSError('owned read failed')):
+            with self.assertRaises(OSError):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'unknown')
+        self.assertEqual(result['returncode'],0)
+        self.assertEqual(result['verification_stage'],'artifact_digest')
+        self.assertNotIn('artifact',result)
+
+    def test_failed_upstream_preserves_the_actual_exit_and_has_no_verification_stage(self):
+        with patch.object(producer.subprocess,'run',return_value=SimpleNamespace(returncode=7)):
+            with self.assertRaisesRegex(ValueError,'Upstream build failed'):self.run_main(build=True)
+        result=json.loads((self.work/'build-result.json').read_text())
+        self.assertEqual(result['build_status'],'failed')
+        self.assertEqual(result['returncode'],7)
+        self.assertNotIn('verification_stage',result)
 
     def test_plan_cannot_launch_upstream_or_create_work(self):
         with patch.object(producer.subprocess, "run", side_effect=AssertionError("Unexpected build")) as run:
@@ -152,6 +206,147 @@ class ProducerLifecycleTests(unittest.TestCase):
         result = json.loads((self.work / "build-result.json").read_text(encoding="utf-8"))
         self.assertEqual(result["build_status"], "unknown")
         self.assertNotIn("artifact", result)
+
+    def test_nested_fixed_sdk_path_writes_are_isolated_before_source_postcheck(self):
+        original = self.sdk.stat().st_ino
+
+        def build(*args, **kwargs):
+            # The pinned upstream runner recomputes this path instead of honoring env.
+            (self.sdk / ".knownPackages").write_text("generated metadata")
+            (self.sdk / "package.xml").write_text("generated package")
+            return self.upstream_distribution()
+
+        def check(*args):
+            self.assertEqual((self.sdk / ".knownPackages").read_text(), "pinned metadata")
+            self.assertFalse((self.sdk / "package.xml").exists())
+            self.assertFalse(self.sdk.is_symlink())
+            self.assertEqual(self.sdk.stat().st_ino, original)
+            return [], self.lock
+
+        with patch.object(producer.subprocess, "run", side_effect=build), \
+             patch.object(producer, "project_inputs", side_effect=check):
+            self.run_main(build=True)
+        self.assertEqual((self.work / "sdk/package.xml").read_text(), "generated package")
+        self.assertEqual(json.loads((self.work / "build-result.json").read_text())["build_status"], "built")
+
+
+class SdkWorkspaceTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="aiphone-sdk-workspace-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name).resolve()
+        self.checkout = self.root / "checkout"
+        self.source = self.checkout / "prebuilts/android-emulator-build/system-images/linux"
+        self.source.mkdir(parents=True)
+        (self.source / ".knownPackages").write_bytes(b"pinned metadata")
+        generic = self.source.parent / "generic/system-images/android-30"
+        generic.mkdir(parents=True)
+        (generic / "source.properties").write_bytes(b"pinned image")
+        (self.source / "system-images").symlink_to("../generic/system-images", target_is_directory=True)
+        self.work = self.root / "work"
+        self.work.mkdir()
+        self.inode = self.source.stat().st_ino
+
+    def assert_original(self):
+        self.assertFalse(self.source.is_symlink())
+        self.assertEqual(self.source.stat().st_ino, self.inode)
+        self.assertEqual((self.source / ".knownPackages").read_bytes(), b"pinned metadata")
+        self.assertTrue((self.source / "system-images").is_symlink())
+        self.assertEqual((self.source / "system-images/android-30/source.properties").read_bytes(), b"pinned image")
+        self.assertFalse((self.source / "system-images/android-30/package.xml").exists())
+
+    def test_sdk_aliases_are_dereferenced_before_the_original_directory_moves(self):
+        with producer.isolated_sdk(self.checkout, self.work, "linux") as sdk:
+            self.assertEqual(sdk, self.work / "sdk")
+            self.assertTrue(self.source.is_symlink())
+            self.assertFalse((sdk / "system-images").is_symlink())
+            report=json.loads((self.work/'sdk-copy.json').read_bytes())
+            self.assertEqual(report['files'],2)
+            self.assertEqual(report['logical_bytes'],len(b'pinned metadata')+len(b'pinned image'))
+            (self.source / ".knownPackages").write_text("generated metadata")
+            (self.source / "system-images/android-30/source.properties").write_text("generated metadata")
+            (self.source / "system-images/android-30/package.xml").write_text("generated package")
+        self.assert_original()
+        self.assertEqual((sdk / "system-images/android-30/package.xml").read_text(), "generated package")
+        self.assertFalse((self.work / "source-sdk").exists())
+
+    def test_upstream_interruption_restores_the_original_directory(self):
+        with self.assertRaises(KeyboardInterrupt):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                (self.source / ".knownPackages").write_text("generated metadata")
+                raise KeyboardInterrupt
+        self.assert_original()
+
+    def test_link_creation_failure_restores_the_original_directory(self):
+        with patch.object(Path, "symlink_to", side_effect=PermissionError("directory links unavailable")):
+            with self.assertRaises(PermissionError):
+                with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                    self.fail("upstream must not execute")
+        self.assert_original()
+
+    def test_preexisting_sdk_alias_is_rejected_without_moving_its_target(self):
+        original = self.work / "fixture-original"
+        self.source.rename(original)
+        self.source.symlink_to(original, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "pinned SDK directory"):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                self.fail("aliased input must not reach upstream")
+        self.assertEqual(self.source.readlink(), original)
+        self.assertEqual(original.stat().st_ino, self.inode)
+        self.assertFalse((self.work / "source-sdk").exists())
+
+    def test_unexpected_sdk_replacement_is_preserved_with_the_original_for_recovery(self):
+        with self.assertRaisesRegex(ValueError, "SDK path changed"):
+            with producer.isolated_sdk(self.checkout, self.work, "linux"):
+                self.source.unlink()
+                self.source.mkdir()
+                (self.source / "unexpected").write_text("preserve")
+        self.assertEqual((self.source / "unexpected").read_text(), "preserve")
+        self.assertEqual((self.work / "source-sdk/.knownPackages").read_bytes(), b"pinned metadata")
+
+    def test_copy_failure_never_moves_the_original_sdk(self):
+        with patch.object(producer.platform,'system',return_value='Linux'), \
+             patch.object(producer,'copy_sdk_file',side_effect=OSError('fixture copy failure')):
+            with self.assertRaises(producer.shutil.Error):
+                with producer.isolated_sdk(self.checkout,self.work,'linux'):
+                    self.fail('an incomplete copy cannot reach upstream')
+        self.assert_original()
+        self.assertFalse((self.work/'source-sdk').exists())
+
+
+class SparseSdkCopyTests(unittest.TestCase):
+    def test_logical_bytes_metadata_and_independent_storage_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source';destination=root/'copy'
+            payload=b'head'+bytes(2*1024**2+17)+b'tail'
+            source.write_bytes(payload);source.chmod(0o640)
+            os.utime(source,ns=(1700000000000000000,1700000001000000000))
+            producer.copy_sdk_file(source,destination)
+            self.assertEqual(destination.read_bytes(),payload)
+            self.assertEqual(source.stat().st_mtime_ns,destination.stat().st_mtime_ns)
+            self.assertEqual(source.stat().st_mode & 0o777,destination.stat().st_mode & 0o777)
+            destination.chmod(0o600);destination.write_bytes(b'independent write')
+            self.assertEqual(source.read_bytes(),payload)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'),'Physical sparse allocation is qualified on Linux')
+    def test_zero_regions_use_sparse_blocks_and_preserve_the_final_length(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source';destination=root/'copy'
+            payload=b'head'+bytes(16*1024**2+17)
+            source.write_bytes(payload)
+            producer.copy_sdk_file(source,destination)
+            self.assertEqual(destination.stat().st_size,len(payload))
+            self.assertEqual(producer.sha256(source),producer.sha256(destination))
+            self.assertLess(destination.stat().st_blocks*512,len(payload)//4)
+
+    def test_empty_and_short_zero_files_keep_exact_lengths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            for length in [0,1,1024**2-1,1024**2,1024**2+1]:
+                with self.subTest(length=length):
+                    source=root/('source-'+str(length));destination=root/('copy-'+str(length))
+                    source.write_bytes(bytes(length));producer.copy_sdk_file(source,destination)
+                    self.assertEqual(destination.read_bytes(),source.read_bytes())
 
 
 if __name__ == "__main__":

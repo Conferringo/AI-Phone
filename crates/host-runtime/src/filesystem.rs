@@ -14,7 +14,7 @@ pub(crate) fn alias(metadata: &Metadata) -> bool {
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt;
-        return metadata.file_attributes() & 0x400 != 0;
+        metadata.file_attributes() & 0x400 != 0
     }
     #[cfg(not(windows))]
     metadata.file_type().is_symlink()
@@ -35,6 +35,14 @@ pub(crate) fn directory(path: &Path, recursive: bool) -> Result<()> {
         builder.mode(0o700);
     }
     builder.create(path)?;
+    Ok(())
+}
+
+pub(crate) fn existing_directory(path: &Path) -> Result<()> {
+    let metadata = fs::symlink_metadata(path)?;
+    if !metadata.is_dir() || alias(&metadata) {
+        return Err(Error::Invalid("source_resource_directory"));
+    }
     Ok(())
 }
 

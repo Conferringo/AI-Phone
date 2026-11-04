@@ -7,6 +7,7 @@ pub mod home_identity;
 pub mod imaging;
 pub mod media;
 pub mod notifications;
+mod paint;
 pub mod process;
 pub mod runtime;
 pub mod screen;

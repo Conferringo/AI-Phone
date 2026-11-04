@@ -508,7 +508,7 @@ mod tests {
         ] {
             config.api_key = credential.into();
             config.proxy_url = proxy;
-            let client = store.model_client(&config).unwrap();
+            let client = store.http_client(&config.proxy_url).unwrap();
             let output = request_tracked(
                 &config,
                 &client,

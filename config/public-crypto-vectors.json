@@ -1,0 +1,143 @@
+{
+  "format": 1,
+  "encoding": "Complete pinned public byte spans, including terminating NUL bytes",
+  "vectors": [
+    {
+      "line": 44,
+      "symbol": "rsa_2048_privkey",
+      "size": 1676,
+      "sha256": "0ea40626c08abb85926ebb11f2c137ba93cb5971663bbf34fbb0950e392f8c52",
+      "source": "gnutls"
+    },
+    {
+      "line": 92,
+      "symbol": "dsa_2048_privkey",
+      "size": 1213,
+      "sha256": "b5d9cded34f2c566afc8759ba2d5af8a179efa2e9d47aaa813edbb2ba4d3f439",
+      "source": "gnutls"
+    },
+    {
+      "line": 121,
+      "symbol": "ecdsa_secp256r1_privkey",
+      "size": 228,
+      "sha256": "250f9ef4a0952e1cf5c6266b0778038789194133d1b4c42c7ea7efcd05fe549b",
+      "source": "gnutls"
+    },
+    {
+      "line": 137,
+      "symbol": "ecdsa_secp192r1_privkey",
+      "size": 191,
+      "sha256": "ec5bf5d793ae50d290264928a8011d9f6bf3448e6cc3c4deb06591bc181d2865",
+      "source": "gnutls"
+    },
+    {
+      "line": 151,
+      "symbol": "ecdsa_secp224r1_privkey",
+      "size": 203,
+      "sha256": "0d1d63224490a75c2df08e082951f07d5404e4315a7d7682a8efd86f8ac0284e",
+      "source": "gnutls"
+    },
+    {
+      "line": 166,
+      "symbol": "ecdsa_secp384r1_privkey",
+      "size": 283,
+      "sha256": "21df662d14f75338e09959415c7c1642e582399b980b5816fb15634b0f246ea8",
+      "source": "gnutls"
+    },
+    {
+      "line": 184,
+      "symbol": "ecdsa_secp521r1_privkey",
+      "size": 355,
+      "sha256": "c84f5e6c5a9b85a1224a42def3e34f964a7152c0c5fe9b965735d85920de6d0f",
+      "source": "gnutls"
+    },
+    {
+      "line": 205,
+      "symbol": "gost01_privkey",
+      "size": 153,
+      "sha256": "770f464f06df5e519fd6546397d0c44abac684a3924ba003abd06c62e43055ea",
+      "source": "gnutls"
+    },
+    {
+      "line": 212,
+      "symbol": "gost12_256_privkey",
+      "size": 157,
+      "sha256": "2b7524edad33d1491d447bbb4ff25d14bca4936480a14aa57765da1f1c1e7db9",
+      "source": "gnutls"
+    },
+    {
+      "line": 219,
+      "symbol": "gost12_512_privkey",
+      "size": 202,
+      "sha256": "3d39c48ee290955e72369948d88f1daa57ffc717705f3a42a71d443d315f396c",
+      "source": "gnutls"
+    },
+    {
+      "source": "libssh",
+      "kind": "format-marker-and-following-diagnostic",
+      "symbol": "OPENSSH_HEADER_BEGIN",
+      "line": 45,
+      "following_diagnostic_line": 254,
+      "alignment_nuls": 4,
+      "size": 79,
+      "sha256": "50c160e3d507b7be4554dad8d4a826233d154f0422c514d987d31ee7730772e4"
+    },
+    {
+      "source": "libssh",
+      "kind": "public-security-key-algorithm-suffix",
+      "symbol": "DEFAULT_PUBLIC_KEY_ALGORITHMS",
+      "size": 272,
+      "sha256": "1304b10020c57a50a7f7b96330f41be64f32b18cac644e8713fbe6f7aaf7e3a7"
+    },
+    {
+      "source": "libssh",
+      "kind": "public-security-key-algorithm-suffix",
+      "symbol": "PUBLIC_KEY_ALGORITHMS",
+      "size": 309,
+      "sha256": "5bc98581911ef44b78b37bbee2edebbe2d2ab5001a5f0dbf3102975725636855"
+    },
+    {
+      "source": "libssh",
+      "kind": "public-security-key-algorithm-suffix",
+      "symbol": "SSH_KEYTYPE_SK_ECDSA_CERT01",
+      "size": 44,
+      "sha256": "da010bc7a9cba0e33c2ef062a67c0e1a8c33201a0e94a22dfcfaa55a473b36fd"
+    }
+  ],
+  "sources": {
+    "gnutls": {
+      "project": "GnuTLS",
+      "version": "3.8.3",
+      "commit": "2f04c14daa086889b4e85f7056c39d23766ddaa1",
+      "path": "lib/crypto-selftests-pk.c",
+      "url": "https://raw.githubusercontent.com/gnutls/gnutls/2f04c14daa086889b4e85f7056c39d23766ddaa1/lib/crypto-selftests-pk.c",
+      "sha256": "0199a5b05732d825e235001455afa1d54178d8508da1fd2e0eb8a5ef271405b8",
+      "license": "LGPL-2.1-or-later"
+    },
+    "libssh": {
+      "project": "libssh",
+      "version": "0.10.6",
+      "url": "https://security.ubuntu.com/ubuntu/pool/main/libs/libssh/libssh_0.10.6.orig.tar.xz",
+      "sha256": "1861d498f5b6f1741b6abc73e608478491edcf9c9d4b6630eef6e74596de9dc1",
+      "license": "LGPL-2.1-or-later",
+      "files": [
+        {
+          "path": "include/libssh/pki_priv.h",
+          "sha256": "9b22800a4b85d7173b693291f99ae0b52e8f684d02d37744e77404ea5028f106"
+        },
+        {
+          "path": "src/pki_container_openssh.c",
+          "sha256": "83f207fd554c45222114e3cce4d8f23f3e0132fb5d3d71d260e153f541967a75"
+        },
+        {
+          "path": "src/pki.c",
+          "sha256": "c8a3d3d6abb438ad159c7b4c4c2745bd6d9e656905887c659fe86174cb30da22"
+        },
+        {
+          "path": "src/kex.c",
+          "sha256": "197394c1953761870076818dae3d11148a9139bda528926d72b989a933567602"
+        }
+      ]
+    }
+  }
+}

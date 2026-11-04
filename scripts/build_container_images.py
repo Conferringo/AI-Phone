@@ -7,8 +7,8 @@ import subprocess
 import tarfile
 import tempfile
 from artifact_io import digest
-from build_capsule_codec import write_xz, read_tar, decoded
-from container_images import MANIFEST,XZ_ARCHIVE,ROLES,RESERVE,MAX_ARCHIVE,MAX_RAW,checked_image,daemon_architecture,docker_command,image_ref,inventory,stage,image_pipe
+from build_capsule_codec import write_xz, decoded
+from container_images import MANIFEST,XZ_ARCHIVE,ROLES,RESERVE,MAX_ARCHIVE,MAX_RAW,checked_image,daemon_architecture,docker_command,image_ref,archive_metadata,inventory_records,stage,image_pipe
 from oci_layer_transform import transform
 
 
@@ -60,10 +60,9 @@ def transformed_images(records, raw, architecture):
     with (folder/'docker-export.tar.gz').open('w+b') as source:
         save_images([row['ref'] for row in records.values()],source,architecture)
         source.flush();source.seek(0)
-        records=bound_records(records,inventory(source,'gzip'),architecture)
-        source.seek(0)
-        with read_tar(source,MAX_RAW,stream=True) as exported:
-            oci=any(entry.name=='oci-layout' for entry in exported)
+        objects,members=archive_metadata(source,'gzip')
+        records=bound_records(records,inventory_records(objects,members),architecture)
+        oci='oci-layout' in members
         source.seek(0)
         with write_xz(ArchiveWriter(raw,folder)) as target:
             writer=RawArchiveWriter(target)

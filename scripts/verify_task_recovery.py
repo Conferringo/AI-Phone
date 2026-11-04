@@ -12,11 +12,11 @@ import tempfile
 import threading
 import time
 import uuid
+from ci_integration import service_binary
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from database import prepare,literal
 from state_backup import psql,private_json
 
-ROOT=Path(__file__).resolve().parent.parent
 CHILD='worker::process_recovery_tests::worker_child'
 
 class Model:
@@ -77,7 +77,7 @@ class Driver:
             value=json.loads(shared.read_text());value['database']=database;private_json(root/'data/database/credentials.json',value)
         prepare(root,self.args.pg_container)
         if not shared.exists():shared.write_bytes((root/'data/database/credentials.json').read_bytes());shared.chmod(0o600)
-        env=self.env(root);r=subprocess.run([ROOT/'target/debug/ai-phone-assistant','--migrate'],env=env,capture_output=True)
+        env=self.env(root);r=subprocess.run([service_binary(),'--migrate'],env=env,capture_output=True)
         if r.returncode:raise ValueError('Fixture migration failed')
         private_json(root/'data/model/credentials.json',{'api_key':'','base_url':f'http://127.0.0.1:{self.model.server.server_port}/v1','model':name,'provider':'compatible','protocol':'responses'})
         conversation=self.sql(database,'SELECT id FROM conversations LIMIT 1;');message=str(uuid.uuid4());run=str(uuid.uuid4())

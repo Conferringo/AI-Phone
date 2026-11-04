@@ -27,6 +27,7 @@ pub struct LoopState {
     pub last_issue: String,
     pub plan: Option<Value>,
     pub exploration_window: Option<ExplorationWindow>,
+    pub guidance_app: String,
 }
 impl LoopState {
     pub fn exploration_yield_due(&mut self, now: u64, step: i32) -> bool {

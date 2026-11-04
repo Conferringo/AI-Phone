@@ -16,6 +16,22 @@ from macos_factory_qemu import software_arguments
 
 
 class MacFactoryEngineTests(unittest.TestCase):
+    def test_native_handoff_keeps_the_factory_deadline_without_creating_an_engine(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp).resolve();(root/'dist').mkdir()
+            (root/'dist/macos-full-factory-report.json').write_text(json.dumps({'artifact':{'delivery':{'complete_device_bundle':True}}}))
+            with patch.object(engine,'runner',return_value=root),patch('macos_client_factory.compiler_environment',return_value={}), \
+                 patch('android_factory_stock.reserve'),patch.object(engine,'engine_session',side_effect=AssertionError('no engine')) as session, \
+                 patch.object(engine,'qemu',side_effect=AssertionError('no QEMU')) as qemu,patch.object(engine,'command') as command:
+                value=engine.build(root,root/'sdk',prebuilt_images=(root/'handoff','a'*64))
+            session.assert_not_called();qemu.assert_not_called()
+            self.assertTrue(value['complete_device_bundle']);self.assertTrue(value['engine_cleanup_verified'])
+            self.assertFalse(value['engine_ready'])
+            self.assertEqual(command.call_args.kwargs['timeout'],6500)
+            argv=command.call_args.args[0]
+            self.assertEqual(argv[argv.index('--image-candidate')+1],root/'handoff')
+            self.assertEqual(argv[argv.index('--image-metadata-sha256')+1],'a'*64)
+
     def test_software_accelerator_preserves_queries_and_other_device_arguments(self):
         self.assertEqual(software_arguments(['-M','none','-accel','help']),['-M','none','-accel','help'])
         self.assertEqual(software_arguments(['--version']),['--version'])

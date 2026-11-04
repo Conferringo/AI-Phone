@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::Row;
 
-fn package(foreground: &str) -> Option<&str> {
+pub(crate) fn package(foreground: &str) -> Option<&str> {
     let value = foreground.split('/').next()?.trim();
     (value.len() < 180
         && value.contains('.')
@@ -15,6 +15,23 @@ fn package(foreground: &str) -> Option<&str> {
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"._".contains(&c)))
     .then_some(value)
+}
+fn experience_name(app_id: &str) -> String {
+    format!(
+        "app-experience-{}",
+        &format!("{:x}", Sha256::digest(app_id))[..12]
+    )
+}
+
+const RECALL_SQL: &str =
+    "SELECT name FROM runtime_skills WHERE lower(name)=$1 AND enabled AND deleted_at IS NULL";
+
+pub(crate) async fn recall(app: &App, app_id: &str) -> Result<Option<String>, String> {
+    sqlx::query_scalar(RECALL_SQL)
+        .bind(experience_name(app_id))
+        .fetch_optional(&app.db)
+        .await
+        .map_err(|e| e.to_string())
 }
 fn metadata(output: &Value) -> Option<Value> {
     output
@@ -150,10 +167,7 @@ pub async fn promote(app: &App, run: Uuid) -> Result<(), String> {
                 row.get::<Vec<String>, _>("observation_ids").join(", ")
             ));
         }
-        let name = format!(
-            "app-experience-{}",
-            &format!("{:x}", Sha256::digest(&app_id))[..12]
-        );
+        let name = experience_name(&app_id);
         crate::workbench::publish_learning(app, &name, &app_id, &body).await?;
     }
     Ok(())
@@ -218,6 +232,12 @@ mod database_tests {
  let args=json!({"app_id":"com.example.reader","title":"打开搜索入口","procedure":"在当前版本点击可见搜索图标，检查出现搜索输入框。","outcome":"verified","limitations":"只验证当前版本界面，不代表其他版本相同。","observation_ids":[format!("{run}-0"),format!("{run}-1")]});
  let mut invalid=args.clone();invalid["observation_ids"]=json!([format!("{}-0",runs[0])]);assert!(save(&app,run,&invalid).await.is_err());
  invalid["observation_ids"]=json!([format!("{run}-0")]);assert!(save(&app,run,&invalid).await.is_err());
+ let audit=Uuid::now_v7();
+ sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status) VALUES($1,$2,$3,'audit','fixture approval','running')").bind(audit).bind(run).bind(message).execute(&db).await.unwrap();
+ assert!(!crate::completion_audit::retain_learning(&app,run,true,Some(&args)).await);
+ assert!(!crate::completion_audit::retain_learning(&app,run,false,Some(&invalid)).await);
+ assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM app_experiences WHERE run_id=$1").bind(run).fetch_one(&db).await.unwrap(),0);
+ assert!(crate::completion_audit::retain_learning(&app,run,false,Some(&args)).await);
  let first=save(&app,run,&args).await.unwrap();assert_eq!(first["id"],save(&app,run,&args).await.unwrap()["id"]);
  let mut corrected=args.clone();corrected["procedure"]=json!("在当前版本点击实际可见搜索图标，复查搜索输入框，不推断其他版本。");
  let revision=save(&app,run,&corrected).await.unwrap();assert_ne!(first["id"],revision["id"]);
@@ -225,9 +245,29 @@ mod database_tests {
  for _ in 0..2 {assert_eq!(withdraw(&app,run,&json!({"id":revision["id"]})).await.unwrap()["withdrawn"],true);}
  save(&app,run,&args).await.unwrap();
  assert!(promote(&app,run).await.is_err());assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runtime_skills WHERE name LIKE 'app-experience-%'").fetch_one(&db).await.unwrap(),0);
- sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,finished_at) VALUES($1,$2,$3,'audit','fixture approval','completed',now())").bind(Uuid::now_v7()).bind(run).bind(message).execute(&db).await.unwrap();promote(&app,run).await.unwrap();
+ sqlx::query("UPDATE harness_events SET status='completed',finished_at=now() WHERE id=$1").bind(audit).execute(&db).await.unwrap();promote(&app,run).await.unwrap();
+ assert_eq!(recall(&app,"com.example.reader").await.unwrap(),Some(experience_name("com.example.reader")));
+ assert!(recall(&app,"com.example.other").await.unwrap().is_none());
+ sqlx::query("INSERT INTO runtime_skills(id,name,source,content) SELECT 'fixture-'||n,'unrelated-skill-'||n,'fixture','isolated lookup fixture' FROM generate_series(1,5000) n").execute(&db).await.unwrap();
+ sqlx::query("ANALYZE runtime_skills").execute(&db).await.unwrap();
+ let plan:Value=sqlx::query_scalar(&format!("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) {RECALL_SQL}")).bind(experience_name("com.example.reader")).fetch_one(&db).await.unwrap();
+ assert!(plan.to_string().contains("runtime_skills_active_name"),"recall must use the matching index as learned skills grow: {plan}");
+ let mut guidance=crate::agent_loop::LoopState::default();
+ let mut observed=vec![json!({"role":"user","content":[{"type":"input_text","text":"使用手机应用"}]}),
+   json!({"type":"function_call","name":"phone_observe","call_id":"guidance-frame","arguments":"{}"}),
+   json!({"type":"function_call_output","call_id":"guidance-frame","output":[{"type":"input_text","text":json!({"success":true,"observation_id":format!("{run}-1"),"foreground_app":"com.example.reader/.Home"}).to_string()},{"type":"input_image","image_url":"data:image/png;base64,fixture_grounding"}]})];
+ let automatic=crate::worker::experience_call(&app,&observed,&mut guidance).await.unwrap();
+ assert_eq!(automatic["name"],"skill_read");
+ assert_eq!(serde_json::from_str::<Value>(automatic["arguments"].as_str().unwrap()).unwrap()["name"],experience_name("com.example.reader"));
+ let mut resumed:crate::agent_loop::LoopState=serde_json::from_value(serde_json::to_value(&guidance).unwrap()).unwrap();
+ assert!(crate::worker::experience_call(&app,&observed,&mut resumed).await.is_none(),"same app and a resumed run do not enqueue another guidance read");
+ let loaded=crate::workbench::skill_text(&app,&experience_name("com.example.reader")).await.unwrap();
+ observed.push(automatic.clone());observed.push(json!({"type":"function_call_output","call_id":automatic["call_id"],"output":[{"type":"input_text","text":loaded}]}));
+ assert!(crate::worker::experience_call(&app,&observed,&mut crate::agent_loop::LoopState::default()).await.is_none(),"existing successful read is reused across app switches");
  sqlx::query("UPDATE runtime_skills SET content=content||E'\\n手动补充应当保留',enabled=false WHERE name LIKE 'app-experience-%'").execute(&db).await.unwrap();promote(&app,run).await.unwrap();
  let skill=sqlx::query("SELECT content,enabled FROM runtime_skills WHERE name LIKE 'app-experience-%'").fetch_one(&db).await.unwrap();assert!(skill.get::<String,_>("content").contains("手动补充应当保留"));assert!(!skill.get::<bool,_>("enabled"));
+ assert!(recall(&app,"com.example.reader").await.unwrap().is_none());
+ assert!(crate::worker::experience_call(&app,&observed,&mut crate::agent_loop::LoopState::default()).await.is_none(),"disabled experience is not silently enabled for recall");
  sqlx::query("UPDATE runs SET origin='user' WHERE id=$1").bind(run).execute(&db).await.unwrap();
  assert!(context(&app,run).await.unwrap().contains("com.example.reader"));
  }).catch_unwind().await;

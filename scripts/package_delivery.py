@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 
-from client_delivery import ASSET_LIMIT
+from client_delivery import ASSET_LIMIT,INSTALLER_FORMATS
 
 
 def native(root,*arguments):
@@ -52,13 +52,25 @@ def file_record(root,path):
     return {'path':relative.as_posix(),'name':path.name,'size':size,'sha256':digest(path)}
 
 
-def checked_artifact(root,report,source):
+def checked_report(root,report,source):
     from artifact_io import digest
-    if report['format']!=1 or report['source_commit']!=source or report['binary_publication'] is not False:
+    if report['format'] not in (1,2) or report['source_commit']!=source or report['binary_publication'] is not False:
         raise ValueError('Candidate source or publication state differs')
     if report['source_manifest_sha256']!=digest(Path(root)/'SOURCE-MANIFEST.json'):
         raise ValueError('Candidate source inventory changed')
-    artifact=report['artifact'];name=artifact['file']
+
+
+def report_installers(report):
+    if report['format']==1:return [{key:report[key] for key in ('artifact','package_delivery')}]
+    entries=report['installers']
+    kinds=[Path(entry['artifact']['file']).suffix.lstrip('.').casefold() for entry in entries]
+    expected=INSTALLER_FORMATS.get(report['host'])
+    if not expected or sorted(kinds)!=sorted(expected):raise ValueError('Candidate installer formats are incomplete or duplicated')
+    return entries
+
+
+def checked_artifact(artifact):
+    name=artifact['file']
     if Path(name).name!=name or artifact['delivery']['complete_device_bundle'] is not True:
         raise ValueError('Candidate requires a complete inspected installer')
     return artifact
@@ -101,10 +113,12 @@ def installer_records(root,package,artifact):
 
 
 def upload_plan(root,report,source):
-    artifact=checked_artifact(root,report,source)
-    metadata=metadata_path(root,artifact,source)
-    records=installer_records(root,report['package_delivery'],artifact)
-    records.extend(file_record(root,path) for path in [metadata,Path(root)/'dist'/(artifact['file']+'.sha256')])
+    checked_report(root,report,source);records=[]
+    for entry in report_installers(report):
+        artifact=checked_artifact(entry['artifact'])
+        metadata=metadata_path(root,artifact,source)
+        records.extend(installer_records(root,entry['package_delivery'],artifact))
+        records.extend(file_record(root,path) for path in [metadata,Path(root)/'dist'/(artifact['file']+'.sha256')])
     if len({row['name'] for row in records})!=len(records):raise ValueError('Duplicate candidate asset name')
     return {'format':1,'source_commit':source,'host':report['host'],'binary_publication':False,'files':records}
 

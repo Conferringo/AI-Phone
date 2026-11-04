@@ -96,6 +96,7 @@ class BootstrapInputTests(OwnedFixture):
         self.assertNotIn("XAUTHORITY", environment)
         self.assertEqual(environment["GIT_CONFIG_GLOBAL"], environment["XDG_CONFIG_HOME"] + "/git/config")
         self.assertTrue(Path(environment["GIT_CONFIG_GLOBAL"]).is_file())
+        self.assertIn("[http]\n\tversion = HTTP/1.1\n", Path(environment["GIT_CONFIG_GLOBAL"]).read_text())
         self.assertTrue(Path(environment["GNUPGHOME"]).is_relative_to(self.root))
         self.assertTrue(Path(environment["REPO_CONFIG_DIR"]).is_relative_to(self.root))
         self.assertNotIn("include", Path(environment["GIT_CONFIG_GLOBAL"]).read_text())
@@ -304,6 +305,19 @@ class CommandOwnerTests(OwnedFixture):
         self.log = (self.root / "owned.log").open("wb")
         self.addCleanup(self.log.close)
         self.command = bootstrap.SourceCommand(self.root, self.environment, self.log)
+        group=patch.object(bootstrap,'group_active',return_value=False)
+        group.start();self.addCleanup(group.stop)
+
+    def test_failed_wrapper_still_terminates_the_owned_display_group(self):
+        process=SimpleNamespace(pid=43210,returncode=None,wait=Mock(return_value=7))
+        exited=SimpleNamespace(si_pid=43210,si_code=bootstrap.os.CLD_EXITED,si_status=7)
+        with patch.object(bootstrap.os,'waitid',return_value=exited),patch.object(bootstrap.os,'getpgid',return_value=43210),\
+             patch.object(bootstrap.os,'getsid',return_value=43210),patch.object(bootstrap.os,'killpg') as kill,\
+             patch.object(bootstrap.subprocess,'Popen',return_value=process):
+            with self.assertRaisesRegex(bootstrap.BuildFailure,'command_failed'):
+                self.command.run(['never-executed'],self.root,graceful=True)
+        self.assertEqual([call.args for call in kill.call_args_list],[(43210,signal.SIGTERM),(43210,signal.SIGKILL)])
+        process.wait.assert_called_once_with(timeout=10)
 
     def test_disk_floor_stops_only_the_new_owned_session(self):
         process = SimpleNamespace(pid=43210, returncode=None, poll=Mock(return_value=None), wait=Mock(return_value=-9))
@@ -318,6 +332,21 @@ class CommandOwnerTests(OwnedFixture):
             self.assertTrue(start.call_args.kwargs["start_new_session"])
             self.assertEqual([call.args for call in kill.call_args_list], [(43210, signal.SIGTERM), (43210, signal.SIGKILL)])
             process.wait.assert_called_once_with(timeout=10)
+
+    def test_unfinished_group_keeps_the_leader_unreaped_and_reports_cleanup_failure(self):
+        process=SimpleNamespace(pid=43210,returncode=None,wait=Mock())
+        exited=SimpleNamespace(si_pid=43210,si_code=bootstrap.os.CLD_EXITED,si_status=0)
+        with patch.object(bootstrap.os,'waitid',return_value=exited),patch.object(bootstrap.os,'getpgid',return_value=43210),\
+             patch.object(bootstrap.os,'getsid',return_value=43210),patch.object(bootstrap.os,'killpg'),\
+             patch.object(bootstrap,'group_finished',return_value=False):
+            with self.assertRaisesRegex(bootstrap.BuildFailure,'process_stop_timeout'):self.command.stop(process)
+        process.wait.assert_not_called()
+
+    def test_group_completion_uses_the_original_join_deadline(self):
+        with patch.object(bootstrap,'group_active',return_value=True),patch.object(bootstrap.time,'monotonic',side_effect=[10,20]),\
+             patch.object(bootstrap.time,'sleep') as sleep:
+            self.assertFalse(bootstrap.group_finished(SimpleNamespace(pid=43210),10))
+        sleep.assert_not_called()
 
     def test_owner_mismatch_preserves_original_and_cleanup_failure(self):
         process = SimpleNamespace(pid=43210, returncode=None, wait=Mock())
@@ -457,6 +486,28 @@ class LifecycleTests(OwnedFixture):
         self.assertNotIn("private-", json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
+    def test_postcheck_failure_keeps_a_redacted_producer_trace_without_accepting_the_build(self):
+        def run(_command,arguments,_cwd,**_kwargs):
+            if '--build' not in arguments:return ''
+            build=self.root/'build';build.mkdir()
+            (build/'build-result.json').write_text(json.dumps({'build_status':'unknown','returncode':0,'verification_stage':'source_inputs',
+                'source_lock_sha256':bootstrap.producer.LOCK_SHA256,'build_id':bootstrap.producer.BUILD_ID,'target':'linux_x86_64'}))
+            (build/'build.log').write_text('Distribution task reached\n')
+            with (self.root/'private-build.log').open('a') as log:
+                log.write('api_key=private-sentinel\n'+str(self.root)+'/checkout\nValueError: Source checkout is not clean: external/qemu; status=generated-file.cc\n')
+            raise bootstrap.BuildFailure('command_failed')
+        output=io.StringIO()
+        with patch.object(bootstrap.SourceCommand,'run',autospec=True,side_effect=run),contextlib.redirect_stderr(output):
+            with self.assertRaises(bootstrap.BuildFailure):bootstrap.controlled_build(self.root)
+        receipt=self.public_receipt();diagnostics=receipt['build_diagnostics']
+        self.assertEqual(receipt['status'],'failed');self.assertEqual(diagnostics['upstream_returncode'],0)
+        self.assertEqual(diagnostics['verification_stage'],'source_inputs')
+        self.assertEqual(diagnostics['producer']['signals'],['source_changed'])
+        self.assertIn('Redacted producer tail',output.getvalue());self.assertIn('generated-file.cc',output.getvalue())
+        self.assertIn('Distribution task reached',output.getvalue())
+        self.assertNotIn('private-sentinel',output.getvalue());self.assertNotIn(str(self.root),output.getvalue())
+        self.assertNotIn('artifact_bytes',receipt)
+
     def test_invalid_or_absent_producer_result_does_not_mask_original_failure(self):
         for value in (None, "broken-json", json.dumps({"build_status": "failed", "returncode": True}),
                       json.dumps({"source_lock_sha256": "0" * 64, "returncode": "private-key-sentinel"})):
@@ -510,6 +561,37 @@ class LifecycleTests(OwnedFixture):
         for value in ([], {**identity, "target": "private-key-sentinel"}):
             path.write_text(json.dumps(value))
             self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "invalid"})
+
+    def test_sdk_footprint_projection_keeps_only_bounded_numeric_evidence(self):
+        build=self.root/'build';build.mkdir();path=build/'sdk-copy.json'
+        expected={'backend':'sparse','files':7,'logical_bytes':1000,'allocated_bytes':512}
+        path.write_text(json.dumps({**expected,'private':'private-sentinel'}))
+        self.assertEqual(bootstrap.sdk_copy_diagnostics(self.root),expected)
+        for key,value in [('backend','private-sentinel'),('files',True),('logical_bytes',-1),('allocated_bytes','private-sentinel')]:
+            path.write_text(json.dumps({**expected,key:value}))
+            self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
+        path.write_text('[]');self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
+
+    def test_post_build_stage_projects_only_fixed_values_and_an_observed_zero_exit(self):
+        build=self.root/'build';build.mkdir();path=build/'build-result.json'
+        identity={'source_lock_sha256':bootstrap.producer.LOCK_SHA256,'build_id':bootstrap.producer.BUILD_ID,'target':'linux_x86_64','build_status':'unknown'}
+        for stage in ('distribution','source_inputs','artifact_digest','complete'):
+            path.write_text(json.dumps({**identity,'returncode':0,'verification_stage':stage,'private':'private-sentinel'}))
+            self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'unknown','upstream_returncode':0,'verification_stage':stage})
+        for stage,code in [('private-sentinel',0),('source_inputs',True),('source_inputs',1)]:
+            path.write_text(json.dumps({**identity,'returncode':code,'verification_stage':stage}))
+            self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'unknown'})
+        path.write_text(json.dumps({**identity,'build_status':'private-sentinel','returncode':0,'verification_stage':'complete'}))
+        self.assertEqual(bootstrap.producer_diagnostics(self.root),{'producer_status':'invalid'})
+
+    def test_source_and_distribution_postcheck_signals_do_not_copy_error_contents(self):
+        log=self.root/'postcheck.log'
+        for line,signal in [('ValueError: Source checkout is not clean: external/qemu; status=private-sentinel','source_changed'),
+                            ('ValueError: Expected upstream distribution was not produced','distribution_missing'),
+                            ('ValueError: Source project revision mismatch: private-sentinel','source_revision')]:
+            log.write_text(line+'\n')
+            result=bootstrap.log_diagnostics(log,self.root/'checkout')
+            self.assertEqual(result['signals'],[signal]);self.assertNotIn('private-sentinel',json.dumps(result))
 
     def test_receipt_byte_budget_accepts_the_limit_and_rejects_larger_input(self):
         build = self.root / "build"

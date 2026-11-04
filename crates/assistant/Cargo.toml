@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 ai-phone-vision = { path = "../vision" }
 ai-phone-api = { path = "../api" }
+ai-phone-host-runtime = { path = "../host-runtime" }
 axum = { version = "=0.8.9", features = ["multipart"] }
 prost = "=0.14.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "time", "sync", "fs", "process", "io-util"] }
@@ -17,7 +18,7 @@ tokio-util = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "=0.22.1"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "multipart"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "postgres", "uuid", "json", "migrate", "macros"] }
 uuid = { version = "1", features = ["v4", "v7", "serde"] }
 futures-util = "0.3"

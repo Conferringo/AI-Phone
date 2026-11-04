@@ -44,6 +44,7 @@ const components:Record<string,string[]>={
  'location-window':['LocationWindow'],'knowledge-window':['KnowledgeWindow'],
  'workspace-window':['WorkspaceWindow'],'execution-trace':['ExecutionTrace'],
  'proactive-controls':['ProactiveProvider','ExplorationToggle'],'registry-window':['RegistryWindow'],
+ 'copilot':['CopilotProvider','CopilotToggle','useCopilotBinding'],
  'floating-window':['FloatingWindow','WindowTrigger'],'device-cable':['DeviceCable'],
  'desktop-surface':['DesktopSurface'],'phone-stream-image':['PhoneStreamImage'],'phone-toolbar':['PhoneToolbar'],
 };
@@ -67,6 +68,7 @@ mock.module('react',()=>({
  useRef:(value:any)=>{const i=owner.cursor++;return owner.slots[i]||(owner.slots[i]={current:value});},
  useState:(value:any)=>{const instance=owner,i=instance.cursor++;if(!(i in instance.slots))instance.slots[i]=value;return[instance.slots[i],(next:any)=>{instance.slots[i]=typeof next==='function'?next(instance.slots[i]):next;instance.dirty=true;}];},
  useCallback:(value:any,deps:any[])=>{const i=owner.cursor++,slot=owner.slots[i];if(!slot||!depsEqual(slot.deps,deps))owner.slots[i]={deps,value};return owner.slots[i].value;},
+ useMemo:(create:()=>any,deps:any[])=>{const i=owner.cursor++,slot=owner.slots[i];if(!slot||!depsEqual(slot.deps,deps))owner.slots[i]={deps,value:create()};return owner.slots[i].value;},
  useLayoutEffect:(create:any,deps:any[])=>effect('layout',create,deps),useEffect:(create:any,deps:any[])=>effect('passive',create,deps),
 }));
 const element=(type:any,props:any,key:any)=>({type,props,key});

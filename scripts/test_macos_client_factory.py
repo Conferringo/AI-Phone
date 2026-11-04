@@ -13,6 +13,36 @@ COMPONENTS=['web','native-services','phone-apps','container-host','js-services',
 
 
 class MacClientFactoryTests(unittest.TestCase):
+    def test_native_image_handoff_builds_complete_client_without_an_emulated_engine(self):
+        from contextlib import ExitStack
+        import factory_image_candidate as handoff
+        import test_container_images as fixtures
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve()
+            (root/'SOURCE-MANIFEST.json').write_text('same source fixture')
+            payload,_inventory=fixtures.ContainerImageTests().fixture(root)
+            report=handoff.stage(root,payload,'a'*40)
+            with ExitStack() as stack:
+                stack.enter_context(patch.dict('os.environ',{'GITHUB_SHA':'a'*40}))
+                stack.enter_context(patch.object(mac,'host_key',return_value='macos-arm64'))
+                stack.enter_context(patch('android_factory_stock.reserve'))
+                stack.enter_context(patch('check_source.check'))
+                stack.enter_context(patch.object(mac,'compiler_environment',return_value={}))
+                docker=stack.enter_context(patch.object(mac,'check_docker',side_effect=AssertionError('no engine')))
+                guest=stack.enter_context(patch.object(mac,'prepare_guest',side_effect=AssertionError('guest already in images')))
+                images=stack.enter_context(patch.object(mac,'prepare_images',side_effect=AssertionError('no image rebuild')))
+                stack.enter_context(patch.object(mac,'prepare_tools',return_value=(root/'tools',root/'python',{})))
+                stack.enter_context(patch.object(mac,'prepare_host',return_value={}))
+                stack.enter_context(patch.object(mac,'prepare_android',return_value=(root/'android',{})))
+                stack.enter_context(patch.object(mac,'prepare_apps',return_value={'phone':{'source_sha256':'c'*64}}))
+                compile=stack.enter_context(patch.object(mac,'compile_client',return_value={'delivery':mac.checked_delivery(COMPONENTS)}))
+                stack.enter_context(patch('package_delivery.prepare',return_value={'format':'single'}))
+                result=mac.build(root,root/'sdk',prebuilt_images=(report.parent,digest(report)))
+            docker.assert_not_called();guest.assert_not_called();images.assert_not_called()
+            self.assertEqual(compile.call_args.args[2],report.parent/handoff.BODY)
+            self.assertEqual(result['image_capsule_bytes'],payload.stat().st_size)
+            self.assertFalse(result['binary_publication'])
+
     def test_complete_inventory_requires_every_device_resource(self):
         self.assertTrue(mac.checked_delivery(COMPONENTS)['complete_device_bundle'])
         for missing in COMPONENTS:

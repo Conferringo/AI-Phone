@@ -19,18 +19,25 @@ case "${2:-client}" in
     label='AI Phone source-emulator candidate'
     description='Unpublished source-emulator output for maintainer review. Redistribution, source closure and Android boot qualification remain unapproved.'
     ;;
+  factory-images)
+    planner=scripts/factory_image_candidate.py
+    label='AI Phone native factory images'
+    description='Temporary unpublished ARM64 image handoff for complete native client assembly. No user state or publication approval is included.'
+    ;;
   *) printf '%s\n' 'Unknown build candidate kind.' >&2; exit 1 ;;
 esac
 work="$(mktemp -d "$RUNNER_TEMP/build-candidate-XXXXXX")"
 nonce="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
 tag="candidate-${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}-$nonce"
 created=false
+release_id=""
 cleanup() {
   status=$?
   trap - EXIT
   if [ "$status" -ne 0 ] && [ "$created" = true ]; then
-    if gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft | grep -qx true; then
-      gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || status=1
+    if [ -n "$release_id" ] && gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$work/failed-release.json" && \
+      jq -e --arg tag "$tag" --arg source "$GITHUB_SHA" '.draft == true and .published_at == null and .tag_name == $tag and .target_commitish == $source' "$work/failed-release.json" > /dev/null; then
+      gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" || status=1
     else
       printf '%s\n' 'Candidate cleanup requires maintainer inspection.' >&2
       status=1
@@ -64,3 +71,7 @@ gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?
 jq --slurpfile pages "$work/assets.json" '.assets = ($pages[0] | add)' "$work/remote.json" > "$work/complete.json"
 python3 scripts/package_delivery.py verify-upload "$work/plan.json" --release "$work/complete.json"
 printf 'Unpublished candidate retained: %s\n' "$tag"
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  printf 'candidate_tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+  printf 'candidate_release_id=%s\n' "$release_id" >> "$GITHUB_OUTPUT"
+fi

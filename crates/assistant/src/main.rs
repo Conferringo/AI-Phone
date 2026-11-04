@@ -46,6 +46,7 @@ mod run_notice;
 mod run_queue;
 mod settings;
 mod setup;
+mod speech;
 mod tool_catalog;
 mod voice_input;
 mod workbench;
@@ -127,9 +128,36 @@ fn db_error(_: impl std::fmt::Display) -> Response {
     )
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+    if arguments
+        .first()
+        .is_some_and(|value| value == "--service-supervision-contract")
+    {
+        if arguments.len() != 1 {
+            return Err("service_supervision_arguments".into());
+        }
+        println!("{}", ai_phone_host_runtime::supervision::CONTRACT);
+        return Ok(());
+    }
+    if arguments
+        .first()
+        .is_some_and(|value| value == "--supervise")
+    {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+        return runtime
+            .block_on(ai_phone_host_runtime::supervision::run(&arguments[1..]))
+            .map_err(Into::into);
+    }
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?
+        .block_on(serve(arguments))
+}
+
+async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error::Error>> {
     if arguments
         .iter()
         .any(|arg| arg == "--device-setup-contract" || arg == "--setup-devices")
@@ -272,6 +300,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/v1/resume", post(http::resume))
         .layer(DefaultBodyLimit::max(65536));
     let routes = routes
+        .route(
+            "/v1/voice/{operation}",
+            post(speech::route).layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
+        )
         .route(
             "/v1/workbench/upload-file",
             post(workbench::upload_file).layer(DefaultBodyLimit::max(12 * 1024 * 1024)),

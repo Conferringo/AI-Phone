@@ -1,4 +1,5 @@
-//! Verified host resources. No interpreter, shell, package manager or device action.
+//! Verified host resources and application-owned native host lifecycle.
+//! This library exposes no guest input actions or arbitrary command interface.
 mod archive;
 mod capsule;
 mod control;
@@ -7,6 +8,8 @@ mod links;
 mod manifest;
 pub mod package;
 mod staging;
+pub mod supervision;
+pub mod wsl;
 
 use fs2::FileExt;
 use std::{
