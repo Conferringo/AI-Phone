@@ -261,11 +261,15 @@ pub(super) fn execution_tools(context: &[Value]) -> Value {
     filter(tools(), !command_execution(context))
 }
 
+pub(super) fn desktop_target(context: &[Value]) -> bool {
+    !phone_task(context) && (computer_task(context) || super::desktop_focused(context))
+}
+
 pub(super) fn initial_observation(context: &[Value]) -> Option<(&'static str, Value)> {
     if !gui_execution(context) {
         return None;
     }
-    let desktop = computer_task(context) && !phone_task(context);
+    let desktop = desktop_target(context);
     let name = if desktop {
         "computer_observe"
     } else {
@@ -580,6 +584,14 @@ mod execution_policy_tests {
             );
         }
         assert!(initial_observation(&focused("用 Python 处理电脑里的本地表格")).is_none());
+        assert!(desktop_target(&focused("阿里巴巴最近发展怎么样")));
+        assert!(initial_observation(&focused("阿里巴巴最近发展怎么样")).is_none());
+        assert_eq!(
+            initial_observation(&focused("搜索GitHub上的skill"))
+                .unwrap()
+                .0,
+            "device_list"
+        );
     }
 
     #[test]

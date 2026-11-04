@@ -526,10 +526,12 @@ fn computer_task(context: &[Value]) -> bool {
                         .iter()
                         .any(|v| clause.contains(v))
             })
-            || context
-                .iter()
-                .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
-                && desktop_focus_task(&request))
+            || (desktop_focused(context) && desktop_focus_task(&request)))
+}
+fn desktop_focused(context: &[Value]) -> bool {
+    context
+        .iter()
+        .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
 }
 fn desktop_focus_task(request: &str) -> bool {
     !work_intent::harness_resource_request(request)
@@ -2144,7 +2146,7 @@ async fn execute(
             continue;
         }
         if (phone_task(&context)
-            || (gui_execution(&context) && !computer_task(&context))
+            || (gui_execution(&context) && !execution_policy::desktop_target(&context))
             || (notification_run && !desktop_notification)
             || wechat_task(&context))
             && !phone_skill_read(&context)
@@ -2158,7 +2160,10 @@ async fn execute(
             );
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
-        if computer_task(&context) && !builtin_skill_read(&context, "computer-use") {
+        if (computer_task(&context)
+            || (gui_execution(&context) && execution_policy::desktop_target(&context)))
+            && !builtin_skill_read(&context, "computer-use")
+        {
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"computer-use\"}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
@@ -3048,7 +3053,7 @@ async fn tool(
             .map_err(|e| e.to_string())?;
         let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
         if !execution_policy::command_execution(&current) {
-            let next = if computer_task(&current) {
+            let next = if execution_policy::desktop_target(&current) {
                 "computer_observe"
             } else {
                 "phone_observe"
