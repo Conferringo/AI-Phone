@@ -82,6 +82,11 @@ def inventory(root=ROOT):
         key=(value['name'],value['version']);repo=value.get('repository');license=value.get('license')
         if key not in javascript_versions:continue
         if isinstance(repo,dict):repo=repo.get('url')
+        if license is None:
+            legacy=value.get('licenses')
+            # Preserve an explicit single grant; do not guess how multiple grants combine.
+            if isinstance(legacy,list) and len(legacy)==1 and isinstance(legacy[0],dict):
+                license=legacy[0].get('type')
         if isinstance(license,dict):license=license.get('type')
         npm[key]={'name':key[0],'version':key[1],'license':license,'repository':repo,'notices':notices(path.parent)}
     node=sorted(npm.values(),key=lambda x:(x['name'],x['version']));rust.sort(key=lambda x:(x['name'],x['version']))

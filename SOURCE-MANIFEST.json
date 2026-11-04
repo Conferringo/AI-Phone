@@ -5160,8 +5160,8 @@
     },
     {
       "path": "scripts/dependency_inventory.py",
-      "size": 8816,
-      "sha256": "d23be11fa4d1eaf7dd8b17f083ccbb683b6aedbf9daf859d6711c147d0f05eeb"
+      "size": 9112,
+      "sha256": "20dadb0c4c8c14db933095e1c0b044a87860d44353fd87c90522dffdd54c87a2"
     },
     {
       "path": "scripts/dependency_report.py",
@@ -5895,8 +5895,8 @@
     },
     {
       "path": "scripts/test_dependency_notices.py",
-      "size": 4618,
-      "sha256": "06a4c334d2bdeba7329392659ede83c416139dd81138bf024052e6ea4b027927"
+      "size": 6435,
+      "sha256": "567f9ab01f94458cc64de3f4a93712e0d54dd21d62279109914375eff27f0914"
     },
     {
       "path": "scripts/test_dependency_reporting.py",
