@@ -2945,8 +2945,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/session/process.rs",
-      "size": 9737,
-      "sha256": "fc0839aab356867de5febece731ad395442b41f81c71333725061cb7c65ac244"
+      "size": 9862,
+      "sha256": "7b12bd55c0ab333d8d56791fae00b7e74027c638b9aa51fc5687e5b6207655f0"
     },
     {
       "path": "crates/host-runtime/src/android/session/readiness.rs",

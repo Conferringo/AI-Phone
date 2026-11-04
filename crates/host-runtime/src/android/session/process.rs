@@ -57,7 +57,12 @@ fn lock(plan: &Plan) -> Result<Option<File>> {
     let file = filesystem::lock_file(&plan.home.join("session.lock"))?;
     match file.try_lock_exclusive() {
         Ok(()) => Ok(Some(file)),
-        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
+        Err(e)
+            if e.kind() == std::io::ErrorKind::WouldBlock
+                || e.raw_os_error() == fs2::lock_contended_error().raw_os_error() =>
+        {
+            Ok(None)
+        }
         Err(e) => Err(e.into()),
     }
 }
