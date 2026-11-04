@@ -2860,8 +2860,8 @@
     },
     {
       "path": "crates/guest-runtime/src/accessibility.rs",
-      "size": 13929,
-      "sha256": "f6501a21cb75df015614d323a07dc9aec157991ec35ecf4034b5d96e672919ea"
+      "size": 17465,
+      "sha256": "ad0d5ad08a2e8eae3e87a843ca5f02a6c985d195e80f8f731e2c9a79d04c9536"
     },
     {
       "path": "crates/guest-runtime/src/actions.rs",
@@ -3405,8 +3405,8 @@
     },
     {
       "path": "docs/public/engineering/desktop-controls.md",
-      "size": 3113,
-      "sha256": "475e798f40fa870de1d19515665a60229f141f8e458e749c0c57816b4253097a"
+      "size": 3573,
+      "sha256": "6ec2bbae57f3203b3b6b2e30188a2e8fc72bef7a8e54874aca89a7f5c49d15aa"
     },
     {
       "path": "docs/public/engineering/device-bridge.md",
