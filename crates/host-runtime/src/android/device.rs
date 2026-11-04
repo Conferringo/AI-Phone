@@ -168,6 +168,8 @@ fn publish_directory(
     let mut file = fs::File::create_new(temporary.path().join("config.ini"))?;
     file.write_all(expected)?;
     file.sync_all()?;
+    // Close the completed file before publishing its parent directory.
+    drop(file);
     filesystem::sync_directory(temporary.path())?;
     control.check()?;
     fs::rename(temporary.path(), folder)?;

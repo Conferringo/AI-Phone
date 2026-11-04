@@ -470,9 +470,8 @@ fn native_windows_junction_is_not_a_component_directory() {
     let status = std::process::Command::new(
         std::path::PathBuf::from(std::env::var_os("SystemRoot").unwrap()).join("System32/cmd.exe"),
     )
-    .args(["/C", "mklink", "/J"])
-    .arg(home.join("components"))
-    .arg(&outside)
+    .current_dir(temp.path())
+    .args(["/D", "/C", "mklink", "/J", "home\\components", "outside"])
     .status()
     .unwrap();
     assert!(status.success());

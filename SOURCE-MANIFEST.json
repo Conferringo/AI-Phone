@@ -2900,8 +2900,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/device.rs",
-      "size": 8832,
-      "sha256": "6636f7636e764fe6122550d04b663ad8310c83b519f1b2f4360a110e543adba9"
+      "size": 8920,
+      "sha256": "8aefc24825947c8d031df8490a76b6f379eaa1a99ebb31e7903e3a218a6566b1"
     },
     {
       "path": "crates/host-runtime/src/android/manifest.rs",
@@ -2920,8 +2920,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/tests.rs",
-      "size": 15204,
-      "sha256": "b0c08a1568c690aebc1dcd8e7ddb8280588332ad54cab0094887546c84bef37f"
+      "size": 15218,
+      "sha256": "9e6f19ad97aaf1c373612f1129c78bc3cfad40957fc5c6c0389a86873f26f0ad"
     },
     {
       "path": "crates/host-runtime/src/archive.rs",
@@ -5295,8 +5295,8 @@
     },
     {
       "path": "scripts/linux_services.py",
-      "size": 7012,
-      "sha256": "5cfa4365e20fdc44dd13712faae52bf02a8bdcaf5b1c360c67f7fbf54d282401"
+      "size": 7068,
+      "sha256": "9cf1e2e96dabc2e78053740234900eb69ddb7b7a245c0bb68b49d9537a195a50"
     },
     {
       "path": "scripts/locale.test.ts",
@@ -5845,8 +5845,8 @@
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 15303,
-      "sha256": "9fccd50e3ab2ad85af5c12730b299b468a2ec981e5d3545d52cce01d5c43299e"
+      "size": 17705,
+      "sha256": "e0ed2f3e267c0ecb74c777bbe8733394bdfcdd8bea40c7ecfba1ec9c4f6499fd"
     },
     {
       "path": "scripts/test_macos_client_factory.py",

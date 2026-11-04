@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 import linux_services
@@ -106,6 +107,42 @@ class LinuxServiceTests(unittest.TestCase):
         import fcntl
         with (self.root/'data/services/fixture.lock').open('r+') as lock:
             fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+
+    def test_stop_waits_for_the_owned_process_after_receipt_removal(self):
+        import fcntl
+        folder=self.root/'data/services';folder.mkdir()
+        receipt=folder/'fixture.json';release=self.root/'release';unpublished=self.root/'unpublished'
+        code=('import os,signal,time\nfrom pathlib import Path\n'
+              'def stop(*args):\n Path("data/services/fixture.json").unlink()\n Path("unpublished").touch()\n'
+              ' while not Path("release").exists():time.sleep(.01)\n raise SystemExit(0)\n'
+              'signal.signal(signal.SIGTERM,stop)\nPath("ready").touch()\n'
+              'while True:time.sleep(.01)\n')
+        with (folder/'fixture.lock').open('w+') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            child=subprocess.Popen([sys.executable,'-c',code,str(linux_services.__file__),'fixture'],
+                                   cwd=self.root,stdin=lock,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        try:
+            deadline=time.monotonic()+3
+            while not (self.root/'ready').exists() and time.monotonic()<deadline:time.sleep(.01)
+            self.assertTrue((self.root/'ready').is_file())
+            receipt.write_text(json.dumps({'pid':child.pid,'start_ticks':linux_services.process_start(child.pid),'root':str(self.root)}))
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                result=executor.submit(stop_unit,self.root,'fixture')
+                try:
+                    while not unpublished.exists() and time.monotonic()<deadline:time.sleep(.01)
+                    self.assertTrue(unpublished.exists())
+                    # The receipt is gone but the real owned process still holds its lock.
+                    with self.assertRaises(TimeoutError):result.result(timeout=.2)
+                    with (folder/'fixture.lock').open('r+') as lock:
+                        with self.assertRaises(BlockingIOError):fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                finally:release.touch()
+                self.assertTrue(result.result(timeout=3))
+            child.wait(timeout=3)
+            with (folder/'fixture.lock').open('r+') as lock:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        finally:
+            release.touch()
+            if child.poll() is None:child.kill()
+            child.wait(timeout=3)
 
     def test_stop_during_restart_backoff_does_not_start_a_replacement(self):
         self.fixture.write_text('from pathlib import Path\np=Path("data/exits")\np.write_text(p.read_text()+"exit\\n" if p.exists() else "exit\\n")\nraise SystemExit(7)\n')
