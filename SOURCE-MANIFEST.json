@@ -2545,8 +2545,8 @@
     },
     {
       "path": "crates/assistant/src/device_exchange.rs",
-      "size": 16355,
-      "sha256": "4a31aadce78987506474f34befa10be7c60936cd6d931ed16ebfcbc0c961d438"
+      "size": 17808,
+      "sha256": "fc1ab59089ea2e49c603cd74b0752ce54d7ff139b372910c29172ef1b4dfaf69"
     },
     {
       "path": "crates/assistant/src/device_network.rs",
