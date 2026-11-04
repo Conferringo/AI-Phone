@@ -5,6 +5,7 @@ pub mod cli;
 mod device;
 mod manifest;
 mod resources;
+pub mod session;
 
 pub const AVD_NAME: &str = "ai_phone_p2";
 
@@ -30,6 +31,26 @@ pub struct Prepared {
     pub avd_home: PathBuf,
     pub reused_sdk: bool,
     pub reused_device: bool,
+}
+impl Prepared {
+    pub fn wire(&self) -> Result<ai_phone_api::wire::NativeAndroidPrepared> {
+        Ok(ai_phone_api::wire::NativeAndroidPrepared {
+            version: 1,
+            sdk_root: self
+                .sdk_root
+                .to_str()
+                .ok_or(Error::Invalid("android_device_path"))?
+                .into(),
+            avd_home: self
+                .avd_home
+                .to_str()
+                .ok_or(Error::Invalid("android_device_path"))?
+                .into(),
+            avd_name: AVD_NAME.into(),
+            reused_sdk: self.reused_sdk,
+            reused_device: self.reused_device,
+        })
+    }
 }
 
 impl Installation {

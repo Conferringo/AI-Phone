@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/native_android.proto.
  */
 export const file_ai_phone_v1_native_android: GenFile = /*@__PURE__*/
-  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNYgZwcm90bzM");
+  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNIoIBChJOYXRpdmVBbmRyb2lkU3RhcnQSMQoFcGhvbmUYASABKAsyIi5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkUHJlcGFyZWQSEAoIYWRiX3BvcnQYAiABKA0SFAoMY29uc29sZV9wb3J0GAMgASgNEhEKCWdycGNfcG9ydBgEIAEoDSKaAQoTTmF0aXZlQW5kcm9pZEJvb3RlZBIPCgd2ZXJzaW9uGAEgASgNEg4KBnNlcmlhbBgCIAEoCRIVCg1yb290X3ZlcmlmaWVkGAMgASgIEg0KBXdpZHRoGAQgASgNEg4KBmhlaWdodBgFIAEoDRIUCgxmcmFtZV9zaGEyNTYYBiABKAkSFgoOcmV1c2VkX3Nlc3Npb24YByABKAgiiwEKGU5hdGl2ZUFuZHJvaWRTZXNzaW9uT3duZXISDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIQCghhdmRfaG9tZRgDIAEoCRIQCghhZGJfcG9ydBgEIAEoDRIUCgxjb25zb2xlX3BvcnQYBSABKA0SEQoJZ3JwY19wb3J0GAYgASgNIkQKG05hdGl2ZUFuZHJvaWRTZXNzaW9uRmFpbHVyZRIMCgRjb2RlGAEgASgJEhcKD291dGNvbWVfdW5rbm93bhgCIAEoCCKWAQoZTmF0aXZlQW5kcm9pZFNlc3Npb25SZXBseRIyCgZib290ZWQYASABKAsyIC5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkQm9vdGVkSAASOwoHZmFpbHVyZRgCIAEoCzIoLmFpX3Bob25lLnYxLk5hdGl2ZUFuZHJvaWRTZXNzaW9uRmFpbHVyZUgAQggKBnJlc3VsdCI1ChtOYXRpdmVBbmRyb2lkU2Vzc2lvbkNvbnRyb2wSFgoOY2FuY2VsX3N0YXJ0dXAYASABKAhiBnByb3RvMw");
 
 /**
  * Native installer IPC, never a model tool. The client owns the installation lock.
@@ -138,4 +138,203 @@ export type NativeAndroidCreation = Message<"ai_phone.v1.NativeAndroidCreation">
  */
 export const NativeAndroidCreationSchema: GenMessage<NativeAndroidCreation> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_native_android, 2);
+
+/**
+ * Local native component IPC. The installer supplies its already admitted phone.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidStart
+ */
+export type NativeAndroidStart = Message<"ai_phone.v1.NativeAndroidStart"> & {
+  /**
+   * @generated from field: ai_phone.v1.NativeAndroidPrepared phone = 1;
+   */
+  phone?: NativeAndroidPrepared | undefined;
+
+  /**
+   * @generated from field: uint32 adb_port = 2;
+   */
+  adbPort: number;
+
+  /**
+   * @generated from field: uint32 console_port = 3;
+   */
+  consolePort: number;
+
+  /**
+   * @generated from field: uint32 grpc_port = 4;
+   */
+  grpcPort: number;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidStart.
+ * Use `create(NativeAndroidStartSchema)` to create a new message.
+ */
+export const NativeAndroidStartSchema: GenMessage<NativeAndroidStart> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 3);
+
+/**
+ * Live OS/transport evidence only; provisioning and complete-host readiness differ.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidBooted
+ */
+export type NativeAndroidBooted = Message<"ai_phone.v1.NativeAndroidBooted"> & {
+  /**
+   * @generated from field: uint32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string serial = 2;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: bool root_verified = 3;
+   */
+  rootVerified: boolean;
+
+  /**
+   * @generated from field: uint32 width = 4;
+   */
+  width: number;
+
+  /**
+   * @generated from field: uint32 height = 5;
+   */
+  height: number;
+
+  /**
+   * @generated from field: string frame_sha256 = 6;
+   */
+  frameSha256: string;
+
+  /**
+   * @generated from field: bool reused_session = 7;
+   */
+  reusedSession: boolean;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidBooted.
+ * Use `create(NativeAndroidBootedSchema)` to create a new message.
+ */
+export const NativeAndroidBootedSchema: GenMessage<NativeAndroidBooted> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 4);
+
+/**
+ * A running worker holds the separate lifecycle lock for this exact plan.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidSessionOwner
+ */
+export type NativeAndroidSessionOwner = Message<"ai_phone.v1.NativeAndroidSessionOwner"> & {
+  /**
+   * @generated from field: uint32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string sdk_root = 2;
+   */
+  sdkRoot: string;
+
+  /**
+   * @generated from field: string avd_home = 3;
+   */
+  avdHome: string;
+
+  /**
+   * @generated from field: uint32 adb_port = 4;
+   */
+  adbPort: number;
+
+  /**
+   * @generated from field: uint32 console_port = 5;
+   */
+  consolePort: number;
+
+  /**
+   * @generated from field: uint32 grpc_port = 6;
+   */
+  grpcPort: number;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidSessionOwner.
+ * Use `create(NativeAndroidSessionOwnerSchema)` to create a new message.
+ */
+export const NativeAndroidSessionOwnerSchema: GenMessage<NativeAndroidSessionOwner> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 5);
+
+/**
+ * A terminal startup failure distinguishes cancellation from unknown cleanup.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidSessionFailure
+ */
+export type NativeAndroidSessionFailure = Message<"ai_phone.v1.NativeAndroidSessionFailure"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+
+  /**
+   * @generated from field: bool outcome_unknown = 2;
+   */
+  outcomeUnknown: boolean;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidSessionFailure.
+ * Use `create(NativeAndroidSessionFailureSchema)` to create a new message.
+ */
+export const NativeAndroidSessionFailureSchema: GenMessage<NativeAndroidSessionFailure> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 6);
+
+/**
+ * @generated from message ai_phone.v1.NativeAndroidSessionReply
+ */
+export type NativeAndroidSessionReply = Message<"ai_phone.v1.NativeAndroidSessionReply"> & {
+  /**
+   * @generated from oneof ai_phone.v1.NativeAndroidSessionReply.result
+   */
+  result: {
+    /**
+     * @generated from field: ai_phone.v1.NativeAndroidBooted booted = 1;
+     */
+    value: NativeAndroidBooted;
+    case: "booted";
+  } | {
+    /**
+     * @generated from field: ai_phone.v1.NativeAndroidSessionFailure failure = 2;
+     */
+    value: NativeAndroidSessionFailure;
+    case: "failure";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidSessionReply.
+ * Use `create(NativeAndroidSessionReplySchema)` to create a new message.
+ */
+export const NativeAndroidSessionReplySchema: GenMessage<NativeAndroidSessionReply> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 7);
+
+/**
+ * Private pipe control during startup. EOF detaches; it does not stop the phone.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidSessionControl
+ */
+export type NativeAndroidSessionControl = Message<"ai_phone.v1.NativeAndroidSessionControl"> & {
+  /**
+   * @generated from field: bool cancel_startup = 1;
+   */
+  cancelStartup: boolean;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidSessionControl.
+ * Use `create(NativeAndroidSessionControlSchema)` to create a new message.
+ */
+export const NativeAndroidSessionControlSchema: GenMessage<NativeAndroidSessionControl> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 8);
 

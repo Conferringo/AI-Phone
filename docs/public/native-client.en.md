@@ -12,6 +12,8 @@ The native setup and ten language catalogs share custom keyboard-accessible sele
 
 Only the native setup window has deployment IPC permissions. The remote workbench cannot download or run host processes. User state lives separately from versioned source; automatic upgrades and cross-version activation remain unfinished.
 
+The native Rust Android worker can start an admitted SDK/AVD, verify root and a screenshot transport, and retain its phone after the setup pipe closes. A matching live session is observed and reused. Startup cancellation waits for the emulator console before sending one stop command; unknown cleanup stays an error. A stale owner with occupied ports requires recovery rather than duplicate startup. Windows setup calls this worker before WSL initialization, but pairing, guest provisioning and complete two-device readiness are still unfinished. Lifecycle fixtures and an isolated macOS Android boot are tested separately from Windows hardware acceleration and full-product installation.
+
 ## Build
 
 ```sh

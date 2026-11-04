@@ -370,13 +370,13 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
-      "size": 125998,
-      "sha256": "13c7815a4ccbfa67bf92298b7c9188437a7bb3df9b56b96e7a3f29132877f5f2"
+      "size": 126015,
+      "sha256": "8008118a57bca9ce28621f3ad5a8582ba7db45e2119b6f615f7493b9cdc7caac"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
-      "size": 1147,
-      "sha256": "3648e69f72f92338aa9684f84a325290103caa13c730b92812779b17db8d078d"
+      "size": 1294,
+      "sha256": "6afb1abfeeb4a86e24d0aac52c7267c3dcdc80383d3319638641c03b91bc02df"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -699,6 +699,11 @@
       "sha256": "0916f5bf846183121c17aa4e1c235e17eeab99259d6f44c7f2f9c3b50b8d8f65"
     },
     {
+      "path": "apps/client/src-tauri/src/bootstrap/native_phone.rs",
+      "size": 5624,
+      "sha256": "397f394744763484591de151e90432b82c4cee5a13a49792e34fdf2f87c30b53"
+    },
+    {
       "path": "apps/client/src-tauri/src/bootstrap/process.rs",
       "size": 4864,
       "sha256": "ec79bf5470f6d982675db5619f93a2ad2377cc21ceb6bcc0c0f379e55e67c1b6"
@@ -720,13 +725,13 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 27395,
-      "sha256": "9b98c9d60aa92e83e0e237c7da2ecfe7beb84b69ae990e83d8d7d1b32f21050b"
+      "size": 27502,
+      "sha256": "0ec863f5ddec158bcae7d9d1a5743cc10f4cdaca8498b5d66a9f073a89a7622a"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
-      "size": 22068,
-      "sha256": "0da70bcc5351602f05289209215be010d8697270fef3b2aef3afcdab5b198726"
+      "size": 22490,
+      "sha256": "122a07876f1f0551e18ef0cff0af5f07ae3076b5bfcd031aae5a961345570b72"
     },
     {
       "path": "apps/client/src-tauri/src/main.rs",
@@ -2895,13 +2900,13 @@
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
-      "size": 2057,
-      "sha256": "20994063e0916ee27549ba60972dca0aed2dfe4e87064e3bb4f8c2d76f6a40b6"
+      "size": 1587,
+      "sha256": "a927b90054a6f1174a3d3e52513e394bac94d6d66877a260bf32820ae0900ed9"
     },
     {
       "path": "crates/host-runtime/src/android/device.rs",
-      "size": 8920,
-      "sha256": "8aefc24825947c8d031df8490a76b6f379eaa1a99ebb31e7903e3a218a6566b1"
+      "size": 9664,
+      "sha256": "d8f6583d17138b52ae28ca056d3f3d42955b5e7dfc03a0a4167fadac73521e0b"
     },
     {
       "path": "crates/host-runtime/src/android/manifest.rs",
@@ -2910,13 +2915,48 @@
     },
     {
       "path": "crates/host-runtime/src/android/mod.rs",
-      "size": 2126,
-      "sha256": "f8c9d42462cdb8962ad808e2fcf3afdb71dd7d723f4f4b707fb6154f32015499"
+      "size": 2796,
+      "sha256": "806f0b56842b7a90dd1e28d3247f42779f332337c29e24d7865ecfff20b90f15"
     },
     {
       "path": "crates/host-runtime/src/android/resources.rs",
       "size": 5780,
       "sha256": "5c452ab47fbe1388e2743e79af474a9590abd1a20e837ec5a03ffa8dae775c86"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/adb.rs",
+      "size": 4808,
+      "sha256": "0a38743b5eb57e34dab2a50793f9d8a0664e4bb024340bc4bc5e833240802b2e"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/cli.rs",
+      "size": 3031,
+      "sha256": "057500c88c6d9d2215b50600e67ff796448571fbdbfaa039496a7d16758f28b2"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/mod.rs",
+      "size": 245,
+      "sha256": "8a497ffe2fc46291471ea608172549431140a9d85340972b4bb39b831e650d37"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/plan.rs",
+      "size": 8159,
+      "sha256": "820b4ba3a77a450bf6f8346632782fd20d6967085823b6892d9fbbb6bd66aaa5"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/process.rs",
+      "size": 9737,
+      "sha256": "fc0839aab356867de5febece731ad395442b41f81c71333725061cb7c65ac244"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/readiness.rs",
+      "size": 2441,
+      "sha256": "c791cf3fd0d157cf935a7a86ee8ca37fbfdfe914c6f6ad2d979ae8345ad4202a"
+    },
+    {
+      "path": "crates/host-runtime/src/android/session/tests.rs",
+      "size": 11280,
+      "sha256": "db0a3f2fec2198f122f324580c8c60726e3b16c55ae44fd2bc86180ea9215ec0"
     },
     {
       "path": "crates/host-runtime/src/android/tests.rs",
@@ -2950,8 +2990,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 1492,
-      "sha256": "a15e886030d426adb815e2155475d7d0bc81e9bcaea1114b90e9ee8a66100c2f"
+      "size": 2148,
+      "sha256": "0fa4ee3cbc502d88fd1768bd8783e3c47df37ccf9d1ce04225684943671bf74d"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -2960,8 +3000,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/cli.rs",
-      "size": 1144,
-      "sha256": "4e1a0284d338f6c4cd2acf263240da477582df475636320da0bdcb447ec8e63e"
+      "size": 820,
+      "sha256": "5bfc87be5f5f183c9c4ba8ca531e6f931168ebfa1bf56b97ace939e28befa6f4"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/config.rs",
@@ -2985,8 +3025,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/transport.rs",
-      "size": 2737,
-      "sha256": "70b5bd904d9e6ee7d4524b062618eb741731a2c564098a57b5379ecfffa132ae"
+      "size": 1885,
+      "sha256": "3da9e83cda2a06c8fb51757971c2fcdd962d4bc5e679c00fad67d6e4c04bc1cf"
     },
     {
       "path": "crates/host-runtime/src/filesystem.rs",
@@ -2995,8 +3035,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 3128,
-      "sha256": "7e70acdcf0b4c8f99f23e3df4b0fcecaa86676dc508550da11d6a3de04e8fc67"
+      "size": 3148,
+      "sha256": "f2ae2147fcb0aefc800bbe55b8c430fa6dee8d578d34cc0db22ba525727b49c8"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -3007,6 +3047,11 @@
       "path": "crates/host-runtime/src/manifest.rs",
       "size": 7547,
       "sha256": "842db95ceb59e7c53f4e3d27d6bb5426dbfbe029e4f5d745b6bd6594e2e421f0"
+    },
+    {
+      "path": "crates/host-runtime/src/native_ipc.rs",
+      "size": 1379,
+      "sha256": "35cc7ddffa115c753f7e1060a7bfcc4c1e116fc051fbdef024286839933fdcbd"
     },
     {
       "path": "crates/host-runtime/src/package/tests.rs",
@@ -3070,8 +3115,13 @@
     },
     {
       "path": "crates/host-runtime/tests/device_bridge_cli.rs",
-      "size": 1873,
-      "sha256": "2cf18e0933257e53b7f8f96f063eb54a910179b1e7c170f2f11ca469e882e868"
+      "size": 3218,
+      "sha256": "b99f38e4fbb51a7ad6fc699d20b64b18e971e3d529e1a76b1b0d5cddaabf70e8"
+    },
+    {
+      "path": "crates/host-runtime/tests/fixtures/native_sdk.rs",
+      "size": 5030,
+      "sha256": "14fe0ab42a6691ea37ee428445e3cf5742d2be2d022ef51311abb7ea6740d25b"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -3226,7 +3276,7 @@
     {
       "path": "docs/public/dependency-licenses.json",
       "size": 434022,
-      "sha256": "d46e548609ce08052a3b5346d29571f570db104160cc9d8d3b5510c02d53620f"
+      "sha256": "e2b3854b7ba38aabf242324c3a3d21d8b0651949e78abf42f2316638de127528"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -4190,13 +4240,13 @@
     },
     {
       "path": "docs/public/native-client.en.md",
-      "size": 2346,
-      "sha256": "6c31c6d600a97ca228c526c9b03cf4cb6167ee9fa0f34003e8770c9aba5c9b1a"
+      "size": 3036,
+      "sha256": "7a5256af633483136a459836df708cd09d56ce0a863eb8f19c361f1670fd7067"
     },
     {
       "path": "docs/public/native-client.zh-CN.md",
-      "size": 1588,
-      "sha256": "90b35da0cd849225a05e292df165ec3baab55c99e8791289f14079833bd3c88a"
+      "size": 2186,
+      "sha256": "27b97f1f5bc55e6be26940fec5d71e13aeec9693454aefc738e679b02ffebcba"
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
@@ -4430,8 +4480,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/native_android.proto",
-      "size": 786,
-      "sha256": "62f627aa0b405d88fe859a2d56787b88574dfe841af837abed4e8d127e89d073"
+      "size": 2005,
+      "sha256": "db5a1ea93bfea14e1ea11539bc30f90b294bb478abf046e4d983f5100fd79794"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/phone_runtime.proto",
@@ -4510,8 +4560,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/native_android_pb.ts",
-      "size": 4093,
-      "sha256": "999ec7058e2cadfb3668bed657058ed6f07e456371030628f40f056498f8ca39"
+      "size": 10372,
+      "sha256": "7fb1bd6666ccc94bbdd314e9d3bd7150b225da0e4c7d916fdb358372fb27c77e"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/phone_runtime_pb.ts",

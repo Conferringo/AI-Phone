@@ -29,3 +29,50 @@ message NativeAndroidCreation {
   uint32 memory_mb = 4;
   uint32 storage_gb = 5;
 }
+
+// Local native component IPC. The installer supplies its already admitted phone.
+message NativeAndroidStart {
+  NativeAndroidPrepared phone = 1;
+  uint32 adb_port = 2;
+  uint32 console_port = 3;
+  uint32 grpc_port = 4;
+}
+
+// Live OS/transport evidence only; provisioning and complete-host readiness differ.
+message NativeAndroidBooted {
+  uint32 version = 1;
+  string serial = 2;
+  bool root_verified = 3;
+  uint32 width = 4;
+  uint32 height = 5;
+  string frame_sha256 = 6;
+  bool reused_session = 7;
+}
+
+// A running worker holds the separate lifecycle lock for this exact plan.
+message NativeAndroidSessionOwner {
+  uint32 version = 1;
+  string sdk_root = 2;
+  string avd_home = 3;
+  uint32 adb_port = 4;
+  uint32 console_port = 5;
+  uint32 grpc_port = 6;
+}
+
+// A terminal startup failure distinguishes cancellation from unknown cleanup.
+message NativeAndroidSessionFailure {
+  string code = 1;
+  bool outcome_unknown = 2;
+}
+
+message NativeAndroidSessionReply {
+  oneof result {
+    NativeAndroidBooted booted = 1;
+    NativeAndroidSessionFailure failure = 2;
+  }
+}
+
+// Private pipe control during startup. EOF detaches; it does not stop the phone.
+message NativeAndroidSessionControl {
+  bool cancel_startup = 1;
+}

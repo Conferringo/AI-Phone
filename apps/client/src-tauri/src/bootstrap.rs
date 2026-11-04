@@ -14,6 +14,8 @@ use std::{
 use tauri::Manager;
 mod checkpoint;
 mod download;
+#[cfg(any(windows, test))]
+mod native_phone;
 mod process;
 mod resources;
 mod toolchain;
@@ -363,7 +365,7 @@ fn register_windows_backend(
         .map_err(|error| error.code().to_string())?;
     if let Some(identity) = android_identity {
         manager.set(folder, "android", "running", "")?;
-        installation
+        let phone = installation
             .prepare_android(
                 &resource.join("android.payload"),
                 identity,
@@ -376,6 +378,7 @@ fn register_windows_backend(
                 &cancelled,
             )
             .map_err(|error| error.code().to_string())?;
+        native_phone::start(&phone, &cancelled)?;
     }
     let request = ai_phone_host_runtime::wsl::InitializeRequest::from_json(
         serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?,

@@ -5,6 +5,7 @@ use std::ffi::OsString;
 enum Service {
     Bridge,
     Supervisor,
+    Android,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -13,6 +14,7 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     match service {
         Service::Bridge => runtime.block_on(crate::device_bridge::run(arguments)),
         Service::Supervisor => runtime.block_on(crate::supervision::run(arguments)),
+        Service::Android => runtime.block_on(crate::android::session::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -28,9 +30,24 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--device-bridge" => Some(start(Service::Bridge, &arguments[1..])),
         "--prepare-android" => Some(crate::android::cli::run(&arguments[1..])),
         "--prepare-android-contract" => Some(contract(arguments, crate::android::cli::CONTRACT)),
+        "--android-session" => Some(start(Service::Android, &arguments[1..])),
+        "--android-session-contract" => {
+            Some(contract(arguments, crate::android::session::CONTRACT))
+        }
         "--supervise" => Some(start(Service::Supervisor, &arguments[1..])),
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),
         _ => None,
     }
+}
+
+pub(crate) async fn interrupt() -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        let mut terminate =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+        tokio::select! {result=tokio::signal::ctrl_c()=>result,_=terminate.recv()=>Ok(())}
+    }
+    #[cfg(not(unix))]
+    tokio::signal::ctrl_c().await
 }

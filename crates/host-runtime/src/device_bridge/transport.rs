@@ -1,36 +1,8 @@
-use prost::Message;
-use std::io;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-pub(super) const LIMIT: usize = 512;
-pub(super) fn invalid() -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, "device_bridge_frame")
-}
-pub(super) async fn read<T: Message + Default>(
-    stream: &mut (impl AsyncRead + Unpin),
-) -> io::Result<T> {
-    let size = stream.read_u32().await? as usize;
-    if size > LIMIT {
-        return Err(invalid());
-    }
-    let mut data = vec![0; size];
-    stream.read_exact(&mut data).await?;
-    T::decode(data.as_slice()).map_err(|_| invalid())
-}
-pub(super) async fn write<T: Message>(
-    stream: &mut (impl AsyncWrite + Unpin),
-    message: &T,
-) -> io::Result<()> {
-    let bytes = message.encode_to_vec();
-    if bytes.len() > LIMIT {
-        return Err(invalid());
-    }
-    stream.write_u32(bytes.len() as u32).await?;
-    stream.write_all(&bytes).await?;
-    stream.flush().await
-}
+pub(crate) use crate::native_ipc::{invalid, read, write};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::native_ipc::LIMIT;
     use ai_phone_api::wire::DeviceBridgeOpened;
     use tokio::io::AsyncWriteExt;
     #[tokio::test]
