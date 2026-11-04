@@ -66,6 +66,16 @@ Registration directory identity follows the [documented VHD location lookup](htt
 
 ## Factory and qualification
 
+The backend factory can also embed the two phone application groups with
+`python3 scripts/wsl_backend_qualification.py --with-device-apps`. This maintainer
+path compiles the input method, launcher and notification probe, then collects
+the pinned Clash APKs using the existing application producers. It requires
+Android 35 compiler tools and Java 17 on the disposable build host. Admission
+accepts either the three backend components or those components with both phone
+application groups; partial groups and a nested container host are rejected.
+The additional resources do not establish native phone, transport or complete
+Windows first-run readiness. The default backend-only qualification is unchanged.
+
 [`wsl-backend.yml`](../../.github/workflows/wsl-backend.yml) runs on each pull
 request and can also be dispatched explicitly. The disposable Linux factory
 builds the precompiled components, assembles and

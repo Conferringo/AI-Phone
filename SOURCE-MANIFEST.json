@@ -4475,8 +4475,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 7721,
-      "sha256": "b56cf4ec74f9726353e6b234b3c02f9e6d00ed645b4bdf0328a6cfa4f9c1e9a5"
+      "size": 8428,
+      "sha256": "d5c17ef6ef8072b2a7d75ef1ee009a9e9969f5c22c6d1b52412946c8ef2a34ec"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -6195,8 +6195,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 17519,
-      "sha256": "fefcc0e63e0ee45a0cbe9a30713bde123fbd317a68658a2ae63861bf1d627fc1"
+      "size": 21963,
+      "sha256": "0c2a2e0224a7e1c89673336584528ad8cdfe080d123a19d6980f3e8ace548c81"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -6275,13 +6275,13 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 11458,
-      "sha256": "3799c4a3f9ed6c8f90f7970fe6308c33daa47d8fe86b9b8b45b935d69fef8e60"
+      "size": 11683,
+      "sha256": "f8c8952ddaa0162cfe74c4545f160988fce76b095a8df1bc5f984e9152c19444"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
-      "size": 3583,
-      "sha256": "454b2a116ea64f73ff53a8e0cce23d5c25179bb1bcf4ff1404cde50a2781fae4"
+      "size": 4174,
+      "sha256": "f0154d1a74f19247c692a2d90f9e81d453dbaf222fc0c3658db718e8c47d75c4"
     },
     {
       "path": "scripts/wsl_engine_inputs.py",
@@ -6300,8 +6300,8 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9717,
-      "sha256": "bf9d73c01363216ee5a86d6982d41690fddda6e15b518296dafba0f5f08ba603"
+      "size": 9727,
+      "sha256": "6fd0b67857592b68e2683bcd253023f342515b1c355fcc6cb69b63cdf23baa11"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",
