@@ -442,5 +442,6 @@
   "Agent 未绑定此设备": "The Agent is not bound to this device",
   "语音会话已关闭": "Voice session closed",
   "语音服务响应过大": "Voice service response is too large",
-  "语音服务未返回文字": "The voice service did not return text"
+  "语音服务未返回文字": "The voice service did not return text",
+  "实时转写": "Live transcription"
 }

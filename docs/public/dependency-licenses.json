@@ -3,7 +3,7 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "7d7299c3fb9e9e1071c4e0341e759a37d2aa243a340c9a5f80b5e4749d197a13",
+    "Cargo.lock": "7e7f162d553e02ccbf16aab440c36cd3867d77c42c8a25c5fce3e40cec996320",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
     "apps/client/src-tauri/Cargo.lock": "8008118a57bca9ce28621f3ad5a8582ba7db45e2119b6f615f7493b9cdc7caac"
   },
@@ -1312,6 +1312,21 @@
       ]
     },
     {
+      "name": "data-encoding",
+      "version": "2.11.1",
+      "license": "MIT",
+      "repository": "https://github.com/ia0/data-encoding",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "b68ad1a3367b825447089e1f8d6829b97f47a89eb78d2f4ebaef4672f5606186"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "dbus",
       "version": "0.9.12",
       "license": "Apache-2.0/MIT",
@@ -2564,6 +2579,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -5627,6 +5643,7 @@
       "repository": "https://github.com/r-efi/r-efi",
       "notices": [],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -5689,6 +5706,29 @@
       ]
     },
     {
+      "name": "rand",
+      "version": "0.9.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-random/rand",
+      "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "rand_chacha",
       "version": "0.3.1",
       "license": "MIT OR Apache-2.0",
@@ -5701,6 +5741,29 @@
         {
           "file": "LICENSE-APACHE",
           "sha256": "aaff376532ea30a0cd5330b9502ad4a4c8bf769c539c87ffe78819d188a18ebf"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "rand_chacha",
+      "version": "0.9.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-random/rand",
+      "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
         },
         {
           "file": "LICENSE-MIT",
@@ -5738,6 +5801,29 @@
     {
       "name": "rand_core",
       "version": "0.6.4",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-random/rand",
+      "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+        },
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "rand_core",
+      "version": "0.9.5",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/rust-random/rand",
       "notices": [
@@ -7852,6 +7938,21 @@
       ]
     },
     {
+      "name": "tokio-tungstenite",
+      "version": "0.29.0",
+      "license": "MIT",
+      "repository": "https://github.com/snapview/tokio-tungstenite",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "fdd55e2b2da854b0fbdc1e607df7c2ba1e1ebf91ecb77c515511ebeef972bc8f"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "tokio-util",
       "version": "0.7.20",
       "license": "MIT",
@@ -8224,6 +8325,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "tungstenite",
+      "version": "0.29.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/snapview/tungstenite-rs",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "7fea0ee51a4ca5d5cea7464135fd55e8b09caf3a61da3d451ac8a22af95c033f"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -8716,6 +8836,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -10170,6 +10291,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },

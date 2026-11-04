@@ -177,14 +177,7 @@ pub async fn session(
         Ok(v) => v,
         Err(e) => return e.into(),
     };
-    let hash = format!("{:x}", Sha256::digest(request.token.as_bytes()));
-    let valid: bool = match sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM admin_sessions WHERE token_hash=$1 AND expires_at>now())",
-    )
-    .bind(hash)
-    .fetch_one(&app.db)
-    .await
-    {
+    let valid: bool = match valid_session(&app.db, &request.token).await {
         Ok(v) => v,
         Err(e) => return db_error(e),
     };
@@ -195,6 +188,22 @@ pub async fn session(
             username: if valid { "admin".into() } else { String::new() },
         },
     )
+}
+pub(crate) async fn valid_session(db: &PgPool, token: &str) -> Result<bool, sqlx::Error> {
+    if token.len() != 64
+        || !token
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Ok(false);
+    }
+    let hash = format!("{:x}", Sha256::digest(token.as_bytes()));
+    sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM admin_sessions WHERE token_hash=$1 AND expires_at>now())",
+    )
+    .bind(hash)
+    .fetch_one(db)
+    .await
 }
 pub async fn logout(
     State(app): State<Shared>,

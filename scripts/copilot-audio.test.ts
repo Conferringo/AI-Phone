@@ -21,3 +21,14 @@ test('short clicks and quiet background do not start a model request',()=>{
   const events:string[]=[];const s=new SpeechSegments({choose:()=> 'phone',start:()=>events.push('start'),speech:()=>{},chunk:()=>events.push('chunk'),end:()=>events.push('end')});
   s.push(new Int16Array(800).fill(3000),0);for(let at=50;at<3000;at+=50)s.push(new Int16Array(800),at);expect(events).toEqual([]);
 });
+test('live input forwards confirmed PCM before endpoint, pins the device and commits only once',()=>{
+  let current='phone';const audio:Array<{target:string;length:number;final:boolean}>=[],ended:number[]=[];
+  const events={choose:()=>current,start:()=>{},speech:()=>{},chunk:()=>{throw Error('Live audio must not use REST chunks');},end:(_id:string,_target:string,at:number)=>ended.push(at),
+    stream:(_id:string,target:string,frames:Int16Array[],final:boolean)=>audio.push({target,length:frames.reduce((n,f)=>n+f.length,0),final})};
+  const s=new SpeechSegments(events,()=> 'live',()=>false),speech=new Int16Array(800).fill(3000),quiet=new Int16Array(800);
+  s.push(speech,0);s.push(speech,50);current='desktop';
+  expect(audio).toEqual([{target:'phone',length:1600,final:false}]);
+  for(let at=100;at<=1550;at+=50)s.push(quiet,at);
+  expect(audio.every(a=>a.target==='phone')).toBe(true);expect(audio.filter(a=>a.final)).toHaveLength(1);expect(ended).toEqual([1550]);
+  s.finish(1600);expect(audio.filter(a=>a.final)).toHaveLength(1);
+});

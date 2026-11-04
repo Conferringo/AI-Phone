@@ -442,5 +442,6 @@
   "Agent 未绑定此设备": "El Agent no está vinculado a este dispositivo",
   "语音会话已关闭": "Sesión de voz cerrada",
   "语音服务响应过大": "Respuesta de voz demasiado grande",
-  "语音服务未返回文字": "El servicio de voz no devolvió texto"
+  "语音服务未返回文字": "El servicio de voz no devolvió texto",
+  "实时转写": "Transcripción en directo"
 }

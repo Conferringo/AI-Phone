@@ -27,6 +27,7 @@ export type SpeechEvents<T>={
   speech:(id:string,target:T,at:number)=>void;
   chunk:(id:string,target:T,frames:Int16Array[],final:boolean)=>void;
   end:(id:string,target:T,at:number)=>void;
+  stream?:(id:string,target:T,frames:Int16Array[],final:boolean)=>void;
 };
 function energy(frame:Int16Array){let sum=0;for(const n of frame)sum+=n*n;return Math.sqrt(sum/Math.max(1,frame.length))/32768;}
 /** Short pauses can stream a draft; only 1500 ms of actual silence seals input. */
@@ -34,7 +35,7 @@ export class SpeechSegments<T>{
   private segment:Segment<T>|null=null;
   private before:Frame[]=[];
   private floor=.002;
-  constructor(private events:SpeechEvents<T>,private id=()=>crypto.randomUUID(),private phraseDrafts:((target:T)=>boolean)=()=>true){}
+  constructor(private events:SpeechEvents<T>,private id=()=>crypto.randomUUID(),private phraseDrafts:((target:T)=>boolean)=()=>true,private live:((target:T)=>boolean)=()=>!!events.stream){}
   push(samples:Int16Array,at:number){
     const frame={samples,at,ms:samples.length/16};
     const level=energy(samples),voiced=level>Math.max(.008,this.floor*3);
@@ -51,24 +52,37 @@ export class SpeechSegments<T>{
     if(voiced){s.last=frame.at;s.voiced+=frame.ms;s.hasAudio=true;}
     if(!s.active){this.confirm(s,frame);return;}
     if(voiced)this.events.speech(s.id,s.target,frame.at);
-    const quiet=frame.at-s.last,duration=s.frames.reduce((n,f)=>n+f.ms,0);
+    if(this.live(s.target)){
+      this.emitLive(s,frame.at-s.last>=1500);
+      if(frame.at-s.last>=1500){this.events.end(s.id,s.target,s.last+1500);this.segment=null;}
+      return;
+    }
+    this.receiveChunked(s,frame.at);
+  }
+  private receiveChunked(s:Segment<T>,at:number){
+    const quiet=at-s.last,duration=s.frames.reduce((n,f)=>n+f.ms,0);
     if(quiet>=1500){
       if(s.hasAudio)this.emit(s,true);
       this.events.end(s.id,s.target,s.last+1500);this.segment=null;
     }else if(s.hasAudio&&(duration>=28000||(this.phraseDrafts(s.target)&&duration>=2000&&quiet>=250)))this.emit(s,false);
   }
   private confirm(s:Segment<T>,frame:Frame){
-    if(s.voiced>=100){s.active=true;this.events.start(s.id,s.target,s.started);this.events.speech(s.id,s.target,s.last);}
+    if(s.voiced>=100){s.active=true;this.events.start(s.id,s.target,s.started);this.events.speech(s.id,s.target,s.last);if(this.live(s.target))this.emitLive(s,false);}
     else if(frame.at-s.last>=200){this.segment=null;this.before=[];}
   }
   private emit(s:Segment<T>,final:boolean){
     const frames=s.frames.filter(f=>f.at<=s.last+150).map(f=>f.samples);
     s.frames=[];s.hasAudio=false;this.events.chunk(s.id,s.target,frames,final);
   }
+  private emitLive(s:Segment<T>,final:boolean){
+    const frames=s.frames.map(f=>f.samples);s.frames=[];
+    this.events.stream!(s.id,s.target,frames,final);
+  }
   finish(at:number){
     const s=this.segment;this.segment=null;this.before=[];
     if(!s?.active)return;
-    if(s.hasAudio)this.emit(s,true);
+    if(this.live(s.target))this.emitLive(s,true);
+    else if(s.hasAudio)this.emit(s,true);
     this.events.end(s.id,s.target,at);
   }
 }

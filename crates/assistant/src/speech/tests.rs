@@ -17,7 +17,7 @@ pub(super) fn audio() -> Vec<u8> {
     bytes
 }
 
-fn draft() -> wire::VoiceDraft {
+pub(super) fn draft() -> wire::VoiceDraft {
     wire::VoiceDraft {
         base_url: "http://127.0.0.1:1/v1".into(),
         api_key: "fixture-voice-key".into(),
@@ -50,6 +50,12 @@ fn voice_configuration_is_independent_and_public_profiles_have_no_credential() {
     let mut invalid = d;
     invalid.api_key = "bad\nheader".into();
     assert!(normalize(invalid).is_err());
+}
+#[test]
+fn live_transcription_is_a_saved_voice_protocol() {
+    let mut value = draft();
+    value.input_protocol = wire::VoiceInputProtocol::RealtimeTranscription as i32;
+    assert!(normalize(value).is_ok(), "live input must be configurable");
 }
 #[tokio::test]
 async fn transport_rejections_preserve_authentication_status() {

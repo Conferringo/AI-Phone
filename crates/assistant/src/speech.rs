@@ -1,5 +1,6 @@
 //! Agent-owned speech configuration and transport. Chat model verification is independent.
 mod provider;
+pub(crate) mod realtime;
 use crate::*;
 use sqlx::Row;
 
@@ -43,7 +44,7 @@ fn normalize(mut draft: wire::VoiceDraft) -> Result<wire::VoiceDraft> {
     draft.recognition_model = field(&draft.recognition_model, "语音识别模型", 200)?;
     draft.speech_model = field(&draft.speech_model, "语音合成模型", 200)?;
     draft.voice = field(&draft.voice, "音色", 200)?;
-    if !matches!(draft.input_protocol, 1 | 2) {
+    if !matches!(draft.input_protocol, 1..=3) {
         return Err("请选择语音输入协议".into());
     }
     draft.api_key = draft.api_key.trim().into();

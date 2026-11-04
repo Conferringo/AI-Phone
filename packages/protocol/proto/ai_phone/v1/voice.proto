@@ -6,6 +6,8 @@ enum VoiceInputProtocol {
   VOICE_INPUT_PROTOCOL_TRANSCRIPTION = 1;
   // One audio-capable chat request returns literal speech and a semantic edit.
   VOICE_INPUT_PROTOCOL_AUDIO_CHAT = 2;
+  // Persistent server-side transcription WebSocket; the chat Agent stays independent.
+  VOICE_INPUT_PROTOCOL_REALTIME_TRANSCRIPTION = 3;
 }
 message VoiceDraft {
   string base_url = 1;
@@ -67,3 +69,37 @@ message VoiceSpeechRequest {
   string text = 4;
 }
 message VoiceAudio { bytes wav = 1; }
+
+message VoiceStreamStart {
+  string device_id = 1;
+  string agent_id = 2;
+  uint64 configuration_revision = 3;
+  string session_id = 4;
+}
+message VoiceStreamAudio {
+  string utterance_id = 1;
+  // Little-endian mono PCM16 at 16 kHz; no WAV header. Maximum 100 ms per frame.
+  bytes pcm16 = 2;
+}
+message VoiceStreamCommit { string utterance_id = 1; }
+message VoiceStreamInput {
+  oneof event {
+    VoiceStreamStart start = 1;
+    VoiceStreamAudio audio = 2;
+    VoiceStreamCommit commit = 3;
+  }
+}
+message VoiceStreamTranscript {
+  string utterance_id = 1;
+  uint32 revision = 2;
+  string text = 3;
+  bool final = 4;
+}
+message VoiceStreamError { string message = 1; }
+message VoiceStreamOutput {
+  oneof event {
+    bool ready = 1;
+    VoiceStreamTranscript transcript = 2;
+    VoiceStreamError error = 3;
+  }
+}

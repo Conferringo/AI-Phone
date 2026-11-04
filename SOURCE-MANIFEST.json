@@ -120,8 +120,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 76631,
-      "sha256": "7d7299c3fb9e9e1071c4e0341e759a37d2aa243a340c9a5f80b5e4749d197a13"
+      "size": 79106,
+      "sha256": "7e7f162d553e02ccbf16aab440c36cd3867d77c42c8a25c5fce3e40cec996320"
     },
     {
       "path": "Cargo.toml",
@@ -1540,8 +1540,8 @@
     },
     {
       "path": "apps/web/next.config.ts",
-      "size": 874,
-      "sha256": "23e1aae37fe80de095d6ff05e9e06268a35bfa6bcfdaf3d010d4b3287a16a73f"
+      "size": 1010,
+      "sha256": "429e133c99df2cdf1b4bba612174487a110c9aa0155c096929768103e665ee59"
     },
     {
       "path": "apps/web/package.json",
@@ -1700,8 +1700,8 @@
     },
     {
       "path": "apps/web/src/components/agent-voice.tsx",
-      "size": 5583,
-      "sha256": "5ba2b12a0e57e062a4df680f6a5ffac627f7a998320e7772fdc2e1ec087b1143"
+      "size": 5665,
+      "sha256": "ba4e310d87fb4955b0d769cf0c9da7a4f0a4612d1bfc35093919b01a34726a0c"
     },
     {
       "path": "apps/web/src/components/connections-dialog.tsx",
@@ -1985,8 +1985,8 @@
     },
     {
       "path": "apps/web/src/lib/copilot-audio.ts",
-      "size": 4035,
-      "sha256": "df8c21f01c2c0ba0bbb7b8443b4c24fd73f5de3de4e917a215846b0d244ce53e"
+      "size": 4700,
+      "sha256": "a4e7de6de9bfbe2689b26b5e6965e0333eeda762b3a49ca95dfa787e418aa230"
     },
     {
       "path": "apps/web/src/lib/copilot-capture.ts",
@@ -1995,8 +1995,8 @@
     },
     {
       "path": "apps/web/src/lib/copilot-input.ts",
-      "size": 8210,
-      "sha256": "c2e1106b5e9701b3ee732924fd833765c2aafc86248bc7823956e793e9e90ffb"
+      "size": 8682,
+      "sha256": "682fd65d2b73ccc4d15513a57230beb7522e8b185f36058c2a59a01e9725dbb4"
     },
     {
       "path": "apps/web/src/lib/copilot-output.ts",
@@ -2005,8 +2005,13 @@
     },
     {
       "path": "apps/web/src/lib/copilot-session.ts",
-      "size": 11479,
-      "sha256": "08287f87e3339b0da4c1dd8bbcbad9035ddc0e0b485f98638acc59d10fcca144"
+      "size": 13337,
+      "sha256": "e646628d2b22d5a60a0ed3e03e3440fc3c32573cc8583fd761baa2c64d24388e"
+    },
+    {
+      "path": "apps/web/src/lib/copilot-stream.ts",
+      "size": 3964,
+      "sha256": "d862618ce40d789be2a73d53f246ce03ed31e83e0fb51a6eb00e897a0c4c2be1"
     },
     {
       "path": "apps/web/src/lib/device-defaults-server.ts",
@@ -2085,48 +2090,48 @@
     },
     {
       "path": "apps/web/src/locales/ar.json",
-      "size": 23641,
-      "sha256": "22b5a0ac1e8e85ce1cbb78edd39963561fa89ecfa444faa87dbfebb0daf53a5c"
+      "size": 23680,
+      "sha256": "818ca80bfbec1e35f1b3e7640869c7230538eb31c1894df31cfdffbae54d7cae"
     },
     {
       "path": "apps/web/src/locales/de.json",
-      "size": 20110,
-      "sha256": "39f66f5999cb9225ccfad65768c526d61f56049ca0cce58ec41a26d600cebc0b"
+      "size": 20150,
+      "sha256": "7fe46df939ac42f698da3f3db8ecd6b9958b08610755321b0c1e62f6f38dc16e"
     },
     {
       "path": "apps/web/src/locales/en.json",
-      "size": 18351,
-      "sha256": "ea05e1d969bd2dd2cee9ffca77db7f6c15365974c7a186c841d9a53f74094ec5"
+      "size": 18391,
+      "sha256": "b31a7304823369f89afe0c6543b40fbf39e1f53eea835e12ddede72bdafa69cb"
     },
     {
       "path": "apps/web/src/locales/es.json",
-      "size": 20107,
-      "sha256": "a34b71a96892a62460905cba5c08ca326faf0184ad1fda3ca5cd5ca25c4a4f19"
+      "size": 20154,
+      "sha256": "dd70940d09381218e062bcf2553c75376eb155115cad382fc76a832794417709"
     },
     {
       "path": "apps/web/src/locales/fr.json",
-      "size": 20712,
-      "sha256": "73b264f0ac620493785123e3227f76b85c2ea039c9b5b6a2fdf7323c6684362f"
+      "size": 20757,
+      "sha256": "65b15aff0d79dc177788e7ea2ccbf1a348b61b5f2d5ba2435cd4d1a7a2900508"
     },
     {
       "path": "apps/web/src/locales/ja.json",
-      "size": 22175,
-      "sha256": "2c2c191d0744ea5f773a79bb04d86d14836147e03f70d8f7d6891531ebe8b0e4"
+      "size": 22230,
+      "sha256": "47fc0b70a7b9ca50ea2cf81fbbd9288b4e5dac40e63ad321b5f89f1224f0d0e1"
     },
     {
       "path": "apps/web/src/locales/ko.json",
-      "size": 20127,
-      "sha256": "8647b1e5dfdfdc990c1cbd50f95b41b5d89d2b9c6c5213e9eaa0bc0b01bde659"
+      "size": 20165,
+      "sha256": "1f14aad40e30316f819c80e939dbc4ce58a0ad487eb13a0f15954d73d3ecab30"
     },
     {
       "path": "apps/web/src/locales/ru.json",
-      "size": 26978,
-      "sha256": "ffcedc075adbcc03d7cc57df80a54187627bae82cf73e7a00a34992fbcf7c96a"
+      "size": 27059,
+      "sha256": "559b013b1c107a70c743fc42a8aaaaaffb47b090ddedf69c337ca852c070cbe7"
     },
     {
       "path": "apps/web/src/locales/zh-TW.json",
-      "size": 17728,
-      "sha256": "c5053a7b2fe83dbbd4f53d0c039bfc7bad591409a96d81a8bf0cf18a0a640b8c"
+      "size": 17762,
+      "sha256": "e208ff1a5ff74f9757766dcb6e8ca86e1a3dcbd9e9bc905d208957f6ebeb1347"
     },
     {
       "path": "apps/web/src/proxy.ts",
@@ -2315,8 +2320,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1079,
-      "sha256": "d82714c75395e9f9b252097bbdcdd79dad67981d5a7395563851c3c4d865f2e9"
+      "size": 1181,
+      "sha256": "721e7028e92f5d8dd2b0ed7499879c377810e3e3cd2b611ef679f384b32e2e80"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2515,8 +2520,8 @@
     },
     {
       "path": "crates/assistant/src/auth.rs",
-      "size": 12345,
-      "sha256": "7b5ec2c0a91efc2f7fd40aa06d951f14a3a601916e94bafcddf1799c32c4823a"
+      "size": 12643,
+      "sha256": "d2cbb9bbc7454f33c02eec1ec1369aae3c1cb16a35642dfc4c1785f067fb74b0"
     },
     {
       "path": "crates/assistant/src/chat_completions.rs",
@@ -2635,8 +2640,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 10518,
-      "sha256": "08c4a82a4aefde9a54da4c7d62d6aedf008235393f540c7871272de765fc0966"
+      "size": 10633,
+      "sha256": "c217c1159ee4d8bb8b10c163f1d3456391420c37382cfe114b599d1e31b89175"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -2724,19 +2729,34 @@
       "sha256": "73c7509f675e19fc68c6d99886417d6ec83bd04a8722aaf78fc5ea1bc35b608c"
     },
     {
+      "path": "crates/assistant/src/speech/realtime/ledger.rs",
+      "size": 11549,
+      "sha256": "3d382c643c8ed8336927187a5f29978ab1fe050cbc415ea36622e50c52292a3a"
+    },
+    {
+      "path": "crates/assistant/src/speech/realtime/tests.rs",
+      "size": 11217,
+      "sha256": "02649dd6740f03cc3b68bad7c071cdeee24847db460127db3ad4528eb2ab864a"
+    },
+    {
+      "path": "crates/assistant/src/speech/realtime.rs",
+      "size": 9401,
+      "sha256": "0311a0c6e2771c53db863c689ceac17de82f0f1b172a4cf170459f38c6aacabb"
+    },
+    {
       "path": "crates/assistant/src/speech/tests.rs",
-      "size": 8750,
-      "sha256": "c96ea184d895205c7aff9fdfda9654992b247b15f68092d934ef76ceb07d7b98"
+      "size": 9009,
+      "sha256": "3f7c5514de2061b464d36e1c75a377bfe12a60810cec22c129b5a1b02ab44a0d"
     },
     {
       "path": "crates/assistant/src/speech.rs",
-      "size": 8109,
-      "sha256": "f9a29c139ef2554df46119f8c793468045f24bbda0bb9ebf19f256d296a5ab58"
+      "size": 8134,
+      "sha256": "05f423caac2082d808d04983e50843141b4f3b398b46ce68ffd42690f4a09dc0"
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 48227,
-      "sha256": "db793d93da10389b70ef04216640e3731816df8354caa28468964c9cb3400883"
+      "size": 48400,
+      "sha256": "0903281d7ec07ec33acedede791f687ac7fa3e858ff8eec49d7e62f0ca52a491"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -3270,8 +3290,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 9265,
-      "sha256": "9640d9f5540bff19afd3d8fd5a84ec4574a6d62b4b529483c019c4631081305d"
+      "size": 11803,
+      "sha256": "8f0ff2f11e4b17767c09cb9f52fe5354708aea479a5221ef1323ac4570e75369"
     },
     {
       "path": "docs/public/database-roles.md",
@@ -3280,13 +3300,13 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 434022,
-      "sha256": "e2b3854b7ba38aabf242324c3a3d21d8b0651949e78abf42f2316638de127528"
+      "size": 437391,
+      "sha256": "b858021972934bcf00039a62e280c62ccac56c368a8c74e27f9c5bbe7251881e"
     },
     {
       "path": "docs/public/dependency-security.json",
-      "size": 5340,
-      "sha256": "0849c58f5735e9e0a6bba035b59d0ba1bb314babb6e05e02e714841e5ebfd159"
+      "size": 3724,
+      "sha256": "798d8e6072a7f083ae6c42159616e87c51b3abf607462392b972cd6c6d7e0bed"
     },
     {
       "path": "docs/public/distribution.en.md",
@@ -4280,8 +4300,8 @@
     },
     {
       "path": "docs/public/protocol-boundaries.md",
-      "size": 1988,
-      "sha256": "c46191856cf17d0e10ce12530bf2865eddfd890e3a881b30fb0c389abaf5e101"
+      "size": 2564,
+      "sha256": "8f33fd922bed01209968412856fce7a9ab3d6fe5ae5f47a82499e8d8f35a4780"
     },
     {
       "path": "docs/public/readme.ar.md",
@@ -4335,8 +4355,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 4972,
-      "sha256": "eb9b18e584badba55e2e504ab7b902fed1465e6a9354974f218d8fb2efac464e"
+      "size": 5070,
+      "sha256": "2f8944457abb43c53f45206d08db65eb39ca87a98f4777c84cdfbf7f55e49f4f"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4515,8 +4535,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/voice.proto",
-      "size": 1988,
-      "sha256": "016d63b4e81d4ad98d42e1a8893ee13d4e8421202af684fb72f2eccd1e8e634a"
+      "size": 2938,
+      "sha256": "bdf511a937c708c461d55e1166b56dcc18e2d607701150c023e9b7e4b3250d5c"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/workbench.proto",
@@ -4595,8 +4615,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/voice_pb.ts",
-      "size": 11544,
-      "sha256": "72724ee8fcbb2c49b86f3801d2075bdf48b3becc78b0ccc9cdaf135c16456b36"
+      "size": 17735,
+      "sha256": "b0d467ddcb46dbe30a125a53febe4cb596ac67ae4b2b48bedcd6c849a95d5f2e"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/workbench_pb.ts",
@@ -5015,13 +5035,13 @@
     },
     {
       "path": "scripts/copilot-audio.test.ts",
-      "size": 2159,
-      "sha256": "fd6cdecd20606c446871406b3624963b60e5cbdcabf0f50d771c49528f4abea7"
+      "size": 3204,
+      "sha256": "2647cafd4a337a25169e01fdd1519e20d7df49a9b13aff2c3a113642dea936bc"
     },
     {
       "path": "scripts/copilot-input.test.ts",
-      "size": 16339,
-      "sha256": "f894ce320498eb2a30426553fea3845a70a5c425e0cd426e87fcaa982fffd15f"
+      "size": 18235,
+      "sha256": "6d56c60b6ef4b08f7831bdc4db4ca7539bc4809e1a4356c68ee20f3f50144fba"
     },
     {
       "path": "scripts/copilot-output.test.ts",
@@ -5032,6 +5052,11 @@
       "path": "scripts/copilot-session.test.ts",
       "size": 583,
       "sha256": "119ac54ff110c176dab15a2fc42b0be5abbee167a23e81a5dd593b2f5a81f62d"
+    },
+    {
+      "path": "scripts/copilot-stream.test.ts",
+      "size": 625,
+      "sha256": "7fbd2ac614fa7076048a43658d0f86e9264e375770791f84b21d10a1f7737fd1"
     },
     {
       "path": "scripts/copilot-wire.test.ts",
@@ -5182,6 +5207,11 @@
       "path": "scripts/fixtures/copilot-session.ts",
       "size": 8872,
       "sha256": "8802db8b8794c3be3707f8219828391a54e7f058e144bc3fdbb8039f46781d02"
+    },
+    {
+      "path": "scripts/fixtures/copilot-stream.ts",
+      "size": 5194,
+      "sha256": "8fd3a2c0d209505b28480ffd55207e19b114e41cea23200ec32e05871ddcf0fb"
     },
     {
       "path": "scripts/fixtures/desktop-input.ts",

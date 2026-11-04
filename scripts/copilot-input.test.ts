@@ -14,6 +14,23 @@ function fixture(accept?: (commit: VoiceCommit) => void) {
 const patch = (utteranceId: string, revision: number, literal: string, final = true) => ({utteranceId, revision, literal, final});
 
 describe('Copilot continuous input contract', () => {
+  test('reconnect recovers only unfinished input, keeping a later confirmed turn queued',()=>{
+    const {voice,sent}=fixture();voice.speech('a',0);voice.transcript(patch('a',1,'未确认片段',false));voice.advance(1500);
+    voice.speech('b',2000);voice.transcript(patch('b',1,'已确认的新指令'));voice.advance(3500);
+    expect(sent).toHaveLength(0);expect(voice.recoverIncomplete()).toBe('未确认片段');expect(voice.drafts.map(d=>d.utteranceId)).toEqual(['b']);
+    voice.retry();expect(sent.map(c=>c.text)).toEqual(['已确认的新指令']);
+  });
+  test('reconnect retains accepted and unresolved durable receipts during a late partial revision',()=>{
+    const accepted=fixture();accepted.voice.speech('a',0);accepted.voice.transcript(patch('a',1,'打开上海天气'));accepted.voice.advance(1500);
+    expect(accepted.voice.recoverIncomplete()).toBe('');expect(accepted.voice.drafts).toHaveLength(1);
+    accepted.voice.transcript(patch('a',2,'打开北京',false));expect(accepted.voice.recoverIncomplete()).toBe('');expect(accepted.voice.drafts).toHaveLength(1);
+    accepted.voice.transcript(patch('a',3,'打开北京天气'));expect(accepted.sent[1].correctsRequestId).toBe(accepted.sent[0].requestId);
+    let fail=true;const pending=fixture(()=>{if(fail)throw Error('Storage acknowledgement unknown');});
+    pending.voice.speech('p',0);pending.voice.transcript(patch('p',1,'保留原提交'));pending.voice.advance(1500);
+    pending.voice.transcript(patch('p',2,'后续文字',false));expect(pending.voice.recoverIncomplete()).toBe('');expect(pending.voice.drafts[0].status).toBe('handoff-pending');
+    fail=false;pending.voice.retry();expect(pending.sent).toHaveLength(0);
+    pending.voice.transcript(patch('p',3,'后续文字'));expect(pending.sent[0].text).toBe('保留原提交');expect(pending.sent[1].correctsRequestId).toBe(pending.sent[0].requestId);
+  });
   test('an unfinished recognition cannot execute a partial command after silence', () => {
     const {voice,sent}=fixture();voice.speech('a',0);
     voice.transcript(patch('a',1,'发送这份表格',false));voice.advance(1500);

@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   turbopack: { root: path.resolve(__dirname, "../..") },
   poweredByHeader: false,
   transpilePackages: ["@ai-phone/protocol"],
+  async rewrites() {
+    return {beforeFiles:[{source:'/api/voice/stream',destination:'http://127.0.0.1:17863/v1/voice/stream'}]};
+  },
   async headers() {
     return [{ source: '/:path*', headers: [
       { key: 'X-Content-Type-Options', value: 'nosniff' },

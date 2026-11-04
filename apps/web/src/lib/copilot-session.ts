@@ -5,6 +5,9 @@ import {CopilotInput,voiceOutboxInput,type VoiceCommit,type VoiceDraft} from './
 import {SpeechSegments,wav} from './copilot-audio';
 import {Microphone} from './copilot-capture';
 import {CopilotOutput,type SpokenReply} from './copilot-output';
+import {CopilotStream,voiceSocket} from './copilot-stream';
+import {create} from '@bufbuild/protobuf';
+import {VoiceStreamStartSchema} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
 import type {OutboxInput} from './chat-outbox';
 
 type Profile=MessageShape<typeof VoiceSettingsSchema>;
@@ -19,6 +22,7 @@ export class CopilotSession {
   private bindings=new Map<string,CopilotBinding>();
   private profiles=new Map<string,Profile>();
   private sessions=new Map<string,Session>();
+  private streams=new Map<string,CopilotStream>();
   private jobs:AudioJob[]=[];
   private working=0;
   private transport:AbortController|null=null;
@@ -39,7 +43,7 @@ export class CopilotSession {
     const audio=await settingsRpc('speech',VoiceSpeechRequestSchema,{deviceId:b.deviceId,agentId:b.agentId,configurationRevision:p.revision,text},VoiceAudioSchema,'voice',signal);
     await this.microphone?.play(audio.wav,signal);
   },message=>{this.outputError=message;this.publish();});
-  constructor(private configure:(agentId:string)=>void,private createMicrophone:()=>MicrophonePort=()=>new Microphone()){}
+  constructor(private configure:(agentId:string)=>void,private createMicrophone:()=>MicrophonePort=()=>new Microphone(),private openStream:()=>WebSocket=voiceSocket){}
   subscribe=(callback:()=>void)=>{this.listeners.add(callback);return()=>{this.listeners.delete(callback);};};
   snapshot=()=>this.state;
   private publish(){
@@ -76,18 +80,33 @@ export class CopilotSession {
     if(!profile?.configured){this.configure(binding.agentId);throw Error('请先配置 Agent 的语音服务');}
     return this.target(binding,profile);
   }
+  private liveStream(target:Target){
+    const {binding,core}=target.session,key=this.key(binding)+':'+target.profile.revision;
+    let stream=this.streams.get(key);
+    if(!stream){
+      stream=new CopilotStream(create(VoiceStreamStartSchema,{deviceId:binding.deviceId,agentId:binding.agentId,configurationRevision:target.profile.revision,sessionId:this.captureId}),patch=>{
+        try{core.transcript({utteranceId:patch.utteranceId,revision:patch.revision,literal:patch.text,final:patch.final});if(core.error)throw Error(core.error);this.publish();}
+        catch(e){this.pause(e instanceof Error?e.message:'语音识别失败');}
+      },message=>this.pause(message),this.openStream);
+      this.streams.set(key,stream);
+    }
+    return stream;
+  }
   private events(){return new SpeechSegments<Target>({
     choose:()=>this.choose(),
     start:(id,target,at)=>{this.speaker.hold();target.session.core.speech(id,at);this.publish();},
     speech:(id,target,at)=>{target.session.core.speech(id,at);},
     chunk:(id,target,frames,final)=>{this.jobs.push({id,target,bytes:wav(frames),final});if(this.jobs.length>4)this.pause('语音识别积压，录音已暂停');else void this.pump();},
+    stream:(id,target,frames,final)=>{if(!this.error)this.liveStream(target).audio(id,frames,final);},
     end:(id,target,at)=>{
-      const job=this.jobs.findLast(j=>j.id===id);
-      if(job)job.final=true;
-      else {const draft=target.session.core.drafts.find(d=>d.utteranceId===id);if(draft?.text)target.session.core.transcript({utteranceId:id,revision:draft.revision+1,literal:draft.literal,final:true,correction:{baseRevision:draft.revision,text:draft.text}});}
+      if(target.profile.inputProtocol!==3){
+        const job=this.jobs.findLast(j=>j.id===id);
+        if(job)job.final=true;
+        else {const draft=target.session.core.drafts.find(d=>d.utteranceId===id);if(draft?.text)target.session.core.transcript({utteranceId:id,revision:draft.revision+1,literal:draft.literal,final:true,correction:{baseRevision:draft.revision,text:draft.text}});}
+      }
       target.session.core.advance(at);this.scheduleEndpoint();this.publish();
     },
-  },()=>crypto.randomUUID(),target=>target.profile.inputProtocol===1);}
+  },()=>crypto.randomUUID(),target=>target.profile.inputProtocol===1,target=>target.profile.inputProtocol===3);}
   private async loadProfiles(){
     const agents=[...new Set([...this.bindings.values()].map(b=>b.agentId).filter(Boolean))];
     await Promise.all(agents.map(async agentId=>{this.profiles.set(agentId,await settingsRpc('settings',VoiceSettingsRequestSchema,{agentId},VoiceSettingsSchema,'voice'));}));
@@ -99,7 +118,9 @@ export class CopilotSession {
     try{
       const gesture=microphone.prepare();await Promise.all([gesture,this.loadProfiles()]);
       if(generation!==this.generation)return;
-      this.choose();this.segments=this.events();
+      const target=this.choose();if(target.profile.inputProtocol===3)await this.liveStream(target).ready();
+      if(generation!==this.generation)return;
+      this.segments=this.events();
       await microphone.open((pcm,at)=>{try{this.segments?.push(pcm,at);}catch(e){this.pause(e instanceof Error?e.message:'语音输入失败');}},message=>this.pause(message));
       if(generation!==this.generation)return;
       this.enabled=true;
@@ -111,6 +132,7 @@ export class CopilotSession {
   stop(){
     if(this.endpointTimer)clearTimeout(this.endpointTimer);this.endpointTimer=null;
     this.generation++;this.enabled=false;this.opening=false;this.transport?.abort();this.transport=null;this.speaker.close();this.microphone?.close();this.microphone=null;this.segments=null;this.jobs=[];
+    for(const stream of this.streams.values())stream.close();this.streams.clear();
     for(const session of this.sessions.values()){
       const text=session.core.drafts.filter(d=>d.status!=='accepted').map(d=>d.text).filter(Boolean).join('\n');
       session.core.stop();if(text)session.binding.recover(text);
@@ -122,7 +144,7 @@ export class CopilotSession {
     const deadlines=[...this.sessions.values()].map(s=>s.core.deadline).filter((t):t is number=>t!==null);
     this.endpointTimer=deadlines.length?setTimeout(()=>{this.endpointTimer=null;for(const s of this.sessions.values())s.core.advance(performance.now());this.publish();},Math.max(0,Math.min(...deadlines)-performance.now())):null;
   }
-  private pause(message:string){const segments=this.segments;this.segments=null;this.error=message;segments?.finish(performance.now());this.microphone?.close();this.speaker.hold();this.publish();}
+  private pause(message:string){const segments=this.segments;this.segments=null;this.error=message;segments?.finish(performance.now());for(const stream of this.streams.values())stream.close();this.streams.clear();this.microphone?.close();this.speaker.hold();this.publish();}
   retry=async()=>{
     if(this.opening)return;
     if(!this.enabled){await this.start(this.currentDeviceId);return;}
@@ -131,7 +153,11 @@ export class CopilotSession {
     try{
       const gesture=microphone.prepare();await Promise.all([gesture,this.loadProfiles()]);if(generation!==this.generation)return;
       for(const job of this.jobs)job.target.profile=this.profiles.get(job.target.session.binding.agentId)||job.target.profile;
-      for(const session of this.sessions.values()){session.core.retry();if(session.core.error)throw Error(session.core.error);}
+      for(const session of this.sessions.values()){
+        if(this.profiles.get(session.binding.agentId)?.inputProtocol===3){const text=session.core.recoverIncomplete();if(text)session.binding.recover(text);}
+        session.core.retry();if(session.core.error)throw Error(session.core.error);
+      }
+      const target=this.choose();if(target.profile.inputProtocol===3)await this.liveStream(target).ready();if(generation!==this.generation)return;
       this.segments=this.events();await microphone.open((pcm,at)=>{try{this.segments?.push(pcm,at);}catch(e){this.pause(e instanceof Error?e.message:'语音输入失败');}},message=>this.pause(message));
       void this.pump();this.publish();
     }catch(e){if(generation===this.generation)this.pause(e instanceof Error?e.message:'麦克风开启失败');}
