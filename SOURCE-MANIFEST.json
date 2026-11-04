@@ -2790,8 +2790,8 @@
     },
     {
       "path": "crates/assistant/src/worker/execution_policy.rs",
-      "size": 17079,
-      "sha256": "7de487e720f046ba30866ca406fcbd7b38c5d6e947f181bddb3cb3f9ee9617d0"
+      "size": 18212,
+      "sha256": "1fc2043c6b37227bc4a4b270fdd131f66c8b48f69d23b3eb0c1621f16c4130af"
     },
     {
       "path": "crates/assistant/src/worker/model_trace.rs",
@@ -2800,8 +2800,8 @@
     },
     {
       "path": "crates/assistant/src/worker/work_intent.rs",
-      "size": 5823,
-      "sha256": "c737d366a7a6cff22313638cf2ae0282ba2ff9be2a4b62c84c1627973f8359b1"
+      "size": 5852,
+      "sha256": "b609512f27212dab2b9ce389d08b9545d47ce48dfc4c5d3ad92f87cf2768ca98"
     },
     {
       "path": "crates/assistant/src/worker.rs",

@@ -32,18 +32,7 @@ pub fn lookup_request(request: &str) -> bool {
     {
         return false;
     }
-    let online = [
-        "浏览器",
-        "官网",
-        "网上",
-        "联网",
-        "互联网",
-        "browser",
-        "website",
-        "online",
-    ]
-    .iter()
-    .any(|word| text.contains(word));
+    let online = online_request(&text);
     if !online
         && [
             "知识库",
@@ -79,23 +68,29 @@ pub fn lookup_request(request: &str) -> bool {
                 .any(|word| text.contains(word)))
 }
 
+fn online_request(text: &str) -> bool {
+    super::work_intent::positive_clauses(text).any(|clause| {
+        [
+            "浏览器",
+            "官网",
+            "网上",
+            "联网",
+            "互联网",
+            "browser",
+            "website",
+            "online",
+        ]
+        .iter()
+        .any(|word| clause.contains(word))
+    })
+}
+
 pub fn browser_lookup(request: &str) -> bool {
     if !lookup_request(request) {
         return false;
     }
     let text = request.to_lowercase();
-    [
-        "浏览器",
-        "官网",
-        "网上",
-        "联网",
-        "互联网",
-        "browser",
-        "website",
-        "online",
-    ]
-    .iter()
-    .any(|word| text.contains(word))
+    online_request(&text)
         || (![
             "微信",
             "wechat",
@@ -505,6 +500,32 @@ mod execution_policy_tests {
         );
         assert!(!browser_frame(
             &json!({"observation_id":"fake","title":"Chromium - Mousepad"})
+        ));
+    }
+
+    #[test]
+    fn offline_in_app_lookup_accepts_real_gui_evidence_without_a_browser() {
+        for text in [
+            "在当前 Writer 文档中用界面查找42.25，确认找到后关闭查找栏。不修改或关闭文档，不联网、不下载、不发送外部消息。",
+            "在微信查找联系人，不联网，不使用浏览器",
+            "Search the Writer document without browser or online access",
+        ] {
+            let mut context = request(text);
+            assert!(lookup_request(text), "{text}");
+            assert!(
+                !browser_lookup(text),
+                "negative network instruction became browser requirement: {text}"
+            );
+            completed(
+                &mut context,
+                "computer_key",
+                json!({"key":"ctrl+f"}),
+                r#"{"success":true,"observation_id":"find","title":"LibreOffice Writer"}"#,
+            );
+            assert!(lookup_evidence(&context), "{text}");
+        }
+        assert!(browser_lookup(
+            "在电脑浏览器搜索资料，不下载、不发送外部消息"
         ));
     }
 
