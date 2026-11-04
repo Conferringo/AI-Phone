@@ -55,10 +55,30 @@ jobs:
           cargo fmt --manifest-path apps/client/src-tauri/Cargo.toml --check
           cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked
           cargo clippy --manifest-path apps/client/src-tauri/Cargo.toml --all-targets --locked -- -D warnings
-      - name: Dependency advisories with target evidence
+      - name: Qualify embedded ARM runtime and dependency advisories
         run: |
-          cargo install cargo-audit --version 0.22.2 --locked
-          python3 scripts/audit_dependencies.py --target aarch64-apple-darwin --output audit.json
+          set -euo pipefail
+          # These tasks share no compiler output or runtime workspace. Join both
+          # results before exposing the component to packaging.
+          (
+            cargo install cargo-audit --version 0.22.2 --locked
+            python3 scripts/audit_dependencies.py --target aarch64-apple-darwin --output audit.json
+          ) > "$RUNNER_TEMP/aiphone-native-audit.log" 2>&1 &
+          audit_pid=$!
+          stock="$RUNNER_TEMP/aiphone-android-stock"
+          android_result=0
+          python3 scripts/android_component_factory.py --work "$stock" --verify-programs --compression-preset 3 --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json" || android_result=$?
+          audit_result=0
+          wait "$audit_pid" || audit_result=$?
+          cat "$RUNNER_TEMP/aiphone-native-audit.log"
+          if [ "$android_result" -ne 0 ] || [ "$audit_result" -ne 0 ]; then
+            exit 1
+          fi
+          # Retain the verified capsule and remove only this job's extraction scratch.
+          rm -rf "$stock/installation"
+          rm "$stock/emulator.zip" "$stock/platform-tools.zip" "$stock/system-image.zip"
+          echo "AI_PHONE_FACTORY_ANDROID_PAYLOAD=$stock/android.payload" >> "$GITHUB_ENV"
+          echo "Pinned ARM emulator and ADB verified; Android system capsule ready."
       - name: Retain sanitized dependency diagnostics
         if: always() && hashFiles('audit.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -67,17 +87,6 @@ jobs:
           path: audit.json
           if-no-files-found: error
           retention-days: 14
-      - name: Build and qualify embedded ARM Android runtime
-        run: |
-          set -euo pipefail
-          stock="$RUNNER_TEMP/aiphone-android-stock"
-          python3 scripts/android_component_factory.py --work "$stock" --verify-programs --compression-preset 3 --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json"
-          # Qualification used only this job's fresh SDK/profile. The package
-          # consumes the sealed payload; extraction and download scratch can go.
-          rm -rf "$stock/installation"
-          rm "$stock/emulator.zip" "$stock/platform-tools.zip" "$stock/system-image.zip"
-          echo "AI_PHONE_FACTORY_ANDROID_PAYLOAD=$stock/android.payload" >> "$GITHUB_ENV"
-          echo "Pinned ARM emulator and ADB verified; Android system capsule ready."
       - name: Local unsigned bundle and privacy checks
         run: python3 scripts/build_client.py --with-web-runtime --with-service-runtime --with-js-services --android-runtime "$AI_PHONE_FACTORY_ANDROID_PAYLOAD"
       - name: Stage qualified core services for maintainer deployment
