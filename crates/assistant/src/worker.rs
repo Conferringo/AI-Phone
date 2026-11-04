@@ -887,7 +887,7 @@ fn wechat_task(context: &[Value]) -> bool {
 }
 fn phone_observation(call: &Value, context: &[Value]) -> bool {
     call["type"] == "function_call"
-        && learning_observation(call["name"].as_str().unwrap_or(""))
+        && call["name"] == "phone_observe"
         && tool_output(context, call)
             .and_then(Value::as_array)
             .is_some_and(|parts| {
@@ -2817,6 +2817,9 @@ async fn recorded_tool(
         .map_err(|e| e.to_string())?;
     if let Some(row) = &existing {
         if let Some(result) = row.get::<Option<Value>, _>("result") {
+            if row.get::<String, _>("status") == "completed" {
+                retain_tool_observation(app, run, id, call, &result).await?;
+            }
             return Ok(result);
         }
         if name == "channel_notify" {
@@ -2986,17 +2989,29 @@ async fn recorded_tool(
     .await
     .map_err(|e| e.to_string())?;
     if status == "completed"
-        && call["name"] == "phone_observe"
         && let Ok(output) = &result
     {
-        let after = call["local_after_action"].is_string()
-            || !matches!(
-                call["name"].as_str(),
-                Some("phone_observe" | "computer_observe")
-            );
-        crate::app_learning::observe(app, run, id, after, output).await?;
+        retain_tool_observation(app, run, id, call, output).await?;
     }
     result
+}
+
+// Fresh execution and receipt replay share one learning boundary. Replaying a
+// completed receipt repairs interrupted retention without repeating the action.
+async fn retain_tool_observation(
+    app: &App,
+    run: Uuid,
+    event: Uuid,
+    call: &Value,
+    output: &Value,
+) -> Result<(), String> {
+    let name = call["name"].as_str().unwrap_or("");
+    if learning_observation(name) {
+        let after = call["local_after_action"].is_string()
+            || !matches!(name, "phone_observe" | "computer_observe");
+        crate::app_learning::observe(app, run, event, after, output).await?;
+    }
+    Ok(())
 }
 
 async fn tool(
@@ -4833,3 +4848,41 @@ mod process_recovery_tests {
 #[cfg(test)]
 #[path = "steering_tests.rs"]
 pub(crate) mod steering_regressions;
+
+#[cfg(test)]
+mod learning_entry_tests {
+    use super::*;
+
+    #[test]
+    fn desktop_frames_do_not_supply_phone_observation_evidence() {
+        let call = json!({"type":"function_call","name":"computer_observe","call_id":"desktop"});
+        let context = vec![
+            call.clone(),
+            json!({"type":"function_call_output","call_id":"desktop","output":[{"type":"input_image","image_url":"data:image/png;base64,a-real-desktop-fixture-frame"}]}),
+        ];
+        assert!(!phone_observation(&call, &context));
+    }
+
+    #[tokio::test]
+    #[ignore = "real disposable PostgreSQL; recorded tool learning and receipt replay"]
+    async fn completed_desktop_tool_receipts_enter_learning_without_repeating_actions() {
+        steering_regressions::database_case(|app|async move{
+            let device="recorded-learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
+            sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')").bind(message).bind(conversation).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,device_id) VALUES($1,$2,$3,$1,'fixture','running',$4)").bind(run).bind(conversation).bind(message).bind(device).execute(&app.db).await.unwrap();
+            let cancel=CancellationToken::new();let mut epoch=0;
+            for (name,after,status) in [("computer_observe",false,"completed"),("computer_key",true,"completed"),("computer_key",false,"failed"),("computer_find_text",false,"completed")] {
+                let event=Uuid::now_v7();let observation=Uuid::now_v7().to_string();
+                let output=json!([{"type":"input_text","text":json!({"success":status=="completed","device_id":device,"observation_id":observation,"application_id":"linux:libreoffice-writer"}).to_string()}]);
+                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,result) VALUES($1,$2,$3,'tool','receipt fixture',$4,$5)").bind(event).bind(run).bind(message).bind(status).bind(&output).execute(&app.db).await.unwrap();
+                let call=json!({"type":"function_call","name":name,"local_action_id":event.to_string(),"arguments":"{}"});
+                for _ in 0..2 { assert_eq!(recorded_tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap(),output); }
+                let retained:Option<bool>=sqlx::query_scalar("SELECT after_action FROM app_learning_observations WHERE observation_id=$1").bind(&observation).fetch_optional(&app.db).await.unwrap();
+                assert_eq!(retained,if status=="completed" && name!="computer_find_text" {Some(after)}else{None},"{name}/{status}");
+            }
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM app_learning_observations WHERE run_id=$1").bind(run).fetch_one(&app.db).await.unwrap(),2);
+        }).await;
+    }
+}

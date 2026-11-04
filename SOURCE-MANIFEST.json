@@ -2805,8 +2805,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 210313,
-      "sha256": "a71b97d51bdb5ee38515c1897127d497ab705f7e9c8fb619fe81eeb93575559d"
+      "size": 214074,
+      "sha256": "feb42ccd1e311a047bb66ad872553894a440b0ae872cd2be4a5d995e451b2385"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
