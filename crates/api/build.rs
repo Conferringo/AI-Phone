@@ -5,6 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         format!("{root}/ai_phone/v1/location.proto"),
         format!("{root}/ai_phone/v1/workspace.proto"),
         format!("{root}/ai_phone/v1/phone_runtime.proto"),
+        format!("{root}/ai_phone/v1/host_bridge.proto"),
         format!("{root}/ai_phone/v1/assistant.proto"),
         format!("{root}/ai_phone/v1/auth.proto"),
         format!("{root}/ai_phone/v1/channels.proto"),

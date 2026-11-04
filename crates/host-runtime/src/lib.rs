@@ -1,8 +1,10 @@
-//! Verified host resources and application-owned native host lifecycle.
-//! This library exposes no guest input actions or arbitrary command interface.
+//! Application-owned native resources, lifecycle and paired device transports.
+//! Device permissions and action receipts remain owned by their callers.
 mod archive;
 mod capsule;
+pub mod component;
 mod control;
+pub mod device_bridge;
 mod filesystem;
 mod links;
 mod manifest;

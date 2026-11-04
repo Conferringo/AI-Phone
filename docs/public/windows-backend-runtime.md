@@ -21,6 +21,8 @@ The backend does not import the host's Docker context or Lima state. It owns
 lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
+The [Rust phone/backend bridge](engineering/device-bridge.md) now supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. SDK/AVD startup, guest discovery/tools and complete first-run integration remain pending; this component does not enable independent Windows hosting.
+
 ## Native client resources
 
 Maintainer builds accept `--wsl-runtime /factory/backend.payload` for Windows. The resource preparer validates the sealed capsule and materializes its exact `rootfs.tar.gz` and manifest under the client's `host/wsl` directory. A compiled manifest digest binds that group to the executable. Artifact inspection rejects changed or additional group members. Source-only builds omit the group; end users do not run this preparation step.
