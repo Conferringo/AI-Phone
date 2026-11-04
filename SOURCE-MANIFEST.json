@@ -2805,8 +2805,8 @@
     },
     {
       "path": "crates/assistant/src/worker/execution_policy.rs",
-      "size": 18332,
-      "sha256": "2b208bd218f346a3bf45b58a6fd70b0ac1a804e602543242dfb83b5620e3d73f"
+      "size": 20599,
+      "sha256": "f172a0bce5a9ac29a9fdb2a18003bb9279b5ca6b1f90fa1e11e00eb537731b96"
     },
     {
       "path": "crates/assistant/src/worker/model_trace.rs",
@@ -2815,13 +2815,13 @@
     },
     {
       "path": "crates/assistant/src/worker/work_intent.rs",
-      "size": 5881,
-      "sha256": "2ef93f5eceb834282f8dfbdbf73b58aab2646a447400eddc1025a6020c5a44ef"
+      "size": 8460,
+      "sha256": "febe6cbc967d16d1e9fe2b9bb31ed6ad2585f8b7d3dd412e0b176c59b857794f"
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 215338,
-      "sha256": "1e78e96882eef1cb4f730f6c86eb2286ce931a9b1e11903fddede7ec62bb109b"
+      "size": 215643,
+      "sha256": "70d4a7bd2648d2827447ce4c3ccad5e2459b7f6a0dc48fa744383eb67478410a"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",

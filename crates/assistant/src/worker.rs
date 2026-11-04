@@ -317,25 +317,7 @@ fn explanatory_request(request: &str) -> bool {
     .any(|word| request.contains(word))
 }
 fn own_work_request(request: &str) -> bool {
-    let work = [
-        "skill",
-        "技能",
-        "知识库",
-        "工作目录",
-        "工作文件",
-        "报告",
-        "脚本",
-        "文档",
-        "代码",
-        "python",
-        "node",
-        "bun",
-        "pdf",
-        "docx",
-        "表格",
-    ]
-    .iter()
-    .any(|word| request.contains(word));
+    let work = work_intent::work_subject(request);
     if !work {
         return false;
     }
@@ -437,41 +419,42 @@ fn phone_target(text: &str) -> bool {
     .iter()
     .any(|w| text.contains(w))
 }
-fn phone_action_request(request: &str) -> bool {
-    [
-        "打开",
-        "发送",
-        "回复",
-        "交付",
-        "进入",
-        "接着做",
-        "执行",
-        "关闭",
-        "启动",
-        "安装",
-        "下载",
-        "点击",
-        "点几",
-        "点开",
-        "点进",
-        "点一下",
-        "点这",
-        "点那",
-        "输入",
-        "滑动",
-        "切换",
-        "修改",
-        "设置为",
-        "返回",
-        "关掉",
-        "删掉",
-        "卸载",
-        "刷",
-        "往下",
-        "往上",
-    ]
-    .iter()
-    .any(|w| request.contains(w))
+fn device_action_request(request: &str) -> bool {
+    work_intent::affirmed_action(
+        request,
+        &[
+            "打开",
+            "发送",
+            "回复",
+            "交付",
+            "进入",
+            "接着做",
+            "执行",
+            "关闭",
+            "启动",
+            "安装",
+            "下载",
+            "点击",
+            "点几",
+            "点开",
+            "点进",
+            "点一下",
+            "点这",
+            "点那",
+            "输入",
+            "滑动",
+            "切换",
+            "修改",
+            "设置为",
+            "返回",
+            "关掉",
+            "删掉",
+            "卸载",
+            "刷",
+            "往下",
+            "往上",
+        ],
+    )
 }
 pub(crate) fn phone_action_required(context: &[Value]) -> bool {
     let request = latest_request(context).to_lowercase();
@@ -502,7 +485,7 @@ pub(crate) fn phone_action_required(context: &[Value]) -> bool {
         .iter()
         .any(|word| request.contains(word));
     phone_task(context)
-        && (phone_action_request(&request) || phone_acknowledgement(&request))
+        && (device_action_request(&request) || phone_acknowledgement(&request))
         && !meta
 }
 pub(crate) fn phone_action_verified(context: &[Value]) -> bool {
@@ -545,8 +528,17 @@ fn computer_task(context: &[Value]) -> bool {
             })
             || context
                 .iter()
-                .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]")))
+                .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
+                && desktop_focus_task(&request))
 }
+fn desktop_focus_task(request: &str) -> bool {
+    !work_intent::harness_resource_request(request)
+        && (device_action_request(request)
+            || work_intent::inspection_request(request)
+            || ["继续", "接着", "continue"].contains(&request.trim())
+            || work_intent::required_tools(request).contains(&"workspace_write"))
+}
+
 #[cfg(test)]
 mod target_wording_tests {
     use super::*;
@@ -593,7 +585,8 @@ fn phone_task(context: &[Value]) -> bool {
     {
         return true;
     }
-    let action = phone_action_request(&request)
+    let action = device_action_request(&request)
+        || work_intent::inspection_request(&request)
         || [
             "检查",
             "读取",
@@ -721,7 +714,7 @@ fn phone_claim(context: &[Value], answer: &str) -> PhoneClaim {
             return PhoneClaim::Action;
         }
         if ["已完成", "已经完成"].iter().any(|w| clause.contains(w)) {
-            return if phone_action_request(&request) {
+            return if device_action_request(&request) {
                 PhoneClaim::Action
             } else {
                 PhoneClaim::Observe
@@ -1577,7 +1570,7 @@ fn finish_rejection(context: &[Value], summary: &str) -> Option<String> {
         if !builtin_skill_read(context, "computer-use") || !observed {
             return Some("电脑任务尚无本轮真实桌面观察，先读取computer-use并computer_observe，等待后需重新观察".into());
         }
-        if phone_action_request(&latest_request(context))
+        if device_action_request(&latest_request(context))
             && !["只观察", "仅观察", "只查看", "仅查看"]
                 .iter()
                 .any(|v| latest_request(context).contains(v))

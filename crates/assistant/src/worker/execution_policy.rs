@@ -530,6 +530,59 @@ mod execution_policy_tests {
     }
 
     #[test]
+    fn read_only_screen_reports_start_with_observation_not_model_planning() {
+        for text in [
+            "开发只读验收：只观察手机当前小红书画面，报告前台应用与能直接看到的页面状态。不操作微信。保持所有应用和内容原样。",
+            "观察手机屏幕，报告实际状态",
+            "只观察手机当前画面，不点击也不输入",
+            "看看手机当前画面并报告你看到了什么",
+            "Inspect the Android screen and report its current state",
+        ] {
+            assert_eq!(
+                initial_observation(&request(text)),
+                Some(("phone_observe", json!({}))),
+                "{text}"
+            );
+            assert!(
+                !crate::worker::phone_action_required(&request(text)),
+                "read-only inspection must not demand input: {text}"
+            );
+        }
+        for text in [
+            "不要观察手机，只解释原理",
+            "编写一份关于手机的报告，不要调用工具",
+            "在工作目录读取手机截图文件，报告文件信息",
+            "Do not inspect the phone; explain only",
+        ] {
+            assert!(initial_observation(&request(text)).is_none(), "{text}");
+        }
+    }
+
+    #[test]
+    fn desktop_affinity_selects_the_device_without_turning_chat_into_gui_work() {
+        let focused = |text: &str| {
+            let mut context = vec![
+                json!({"role":"system","content":[{"type":"input_text","text":"[当前设备类型:desktop]"}]}),
+            ];
+            context.extend(request(text));
+            context
+        };
+        for text in ["你好", "只读取Skill列表，不操作设备", "把这句话记入知识库"]
+        {
+            assert!(initial_observation(&focused(text)).is_none(), "{text}");
+        }
+        for text in ["打开浏览器", "只观察当前画面并报告状态", "创建一份文档"]
+        {
+            assert_eq!(
+                initial_observation(&focused(text)).unwrap().0,
+                "device_list",
+                "{text}"
+            );
+        }
+        assert!(initial_observation(&focused("用 Python 处理电脑里的本地表格")).is_none());
+    }
+
+    #[test]
     fn first_model_call_can_start_with_a_real_frame_without_a_planning_round_trip() {
         let mut context = request("在电脑搜索安防企业");
         assert_eq!(initial_observation(&context).unwrap().0, "device_list");
