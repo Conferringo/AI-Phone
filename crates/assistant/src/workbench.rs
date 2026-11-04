@@ -342,15 +342,8 @@ pub fn workspace_image() -> String {
 }
 
 pub async fn initialize(db: &PgPool, root: &std::path::Path) -> Result<(), String> {
-    for id in [
-        "phone-use",
-        "wechat",
-        "computer-use",
-        "device-transfer",
-        "autonomous-learning",
-        "browser-android",
-        "files-android",
-    ] {
+    for builtin in crate::builtin_guides::SKILLS {
+        let id = builtin.id;
         let content = tokio::fs::read_to_string(root.join(format!("skills/builtin/{id}/SKILL.md")))
             .await
             .map_err(|e| e.to_string())?;

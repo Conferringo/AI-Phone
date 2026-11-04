@@ -52,6 +52,9 @@ where
     .catch_unwind()
     .await;
     db.close().await;
+    // close() was observed returning with one idle connection after asynchronous
+    // request return. Release the fixture's final owner before normal DROP.
+    drop(db);
     // SQLx has sent Terminate; the server owns the remaining shutdown. Normal
     // DROP uses PostgreSQL's bounded CountOtherDBBackends wait and still fails
     // for live clients. An immediate pg_stat_activity assertion races that wait.

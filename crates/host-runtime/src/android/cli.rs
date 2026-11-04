@@ -23,22 +23,7 @@ fn read_request() -> Result<NativeAndroidPrepare> {
     Ok(request)
 }
 fn receipt(prepared: super::Prepared) -> Result<NativeAndroidPrepared> {
-    Ok(NativeAndroidPrepared {
-        version: 1,
-        sdk_root: prepared
-            .sdk_root
-            .to_str()
-            .ok_or(Error::Invalid("android_device_path"))?
-            .into(),
-        avd_home: prepared
-            .avd_home
-            .to_str()
-            .ok_or(Error::Invalid("android_device_path"))?
-            .into(),
-        avd_name: super::AVD_NAME.into(),
-        reused_sdk: prepared.reused_sdk,
-        reused_device: prepared.reused_device,
-    })
+    prepared.wire()
 }
 pub fn run(arguments: &[OsString]) -> Result<()> {
     let [home] = arguments else {

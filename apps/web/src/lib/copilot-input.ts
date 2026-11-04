@@ -167,6 +167,14 @@ export class CopilotInput {
     this.failure = '';
     this.flush();
   }
+  /** A lost audio stream cannot invent its missing final. Preserve its text for
+   * manual editing; accepted receipts and failed durable handoffs stay owned. */
+  recoverIncomplete():string {
+    const incomplete=this.slots.filter(slot=>!slot.final&&!slot.accepted&&!slot.pending);
+    const ids=new Set(incomplete.map(slot=>slot.id));
+    this.slots=this.slots.filter(slot=>!ids.has(slot.id));
+    return incomplete.map(slot=>slot.text).filter(Boolean).join('\n');
+  }
 
   stop() {
     this.enabled = false;

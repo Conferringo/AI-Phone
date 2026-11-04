@@ -222,6 +222,7 @@ pub fn notification_read_only_tool(name: &str) -> bool {
             | "device_notifications"
             | "computer_observe"
             | "computer_find_text"
+            | "computer_find_control"
             | "skill_read"
             | "skill_list"
             | "task_history"
@@ -806,6 +807,7 @@ mod tests {
             "phone_notifications",
             "phone_observe",
             "computer_find_text",
+            "computer_find_control",
             "task_finish",
             "skill_read",
         ] {

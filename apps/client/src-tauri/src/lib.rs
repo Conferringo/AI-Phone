@@ -400,6 +400,19 @@ async fn resume_local_host(app: &tauri::AppHandle) -> Option<Url> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(desktop)]
+    {
+        let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
+        if let Some(result) = ai_phone_host_runtime::component::run(&arguments) {
+            match result {
+                Ok(()) => std::process::exit(0),
+                Err(error) => {
+                    eprintln!("{error}");
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
     let builder = tauri::Builder::default()
         .manage(Connecting(AtomicBool::new(false)))
         .manage(Navigation::default())

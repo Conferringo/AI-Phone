@@ -30,6 +30,7 @@ dependencies = [
 name = "ai-phone-client"
 version = "0.1.0-preview.3"
 dependencies = [
+ "ai-phone-api",
  "ai-phone-host-runtime",
  "glib",
  "reqwest 0.12.28",

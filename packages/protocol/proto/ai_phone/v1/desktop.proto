@@ -19,6 +19,11 @@ message DesktopObservation {
   // Bounded post-input paint observation, not application or navigation completion.
   DesktopFrameState frame_state = 9;
   uint32 frame_wait_ms = 10;
+  // Stable OS application identity. Empty when unavailable; never a document title.
+  string application_id = 11;
+  // OS identity of the observed foreground window, not its private title.
+  uint64 window_id = 12;
+  uint32 process_id = 13;
 }
 message DesktopActionRequest {
   string device_id = 1;
@@ -37,6 +42,9 @@ message DesktopActionRequest {
   string text = 14;
   // Automated input waits for repaint; interactive streamed control may omit it.
   bool wait_for_paint = 15;
+  // Replace the current editable field through real select-all/paste input.
+  // Rejected when the observed foreground window or editable focus is unavailable.
+  bool replace = 16;
 }
 message DeviceFilesRequest { string device_id = 1; string path = 2; }
 message DeviceFile { string name = 1; string path = 2; bool directory = 3; uint64 bytes = 4; }

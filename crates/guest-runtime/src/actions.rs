@@ -52,7 +52,23 @@ pub enum Action {
     Text {
         text: String,
     },
+    #[serde(rename = "replace_text")]
+    ReplaceText {
+        text: String,
+        window_id: u32,
+        process_id: u32,
+    },
 }
+
+/// The focus check failed before any clipboard or keyboard side effect.
+#[derive(Debug)]
+pub struct InputRejected(pub String);
+impl std::fmt::Display for InputRejected {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+impl std::error::Error for InputRejected {}
 
 #[derive(Deserialize)]
 pub struct Input {
@@ -107,7 +123,7 @@ impl Action {
             }
             Self::Scroll { x, y, .. } => point(*x, *y, settings).map(|_| ()),
             Self::Key { key: value } => key(value),
-            Self::Text { text: value } => text(value),
+            Self::Text { text: value } | Self::ReplaceText { text: value, .. } => text(value),
         }
     }
 }
@@ -203,21 +219,34 @@ async fn scroll(
     trace.acknowledge(screen)
 }
 
-async fn send_key(runner: &impl Runner, settings: &Settings, value: &str) -> Result<()> {
-    let mut request = Request::new("xdotool", &["key", "--clearmodifiers", value]);
+async fn send_keys(runner: &impl Runner, settings: &Settings, keys: &[&str]) -> Result<()> {
+    let mut request = Request::new("xdotool", &["key", "--clearmodifiers"]);
+    request
+        .args
+        .extend(keys.iter().map(std::ffi::OsString::from));
     request.env = settings.environment()?;
     process::checked(runner.execute(request).await?)?;
     Ok(())
 }
 
-async fn paste(runner: &impl Runner, settings: &Settings, value: &str) -> Result<()> {
+async fn paste(
+    runner: &impl Runner,
+    settings: &Settings,
+    value: &str,
+    replace: bool,
+) -> Result<()> {
     let mut request = Request::new("xclip", &["-selection", "clipboard"]);
     request.input = value.as_bytes().to_vec();
     request.timeout = Some(Duration::from_secs(5));
     request.capture = Capture::Discard;
     request.env = settings.environment()?;
     process::checked(runner.execute(request).await?)?;
-    send_key(runner, settings, "ctrl+v").await
+    let keys: &[&str] = if replace {
+        &["ctrl+a", "ctrl+v"]
+    } else {
+        &["ctrl+v"]
+    };
+    send_keys(runner, settings, keys).await
 }
 
 pub async fn execute(
@@ -228,6 +257,16 @@ pub async fn execute(
 ) -> Result<()> {
     let input: Input = serde_json::from_value(value)?;
     input.action.validate(settings)?;
+    if let Action::ReplaceText {
+        window_id,
+        process_id,
+        ..
+    } = &input.action
+    {
+        crate::accessibility::require_field(screen, settings, *window_id, *process_id)
+            .await
+            .map_err(|e| InputRejected(e.to_string()))?;
+    }
     let mut trace = Trace::new(&settings.home, input.action_id.as_deref());
     perform(screen, runner, settings, &mut trace, input.action).await
 }
@@ -248,7 +287,43 @@ async fn perform(
         } => click(screen, trace, (x, y), button, clicks).await,
         Action::Drag { x, y, to_x, to_y } => drag(screen, trace, (x, y), (to_x, to_y)).await,
         Action::Scroll { x, y, amount } => scroll(screen, trace, (x, y), amount).await,
-        Action::Key { key } => send_key(runner, settings, &key).await,
-        Action::Text { text } => paste(runner, settings, &text).await,
+        Action::Key { key } => send_keys(runner, settings, &[&key]).await,
+        Action::Text { text } => paste(runner, settings, &text, false).await,
+        Action::ReplaceText { text, .. } => paste(runner, settings, &text, true).await,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+    #[derive(Default)]
+    struct Recorder(Mutex<Vec<Request>>);
+    impl Runner for Recorder {
+        async fn execute(&self, request: Request) -> Result<process::Output> {
+            self.0.lock().unwrap().push(request);
+            Ok(process::Output {
+                code: 0,
+                stdout: vec![],
+                stderr: vec![],
+            })
+        }
+    }
+    #[tokio::test]
+    async fn replacement_selects_and_pastes_in_one_keyboard_process() {
+        let runner = Recorder::default();
+        let text = "新文件 😀 $(not-a-command)";
+        paste(&runner, &Settings::from_env(), text, true)
+            .await
+            .unwrap();
+        let calls = runner.0.lock().unwrap();
+        assert_eq!(calls.len(), 2);
+        assert_eq!(calls[0].program, "xclip");
+        assert_eq!(calls[0].input, text.as_bytes());
+        assert_eq!(calls[1].program, "xdotool");
+        assert_eq!(
+            calls[1].args,
+            ["key", "--clearmodifiers", "ctrl+a", "ctrl+v"]
+        );
     }
 }

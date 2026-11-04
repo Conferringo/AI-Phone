@@ -13,7 +13,7 @@ const DIRECTORY: &str = "phone-local-01.avd";
 const RECORD: &str = "ai_phone_p2.ini";
 const JOURNAL: &str = ".create.pb";
 
-fn text(path: &Path) -> Result<String> {
+pub(super) fn text(path: &Path) -> Result<String> {
     let value = path.to_str().ok_or(Error::Invalid("android_device_path"))?;
     if value.chars().any(char::is_control) {
         return Err(Error::Invalid("android_device_path"));
@@ -68,11 +68,33 @@ fn exists(path: &Path) -> Result<bool> {
         Err(e) => Err(e.into()),
     }
 }
-fn verify_existing(home: &Path, sdk: &Path, abi: &str) -> Result<()> {
+pub(super) fn verify_existing(home: &Path, sdk: &Path, abi: &str) -> Result<()> {
     let folder = home.join(DIRECTORY);
     filesystem::existing_directory(&folder)?;
     verify_record(home, &folder)?;
     verify_image(&folder, sdk, abi)
+}
+
+pub(super) fn applied(home: &Path) -> Result<Resources> {
+    let values = ini(&home.join(DIRECTORY).join("config.ini"))?;
+    let number = |key: &str| {
+        values
+            .get(key)
+            .and_then(|v| v.parse::<u32>().ok())
+            .ok_or(Error::Invalid("android_device_configuration"))
+    };
+    let storage = values
+        .get("disk.dataPartition.size")
+        .and_then(|v| v.strip_suffix('G'))
+        .and_then(|v| v.parse().ok())
+        .ok_or(Error::Invalid("android_device_configuration"))?;
+    let resources = Resources {
+        cpus: number("hw.cpu.ncore")?,
+        memory_mb: number("hw.ramSize")?,
+        storage_gb: storage,
+    };
+    resources.validate()?;
+    Ok(resources)
 }
 fn verify_record(home: &Path, folder: &Path) -> Result<()> {
     let record = ini(&home.join(RECORD))?;

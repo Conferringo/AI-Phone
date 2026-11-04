@@ -1,6 +1,7 @@
 //! A paired transport, not guest authority or an Android-readiness shortcut.
 mod cli;
 mod config;
+mod peer;
 mod relay;
 #[cfg(test)]
 mod tests;
@@ -17,6 +18,7 @@ use tokio::{net::TcpListener, sync::watch, task::JoinSet};
 
 pub const CONTRACT: &str = "ai-phone-device-bridge-v1";
 pub use cli::run;
+pub use peer::{CONTRACT as PEER_CONTRACT, run as run_peer};
 
 pub struct Bridge {
     receipt: DeviceBridgeStarted,
@@ -24,7 +26,10 @@ pub struct Bridge {
 }
 impl Bridge {
     pub async fn bind(request: DeviceBridgeConfig) -> Result<Self> {
-        let config = Arc::new(config::Config::try_from(request)?);
+        Self::bind_config(config::Config::try_from(request)?).await
+    }
+    async fn bind_config(config: config::Config) -> Result<Self> {
+        let config = Arc::new(config);
         let routes = match config.role {
             DeviceBridgeRole::Host => {
                 let listener = TcpListener::bind(config.endpoint).await?;

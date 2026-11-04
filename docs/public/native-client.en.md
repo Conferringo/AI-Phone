@@ -12,6 +12,10 @@ The native setup and ten language catalogs share custom keyboard-accessible sele
 
 Only the native setup window has deployment IPC permissions. The remote workbench cannot download or run host processes. User state lives separately from versioned source; automatic upgrades and cross-version activation remain unfinished.
 
+The native Rust Android worker can start an admitted SDK/AVD, verify root and a screenshot transport, and retain its phone after the setup pipe closes. A matching live session is observed and reused. Startup cancellation waits for the emulator console before sending one stop command; unknown cleanup stays an error. A stale owner with occupied ports requires recovery rather than duplicate startup. Windows setup calls this worker before WSL initialization, but pairing, guest provisioning and complete two-device readiness are still unfinished. Lifecycle fixtures and an isolated macOS Android boot are tested separately from Windows hardware acceleration and full-product installation.
+
+The Rust guest phone peer receives pairing credentials and the emulator token through private protobuf stdin. It owns the existing media discovery file and local bridge listeners, preserves conflicting files, and removes its advertisement after draining connections. A Linux ARM64 peer has read the running macOS Android's root identity and real screenshot through the existing media client. Automatic Windows pairing, the bundled guest ADB/protocol tools and full guest provisioning remain to be integrated; complete-host readiness stays disabled.
+
 ## Build
 
 ```sh

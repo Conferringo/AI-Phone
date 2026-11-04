@@ -105,8 +105,10 @@ pub(super) fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
                 "不保存",
                 "不下载",
                 "不处理",
+                "不操作",
                 "不编写",
                 "不浏览",
+                "不联网",
                 "不搜索",
                 "不安装",
                 "不导入",
@@ -130,6 +132,67 @@ pub(super) fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
         })
 }
 
+pub(super) fn harness_resource_request(request: &str) -> bool {
+    [
+        "skill",
+        "技能",
+        "知识库",
+        "工作目录",
+        "工作文件",
+        "脚本",
+        "代码",
+        "python",
+        "node",
+        "bun",
+    ]
+    .iter()
+    .any(|word| request.contains(word))
+}
+
+pub(super) fn work_subject(request: &str) -> bool {
+    harness_resource_request(request)
+        || ["文档", "pdf", "docx", "表格"]
+            .iter()
+            .any(|word| request.contains(word))
+        || (request.contains("报告") && required_tools(request).contains(&"workspace_write"))
+}
+
+pub(super) fn affirmed_action(request: &str, verbs: &[&str]) -> bool {
+    positive_clauses(request).any(|clause| {
+        verbs.iter().any(|verb| {
+            clause.match_indices(verb).any(|(index, _)| {
+                let prefix = clause[..index].trim_end();
+                ![
+                    "不", "别", "勿", "不要", "不准", "不能", "不可", "禁止", "避免", "无需",
+                    "不必", "未", "not", "never",
+                ]
+                .iter()
+                .any(|negative| prefix.ends_with(negative))
+            })
+        })
+    })
+}
+
+pub(super) fn inspection_request(request: &str) -> bool {
+    affirmed_action(
+        request,
+        &[
+            "观察",
+            "查看",
+            "看看",
+            "看下",
+            "看一下",
+            "检查",
+            "读取",
+            "observe",
+            "inspect",
+            "look at",
+            "view",
+            "check",
+        ],
+    )
+}
+
 fn matches(requirement: &Requirement, clause: &str) -> bool {
     requirement
         .targets
@@ -150,6 +213,27 @@ pub(super) fn required_tools(request: &str) -> Vec<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn screen_reports_do_not_require_creating_a_work_artifact() {
+        assert!(!work_subject("观察手机当前画面，报告前台状态"));
+        assert!(work_subject("在工作目录生成报告文件"));
+        assert!(work_subject("读取skill列表"));
+        assert!(work_subject("打开表格文档"));
+        assert!(harness_resource_request("只读取skill列表"));
+        assert!(!harness_resource_request("打开表格文档"));
+    }
+
+    #[test]
+    fn read_only_inspection_never_turns_excluded_input_into_an_action() {
+        assert!(inspection_request("只观察手机当前画面，不点击也不输入"));
+        assert!(!affirmed_action(
+            "只观察手机当前画面，不点击也不输入",
+            &["点击", "输入"]
+        ));
+        assert!(affirmed_action("观察手机画面，然后点击输入框", &["点击"]));
+        assert!(!inspection_request("不要观察手机，只解释原理"));
+    }
 
     #[test]
     fn explicit_positive_work_keeps_its_required_evidence() {

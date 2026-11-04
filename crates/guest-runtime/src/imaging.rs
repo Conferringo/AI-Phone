@@ -40,7 +40,10 @@ fn decode(value: &str) -> Result<DynamicImage> {
 }
 
 fn region(request: &Zoom, image: &DynamicImage) -> Result<(u32, u32, u32, u32)> {
-    if request.x < 0 || request.y < 0 || request.width < 32 || request.height < 32 {
+    if request.width <= 0 || request.height <= 0 {
+        return Err("放大区域宽高必须为正整数像素".into());
+    }
+    if request.x < 0 || request.y < 0 {
         return Err("放大区域超出原始观察".into());
     }
     let right = request

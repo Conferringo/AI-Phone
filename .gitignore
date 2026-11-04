@@ -1,7 +1,7 @@
 .env
 .env.*
 !.env.example
-.tools/
+.tools
 node_modules/
 .next/
 out/

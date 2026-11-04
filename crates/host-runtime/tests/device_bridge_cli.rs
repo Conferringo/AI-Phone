@@ -49,3 +49,54 @@ fn native_android_component_has_a_separate_protobuf_contract_and_no_false_receip
     }
     assert!(!invoke(&["--prepare-android"], b"").status.success());
 }
+
+#[test]
+fn android_session_rejects_bad_frames_and_reports_typed_startup_failure() {
+    use ai_phone_api::wire::{
+        NativeAndroidSessionReply, native_android_session_reply::Result as Reply,
+    };
+    use prost::Message;
+    let output = invoke(&["--android-session-contract"], b"");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"ai-phone-native-android-session-v1\n");
+    for (arguments, input) in [
+        (vec!["--android-session-contract", "extra"], vec![]),
+        (vec!["--android-session", "extra"], vec![]),
+        (vec!["--android-session"], vec![0, 0, 0, 1, 255]),
+        (vec!["--android-session"], vec![0, 0, 64, 1]),
+    ] {
+        let output = invoke(&arguments, &input);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+    }
+    let output = invoke(&["--android-session"], &[0, 0, 0, 0]);
+    assert!(!output.status.success());
+    assert_eq!(
+        u32::from_be_bytes(output.stdout[..4].try_into().unwrap()) as usize,
+        output.stdout.len() - 4
+    );
+    let reply = NativeAndroidSessionReply::decode(&output.stdout[4..]).unwrap();
+    let Some(Reply::Failure(failure)) = reply.result else {
+        panic!("no readiness for a missing phone")
+    };
+    assert_eq!(failure.code, "android_session_phone");
+    assert!(!failure.outcome_unknown);
+}
+
+#[test]
+fn phone_peer_has_a_fixed_contract_and_never_emits_ready_for_bad_input() {
+    let output = invoke(&["--phone-peer-contract"], b"");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"ai-phone-phone-peer-v1\n");
+    for (args, input) in [
+        (vec!["--phone-peer-contract", "extra"], vec![]),
+        (vec!["--phone-peer", "extra"], vec![]),
+        (vec!["--phone-peer"], vec![0, 0, 0, 0]),
+        (vec!["--phone-peer"], vec![0, 0, 64, 1]),
+        (vec!["--phone-peer"], vec![0, 0, 0, 1, 255]),
+    ] {
+        let output = invoke(&args, &input);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+    }
+}

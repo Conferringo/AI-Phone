@@ -317,25 +317,7 @@ fn explanatory_request(request: &str) -> bool {
     .any(|word| request.contains(word))
 }
 fn own_work_request(request: &str) -> bool {
-    let work = [
-        "skill",
-        "技能",
-        "知识库",
-        "工作目录",
-        "工作文件",
-        "报告",
-        "脚本",
-        "文档",
-        "代码",
-        "python",
-        "node",
-        "bun",
-        "pdf",
-        "docx",
-        "表格",
-    ]
-    .iter()
-    .any(|word| request.contains(word));
+    let work = work_intent::work_subject(request);
     if !work {
         return false;
     }
@@ -437,41 +419,42 @@ fn phone_target(text: &str) -> bool {
     .iter()
     .any(|w| text.contains(w))
 }
-fn phone_action_request(request: &str) -> bool {
-    [
-        "打开",
-        "发送",
-        "回复",
-        "交付",
-        "进入",
-        "接着做",
-        "执行",
-        "关闭",
-        "启动",
-        "安装",
-        "下载",
-        "点击",
-        "点几",
-        "点开",
-        "点进",
-        "点一下",
-        "点这",
-        "点那",
-        "输入",
-        "滑动",
-        "切换",
-        "修改",
-        "设置为",
-        "返回",
-        "关掉",
-        "删掉",
-        "卸载",
-        "刷",
-        "往下",
-        "往上",
-    ]
-    .iter()
-    .any(|w| request.contains(w))
+fn device_action_request(request: &str) -> bool {
+    work_intent::affirmed_action(
+        request,
+        &[
+            "打开",
+            "发送",
+            "回复",
+            "交付",
+            "进入",
+            "接着做",
+            "执行",
+            "关闭",
+            "启动",
+            "安装",
+            "下载",
+            "点击",
+            "点几",
+            "点开",
+            "点进",
+            "点一下",
+            "点这",
+            "点那",
+            "输入",
+            "滑动",
+            "切换",
+            "修改",
+            "设置为",
+            "返回",
+            "关掉",
+            "删掉",
+            "卸载",
+            "刷",
+            "往下",
+            "往上",
+        ],
+    )
 }
 pub(crate) fn phone_action_required(context: &[Value]) -> bool {
     let request = latest_request(context).to_lowercase();
@@ -502,7 +485,7 @@ pub(crate) fn phone_action_required(context: &[Value]) -> bool {
         .iter()
         .any(|word| request.contains(word));
     phone_task(context)
-        && (phone_action_request(&request) || phone_acknowledgement(&request))
+        && (device_action_request(&request) || phone_acknowledgement(&request))
         && !meta
 }
 pub(crate) fn phone_action_verified(context: &[Value]) -> bool {
@@ -543,10 +526,21 @@ fn computer_task(context: &[Value]) -> bool {
                         .iter()
                         .any(|v| clause.contains(v))
             })
-            || context
-                .iter()
-                .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]")))
+            || (desktop_focused(context) && desktop_focus_task(&request)))
 }
+fn desktop_focused(context: &[Value]) -> bool {
+    context
+        .iter()
+        .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
+}
+fn desktop_focus_task(request: &str) -> bool {
+    !work_intent::harness_resource_request(request)
+        && (device_action_request(request)
+            || work_intent::inspection_request(request)
+            || ["继续", "接着", "continue"].contains(&request.trim())
+            || work_intent::required_tools(request).contains(&"workspace_write"))
+}
+
 #[cfg(test)]
 mod target_wording_tests {
     use super::*;
@@ -593,7 +587,8 @@ fn phone_task(context: &[Value]) -> bool {
     {
         return true;
     }
-    let action = phone_action_request(&request)
+    let action = device_action_request(&request)
+        || work_intent::inspection_request(&request)
         || [
             "检查",
             "读取",
@@ -721,7 +716,7 @@ fn phone_claim(context: &[Value], answer: &str) -> PhoneClaim {
             return PhoneClaim::Action;
         }
         if ["已完成", "已经完成"].iter().any(|w| clause.contains(w)) {
-            return if phone_action_request(&request) {
+            return if device_action_request(&request) {
                 PhoneClaim::Action
             } else {
                 PhoneClaim::Observe
@@ -808,14 +803,16 @@ pub(crate) async fn experience_call(
     context: &[Value],
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<Value> {
-    let app_id = latest_grounding(context).and_then(|value| {
-        crate::app_learning::package(value["foreground_app"].as_str().unwrap_or(""))
-            .map(str::to_owned)
-    })?;
-    if state.guidance_app == app_id {
+    let app_id = current_learning_application(context)?;
+    let builtin = crate::builtin_guides::for_application(&app_id);
+    let guidance_key = builtin.map_or_else(|| app_id.clone(), |name| format!("{app_id}/{name}"));
+    if state.guidance_app == guidance_key {
         return None;
     }
-    state.guidance_app.clone_from(&app_id);
+    if let Some(call) = builtin.and_then(|name| builtin_guide_call(context, name)) {
+        return Some(call);
+    }
+    state.guidance_app = guidance_key;
     let name = match crate::app_learning::recall(app, &app_id).await {
         Ok(name) => name?,
         Err(_) => {
@@ -829,9 +826,44 @@ pub(crate) async fn experience_call(
     {
         return None;
     }
-    Some(
-        json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
-        "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name}),
+    Some(guidance_read(&name))
+}
+fn current_learning_application(context: &[Value]) -> Option<String> {
+    let latest = context
+        .iter()
+        .skip(evidence_start(context))
+        .rev()
+        .find(|call| {
+            call["type"] == "function_call"
+                && learning_observation(call["name"].as_str().unwrap_or(""))
+        })?;
+    if !successful_call(latest, context) {
+        return None;
+    }
+    let metadata = tool_output(context, latest).and_then(crate::app_learning::metadata)?;
+    Some(metadata.app_id)
+}
+fn builtin_guide_call(context: &[Value], name: &str) -> Option<Value> {
+    let attempted = context
+        .iter()
+        .skip(evidence_start(context))
+        .any(|call| call["local_app_guidance"] == name);
+    (!attempted && !builtin_skill_read(context, name)).then(|| guidance_read(name))
+}
+fn guidance_read(name: &str) -> Value {
+    json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
+        "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name})
+}
+fn learning_observation(name: &str) -> bool {
+    matches!(
+        name,
+        "phone_observe"
+            | "computer_observe"
+            | "computer_click"
+            | "computer_type"
+            | "computer_key"
+            | "computer_scroll"
+            | "computer_drag"
     )
 }
 
@@ -839,7 +871,9 @@ fn wechat_task(context: &[Value]) -> bool {
     let request = latest_request(context)
         .to_lowercase()
         .replace("企业微信", "");
-    if request.contains("微信") || request.contains("wechat") {
+    if work_intent::positive_clauses(&request)
+        .any(|clause| clause.contains("微信") || clause.contains("wechat"))
+    {
         return true;
     }
     if latest_grounding(context).is_some_and(|value| {
@@ -1538,7 +1572,7 @@ fn finish_rejection(context: &[Value], summary: &str) -> Option<String> {
         if !builtin_skill_read(context, "computer-use") || !observed {
             return Some("电脑任务尚无本轮真实桌面观察，先读取computer-use并computer_observe，等待后需重新观察".into());
         }
-        if phone_action_request(&latest_request(context))
+        if device_action_request(&latest_request(context))
             && !["只观察", "仅观察", "只查看", "仅查看"]
                 .iter()
                 .any(|v| latest_request(context).contains(v))
@@ -2112,7 +2146,7 @@ async fn execute(
             continue;
         }
         if (phone_task(&context)
-            || (gui_execution(&context) && !computer_task(&context))
+            || (gui_execution(&context) && !execution_policy::desktop_target(&context))
             || (notification_run && !desktop_notification)
             || wechat_task(&context))
             && !phone_skill_read(&context)
@@ -2126,7 +2160,10 @@ async fn execute(
             );
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
-        if computer_task(&context) && !builtin_skill_read(&context, "computer-use") {
+        if (computer_task(&context)
+            || (gui_execution(&context) && execution_policy::desktop_target(&context)))
+            && !builtin_skill_read(&context, "computer-use")
+        {
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"computer-use\"}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
@@ -2796,6 +2833,9 @@ async fn recorded_tool(
         .map_err(|e| e.to_string())?;
     if let Some(row) = &existing {
         if let Some(result) = row.get::<Option<Value>, _>("result") {
+            if row.get::<String, _>("status") == "completed" {
+                retain_tool_observation(app, run, id, call, &result).await?;
+            }
             return Ok(result);
         }
         if name == "channel_notify" {
@@ -2830,6 +2870,7 @@ async fn recorded_tool(
     let title = match name {
         "computer_observe" => "观察电脑",
         "computer_find_text" => "定位电脑文字",
+        "computer_find_control" => "定位电脑控件",
         "computer_click" => "点击电脑",
         "computer_type" => "电脑输入",
         "computer_key" => "电脑按键",
@@ -2965,13 +3006,29 @@ async fn recorded_tool(
     .await
     .map_err(|e| e.to_string())?;
     if status == "completed"
-        && call["name"] == "phone_observe"
         && let Ok(output) = &result
     {
-        crate::app_learning::observe(app, run, id, call["local_after_action"].is_string(), output)
-            .await?;
+        retain_tool_observation(app, run, id, call, output).await?;
     }
     result
+}
+
+// Fresh execution and receipt replay share one learning boundary. Replaying a
+// completed receipt repairs interrupted retention without repeating the action.
+async fn retain_tool_observation(
+    app: &App,
+    run: Uuid,
+    event: Uuid,
+    call: &Value,
+    output: &Value,
+) -> Result<(), String> {
+    let name = call["name"].as_str().unwrap_or("");
+    if learning_observation(name) {
+        let after = call["local_after_action"].is_string()
+            || !matches!(name, "phone_observe" | "computer_observe");
+        crate::app_learning::observe(app, run, event, after, output).await?;
+    }
+    Ok(())
 }
 
 async fn tool(
@@ -2997,7 +3054,7 @@ async fn tool(
             .map_err(|e| e.to_string())?;
         let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
         if !execution_policy::command_execution(&current) {
-            let next = if computer_task(&current) {
+            let next = if execution_policy::desktop_target(&current) {
                 "computer_observe"
             } else {
                 "phone_observe"
@@ -3612,6 +3669,15 @@ mod verification_tests {
             finish_rejection(&context, "已打开表格").is_some(),
             "locating text is not GUI execution"
         );
+        context.extend(action(
+            "control-locate",
+            "computer_find_control",
+            json!({"candidates":[{"name":"打开","center":[200,300]}]}),
+        ));
+        assert!(
+            finish_rejection(&context, "已打开表格").is_some(),
+            "control inspection alone is not execution"
+        );
         context.extend(action("click", "computer_click", json!({})));
         assert!(finish_rejection(&context, "已打开桌面表格").is_none());
         context.extend(action("wait", "task_wait", json!({})));
@@ -3652,6 +3718,17 @@ mod verification_tests {
     fn wechat_routing_uses_current_request_actual_app_or_notification_source() {
         assert!(wechat_task(&request("回复微信里的消息")));
         assert!(!wechat_task(&request("在企业微信绑定机器人")));
+        for text in [
+            "在小红书搜索，不操作微信",
+            "不要打开微信，只看小红书",
+            "Do not open WeChat; search Xiaohongshu",
+        ] {
+            assert!(
+                !wechat_task(&request(text)),
+                "negative app reference must not load unrelated guidance: {text}"
+            );
+        }
+        assert!(wechat_task(&request("回复微信，但不要发图片")));
         let mut context = request("打开微信");
         context.extend(request("现在打开设置"));
         assert!(
@@ -4808,3 +4885,41 @@ mod process_recovery_tests {
 #[cfg(test)]
 #[path = "steering_tests.rs"]
 pub(crate) mod steering_regressions;
+
+#[cfg(test)]
+mod learning_entry_tests {
+    use super::*;
+
+    #[test]
+    fn desktop_frames_do_not_supply_phone_observation_evidence() {
+        let call = json!({"type":"function_call","name":"computer_observe","call_id":"desktop"});
+        let context = vec![
+            call.clone(),
+            json!({"type":"function_call_output","call_id":"desktop","output":[{"type":"input_image","image_url":"data:image/png;base64,a-real-desktop-fixture-frame"}]}),
+        ];
+        assert!(!phone_observation(&call, &context));
+    }
+
+    #[tokio::test]
+    #[ignore = "real disposable PostgreSQL; recorded tool learning and receipt replay"]
+    async fn completed_desktop_tool_receipts_enter_learning_without_repeating_actions() {
+        steering_regressions::database_case(|app|async move{
+            let device="recorded-learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
+            sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')").bind(message).bind(conversation).execute(&app.db).await.unwrap();
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,device_id) VALUES($1,$2,$3,$1,'fixture','running',$4)").bind(run).bind(conversation).bind(message).bind(device).execute(&app.db).await.unwrap();
+            let cancel=CancellationToken::new();let mut epoch=0;
+            for (name,after,status) in [("computer_observe",false,"completed"),("computer_key",true,"completed"),("computer_key",false,"failed"),("computer_find_text",false,"completed")] {
+                let event=Uuid::now_v7();let observation=Uuid::now_v7().to_string();
+                let output=json!([{"type":"input_text","text":json!({"success":status=="completed","device_id":device,"observation_id":observation,"application_id":"linux:libreoffice-writer"}).to_string()}]);
+                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,result) VALUES($1,$2,$3,'tool','receipt fixture',$4,$5)").bind(event).bind(run).bind(message).bind(status).bind(&output).execute(&app.db).await.unwrap();
+                let call=json!({"type":"function_call","name":name,"local_action_id":event.to_string(),"arguments":"{}"});
+                for _ in 0..2 { assert_eq!(recorded_tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap(),output); }
+                let retained:Option<bool>=sqlx::query_scalar("SELECT after_action FROM app_learning_observations WHERE observation_id=$1").bind(&observation).fetch_optional(&app.db).await.unwrap();
+                assert_eq!(retained,if status=="completed" && name!="computer_find_text" {Some(after)}else{None},"{name}/{status}");
+            }
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM app_learning_observations WHERE run_id=$1").bind(run).fetch_one(&app.db).await.unwrap(),2);
+        }).await;
+    }
+}

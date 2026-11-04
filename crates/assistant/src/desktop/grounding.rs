@@ -38,12 +38,9 @@ struct Viewport {
 }
 impl Viewport {
     fn fits(&self, observation: &wire::DesktopObservation) -> bool {
-        self.width.get() >= 32
-            && self.height.get() >= 32
-            && self
-                .x
-                .checked_add(self.width.get())
-                .is_some_and(|right| right <= observation.width)
+        self.x
+            .checked_add(self.width.get())
+            .is_some_and(|right| right <= observation.width)
             && self
                 .y
                 .checked_add(self.height.get())
@@ -70,7 +67,7 @@ fn viewport(args: &Value, observation: &wire::DesktopObservation) -> Result<View
             }
         };
     if !viewport.fits(observation) {
-        return Err("定位区域必须在当前画面内，宽高至少32像素".into());
+        return Err("定位区域必须在当前画面内，宽高为正整数像素".into());
     }
     Ok(viewport)
 }
@@ -160,6 +157,14 @@ pub(super) async fn tool(
         latest.as_deref(),
         now(),
     )?;
+    if name == "computer_find_control" {
+        let value=helper("controls", json!({"window_id":observation.window_id,"process_id":observation.process_id,"text":args["text"].as_str().unwrap_or(""),"role":args["role"].as_str().unwrap_or("")})).await?;
+        return Ok(plain(
+            json!({"success":true,"device_id":device,"source_observation_id":observation.observation_id,
+            "source":"accessibility","coordinate_space":"full_screen","candidates":value["candidates"],"partial":value["partial"],"inspected_nodes":value["inspected_nodes"],
+            "note":"结合当前画面选择角色/状态正确的候选；同名控件不自动择一。"}),
+        ));
+    }
     if name == "computer_find_text" {
         return find_text(app, observation, args).await;
     }
@@ -238,9 +243,15 @@ mod tests {
             (0, 0, 1280, 800)
         );
         for region in [
+            json!({"x":378,"y":266,"width":60,"height":18}),
+            json!({"x":1279,"y":799,"width":1,"height":1}),
+        ] {
+            assert!(viewport(&json!({"region":region}), &observation).is_ok());
+        }
+        for region in [
             json!({"x":0}),
             json!({"x":0,"y":0,"width":0,"height":40}),
-            json!({"x":0,"y":0,"width":31,"height":40}),
+            json!({"x":0,"y":0,"width":1281,"height":40}),
             json!({"x":1270,"y":0,"width":32,"height":40}),
             json!({"x":0,"y":u32::MAX,"width":32,"height":40}),
         ] {

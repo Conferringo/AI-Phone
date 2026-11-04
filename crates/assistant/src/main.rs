@@ -19,7 +19,9 @@ use uuid::Uuid;
 mod agent_loop;
 mod anthropic_messages;
 mod app_learning;
+mod application_identity;
 mod auth;
+mod builtin_guides;
 mod chat_completions;
 mod completion_audit;
 mod database;
@@ -283,6 +285,14 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .layer(DefaultBodyLimit::max(65536));
     let routes = routes
         .route(
+            "/v1/voice/playback",
+            axum::routing::get(speech::playback::route),
+        )
+        .route(
+            "/v1/voice/stream",
+            axum::routing::get(speech::realtime::route),
+        )
+        .route(
             "/v1/voice/{operation}",
             post(speech::route).layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
         )
@@ -304,3 +314,9 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .await?;
     Ok(())
 }
+
+#[cfg(test)]
+mod app_guidance_tests;
+
+#[cfg(test)]
+mod run_activity_tests;

@@ -1,5 +1,7 @@
 //! Agent-owned speech configuration and transport. Chat model verification is independent.
+pub(crate) mod playback;
 mod provider;
+pub(crate) mod realtime;
 use crate::*;
 use sqlx::Row;
 
@@ -43,7 +45,7 @@ fn normalize(mut draft: wire::VoiceDraft) -> Result<wire::VoiceDraft> {
     draft.recognition_model = field(&draft.recognition_model, "语音识别模型", 200)?;
     draft.speech_model = field(&draft.speech_model, "语音合成模型", 200)?;
     draft.voice = field(&draft.voice, "音色", 200)?;
-    if !matches!(draft.input_protocol, 1 | 2) {
+    if !matches!(draft.input_protocol, 1..=3) {
         return Err("请选择语音输入协议".into());
     }
     draft.api_key = draft.api_key.trim().into();
@@ -109,6 +111,53 @@ async fn configured(app: &App, id: &str, device: &str, revision: u64) -> Result<
     Ok(draft)
 }
 
+fn origin(app: &App, headers: &HeaderMap) -> bool {
+    let value = headers
+        .get("origin")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if matches!(value, "http://127.0.0.1:17860" | "http://localhost:17860") {
+        return true;
+    }
+    let deployment = std::fs::read(app.root.join("data/deployment.json"))
+        .ok()
+        .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok());
+    deployment
+        .and_then(|d| d["origin"].as_str().map(str::to_owned))
+        .is_some_and(|allowed| allowed == value)
+}
+fn cookie(headers: &HeaderMap) -> &str {
+    headers
+        .get("cookie")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .split(';')
+        .map(str::trim)
+        .find_map(|v| v.strip_prefix("ai_phone_session="))
+        .unwrap_or("")
+}
+async fn websocket_authorization(
+    app: &App,
+    headers: &HeaderMap,
+) -> std::result::Result<(), Response> {
+    if !origin(app, headers) {
+        return Err(error(
+            StatusCode::FORBIDDEN,
+            "wrong_origin",
+            "请从工作台操作",
+        ));
+    }
+    match auth::valid_session(&app.db, cookie(headers)).await {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(error(
+            StatusCode::UNAUTHORIZED,
+            "unauthorized",
+            "请先进入工作台",
+        )),
+        Err(e) => Err(db_error(e)),
+    }
+}
+
 pub async fn route(
     axum::extract::State(app): axum::extract::State<Shared>,
     axum::extract::Path(operation): axum::extract::Path<String>,
@@ -155,23 +204,6 @@ pub async fn route(
                 Ok(pb(
                     StatusCode::OK,
                     provider::transcribe(&client, &draft, request).await?,
-                ))
-            }
-            "speech" => {
-                let request = decode::<wire::VoiceSpeechRequest>(&app, &headers, body)?;
-                let draft = configured(
-                    &app,
-                    &request.agent_id,
-                    &request.device_id,
-                    request.configuration_revision,
-                )
-                .await?;
-                let client = app.settings.http_client(&draft.proxy_url)?;
-                Ok(pb(
-                    StatusCode::OK,
-                    wire::VoiceAudio {
-                        wav: provider::speech(&client, &draft, &request.text).await?,
-                    },
                 ))
             }
             _ => Ok(error(StatusCode::NOT_FOUND, "not_found", "操作不存在")),

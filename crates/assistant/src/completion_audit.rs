@@ -85,7 +85,7 @@ pub async fn verify(
     }
     audit_input.extend(visual_inputs);
     let tool = json!({"type":"function","name":"audit_result","description":"只报告证据核验结果，不能执行操作。",
-        "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string"},"experience":crate::tool_catalog::experience_schema()},
+        "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string","description":"一至三句核验结论，指出关键证据或具体缺失。不要复述整段任务、全部步骤或完整文件路径。"},"experience":crate::tool_catalog::experience_schema()},
         "required":["approved","feedback"],"additionalProperties":false}});
     audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。仅使用本轮同应用的真实observation_ids，verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
     let body = json!({"input":[
@@ -154,8 +154,11 @@ pub(crate) async fn retain_learning(
     };
     match crate::app_learning::save(app, run, candidate).await {
         Ok(_) => true,
-        Err(_) => {
-            eprintln!("Optional app learning was not retained; user task result preserved");
+        Err(error) => {
+            eprintln!(
+                "Optional app learning was not retained; user task result preserved: {}",
+                app.settings.redact(&error)
+            );
             false
         }
     }

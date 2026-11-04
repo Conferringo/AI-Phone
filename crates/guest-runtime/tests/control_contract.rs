@@ -26,6 +26,13 @@ struct FakeScreen {
     paint_delay: Option<Duration>,
 }
 impl Screen for FakeScreen {
+    fn window(&self) -> Result<ai_phone_guest_runtime::screen::WindowIdentity> {
+        Ok(ai_phone_guest_runtime::screen::WindowIdentity {
+            title: self.title()?,
+            application_class: "fixture-app".into(),
+            ..Default::default()
+        })
+    }
     fn capture(&self) -> Result<RgbImage> {
         if self.fail_capture && !self.state.lock().unwrap().buttons.is_empty() {
             return Err("fixture capture lost after input".into());
@@ -379,9 +386,16 @@ fn zoom_decodes_real_png_crops_lanczos_and_enforces_bounds() {
             .unwrap()
             .to_rgb8();
     assert_eq!(output.get_pixel(10, 10), &Rgb([42, 88, 123]));
+    // Small positive regions are valid; empty and out-of-frame regions remain errors.
+    let small = imaging::zoom(json!({"png":input,"x":0,"y":0,"width":31,"height":18})).unwrap();
+    assert_eq!(
+        (small["width"].as_u64(), small["height"].as_u64()),
+        (Some(62), Some(36))
+    );
     for (x, y, w, h) in [
         (-1, 0, 32, 32),
-        (0, 0, 31, 32),
+        (0, 0, 0, 32),
+        (0, 0, 32, 0),
         (90, 0, 32, 32),
         (0, 70, 32, 32),
     ] {
@@ -454,4 +468,25 @@ fn cursor_receipts_are_atomic_bounded_and_preserve_action_id() {
         0o600
     );
     assert_eq!(std::fs::read_dir(folder).unwrap().count(), 1);
+}
+
+#[tokio::test]
+async fn replacement_without_current_window_has_no_clipboard_or_key_side_effects() {
+    let home = tempfile::tempdir().unwrap();
+    let app = runtime(home.path());
+    let result = actions::execute(
+        &app.screen,
+        &app.runner,
+        &app.settings,
+        json!({"kind":"replace_text","text":"替换内容","window_id":17,"process_id":42}),
+    )
+    .await;
+    assert!(
+        result.is_err(),
+        "replacement must never degrade to ordinary append"
+    );
+    assert!(result.unwrap_err().is::<actions::InputRejected>());
+    assert!(app.runner.requests.lock().unwrap().is_empty());
+    assert!(app.screen.state.lock().unwrap().moves.is_empty());
+    assert!(app.screen.state.lock().unwrap().buttons.is_empty());
 }

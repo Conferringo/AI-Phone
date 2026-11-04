@@ -14,9 +14,17 @@ use x11rb::{
 pub trait Screen: Send + Sync {
     fn capture(&self) -> Result<RgbImage>;
     fn title(&self) -> Result<String>;
+    fn window(&self) -> Result<WindowIdentity>;
     fn move_to(&self, x: i16, y: i16) -> Result<()>;
     fn button(&self, button: u8, down: bool) -> Result<()>;
     fn pointer(&self) -> Result<(i32, i32)>;
+}
+#[derive(Default)]
+pub struct WindowIdentity {
+    pub title: String,
+    pub application_class: String,
+    pub window_id: u32,
+    pub process_id: u32,
 }
 
 pub struct NativeScreen {
@@ -119,6 +127,9 @@ impl Display {
 
     fn active_title(&self) -> Result<String> {
         let window = self.active_window()?;
+        self.window_title(window)
+    }
+    fn window_title(&self, window: u32) -> Result<String> {
         let atom = self.atom(b"_NET_WM_NAME")?;
         let mut title = self.property(window, atom)?;
         if title.is_empty() {
@@ -157,6 +168,26 @@ impl Screen for NativeScreen {
 
     fn title(&self) -> Result<String> {
         self.with(Display::active_title)
+    }
+    fn window(&self) -> Result<WindowIdentity> {
+        self.with(|display| {
+            let window = display.active_window()?;
+            Ok(WindowIdentity {
+                title: display.window_title(window)?,
+                application_class: wm_class(
+                    &display.property(window, xproto::AtomEnum::WM_CLASS.into())?,
+                ),
+                window_id: window,
+                process_id: {
+                    let atom = display.atom(b"_NET_WM_PID")?;
+                    let bytes = display.property(window, atom)?;
+                    bytes
+                        .get(..4)
+                        .map(|v| u32::from_ne_bytes(v.try_into().unwrap()))
+                        .unwrap_or_default()
+                },
+            })
+        })
     }
 
     fn move_to(&self, x: i16, y: i16) -> Result<()> {
@@ -249,5 +280,30 @@ fn integer(bytes: &[u8], little_endian: bool) -> u32 {
         bytes
             .iter()
             .fold(0, |value, byte| (value << 8) | u32::from(*byte))
+    }
+}
+
+fn wm_class(bytes: &[u8]) -> String {
+    bytes
+        .split(|byte| *byte == 0)
+        .nth(1)
+        .and_then(|class| std::str::from_utf8(class).ok())
+        .filter(|class| class.len() <= 160 && !class.chars().any(char::is_control))
+        .unwrap_or("")
+        .into()
+}
+
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
+    #[test]
+    fn class_is_the_machine_class_not_the_instance_or_window_title() {
+        assert_eq!(
+            wm_class(b"private-instance\0libreoffice-writer\0"),
+            "libreoffice-writer"
+        );
+        assert_eq!(wm_class(b"private-instance"), "");
+        assert_eq!(wm_class(b"private-instance\0\0"), "");
+        assert_eq!(wm_class(b"instance\0broken\nclass\0"), "");
     }
 }

@@ -185,15 +185,8 @@ pub async fn file_authorized(app: &App, run: Uuid, device: &str) -> Result<()> {
         Err("设备没有绑定给此Agent，数据线也未连接".into())
     }
 }
-async fn observation_directory(root: &std::path::Path) -> Result<PathBuf> {
-    let dir = root.join("data/desktop/observations");
-    tokio::fs::create_dir_all(&dir)
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(dir)
-}
-async fn guest_home_directory(root: &std::path::Path) -> Result<PathBuf> {
-    let dir = root.join("data/desktop/home");
+async fn desktop_directory(root: &std::path::Path, leaf: &str) -> Result<PathBuf> {
+    let dir = root.join("data/desktop").join(leaf);
     tokio::fs::create_dir_all(&dir)
         .await
         .map_err(|e| e.to_string())?;
@@ -209,13 +202,24 @@ async fn save_observation(
         .decode(value["png"].take().as_str().ok_or("电脑没有返回画面")?)
         .map_err(|e| e.to_string())?;
     let id = Uuid::now_v7();
-    let dir = observation_directory(&app.root).await?;
+    let dir = desktop_directory(&app.root, "observations").await?;
     let path = dir.join(format!("{id}.png"));
     tokio::fs::write(&path, &png)
         .await
         .map_err(|e| e.to_string())?;
     let title = value["title"].as_str().unwrap_or("Linux desktop");
-    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256) VALUES($1,$2,$3,$4,$5,$6)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).execute(&app.db).await.map_err(|e|e.to_string())?;
+    let application_id =
+        crate::application_identity::desktop(value["application_class"].as_str().unwrap_or(""))
+            .unwrap_or_default();
+    let window_id = value["window_id"]
+        .as_u64()
+        .and_then(|v| u32::try_from(v).ok())
+        .unwrap_or_default() as u64;
+    let process_id = value["process_id"]
+        .as_u64()
+        .and_then(|v| u32::try_from(v).ok())
+        .unwrap_or_default();
+    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256,application_id,window_id,process_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).bind(&application_id).bind(window_id as i64).bind(i64::from(process_id)).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(wire::DesktopObservation {
         device_id: device.into(),
         observation_id: id.to_string(),
@@ -232,6 +236,9 @@ async fn save_observation(
             _ => wire::DesktopFrameState::Unspecified,
         } as i32,
         frame_wait_ms: value["frame_wait_ms"].as_u64().unwrap_or_default() as u32,
+        application_id,
+        window_id,
+        process_id,
     })
 }
 async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Result<i64> {
@@ -274,29 +281,50 @@ pub async fn observe(
     let value = helper("observe", json!({})).await?;
     save_observation(app, device, epoch, value).await
 }
+fn validate_pointer(r: &wire::DesktopActionRequest) -> Result<()> {
+    let check = |x, y, error: &str| {
+        if (0..1280).contains(&x) && (0..800).contains(&y) {
+            Ok(())
+        } else {
+            Err(error.to_owned())
+        }
+    };
+    match r.kind.as_str() {
+        "drag" => {
+            check(r.x, r.y, "坐标超出屏幕")?;
+            check(r.to_x, r.to_y, "拖拽终点超出屏幕")
+        }
+        "click" | "scroll" => check(r.x, r.y, "坐标超出屏幕"),
+        _ => Ok(()),
+    }
+}
 fn action_value(r: &wire::DesktopActionRequest) -> Result<Value> {
     if !["click", "drag", "scroll", "key", "text"].contains(&r.kind.as_str()) {
         return Err("未知桌面操作".into());
     }
-    if ["click", "drag", "scroll"].contains(&r.kind.as_str())
-        && (!(0..1280).contains(&r.x) || !(0..800).contains(&r.y))
-    {
-        return Err("坐标超出屏幕".into());
+    if r.replace && r.kind != "text" {
+        return Err("字段替换仅用于文本输入".into());
     }
-    if r.kind == "drag" && (!(0..1280).contains(&r.to_x) || !(0..800).contains(&r.to_y)) {
-        return Err("拖拽终点超出屏幕".into());
-    }
+    validate_pointer(r)?;
     if r.text.len() > 64000 || r.key.len() > 80 || r.button > 3 || r.clicks > 2 {
         return Err("无效输入".into());
     }
+    // A distinct native action makes an older guest reject the operation instead
+    // of silently ignoring an unknown replacement flag and appending text.
+    let kind = if r.replace { "replace_text" } else { &r.kind };
     Ok(
-        json!({"kind":r.kind,"x":r.x,"y":r.y,"to_x":r.to_x,"to_y":r.to_y,"amount":r.amount,"button":r.button.max(1),"clicks":r.clicks.max(1),"key":r.key,"text":r.text,"wait_for_paint":r.wait_for_paint}),
+        json!({"kind":kind,"x":r.x,"y":r.y,"to_x":r.to_x,"to_y":r.to_y,"amount":r.amount,"button":r.button.max(1),"clicks":r.clicks.max(1),"key":r.key,"text":r.text,"wait_for_paint":r.wait_for_paint}),
     )
+}
+fn input_rejection(error: &str) -> Option<Value> {
+    let value: Value = serde_json::from_str(error).ok()?;
+    (value["success"] == false && value["not_executed"] == true && value["code"] == "field_focus")
+        .then_some(value)
 }
 fn observation_meta(o: &wire::DesktopObservation) -> Value {
     let state = wire::DesktopFrameState::try_from(o.frame_state)
         .unwrap_or(wire::DesktopFrameState::Unspecified);
-    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
+    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"application_id":o.application_id,"window_id":o.window_id,"process_id":o.process_id,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
 }
 async fn stored_observation(
     connection: &mut sqlx::PgConnection,
@@ -311,6 +339,9 @@ async fn stored_observation(
         width: 1280,
         height: 800,
         title: r.get("title"),
+        application_id: r.get("application_id"),
+        window_id: r.get::<i64, _>("window_id") as u64,
+        process_id: r.get::<i64, _>("process_id") as u32,
         png: tokio::fs::read(r.get::<String, _>("png_path"))
             .await
             .map_err(|e| e.to_string())?,
@@ -395,10 +426,19 @@ async fn recorded_action(
     if old.get::<String, _>("input_hash") != fingerprint {
         return Err("操作编号已用于不同请求".into());
     }
-    if old.get::<String, _>("status") != "completed" {
+    let status = old.get::<String, _>("status");
+    let value: Option<Value> = old.get("result");
+    if status == "failed"
+        && let Some(value) = value
+            .as_ref()
+            .filter(|v| input_rejection(&v.to_string()).is_some())
+    {
+        return Err(value.to_string());
+    }
+    if status != "completed" {
         return Err("该操作已有执行记录，结果未知时不能重放，请重新观察".into());
     }
-    let value: Value = old.get("result");
+    let value = value.ok_or("结果不完整")?;
     let mut observation = stored_observation(
         connection,
         value["observation_id"].as_str().ok_or("结果不完整")?,
@@ -444,19 +484,50 @@ pub async fn action(
     {
         return Err("电脑控制权已变化，请重新观察或接管".into());
     }
-    let valid:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM desktop_observations WHERE id=$1 AND device_id=$2 AND epoch=$3 AND captured_at>now()-interval '45 seconds' AND id=(SELECT id FROM desktop_observations WHERE device_id=$2 AND epoch=$3 ORDER BY captured_at DESC,id DESC LIMIT 1))").bind(uuid(&r.observation_id)?).bind(&r.device_id).bind(r.epoch as i64).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
-    if !valid {
+    let observed: Option<(i64, i64)> = sqlx::query_as(
+        "SELECT window_id,process_id FROM desktop_observations
+         WHERE id=$1 AND device_id=$2 AND epoch=$3 AND captured_at>now()-interval '45 seconds'
+         AND id=(SELECT id FROM desktop_observations WHERE device_id=$2 AND epoch=$3
+                 ORDER BY captured_at DESC,id DESC LIMIT 1)",
+    )
+    .bind(uuid(&r.observation_id)?)
+    .bind(&r.device_id)
+    .bind(r.epoch as i64)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
+    let Some((window_id, process_id)) = observed else {
         return Err("观察已过期或不属于该电脑，请先computer_observe".into());
+    };
+    if r.replace {
+        input["window_id"] = json!(window_id);
+        input["process_id"] = json!(process_id);
     }
     // Intent is committed independently before the side effect. A crash cannot replay it.
     sqlx::query("INSERT INTO desktop_actions(id,device_id,run_id,input_hash,status) VALUES($1,$2,$3,$4,'running')").bind(id).bind(&r.device_id).bind(run).bind(fingerprint).execute(&app.db).await.map_err(|e|e.to_string())?;
+    let mut cursor = action_cursor(&r, expected);
+    cursor_write(app, &cursor).await?;
+    let result = match helper("action", input).await {
+        Ok(value) => save_observation(app, &r.device_id, r.epoch as i64, value).await,
+        Err(e) => Err(e),
+    };
+    finish_action(app, id, &mut cursor, &result).await?;
+    sqlx::query("UPDATE desktop_controls SET touched_at=now() WHERE device_id=$1")
+        .bind(&r.device_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
+    tx.commit().await.map_err(|e| e.to_string())?;
+    result
+}
+fn action_cursor(r: &wire::DesktopActionRequest, actor: String) -> wire::DeviceCursor {
     let duration = if r.kind == "drag" { 300 } else { 120 };
     let point = |x: i32, y: i32, at_ms| wire::GesturePoint {
         x: x as u32,
         y: y as u32,
         at_ms,
     };
-    let mut cursor = wire::DeviceCursor {
+    wire::DeviceCursor {
         device_id: r.device_id.clone(),
         action_id: r.action_id.clone(),
         kind: r.kind.clone(),
@@ -465,7 +536,7 @@ pub async fn action(
         duration_ms: duration,
         width: 1280,
         height: 800,
-        actor: expected,
+        actor,
         input_confirmed: false,
         reported_at_ms: now(),
         paths: if ["click", "drag", "scroll"].contains(&r.kind.as_str()) {
@@ -483,35 +554,34 @@ pub async fn action(
         } else {
             vec![]
         },
-    };
-    cursor_write(app, &cursor).await?;
-    let result = match helper("action", input).await {
-        Ok(value) => save_observation(app, &r.device_id, r.epoch as i64, value).await,
-        Err(e) => Err(e),
-    };
-    cursor.status = if result.is_ok() {
-        "completed"
-    } else {
-        "unknown"
     }
-    .into();
-    cursor_write(app, &cursor).await?;
-    match &result {
-        Ok(o) => {
-            sqlx::query("UPDATE desktop_actions SET status='completed',result=$2,finished_at=now() WHERE id=$1").bind(id).bind(observation_meta(o)).execute(&app.db).await.map_err(|e|e.to_string())?;
-        }
-        Err(e) => {
-            sqlx::query("UPDATE desktop_actions SET status='unknown',result=$2,finished_at=now() WHERE id=$1").bind(id).bind(json!({"error":e})).execute(&app.db).await.map_err(|e|e.to_string())?;
-        }
-    }
-    sqlx::query("UPDATE desktop_controls SET touched_at=now() WHERE device_id=$1")
-        .bind(&r.device_id)
-        .execute(&mut *tx)
+}
+
+async fn finish_action(
+    app: &App,
+    id: Uuid,
+    cursor: &mut wire::DeviceCursor,
+    result: &Result<wire::DesktopObservation>,
+) -> Result<()> {
+    let (status, value) = match result {
+        Ok(observation) => ("completed", observation_meta(observation)),
+        Err(error) => match input_rejection(error) {
+            Some(rejection) => ("failed", rejection),
+            None => ("unknown", json!({"error":error})),
+        },
+    };
+    cursor.status = status.into();
+    cursor_write(app, cursor).await?;
+    sqlx::query("UPDATE desktop_actions SET status=$2,result=$3,finished_at=now() WHERE id=$1")
+        .bind(id)
+        .bind(status)
+        .bind(value)
+        .execute(&app.db)
         .await
         .map_err(|e| e.to_string())?;
-    tx.commit().await.map_err(|e| e.to_string())?;
-    result
+    Ok(())
 }
+
 fn safe_name(name: &str) -> Result<String> {
     if name.is_empty()
         || name == "."
@@ -1093,13 +1163,27 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         ));
     }
     let observation_id = args["observation_id"].as_str().unwrap_or("");
-    if matches!(name, "computer_zoom" | "computer_find_text") {
+    if matches!(
+        name,
+        "computer_zoom" | "computer_find_text" | "computer_find_control"
+    ) {
         let observation = {
             let mut connection = app.db.acquire().await.map_err(|e| e.to_string())?;
             stored_observation(&mut connection, observation_id).await?
         };
         return grounding::tool(app, name, device, &observation, args).await;
     }
+    tool_action(app, run, device, observation_id, call, args).await
+}
+async fn tool_action(
+    app: &App,
+    run: Uuid,
+    device: &str,
+    observation_id: &str,
+    call: &Value,
+    args: &Value,
+) -> Result<Value> {
+    let name = call["name"].as_str().ok_or("缺少工具名称")?;
     let epoch: i64 =
         sqlx::query_scalar("SELECT epoch FROM desktop_observations WHERE id=$1 AND device_id=$2")
             .bind(uuid(observation_id)?)
@@ -1125,9 +1209,14 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         key: text("key"),
         text: text("text"),
         wait_for_paint: true,
+        replace: args["replace"].as_bool().unwrap_or(false),
     };
-    Ok(blocks(action(app, r, Some(run)).await?))
+    match action(app, r, Some(run)).await {
+        Ok(observation) => Ok(blocks(observation)),
+        Err(error) => input_rejection(&error).map(plain).ok_or(error),
+    }
 }
+
 fn transfer_value(t: wire::DeviceTransfer) -> Value {
     plain(
         json!({"success":t.status=="completed","request_id":t.id,"status":t.status,"source_device_id":t.source_device_id,"target_device_id":t.target_device_id,"source_path":t.source_path,"target_path":t.target_path,"bytes":t.bytes,"sha256":t.sha256,"error":t.error}),
@@ -1140,6 +1229,8 @@ pub fn catalog() -> Vec<Value> {
     }
     let id = json!({"type":"string"});
     let num = json!({"type":"integer"});
+    let origin = json!({"type":"integer","minimum":0});
+    let extent = json!({"type":"integer","minimum":1});
     vec![
         f(
             "device_message",
@@ -1162,14 +1253,20 @@ pub fn catalog() -> Vec<Value> {
         f(
             "computer_zoom",
             "只读放大当前观察的局部，适合小字、表格和密集控件。返回原图偏移及倍率；点击仍用全屏坐标，不把局部坐标直接送入动作。",
-            json!({"device_id":id,"observation_id":id,"x":num,"y":num,"width":num,"height":num}),
+            json!({"device_id":id,"observation_id":id,"x":origin,"y":origin,"width":extent,"height":extent}),
             vec!["device_id", "observation_id", "x", "y", "width", "height"],
         ),
         f(
             "computer_find_text",
             "在最新截图中定位文字，返回原图坐标、边界和置信度；同名结果分别保留。小字或整屏未找到时，可用region指定目标附近的全屏像素区域进行放大识别；返回坐标仍为全屏坐标。找不到返回空列表，不执行点击；文字区域不保证可点击。",
-            json!({"device_id":id,"observation_id":id,"text":id,"region":{"type":"object","properties":{"x":num,"y":num,"width":num,"height":num},"required":["x","y","width","height"],"additionalProperties":false}}),
+            json!({"device_id":id,"observation_id":id,"text":id,"region":{"type":"object","properties":{"x":origin,"y":origin,"width":extent,"height":extent},"required":["x","y","width","height"],"additionalProperties":false}}),
             vec!["device_id", "observation_id", "text"],
+        ),
+        f(
+            "computer_find_control",
+            "只读定位前台窗口的真实可访问性控件。提供名称text或角色role，可同时筛选；返回所有同名候选的全屏边界、可用/可编辑/焦点状态，不执行点击。按钮和表单优先于猜坐标；旧窗口不提供可访问性时用computer_find_text/OCR。partial=true不代表已搜索完整窗口。",
+            json!({"device_id":id,"observation_id":id,"text":id,"role":id}),
+            vec!["device_id", "observation_id"],
         ),
         f(
             "computer_click",
@@ -1179,8 +1276,8 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "computer_type",
-            "向已聚焦的Linux输入区域粘贴Unicode文本（支持中文）。",
-            json!({"device_id":id,"observation_id":id,"text":id}),
+            "向已聚焦的Linux输入区域粘贴Unicode文本（支持中文）。replace=true可在一次动作中替换当前可编辑字段，执行前核对真实焦点；不用于画布或文档正文。默认追加；焦点不足时不输入、不自动降级追加，先点击文本框。",
+            json!({"device_id":id,"observation_id":id,"text":id,"replace":{"type":"boolean"}}),
             vec!["device_id", "observation_id", "text"],
         ),
         f(
@@ -1349,8 +1446,8 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
         process(build, vec![], 2 * 1024 * 1024, 1800).await?;
     }
     install_step(app, id, "启动桌面").await?;
-    observation_directory(&app.root).await?;
-    guest_home_directory(&app.root).await?;
+    desktop_directory(&app.root, "observations").await?;
+    desktop_directory(&app.root, "home").await?;
     crate::device_network::prepare(app, &device).await?;
     let mut start = docker();
     start
@@ -1473,7 +1570,7 @@ mod tests {
         std::fs::create_dir_all(&staged).unwrap();
         symlink(&data, staged.join("data")).unwrap();
         let owner = std::fs::metadata(&data).unwrap().uid();
-        let home = guest_home_directory(&staged).await.unwrap();
+        let home = desktop_directory(&staged, "home").await.unwrap();
         assert_eq!(home, staged.join("data/desktop/home"));
         assert_eq!(home.canonicalize().unwrap(), data.join("desktop/home"));
         assert_eq!(std::fs::metadata(&home).unwrap().uid(), owner);
@@ -1487,7 +1584,7 @@ mod tests {
             let blocked = fixture.0.join(relative);
             std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();
             std::fs::write(&blocked, b"preserved source blocker").unwrap();
-            assert!(guest_home_directory(&fixture.0).await.is_err());
+            assert!(desktop_directory(&fixture.0, "home").await.is_err());
             assert_eq!(std::fs::read(blocked).unwrap(), b"preserved source blocker");
         }
     }
@@ -1509,7 +1606,7 @@ mod tests {
             before.mode(),
         );
         for _ in 0..2 {
-            assert_eq!(guest_home_directory(&fixture.0).await.unwrap(), home);
+            assert_eq!(desktop_directory(&fixture.0, "home").await.unwrap(), home);
         }
         let after = std::fs::metadata(&home).unwrap();
         assert_eq!(
@@ -1531,7 +1628,7 @@ mod tests {
     #[tokio::test]
     async fn observation_directory_creates_writable_host_storage_without_guest_home() {
         let fixture = ObservationDirectoryFixture::new();
-        let dir = observation_directory(&fixture.0).await.unwrap();
+        let dir = desktop_directory(&fixture.0, "observations").await.unwrap();
         assert_eq!(dir, fixture.0.join("data/desktop/observations"));
         assert!(dir.is_dir());
         assert!(!fixture.0.join("data/desktop/home").exists());
@@ -1547,7 +1644,7 @@ mod tests {
             let blocked = fixture.0.join(relative);
             std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();
             std::fs::write(&blocked, b"keep existing content").unwrap();
-            assert!(observation_directory(&fixture.0).await.is_err());
+            assert!(desktop_directory(&fixture.0, "observations").await.is_err());
             assert_eq!(std::fs::read(blocked).unwrap(), b"keep existing content");
         }
     }
@@ -1570,7 +1667,7 @@ mod tests {
         };
         for _ in 0..2 {
             assert_eq!(
-                observation_directory(&fixture.0).await.unwrap(),
+                desktop_directory(&fixture.0, "observations").await.unwrap(),
                 observations
             );
         }
@@ -1588,6 +1685,43 @@ mod tests {
                 original_home_identity
             );
         }
+    }
+
+    #[test]
+    fn field_replacement_is_explicit_and_cannot_silently_append_in_older_guests() {
+        let mut r = wire::DesktopActionRequest {
+            kind: "text".into(),
+            text: "新值".into(),
+            replace: true,
+            ..Default::default()
+        };
+        assert_eq!(action_value(&r).unwrap()["kind"], "replace_text");
+        r.replace = false;
+        assert_eq!(action_value(&r).unwrap()["kind"], "text");
+        r.replace = true;
+        r.kind = "key".into();
+        assert!(action_value(&r).is_err());
+        for (value, expected) in [
+            (
+                json!({"success":false,"not_executed":true,"code":"field_focus"}),
+                true,
+            ),
+            (
+                json!({"success":false,"not_executed":false,"code":"field_focus"}),
+                false,
+            ),
+            (
+                json!({"success":true,"not_executed":true,"code":"field_focus"}),
+                false,
+            ),
+            (
+                json!({"success":false,"not_executed":true,"code":"other"}),
+                false,
+            ),
+        ] {
+            assert_eq!(input_rejection(&value.to_string()).is_some(), expected);
+        }
+        assert!(input_rejection("process timed out").is_none());
     }
 
     #[test]
@@ -1622,7 +1756,9 @@ mod tests {
             sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','fixture','managed')").bind(device).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')").bind(device).execute(&app.db).await.unwrap();
             let png=include_bytes!("../../phone-runner/fixtures/ocr-probe.png");
-            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Fixture","frame_state":"stable","frame_wait_ms":320})).await.unwrap();
+            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Private document.odt","application_class":"LibreOffice-Writer","frame_state":"stable","frame_wait_ms":320,"window_id":424242,"process_id":99})).await.unwrap();
+            assert_eq!(observation.application_id,"linux:libreoffice-writer");
+            assert_eq!(observation.window_id,424242);assert_eq!(observation.process_id,99);
             let id=Uuid::now_v7();
             sqlx::query("INSERT INTO desktop_actions(id,device_id,input_hash,status,result) VALUES($1,$2,'same-input','completed',$3)").bind(id).bind(device).bind(observation_meta(&observation)).execute(&app.db).await.unwrap();
             let mut connection=app.db.acquire().await.unwrap();
@@ -1630,12 +1766,25 @@ mod tests {
                 let cached=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
                 assert_eq!(cached.observation_id,observation.observation_id);assert_eq!(cached.png,png);
                 assert_eq!(cached.frame_state,wire::DesktopFrameState::Stable as i32);assert_eq!(cached.frame_wait_ms,320);
+                assert_eq!(cached.application_id,"linux:libreoffice-writer");
+                assert_eq!(cached.window_id,424242);assert_eq!(cached.process_id,99);
             }
             assert!(recorded_action(&mut connection,id,"different-input").await.is_err());
             for status in ["running","unknown","failed"] {
                 sqlx::query("UPDATE desktop_actions SET status=$2 WHERE id=$1").bind(id).bind(status).execute(&mut *connection).await.unwrap();
                 assert!(recorded_action(&mut connection,id,"same-input").await.is_err());
             }
+            sqlx::query("UPDATE desktop_actions SET status='unknown',result=NULL WHERE id=$1").bind(id).execute(&mut *connection).await.unwrap();
+            assert!(recorded_action(&mut connection,id,"same-input").await.unwrap_err().contains("结果未知"));
+            let rejection=json!({"success":false,"not_executed":true,"code":"field_focus","error":"未确认字段"});
+            let mut cursor=wire::DeviceCursor {device_id:device.into(),action_id:id.to_string(),..Default::default()};
+            finish_action(&app,id,&mut cursor,&Err(rejection.to_string())).await.unwrap();
+            assert_eq!(cursor.status,"failed");
+            let row=sqlx::query("SELECT status,result FROM desktop_actions WHERE id=$1").bind(id).fetch_one(&mut *connection).await.unwrap();
+            assert_eq!(row.get::<String,_>("status"),"failed");
+            assert_eq!(row.get::<Value,_>("result"),rejection);
+            let replay=recorded_action(&mut connection,id,"same-input").await.unwrap_err();
+            assert_eq!(input_rejection(&replay).unwrap(),rejection);
             assert!(recorded_action(&mut connection,Uuid::now_v7(),"new-input").await.unwrap().is_none());
             sqlx::query("UPDATE desktop_actions SET status='completed',result=jsonb_build_object('observation_id',$2::text) WHERE id=$1").bind(id).bind(&observation.observation_id).execute(&mut *connection).await.unwrap();
             let legacy=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
