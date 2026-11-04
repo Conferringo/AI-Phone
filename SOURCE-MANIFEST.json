@@ -2880,8 +2880,8 @@
     },
     {
       "path": "crates/guest-runtime/src/accessibility.rs",
-      "size": 20259,
-      "sha256": "41998614199800f33f6eb5c661ba866d514ea5bcfb642a8900403fe14081deb2"
+      "size": 23379,
+      "sha256": "fd387bad6c36a71526d45270d0a5a26294b97dc1dfa2fd7a17f8c5535d277500"
     },
     {
       "path": "crates/guest-runtime/src/actions.rs",
@@ -6345,8 +6345,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 6851,
-      "sha256": "6b2231261883203dcd88457924bf76915dbbec5de0733f1a0fc79f292a6acaee"
+      "size": 6986,
+      "sha256": "0cfdd71f141afb83b8797b51ea6c71151acc95a0c7fb374e6f518c811bd79414"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
