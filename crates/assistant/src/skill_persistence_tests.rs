@@ -6,23 +6,6 @@ fn text(body: &str) -> String {
     )
 }
 
-fn builtin_fixtures(root: &std::path::Path) {
-    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../skills/builtin");
-    for id in [
-        "phone-use",
-        "wechat",
-        "computer-use",
-        "device-transfer",
-        "autonomous-learning",
-        "browser-android",
-        "files-android",
-    ] {
-        let folder = root.join("skills/builtin").join(id);
-        std::fs::create_dir_all(&folder).unwrap();
-        std::fs::copy(source.join(id).join("SKILL.md"), folder.join("SKILL.md")).unwrap();
-    }
-}
-
 #[tokio::test]
 #[ignore = "requires disposable PostgreSQL; no production Skills or workspace"]
 async fn skill_edit_never_publishes_uncommitted_text() {
@@ -49,7 +32,7 @@ async fn skill_edit_never_publishes_uncommitted_text() {
 async fn skill_startup_repairs_interrupted_custom_materialization() {
     database_case(|app| {
         Box::pin(async move {
-            builtin_fixtures(&app.root);
+            crate::builtin_guides::test_files(&app.root);
             let original = text("committed original");
             let item = skill_import(app, "", &original, "").await.unwrap();
             let folder = app.root.join("data/runtime-skills").join(&item.id);
@@ -388,7 +371,7 @@ async fn committed_skill_survives_lost_commit_acknowledgement() {
 async fn skill_import_staging_recovers_resources_without_exposing_invalid_imports() {
     database_case(|app| {
         Box::pin(async move {
-            builtin_fixtures(&app.root);
+            crate::builtin_guides::test_files(&app.root);
             assert!(
                 skill_import(app, "", "not a valid Skill", "")
                     .await

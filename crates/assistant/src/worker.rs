@@ -808,23 +808,16 @@ pub(crate) async fn experience_call(
     context: &[Value],
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<Value> {
-    let latest = context
-        .iter()
-        .skip(evidence_start(context))
-        .rev()
-        .find(|call| {
-            call["type"] == "function_call"
-                && learning_observation(call["name"].as_str().unwrap_or(""))
-        })?;
-    if !successful_call(latest, context) {
+    let app_id = current_learning_application(context)?;
+    let builtin = crate::builtin_guides::for_application(&app_id);
+    let guidance_key = builtin.map_or_else(|| app_id.clone(), |name| format!("{app_id}/{name}"));
+    if state.guidance_app == guidance_key {
         return None;
     }
-    let metadata = tool_output(context, latest).and_then(crate::app_learning::metadata)?;
-    let app_id = metadata.app_id;
-    if state.guidance_app == app_id {
-        return None;
+    if let Some(call) = builtin.and_then(|name| builtin_guide_call(context, name)) {
+        return Some(call);
     }
-    state.guidance_app.clone_from(&app_id);
+    state.guidance_app = guidance_key;
     let name = match crate::app_learning::recall(app, &app_id).await {
         Ok(name) => name?,
         Err(_) => {
@@ -838,10 +831,33 @@ pub(crate) async fn experience_call(
     {
         return None;
     }
-    Some(
-        json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
-        "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name}),
-    )
+    Some(guidance_read(&name))
+}
+fn current_learning_application(context: &[Value]) -> Option<String> {
+    let latest = context
+        .iter()
+        .skip(evidence_start(context))
+        .rev()
+        .find(|call| {
+            call["type"] == "function_call"
+                && learning_observation(call["name"].as_str().unwrap_or(""))
+        })?;
+    if !successful_call(latest, context) {
+        return None;
+    }
+    let metadata = tool_output(context, latest).and_then(crate::app_learning::metadata)?;
+    Some(metadata.app_id)
+}
+fn builtin_guide_call(context: &[Value], name: &str) -> Option<Value> {
+    let attempted = context
+        .iter()
+        .skip(evidence_start(context))
+        .any(|call| call["local_app_guidance"] == name);
+    (!attempted && !builtin_skill_read(context, name)).then(|| guidance_read(name))
+}
+fn guidance_read(name: &str) -> Value {
+    json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
+        "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name})
 }
 fn learning_observation(name: &str) -> bool {
     matches!(

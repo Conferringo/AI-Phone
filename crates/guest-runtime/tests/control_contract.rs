@@ -385,9 +385,16 @@ fn zoom_decodes_real_png_crops_lanczos_and_enforces_bounds() {
             .unwrap()
             .to_rgb8();
     assert_eq!(output.get_pixel(10, 10), &Rgb([42, 88, 123]));
+    // Small positive regions are valid; empty and out-of-frame regions remain errors.
+    let small = imaging::zoom(json!({"png":input,"x":0,"y":0,"width":31,"height":18})).unwrap();
+    assert_eq!(
+        (small["width"].as_u64(), small["height"].as_u64()),
+        (Some(62), Some(36))
+    );
     for (x, y, w, h) in [
         (-1, 0, 32, 32),
-        (0, 0, 31, 32),
+        (0, 0, 0, 32),
+        (0, 0, 32, 0),
         (90, 0, 32, 32),
         (0, 70, 32, 32),
     ] {

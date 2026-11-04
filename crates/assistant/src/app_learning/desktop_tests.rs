@@ -5,6 +5,8 @@ use super::*;
 async fn desktop_evidence_promotes_and_recalls_without_phone_or_title_fallback() {
     crate::worker::steering_regressions::database_case(|app|async move{
         crate::registry::initialize(&app.db,&app.settings).await.unwrap();
+        crate::builtin_guides::test_files(&app.root);
+        crate::workbench::initialize(&app.db,&app.root).await.unwrap();
         let device="learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
         sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Desktop','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
         sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
@@ -26,6 +28,10 @@ async fn desktop_evidence_promotes_and_recalls_without_phone_or_title_fallback()
         let body=crate::workbench::skill_text(&app,&name).await.unwrap();assert!(!body.contains("private-doc.odt"));
         let mut context=vec![json!({"role":"user","content":[{"type":"input_text","text":"在电脑Writer查找"}]}),json!({"type":"function_call","name":"computer_key","call_id":"latest","arguments":"{}"}),json!({"type":"function_call_output","call_id":"latest","output":output})];
         let mut state=crate::agent_loop::LoopState::default();
+        let guide=crate::worker::experience_call(&app,&context,&mut state).await.unwrap();
+        assert_eq!(serde_json::from_str::<Value>(guide["arguments"].as_str().unwrap()).unwrap()["name"],"writer");
+        context.push(guide.clone());
+        context.push(json!({"type":"function_call_output","call_id":guide["call_id"],"output":[{"type":"input_text","text":crate::workbench::skill_text(&app,"writer").await.unwrap()}]}));
         let call=crate::worker::experience_call(&app,&context,&mut state).await.unwrap();
         assert_eq!(serde_json::from_str::<Value>(call["arguments"].as_str().unwrap()).unwrap()["name"],name);
         assert!(crate::worker::experience_call(&app,&context,&mut state).await.is_none());

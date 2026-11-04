@@ -38,12 +38,9 @@ struct Viewport {
 }
 impl Viewport {
     fn fits(&self, observation: &wire::DesktopObservation) -> bool {
-        self.width.get() >= 32
-            && self.height.get() >= 32
-            && self
-                .x
-                .checked_add(self.width.get())
-                .is_some_and(|right| right <= observation.width)
+        self.x
+            .checked_add(self.width.get())
+            .is_some_and(|right| right <= observation.width)
             && self
                 .y
                 .checked_add(self.height.get())
@@ -70,7 +67,7 @@ fn viewport(args: &Value, observation: &wire::DesktopObservation) -> Result<View
             }
         };
     if !viewport.fits(observation) {
-        return Err("定位区域必须在当前画面内，宽高至少32像素".into());
+        return Err("定位区域必须在当前画面内，宽高为正整数像素".into());
     }
     Ok(viewport)
 }
@@ -238,9 +235,15 @@ mod tests {
             (0, 0, 1280, 800)
         );
         for region in [
+            json!({"x":378,"y":266,"width":60,"height":18}),
+            json!({"x":1279,"y":799,"width":1,"height":1}),
+        ] {
+            assert!(viewport(&json!({"region":region}), &observation).is_ok());
+        }
+        for region in [
             json!({"x":0}),
             json!({"x":0,"y":0,"width":0,"height":40}),
-            json!({"x":0,"y":0,"width":31,"height":40}),
+            json!({"x":0,"y":0,"width":1281,"height":40}),
             json!({"x":1270,"y":0,"width":32,"height":40}),
             json!({"x":0,"y":u32::MAX,"width":32,"height":40}),
         ] {
