@@ -103,15 +103,7 @@ fn new_source(
     let work = temporary.path().join("source");
     let result = fill_source(file, &work, home, expected, index, control)
         .and_then(|()| publish(&work, destination, index, home, control));
-    match (result, temporary.close()) {
-        (Ok(()), Ok(())) => Ok(()),
-        (Err(primary), Ok(())) => Err(primary),
-        (Ok(()), Err(cleanup)) => Err(cleanup.into()),
-        (Err(primary), Err(cleanup)) => Err(Error::Cleanup {
-            primary: Box::new(primary),
-            cleanup,
-        }),
-    }
+    filesystem::finish_temporary(result, temporary)
 }
 
 fn fill_source(

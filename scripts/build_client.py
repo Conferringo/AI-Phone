@@ -139,7 +139,7 @@ if __name__=='__main__':
     if args.with_js_services and (not args.with_web_runtime or args.package_only):parser.error('JS services require the matching prebuilt web/Bun runtime')
     if args.images_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Image capsule requires a matching desktop host build')
     if args.installer_tools and (args.platform not in ('macos','linux') or args.package_only):parser.error('Installer tools require a matching supported host build')
-    if args.android_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Android runtime embedding requires a matching desktop host build')
+    if args.android_runtime and (args.platform not in ('macos','linux','windows') or args.package_only):parser.error('Android runtime embedding requires a matching desktop host build')
     if args.with_web_runtime:
         from bootstrap_bun import bun_path
         bun=bun_path(ROOT)

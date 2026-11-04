@@ -18,6 +18,8 @@ python scripts/android_component_factory.py --work .tools/windows-android-compon
 
 Full Windows delivery still requires the application-owned Linux/backend environment, Windows acceleration setup, device-control bridge, initialization and recovery. A successful SDK receipt alone does not qualify that delivery.
 
+The [Rust native preparation path](native-android-preparation.md) now admits this offline component and creates or recovers the device configuration. Windows client builds accept `--android-runtime` alongside `--wsl-runtime`; the native bootstrap uses the same installation lock and leaves complete-host readiness disabled. This resource integration is separate from launching and observing a real Windows Android guest.
+
 ## Availability
 
 Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.

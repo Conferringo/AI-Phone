@@ -129,15 +129,19 @@ pub(crate) fn verify_record(root: &Path, row: &Record, control: &Control<'_>) ->
 }
 
 pub(crate) fn bounded_file(path: &Path) -> Result<Vec<u8>> {
+    bounded_file_with_limit(path, MAX_MANIFEST)
+}
+
+pub(crate) fn bounded_file_with_limit(path: &Path, maximum: u64) -> Result<Vec<u8>> {
     let mut input = regular(path)?;
-    if input.metadata()?.len() > MAX_MANIFEST {
+    if input.metadata()?.len() > maximum {
         return Err(Error::Invalid("source_resource_metadata_size"));
     }
     let mut bytes = Vec::new();
     Read::by_ref(&mut input)
-        .take(MAX_MANIFEST + 1)
+        .take(maximum + 1)
         .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 > MAX_MANIFEST {
+    if bytes.len() as u64 > maximum {
         return Err(Error::Invalid("source_resource_metadata_size"));
     }
     Ok(bytes)
@@ -251,6 +255,18 @@ pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     #[cfg(not(unix))]
     let _ = path;
     Ok(())
+}
+
+pub(crate) fn finish_temporary(result: Result<()>, temporary: tempfile::TempDir) -> Result<()> {
+    match (result, temporary.close()) {
+        (Ok(()), Ok(())) => Ok(()),
+        (Err(error), Ok(())) => Err(error),
+        (Ok(()), Err(error)) => Err(error.into()),
+        (Err(primary), Err(cleanup)) => Err(Error::Cleanup {
+            primary: Box::new(primary),
+            cleanup,
+        }),
+    }
 }
 
 pub(crate) fn sync_tree(path: &Path, control: &Control<'_>) -> Result<()> {

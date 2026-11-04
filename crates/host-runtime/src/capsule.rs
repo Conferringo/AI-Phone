@@ -1,7 +1,7 @@
 use crate::{
     Error, Result,
     control::{CHUNK, Control},
-    manifest::{MAX_TOTAL, identity},
+    manifest::identity,
 };
 use flate2::bufread::GzDecoder;
 use sha2::{Digest, Sha256};
@@ -11,7 +11,6 @@ use std::{
 };
 use xz2::{bufread::XzDecoder, stream::Stream};
 
-const MAX_RAW: u64 = MAX_TOTAL + 64 * 1024 * 1024;
 const MAX_COMPRESSED: u64 = 2 * 1024 * 1024 * 1024;
 const XZ_MEMORY: u64 = 128 * 1024 * 1024;
 
@@ -24,10 +23,11 @@ pub(crate) struct Reader<'a, 'b> {
     decoder: Decoder<'a>,
     control: &'b Control<'b>,
     decoded: u64,
+    maximum: u64,
 }
 
 impl<'a, 'b> Reader<'a, 'b> {
-    pub fn new(file: &'a mut File, control: &'b Control<'b>) -> Result<Self> {
+    pub fn with_limit(file: &'a mut File, control: &'b Control<'b>, maximum: u64) -> Result<Self> {
         file.rewind()?;
         let mut magic = [0; 6];
         file.read_exact(&mut magic)?;
@@ -46,6 +46,7 @@ impl<'a, 'b> Reader<'a, 'b> {
             decoder,
             control,
             decoded: 0,
+            maximum,
         })
     }
 
@@ -92,7 +93,7 @@ impl Read for Reader<'_, '_> {
             .decoded
             .checked_add(length as u64)
             .ok_or_else(|| io::Error::other(Error::Invalid("source_resource_size")))?;
-        if self.decoded > MAX_RAW {
+        if self.decoded > self.maximum {
             return Err(io::Error::other(Error::Invalid("source_resource_size")));
         }
         Ok(length)
@@ -104,7 +105,16 @@ pub(crate) fn verify_identity(
     expected: &str,
     control: &Control<'_>,
 ) -> Result<()> {
-    if !identity(expected) || file.metadata()?.len() > MAX_COMPRESSED {
+    verify_bounded_identity(file, expected, control, MAX_COMPRESSED)
+}
+
+pub(crate) fn verify_bounded_identity(
+    file: &mut File,
+    expected: &str,
+    control: &Control<'_>,
+    maximum: u64,
+) -> Result<()> {
+    if !identity(expected) || file.metadata()?.len() > maximum {
         return Err(Error::Invalid("source_resource_identity"));
     }
     if hash(file, control)? != expected {

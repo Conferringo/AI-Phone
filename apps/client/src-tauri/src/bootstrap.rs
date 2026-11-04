@@ -194,7 +194,7 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 }
 
 struct Components {
-    android: bool,
+    android: Option<String>,
     images: bool,
     tools: Option<String>,
     wsl: Option<String>,
@@ -222,7 +222,7 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
         }
     }
     Ok(Components {
-        android: expected.contains_key("android.payload"),
+        android: expected.get("android.payload").cloned(),
         images: expected.contains_key("images.payload"),
         tools: expected.get("tools/manifest.json").cloned(),
         wsl: expected.get("wsl/manifest.json").cloned(),
@@ -335,6 +335,7 @@ fn run(
             &folder,
             &resource,
             components.wsl.as_deref(),
+            components.android.as_deref(),
             &request,
         );
     }
@@ -351,6 +352,7 @@ fn register_windows_backend(
     folder: &Path,
     resource: &Path,
     identity: Option<&str>,
+    android_identity: Option<&str>,
     request: &Request,
 ) -> Result<(), String> {
     let identity = identity.ok_or("wsl_backend_missing")?;
@@ -359,6 +361,22 @@ fn register_windows_backend(
     let mut native = ai_phone_host_runtime::wsl::Native::new(&cancelled);
     let mut installation = ai_phone_host_runtime::Installation::lock(folder)
         .map_err(|error| error.code().to_string())?;
+    if let Some(identity) = android_identity {
+        manager.set(folder, "android", "running", "")?;
+        installation
+            .prepare_android(
+                &resource.join("android.payload"),
+                identity,
+                ai_phone_host_runtime::android::Resources {
+                    cpus: request.phone.cpus.into(),
+                    memory_mb: request.phone.memory_mb,
+                    storage_gb: request.phone.storage_gb.into(),
+                },
+                &available_bytes,
+                &cancelled,
+            )
+            .map_err(|error| error.code().to_string())?;
+    }
     let request = ai_phone_host_runtime::wsl::InitializeRequest::from_json(
         serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?,
     )
@@ -441,7 +459,7 @@ fn run_source_installer(
     if let Some(runtime) = runtime {
         command.arg("--tool-runtime").arg(runtime.directory);
     }
-    if components.android {
+    if components.android.is_some() {
         command
             .arg("--android-runtime")
             .arg(resource.join("android.payload"));
