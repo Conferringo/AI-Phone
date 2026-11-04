@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 19877,
-      "sha256": "13be3a4cccb14867e5926f807b6986903a147ab571b358aa2c8e0b543d67dcc6"
+      "size": 20005,
+      "sha256": "5836706e5cb6f197efefcfc8f15bbfe6dc5f698512d2e3f5aff6e107b598ff90"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
-      "size": 2506,
-      "sha256": "bb6e755c10ddaf2ab3ba4ced1d3c500b89ae86452a2a98336a0312c789d60a23"
+      "size": 2634,
+      "sha256": "7a8970854fc5f88849fbd2382036d1f2167e76a79f2da1fe6897d19958430400"
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
@@ -720,8 +720,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 26339,
-      "sha256": "9571356e890305917d1d4cee2670916de7d0b6b9a72dbb25ca62a2a70cdae770"
+      "size": 26673,
+      "sha256": "d5c48c786c13e7cdca735d904db3edc99ae93be78fa22ceccb2e8d08d2a84340"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -1370,8 +1370,8 @@
     },
     {
       "path": "apps/client/ui/connection.js",
-      "size": 9865,
-      "sha256": "e60c59ee940c6dc3bc53c710564bfda46b8872d494d6c6dd8d8c45c11274fce9"
+      "size": 9914,
+      "sha256": "71d778a781da8edc0c04cfc1426a73f7bfbc4907cdfbddcde0fb309fba8cf2cc"
     },
     {
       "path": "apps/client/ui/index.html",
@@ -2910,8 +2910,8 @@
     },
     {
       "path": "crates/host-runtime/src/bin/wsl-host.rs",
-      "size": 1397,
-      "sha256": "75558b9684aee203d9af37d66879eadabbf693e7c8d3dcb51f39a314331affc1"
+      "size": 3164,
+      "sha256": "8cb7bf7073d0d1e880a6713c2b8a9eabad4bb94d4a5c4f8573a0930623916102"
     },
     {
       "path": "crates/host-runtime/src/capsule.rs",
@@ -2975,13 +2975,18 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
-      "size": 7659,
-      "sha256": "ac9c7870c3fbd89653237b274434139e51a0996ccae622fb6830919f2e5c8226"
+      "size": 12730,
+      "sha256": "7e53e37b6f9f984e25d81abb843326ddfd4eaff9a63d845c99dba4e195bfb822"
     },
     {
       "path": "crates/host-runtime/src/wsl/command.rs",
-      "size": 6493,
-      "sha256": "06ab8f72729aa6ffc7c94541e59ae8401b5c45974d50b0cbb1df4ff6dda26e0a"
+      "size": 7572,
+      "sha256": "df02ebd8484b7008538b5ace2699add5a4d31cbad3cc8bf7f8687da847711e3e"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/initialize.rs",
+      "size": 6686,
+      "sha256": "c21cdc866e9dfe8dc881746e16e4b4d620ba417b92f406c25b06f7c2e7bb4a7a"
     },
     {
       "path": "crates/host-runtime/src/wsl/tests.rs",
@@ -2990,13 +2995,13 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/windows.rs",
-      "size": 5231,
-      "sha256": "d57bc368b5aa82f9802cb3039e83a95a4ba1edab5989cf87a49ebc114ba2de93"
+      "size": 6122,
+      "sha256": "5c7b82b09857b86d40565aa2c1436c4fe78ae44bdf0f8406bc86716cc434e74a"
     },
     {
       "path": "crates/host-runtime/src/wsl.rs",
-      "size": 7900,
-      "sha256": "ba0d74c7157a0e831d4bba53f301f3e3e0ae3b9d33e9ab50096345fee4e73569"
+      "size": 7970,
+      "sha256": "c321b98849657e5868773acf70d6e9af265b90d00beab427a7c0c0d3a94a20f9"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -3260,8 +3265,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 5909,
-      "sha256": "d7003d38479a6346512f3ddef9a92d018a8e4b18f76e620f3aaa2c3371c4d705"
+      "size": 7102,
+      "sha256": "58414ddd5ddd4a6e08814aabe3cd2f76ba1cd7f8303055d33d1cb8331d00f4bf"
     },
     {
       "path": "docs/public/languages.md",

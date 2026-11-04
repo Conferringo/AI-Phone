@@ -27,6 +27,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo test -p ai-phone-host-runtime --lib wsl:: --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --bin wsl-host --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo clippy -p ai-phone-host-runtime --all-targets --locked -- -D warnings
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo build -p ai-phone-host-runtime --bin wsl-host --release --locked

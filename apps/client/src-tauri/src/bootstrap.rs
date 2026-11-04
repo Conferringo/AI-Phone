@@ -330,7 +330,13 @@ fn run(
     .map_err(|e| e.to_string())?;
     #[cfg(target_os = "windows")]
     if components.wsl.is_some() {
-        return register_windows_backend(manager, &folder, &resource, components.wsl.as_deref());
+        return register_windows_backend(
+            manager,
+            &folder,
+            &resource,
+            components.wsl.as_deref(),
+            &request,
+        );
     }
     #[cfg(not(target_os = "windows"))]
     if components.wsl.is_some() {
@@ -345,6 +351,7 @@ fn register_windows_backend(
     folder: &Path,
     resource: &Path,
     identity: Option<&str>,
+    request: &Request,
 ) -> Result<(), String> {
     let identity = identity.ok_or("wsl_backend_missing")?;
     manager.set(folder, "backend", "running", "")?;
@@ -352,10 +359,15 @@ fn register_windows_backend(
     let mut native = ai_phone_host_runtime::wsl::Native::new(&cancelled);
     let mut installation = ai_phone_host_runtime::Installation::lock(folder)
         .map_err(|error| error.code().to_string())?;
+    let request = ai_phone_host_runtime::wsl::InitializeRequest::from_json(
+        serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?,
+    )
+    .map_err(|error| error.code().to_string())?;
     let registered = installation
-        .ensure_wsl_bundle(
+        .start_wsl_bundle(
             &resource.join("wsl"),
             identity,
+            &request,
             &mut native,
             &available_bytes,
             &cancelled,

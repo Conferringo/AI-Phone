@@ -1,5 +1,5 @@
 //! Bound installer resources enter the same owned registration lifecycle as raw imports.
-use super::{Backend, Registered, Rootfs};
+use super::{Backend, InitializeRequest, Initializer, Registered, Rootfs};
 use crate::{Error, Installation, Result, control::Control, filesystem, manifest};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -53,6 +53,26 @@ fn read(source: &Path, expected: &str) -> Result<Bundle> {
 }
 
 impl Installation {
+    pub fn start_wsl_bundle<B: Backend + Initializer>(
+        &mut self,
+        source: &Path,
+        expected_manifest: &str,
+        request: &InitializeRequest,
+        backend: &mut B,
+        available: &dyn Fn(&Path) -> u64,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<Registered> {
+        let mut registered =
+            self.ensure_wsl_bundle(source, expected_manifest, backend, available, cancelled)?;
+        if cancelled() {
+            return Err(Error::Cancelled);
+        }
+        backend.initialize(&registered.distribution, request)?;
+        registered.backend_initialized = true;
+        // The Windows phone bridge and live two-device probe own phone_ready.
+        Ok(registered)
+    }
+
     pub fn ensure_wsl_bundle(
         &mut self,
         source: &Path,
@@ -92,6 +112,120 @@ mod tests {
     struct Host {
         registrations: Vec<Registration>,
         imports: usize,
+        initializations: usize,
+        fail_initialize: bool,
+    }
+    impl Initializer for Host {
+        fn initialize(&mut self, distribution: &str, request: &InitializeRequest) -> Result<()> {
+            assert!(
+                self.registrations
+                    .iter()
+                    .any(|row| row.name == distribution)
+            );
+            assert_eq!(
+                serde_json::from_slice::<serde_json::Value>(request.as_ref()).unwrap()["locale"],
+                "en"
+            );
+            self.initializations += 1;
+            if self.fail_initialize {
+                return Err(Error::Invalid("wsl_initialization_unknown"));
+            }
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn backend_initialization_follows_owned_registration_and_never_claims_phone_readiness() {
+        let (root, source, identity) = fixture();
+        let home = root.path().join("home");
+        let request = InitializeRequest::from_json(br#"{"locale":"en"}"#.to_vec()).unwrap();
+        let mut host = Host::default();
+        let mut installation = Installation::lock(&home).unwrap();
+        let first = installation
+            .start_wsl_bundle(&source, &identity, &request, &mut host, &available, &|| {
+                false
+            })
+            .unwrap();
+        assert!(first.backend_initialized);
+        assert!(!first.phone_ready);
+        assert_eq!((host.imports, host.initializations), (1, 1));
+        let user = home.join("user-work.txt");
+        fs::write(&user, b"preserve user work").unwrap();
+        let resumed = installation
+            .start_wsl_bundle(&source, &identity, &request, &mut host, &available, &|| {
+                false
+            })
+            .unwrap();
+        assert!(resumed.reused && resumed.backend_initialized && !resumed.phone_ready);
+        assert_eq!((host.imports, host.initializations), (1, 2));
+        assert_eq!(fs::read(user).unwrap(), b"preserve user work");
+    }
+
+    #[test]
+    fn unknown_initialization_retains_the_owned_import_for_observed_manual_recovery() {
+        let (root, source, identity) = fixture();
+        let home = root.path().join("home");
+        let request = InitializeRequest::from_json(br#"{"locale":"en"}"#.to_vec()).unwrap();
+        let mut host = Host {
+            fail_initialize: true,
+            ..Host::default()
+        };
+        let mut installation = Installation::lock(&home).unwrap();
+        assert_eq!(
+            installation
+                .start_wsl_bundle(&source, &identity, &request, &mut host, &available, &|| {
+                    false
+                })
+                .err()
+                .unwrap()
+                .code(),
+            "wsl_initialization_unknown"
+        );
+        assert_eq!((host.imports, host.initializations), (1, 1));
+        host.fail_initialize = false;
+        let resumed = installation
+            .start_wsl_bundle(&source, &identity, &request, &mut host, &available, &|| {
+                false
+            })
+            .unwrap();
+        assert!(resumed.reused && resumed.backend_initialized);
+        assert_eq!((host.imports, host.initializations), (1, 2));
+        assert!(matches!(
+            installation.start_wsl_bundle(
+                &source,
+                &identity,
+                &request,
+                &mut host,
+                &available,
+                &|| true
+            ),
+            Err(Error::Cancelled)
+        ));
+        assert_eq!(host.initializations, 2);
+    }
+
+    #[test]
+    fn altered_capsule_never_reaches_registration_or_initialization() {
+        let (root, source, _identity) = fixture();
+        let request = InitializeRequest::from_json(br#"{"locale":"en"}"#.to_vec()).unwrap();
+        let mut host = Host::default();
+        let mut installation = Installation::lock(&root.path().join("home")).unwrap();
+        assert_eq!(
+            installation
+                .start_wsl_bundle(
+                    &source,
+                    &"0".repeat(64),
+                    &request,
+                    &mut host,
+                    &available,
+                    &|| false
+                )
+                .err()
+                .unwrap()
+                .code(),
+            "wsl_bundle_changed"
+        );
+        assert_eq!((host.imports, host.initializations), (0, 0));
     }
     impl Backend for Host {
         fn registrations(&mut self) -> Result<Vec<Registration>> {

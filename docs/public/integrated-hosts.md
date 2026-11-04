@@ -24,6 +24,8 @@ The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, mem
 
 Stopping installation terminates its child process group and retains completed work. SDK license prompts are never automatically accepted from a saved pending prompt. Foreign jobs/containers and quarantined restored data are rejected before startup changes. This is not full upgrade rollback or a signed updater.
 
+The Windows adapter now imports the owned WSL bundle and invokes its existing backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. A successful process exit and final backend acknowledgement set only `backend_initialized`; they do not prove live service health, phone readiness or a complete installation. Cancellation after launch leaves the guest outcome explicitly unknown and retains the registered distribution. The native phone bridge, full readiness probe and Windows capability activation remain unfinished; initialization still uses the existing Python guest entry, pending the Rust runtime migration.
+
 ## Isolation
 
 A complete macOS bundle selects its own [container-host component](container-host-runtime.md), even when another Docker engine is running. It uses a real short private Lima state directory bound to this installation's persistent user data; executable selection is restored after reopening. It never changes global Docker contexts. Contributor source mode can reuse an explicitly available engine, but must still check container ownership.
@@ -43,3 +45,5 @@ Component execution, package inspection and complete installation are separate c
 完整包应自带系统镜像、模拟器、服务与私有工具，不让普通用户安装SDK、编译器或Docker。能容器化的依赖放入本项目容器，原生虚拟化/输入/视觉程序放在应用自己的目录，不修改用户全局开发环境。完整macOS包优先自己的Lima/VZ引擎，不改全局Docker context；代码版本、持久user目录和短路径容器状态分别归属同一安装，重开恢复原环境。
 
 首次安装需要至少12GiB内存、35GiB可用存储，推荐16GiB内存。设备资源在创建时设置，已有设备不会随预设变化被重建或扩容。关闭、中断、重试、缺失组件和恢复隔离均要明确反馈；单项测试或阶段完成不能代替完整初装验收。现有设备、聊天、账号和密钥不进入源码或运行组件。
+
+Windows适配器已接通所属WSL资源导入和既有后端初始化，配置经有界标准输入传入，不挂载Windows磁盘、不写入进程参数。成功退出和回执只确认后端初始化，不证明服务实时可用、手机就绪或完整安装；启动后取消保留明确的未知结果及原发行实例。原生手机桥、完整就绪探测和Windows能力开放仍未完成；客体初始化暂复用既有Python入口，纯Rust运行链迁移尚未全部完成。

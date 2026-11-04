@@ -8,6 +8,8 @@ use std::{
 };
 
 mod bundle;
+mod initialize;
+pub use initialize::{InitializeRequest, Initializer};
 #[cfg(any(windows, test))]
 mod command;
 mod windows;

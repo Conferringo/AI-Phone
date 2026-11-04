@@ -1,7 +1,7 @@
 //! Bounded native command ownership; output is not included in public errors.
 use crate::{Error, Result};
 use std::{
-    io::Read,
+    io::{Read, Write},
     process::{Child, Command, Stdio},
     sync::{
         Arc,
@@ -76,8 +76,8 @@ fn collected(
     output: Result<Vec<u8>>,
     diagnostic: Result<Vec<u8>>,
 ) -> Result<Vec<u8>> {
-    if matches!(outcome, Err(Error::Cancelled)) {
-        return Err(Error::Cancelled);
+    if let Err(error @ (Error::Cancelled | Error::Cleanup { .. })) = outcome {
+        return Err(error);
     }
     // A child may fail while its output reader is discovering the size limit.
     // Select the bounded-output error deterministically after both readers join.
@@ -88,7 +88,25 @@ fn collected(
 }
 
 pub(super) fn run(
+    command: Command,
+    timeout: Duration,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<Vec<u8>> {
+    execute(command, None, timeout, cancelled)
+}
+
+pub(super) fn run_input(
+    command: Command,
+    input: &[u8],
+    timeout: Duration,
+    cancelled: &dyn Fn() -> bool,
+) -> Result<Vec<u8>> {
+    execute(command, Some(input.to_vec()), timeout, cancelled)
+}
+
+fn execute(
     mut command: Command,
+    input: Option<Vec<u8>>,
     timeout: Duration,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<Vec<u8>> {
@@ -96,11 +114,19 @@ pub(super) fn run(
         return Err(Error::Cancelled);
     }
     let mut child = command
-        .stdin(Stdio::null())
+        .stdin(if input.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
     let overflow = Arc::new(AtomicBool::new(false));
+    let input = input.map(|bytes| {
+        let mut pipe = child.stdin.take().expect("piped child stdin");
+        thread::spawn(move || pipe.write_all(&bytes))
+    });
     // Both handles are guaranteed by the requested Stdio::piped configuration.
     let output = reader(
         child.stdout.take().expect("piped child stdout"),
@@ -111,14 +137,29 @@ pub(super) fn run(
         overflow.clone(),
     );
     let outcome = wait(&mut child, timeout, cancelled, &overflow);
+    let outcome = reap(&mut child, outcome);
+    let output = finish(output);
+    let diagnostic = finish(error);
+    let written = input
+        .map(|writer| {
+            writer
+                .join()
+                .map_err(|_| Error::Invalid("wsl_command_input"))?
+                .map_err(Error::Io)
+        })
+        .transpose();
+    let bytes = collected(outcome, output, diagnostic)?;
+    written?;
+    Ok(bytes)
+}
+
+fn reap(child: &mut Child, outcome: Result<()>) -> Result<()> {
     let killed = if outcome.is_err() {
         child.kill()
     } else {
         Ok(())
     };
     let reaped = child.wait();
-    let output = finish(output);
-    let diagnostic = finish(error);
     if let Err(cleanup) = reaped {
         return Err(Error::Cleanup {
             primary: Box::new(
@@ -141,7 +182,7 @@ pub(super) fn run(
             cleanup,
         });
     }
-    collected(outcome, output, diagnostic)
+    outcome
 }
 
 #[cfg(test)]

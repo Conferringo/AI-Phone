@@ -1,4 +1,4 @@
-use super::{Backend, Registration};
+use super::{Backend, InitializeRequest, Initializer, Registration};
 use crate::{Error, Result};
 use std::path::Path;
 #[cfg(windows)]
@@ -41,6 +41,29 @@ fn read_registrations(
 
 pub struct Native<'a> {
     cancelled: &'a dyn Fn() -> bool,
+}
+
+#[cfg(windows)]
+impl Initializer for Native<'_> {
+    fn initialize(&mut self, distribution: &str, request: &InitializeRequest) -> Result<()> {
+        let mut command = system_program("wsl.exe")?;
+        command.args([
+            "--distribution",
+            distribution,
+            "--user",
+            "root",
+            "--cd",
+            "/",
+            "--exec",
+            "/opt/aiphone/tools/python/bin/python3",
+            "-I",
+            "-B",
+            "/opt/aiphone/bootstrap/wsl_backend_entry.py",
+            "--initialize",
+            "/dev/stdin",
+        ]);
+        super::initialize::run(command, request, self.cancelled)
+    }
 }
 impl<'a> Native<'a> {
     pub fn new(cancelled: &'a dyn Fn() -> bool) -> Self {
@@ -151,6 +174,13 @@ impl Backend for Native<'_> {
         Err(Error::Invalid("wsl_host_unsupported"))
     }
     fn import(&mut self, _: &str, _: &Path, _: &Path) -> Result<()> {
+        Err(Error::Invalid("wsl_host_unsupported"))
+    }
+}
+
+#[cfg(not(windows))]
+impl Initializer for Native<'_> {
+    fn initialize(&mut self, _: &str, _: &InitializeRequest) -> Result<()> {
         Err(Error::Invalid("wsl_host_unsupported"))
     }
 }
