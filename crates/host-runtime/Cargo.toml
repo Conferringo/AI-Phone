@@ -7,6 +7,7 @@ license = "Apache-2.0"
 publish = false
 
 [dependencies]
+ai-phone-adb = { path = "../adb-client" }
 ai-phone-api = { path = "../api" }
 prost = "=0.14.4"
 tokio = { version = "1", features = ["process", "signal", "time", "macros", "rt", "net", "io-util", "io-std", "sync"] }

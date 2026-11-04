@@ -1,34 +1,28 @@
 use crate::{Error, Result};
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    time::Duration,
-};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
+use std::time::Duration;
 
 pub(super) struct Adb {
     pub port: u16,
     pub serial: String,
 }
+fn error(value: ai_phone_adb::Error) -> Error {
+    match value {
+        ai_phone_adb::Error::Io(value) => Error::Io(value),
+        ai_phone_adb::Error::Rejected(_) => Error::Invalid("android_adb_rejected"),
+        ai_phone_adb::Error::Protocol => Error::Invalid("android_adb_frame"),
+        ai_phone_adb::Error::Limit => Error::Invalid("android_adb_output"),
+        ai_phone_adb::Error::Timeout => Error::Invalid("android_adb_unknown"),
+    }
+}
 impl Adb {
+    fn client(&self) -> Result<ai_phone_adb::Client> {
+        ai_phone_adb::Client::new(self.port, self.serial.clone()).map_err(error)
+    }
     async fn request(&self, service: &str, limit: usize) -> Result<Vec<u8>> {
-        bounded(async {
-            let mut socket =
-                TcpStream::connect(SocketAddr::from((Ipv4Addr::LOCALHOST, self.port))).await?;
-            socket.set_nodelay(true)?;
-            command(&mut socket, &format!("host:transport:{}", self.serial)).await?;
-            command(&mut socket, service).await?;
-            let mut bytes = Vec::new();
-            socket
-                .take(limit as u64 + 1)
-                .read_to_end(&mut bytes)
-                .await?;
-            if bytes.len() > limit {
-                return Err(Error::Invalid("android_adb_output"));
-            }
-            Ok(bytes)
-        })
-        .await
+        self.client()?
+            .raw(service, limit, Duration::from_secs(3))
+            .await
+            .map_err(error)
     }
     pub async fn uid(&self) -> Result<u32> {
         let bytes = self.request("shell:id -u", 128).await?;
@@ -58,49 +52,23 @@ impl Adb {
         self.request("exec:screencap -p", 8 * 1024 * 1024).await
     }
     pub async fn server(&self) -> Result<()> {
-        bounded(async {
-            let mut socket =
-                TcpStream::connect(SocketAddr::from((Ipv4Addr::LOCALHOST, self.port))).await?;
-            command(&mut socket, "host:version").await?;
-            let mut size = [0; 4];
-            socket.read_exact(&mut size).await?;
-            let count = std::str::from_utf8(&size)
-                .ok()
-                .and_then(|s| usize::from_str_radix(s, 16).ok())
-                .filter(|n| *n <= 16)
-                .ok_or(Error::Invalid("android_adb_frame"))?;
-            let mut version = vec![0; count];
-            socket.read_exact(&mut version).await?;
-            if version.is_empty() || !version.iter().all(u8::is_ascii_hexdigit) {
-                return Err(Error::Invalid("android_adb_frame"));
-            }
-            Ok(())
-        })
-        .await
-    }
-}
-
-async fn bounded<T>(future: impl std::future::Future<Output = Result<T>>) -> Result<T> {
-    tokio::time::timeout(Duration::from_secs(3), future)
-        .await
-        .map_err(|_| Error::Invalid("android_adb_unknown"))?
-}
-async fn command(socket: &mut TcpStream, service: &str) -> Result<()> {
-    socket
-        .write_all(format!("{:04x}{service}", service.len()).as_bytes())
-        .await?;
-    let mut status = [0; 4];
-    socket.read_exact(&mut status).await?;
-    match &status {
-        b"OKAY" => Ok(()),
-        b"FAIL" => Err(Error::Invalid("android_adb_rejected")),
-        _ => Err(Error::Invalid("android_adb_frame")),
+        let version = self
+            .client()?
+            .version(Duration::from_secs(3))
+            .await
+            .map_err(error)?;
+        if version.is_empty() || !version.iter().all(u8::is_ascii_hexdigit) {
+            return Err(Error::Invalid("android_adb_frame"));
+        }
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::Ipv4Addr;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     #[tokio::test]
     async fn selects_the_exact_serial_before_a_bounded_raw_uid_request() {
         let server = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, 0))

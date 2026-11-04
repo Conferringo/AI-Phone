@@ -48,7 +48,9 @@ def source_input(payload):
     with tarfile.open(payload,'r:*') as source:
         manifest,records,_=archive_records(source)
         expected={'web','native-services','js-services'}
-        if set(manifest['components'])!=expected:raise ValueError('WSL source must contain only its three backend components')
+        selected=set(manifest['components'])
+        if selected not in (expected,expected|{'phone-apps','guest-apps'}):
+            raise ValueError('WSL source requires backend components, optionally with both offline phone app groups')
         for name,row in records.items():
             with source.extractfile(name) as body:actual=hashlib.file_digest(body,'sha256').hexdigest()
             if actual!=row['sha256']:raise ValueError('WSL source integrity differs')
@@ -56,7 +58,7 @@ def source_input(payload):
             if json.load(source.extractfile(name)).get('host')!='linux-x64':raise ValueError('WSL requires Linux x64 backend components')
         services=json.load(source.extractfile('runtime/services/manifest.json'))
         if services.get('vision')!='linux-tesseract-bundled':raise ValueError('WSL requires offline OCR')
-    return digest(payload)
+    return {'sha256':digest(payload),'components':manifest['components']}
 
 
 def engine_script(program):
@@ -130,11 +132,11 @@ ENTRYPOINT ["/opt/aiphone/tools/python/bin/python3", "-I", "-B", "/opt/aiphone/b
 def validated_inputs(root,source,images,tools,packages):
     from installer_tools import verify as verify_tools
     from container_images import stage
-    plan=factory_plan(root);source_hash=source_input(source)
+    plan=factory_plan(root);source_record=source_input(source)
     tool_manifest=verify_tools(tools,'linux-x64');image_manifest=stage(images).manifest
     if image_manifest['architecture']!='amd64':raise ValueError('WSL requires amd64 container images')
     package_inputs(packages,plan['engine_packages'])
-    return plan,source_hash,tool_manifest
+    return plan,source_record,tool_manifest
 
 
 def payload_scripts(source,scripts):
@@ -147,7 +149,7 @@ def payload_scripts(source,scripts):
 
 
 def prepare_context(root,folder,source,images,tools,packages):
-    plan,source_hash,tool_manifest=validated_inputs(root,source,images,tools,packages)
+    plan,source_record,tool_manifest=validated_inputs(root,source,images,tools,packages)
     folder.mkdir()
     for path,name in ((source,'source.payload'),(images,'images.payload')):shutil.copyfile(path,folder/name)
     shutil.copytree(tools,folder/'tools');shutil.copytree(packages,folder/'packages')
@@ -157,7 +159,7 @@ def prepare_context(root,folder,source,images,tools,packages):
     from wsl_engine_inputs import licenses
     (folder/'engine-sources.json').write_text(json.dumps(licenses(packages,plan['engine_packages']),sort_keys=True)+'\n')
     (folder/'Dockerfile').write_text(dockerfile(plan))
-    return {'policy':plan,'source_sha256':source_hash,'images_sha256':digest(images),
+    return {'policy':plan,'source_sha256':source_record['sha256'],'source_components':source_record['components'],'images_sha256':digest(images),
             'tools_manifest_sha256':digest(Path(tools)/'manifest.json'),'tools':tool_manifest['tools']}
 
 

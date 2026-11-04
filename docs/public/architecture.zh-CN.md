@@ -13,6 +13,8 @@
 | 渠道 | Bun、官方SDK/Bot API及本地WhatsApp适配 | Agent级凭据、私聊配对、入站排队、送达状态 |
 | 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、模型版本与审计；Redis预留，尚未分发任务 |
 
+手机执行器与原生启动观察共用[Rust ADB客户端](engineering/device-bridge.md#runner-adb-transport)，执行器不再逐命令创建adb进程。宿主SDK仍提供ADB服务，其他媒体和初始化路径仍有SDK工具依赖。
+
 文本和Markdown默认使用Mousepad打开，桌面包含文件类型检测工具；[用户的MIME关联设置](https://specifications.freedesktop.org/mime-apps/latest/file.html)优先于镜像默认值。
 
 设备音频使用48kHz、双声道、有符号16位PCM；各设备的播放流独立于当前聚焦设备。电脑的PulseAudio监听使用50ms、无回绕的时钟窗口；Rust采集租约持有编码器，连接关闭时释放。

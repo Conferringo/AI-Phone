@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "3d377dd4e39f084032b1010eebd345c925d390161f0fcf77e389ce0d4cadb74b",
+    "Cargo.lock": "3d3cfe782f974d48c58dc470e6d354a329200bed7287248fae379246de916281",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "8008118a57bca9ce28621f3ad5a8582ba7db45e2119b6f615f7493b9cdc7caac"
+    "apps/client/src-tauri/Cargo.lock": "f86e180640c169752c8af0d1c6b71adf6fc08da1dfc96a65b139f3d8d8d7a556"
   },
   "rust": [
     {
@@ -12830,7 +12830,7 @@
     {
       "name": "async",
       "version": "0.2.10",
-      "license": null,
+      "license": "MIT",
       "repository": "https://github.com/caolan/async.git",
       "notices": [
         {
@@ -16304,9 +16304,7 @@
   ],
   "missing_license_metadata": {
     "rust": [],
-    "javascript": [
-      "async@0.2.10"
-    ]
+    "javascript": []
   },
   "native_client_missing_notice_files": []
 }

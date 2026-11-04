@@ -800,9 +800,8 @@ mod tests {
         std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o600)).unwrap();
         let mut runner = Runner {
             phone_id: "phone-local-01".into(),
-            serial: "emulator-5564".into(),
             media_url: "http://127.0.0.1:17865".into(),
-            adb: root.join("unused"),
+            adb: ai_phone_adb::Client::new(1, "emulator-5564".into()).unwrap(),
             token: String::new(),
             ledger_path: root.join("ledger"),
             ledger: Mutex::new(Ledger::default()),

@@ -115,7 +115,7 @@ class ResumeSpecTests(unittest.TestCase):
 
     def test_only_fixed_source_fields_can_be_reported_by_name(self):
         fields = ('PATH', 'JAVA_HOME', 'AI_PHONE_JAVA_HOME', 'AI_PHONE_SDK_ROOT',
-                  'AI_PHONE_ADB', 'AI_PHONE_PROJECT_ROOT', 'AI_PHONE_DATA_ROOT')
+                  'AI_PHONE_PROJECT_ROOT', 'AI_PHONE_DATA_ROOT')
         for field in fields:
             with self.subTest(field=field):
                 self.output.seek(0)

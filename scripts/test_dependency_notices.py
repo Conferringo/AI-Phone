@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from dependency_inventory import notices, supplemental_notices, runtime_notice_blocks
+from unittest.mock import patch
+from dependency_inventory import inventory, notices, supplemental_notices, runtime_notice_blocks
 
 class NoticeTests(unittest.TestCase):
     def test_copyright_attribution_is_kept(self):
@@ -60,5 +61,35 @@ class OwnedCrateTests(unittest.TestCase):
             self.assertEqual(missing,[])
             self.assertIn('Fixture third-party grant',text)
             self.assertNotIn('owned 0.1.0',text)
+
+
+class JavascriptInventoryTests(unittest.TestCase):
+    def report(self, metadata):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            (root/'Cargo.lock').write_text('')
+            (root/'bun.lock').write_text('{}')
+            folder=root/'node_modules/legacy-package'
+            folder.mkdir(parents=True)
+            (folder/'package.json').write_text(json.dumps({'name':'legacy-package','version':'1.0.0',**metadata}))
+            (folder/'LICENSE').write_text('Retained upstream grant')
+            locked=json.dumps({'legacy-package':['legacy-package@1.0.0']})
+            with patch('dependency_inventory.subprocess.check_output',return_value=locked):
+                return inventory(root)
+
+    def test_single_legacy_license_is_reported_with_its_retained_grant(self):
+        report=self.report({'licenses':[{'type':'MIT','url':'https://example.org/LICENSE'}]})
+        self.assertEqual(report['javascript'][0]['license'],'MIT')
+        self.assertEqual(report['missing_license_metadata']['javascript'],[])
+        self.assertEqual(report['javascript'][0]['notices'],[{'file':'LICENSE','sha256':hashlib.sha256(b'Retained upstream grant').hexdigest()}])
+
+    def test_current_license_takes_precedence_over_legacy_metadata(self):
+        report=self.report({'license':'Apache-2.0','licenses':[{'type':'MIT'}]})
+        self.assertEqual(report['javascript'][0]['license'],'Apache-2.0')
+
+    def test_multiple_legacy_licenses_are_not_assigned_an_invented_expression(self):
+        report=self.report({'licenses':[{'type':'MIT'},{'type':'Apache-2.0'}]})
+        self.assertIsNone(report['javascript'][0]['license'])
+        self.assertEqual(report['missing_license_metadata']['javascript'],['legacy-package@1.0.0'])
 
 if __name__=='__main__':unittest.main()

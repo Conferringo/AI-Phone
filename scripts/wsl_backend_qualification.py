@@ -20,9 +20,12 @@ def qualification_preflight(root):
     return work
 
 
-def assemble(root):
+def assemble(root,*,device_apps=False):
     root=Path(root).resolve();work=qualification_preflight(root)
     work.mkdir(parents=True)
+    if device_apps:
+        from linux_client_factory import prepare_apps
+        prepare_apps(root,dict(os.environ))
     tools,python_archive,_=prepare_tools(root,work)
     output=factory_context(root,work/'ocr-context','linux-ocr',python_archive)
     from linux_ocr_runtime import build as build_ocr
@@ -33,7 +36,8 @@ def assemble(root):
     run([root/'scripts/bun','run','build'],root)
     build_js(root)
     from prepare_client_host import prepare
-    prepare(root,with_web_runtime=True,with_service_runtime=True,with_js_services=True,linux_ocr=ocr)
+    prepare(root,with_web_runtime=True,with_service_runtime=True,with_js_services=True,
+            with_phone_apps=device_apps,with_guest_apps=device_apps,linux_ocr=ocr)
     from factory_cache import retire_native_cache,retire_image_build_cache
     retired=retire_native_cache(root,root/'apps/client/src-tauri/gen/host/source.payload')
     (work/'cache-retirement.json').write_text(json.dumps(retired,sort_keys=True)+'\n')
@@ -46,14 +50,14 @@ def assemble(root):
     return result,work,images
 
 
-def qualify(root):
+def qualify(root,*,device_apps=False):
     from wsl_runtime_fixture import require_disposable,qualify_runtime
     require_disposable();root=Path(root).resolve()
     report={'format':1,'stage':'assemble','passed':False,'source_commit':os.environ.get('GITHUB_SHA',''),
             'windows_boot_verified':False,'phone_ready':False,'complete_device_bundle':False}
     (root/'dist').mkdir(exist_ok=True)
     try:
-        component,work,images=assemble(root);report['component']=component;report['stage']='runtime'
+        component,work,images=assemble(root,device_apps=device_apps);report['component']=component;report['stage']='runtime'
         report['runtime']=qualify_runtime(work/'assembled',root/'apps/client/src-tauri/gen/host/source.payload',images)
         report['passed']=True;report['stage']='complete'
         return report
@@ -65,4 +69,9 @@ def qualify(root):
         (root/'dist/wsl-backend-qualification.json').write_text(json.dumps(report,indent=2)+'\n')
 
 
-if __name__=='__main__':print(json.dumps(qualify(Path(__file__).resolve().parent.parent)))
+if __name__=='__main__':
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--with-device-apps',action='store_true',help='Build and embed phone control and pinned guest apps; requires Android 35 compiler tools and Java 17 on the maintainer host')
+    args=parser.parse_args()
+    print(json.dumps(qualify(Path(__file__).resolve().parent.parent,device_apps=args.with_device_apps)))

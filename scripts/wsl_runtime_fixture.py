@@ -41,7 +41,7 @@ def checked_inputs(work,source,images):
     import tarfile
     manifest=verify_capsule(work/'wsl-backend.payload')
     if digest(work/'rootfs.tar.gz')!=manifest['rootfs']['sha256']:raise ValueError('Rootfs changed before runtime import')
-    source_hash=source_input(source);prepared=stage(images)
+    source_hash=source_input(source)['sha256'];prepared=stage(images)
     if source_hash!=manifest['provenance']['source_sha256'] or prepared.identity!=manifest['provenance']['images_sha256']:
         raise ValueError('Runtime qualification inputs differ from assembled rootfs')
     with tarfile.open(source,'r:*') as archive:_,records,_=archive_records(archive)

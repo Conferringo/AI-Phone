@@ -6,6 +6,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from wsl_backend import inspect_rootfs, publish_capsule, verify_capsule
@@ -94,21 +95,22 @@ class WslBackendTests(unittest.TestCase):
 
 
 class WslSourceTests(unittest.TestCase):
-    def payload(self,folder,host='linux-x64',extra=None):
+    def payload(self,folder,host='linux-x64',extra=None,components=None):
         rows={}
         from client_host_entry import COMPONENT_MANIFESTS
-        for role in ('web','native-services','js-services'):
+        components=components or ('web','native-services','js-services')
+        for role in components:
             rows[COMPONENT_MANIFESTS[role]]=json.dumps({'host':host,'vision':'linux-tesseract-bundled'}).encode()
         if extra:rows.update(extra)
         records=[{'path':name,'size':len(data),'sha256':hashlib.sha256(data).hexdigest(),'mode':0o644} for name,data in rows.items()]
-        manifest={'format':2,'components':[role for role in COMPONENT_MANIFESTS if role in ('web','native-services','js-services')],'files':records}
+        manifest={'format':2,'components':[role for role in COMPONENT_MANIFESTS if role in components],'files':records}
         path=folder/'source.payload';archive(path,[*rows.items(),('HOST-MANIFEST.json',json.dumps(manifest).encode())]);return path
 
     def test_source_admission_requires_verified_linux_components_and_offline_ocr(self):
         from wsl_backend_factory import source_input
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);source=self.payload(root);identity=source_input(source)
-            self.assertEqual(identity,hashlib.sha256(source.read_bytes()).hexdigest())
+            self.assertEqual(identity,{'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'components':['web','native-services','js-services']})
             for host in ('windows-x64','macos-arm64','linux-arm64'):
                 with self.subTest(host=host):
                     with self.assertRaisesRegex(ValueError,'Linux x64'):source_input(self.payload(root,host))
@@ -116,6 +118,17 @@ class WslSourceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'offline OCR'):source_input(source)
             source=self.payload(root,extra={'user/chat.txt':b'private'})
             with self.assertRaises(ValueError):source_input(source)
+
+    def test_backend_can_carry_the_matched_offline_phone_app_groups(self):
+        from wsl_backend_factory import source_input
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            backend=('web','native-services','js-services')
+            source=self.payload(root,components=(*backend,'phone-apps','guest-apps'))
+            self.assertEqual(source_input(source),{'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'components':['web','native-services','phone-apps','js-services','guest-apps']})
+            for extra in [('phone-apps',),('guest-apps',),('container-host',)]:
+                with self.subTest(extra=extra),self.assertRaisesRegex(ValueError,'backend components'):
+                    source_input(self.payload(root,components=(*backend,*extra)))
 
     def test_export_targets_only_new_owned_container_identity(self):
         from wsl_backend_factory import export_owned
@@ -128,6 +141,7 @@ class WslSourceTests(unittest.TestCase):
             run.reset_mock();inspect.return_value=json.dumps([{'Config':{'Labels':{},'Image':'foreign'}}])
             with self.assertRaisesRegex(ValueError,'ownership'):export_owned('factory:unit',Path(folder)/'other.tar','fixture')
             self.assertFalse(any(call.args[0][1]=='rm' for call in run.call_args_list))
+
 
     def test_engine_receipt_comes_from_exact_pinned_archives(self):
         from wsl_engine_inputs import extract,licenses
@@ -254,5 +268,54 @@ class WslEngineRelocationTests(unittest.TestCase):
             self.assertEqual(__import__('os').readlink(root/'etc/mtab'),'/proc/mounts')
             self.assertEqual(relocate_links(root),[])
 
+
+
+
+class WslAssemblyTests(unittest.TestCase):
+    def test_invalid_phone_apps_stop_before_expensive_backend_builds(self):
+        import wsl_backend_qualification as factory
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);work=root/'work'
+            with patch.object(factory,'qualification_preflight',return_value=work),\
+                 patch('linux_client_factory.prepare_apps',side_effect=ValueError('Application signer differs')),\
+                 patch.object(factory,'prepare_tools') as tools,\
+                 patch.object(factory,'build') as build:
+                with self.assertRaisesRegex(ValueError,'signer differs'):
+                    factory.assemble(root,device_apps=True)
+                tools.assert_not_called();build.assert_not_called()
+                self.assertFalse((work/'assembled').exists())
+
+    def test_device_producer_packages_both_app_groups_and_retains_backend_only_mode(self):
+        import wsl_backend_qualification as factory
+        from wsl_backend_factory import source_input
+        for device_apps in (False,True):
+            with self.subTest(device_apps=device_apps),tempfile.TemporaryDirectory() as temporary,ExitStack() as stack:
+                root=Path(temporary);(root/'SOURCE-MANIFEST.json').write_text('fixture source')
+                work=root/'work'
+                stack.enter_context(patch.object(factory,'qualification_preflight',return_value=work))
+                stack.enter_context(patch.object(factory,'prepare_tools',return_value=(root/'tools',root/'python',{})))
+                stack.enter_context(patch.object(factory,'factory_context',return_value=root/'ocr'))
+                stack.enter_context(patch('linux_ocr_runtime.build'))
+                stack.enter_context(patch('build_native_services.build'))
+                stack.enter_context(patch('prebuilt_js.build'))
+                stack.enter_context(patch.object(factory,'run'))
+                apps=stack.enter_context(patch('linux_client_factory.prepare_apps'))
+                def prepare(_root,**options):
+                    components=['web','native-services','js-services']
+                    if options.get('with_phone_apps'):components.append('phone-apps')
+                    if options.get('with_guest_apps'):components.append('guest-apps')
+                    folder=root/'apps/client/src-tauri/gen/host';folder.mkdir(parents=True)
+                    return WslSourceTests().payload(folder,components=components)
+                stack.enter_context(patch('prepare_client_host.prepare',side_effect=prepare))
+                stack.enter_context(patch('factory_cache.retire_native_cache',return_value={}))
+                stack.enter_context(patch('factory_cache.retire_image_build_cache',return_value={}))
+                stack.enter_context(patch.object(factory,'prepare_images',return_value=(root/'images',{})))
+                stack.enter_context(patch.object(factory,'factory_plan',return_value={'engine_packages':[]}))
+                def build(_root,_work,source,*_inputs):
+                    return source_input(source)
+                stack.enter_context(patch.object(factory,'build',side_effect=build))
+                component,_,_=factory.assemble(root,device_apps=device_apps)
+                self.assertEqual(set(component['components']),{'web','native-services','js-services'}|({'phone-apps','guest-apps'} if device_apps else set()))
+                self.assertEqual(apps.call_count,int(device_apps))
 
 if __name__=='__main__':unittest.main()
