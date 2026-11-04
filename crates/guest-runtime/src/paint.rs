@@ -104,6 +104,12 @@ mod tests {
         transition: bool,
     }
     impl Screen for Frames {
+        fn window(&self) -> Result<crate::screen::WindowIdentity> {
+            Ok(crate::screen::WindowIdentity {
+                title: self.title()?,
+                application_class: String::new(),
+            })
+        }
         fn capture(&self) -> Result<RgbImage> {
             let count = self.count.fetch_add(1, Ordering::Relaxed);
             let mut image = RgbImage::new(32, 32);

@@ -19,6 +19,8 @@ message DesktopObservation {
   // Bounded post-input paint observation, not application or navigation completion.
   DesktopFrameState frame_state = 9;
   uint32 frame_wait_ms = 10;
+  // Stable OS application identity. Empty when unavailable; never a document title.
+  string application_id = 11;
 }
 message DesktopActionRequest {
   string device_id = 1;

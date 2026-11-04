@@ -48,13 +48,15 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
     }
 
     fn frame(&self, image: &RgbImage) -> Result<Value> {
-        let title = self
-            .screen
-            .title()
-            .unwrap_or_else(|_| "Linux desktop".into());
+        let identity = self.screen.window().unwrap_or_default();
+        let title = if identity.title.is_empty() {
+            "Linux desktop"
+        } else {
+            &identity.title
+        };
         let bytes = imaging::png(image)?;
         Ok(
-            json!({"width": self.settings.width, "height": self.settings.height, "title": title, "png": STANDARD.encode(bytes)}),
+            json!({"width": self.settings.width, "height": self.settings.height, "title": title, "application_class":identity.application_class,"png": STANDARD.encode(bytes)}),
         )
     }
 

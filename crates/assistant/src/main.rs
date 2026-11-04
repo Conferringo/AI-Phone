@@ -19,6 +19,7 @@ use uuid::Uuid;
 mod agent_loop;
 mod anthropic_messages;
 mod app_learning;
+mod application_identity;
 mod auth;
 mod chat_completions;
 mod completion_audit;

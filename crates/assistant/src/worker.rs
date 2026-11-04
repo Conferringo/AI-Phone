@@ -808,10 +808,19 @@ pub(crate) async fn experience_call(
     context: &[Value],
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<Value> {
-    let app_id = latest_grounding(context).and_then(|value| {
-        crate::app_learning::package(value["foreground_app"].as_str().unwrap_or(""))
-            .map(str::to_owned)
-    })?;
+    let latest = context
+        .iter()
+        .skip(evidence_start(context))
+        .rev()
+        .find(|call| {
+            call["type"] == "function_call"
+                && learning_observation(call["name"].as_str().unwrap_or(""))
+        })?;
+    if !successful_call(latest, context) {
+        return None;
+    }
+    let metadata = tool_output(context, latest).and_then(crate::app_learning::metadata)?;
+    let app_id = metadata.app_id;
     if state.guidance_app == app_id {
         return None;
     }
@@ -832,6 +841,18 @@ pub(crate) async fn experience_call(
     Some(
         json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
         "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name}),
+    )
+}
+fn learning_observation(name: &str) -> bool {
+    matches!(
+        name,
+        "phone_observe"
+            | "computer_observe"
+            | "computer_click"
+            | "computer_type"
+            | "computer_key"
+            | "computer_scroll"
+            | "computer_drag"
     )
 }
 
@@ -866,7 +887,7 @@ fn wechat_task(context: &[Value]) -> bool {
 }
 fn phone_observation(call: &Value, context: &[Value]) -> bool {
     call["type"] == "function_call"
-        && call["name"] == "phone_observe"
+        && learning_observation(call["name"].as_str().unwrap_or(""))
         && tool_output(context, call)
             .and_then(Value::as_array)
             .is_some_and(|parts| {
@@ -2968,8 +2989,12 @@ async fn recorded_tool(
         && call["name"] == "phone_observe"
         && let Ok(output) = &result
     {
-        crate::app_learning::observe(app, run, id, call["local_after_action"].is_string(), output)
-            .await?;
+        let after = call["local_after_action"].is_string()
+            || !matches!(
+                call["name"].as_str(),
+                Some("phone_observe" | "computer_observe")
+            );
+        crate::app_learning::observe(app, run, id, after, output).await?;
     }
     result
 }

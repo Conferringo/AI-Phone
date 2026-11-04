@@ -26,6 +26,12 @@ struct FakeScreen {
     paint_delay: Option<Duration>,
 }
 impl Screen for FakeScreen {
+    fn window(&self) -> Result<ai_phone_guest_runtime::screen::WindowIdentity> {
+        Ok(ai_phone_guest_runtime::screen::WindowIdentity {
+            title: self.title()?,
+            application_class: "fixture-app".into(),
+        })
+    }
     fn capture(&self) -> Result<RgbImage> {
         if self.fail_capture && !self.state.lock().unwrap().buttons.is_empty() {
             return Err("fixture capture lost after input".into());

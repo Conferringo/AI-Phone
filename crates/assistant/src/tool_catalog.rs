@@ -2,7 +2,7 @@
 use serde_json::{Value, json};
 
 pub(crate) fn experience_schema() -> Value {
-    json!({"type":"object","properties":{"app_id":{"type":"string"},"title":{"type":"string"},"procedure":{"type":"string"},"outcome":{"type":"string","enum":["verified","blocked"]},"limitations":{"type":"string"},"observation_ids":{"type":"array","items":{"type":"string"},"maxItems":12}},"required":["app_id","title","procedure","outcome","limitations","observation_ids"],"additionalProperties":false})
+    json!({"type":"object","properties":{"app_id":{"type":"string","description":"手机使用foreground_app中的包名；电脑使用真实application_id，不用窗口标题或文件名。"},"title":{"type":"string"},"procedure":{"type":"string"},"outcome":{"type":"string","enum":["verified","blocked"]},"limitations":{"type":"string"},"observation_ids":{"type":"array","items":{"type":"string"},"maxItems":12}},"required":["app_id","title","procedure","outcome","limitations","observation_ids"],"additionalProperties":false})
 }
 
 pub(crate) fn tools() -> Value {
@@ -124,7 +124,7 @@ pub(crate) fn tools() -> Value {
             json!({"id":{"type":"string"}}),
             vec!["id"]
         ),
-        json!({"type":"function","name":"app_experience_save","description":"保存/修订本轮应用使用心得候选。同一包名+标题替代旧草稿，原稿保留。提供可复现方法、真实边界与本轮观察ID；verified至少2次同应用观察且有动作后复查。结束审计通过后汇入Skill。","parameters":experience_schema()}),
+        json!({"type":"function","name":"app_experience_save","description":"保存/修订本轮应用使用心得候选。同一应用标识+标题替代旧草稿，原稿保留。提供可复现方法、真实边界与本轮观察ID；verified至少2次同应用观察且有动作后复查。结束审计通过后汇入Skill。","parameters":experience_schema()}),
         function(
             "skill_list",
             "列出Skill、启用状态、内置标记和content_sha256；先检查避免重复创建。",

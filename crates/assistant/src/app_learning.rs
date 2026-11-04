@@ -1,21 +1,10 @@
 //! Evidence-backed app experience, independent of compressed model context.
+use crate::application_identity::phone as package;
 use crate::*;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::Row;
 
-pub(crate) fn package(foreground: &str) -> Option<&str> {
-    let value = foreground.split('/').next()?.trim();
-    (value.len() < 180
-        && value.contains('.')
-        && value
-            .split('.')
-            .all(|part| !part.is_empty() && part.as_bytes()[0].is_ascii_alphabetic())
-        && value
-            .bytes()
-            .all(|c| c.is_ascii_alphanumeric() || b"._".contains(&c)))
-    .then_some(value)
-}
 fn experience_name(app_id: &str) -> String {
     format!(
         "app-experience-{}",
@@ -33,12 +22,41 @@ pub(crate) async fn recall(app: &App, app_id: &str) -> Result<Option<String>, St
         .await
         .map_err(|e| e.to_string())
 }
-fn metadata(output: &Value) -> Option<Value> {
+pub(crate) struct Metadata {
+    pub app_id: String,
+    pub device_id: String,
+    pub observation_id: String,
+}
+pub(crate) fn metadata(output: &Value) -> Option<Metadata> {
     output
         .as_array()?
         .iter()
         .filter_map(|p| serde_json::from_str::<Value>(p["text"].as_str()?).ok())
-        .find(|v| v["observation_id"].is_string() && v["foreground_app"].is_string())
+        .find_map(|value| {
+            let observation_id = value["observation_id"]
+                .as_str()
+                .filter(|id| !id.is_empty())?
+                .to_owned();
+            let app_id = application(&value)?;
+            let device_id = value["device_id"]
+                .as_str()
+                .filter(|id| !id.is_empty())
+                .or_else(|| (!app_id.starts_with("linux:")).then_some("phone-local-01"))?
+                .to_owned();
+            Some(Metadata {
+                app_id,
+                device_id,
+                observation_id,
+            })
+        })
+}
+fn application(value: &Value) -> Option<String> {
+    if let Some(phone) = value["foreground_app"].as_str().and_then(package) {
+        return Some(phone.into());
+    }
+    let desktop = value["application_id"].as_str()?;
+    (desktop.starts_with("linux:") && crate::application_identity::valid(desktop))
+        .then(|| desktop.into())
 }
 pub async fn observe(
     app: &App,
@@ -50,11 +68,8 @@ pub async fn observe(
     let Some(value) = metadata(output) else {
         return Ok(());
     };
-    let Some(app_id) = package(value["foreground_app"].as_str().unwrap_or("")) else {
-        return Ok(());
-    };
     sqlx::query("INSERT INTO app_learning_observations(observation_id,run_id,device_id,app_id,event_id,after_action,observed_at) SELECT $1,r.id,$6,$3,$4,$5,(SELECT created_at FROM harness_events WHERE id=$4) FROM runs r WHERE id=$2 ON CONFLICT DO NOTHING")
- .bind(value["observation_id"].as_str().unwrap()).bind(run).bind(app_id).bind(event).bind(after_action).bind(value["device_id"].as_str().unwrap_or("phone-local-01")).execute(&app.db).await.map_err(|e|e.to_string())?;
+ .bind(value.observation_id).bind(run).bind(value.app_id).bind(event).bind(after_action).bind(value.device_id).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(())
 }
 pub async fn context(app: &App, run: Uuid) -> Result<String, String> {
@@ -70,7 +85,7 @@ pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
     let procedure = text("procedure");
     let limitations = text("limitations");
     let outcome = text("outcome");
-    if package(&app_id) != Some(app_id.as_str())
+    if !crate::application_identity::valid(&app_id)
         || title.is_empty()
         || title.len() > 240
         || procedure.len() < 12
@@ -79,7 +94,7 @@ pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
         || !["verified", "blocked"].contains(&outcome.as_str())
     {
         return Err(
-            "经验需要真实应用包名、简短标题、具体步骤及边界；outcome为verified或blocked".into(),
+            "经验需要真实应用标识、简短标题、具体步骤及边界；outcome为verified或blocked".into(),
         );
     }
     let ids: Vec<String> = args["observation_ids"]
@@ -107,7 +122,7 @@ pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
         .iter()
         .any(|r| r.get::<String, _>("device_id") != device_id)
     {
-        return Err("同一心得不能混用不同手机的观察证据".into());
+        return Err("同一心得不能混用不同设备的观察证据".into());
     }
     let fingerprint = format!(
         "{:x}",
@@ -180,6 +195,15 @@ mod tests {
         assert_eq!(package("com.example.app/.Home"), Some("com.example.app"));
         assert_eq!(package("../../private"), None);
         assert!(metadata(&json!([{"type":"input_text","text":"I used an app"}])).is_none());
+    }
+    #[test]
+    fn desktop_observations_are_recognized_without_guessing_from_private_titles() {
+        let real = json!([{"type":"input_text","text":json!({"device_id":"desktop-local-01","observation_id":"current-frame","application_id":"linux:libreoffice-writer","title":"private-file.odt — LibreOffice Writer"}).to_string()}]);
+        assert!(
+            metadata(&real).is_some(),
+            "computer-use must enter the existing experience pipeline"
+        );
+        assert!(metadata(&json!([{"type":"input_text","text":json!({"device_id":"desktop-local-01","observation_id":"old-frame","title":"private-file.odt — LibreOffice Writer"}).to_string()}])).is_none());
     }
 }
 
@@ -305,3 +329,7 @@ pub async fn withdraw(app: &App, run: Uuid, args: &Value) -> Result<Value, Strin
         json!({"success":changed==1,"id":id,"withdrawn":changed==1,"note":"原稿及证据保留在账本；撤回稿不会参与本轮发布审计"}),
     )
 }
+
+#[cfg(test)]
+#[path = "app_learning/desktop_tests.rs"]
+mod desktop_tests;

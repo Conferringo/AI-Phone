@@ -215,7 +215,10 @@ async fn save_observation(
         .await
         .map_err(|e| e.to_string())?;
     let title = value["title"].as_str().unwrap_or("Linux desktop");
-    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256) VALUES($1,$2,$3,$4,$5,$6)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).execute(&app.db).await.map_err(|e|e.to_string())?;
+    let application_id =
+        crate::application_identity::desktop(value["application_class"].as_str().unwrap_or(""))
+            .unwrap_or_default();
+    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256,application_id) VALUES($1,$2,$3,$4,$5,$6,$7)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).bind(&application_id).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(wire::DesktopObservation {
         device_id: device.into(),
         observation_id: id.to_string(),
@@ -232,6 +235,7 @@ async fn save_observation(
             _ => wire::DesktopFrameState::Unspecified,
         } as i32,
         frame_wait_ms: value["frame_wait_ms"].as_u64().unwrap_or_default() as u32,
+        application_id,
     })
 }
 async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Result<i64> {
@@ -296,7 +300,7 @@ fn action_value(r: &wire::DesktopActionRequest) -> Result<Value> {
 fn observation_meta(o: &wire::DesktopObservation) -> Value {
     let state = wire::DesktopFrameState::try_from(o.frame_state)
         .unwrap_or(wire::DesktopFrameState::Unspecified);
-    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
+    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"application_id":o.application_id,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
 }
 async fn stored_observation(
     connection: &mut sqlx::PgConnection,
@@ -311,6 +315,7 @@ async fn stored_observation(
         width: 1280,
         height: 800,
         title: r.get("title"),
+        application_id: r.get("application_id"),
         png: tokio::fs::read(r.get::<String, _>("png_path"))
             .await
             .map_err(|e| e.to_string())?,
@@ -1622,7 +1627,8 @@ mod tests {
             sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','fixture','managed')").bind(device).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')").bind(device).execute(&app.db).await.unwrap();
             let png=include_bytes!("../../phone-runner/fixtures/ocr-probe.png");
-            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Fixture","frame_state":"stable","frame_wait_ms":320})).await.unwrap();
+            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Private document.odt","application_class":"LibreOffice-Writer","frame_state":"stable","frame_wait_ms":320})).await.unwrap();
+            assert_eq!(observation.application_id,"linux:libreoffice-writer");
             let id=Uuid::now_v7();
             sqlx::query("INSERT INTO desktop_actions(id,device_id,input_hash,status,result) VALUES($1,$2,'same-input','completed',$3)").bind(id).bind(device).bind(observation_meta(&observation)).execute(&app.db).await.unwrap();
             let mut connection=app.db.acquire().await.unwrap();
@@ -1630,6 +1636,7 @@ mod tests {
                 let cached=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
                 assert_eq!(cached.observation_id,observation.observation_id);assert_eq!(cached.png,png);
                 assert_eq!(cached.frame_state,wire::DesktopFrameState::Stable as i32);assert_eq!(cached.frame_wait_ms,320);
+                assert_eq!(cached.application_id,"linux:libreoffice-writer");
             }
             assert!(recorded_action(&mut connection,id,"different-input").await.is_err());
             for status in ["running","unknown","failed"] {
