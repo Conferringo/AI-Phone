@@ -6,6 +6,8 @@ Next.js App Router/Turbopack, React, Tailwind, shadcn/ui and GSAP provide the wo
 
 Android runs natively through Android Emulator, controlled by a Rust runner, ADB and guest bridges. Native UI targets with OCR/screenshot fallback ground actions. Bun bridges use Android gRPC and FFmpeg/X11 for JPEG frames and PCM audio. Native touch indicators/pointers are captured in the same frame. The Linux computer uses Docker, Debian/Openbox and Xvfb. A native Rust guest service owns X11 capture and input, cursor receipts, audio-process supervision, capture leases and durable notifications. FFmpeg provides screen/audio encoding. The workbench supports screenshot-based control and read-only regional zoom.
 
+The phone Runner and native boot observer share a [Rust ADB client](engineering/device-bridge.md#runner-adb-transport). Runner commands no longer spawn an ADB executable; the host SDK still provides the ADB server, and other media/setup paths retain SDK tool dependencies.
+
 Text and Markdown files open in Mousepad by default. The desktop includes file-type detection; [personal MIME associations](https://specifications.freedesktop.org/mime-apps/latest/file.html) take precedence over image defaults.
 
 Device audio uses stereo 48 kHz signed 16-bit PCM, with independent playback streams across device focus changes. The desktop's PulseAudio monitor uses a 50 ms clock window without rewinds; the Rust capture lease owns the encoder and releases it when its connection closes.

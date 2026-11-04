@@ -12,6 +12,24 @@ Each listener bounds concurrent connections. Admission has a five-second deadlin
 
 The guest peer holds one filesystem lease and records the discovery file present before authentication. Publication rejects files created, removed or changed while pairing, including changes retaining the same owner marker. If discovery was absent, atomic create-only publication also preserves a file appearing during the write. Failed publication does not delete another writer's file. Unchanged owned metadata can be replaced on resume. The lease serializes cooperating peers; replacement of an existing file is not a filesystem-wide compare-and-swap against arbitrary concurrent writers.
 
+## Runner ADB transport
+
+The phone Runner and native boot observer share `ai-phone-adb`, a Rust client for
+the existing loopback ADB server. Shell commands use ADB shell v2 with separate
+stdout, stderr and the remote exit code; screenshots retain their raw binary
+stream. This removes the Runner's per-command ADB process and its
+`AI_PHONE_ADB` executable override. The model-facing API remains protobuf.
+The implementation follows the upstream [ADB services](https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/docs/dev/services.md)
+and [shell protocol](https://android.googlesource.com/platform/packages/modules/adb/+/master/shell_protocol.h).
+
+Each operation selects the exact serial and keeps the caller's output and time
+budgets. A truncated response, missing shell exit or timeout cannot become a
+successful action. Cancellation drops the connection; the Runner retains its
+action ledger, control epoch and unknown-result handling. No command is retried
+by the client. The native SDK still owns the host ADB server, and remaining
+media/setup paths still require their documented SDK tools; this change does
+not finish Windows first-run integration or the Python/Bun migration.
+
 ## Qualification and remaining integration
 
 The component has actual two-route transfer, half-close, invalid-credential, frame-boundary and cancellation tests. Maintainer validation also ran a separately compiled Linux Rust process against an existing native Android instance, reading root identity and a real PNG through the bridge. A temporary guest tone produced nonzero gRPC PCM through the native bridge; this does not certify host loudspeaker playback. No accounts, conversations or device disks are inputs to the distributed component.

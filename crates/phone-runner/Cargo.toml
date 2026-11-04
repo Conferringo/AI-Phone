@@ -7,6 +7,7 @@ publish.workspace = true
 license.workspace = true
 
 [dependencies]
+ai-phone-adb = { path = "../adb-client" }
 ai-phone-vision = { path = "../vision" }
 ai-phone-api = { path = "../api" }
 axum = "=0.8.9"

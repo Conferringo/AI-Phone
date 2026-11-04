@@ -16,7 +16,7 @@ from prebuilt_services import supervisor_command
 
 _SPEC_SERVICES = ('emulator', 'runner', 'media', 'assistant', 'channels', 'web', 'lan')
 _SPEC_ENV_FIELDS = ('PATH', 'JAVA_HOME', 'AI_PHONE_JAVA_HOME', 'AI_PHONE_SDK_ROOT',
-                    'AI_PHONE_ADB', 'AI_PHONE_PROJECT_ROOT', 'AI_PHONE_DATA_ROOT')
+                    'AI_PHONE_PROJECT_ROOT', 'AI_PHONE_DATA_ROOT')
 
 
 def folder_for(root, name):

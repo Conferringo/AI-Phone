@@ -18,6 +18,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai-phone-adb"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "ai-phone-api"
 version = "0.0.1"
 dependencies = [
@@ -47,6 +54,7 @@ dependencies = [
 name = "ai-phone-host-runtime"
 version = "0.1.0"
 dependencies = [
+ "ai-phone-adb",
  "ai-phone-api",
  "flate2",
  "fs2",

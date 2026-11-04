@@ -16,14 +16,13 @@ use std::{
     io::Write,
     os::unix::fs::{OpenOptionsExt, PermissionsExt},
     path::PathBuf,
-    process::Stdio,
     sync::{
         Arc,
         atomic::{AtomicBool, AtomicU32, Ordering},
     },
     time::Duration,
 };
-use tokio::{io::AsyncReadExt, process::Command, sync::Mutex};
+use tokio::sync::Mutex;
 use uuid::Uuid;
 mod action_store;
 mod cursor;
@@ -75,9 +74,8 @@ impl Default for Ledger {
 }
 struct Runner {
     phone_id: String,
-    serial: String,
     media_url: String,
-    adb: PathBuf,
+    adb: ai_phone_adb::Client,
     token: String,
     ledger_path: PathBuf,
     ledger: Mutex<Ledger>,
@@ -175,37 +173,70 @@ fn save(runner: &Runner, ledger: &Ledger) -> Result<(), String> {
 }
 
 async fn adb(runner: &Runner, args: Vec<String>) -> Result<(bool, Vec<u8>, String), String> {
-    let mut command = Command::new(&runner.adb);
-    command
-        .args(["-P", "15037", "-s", &runner.serial])
-        .args(args)
-        .kill_on_drop(true)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-    let mut child = command.spawn().map_err(|e| e.to_string())?;
-    let mut stdout = child.stdout.take().ok_or("Missing stdout")?.take(2_097_153);
-    let mut stderr = child.stderr.take().ok_or("Missing stderr")?.take(65_537);
-    let mut out = Vec::new();
-    let mut errors = Vec::new();
-    let result = tokio::time::timeout(Duration::from_secs(20), async {
-        tokio::try_join!(
-            stdout.read_to_end(&mut out),
-            stderr.read_to_end(&mut errors),
-            child.wait()
-        )
-    })
-    .await
-    .map_err(|_| "ADB timeout; action outcome unknown".to_string())?
-    .map_err(|e| e.to_string())?;
-    if out.len() > 2_097_152 || errors.len() > 65_536 {
-        return Err("ADB output limit exceeded; outcome unknown".into());
+    use ai_phone_adb::{Error, Limits, Output};
+    let deadline = Duration::from_secs(20);
+    let result = match args.as_slice() {
+        [kind, command @ ..] if kind == "shell" && !command.is_empty() => {
+            runner
+                .adb
+                .shell(
+                    &command.join(" "),
+                    Limits {
+                        stdout: 2_097_152,
+                        stderr: 65_536,
+                    },
+                    deadline,
+                )
+                .await
+        }
+        [kind, command, arguments @ ..] if kind == "exec-out" => {
+            let service = format!(
+                "exec:{}{}",
+                command,
+                arguments
+                    .iter()
+                    .map(|value| format!(" {}", guest_quote(value)))
+                    .collect::<String>()
+            );
+            runner
+                .adb
+                .raw(&service, 2_097_152, deadline)
+                .await
+                .map(|stdout| Output {
+                    code: 0,
+                    stdout,
+                    stderr: vec![],
+                })
+        }
+        [kind] if kind == "get-state" => runner.adb.state(128, deadline).await.map(|mut stdout| {
+            stdout.push(b'\n');
+            Output {
+                code: 0,
+                stdout,
+                stderr: vec![],
+            }
+        }),
+        [kind] if kind == "root" => runner.adb.raw("root:", 4096, deadline).await.map(|stdout| {
+            let failed = stdout.windows(6).any(|part| part == b"cannot");
+            Output {
+                code: u8::from(failed),
+                stdout,
+                stderr: vec![],
+            }
+        }),
+        _ => return Err("Unsupported internal ADB command".into()),
+    };
+    match result {
+        Ok(output) => Ok((
+            output.code == 0,
+            output.stdout,
+            String::from_utf8_lossy(&output.stderr).into_owned(),
+        )),
+        Err(Error::Rejected(message)) => Ok((false, vec![], message)),
+        Err(error) => Err(error.to_string()),
     }
-    Ok((
-        result.2.success(),
-        out,
-        String::from_utf8_lossy(&errors).into_owned(),
-    ))
 }
+
 fn args(values: &[&str]) -> Vec<String> {
     values.iter().map(|v| (*v).to_string()).collect()
 }
@@ -945,16 +976,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ledger.controller = "manual".into();
     let runner = Arc::new(Runner {
         phone_id: std::env::var("AI_PHONE_DEVICE_ID").unwrap_or_else(|_| "phone-local-01".into()),
-        serial: std::env::var("AI_PHONE_SERIAL").unwrap_or_else(|_| "emulator-5564".into()),
         media_url: std::env::var("AI_PHONE_MEDIA_URL")
             .unwrap_or_else(|_| "http://127.0.0.1:17865".into()),
-        adb: std::env::var_os("AI_PHONE_ADB")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                std::env::var_os("AI_PHONE_SDK_ROOT")
-                    .map(|sdk| PathBuf::from(sdk).join("platform-tools/adb"))
-                    .unwrap_or_else(|| PathBuf::from("adb"))
-            }),
+        adb: ai_phone_adb::Client::new(
+            15037,
+            std::env::var("AI_PHONE_SERIAL").unwrap_or_else(|_| "emulator-5564".into()),
+        )?,
         token,
         vision: ai_phone_vision::program(&root),
         grounding: Mutex::new(grounding::GroundingState::default()),
@@ -1037,16 +1064,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod observation_tests {
     use super::*;
-    use std::time::Instant;
+    use std::{process::Stdio, time::Instant};
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        process::Command,
+    };
 
     const XML: &str = "<?xml version='1.0' encoding='UTF-8'?><hierarchy rotation=\"0\"><node text=\"current\" /></hierarchy>";
 
-    struct Fixture(PathBuf);
+    struct Fixture(PathBuf, std::sync::Mutex<Vec<tokio::task::JoinHandle<()>>>);
     impl Fixture {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!("ai-phone-observe-{}", Uuid::new_v4()));
             std::fs::create_dir(&path).unwrap();
-            Self(path)
+            Self(path, std::sync::Mutex::new(vec![]))
         }
         fn executable(&self, name: &str, source: &str) -> PathBuf {
             let path = self.0.join(name);
@@ -1057,9 +1088,8 @@ mod observation_tests {
         fn runner(&self, source: &str) -> Runner {
             Runner {
                 phone_id: "phone-local-01".into(),
-                serial: "emulator-5564".into(),
                 media_url: "http://127.0.0.1:0".into(),
-                adb: self.executable("adb", source),
+                adb: self.adb_server(source),
                 token: "test-only".into(),
                 vision: self.0.join("unavailable-ocr"),
                 grounding: Mutex::new(grounding::GroundingState::default()),
@@ -1074,9 +1104,72 @@ mod observation_tests {
                 local: reqwest::Client::builder().no_proxy().build().unwrap(),
             }
         }
+        fn adb_server(&self, source: &str) -> ai_phone_adb::Client {
+            let program = self.executable("adb-fixture", source);
+            let socket = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).unwrap();
+            let port = socket.local_addr().unwrap().port();
+            socket.set_nonblocking(true).unwrap();
+            let listener = tokio::net::TcpListener::from_std(socket).unwrap();
+            let task = tokio::spawn(async move {
+                let mut workers = tokio::task::JoinSet::new();
+                loop {
+                    tokio::select! {
+                        accepted=listener.accept()=>{
+                            let Ok((socket,_))=accepted else { break };
+                            let program=program.clone();workers.spawn(fake_adb(socket,program));
+                        }
+                        _=workers.join_next(),if !workers.is_empty()=>{}
+                    }
+                }
+            });
+            self.1.lock().unwrap().push(task);
+            ai_phone_adb::Client::new(port, "emulator-5564".into()).unwrap()
+        }
+    }
+    async fn fake_request(socket: &mut tokio::net::TcpStream) -> String {
+        let mut header = [0; 4];
+        socket.read_exact(&mut header).await.unwrap();
+        let length = usize::from_str_radix(std::str::from_utf8(&header).unwrap(), 16).unwrap();
+        let mut body = vec![0; length];
+        socket.read_exact(&mut body).await.unwrap();
+        socket.write_all(b"OKAY").await.unwrap();
+        String::from_utf8(body).unwrap()
+    }
+    async fn fake_packet(socket: &mut tokio::net::TcpStream, id: u8, body: &[u8]) {
+        socket.write_u8(id).await.unwrap();
+        socket.write_u32_le(body.len() as u32).await.unwrap();
+        socket.write_all(body).await.unwrap();
+    }
+    async fn fake_adb(mut socket: tokio::net::TcpStream, program: PathBuf) {
+        assert_eq!(
+            fake_request(&mut socket).await,
+            "host:transport:emulator-5564"
+        );
+        let service = fake_request(&mut socket).await;
+        let text = service.strip_prefix("shell,v2,raw:").unwrap();
+        let mut close = [0; 5];
+        socket.read_exact(&mut close).await.unwrap();
+        assert_eq!(close, [4, 0, 0, 0, 0]);
+        let mut command = Command::new(program);
+        command
+            .args(["-P", "15037", "-s", "emulator-5564", "shell", text])
+            .kill_on_drop(true)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        let mut byte = [0];
+        let output = tokio::select! {
+            result=command.output()=>result.unwrap(),
+            _=socket.read(&mut byte)=>return,
+        };
+        fake_packet(&mut socket, 1, &output.stdout).await;
+        fake_packet(&mut socket, 2, &output.stderr).await;
+        fake_packet(&mut socket, 3, &[output.status.code().unwrap_or(255) as u8]).await;
     }
     impl Drop for Fixture {
         fn drop(&mut self) {
+            for task in self.1.get_mut().unwrap().drain(..) {
+                task.abort();
+            }
             let _ = std::fs::remove_dir_all(&self.0);
         }
     }
@@ -1233,8 +1326,8 @@ mod observation_tests {
             }
             CompletionFault::Snapshot => "mkdir \"$base/ledger.tmp\"".into(),
         };
-        // This is the only executable supplied to Runner. It accepts HOME only,
-        // never invokes a host ADB, and confines its writes to its own directory.
+        // The TCP peer fixture accepts HOME only, never invokes a host ADB,
+        // and confines its writes to its own directory.
         let script = format!(
             r#"#!/bin/sh
 set -eu
@@ -1480,7 +1573,7 @@ printf 'home-completed'
     }
 
     #[tokio::test]
-    async fn host_deadline_kills_hung_adb_and_returns_empty_tree() {
+    async fn host_deadline_closes_transport_and_stops_its_fixture() {
         let fixture = Fixture::new();
         let pid_file = fixture.0.join("pid");
         let runner = fixture.runner(&format!(
@@ -1504,7 +1597,7 @@ printf 'home-completed'
             }
             tokio::time::sleep(Duration::from_millis(25)).await;
         }
-        panic!("timed-out ADB child must be terminated");
+        panic!("timed-out transport must close its owned peer command");
     }
 
     #[tokio::test]
