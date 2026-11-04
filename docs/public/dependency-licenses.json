@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "97f41833cbff1f4f3f76afa0abe6b5c2b69883e57114292eeb54f70ce289f67e",
+    "Cargo.lock": "7d7299c3fb9e9e1071c4e0341e759a37d2aa243a340c9a5f80b5e4749d197a13",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "21cafd72585f8102fcb08cc6a5ed007a67dd7f04ae47d5ac5df7f3b6f8f13fd1"
+    "apps/client/src-tauri/Cargo.lock": "13c7815a4ccbfa67bf92298b7c9188437a7bb3df9b56b96e7a3f29132877f5f2"
   },
   "rust": [
     {
@@ -1734,7 +1734,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -2010,7 +2011,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -2083,7 +2085,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -2793,7 +2796,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -3446,7 +3450,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -4286,7 +4291,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -4865,7 +4871,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5217,7 +5224,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5347,7 +5355,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5362,7 +5371,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5377,7 +5387,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5392,7 +5403,8 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5402,7 +5414,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5412,7 +5425,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5422,7 +5436,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5432,7 +5447,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5442,7 +5458,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5452,7 +5469,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5462,7 +5480,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5472,7 +5491,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -5482,7 +5502,8 @@
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "notices": [],
       "workspaces": [
-        "Cargo.toml"
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {

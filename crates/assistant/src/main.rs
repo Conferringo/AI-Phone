@@ -130,26 +130,8 @@ fn db_error(_: impl std::fmt::Display) -> Response {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args_os().skip(1).collect();
-    if arguments
-        .first()
-        .is_some_and(|value| value == "--service-supervision-contract")
-    {
-        if arguments.len() != 1 {
-            return Err("service_supervision_arguments".into());
-        }
-        println!("{}", ai_phone_host_runtime::supervision::CONTRACT);
-        return Ok(());
-    }
-    if arguments
-        .first()
-        .is_some_and(|value| value == "--supervise")
-    {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()?;
-        return runtime
-            .block_on(ai_phone_host_runtime::supervision::run(&arguments[1..]))
-            .map_err(Into::into);
+    if let Some(result) = ai_phone_host_runtime::component::run(&arguments) {
+        return result.map_err(Into::into);
     }
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()

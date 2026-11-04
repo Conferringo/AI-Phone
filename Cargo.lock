@@ -69,8 +69,10 @@ dependencies = [
 name = "ai-phone-host-runtime"
 version = "0.1.0"
 dependencies = [
+ "ai-phone-api",
  "flate2",
  "fs2",
+ "prost",
  "rustix",
  "serde",
  "serde_json",
