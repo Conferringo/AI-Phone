@@ -6,7 +6,7 @@ use super::{
 use crate::tool_catalog::tools;
 use serde_json::{Value, json};
 
-pub const GUI_GUIDANCE: &str = "需要设备操作或联网检索时，必须在真实设备中完成：手机用phone-use，电脑用computer-use；搜索资料应打开设备浏览器，应用内搜索使用对应应用。不得用模型内置搜索、命令抓取或工作容器替代。workspace_read/write/list、知识库和Skill管理仍可使用。直接执行下一步；工具已返回动作后的新画面时不重复观察，不输出冗长引导。普通聊天不做无关操作。";
+pub const GUI_GUIDANCE: &str = "需要设备操作或联网检索时，必须在真实设备中完成：手机用phone-use，电脑用computer-use；搜索资料应打开设备浏览器，应用内搜索使用对应应用。不得用模型内置搜索、命令抓取或工作容器替代。workspace_read/write/list、知识库和Skill管理仍可使用。直接执行下一步；工具已返回动作后的新画面时不重复观察，不输出冗长引导。普通聊天不做无关操作。最终只报告用户目标与实际限制；后台学习由验收阶段处理，不自行声明是否已更新经验。";
 
 pub fn command_tool(name: &str) -> bool {
     matches!(

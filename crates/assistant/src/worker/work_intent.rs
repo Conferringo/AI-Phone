@@ -105,6 +105,7 @@ pub(super) fn positive_clauses(request: &str) -> impl Iterator<Item = &str> {
                 "不保存",
                 "不下载",
                 "不处理",
+                "不操作",
                 "不编写",
                 "不浏览",
                 "不联网",

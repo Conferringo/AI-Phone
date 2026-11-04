@@ -876,7 +876,9 @@ fn wechat_task(context: &[Value]) -> bool {
     let request = latest_request(context)
         .to_lowercase()
         .replace("企业微信", "");
-    if request.contains("微信") || request.contains("wechat") {
+    if work_intent::positive_clauses(&request)
+        .any(|clause| clause.contains("微信") || clause.contains("wechat"))
+    {
         return true;
     }
     if latest_grounding(context).is_some_and(|value| {
@@ -3708,6 +3710,17 @@ mod verification_tests {
     fn wechat_routing_uses_current_request_actual_app_or_notification_source() {
         assert!(wechat_task(&request("回复微信里的消息")));
         assert!(!wechat_task(&request("在企业微信绑定机器人")));
+        for text in [
+            "在小红书搜索，不操作微信",
+            "不要打开微信，只看小红书",
+            "Do not open WeChat; search Xiaohongshu",
+        ] {
+            assert!(
+                !wechat_task(&request(text)),
+                "negative app reference must not load unrelated guidance: {text}"
+            );
+        }
+        assert!(wechat_task(&request("回复微信，但不要发图片")));
         let mut context = request("打开微信");
         context.extend(request("现在打开设置"));
         assert!(
