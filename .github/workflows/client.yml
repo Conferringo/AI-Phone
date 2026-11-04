@@ -25,7 +25,7 @@ concurrency:
 jobs:
   macos-arm64:
     if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     env:
       CARGO_BUILD_JOBS: '2'
@@ -39,6 +39,7 @@ jobs:
           node-version: '22'
       - name: Toolchain and locked dependencies
         run: |
+          test "$(uname -m)" = arm64
           python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
@@ -196,7 +197,7 @@ jobs:
   full-macos-arm64:
     if: github.event_name == 'workflow_dispatch' && inputs.complete_macos_factory
     needs: native-arm-images
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 120
     permissions:
       contents: write
