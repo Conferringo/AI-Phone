@@ -6025,8 +6025,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 11306,
-      "sha256": "c5a5f4f20afad002295ba4f8fb15c57c7b9f16bc550752092a3a7ac9597d8600"
+      "size": 11478,
+      "sha256": "63ef8310541cfa15240a4e2b11dc5fed39fee487a5342ab532017103dd0c430f"
     },
     {
       "path": "scripts/test_macos_disk_image.py",

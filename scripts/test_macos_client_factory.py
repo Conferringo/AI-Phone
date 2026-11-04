@@ -56,7 +56,9 @@ class MacClientFactoryTests(unittest.TestCase):
             root=Path(temporary);fixture(root);cache=root/'cache';cache.mkdir()
             def qualify(_root,payload,installation,_receipt):
                 return android_runtime.verify_sdk(android_runtime.stage(payload,installation))
-            with patch('android_component_factory.qualify',side_effect=qualify):
+            with patch('android_component_factory.host_key',return_value='macos-arm64'), \
+                 patch('android_runtime.host_key',return_value='macos-arm64'), \
+                 patch('android_component_factory.qualify',side_effect=qualify):
                 payload,receipt=mac.prepare_android(root,cache)
             self.assertEqual(receipt['compression_preset'],9)
             self.assertTrue(payload.is_file())
