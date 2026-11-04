@@ -2920,8 +2920,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/tests.rs",
-      "size": 15218,
-      "sha256": "9e6f19ad97aaf1c373612f1129c78bc3cfad40957fc5c6c0389a86873f26f0ad"
+      "size": 15599,
+      "sha256": "c5a63fd44d330057e74571325b975d31b95eba064e32c03223094dd105a66a01"
     },
     {
       "path": "crates/host-runtime/src/archive.rs",

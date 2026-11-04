@@ -467,14 +467,20 @@ fn native_windows_junction_is_not_a_component_directory() {
     let mut install = Installation::lock(&home).unwrap();
     let outside = temp.path().join("outside");
     fs::create_dir(&outside).unwrap();
-    let status = std::process::Command::new(
-        std::path::PathBuf::from(std::env::var_os("SystemRoot").unwrap()).join("System32/cmd.exe"),
+    fs::write(outside.join("sentinel"), b"keep").unwrap();
+    let output = std::process::Command::new(
+        std::path::PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+            .join("System32/WindowsPowerShell/v1.0/powershell.exe"),
     )
     .current_dir(temp.path())
-    .args(["/D", "/C", "mklink", "/J", "home\\components", "outside"])
-    .status()
+    .args(["-NoLogo","-NoProfile","-NonInteractive","-Command",
+        "New-Item -ItemType Junction -Path 'home\\components' -Target (Join-Path $PWD 'outside') -ErrorAction Stop | Out-Null"])
+    .output()
     .unwrap();
-    assert!(status.success());
+    assert!(output.status.success(), "junction fixture: {output:?}");
+    assert!(crate::filesystem::alias(
+        &fs::symlink_metadata(home.join("components")).unwrap()
+    ));
     assert!(
         prepare(
             &mut install,
@@ -486,6 +492,6 @@ fn native_windows_junction_is_not_a_component_directory() {
         )
         .is_err()
     );
-    assert!(fs::read_dir(outside).unwrap().next().is_none());
+    assert_eq!(fs::read(outside.join("sentinel")).unwrap(), b"keep");
     fs::remove_dir(home.join("components")).unwrap();
 }
