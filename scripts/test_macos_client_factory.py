@@ -49,6 +49,20 @@ class MacClientFactoryTests(unittest.TestCase):
             with self.subTest(missing=missing),self.assertRaises(ValueError):
                 mac.checked_delivery([name for name in COMPONENTS if name!=missing])
 
+    def test_complete_sdk_is_dense_and_raw_qualification_files_are_reclaimed(self):
+        import android_runtime
+        from test_android_macos_factory import fixture
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);fixture(root);cache=root/'cache';cache.mkdir()
+            def qualify(_root,payload,installation,_receipt):
+                return android_runtime.verify_sdk(android_runtime.stage(payload,installation))
+            with patch('android_component_factory.qualify',side_effect=qualify):
+                payload,receipt=mac.prepare_android(root,cache)
+            self.assertEqual(receipt['compression_preset'],9)
+            self.assertTrue(payload.is_file())
+            self.assertFalse((cache/'android-qualification').exists())
+            self.assertEqual(list((cache/'android').glob('*.zip')),[])
+
     def test_compiled_dmg_requires_full_inventory_and_matching_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);(root/'config').mkdir();(root/'dist').mkdir()

@@ -3385,8 +3385,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4391,
-      "sha256": "21ba6ffb5db7357f71659134f4e3c817f05f6f395a719a78192824f817e9a081"
+      "size": 5035,
+      "sha256": "7be37e4623d7601f97d9b43412a244cb63f1f1b64bb21917181d92275a88811f"
     },
     {
       "path": "docs/public/engineering/app-guides.md",
@@ -4865,8 +4865,8 @@
     },
     {
       "path": "scripts/android_component_factory.py",
-      "size": 6084,
-      "sha256": "292d6231555e893e557d266a87b51dea020a9e775fb1397dec8c60db6cccb3b5"
+      "size": 6137,
+      "sha256": "20cfadb0086d817c6c0171410c4656edef453354c5f5a267f88029e7b17f0d4d"
     },
     {
       "path": "scripts/android_factory_stock.py",
@@ -4885,8 +4885,8 @@
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 12162,
-      "sha256": "8e5e2b2413f980282a472126468409d6ce33e54616141f8342a84705deb15eec"
+      "size": 12204,
+      "sha256": "6ecb08928aab12c8c99db44ccfeeec5ebafb221f4fb84ca70c4cac795b4c61ca"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -5490,8 +5490,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 8017,
-      "sha256": "7f33dde1be0ea059f3399e7d821434039c2aff6c2315fc91ea5efbf1882f82a5"
+      "size": 8038,
+      "sha256": "b7392c7b47b3944b5a92f111fafff09c0a53d1352e6e4a3820790b351afa5283"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5755,8 +5755,8 @@
     },
     {
       "path": "scripts/test_android_compression_profiles.py",
-      "size": 1850,
-      "sha256": "0f56424a08923d64167a7236526893d6efe8f17b5396d758fa7908e4eab4dc55"
+      "size": 2223,
+      "sha256": "646a57ab92114870c56f0a19454bc2c8647c7b17ab4bad30771bc90a7066d789"
     },
     {
       "path": "scripts/test_android_input.py",
@@ -6025,8 +6025,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 10445,
-      "sha256": "9261be87ed55b4940839d863e4f90e012eb163e279ae1dc596c068d15be56be6"
+      "size": 11306,
+      "sha256": "c5a5f4f20afad002295ba4f8fb15c57c7b9f16bc550752092a3a7ac9597d8600"
     },
     {
       "path": "scripts/test_macos_disk_image.py",

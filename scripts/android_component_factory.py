@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from android_runtime import ABIS,build as build_runtime,checked_compression
+from android_runtime import ABIS,COMPRESSION_PRESETS,build as build_runtime,checked_compression
 from android_sdk_archive import unpack_sdk
 from client_host import download
 from host_platform import host_key
@@ -95,7 +95,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent)
     parser.add_argument('--work',type=Path,required=True);parser.add_argument('--receipt',type=Path)
     parser.add_argument('--verify-programs',action='store_true')
-    parser.add_argument('--compression-preset',type=int,choices=(3,6),default=6,help='XZ preset: 3 for component checks, 6 for complete distributions')
+    parser.add_argument('--compression-preset',type=int,choices=COMPRESSION_PRESETS,default=6,help='XZ preset: 3 for component checks, 6 for normal builds, 9 for denser distributions')
     args=parser.parse_args();output,result=build(args.root,args.work,compression_preset=args.compression_preset)
     if args.verify_programs:result['qualification']=qualify(args.root,output,args.work/'installation',result)
     if args.receipt:
