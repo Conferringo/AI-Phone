@@ -10,17 +10,19 @@ The existing worker queues the matching built-in `skill_read` before loading ena
 
 Shipped guides do not replace the user's learned Skill, manual notes or knowledge documents. Candidate publication still requires the current task's real observations and completion verification. Corrections can revise a method; complete long-term merging, effectiveness measurement and retirement are still unfinished.
 
-## Qualified scope
+## Evidence and limits
 
 | Application | Shipped guidance and evidence | Limits |
 | --- | --- | --- |
 | WeChat | Existing notification, conversation and reply guidance | The complete real incoming work request → GUI office work → original-chat delivery scenario remains unqualified. |
 | Xiaohongshu | Android 9.51.0: GUI search, open a result, inspect its visible title, dismiss an optional login sheet and return to results | Read-only flow only. Full articles/comments behind login, publishing, private messages and commerce are not qualified. No fixed coordinates or personal content are shipped. |
 | LibreOffice Writer | Real GUI find, input-focus recovery, result verification and closing the find bar; guided experience followed by automatic reuse | Does not certify document editing, replacement, formatting or export. |
-| LibreOffice Calc | Linux 25.2.3: Chinese tabular input, multiplication and SUM formulas, formula-bar checks and native ODS saving; saved formulas and cached results independently inspected | Does not certify charts, complex formatting or all spreadsheet formats. |
-| LibreOffice Impress | Linux 25.2.3: three slides with separate title/subtitle/body placeholders, native ODP saving and per-slide checks; one method automatically retained by completion verification | Broad design proficiency, animation and all export formats remain unqualified. |
-| LibreOffice Draw | A guided Linux 25.2.3 flow created three labeled rectangles and two right-pointing arrows; native ODG geometry and arrow markers independently checked | The unguided attempt failed after repeated tool and focus mistakes. Guided completion was still slow; this is not general autonomous drawing certification. |
+| LibreOffice Calc | Linux 25.2.3: Chinese tabular input, multiplication and SUM formulas, formula-bar checks, native ODS saving and one XLSX export; saved formulas and cached results independently inspected | Does not certify charts, complex formatting or all spreadsheet formats. |
+| LibreOffice Impress | Linux 25.2.3: three slides with separate title/subtitle/body placeholders, native ODP saving and one PPTX export with per-slide checks; one method automatically retained by completion verification | Broad design proficiency, animation and other export formats remain unqualified. |
+| LibreOffice Draw | A guided Linux 25.2.3 flow created three labeled rectangles and two right-pointing arrows; native ODG geometry and arrow markers independently checked | The initial unguided attempt and a later ordinary task using the guide both failed. Guided completion was slow; autonomous drawing remains unqualified. |
 | Douyin, QQ, DingTalk, WeCom, Meituan, bilibili | General phone-use tools are available | Per-application scenarios have not been individually qualified. There are no placeholder guides claiming otherwise. |
+
+These are individual functionality samples. Office operation is still slow: repeated tool selection, format-list navigation and verification can create unnecessary model turns. This is not a performance or general productivity qualification.
 
 Guest applications, versions, language and account state can change the UI. Controls and screenshots from the current observation determine the next action. A visible title does not establish reading an entire article; a queued or locally visible message does not establish recipient receipt.
 
@@ -33,4 +35,4 @@ Guest applications, versions, language and account state can change the UI. Cont
 
 ## 中文
 
-内置专项指南和用户自己的经验分别保留，按真实观察到的包名或电脑应用标识加载，沿用同一工具与检查点，不新增学习Agent。已有小红书只读搜索/查看标题/返回、Writer查找、Calc公式表格与ODS保存、Impress多页ODP的真实演练；Draw首轮失败，指导后完成ODG流程图但效率仍低，不能称通用自主绘图通过。微信完整办公交付及其他App仍未逐项通过。指南不能代替当前画面、真实操作和完成核验，也不能将经验积累称为模型权重训练。
+内置专项指南和用户自己的经验分别保留，按真实观察到的包名或电脑应用标识加载，沿用同一工具与检查点，不新增学习Agent。已有小红书只读搜索/查看标题/返回、Writer查找、Calc公式表格与ODS/XLSX保存、Impress多页ODP/PPTX的真实演练；Draw首轮失败，指导后完成ODG流程图；后续普通任务虽读到指南仍失败，自主绘图尚不可靠。微信完整办公交付及其他App仍未逐项通过。指南不能代替当前画面、真实操作和完成核验，也不能将经验积累称为模型权重训练。

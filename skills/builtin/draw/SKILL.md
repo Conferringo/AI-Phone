@@ -3,7 +3,7 @@ name: draw
 description: Draw labeled shapes and arrow connections in real LibreOffice Draw; avoid repeated icon guessing.
 ---
 
-Use computer-use with the observed application_id `linux:libreoffice-draw`. A guided LibreOffice 25.2.3 Linux exercise produced three labeled rectangles and two right-pointing arrows, saved as native ODG. The unguided attempt failed after repeated tool/field mistakes; this guide does not certify general autonomous drawing or efficient design work.
+Use computer-use with the observed application_id `linux:libreoffice-draw`. A guided LibreOffice 25.2.3 Linux exercise produced three labeled rectangles and two right-pointing arrows, saved as native ODG. The initial unguided attempt failed after repeated tool/field mistakes. A later ordinary task with this guide also failed during arrow styling and localization. This guide records exercised methods; it does not certify reliable autonomous drawing or efficient design work.
 
 Identify the outline rectangle tool from the current toolbar, not from remembered coordinates or a different shape-group icon. Draw one visible shape inside the white page and confirm its outline before adding more. With the shape selected, F2 enters its text; Escape leaves text editing. Only use Ctrl+A to replace a label after confirming text-edit focus. On the canvas it selects objects instead.
 

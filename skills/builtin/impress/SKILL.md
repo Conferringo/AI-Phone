@@ -3,7 +3,7 @@ name: impress
 description: Build and verify real multi-slide LibreOffice Impress presentations with editable placeholders.
 ---
 
-Use computer-use with the observed application_id `linux:libreoffice-impress`. The exercised baseline is LibreOffice 25.2.3 on Linux: three slides, Chinese title/subtitle/body text, slide insertion, native ODP saving and checking each saved slide. This does not certify arbitrary templates, animations, charts or export formats.
+Use computer-use with the observed application_id `linux:libreoffice-impress`. The exercised baseline is LibreOffice 25.2.3 on Linux: three slides, Chinese title/subtitle/body text, slide insertion, native ODP saving, one genuine PPTX export and checking each saved slide. This does not certify arbitrary templates, animations, charts or other export formats.
 
 Open File → New → Presentation. If a template chooser appears, dismiss it to work with a blank presentation. Preserve the other open documents.
 

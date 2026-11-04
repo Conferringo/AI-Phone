@@ -3,7 +3,7 @@ name: calc
 description: Create, calculate and save real LibreOffice Calc spreadsheets through the Linux GUI.
 ---
 
-Use computer-use with the observed application_id `linux:libreoffice-calc`. The exercised baseline is LibreOffice 25.2.3 on Linux: a new spreadsheet, Chinese text, numeric cells, multiplication and SUM formulas, formula-bar verification and native ODS saving. Other formats and advanced spreadsheet features need their own checks.
+Use computer-use with the observed application_id `linux:libreoffice-calc`. The exercised baseline is LibreOffice 25.2.3 on Linux: a new spreadsheet, Chinese text, numeric cells, multiplication and SUM formulas, formula-bar verification and native ODS saving and a genuine XLSX export with its saved formula and cached value independently inspected. Advanced spreadsheet features and other formats need their own checks.
 
 Open File → New → Spreadsheet without replacing an existing document. Select the intended start cell before pasting tab-separated columns and newline-separated rows with computer_type. Pasting can open Text Import asynchronously: an unchanged frame does not justify pasting again. Observe the actual dialog, check separated columns and the preview, and enable formula evaluation when formulas are intended. Confirm the import once and inspect the resulting sheet.
 

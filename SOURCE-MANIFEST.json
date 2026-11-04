@@ -3380,8 +3380,8 @@
     },
     {
       "path": "docs/public/engineering/app-guides.md",
-      "size": 4876,
-      "sha256": "cfc4c2d5380ca6e0e643d54ffa46519ec9576e8cc1c2a3a003a38bb5962e655f"
+      "size": 5190,
+      "sha256": "87902d17f4a23740bd163f9ed1ae5b3c1e72ecb88c825f73b6f04a5bbdd404f9"
     },
     {
       "path": "docs/public/engineering/app-learning.md",
@@ -6305,8 +6305,8 @@
     },
     {
       "path": "skills/builtin/calc/SKILL.md",
-      "size": 1782,
-      "sha256": "9b930263e9c8793557838201b019b9865278692ce86e1751245bd8b9aec67b04"
+      "size": 1872,
+      "sha256": "837fa65204fc742a12ae0a900be0d8ee4c518debcde38dc8bf941f64261c8ce7"
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
@@ -6320,8 +6320,8 @@
     },
     {
       "path": "skills/builtin/draw/SKILL.md",
-      "size": 2143,
-      "sha256": "0bfeca8ddb95cb5b14ded5c2153410e65b27bb5de501b789d83ef8677444e4bd"
+      "size": 2271,
+      "sha256": "8ba26ce9a654eba8473361713c7d8828d0eafbaedf29ac67a025c4e7c3dd5cc0"
     },
     {
       "path": "skills/builtin/files-android/SKILL.md",
@@ -6330,8 +6330,8 @@
     },
     {
       "path": "skills/builtin/impress/SKILL.md",
-      "size": 1592,
-      "sha256": "a5c14763794483fafebafb39b2144ab1875af8f183596237fb532241da9d2736"
+      "size": 1623,
+      "sha256": "a74e7914208213916d2de6e98c0ebc6ddc3e6400efd147e80581fe25d53c10f8"
     },
     {
       "path": "skills/builtin/phone-use/SKILL.md",
