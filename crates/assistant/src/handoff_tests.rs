@@ -670,3 +670,25 @@ async fn canceling_the_source_stops_its_queued_or_running_delegation_without_era
         }).await;
     }
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; cable authority does not grant another Agent's GUI"]
+async fn a_task_can_discover_and_connect_an_owned_computer_without_stealing_its_agent_control() {
+    database_case(|app|async move {
+        let f=Fixture::new(app).await;
+        desktop::link(&f.app,wire::DeviceLinkRequest{source_device_id:registry::PHONE.into(),target_device_id:COMPUTER.into(),connected:false}).await.unwrap();
+        let call=json!({"name":"device_list"});
+        let result=desktop::tool(&f.app,f.source_run,&call,&json!({})).await.unwrap();
+        let state:Value=serde_json::from_str(result[0]["text"].as_str().unwrap()).unwrap();
+        let computer=state["devices"].as_array().unwrap().iter().find(|d|d["device_id"]==COMPUTER).expect("notification work must discover the owner's installed receiving computer before the cable exists");
+        assert_eq!(computer["can_control"],false);assert_eq!(computer["can_handoff"],true);
+        let args=json!({"source_device_id":registry::PHONE,"target_device_id":COMPUTER,"connected":true});
+        desktop::tool(&f.app,f.source_run,&json!({"name":"device_link"}),&args).await.unwrap();
+        assert!(desktop::file_authorized(&f.app,f.source_run,COMPUTER).await.is_ok());
+        assert!(desktop::authorized(&f.app,f.source_run,COMPUTER).await.is_err(),"a data cable must not grant GUI control");
+        sqlx::query("INSERT INTO devices(id,name,owner_id,kind,system,runtime_state) VALUES('foreign-fixture','Foreign','another-owner','desktop','fixture','managed')").execute(&f.app.db).await.unwrap();
+        let result=desktop::tool(&f.app,f.source_run,&call,&json!({})).await.unwrap();let visible:Value=serde_json::from_str(result[0]["text"].as_str().unwrap()).unwrap();
+        assert!(!visible["devices"].as_array().unwrap().iter().any(|d|d["device_id"]=="foreign-fixture"));
+        assert!(desktop::tool(&f.app,f.source_run,&json!({"name":"device_link"}),&json!({"source_device_id":registry::PHONE,"target_device_id":"foreign-fixture","connected":true})).await.is_err());
+    }).await;
+}

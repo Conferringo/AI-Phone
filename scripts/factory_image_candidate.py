@@ -105,6 +105,7 @@ def upload_plan(root, report, source):
 
 def asset_ready(row):
     return (row.get('state') == 'uploaded' and type(row.get('size')) is int
+            and type(row.get('id')) is int and row['id'] > 0
             and 0 < row['size'] < ASSET_LIMIT
             and re.fullmatch(r'sha256:[0-9a-f]{64}', row.get('digest', '')) is not None)
 
@@ -118,16 +119,19 @@ def checked_assets(rows, identity):
     return assets
 
 
-def checked_remote(value, tag, identity, source):
+def checked_remote(value, tag, identity, source, release_id):
     pattern = 'candidate-'+re.escape(source[:12])+r'-[0-9]+-[0-9a-f]{32}'
-    if (re.fullmatch('[0-9a-f]{40}', source) is None or re.fullmatch(pattern, tag) is None
-            or value.get('draft') is not True or value.get('published_at') is not None
-            or value.get('target_commitish') != source or value.get('tag_name') != tag):
+    if (type(release_id) is not int or release_id <= 0 or re.fullmatch('[0-9a-f]{40}', source) is None
+            or re.fullmatch(pattern, tag) is None):
+        raise ValueError('Factory handoff is not an owned unpublished source-matched draft')
+    expected = {'id': release_id, 'draft': True, 'published_at': None,
+                'target_commitish': source, 'tag_name': tag}
+    if any(type(value.get(key)) is not type(item) or value.get(key) != item for key, item in expected.items()):
         raise ValueError('Factory handoff is not an owned unpublished source-matched draft')
     return checked_assets(value.get('assets', []), identity)
 
 
-def github(*arguments):
+def github(*arguments, output=None):
     repository = os.environ.get('GITHUB_REPOSITORY', '')
     if re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repository) is None:
         raise ValueError('Explicit GitHub factory repository required')
@@ -136,25 +140,36 @@ def github(*arguments):
         command[2] = 'repos/'+repository+'/'+arguments[1]
     else:
         command += ['--repo', repository]
-    return subprocess.check_output(command, text=True)
+    if output is None:
+        return subprocess.check_output(command, text=True)
+    with Path(output).open('xb') as stream:
+        subprocess.run(command, stdout=stream, check=True)
+    return ''
 
 
-def fetch(root, tag, identity, source, folder):
-    remote = json.loads(github('api', 'releases/tags/'+tag))
-    assets = checked_remote(remote, tag, identity, source)
+def fetch(root, tag, identity, source, folder, *, release_id):
+    remote = json.loads(github('api', 'releases/'+str(release_id)))
+    assets = checked_remote(remote, tag, identity, source, release_id)
     folder = Path(folder)
     folder.mkdir(parents=True)
-    github('release', 'download', tag, '--dir', str(folder), '--pattern', BODY, '--pattern', METADATA)
+    for name in [METADATA, BODY]:
+        github('api', 'releases/assets/'+str(assets[name]['id']), '-H', 'Accept: application/octet-stream', output=folder/name)
     _payload, value = checked_component(root, folder, identity, source)
     if not delivery.matching_asset(value['artifact'], assets[BODY]):
         raise ValueError('Downloaded factory image differs from its remote asset')
     return folder
 
 
-def discard(tag, identity, source):
-    remote = json.loads(github('api', 'releases/tags/'+tag))
-    checked_remote(remote, tag, identity, source)
-    github('release', 'delete', tag, '--cleanup-tag', '--yes')
+def discard(tag, identity, source, *, release_id):
+    remote = json.loads(github('api', 'releases/'+str(release_id)))
+    checked_remote(remote, tag, identity, source, release_id)
+    refs = json.loads(github('api', 'git/matching-refs/tags/'+tag))
+    exact = [row for row in refs if row.get('ref') == 'refs/tags/'+tag]
+    if len(exact) > 1 or any(row.get('object',{}).get('type') != 'commit' or row.get('object',{}).get('sha') != source for row in exact):
+        raise ValueError('Factory candidate tag does not name its owned source commit')
+    if exact:
+        github('api', 'git/refs/tags/'+tag, '--method', 'DELETE')
+    github('api', 'releases/'+str(release_id), '--method', 'DELETE')
 
 
 def build(root, work, source):
@@ -178,16 +193,29 @@ def build(root, work, source):
     return stage(root, payload, source)
 
 
-def main(arguments=None):
+def parse_arguments(arguments):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['build', 'plan', 'fetch', 'discard'])
     parser.add_argument('input')
     parser.add_argument('--identity')
+    parser.add_argument('--release-id', type=int)
     parser.add_argument('--work', type=Path)
     parser.add_argument('--result', type=Path, help='Write the machine-readable result separately from build logs')
     args = parser.parse_args(arguments)
     if args.operation == 'build' and args.result is None:
         parser.error('build requires --result')
+    if args.operation in ('fetch','discard'):
+        if args.release_id is None or args.release_id <= 0:
+            parser.error('fetch/discard require a positive --release-id from the producer')
+        if args.identity is None:
+            parser.error('--identity required')
+    if args.operation == 'fetch' and args.work is None:
+        parser.error('--work required')
+    return args
+
+
+def main(arguments=None):
+    args = parse_arguments(arguments)
     source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     if args.operation == 'build':
         path = build(ROOT, Path(args.input), source)
@@ -195,11 +223,9 @@ def main(arguments=None):
     elif args.operation == 'plan':
         result = upload_plan(ROOT, Path(args.input), source)
     elif args.operation == 'fetch':
-        if args.work is None or args.identity is None: parser.error('--work and --identity required')
-        result = {'directory': str(fetch(ROOT, args.input, args.identity, source, args.work))}
+        result = {'directory': str(fetch(ROOT, args.input, args.identity, source, args.work, release_id=args.release_id))}
     else:
-        if args.identity is None: parser.error('--identity required')
-        discard(args.input, args.identity, source)
+        discard(args.input, args.identity, source, release_id=args.release_id)
         result = {'discarded': True}
     if args.result is not None:
         args.result.write_text(json.dumps(result)+'\n')

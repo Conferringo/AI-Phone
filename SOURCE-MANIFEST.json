@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 19552,
-      "sha256": "8700c56ea153dfb0f9a4fefc8034bc05f63637a76081d0d9074c782fdb8b8adb"
+      "size": 19877,
+      "sha256": "13be3a4cccb14867e5926f807b6986903a147ab571b358aa2c8e0b543d67dcc6"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -2535,8 +2535,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 71090,
-      "sha256": "ac90f197b2c7b67fd429bd8fcbcdea380b9504bb2eec0fc75aa96c90e09fb714"
+      "size": 71963,
+      "sha256": "7165b57da6d98bdacd5b16b6c62b6a19f1a41f2d8788bc72aefd7022f578621f"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2595,8 +2595,8 @@
     },
     {
       "path": "crates/assistant/src/handoff_tests.rs",
-      "size": 33270,
-      "sha256": "31321c228938f6978fd2622a2a086f2627a8f6b63d79ce2ec086e6128f19aa4a"
+      "size": 35350,
+      "sha256": "73a1a28dd13a24ca334c4fff79efa9ab849611020a5ed6df416fe8e902e4228e"
     },
     {
       "path": "crates/assistant/src/history_window.rs",
@@ -4130,8 +4130,8 @@
     },
     {
       "path": "docs/public/notification-workflows.md",
-      "size": 7023,
-      "sha256": "cb26534104d74f2c9f3d7d72df239bf6ec5d1b9889a206fbfcb9d2405f243f9f"
+      "size": 7691,
+      "sha256": "859c89e8a5b25fb42973fee526b8e2e5cc81885d348571cc76221e1a079b5071"
     },
     {
       "path": "docs/public/preview-release.md",
@@ -5000,8 +5000,8 @@
     },
     {
       "path": "scripts/factory_image_candidate.py",
-      "size": 9179,
-      "sha256": "909d10c2c849e0e2e5862a5259344bd684f1277c56d587d72ba240417dff4ce4"
+      "size": 10611,
+      "sha256": "14f064871b3c93c7d1627b45aced9a21523a7176ebfc75c3f67a1a59968a42f0"
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
@@ -5405,8 +5405,8 @@
     },
     {
       "path": "scripts/retain-client-candidate.sh",
-      "size": 3827,
-      "sha256": "0e56f9cb73e185f659ba26955fdd23d29605204d39dc8640db0d8163f37d51f2"
+      "size": 4122,
+      "sha256": "b44dbd7f6a448917a38e41b4d7e42d9c5cb621b6e85d16ecd682fce37d9254f2"
     },
     {
       "path": "scripts/route-stroke.test.ts",
@@ -5640,8 +5640,8 @@
     },
     {
       "path": "scripts/test_factory_image_candidate.py",
-      "size": 12803,
-      "sha256": "bee97c5160d179bca8863399c79254be77a17859a316b1025385ab263960fb32"
+      "size": 16289,
+      "sha256": "d9498d0f2b5391220e4d1a9483762873f92874fa1ff79666b79a3105f43caea9"
     },
     {
       "path": "scripts/test_fresh_images_producer.py",
@@ -6045,8 +6045,8 @@
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
-      "size": 3324,
-      "sha256": "bb7777c9c18a27f549ccc4066b9ca20a33815adad80b67eecdd0c9f563a93535"
+      "size": 3473,
+      "sha256": "0b11f4b24e844d3bc20a2d87eeaf0b3d3a9c234bb932d98f29633276bcdc9e01"
     },
     {
       "path": "skills/builtin/files-android/SKILL.md",

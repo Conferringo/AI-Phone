@@ -653,23 +653,27 @@ fn transfer_row(r: &sqlx::postgres::PgRow) -> wire::DeviceTransfer {
         created_at_ms: r.get::<i64, _>("ms") as u64,
     }
 }
-pub async fn state(app: &App) -> Result<wire::DeviceLinkState> {
+async fn device_links(app: &App) -> Result<Vec<wire::DeviceLink>> {
     let links = sqlx::query("SELECT * FROM device_links ORDER BY updated_at DESC")
         .fetch_all(&app.db)
         .await
         .map_err(|e| e.to_string())?;
+    Ok(links
+        .iter()
+        .map(|r| wire::DeviceLink {
+            id: r.get::<Uuid, _>("id").to_string(),
+            source_device_id: r.get("source_device_id"),
+            target_device_id: r.get("target_device_id"),
+            connected: r.get("connected"),
+            revision: r.get::<i64, _>("revision") as u64,
+        })
+        .collect())
+}
+pub async fn state(app: &App) -> Result<wire::DeviceLinkState> {
+    let links = device_links(app).await?;
     let transfers=sqlx::query("SELECT *, (extract(epoch FROM created_at)*1000)::bigint ms FROM device_transfers ORDER BY created_at DESC LIMIT 30").fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     Ok(wire::DeviceLinkState {
-        links: links
-            .iter()
-            .map(|r| wire::DeviceLink {
-                id: r.get::<Uuid, _>("id").to_string(),
-                source_device_id: r.get("source_device_id"),
-                target_device_id: r.get("target_device_id"),
-                connected: r.get("connected"),
-                revision: r.get::<i64, _>("revision") as u64,
-            })
-            .collect(),
+        links,
         transfers: transfers.iter().map(transfer_row).collect(),
         jobs: provision_jobs(app).await?,
         messages: crate::device_exchange::list(app).await?,
@@ -1012,11 +1016,11 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         ));
     }
     if name == "device_list" {
-        let rows=sqlx::query("SELECT DISTINCT d.id,d.name,d.kind,d.runtime_state FROM devices d WHERE d.id IN (SELECT device_id FROM run_device_bindings WHERE run_id=$1) OR EXISTS(SELECT 1 FROM device_links l JOIN run_device_bindings b ON b.run_id=$1 AND ((b.device_id=l.source_device_id AND d.id=l.target_device_id) OR(b.device_id=l.target_device_id AND d.id=l.source_device_id)) WHERE l.connected)").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-        let links = state(app).await?.links;
+        let rows=sqlx::query("SELECT d.id,d.name,d.kind,d.runtime_state,EXISTS(SELECT 1 FROM run_device_bindings b JOIN runs r ON r.id=b.run_id JOIN agent_device_bindings current ON current.agent_id=r.agent_id AND current.device_id=b.device_id WHERE b.run_id=$1 AND b.device_id=d.id) can_control,EXISTS(SELECT 1 FROM agent_device_bindings b WHERE b.device_id=d.id AND b.agent_id=d.default_agent_id) can_handoff FROM devices d WHERE d.owner_id='local-user' AND d.runtime_state='managed' ORDER BY d.kind,d.id").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+        let links = device_links(app).await?;
         let messages = crate::device_exchange::list(app).await?;
         return Ok(plain(
-            json!({"handoffs":messages.iter().filter(|m|rows.iter().any(|r|r.get::<String,_>("id")==m.source_device_id||r.get::<String,_>("id")==m.target_device_id)).map(|m|json!({"message_id":m.id,"source_device_id":m.source_device_id,"target_device_id":m.target_device_id,"status":m.status,"run_id":m.run_id,"error":m.error})).collect::<Vec<_>>(),"links":links.iter().filter(|l|l.connected).map(|l|json!({"source_device_id":l.source_device_id,"target_device_id":l.target_device_id})).collect::<Vec<_>>(),"devices":rows.iter().map(|r|json!({"device_id":r.get::<String,_>("id"),"name":r.get::<String,_>("name"),"kind":r.get::<String,_>("kind"),"runtime_state":r.get::<String,_>("runtime_state")})).collect::<Vec<_>>()}),
+            json!({"handoffs":messages.iter().filter(|m|rows.iter().any(|r|r.get::<String,_>("id")==m.source_device_id||r.get::<String,_>("id")==m.target_device_id)).map(|m|json!({"message_id":m.id,"source_device_id":m.source_device_id,"target_device_id":m.target_device_id,"status":m.status,"run_id":m.run_id,"error":m.error})).collect::<Vec<_>>(),"links":links.iter().filter(|l|l.connected).map(|l|json!({"source_device_id":l.source_device_id,"target_device_id":l.target_device_id})).collect::<Vec<_>>(),"devices":rows.iter().map(|r|json!({"device_id":r.get::<String,_>("id"),"name":r.get::<String,_>("name"),"kind":r.get::<String,_>("kind"),"runtime_state":r.get::<String,_>("runtime_state"),"can_control":r.get::<bool,_>("can_control"),"can_handoff":r.get::<bool,_>("can_handoff")})).collect::<Vec<_>>()}),
         ));
     }
     if name == "device_transfer_status" {
@@ -1031,8 +1035,11 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         let source = args["source_device_id"].as_str().unwrap_or("");
         let target = args["target_device_id"].as_str().unwrap_or("");
         if name == "device_link" {
-            authorized(app, run, source).await?;
-            authorized(app, run, target).await?;
+            let controls_endpoint:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM run_device_bindings b JOIN runs r ON r.id=b.run_id JOIN agent_device_bindings current ON current.agent_id=r.agent_id AND current.device_id=b.device_id WHERE b.run_id=$1 AND b.device_id IN ($2,$3))")
+                .bind(run).bind(source).bind(target).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+            if !controls_endpoint {
+                return Err("该任务没有数据线任一端设备的授权".into());
+            }
             link(
                 app,
                 wire::DeviceLinkRequest {
@@ -1142,7 +1149,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "device_list",
-            "列出本任务可使用的真实设备及安装状态。电脑和手机的工具不可混用。",
+            "列出主人已安装的真实设备、can_control控制权限和can_handoff交接能力。未连线的其他Agent设备可先device_link，再device_message交接；数据线不授予GUI控制权。",
             json!({}),
             vec![],
         ),
@@ -1208,7 +1215,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "device_link",
-            "连接或断开获授权手机与电脑的虚拟数据线（文件通道）。不赋予额外设备权限。",
+            "连接或断开主人已安装的手机与电脑，本任务至少控制一端。文件通道不改变GUI控制归属；另一Agent的设备用device_message交接。",
             json!({"source_device_id":id,"target_device_id":id,"connected":{"type":"boolean"}}),
             vec!["source_device_id", "target_device_id", "connected"],
         ),

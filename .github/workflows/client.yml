@@ -144,6 +144,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     outputs:
       candidate_tag: ${{ steps.retain.outputs.candidate_tag }}
+      candidate_release_id: ${{ steps.retain.outputs.candidate_release_id }}
       metadata_sha256: ${{ steps.assemble.outputs.metadata_sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -197,6 +198,7 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
       HOMEBREW_NO_AUTO_UPDATE: '1'
       AI_PHONE_IMAGE_HANDOFF_TAG: ${{ needs.native-arm-images.outputs.candidate_tag }}
+      AI_PHONE_IMAGE_HANDOFF_RELEASE_ID: ${{ needs.native-arm-images.outputs.candidate_release_id }}
       AI_PHONE_IMAGE_HANDOFF_IDENTITY: ${{ needs.native-arm-images.outputs.metadata_sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -232,7 +234,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 scripts/factory_image_candidate.py fetch "$AI_PHONE_IMAGE_HANDOFF_TAG" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY" --work "$RUNNER_TEMP/mac-native-images"
+          python3 scripts/factory_image_candidate.py fetch "$AI_PHONE_IMAGE_HANDOFF_TAG" --release-id "$AI_PHONE_IMAGE_HANDOFF_RELEASE_ID" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY" --work "$RUNNER_TEMP/mac-native-images"
       - name: Build all nine resources and the complete Mac client
         run: python3 scripts/macos_factory_engine.py --compiler-sdk "$ANDROID_HOME" --image-candidate "$RUNNER_TEMP/mac-native-images" --image-metadata-sha256 "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
       - name: Retain text qualification receipts
@@ -251,10 +253,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/retain-client-candidate.sh dist/macos-full-factory-report.json
       - name: Retire only this source-bound temporary image handoff
-        if: always() && env.AI_PHONE_IMAGE_HANDOFF_TAG != ''
+        if: always() && env.AI_PHONE_IMAGE_HANDOFF_TAG != '' && env.AI_PHONE_IMAGE_HANDOFF_RELEASE_ID != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/factory_image_candidate.py discard "$AI_PHONE_IMAGE_HANDOFF_TAG" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
+        run: python3 scripts/factory_image_candidate.py discard "$AI_PHONE_IMAGE_HANDOFF_TAG" --release-id "$AI_PHONE_IMAGE_HANDOFF_RELEASE_ID" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
       # Candidate drafts contain only inspected installers and their inventories.
       # Signing keys, guest state and accounts never enter retention.
 

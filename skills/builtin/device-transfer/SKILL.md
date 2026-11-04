@@ -3,7 +3,7 @@ name: device-transfer
 description: 通过有授权和SHA256校验的数据线在手机与Linux电脑间传文件，区分设备到达与社交应用交付。
 ---
 # 数据线与交付
-1. device_list取得本任务可用的手机和电脑ID。用户指示或主人已委托的通知工作需要跨设备处理时可用device_link连接二者，不得连接未授权设备。
+1. device_list取得主人已安装的手机和电脑ID。can_control决定能否直接使用该设备GUI，can_handoff说明可交接给它的Agent。用户指示或主人已委托的通知工作需要跨设备处理时可用device_link连接二者，本任务须控制至少一端；数据线不授予另一Agent设备的GUI控制权。
 2. device_files检查源文件真实路径。电脑路径相对/home/ai/Files；手机文件在/sdcard共享存储，默认下载目录。微信附件需要先通过phone-use在正确会话下载。
 3. device_transfer传输，检查status=completed、bytes、sha256与实际target_path。单文件最高64MiB；返回的新目录是防覆盖设计，不猜目标路径。重复请求查device_transfer_status，未知结果不能重新发送。
 4. 手机→电脑后读取computer-use，用真实桌面的Writer、Calc、Impress、Draw或相应应用编辑、计算、排版和保存。普通办公不调用脚本生成文件后冒充GUI处理；只有用户明确要求编程、命令或系统维护时才使用computer_run，并如实区分。核对实际内容、公式、页数及目标文件，保留原件，不得用输入文件改名冒充处理成果。
