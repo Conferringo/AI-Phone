@@ -26,6 +26,8 @@ fn contract(arguments: &[OsString], value: &str) -> Result<()> {
 pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
     match arguments.first()?.to_str()? {
         "--device-bridge" => Some(start(Service::Bridge, &arguments[1..])),
+        "--prepare-android" => Some(crate::android::cli::run(&arguments[1..])),
+        "--prepare-android-contract" => Some(contract(arguments, crate::android::cli::CONTRACT)),
         "--supervise" => Some(start(Service::Supervisor, &arguments[1..])),
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),

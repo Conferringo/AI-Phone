@@ -1,0 +1,31 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+// Native installer IPC, never a model tool. The client owns the installation lock.
+message NativeAndroidPrepare {
+  uint32 version = 1;
+  string payload_path = 2;
+  string payload_sha256 = 3;
+  uint32 cpus = 4;
+  uint32 memory_mb = 5;
+  uint32 storage_gb = 6;
+}
+
+// Factory resources and a writable device configuration, not a boot receipt.
+message NativeAndroidPrepared {
+  uint32 version = 1;
+  string sdk_root = 2;
+  string avd_home = 3;
+  string avd_name = 4;
+  bool reused_sdk = 5;
+  bool reused_device = 6;
+}
+
+// Creation journal. Removed after the AVD directory and its record are durable.
+message NativeAndroidCreation {
+  uint32 version = 1;
+  string sdk_root = 2;
+  uint32 cpus = 3;
+  uint32 memory_mb = 4;
+  uint32 storage_gb = 5;
+}

@@ -33,3 +33,19 @@ fn rejects_unrecognized_arguments_and_malformed_input_before_readiness() {
         assert!(output.stdout.is_empty());
     }
 }
+
+#[test]
+fn native_android_component_has_a_separate_protobuf_contract_and_no_false_receipt() {
+    let output = invoke(&["--prepare-android-contract"], b"");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"ai-phone-native-android-v1\n");
+    let folder = tempfile::tempdir().unwrap();
+    let home = folder.path().join("installation");
+    for input in [vec![], vec![255], vec![0; 8193]] {
+        let output = invoke(&["--prepare-android", home.to_str().unwrap()], &input);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+        assert!(!home.exists());
+    }
+    assert!(!invoke(&["--prepare-android"], b"").status.success());
+}

@@ -32,6 +32,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo test -p ai-phone-host-runtime --lib device_bridge:: --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --lib android:: --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo test -p ai-phone-host-runtime --test device_bridge_cli --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo clippy -p ai-phone-host-runtime --all-targets --locked -- -D warnings

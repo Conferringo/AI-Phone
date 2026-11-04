@@ -155,6 +155,6 @@ def stop_unit(root, name):
     if not value:return False
     os.kill(value['pid'],signal.SIGTERM)
     deadline=time.monotonic()+8
-    while unit_state(root,name) and time.monotonic()<deadline:time.sleep(.05)
-    if unit_state(root,name):raise ValueError('Owned service did not stop; no PID was force-killed')
+    while process_start(value['pid'])==value['start_ticks'] and time.monotonic()<deadline:time.sleep(.05)
+    if process_start(value['pid'])==value['start_ticks']:raise ValueError('Owned service did not stop; no PID was force-killed')
     return True

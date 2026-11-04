@@ -140,9 +140,10 @@ fn add_header(
     name: &str,
     size: u64,
     total: &mut u64,
+    limits: &Limits,
 ) -> Result<()> {
     if headers.len() >= MAX_FILES
-        || size > MAX_FILE
+        || size > limits.file
         || headers.insert(name.to_owned(), size).is_some()
     {
         return Err(Error::Invalid("source_resource_inventory"));
@@ -150,10 +151,22 @@ fn add_header(
     *total = total
         .checked_add(size)
         .ok_or(Error::Invalid("source_resource_size"))?;
-    if *total > MAX_TOTAL {
+    if *total > limits.total {
         return Err(Error::Invalid("source_resource_size"));
     }
     Ok(())
+}
+
+pub(crate) struct Limits {
+    pub manifest: &'static str,
+    pub file: u64,
+    pub total: u64,
+    pub metadata: u64,
+}
+
+pub(crate) struct RawInventory {
+    pub raw: Vec<u8>,
+    pub headers: BTreeMap<String, u64>,
 }
 
 #[derive(Default)]
@@ -169,11 +182,12 @@ impl SourceInventory {
         &mut self,
         archive: &mut tar::Archive<R>,
         control: &Control<'_>,
+        limits: &Limits,
         body: &mut impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
     ) -> Result<()> {
         for entry in archive.entries()?.raw(true) {
             control.check()?;
-            self.entry(&mut entry?, body)?;
+            self.entry(&mut entry?, body, limits)?;
         }
         if self.extensions.next.path.is_some() || self.extensions.next.size.is_some() {
             return Err(Error::Invalid("source_resource_extension_without_file"));
@@ -185,45 +199,69 @@ impl SourceInventory {
         &mut self,
         entry: &mut tar::Entry<'_, R>,
         body: &mut impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
+        limits: &Limits,
     ) -> Result<()> {
         if self.extensions.metadata(entry)? {
             return Ok(());
         }
         let name = self.extensions.name(entry.header())?;
         let size = entry.size();
-        add_header(&mut self.headers, &name, size, &mut self.total)?;
-        if name == manifest::HOST_MANIFEST {
-            self.raw = Some(limited(entry, size, MAX_MANIFEST)?);
+        add_header(&mut self.headers, &name, size, &mut self.total, limits)?;
+        if name == limits.manifest {
+            self.raw = Some(limited(entry, size, limits.metadata)?);
         } else {
             body(&name, size, entry)?;
         }
         Ok(())
     }
 
-    fn finish(self) -> Result<Inventory> {
+    fn finish(self) -> Result<RawInventory> {
         let raw = self
             .raw
             .ok_or(Error::Invalid("source_resource_manifest_missing"))?;
-        let manifest =
-            serde_json::from_slice(&raw).map_err(|_| Error::Invalid("source_resource_manifest"))?;
-        let inventory = Inventory {
-            manifest,
+        Ok(RawInventory {
             raw,
             headers: self.headers,
-        };
-        manifest::validate(&inventory)?;
-        Ok(inventory)
+        })
     }
 }
 
 pub(crate) fn visit(
     file: &mut File,
     control: &Control<'_>,
-    mut body: impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
+    body: impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
 ) -> Result<Inventory> {
-    let mut archive = tar::Archive::new(Reader::new(file, control)?);
+    let limits = Limits {
+        manifest: manifest::HOST_MANIFEST,
+        file: MAX_FILE,
+        total: MAX_TOTAL,
+        metadata: MAX_MANIFEST,
+    };
+    let raw = visit_component(file, control, &limits, body)?;
+    let manifest =
+        serde_json::from_slice(&raw.raw).map_err(|_| Error::Invalid("source_resource_manifest"))?;
+    let inventory = Inventory {
+        manifest,
+        raw: raw.raw,
+        headers: raw.headers,
+    };
+    manifest::validate(&inventory)?;
+    Ok(inventory)
+}
+
+pub(crate) fn visit_component(
+    file: &mut File,
+    control: &Control<'_>,
+    limits: &Limits,
+    mut body: impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
+) -> Result<RawInventory> {
+    let mut archive = tar::Archive::new(Reader::with_limit(
+        file,
+        control,
+        limits.total + 64 * 1024 * 1024,
+    )?);
     let mut inventory = SourceInventory::default();
-    inventory.scan(&mut archive, control, &mut body)?;
+    inventory.scan(&mut archive, control, limits, &mut body)?;
     archive.into_inner().finish_tar()?;
     inventory.finish()
 }
