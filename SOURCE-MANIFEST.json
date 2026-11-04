@@ -2545,8 +2545,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 16215,
-      "sha256": "8ed311f8bb045a898c6389634ae5dad7a39affa709e55b04253f82b6b0680db0"
+      "size": 16298,
+      "sha256": "262a242ed8cba835b739552154bfec81638a466c9361d12ba455ef63fa12cdc7"
     },
     {
       "path": "crates/assistant/src/database.rs",

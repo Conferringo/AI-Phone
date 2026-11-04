@@ -154,8 +154,11 @@ pub(crate) async fn retain_learning(
     };
     match crate::app_learning::save(app, run, candidate).await {
         Ok(_) => true,
-        Err(_) => {
-            eprintln!("Optional app learning was not retained; user task result preserved");
+        Err(error) => {
+            eprintln!(
+                "Optional app learning was not retained; user task result preserved: {}",
+                app.settings.redact(&error)
+            );
             false
         }
     }
