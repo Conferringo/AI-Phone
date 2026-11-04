@@ -4965,8 +4965,8 @@
     },
     {
       "path": "scripts/emulator-source-build/qualify_display_session.py",
-      "size": 4808,
-      "sha256": "3472e0e0323d4a8c45f26282c289834fd18a26a0fc251fbf6ba3d1a87140f53a"
+      "size": 6021,
+      "sha256": "3f60438130b808a410d230bb2eb5bf21dcef1aec4243ee25b7f310be54d119d0"
     },
     {
       "path": "scripts/emulator-source-build/qualify_owned_session.py",

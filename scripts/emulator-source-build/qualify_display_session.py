@@ -1,4 +1,5 @@
 """Real Linux Xvfb ownership checks; no network, source build, VM or user device."""
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -52,7 +53,11 @@ def fail_auth_cleanup(root, environment):
     folder = root / 'bin'
     folder.mkdir()
     wrapper = folder / 'xauth'
-    wrapper.write_text('#!/bin/sh\nif [ "$1" = remove ]; then exit 7; fi\nexec '
+    marker = shlex.quote(str(root / 'cleanup-rejected'))
+    called = shlex.quote(str(root / 'xauth-called'))
+    wrapper.write_text('#!/bin/sh\nprintf called > ' + called + '\nfor argument do\n'
+                       '  if [ "$argument" = remove ]; then\n'
+                       '    printf rejected > ' + marker + '\n    exit 7\n  fi\ndone\nexec '
                        + shlex.quote(executable) + ' "$@"\n')
     wrapper.chmod(0o700)
     environment['PATH'] = str(folder) + os.pathsep + environment['PATH']
@@ -85,17 +90,31 @@ class DisplaySessionQualification(unittest.TestCase):
                             with self.assertRaisesRegex(bootstrap.BuildInterrupted, 'fixture_interruption'):
                                 command.run(arguments, root,graceful=True)
                     elif mode in {'fail', 'cleanup-fail'}:
-                        with self.assertRaisesRegex(bootstrap.BuildFailure, 'command_failed'):
-                            command.run(arguments, root, timeout=10,graceful=True)
+                        try:
+                            with self.assertRaisesRegex(bootstrap.BuildFailure, 'command_failed'):
+                                command.run(arguments, root, timeout=10,graceful=True)
+                        finally:
+                            if mode == 'cleanup-fail':
+                                display = Path(shutil.which('xvfb-run', path=environment['PATH']))
+                                print(json.dumps({'display_wrapper_system': str(display) == '/usr/bin/xvfb-run',
+                                    'display_wrapper_sha256': hashlib.sha256(display.read_bytes()).hexdigest(),
+                                    'owned_xauth_called': (root / 'xauth-called').exists(),
+                                    'cleanup_injected': (root / 'cleanup-rejected').exists()}), flush=True)
                     else:
                         command.run(arguments, root, timeout=10,graceful=True)
-                self.assertTrue(record.is_file(), (root / 'display.log').read_text())
-                value = json.loads(record.read_text())
-                current = process_identity(value['pid'])
-                self.assertTrue(current is None or current[1] != value['start_ticks']
-                                or current[0] in {'Z', 'X'}, 'Owned Xvfb is still running')
-                self.assertFalse(Path('/tmp/.X11-unix', 'X' + value['display'][1:]).exists(),
-                                 'Owned X display socket remains')
+                self.assert_display_released(root, record, mode)
+
+    def assert_display_released(self, root, record, mode):
+        if mode == 'cleanup-fail':
+            self.assertEqual((root / 'cleanup-rejected').read_text(), 'rejected',
+                             'The fixture must reach xauth cleanup, including its options')
+        self.assertTrue(record.is_file(), (root / 'display.log').read_text())
+        value = json.loads(record.read_text())
+        current = process_identity(value['pid'])
+        self.assertTrue(current is None or current[1] != value['start_ticks']
+                        or current[0] in {'Z', 'X'}, 'Owned Xvfb is still running')
+        self.assertFalse(Path('/tmp/.X11-unix', 'X' + value['display'][1:]).exists(),
+                         'Owned X display socket remains')
 
 
 if __name__ == '__main__':
