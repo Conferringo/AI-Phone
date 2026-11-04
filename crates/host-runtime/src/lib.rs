@@ -15,10 +15,8 @@ mod staging;
 pub mod supervision;
 pub mod wsl;
 
-use fs2::FileExt;
 use std::{
     fmt,
-    fs::File,
     path::{Path, PathBuf},
 };
 
@@ -73,7 +71,7 @@ impl From<std::io::Error> for Error {
 /// This guard must remain alive for the complete installation transaction.
 pub struct Installation {
     home: PathBuf,
-    _lock: File,
+    _lock: filesystem::Lease,
 }
 
 #[derive(Debug, Clone)]
@@ -89,16 +87,7 @@ impl Installation {
     pub fn lock(home: &Path) -> Result<Self> {
         filesystem::directory(home, true)?;
         let home = home.canonicalize()?;
-        let lock = filesystem::lock_file(&home.join("bootstrap.lock"))?;
-        lock.try_lock_exclusive().map_err(|error| {
-            if error.kind() == std::io::ErrorKind::WouldBlock
-                || error.raw_os_error() == fs2::lock_contended_error().raw_os_error()
-            {
-                Error::Busy
-            } else {
-                error.into()
-            }
-        })?;
+        let lock = filesystem::lease(&home.join("bootstrap.lock"))?.ok_or(Error::Busy)?;
         Ok(Self { home, _lock: lock })
     }
 

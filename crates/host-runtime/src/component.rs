@@ -6,6 +6,7 @@ enum Service {
     Bridge,
     Supervisor,
     Android,
+    PhonePeer,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -15,6 +16,7 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Bridge => runtime.block_on(crate::device_bridge::run(arguments)),
         Service::Supervisor => runtime.block_on(crate::supervision::run(arguments)),
         Service::Android => runtime.block_on(crate::android::session::run(arguments)),
+        Service::PhonePeer => runtime.block_on(crate::device_bridge::run_peer(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -28,6 +30,8 @@ fn contract(arguments: &[OsString], value: &str) -> Result<()> {
 pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
     match arguments.first()?.to_str()? {
         "--device-bridge" => Some(start(Service::Bridge, &arguments[1..])),
+        "--phone-peer" => Some(start(Service::PhonePeer, &arguments[1..])),
+        "--phone-peer-contract" => Some(contract(arguments, crate::device_bridge::PEER_CONTRACT)),
         "--prepare-android" => Some(crate::android::cli::run(&arguments[1..])),
         "--prepare-android-contract" => Some(contract(arguments, crate::android::cli::CONTRACT)),
         "--android-session" => Some(start(Service::Android, &arguments[1..])),

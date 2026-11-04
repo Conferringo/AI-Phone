@@ -3,6 +3,7 @@ use crate::{
     control::{CHUNK, Control},
     manifest::{MAX_MANIFEST, Record},
 };
+use fs2::FileExt;
 use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File, Metadata, OpenOptions},
@@ -64,6 +65,36 @@ pub(crate) fn lock_file(path: &Path) -> Result<File> {
         return Err(Error::Invalid("source_resource_lock"));
     }
     Ok(file)
+}
+
+fn try_lock(file: &File) -> Result<bool> {
+    match file.try_lock_exclusive() {
+        Ok(()) => Ok(true),
+        Err(error)
+            if error.kind() == std::io::ErrorKind::WouldBlock
+                || error.raw_os_error() == fs2::lock_contended_error().raw_os_error() =>
+        {
+            Ok(false)
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
+pub(crate) struct Lease(File);
+impl Drop for Lease {
+    fn drop(&mut self) {
+        // Closing one descriptor alone can leave a duplicated open description
+        // holding the lock. End this owner's lease before closing its handle.
+        let _ = FileExt::unlock(&self.0);
+    }
+}
+pub(crate) fn lease(path: &Path) -> Result<Option<Lease>> {
+    let file = lock_file(path)?;
+    if try_lock(&file)? {
+        Ok(Some(Lease(file)))
+    } else {
+        Ok(None)
+    }
 }
 
 pub(crate) fn regular(path: &Path) -> Result<File> {
@@ -333,4 +364,23 @@ fn link_destination(path: &Path) -> Result<PathBuf> {
         .parent()
         .ok_or(Error::Invalid("source_resource_link"))?
         .join(target))
+}
+
+#[cfg(test)]
+mod lease_tests {
+    use super::*;
+    #[test]
+    fn lease_release_does_not_wait_for_a_duplicate_description_to_close() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join("owned.lock");
+        let guard = lease(&path).unwrap().unwrap();
+        let duplicate = guard.0.try_clone().unwrap();
+        assert!(lease(&path).unwrap().is_none());
+        drop(guard);
+        assert!(
+            lease(&path).unwrap().is_some(),
+            "the owner ended, even if a transient process descriptor still exists"
+        );
+        drop(duplicate);
+    }
 }

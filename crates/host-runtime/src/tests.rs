@@ -489,7 +489,12 @@ fn concurrent_owner_is_refused_and_does_not_change_lock_or_home_permissions() {
         );
     }
     drop(owner);
-    assert!(Installation::lock(&home).is_ok());
+    let reopened = Installation::lock(&home);
+    assert!(
+        reopened.is_ok(),
+        "released owner must reopen: {:?}",
+        reopened.err()
+    );
 }
 
 #[test]

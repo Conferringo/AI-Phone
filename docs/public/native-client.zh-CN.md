@@ -10,6 +10,8 @@
 
 原生Rust Android运行进程可启动已准入的SDK/AVD，核对root与截图传输，并在安装握手管道关闭后保持手机运行；重复进入观察并复用同一实例。启动中取消先等待模拟器控制端口，再发一次停止命令；退出结果不明保留错误。旧归属记录存在但端口被占用时要求恢复，不重复启动。Windows安装已调用该进程，再初始化WSL；配对、客体配置与完整双设备就绪仍未完成。进程夹具与隔离macOS Android开机已分别验证，不代表Windows硬件加速或完整产品安装通过。
 
+Rust客体手机peer通过私有protobuf标准输入接收配对凭据与模拟器令牌，管理现有媒体发现文件和本地桥监听；保留冲突文件，在连接收敛后移除发现信息。Linux ARM64进程已通过现有媒体客户端读到运行中的macOS Android root身份与真实截图。Windows自动配对、客体ADB/协议工具随包提供和完整客体配置仍须接通，完整宿主就绪标记保持关闭。
+
 构建入口：`./scripts/bootstrap.sh`、`cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked`、`python3 scripts/build_client.py`。打包会重新生成确定性的源码白名单资源并核验摘要，其他平台使用 `--platform windows|linux|android`。CI构建与解包检查不是实机安装验收。
 
 macOS要求14.4以上及Apple Silicon；Linux包针对Ubuntu24.04兼容环境；Windows需要WebView2；Android为ARM64。macOS/Windows未签名，Android使用保留的预览签名身份。详见[预览范围](preview-release.md)、[第三方声明](../../THIRD_PARTY_NOTICES.md)和[发行状态](release-status.md)。

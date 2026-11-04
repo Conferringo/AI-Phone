@@ -1,7 +1,6 @@
 use super::{adb::Adb, plan::Plan, readiness};
 use crate::{Error, Result, filesystem};
 use ai_phone_api::wire::{NativeAndroidBooted, NativeAndroidSessionOwner};
-use fs2::FileExt;
 use prost::Message;
 use std::{fs::File, io::Write, path::Path, process::Stdio, time::Duration};
 use tokio::{
@@ -16,7 +15,7 @@ pub(super) enum Started {
 }
 pub(super) struct Phone {
     plan: Plan,
-    _lock: File,
+    _lock: filesystem::Lease,
     log: File,
     adb: Option<Child>,
     emulator: Option<Child>,
@@ -51,19 +50,6 @@ fn client(plan: &Plan) -> Adb {
     Adb {
         port: plan.ports.adb,
         serial: plan.serial(),
-    }
-}
-fn lock(plan: &Plan) -> Result<Option<File>> {
-    let file = filesystem::lock_file(&plan.home.join("session.lock"))?;
-    match file.try_lock_exclusive() {
-        Ok(()) => Ok(Some(file)),
-        Err(e)
-            if e.kind() == std::io::ErrorKind::WouldBlock
-                || e.raw_os_error() == fs2::lock_contended_error().raw_os_error() =>
-        {
-            Ok(None)
-        }
-        Err(e) => Err(e.into()),
     }
 }
 fn spawn(mut command: Command, log: &File) -> Result<Child> {
@@ -102,7 +88,7 @@ fn space(plan: &Plan) -> Result<()> {
 }
 pub(super) async fn start(plan: Plan, stop: &mut watch::Receiver<bool>) -> Result<Started> {
     readiness::cancelled(stop)?;
-    let lease = lock(&plan)?;
+    let lease = filesystem::lease(&plan.home.join("session.lock"))?;
     let owner = read_owner(&plan)?;
     let Some(lease) = lease else {
         owner.ok_or(Error::Invalid("android_session_starting"))?;
@@ -120,7 +106,7 @@ pub(super) async fn start(plan: Plan, stop: &mut watch::Receiver<bool>) -> Resul
     Ok(Started::Owned(Box::new(phone)))
 }
 impl Phone {
-    fn new(plan: Plan, lease: File) -> Result<Self> {
+    fn new(plan: Plan, lease: filesystem::Lease) -> Result<Self> {
         let reservations = plan.ports.reserve()?;
         space(&plan)?;
         let log = plan.log()?;

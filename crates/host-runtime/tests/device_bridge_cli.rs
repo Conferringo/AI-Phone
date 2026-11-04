@@ -82,3 +82,21 @@ fn android_session_rejects_bad_frames_and_reports_typed_startup_failure() {
     assert_eq!(failure.code, "android_session_phone");
     assert!(!failure.outcome_unknown);
 }
+
+#[test]
+fn phone_peer_has_a_fixed_contract_and_never_emits_ready_for_bad_input() {
+    let output = invoke(&["--phone-peer-contract"], b"");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"ai-phone-phone-peer-v1\n");
+    for (args, input) in [
+        (vec!["--phone-peer-contract", "extra"], vec![]),
+        (vec!["--phone-peer", "extra"], vec![]),
+        (vec!["--phone-peer"], vec![0, 0, 0, 0]),
+        (vec!["--phone-peer"], vec![0, 0, 64, 1]),
+        (vec!["--phone-peer"], vec![0, 0, 0, 1, 255]),
+    ] {
+        let output = invoke(&args, &input);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+    }
+}
