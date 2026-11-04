@@ -4,7 +4,7 @@ AI Phone combines a small shipped guide with the user's evidence-backed experien
 
 ## Runtime path
 
-`builtin_guides.rs` is the single registry for shipped Skill installation and exact machine-application bindings. A phone observation supplies its Android package; a desktop observation supplies its separate OS application ID. Private window titles and quoted app names do not select a guide.
+`builtin_guides.rs` is the single registry for shipped Skill installation and exact machine-application bindings. A phone observation supplies its Android package; a desktop observation supplies its separate OS application ID. Private window titles and quoted app names do not select a guide. [Desktop control location](desktop-controls.md) adds read-only semantic inspection for supported foreground windows.
 
 The existing worker queues the matching built-in `skill_read` before loading enabled personal experience and before requesting another model decision. It uses the existing checkpoint, tools and Skill resource owner. Remaining in the same application does not repeat the reads or database lookup. An unavailable optional guide is attempted once in the current input and does not hide local experience. Unknown observations cannot borrow an earlier application's identity.
 

@@ -286,6 +286,7 @@ mod tests {
             "phone_tap_element",
             "computer_observe",
             "computer_find_text",
+            "computer_find_control",
             "skill_install",
             "task_finish",
         ] {

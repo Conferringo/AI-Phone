@@ -23,6 +23,8 @@ pub trait Screen: Send + Sync {
 pub struct WindowIdentity {
     pub title: String,
     pub application_class: String,
+    pub window_id: u32,
+    pub process_id: u32,
 }
 
 pub struct NativeScreen {
@@ -175,6 +177,15 @@ impl Screen for NativeScreen {
                 application_class: wm_class(
                     &display.property(window, xproto::AtomEnum::WM_CLASS.into())?,
                 ),
+                window_id: window,
+                process_id: {
+                    let atom = display.atom(b"_NET_WM_PID")?;
+                    let bytes = display.property(window, atom)?;
+                    bytes
+                        .get(..4)
+                        .map(|v| u32::from_ne_bytes(v.try_into().unwrap()))
+                        .unwrap_or_default()
+                },
             })
         })
     }

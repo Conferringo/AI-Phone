@@ -12,7 +12,7 @@ ARG HTTP_PROXY
 ARG HTTPS_PROXY
 USER root
 RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources
-RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends xvfb openbox tint2 pcmanfm xterm xdotool xclip x11-utils x11-xserver-utils dbus-x11 ffmpeg libreoffice-calc libreoffice-writer libreoffice-impress libreoffice-draw libreoffice-l10n-zh-cn fonts-noto-cjk mousepad file && rm -rf /var/lib/apt/lists/*
+RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends xvfb openbox tint2 pcmanfm xterm xdotool xclip x11-utils x11-xserver-utils dbus-x11 at-spi2-core ffmpeg libreoffice-gtk3 libreoffice-calc libreoffice-writer libreoffice-impress libreoffice-draw libreoffice-l10n-zh-cn fonts-noto-cjk mousepad file && rm -rf /var/lib/apt/lists/*
 RUN test -x /usr/bin/localc && test -x /usr/bin/lowriter && test -x /usr/bin/loimpress && test -x /usr/bin/lodraw
 RUN useradd -m -u 1000 -s /bin/bash ai && mkdir -p /home/ai/Files /home/ai/Desktop && chown -R ai:ai /home/ai
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo dunst libnotify-bin && rm -rf /var/lib/apt/lists/*
@@ -33,6 +33,7 @@ COPY infra/desktop/clash-launch.sh /usr/local/bin/ai-phone-clash
 RUN chmod 755 /usr/local/bin/ai-phone-clash
 COPY infra/desktop/network-start.sh /usr/local/bin/device-network-start
 RUN chmod 755 /usr/local/bin/device-network-start
+ENV SAL_USE_VCLPLUGIN=gtk3
 ENV DISPLAY=:0 LANG=C.UTF-8 HOME=/home/ai XDG_RUNTIME_DIR=/tmp/ai-runtime PULSE_SERVER=unix:/tmp/ai-runtime/pulse/native
 COPY infra/desktop/mimeapps.list /etc/xdg/mimeapps.list
 RUN command -v file && \

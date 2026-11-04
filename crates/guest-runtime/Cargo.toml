@@ -11,6 +11,7 @@ name = "desktop-bridge"
 path = "src/main.rs"
 
 [dependencies]
+atspi = { version = "=0.30.0", default-features = false, features = ["proxies", "tokio", "zbus"] }
 base64 = "=0.22.1"
 fs2 = "0.4"
 image = { version = "=0.25.10", default-features = false, features = ["png"] }

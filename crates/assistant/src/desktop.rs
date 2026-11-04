@@ -218,7 +218,15 @@ async fn save_observation(
     let application_id =
         crate::application_identity::desktop(value["application_class"].as_str().unwrap_or(""))
             .unwrap_or_default();
-    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256,application_id) VALUES($1,$2,$3,$4,$5,$6,$7)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).bind(&application_id).execute(&app.db).await.map_err(|e|e.to_string())?;
+    let window_id = value["window_id"]
+        .as_u64()
+        .and_then(|v| u32::try_from(v).ok())
+        .unwrap_or_default() as u64;
+    let process_id = value["process_id"]
+        .as_u64()
+        .and_then(|v| u32::try_from(v).ok())
+        .unwrap_or_default();
+    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256,application_id,window_id,process_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).bind(&application_id).bind(window_id as i64).bind(i64::from(process_id)).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(wire::DesktopObservation {
         device_id: device.into(),
         observation_id: id.to_string(),
@@ -236,6 +244,8 @@ async fn save_observation(
         } as i32,
         frame_wait_ms: value["frame_wait_ms"].as_u64().unwrap_or_default() as u32,
         application_id,
+        window_id,
+        process_id,
     })
 }
 async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Result<i64> {
@@ -300,7 +310,7 @@ fn action_value(r: &wire::DesktopActionRequest) -> Result<Value> {
 fn observation_meta(o: &wire::DesktopObservation) -> Value {
     let state = wire::DesktopFrameState::try_from(o.frame_state)
         .unwrap_or(wire::DesktopFrameState::Unspecified);
-    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"application_id":o.application_id,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
+    json!({"success":true,"device_id":o.device_id,"observation_id":o.observation_id,"epoch":o.epoch,"captured_at_ms":o.captured_at_ms,"width":o.width,"height":o.height,"title":o.title,"application_id":o.application_id,"window_id":o.window_id,"process_id":o.process_id,"frame_state":state.as_str_name(),"frame_wait_ms":o.frame_wait_ms})
 }
 async fn stored_observation(
     connection: &mut sqlx::PgConnection,
@@ -316,6 +326,8 @@ async fn stored_observation(
         height: 800,
         title: r.get("title"),
         application_id: r.get("application_id"),
+        window_id: r.get::<i64, _>("window_id") as u64,
+        process_id: r.get::<i64, _>("process_id") as u32,
         png: tokio::fs::read(r.get::<String, _>("png_path"))
             .await
             .map_err(|e| e.to_string())?,
@@ -1098,7 +1110,10 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         ));
     }
     let observation_id = args["observation_id"].as_str().unwrap_or("");
-    if matches!(name, "computer_zoom" | "computer_find_text") {
+    if matches!(
+        name,
+        "computer_zoom" | "computer_find_text" | "computer_find_control"
+    ) {
         let observation = {
             let mut connection = app.db.acquire().await.map_err(|e| e.to_string())?;
             stored_observation(&mut connection, observation_id).await?
@@ -1177,6 +1192,12 @@ pub fn catalog() -> Vec<Value> {
             "在最新截图中定位文字，返回原图坐标、边界和置信度；同名结果分别保留。小字或整屏未找到时，可用region指定目标附近的全屏像素区域进行放大识别；返回坐标仍为全屏坐标。找不到返回空列表，不执行点击；文字区域不保证可点击。",
             json!({"device_id":id,"observation_id":id,"text":id,"region":{"type":"object","properties":{"x":origin,"y":origin,"width":extent,"height":extent},"required":["x","y","width","height"],"additionalProperties":false}}),
             vec!["device_id", "observation_id", "text"],
+        ),
+        f(
+            "computer_find_control",
+            "只读定位前台窗口的真实可访问性控件。提供名称text或角色role，可同时筛选；返回所有同名候选的全屏边界、可用/可编辑/焦点状态，不执行点击。按钮和表单优先于猜坐标；旧窗口不提供可访问性时用computer_find_text/OCR。partial=true不代表已搜索完整窗口。",
+            json!({"device_id":id,"observation_id":id,"text":id,"role":id}),
+            vec!["device_id", "observation_id"],
         ),
         f(
             "computer_click",
@@ -1629,8 +1650,9 @@ mod tests {
             sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','fixture','managed')").bind(device).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')").bind(device).execute(&app.db).await.unwrap();
             let png=include_bytes!("../../phone-runner/fixtures/ocr-probe.png");
-            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Private document.odt","application_class":"LibreOffice-Writer","frame_state":"stable","frame_wait_ms":320})).await.unwrap();
+            let observation=save_observation(&app,device,7,json!({"png":STANDARD.encode(png),"title":"Private document.odt","application_class":"LibreOffice-Writer","frame_state":"stable","frame_wait_ms":320,"window_id":424242,"process_id":99})).await.unwrap();
             assert_eq!(observation.application_id,"linux:libreoffice-writer");
+            assert_eq!(observation.window_id,424242);assert_eq!(observation.process_id,99);
             let id=Uuid::now_v7();
             sqlx::query("INSERT INTO desktop_actions(id,device_id,input_hash,status,result) VALUES($1,$2,'same-input','completed',$3)").bind(id).bind(device).bind(observation_meta(&observation)).execute(&app.db).await.unwrap();
             let mut connection=app.db.acquire().await.unwrap();
@@ -1639,6 +1661,7 @@ mod tests {
                 assert_eq!(cached.observation_id,observation.observation_id);assert_eq!(cached.png,png);
                 assert_eq!(cached.frame_state,wire::DesktopFrameState::Stable as i32);assert_eq!(cached.frame_wait_ms,320);
                 assert_eq!(cached.application_id,"linux:libreoffice-writer");
+                assert_eq!(cached.window_id,424242);assert_eq!(cached.process_id,99);
             }
             assert!(recorded_action(&mut connection,id,"different-input").await.is_err());
             for status in ["running","unknown","failed"] {

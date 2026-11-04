@@ -30,6 +30,7 @@ impl Screen for FakeScreen {
         Ok(ai_phone_guest_runtime::screen::WindowIdentity {
             title: self.title()?,
             application_class: "fixture-app".into(),
+            ..Default::default()
         })
     }
     fn capture(&self) -> Result<RgbImage> {

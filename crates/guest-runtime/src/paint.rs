@@ -108,6 +108,7 @@ mod tests {
             Ok(crate::screen::WindowIdentity {
                 title: self.title()?,
                 application_class: String::new(),
+                ..Default::default()
             })
         }
         fn capture(&self) -> Result<RgbImage> {

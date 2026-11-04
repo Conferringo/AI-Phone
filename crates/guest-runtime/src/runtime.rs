@@ -56,12 +56,15 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
         };
         let bytes = imaging::png(image)?;
         Ok(
-            json!({"width": self.settings.width, "height": self.settings.height, "title": title, "application_class":identity.application_class,"png": STANDARD.encode(bytes)}),
+            json!({"width": self.settings.width, "height": self.settings.height, "title": title, "application_class":identity.application_class,"window_id":identity.window_id,"process_id":identity.process_id,"png": STANDARD.encode(bytes)}),
         )
     }
 
     pub async fn dispatch(&self, operation: &str, args: Value) -> Result<Response> {
         match operation {
+            "controls" => crate::accessibility::find(&self.screen, &self.settings, args)
+                .await
+                .map(Response::Json),
             "action" => self.perform_action(args).await.map(Response::Json),
             "run" => self.run(args).await.map(Response::Json),
             "notifications" => self.notifications().await.map(Response::Json),

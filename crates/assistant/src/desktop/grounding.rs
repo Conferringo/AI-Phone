@@ -157,6 +157,14 @@ pub(super) async fn tool(
         latest.as_deref(),
         now(),
     )?;
+    if name == "computer_find_control" {
+        let value=helper("controls", json!({"window_id":observation.window_id,"process_id":observation.process_id,"text":args["text"].as_str().unwrap_or(""),"role":args["role"].as_str().unwrap_or("")})).await?;
+        return Ok(plain(
+            json!({"success":true,"device_id":device,"source_observation_id":observation.observation_id,
+            "source":"accessibility","coordinate_space":"full_screen","candidates":value["candidates"],"partial":value["partial"],"inspected_nodes":value["inspected_nodes"],
+            "note":"结合当前画面选择角色/状态正确的候选；同名控件不自动择一。"}),
+        ));
+    }
     if name == "computer_find_text" {
         return find_text(app, observation, args).await;
     }

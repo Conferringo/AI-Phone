@@ -1,4 +1,5 @@
 //! Native Linux guest control. The assistant owns authorization and action intent.
+pub mod accessibility;
 pub mod actions;
 pub mod audio;
 pub mod cursor;
