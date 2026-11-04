@@ -3,8 +3,9 @@ import contextlib
 import importlib.util
 import io
 import json
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -259,6 +260,9 @@ class SdkWorkspaceTests(unittest.TestCase):
             self.assertEqual(sdk, self.work / "sdk")
             self.assertTrue(self.source.is_symlink())
             self.assertFalse((sdk / "system-images").is_symlink())
+            report=json.loads((self.work/'sdk-copy.json').read_bytes())
+            self.assertEqual(report['files'],2)
+            self.assertEqual(report['logical_bytes'],len(b'pinned metadata')+len(b'pinned image'))
             (self.source / ".knownPackages").write_text("generated metadata")
             (self.source / "system-images/android-30/source.properties").write_text("generated metadata")
             (self.source / "system-images/android-30/package.xml").write_text("generated package")
@@ -299,6 +303,50 @@ class SdkWorkspaceTests(unittest.TestCase):
                 (self.source / "unexpected").write_text("preserve")
         self.assertEqual((self.source / "unexpected").read_text(), "preserve")
         self.assertEqual((self.work / "source-sdk/.knownPackages").read_bytes(), b"pinned metadata")
+
+    def test_copy_failure_never_moves_the_original_sdk(self):
+        with patch.object(producer.platform,'system',return_value='Linux'), \
+             patch.object(producer,'copy_sdk_file',side_effect=OSError('fixture copy failure')):
+            with self.assertRaises(producer.shutil.Error):
+                with producer.isolated_sdk(self.checkout,self.work,'linux'):
+                    self.fail('an incomplete copy cannot reach upstream')
+        self.assert_original()
+        self.assertFalse((self.work/'source-sdk').exists())
+
+
+class SparseSdkCopyTests(unittest.TestCase):
+    def test_logical_bytes_metadata_and_independent_storage_are_preserved(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source';destination=root/'copy'
+            payload=b'head'+bytes(2*1024**2+17)+b'tail'
+            source.write_bytes(payload);source.chmod(0o640)
+            os.utime(source,ns=(1700000000000000000,1700000001000000000))
+            producer.copy_sdk_file(source,destination)
+            self.assertEqual(destination.read_bytes(),payload)
+            self.assertEqual(source.stat().st_mtime_ns,destination.stat().st_mtime_ns)
+            self.assertEqual(source.stat().st_mode & 0o777,destination.stat().st_mode & 0o777)
+            destination.chmod(0o600);destination.write_bytes(b'independent write')
+            self.assertEqual(source.read_bytes(),payload)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'),'Physical sparse allocation is qualified on Linux')
+    def test_zero_regions_use_sparse_blocks_and_preserve_the_final_length(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source';destination=root/'copy'
+            payload=b'head'+bytes(16*1024**2+17)
+            source.write_bytes(payload)
+            producer.copy_sdk_file(source,destination)
+            self.assertEqual(destination.stat().st_size,len(payload))
+            self.assertEqual(producer.sha256(source),producer.sha256(destination))
+            self.assertLess(destination.stat().st_blocks*512,len(payload)//4)
+
+    def test_empty_and_short_zero_files_keep_exact_lengths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            for length in [0,1,1024**2-1,1024**2,1024**2+1]:
+                with self.subTest(length=length):
+                    source=root/('source-'+str(length));destination=root/('copy-'+str(length))
+                    source.write_bytes(bytes(length));producer.copy_sdk_file(source,destination)
+                    self.assertEqual(destination.read_bytes(),source.read_bytes())
 
 
 if __name__ == "__main__":

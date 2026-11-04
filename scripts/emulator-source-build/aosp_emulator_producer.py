@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -194,6 +195,29 @@ def checked_build_request(args):
     return host, checkout, work
 
 
+def copy_sdk_file(source, destination):
+    if not stat.S_ISREG(os.stat(source).st_mode):
+        raise shutil.SpecialFileError('Expected a regular pinned SDK file')
+    with open(source,'rb') as input_file,open(destination,'xb') as output:
+        while block:=input_file.read(1024**2):
+            if block.count(0)==len(block):
+                output.seek(len(block),os.SEEK_CUR)
+            else:
+                output.write(block)
+        output.truncate()
+    shutil.copystat(source,destination)
+    return destination
+
+
+def copy_sdk_tree(source, sdk):
+    copier=copy_sdk_file if platform.system()=='Linux' else shutil.copy2
+    shutil.copytree(source, sdk, symlinks=False, copy_function=copier)
+    files=[path.stat() for path in sdk.rglob('*') if path.is_file()]
+    allocated=sum(info.st_blocks*512 for info in files) if all(hasattr(info,'st_blocks') for info in files) else None
+    return {'backend':'sparse' if copier is copy_sdk_file else 'native',
+            'files':len(files),'logical_bytes':sum(info.st_size for info in files),'allocated_bytes':allocated}
+
+
 @contextmanager
 def isolated_sdk(checkout, work, group):
     # Nested upstream tools recompute this SDK path and mutate its metadata.
@@ -202,7 +226,7 @@ def isolated_sdk(checkout, work, group):
     sdk, original = work / "sdk", work / "source-sdk"
     if source.is_symlink() or not source.is_dir():
         raise ValueError("Expected a pinned SDK directory")
-    shutil.copytree(source, sdk, symlinks=False)
+    write_once(work/'sdk-copy.json',copy_sdk_tree(source,sdk))
     source.rename(original)
     try:
         source.symlink_to(sdk, target_is_directory=True)

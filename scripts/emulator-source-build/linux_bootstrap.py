@@ -440,6 +440,18 @@ def build_diagnostics(root):
             "producer": log_diagnostics(root / "private-build.log", root / "checkout")}
 
 
+def sdk_copy_diagnostics(root):
+    try:
+        path=root/'build/sdk-copy.json'
+        if path.is_symlink() or path.stat().st_size>8192:return None
+        value=json.loads(path.read_bytes())
+    except (OSError,ValueError):return None
+    if not isinstance(value,dict) or value.get('backend') not in ('sparse','native'):return None
+    fields=('files','logical_bytes','allocated_bytes')
+    if any(type(value.get(key)) is not int or not 0<=value[key]<=2**48 for key in fields):return None
+    return {'backend':value['backend'],**{key:value[key] for key in fields}}
+
+
 def publish_receipt(root, value):
     temporary = root / "public-receipt.next"
     with temporary.open("x", encoding="utf-8") as output:
@@ -526,6 +538,8 @@ def controlled_build(root):
         raise
     finally:
         print_build_failure(root,receipt["status"],receipt["stage"])
+        sdk_copy=sdk_copy_diagnostics(root)
+        if sdk_copy is not None:receipt['sdk_copy']=sdk_copy
         publish_receipt(root, receipt)
 
 

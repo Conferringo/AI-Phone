@@ -561,6 +561,16 @@ class LifecycleTests(OwnedFixture):
             path.write_text(json.dumps(value))
             self.assertEqual(bootstrap.producer_diagnostics(self.root), {"producer_status": "invalid"})
 
+    def test_sdk_footprint_projection_keeps_only_bounded_numeric_evidence(self):
+        build=self.root/'build';build.mkdir();path=build/'sdk-copy.json'
+        expected={'backend':'sparse','files':7,'logical_bytes':1000,'allocated_bytes':512}
+        path.write_text(json.dumps({**expected,'private':'private-sentinel'}))
+        self.assertEqual(bootstrap.sdk_copy_diagnostics(self.root),expected)
+        for key,value in [('backend','private-sentinel'),('files',True),('logical_bytes',-1),('allocated_bytes','private-sentinel')]:
+            path.write_text(json.dumps({**expected,key:value}))
+            self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
+        path.write_text('[]');self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
+
     def test_post_build_stage_projects_only_fixed_values_and_an_observed_zero_exit(self):
         build=self.root/'build';build.mkdir();path=build/'build-result.json'
         identity={'source_lock_sha256':bootstrap.producer.LOCK_SHA256,'build_id':bootstrap.producer.BUILD_ID,'target':'linux_x86_64','build_status':'unknown'}
