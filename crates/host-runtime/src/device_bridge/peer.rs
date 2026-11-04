@@ -14,6 +14,10 @@ use tokio::sync::watch;
 
 pub const CONTRACT: &str = "ai-phone-phone-peer-v1";
 const LIMIT: u64 = 16384;
+struct Claim {
+    initial_owner: bool,
+    advertisement: Option<Vec<u8>>,
+}
 struct Plan {
     request: DeviceBridgePhone,
     home: PathBuf,
@@ -58,15 +62,22 @@ impl Plan {
     fn marker(&self) -> String {
         format!("aiphone.bridge={}\n", self.owner.bridge_id)
     }
-    fn claim(&self) -> Result<(filesystem::Lease, bool)> {
+    fn claim(&self) -> Result<(filesystem::Lease, Claim)> {
         let lease = filesystem::lease(&self.home.join(".phone-peer.lock"))?.ok_or(Error::Busy)?;
         let initial = self.initial_owner()?;
-        if let Some(bytes) = self.read_advertisement()?
+        let advertisement = self.read_advertisement()?;
+        if let Some(bytes) = &advertisement
             && (initial || !bytes.starts_with(self.marker().as_bytes()))
         {
             return Err(Error::Invalid("phone_peer_foreign_metadata"));
         }
-        Ok((lease, initial))
+        Ok((
+            lease,
+            Claim {
+                initial_owner: initial,
+                advertisement,
+            },
+        ))
     }
     fn initial_owner(&self) -> Result<bool> {
         let Some(bytes) = read_optional(&self.owner_path())? else {
@@ -79,18 +90,25 @@ impl Plan {
         }
         Ok(false)
     }
-    fn publish(&self, transport: &DeviceBridgeStarted, initial: bool) -> Result<Vec<u8>> {
+    fn publish(&self, transport: &DeviceBridgeStarted, claim: Claim) -> Result<Vec<u8>> {
         for path in [self.home.join("avd"), self.home.join("avd/running")] {
             filesystem::directory(&path, false)?;
         }
+        if self.read_advertisement()? != claim.advertisement {
+            return Err(Error::Invalid("phone_peer_foreign_metadata"));
+        }
         let metadata = self.metadata(transport);
-        if initial {
+        if claim.initial_owner {
             publish(&self.owner_path(), &self.owner.encode_to_vec(), true)?;
         }
-        if let Err(error) = publish(&self.advertisement(), &metadata, false) {
-            remove_advertisement(self, &metadata)?;
-            return Err(error);
-        }
+        // An absent advertisement stays a create-only publication, even when
+        // this owner is resuming. A failed publication must never clean up a
+        // file another writer may have created (even with identical bytes).
+        publish(
+            &self.advertisement(),
+            &metadata,
+            claim.advertisement.is_none(),
+        )?;
         Ok(metadata)
     }
     fn metadata(&self, transport: &DeviceBridgeStarted) -> Vec<u8> {
@@ -137,14 +155,14 @@ fn read_optional(path: &Path) -> Result<Option<Vec<u8>>> {
         Ok(_) => filesystem::bounded_file_with_limit(path, LIMIT).map(Some),
     }
 }
-fn publish(path: &Path, bytes: &[u8], initial: bool) -> Result<()> {
+fn publish(path: &Path, bytes: &[u8], create_new: bool) -> Result<()> {
     let parent = path
         .parent()
         .ok_or(Error::Invalid("phone_peer_directory"))?;
     let mut file = tempfile::NamedTempFile::new_in(parent)?;
     file.write_all(bytes)?;
     file.as_file().sync_all()?;
-    if initial {
+    if create_new {
         file.persist_noclobber(path)
     } else {
         file.persist(path)
@@ -161,9 +179,9 @@ pub(super) struct PhonePeer {
 impl PhonePeer {
     pub async fn bind(request: DeviceBridgePhone) -> Result<Self> {
         let (plan, config) = Plan::parse(request)?;
-        let (lease, initial) = plan.claim()?;
+        let (lease, claim) = plan.claim()?;
         let bridge = Bridge::bind_config(config).await?;
-        let metadata = plan.publish(bridge.receipt(), initial)?;
+        let metadata = plan.publish(bridge.receipt(), claim)?;
         Ok(Self {
             bridge,
             plan,
@@ -226,9 +244,8 @@ pub async fn run(arguments: &[std::ffi::OsString]) -> Result<()> {
 mod tests {
     use super::*;
     use ai_phone_api::wire::DeviceBridgeConfig;
-    #[test]
-    fn owner_publication_preserves_a_file_created_after_the_claim() {
-        let root = tempfile::tempdir().unwrap();
+
+    fn fixture(root: &Path) -> (Plan, DeviceBridgeStarted) {
         let id = "a".repeat(32);
         let (plan, _) = Plan::parse(DeviceBridgePhone {
             transport: Some(DeviceBridgeConfig {
@@ -239,24 +256,102 @@ mod tests {
                 endpoint: "127.0.0.1:23000".into(),
                 ..Default::default()
             }),
-            runtime_directory: root.path().to_str().unwrap().into(),
+            runtime_directory: root.to_str().unwrap().into(),
             serial: "emulator-5564".into(),
             grpc_token: "test-token".into(),
         })
         .unwrap();
+        (
+            plan,
+            DeviceBridgeStarted {
+                version: 1,
+                role: DeviceBridgeRole::Guest as i32,
+                bridge_id: id,
+                endpoint: "127.0.0.1:23000".into(),
+                adb_port: 15037,
+                emulator_port: 8558,
+            },
+        )
+    }
+    #[test]
+    fn owner_publication_preserves_a_file_created_after_the_claim() {
+        let root = tempfile::tempdir().unwrap();
+        let (plan, receipt) = fixture(root.path());
         let (_lease, initial) = plan.claim().unwrap();
-        assert!(initial);
         std::fs::write(plan.owner_path(), b"manual owner").unwrap();
-        let receipt = DeviceBridgeStarted {
-            version: 1,
-            role: DeviceBridgeRole::Guest as i32,
-            bridge_id: id,
-            endpoint: "127.0.0.1:23000".into(),
-            adb_port: 15037,
-            emulator_port: 8558,
-        };
         assert!(plan.publish(&receipt, initial).is_err());
         assert_eq!(std::fs::read(plan.owner_path()).unwrap(), b"manual owner");
         assert!(!plan.advertisement().exists());
+    }
+    #[test]
+    fn advertisement_changed_during_pairing_is_preserved() {
+        for (owned, advertised) in [(false, false), (true, false), (true, true)] {
+            let root = tempfile::tempdir().unwrap();
+            let (plan, receipt) = fixture(root.path());
+            filesystem::directory(&plan.home.join("avd"), false).unwrap();
+            filesystem::directory(&plan.home.join("avd/running"), false).unwrap();
+            if owned {
+                std::fs::write(plan.owner_path(), plan.owner.encode_to_vec()).unwrap();
+            }
+            if advertised {
+                std::fs::write(plan.advertisement(), plan.metadata(&receipt)).unwrap();
+            }
+            let (_lease, initial) = plan.claim().unwrap();
+            let changed = b"manual replacement during authentication\n";
+            std::fs::write(plan.advertisement(), changed).unwrap();
+            assert!(
+                plan.publish(&receipt, initial).is_err(),
+                "owned={owned},advertised={advertised}"
+            );
+            assert_eq!(std::fs::read(plan.advertisement()).unwrap(), changed);
+        }
+    }
+    #[test]
+    fn unchanged_claims_publish_new_and_resumed_discovery_metadata() {
+        for (owned, advertised) in [(false, false), (true, false), (true, true)] {
+            let root = tempfile::tempdir().unwrap();
+            let (plan, mut receipt) = fixture(root.path());
+            filesystem::directory(&plan.home.join("avd"), false).unwrap();
+            filesystem::directory(&plan.home.join("avd/running"), false).unwrap();
+            if owned {
+                std::fs::write(plan.owner_path(), plan.owner.encode_to_vec()).unwrap();
+            }
+            if advertised {
+                std::fs::write(plan.advertisement(), plan.metadata(&receipt)).unwrap();
+            }
+            let (_lease, claim) = plan.claim().unwrap();
+            receipt.emulator_port += 2;
+            let metadata = plan.publish(&receipt, claim).unwrap();
+            assert_eq!(metadata, plan.metadata(&receipt));
+            assert_eq!(std::fs::read(plan.advertisement()).unwrap(), metadata);
+            assert_eq!(
+                std::fs::read(plan.owner_path()).unwrap(),
+                plan.owner.encode_to_vec()
+            );
+        }
+    }
+    #[test]
+    fn removed_or_edited_owned_advertisement_invalidates_the_claim() {
+        for removed in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let (plan, receipt) = fixture(root.path());
+            filesystem::directory(&plan.home.join("avd"), false).unwrap();
+            filesystem::directory(&plan.home.join("avd/running"), false).unwrap();
+            std::fs::write(plan.owner_path(), plan.owner.encode_to_vec()).unwrap();
+            std::fs::write(plan.advertisement(), plan.metadata(&receipt)).unwrap();
+            let (_lease, claim) = plan.claim().unwrap();
+            if removed {
+                std::fs::remove_file(plan.advertisement()).unwrap();
+            } else {
+                std::fs::write(
+                    plan.advertisement(),
+                    format!("{}edited=true\n", plan.marker()),
+                )
+                .unwrap();
+            }
+            let expected = plan.read_advertisement().unwrap();
+            assert!(plan.publish(&receipt, claim).is_err());
+            assert_eq!(plan.read_advertisement().unwrap(), expected);
+        }
     }
 }
