@@ -1009,3 +1009,28 @@ async fn terminal_unknown_side_effects_keep_new_input_queued() {
         }
     }
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; no device actions or model requests"]
+async fn completion_waits_for_owned_handoffs_but_does_not_block_ordinary_completion() {
+    database_case(|app|async move {
+        registry::initialize(&app.db,&app.settings).await.unwrap();
+        let accepted=accept(&app,&request("Keep this task open until its delegated work returns")).await;
+        let run=Uuid::parse_str(&accepted.run_id).unwrap();
+        let message:Uuid=sqlx::query_scalar("SELECT assistant_message_id FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+        sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES('finish-fixture-computer','Fixture computer','desktop','fixture','registered')")
+            .execute(&app.db).await.unwrap();
+        let link=Uuid::new_v4();
+        sqlx::query("INSERT INTO device_links(id,source_device_id,target_device_id) VALUES($1,'finish-fixture-computer','phone-local-01')").bind(link).execute(&app.db).await.unwrap();
+        let handoff=Uuid::new_v4();
+        sqlx::query("INSERT INTO device_messages(id,link_id,link_revision,source_device_id,target_device_id,source_run_id,text) VALUES($1,$2,1,'phone-local-01','finish-fixture-computer',$3,'Fixture assignment')")
+            .bind(handoff).bind(link).bind(run).execute(&app.db).await.unwrap();
+        let call=json!({"name":"task_finish","arguments":"{\"status\":\"completed\",\"summary\":\"Done\"}"});let mut epoch=0;let cancel=CancellationToken::new();
+        let error=tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap_err();assert!(error.contains("task_wait"));
+        sqlx::query("UPDATE device_messages SET status='completed' WHERE id=$1").bind(handoff).execute(&app.db).await.unwrap();
+        assert!(tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap_err().contains("task_wait"),"terminal status alone is not a consumed return receipt");
+        sqlx::query("UPDATE device_messages SET return_delivered_at=now() WHERE id=$1").bind(handoff).execute(&app.db).await.unwrap();
+        let result=tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&result).unwrap()["finish"]["status"],"completed");
+    }).await;
+}

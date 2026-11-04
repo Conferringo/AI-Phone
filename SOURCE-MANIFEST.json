@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 19021,
-      "sha256": "6a37cd867f0429fbf9d9c9a9bac37bc94d7e13f571b48ffaab23aa8b2d95586a"
+      "size": 19552,
+      "sha256": "8700c56ea153dfb0f9a4fefc8034bc05f63637a76081d0d9074c782fdb8b8adb"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 8316,
-      "sha256": "d23baf9a267212b1fc8ed10bd6db50676e0c1f76229cb516c9f5d7d594346f1f"
+      "size": 8458,
+      "sha256": "ab7ce238231b90bd7a27dbd6c6d5feb4eaa9a766d59ec249bf26911217603797"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -2489,6 +2489,11 @@
       "sha256": "165f2bbdbbea6c2092e45342fbe5afbee8541846b0516b627246c2ed1ddda737"
     },
     {
+      "path": "crates/assistant/migrations/0036_handoff_returns.sql",
+      "size": 446,
+      "sha256": "d2f0a068d4a5198737d99c66f092653281b16b70a77c4499d7dbb1eb6fb131b7"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
       "size": 10262,
       "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
@@ -2540,8 +2545,8 @@
     },
     {
       "path": "crates/assistant/src/device_exchange.rs",
-      "size": 14861,
-      "sha256": "d6af022a4ced2057b5f2733bc6337f6c73078ae82d0e17923d25fcf3cabca947"
+      "size": 16355,
+      "sha256": "4a31aadce78987506474f34befa10be7c60936cd6d931ed16ebfcbc0c961d438"
     },
     {
       "path": "crates/assistant/src/device_network.rs",
@@ -2584,9 +2589,14 @@
       "sha256": "efbc5a2d22c385e7cfd92adf0a01e5a0e19a0c89c312a61b322e7b606946bbeb"
     },
     {
+      "path": "crates/assistant/src/handoff_returns.rs",
+      "size": 4984,
+      "sha256": "fa155716569d7dbbb3bc1c8b10f79fba08b119913582416a21022c2b88e30653"
+    },
+    {
       "path": "crates/assistant/src/handoff_tests.rs",
-      "size": 18105,
-      "sha256": "51f62f59a213dbcef9ac013c427756ddd9ea35eb38e7634c33c39cd2108e99d9"
+      "size": 33270,
+      "sha256": "31321c228938f6978fd2622a2a086f2627a8f6b63d79ce2ec086e6128f19aa4a"
     },
     {
       "path": "crates/assistant/src/history_window.rs",
@@ -2720,8 +2730,8 @@
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 45881,
-      "sha256": "3585f052b2d0cf0ff44a4180003ebe2edcb8dd07c2562a6c50da60d0c51aba7d"
+      "size": 48227,
+      "sha256": "db793d93da10389b70ef04216640e3731816df8354caa28468964c9cb3400883"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -2755,8 +2765,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 208582,
-      "sha256": "1e24ba43119538d94eefc4319b02e0d30bc1b631e5c2476da1e24b855a5e9c7e"
+      "size": 209586,
+      "sha256": "01f30c08ce020f6c582db4e41372a16a24bb90c02282f76d605afacfaf6fda37"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -3140,8 +3150,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 433054,
-      "sha256": "50b4059a83d3ec0afae95468fce6164b08d205c5a8c1b2e57574a0cdfa3d78c3"
+      "size": 433098,
+      "sha256": "15ccdf14f2002bf1da475e25a3da2a4c10baa5c1d7371ec669c20106c97ff1ee"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -4120,8 +4130,8 @@
     },
     {
       "path": "docs/public/notification-workflows.md",
-      "size": 5035,
-      "sha256": "639ef93018e68510b5fa964e5e651edc63be25627a01e1e4d44d0847372df9b4"
+      "size": 7023,
+      "sha256": "cb26534104d74f2c9f3d7d72df239bf6ec5d1b9889a206fbfcb9d2405f243f9f"
     },
     {
       "path": "docs/public/preview-release.md",
@@ -6035,8 +6045,8 @@
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
-      "size": 2764,
-      "sha256": "850613202a93a4f0b0384da173e40c7abf29e7c45dc3716759df674cf2c4548b"
+      "size": 3324,
+      "sha256": "bb7777c9c18a27f549ccc4066b9ca20a33815adad80b67eecdd0c9f563a93535"
     },
     {
       "path": "skills/builtin/files-android/SKILL.md",

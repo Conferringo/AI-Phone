@@ -39,6 +39,7 @@ jobs:
           node-version: '22'
       - name: Toolchain and locked dependencies
         run: |
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
           ./scripts/bootstrap.sh
@@ -207,6 +208,7 @@ jobs:
       - name: Disposable Mac factory toolchain
         run: |
           set -euo pipefail
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
           # This hosted job builds only macOS/ARM Linux, so no Android NDK is
           # consumed. Reclaim only this disposable runner's unused compiler SDKs.
           rm -rf "$ANDROID_HOME/ndk"
@@ -289,7 +291,9 @@ jobs:
       - name: Rust toolchain
         run: rustup default 1.96.0
       - name: Locked client CLI
-        run: python scripts/bootstrap_bun.py --dependencies
+        run: |
+          python -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
+          python scripts/bootstrap_bun.py --dependencies
       - name: Relocated dependency and archive regressions
         env:
           PYTHONPATH: scripts
@@ -362,6 +366,7 @@ jobs:
       - name: Toolchain
         shell: bash
         run: |
+          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
           export JAVA_HOME="$JAVA_HOME_17_X64"
           export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"

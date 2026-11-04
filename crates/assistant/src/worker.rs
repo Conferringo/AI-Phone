@@ -1984,7 +1984,7 @@ async fn execute(
     id: Uuid,
     cancel: &CancellationToken,
 ) -> Result<RunDisposition, String> {
-    let row = sqlx::query("SELECT *,extract(epoch FROM now()-created_at)::bigint elapsed_seconds FROM runs WHERE id=$1")
+    let row = sqlx::query("SELECT r.*,extract(epoch FROM now()-r.created_at)::bigint elapsed_seconds,EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending FROM runs r WHERE r.id=$1")
         .bind(id)
         .fetch_one(&app.db)
         .await
@@ -1997,6 +1997,7 @@ async fn execute(
         serde_json::from_value(row.get("pending_tools")).map_err(|e| e.to_string())?;
     let mut answer: String = row.get("answer");
     let mut step: i32 = row.get("step");
+    let mut handoffs_pending: bool = row.get("handoffs_pending");
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
     let exploration = matches!(
@@ -2089,6 +2090,11 @@ async fn execute(
             return Ok(RunDisposition::Queued);
         }
         crate::proactive::inject_attention(app, id, &mut context).await?;
+        if handoffs_pending
+            && crate::device_exchange::returns::receive(app, id, &mut context).await?
+        {
+            handoffs_pending = crate::device_exchange::returns::pending(app, id).await?;
+        }
         if consume_wait_completion(
             app,
             id,
@@ -2183,6 +2189,9 @@ async fn execute(
             let value = tool_value(&result);
             let outcome = tool_outcome(value.as_ref());
             let failed = outcome != ToolOutcome::Completed;
+            if !failed && name == "device_message" {
+                handoffs_pending = crate::device_exchange::returns::pending(app, id).await?;
+            }
             let mut stalled = state.tool_result(
                 name,
                 call["arguments"].as_str().unwrap_or("{}"),
@@ -3147,13 +3156,17 @@ async fn tool(
             return Err("仍有待执行工具；请先完成这些步骤，再重新task_finish".into());
         }
         if status == "completed" {
-            let summary_only: bool = sqlx::query_scalar(
-                "SELECT origin='notification' AND background_read_only FROM runs WHERE id=$1",
+            let policy = sqlx::query(
+                "SELECT r.origin='notification' AND r.background_read_only summary_only,EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending FROM runs r WHERE r.id=$1",
             )
             .bind(run)
             .fetch_one(&app.db)
             .await
             .map_err(|e| e.to_string())?;
+            if policy.get::<bool, _>("handoffs_pending") {
+                return Err("设备协作尚未返回并核对；使用task_wait等待结果，系统会唤醒原任务。不要把交接排队说成已完成。".into());
+            }
+            let summary_only: bool = policy.get("summary_only");
             if summary_only
                 && !current
                     .iter()
