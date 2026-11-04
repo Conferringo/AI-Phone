@@ -2530,8 +2530,8 @@
     },
     {
       "path": "crates/assistant/src/app_guidance_tests.rs",
-      "size": 3828,
-      "sha256": "62a967825456e382d2723cca21088ad9ec164270e76973b79c86e5b6eac7e8c6"
+      "size": 6569,
+      "sha256": "675f7338d4922f47d7e859d816c721b7532b522ee3b2a65cd58671672b8d1e31"
     },
     {
       "path": "crates/assistant/src/app_learning/desktop_tests.rs",
@@ -2555,8 +2555,8 @@
     },
     {
       "path": "crates/assistant/src/builtin_guides.rs",
-      "size": 2848,
-      "sha256": "9924bf78e839a005fb507ba56d91efffa44a909254cd092a697205852f529b43"
+      "size": 3407,
+      "sha256": "153c98f9695de28546ee322742ed2185916b865341e6b0720dac067f42be0a88"
     },
     {
       "path": "crates/assistant/src/chat_completions.rs",
@@ -2565,8 +2565,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 16298,
-      "sha256": "262a242ed8cba835b739552154bfec81638a466c9361d12ba455ef63fa12cdc7"
+      "size": 16441,
+      "sha256": "3298c5210dad0f8dd171b161db0792902f446d239b63631e5f498d65f48e8692"
     },
     {
       "path": "crates/assistant/src/database.rs",
@@ -2580,8 +2580,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 72612,
-      "sha256": "94dcc5c76b5d95722411d966f3da8c5c75791094ff26d199019eca898b57bff7"
+      "size": 72750,
+      "sha256": "6794f59136b37eec974df6ce4b1177dd692e4a33d5d3df0a625bee5c172135f7"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2810,8 +2810,8 @@
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
-      "size": 16474,
-      "sha256": "6acb662007331026fcc8e8c13a53dc8ef7f2ac620a6ef848a4af2445e3d2f28d"
+      "size": 16682,
+      "sha256": "4188bc3892cd426cd43117a67bcab1c43f5cf002bec1a61d213eaebbcde9009d"
     },
     {
       "path": "crates/assistant/src/voice_input.rs",
@@ -3380,8 +3380,8 @@
     },
     {
       "path": "docs/public/engineering/app-guides.md",
-      "size": 3871,
-      "sha256": "7c3a9ff9d556fee10211eb1fb4b5476e9514eb338e4d9ecc9f2e5db4025055b0"
+      "size": 4876,
+      "sha256": "cfc4c2d5380ca6e0e643d54ffa46519ec9576e8cc1c2a3a003a38bb5962e655f"
     },
     {
       "path": "docs/public/engineering/app-learning.md",
@@ -6304,6 +6304,11 @@
       "sha256": "5fc8a913064c41df07f0abac852c07534d0bafbd28d5f78d757cbf19b95ce546"
     },
     {
+      "path": "skills/builtin/calc/SKILL.md",
+      "size": 1782,
+      "sha256": "9b930263e9c8793557838201b019b9865278692ce86e1751245bd8b9aec67b04"
+    },
+    {
       "path": "skills/builtin/computer-use/SKILL.md",
       "size": 5973,
       "sha256": "3770c46e5eca9c1b826ba8a8207e6e78d6603fbae5c7e7552f0d1c35048ebff1"
@@ -6314,9 +6319,19 @@
       "sha256": "0b11f4b24e844d3bc20a2d87eeaf0b3d3a9c234bb932d98f29633276bcdc9e01"
     },
     {
+      "path": "skills/builtin/draw/SKILL.md",
+      "size": 2143,
+      "sha256": "0bfeca8ddb95cb5b14ded5c2153410e65b27bb5de501b789d83ef8677444e4bd"
+    },
+    {
       "path": "skills/builtin/files-android/SKILL.md",
       "size": 1782,
       "sha256": "f4a90495816801c98471cbe56eeebb9cc5c5d433e550dbb4f7a8dddb7672e9c9"
+    },
+    {
+      "path": "skills/builtin/impress/SKILL.md",
+      "size": 1592,
+      "sha256": "a5c14763794483fafebafb39b2144ab1875af8f183596237fb532241da9d2736"
     },
     {
       "path": "skills/builtin/phone-use/SKILL.md",

@@ -1186,7 +1186,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "computer_type",
-            "向已聚焦的Linux输入区域粘贴Unicode文本（支持中文）。",
+            "向已聚焦的Linux输入区域粘贴Unicode文本（支持中文），不会自动清空原值。替换已有字段时，先确认文本框焦点并全选其旧文本；勿在画布或正文上盲用全选。",
             json!({"device_id":id,"observation_id":id,"text":id}),
             vec!["device_id", "observation_id", "text"],
         ),

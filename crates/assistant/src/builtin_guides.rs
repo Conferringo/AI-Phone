@@ -41,6 +41,18 @@ pub(crate) const SKILLS: &[Builtin] = &[
         id: "writer",
         application: Some("linux:libreoffice-writer"),
     },
+    Builtin {
+        id: "calc",
+        application: Some("linux:libreoffice-calc"),
+    },
+    Builtin {
+        id: "impress",
+        application: Some("linux:libreoffice-impress"),
+    },
+    Builtin {
+        id: "draw",
+        application: Some("linux:libreoffice-draw"),
+    },
 ];
 
 pub(crate) fn for_application(application: &str) -> Option<&'static str> {
@@ -89,6 +101,12 @@ mod tests {
         }
         assert_eq!(for_application("com.xingin.xhs"), Some("xiaohongshu"));
         assert_eq!(for_application("linux:libreoffice-writer"), Some("writer"));
+        assert_eq!(for_application("linux:libreoffice-calc"), Some("calc"));
+        assert_eq!(
+            for_application("linux:libreoffice-impress"),
+            Some("impress")
+        );
+        assert_eq!(for_application("linux:libreoffice-draw"), Some("draw"));
         assert_eq!(for_application("com.xingin.xhs.fake"), None);
         assert_eq!(for_application("a private file — LibreOffice Writer"), None);
     }

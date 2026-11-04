@@ -55,3 +55,40 @@ async fn built_in_app_guidance_and_personal_experience_load_once_without_extra_m
         assert_eq!(sqlx::query_scalar::<_,String>("SELECT content FROM runtime_skills WHERE name=$1").bind(experience).fetch_one(&app.db).await.unwrap(),"Personal verified method");
     }).await;
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; fresh Office guides and checkpoint reuse"]
+async fn office_guides_install_and_follow_the_observed_application_once() {
+    worker::steering_regressions::database_case(|app| async move {
+        crate::builtin_guides::test_files(&app.root);
+        crate::workbench::initialize(&app.db, &app.root).await.unwrap();
+        for guide in ["calc", "impress", "draw"] {
+            let text = crate::workbench::skill_text(&app, guide).await.unwrap();
+            assert!(text.contains(&format!("name: {guide}\n")));
+            let application = format!("linux:libreoffice-{guide}");
+            let mut context = vec![
+                json!({"role":"user","content":[{"type":"input_text","text":"使用当前电脑应用"}]}),
+                json!({"type":"function_call","name":"computer_observe","call_id":"current","arguments":"{}"}),
+                json!({"type":"function_call_output","call_id":"current","output":[{"type":"input_text","text":json!({"success":true,"device_id":"desktop-fixture","observation_id":"current","application_id":application,"title":"private filename is not a binding"}).to_string()}]}),
+            ];
+            let mut state = agent_loop::LoopState::default();
+            let call = worker::experience_call(&app, &context, &mut state).await.unwrap();
+            assert_eq!(name(&call), guide);
+            loaded(&mut context, call, text);
+            let mut resumed = serde_json::from_value(serde_json::to_value(state).unwrap()).unwrap();
+            assert!(worker::experience_call(&app, &context, &mut resumed).await.is_none());
+        }
+        // Exercise the supported user path; built-in Skills are immutable.
+        let cancel = tokio_util::sync::CancellationToken::new();
+        let original = "---\nname: office-notes\ndescription: Personal Office notes.\n---\n\nOriginal notes\n";
+        let item = crate::workbench::invoke(&app, "skill_create", &json!({"content":original}), &cancel).await.unwrap();
+        let updated = original.replace("Original notes", "Manual Office guide");
+        crate::workbench::invoke(&app, "skill_edit", &json!({"id":item["id"],"content":updated,"expected_content_sha256":item["content_sha256"]}), &cancel).await.unwrap();
+        crate::workbench::invoke(&app, "skill_set_enabled", &json!({"id":item["id"],"enabled":false}), &cancel).await.unwrap();
+        crate::workbench::initialize(&app.db, &app.root).await.unwrap();
+        let (body, enabled): (String, bool) = sqlx::query_as("SELECT content,enabled FROM runtime_skills WHERE id=$1")
+            .bind(item["id"].as_str().unwrap()).fetch_one(&app.db).await.unwrap();
+        assert_eq!(body, updated);
+        assert!(!enabled);
+    }).await;
+}

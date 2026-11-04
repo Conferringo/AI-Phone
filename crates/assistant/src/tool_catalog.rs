@@ -224,7 +224,7 @@ pub(crate) fn tools() -> Value {
         function(
             "task_finish",
             "只有本轮目标已经有真实工具证据并通过复查时用completed结束；需要用户提供具体信息或解决真实阻碍时用needs_input暂停。禁止用普通正文、计划或询问是否继续代替完成。无证据会拒绝并要求继续。",
-            json!({"status":{"type":"string","enum":["completed","needs_input"]},"summary":{"type":"string"}}),
+            json!({"status":{"type":"string","enum":["completed","needs_input"]},"summary":{"type":"string","description":"给用户的一至三句交付结果：成果文件、关键核验结论或真实阻碍。步骤、工具调用、观察ID已在账本，勿复述操作过程、长篇自证或学习报告。"}}),
             vec!["status", "summary"]
         ),
         function(
