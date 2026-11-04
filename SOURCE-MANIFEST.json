@@ -4510,8 +4510,8 @@
     },
     {
       "path": "infra/desktop/home-initialize.sh",
-      "size": 1725,
-      "sha256": "9f76dca020d94afac8e8c15938c55c2d4d8899cfb30c6dfad5a008c987fb5857"
+      "size": 2496,
+      "sha256": "57e30c7f351e0c00d0c47e2fa56d3866b87d628122b1e3594769fa676a8b0f68"
     },
     {
       "path": "infra/desktop/location.js",
@@ -6355,8 +6355,8 @@
     },
     {
       "path": "skills/builtin/draw/SKILL.md",
-      "size": 2271,
-      "sha256": "8ba26ce9a654eba8473361713c7d8828d0eafbaedf29ac67a025c4e7c3dd5cc0"
+      "size": 2790,
+      "sha256": "af97f95a26291a0de4670a578e725bb6b0ed68bd360ef5cf483209a64f9a46b4"
     },
     {
       "path": "skills/builtin/files-android/SKILL.md",

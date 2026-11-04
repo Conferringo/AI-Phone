@@ -3,7 +3,13 @@ set -eu
 home=${HOME:?Desktop home missing}
 case "${1:-}" in
 prepare)
-  mkdir -p "$home/Files" "$home/Desktop" "$home/.config/openbox" "$home/.config/pcmanfm/default"
+  mkdir -p "$home/Files" "$home/Desktop" "$home/.config/openbox" "$home/.config/pcmanfm/default" "$home/.config/libfm"
+  if [ ! -f "$home/.config/libfm/libfm.conf" ]; then
+    cat > "$home/.config/libfm/libfm.conf" <<'FILE_MANAGER'
+[config]
+quick_exec=1
+FILE_MANAGER
+  fi
   if [ ! -f "$home/.config/pcmanfm/.ai-phone-style-v1" ]; then
     cat > "$home/.config/pcmanfm/default/desktop-items-0.conf" <<'DESKTOP_STYLE'
 [*]
@@ -41,6 +47,30 @@ Exec=libreoffice --calc
 Icon=libreoffice-calc
 Terminal=false
 DESKTOP
+  cat > "$home/Desktop/Writer.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=文档
+Exec=libreoffice --writer
+Icon=libreoffice-writer
+Terminal=false
+DESKTOP
+  cat > "$home/Desktop/Impress.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=演示
+Exec=libreoffice --impress
+Icon=libreoffice-impress
+Terminal=false
+DESKTOP
+  cat > "$home/Desktop/Draw.desktop" <<'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=绘图
+Exec=libreoffice --draw
+Icon=libreoffice-draw
+Terminal=false
+DESKTOP
   cat > "$home/Desktop/Browser.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
@@ -57,7 +87,7 @@ Exec=/usr/local/bin/ai-phone-clash
 Icon=clash-party
 Terminal=false
 DESKTOP
-  chmod +x "$home/Desktop/Files.desktop" "$home/Desktop/Calc.desktop" "$home/Desktop/Browser.desktop" "$home/Desktop/Clash.desktop"
+  chmod +x "$home/Desktop/Files.desktop" "$home/Desktop/Calc.desktop" "$home/Desktop/Writer.desktop" "$home/Desktop/Impress.desktop" "$home/Desktop/Draw.desktop" "$home/Desktop/Browser.desktop" "$home/Desktop/Clash.desktop"
   ;;
 *) echo 'Unknown desktop home initialization stage' >&2; exit 1 ;;
 esac
