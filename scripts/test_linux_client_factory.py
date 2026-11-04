@@ -14,6 +14,44 @@ import android_sdk_archive as sdk_archive
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    def context_fixture(self,root):
+        (root/'config').mkdir();(root/'scripts').mkdir()
+        for role in ('linux-ocr','linux-host'):
+            (root/'scripts'/role).mkdir()
+            for name in ('Dockerfile','collect.py'):(root/'scripts'/role/name).write_text(role+' '+name)
+        (root/'scripts/linux_dependency_factory.py').write_text('shared collector')
+        source=root/'ca.deb';source.write_bytes(b'verified CA fixture')
+        policy={'snapshot':'20261031T040000Z','ca_certificates':{'url':source.as_uri(),'sha256':digest(source),'size_bytes':source.stat().st_size}}
+        (root/'config/linux-factory.json').write_text(json.dumps(policy))
+        return source
+
+    def test_context_contains_verified_ca_snapshot_and_only_selected_build_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=self.context_fixture(root)
+            private=root/'data/chat';private.parent.mkdir();private.write_bytes(b'keep private')
+            python=root/'python.tar.gz';python.write_bytes(b'pinned Python fixture')
+            for role in ('linux-ocr','linux-host'):
+                context=root/role
+                def build(command,_root):
+                    expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','snapshot.conf'}
+                    if role=='linux-ocr':expected.add('python.tar.gz')
+                    self.assertEqual({p.name for p in context.iterdir()},expected)
+                    self.assertEqual((context/'bootstrap-ca.deb').read_bytes(),source.read_bytes())
+                    self.assertEqual((context/'snapshot.conf').read_text(),'APT::Snapshot "20261031T040000Z";\n')
+                    self.assertEqual(command[-1],context)
+                    (context/'output').mkdir()
+                with patch.object(factory,'run',side_effect=build):
+                    output=factory.factory_context(root,context,role,python if role=='linux-ocr' else None)
+                self.assertEqual(output,context/'output');self.assertTrue(output.is_dir())
+            self.assertEqual(private.read_bytes(),b'keep private')
+
+    def test_invalid_bootstrap_ca_never_starts_the_builder(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=self.context_fixture(root);source.write_bytes(b'changed CA fixture')
+            with patch.object(factory,'run') as run,self.assertRaisesRegex(ValueError,'checksum'):
+                factory.factory_context(root,root/'context','linux-host')
+            run.assert_not_called()
+
     def test_compiled_client_requires_both_complete_unchanged_linux_installers(self):
         full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
         with tempfile.TemporaryDirectory() as temporary:

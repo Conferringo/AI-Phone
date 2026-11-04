@@ -94,6 +94,9 @@ def factory_context(root,folder,role,python_archive=None):
     folder.mkdir(parents=True)
     for source,target in [(root/'scripts'/role/'Dockerfile','Dockerfile'),(root/'scripts'/role/'collect.py','collect.py'),(root/'scripts/linux_dependency_factory.py','factory.py')]:
         shutil.copyfile(source,folder/target)
+    policy=json.loads((root/'config/linux-factory.json').read_text())
+    fetch(folder,'bootstrap-ca.deb',policy['ca_certificates'])
+    (folder/'snapshot.conf').write_text('APT::Snapshot '+json.dumps(policy['snapshot'])+';\n')
     if python_archive is not None:shutil.copyfile(python_archive,folder/'python.tar.gz')
     output=folder/'output'
     run(['docker','buildx','build','--platform','linux/amd64','--target','export','--output','type=local,dest='+str(output),folder],root)

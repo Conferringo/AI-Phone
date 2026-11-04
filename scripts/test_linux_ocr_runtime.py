@@ -66,8 +66,11 @@ class LinuxOcrTests(unittest.TestCase):
             program.chmod(0o755)
             alias = root / 'alias'; alias.symlink_to(target, target_is_directory=True)
             with self.assertRaisesRegex(ValueError, 'alias'): ocr.verify(root, alias, host='linux-x64')
-            (root / 'scripts/linux-ocr/Dockerfile').write_text('changed launcher')
-            with self.assertRaisesRegex(ValueError, 'source'): ocr.verify(root, target, host='linux-x64')
+            for name in ('scripts/linux-ocr/Dockerfile','config/linux-factory.json'):
+                source=root/name;before=source.read_bytes();source.write_text('changed factory source')
+                with self.assertRaisesRegex(ValueError, 'source'): ocr.verify(root, target, host='linux-x64')
+                source.write_bytes(before)
+                ocr.verify(root, target, host='linux-x64')
 
     def test_archive_checksum_missing_members_paths_and_elf_abi_fail_before_activation(self):
         for scenario in ('checksum', 'missing', 'path', 'abi'):

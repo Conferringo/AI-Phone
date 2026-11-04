@@ -12,7 +12,7 @@ LOADER = 'lib/ld-linux-x86-64.so.2'
 REQUIRED = frozenset({'bin/tesseract', LOADER, 'lib/libtesseract.so.5', 'tessdata/eng.traineddata',
     'tessdata/chi_sim.traineddata', 'tessdata/configs/tsv', 'python/PIL/__init__.py',
     'python/PIL/_imaging.cpython-313-x86_64-linux-gnu.so', 'source-records.json', 'licenses/tesseract-ocr.copyright'})
-SOURCE = ('config/linux-ocr.json', 'scripts/linux_ocr_runtime.py', 'scripts/linux_dependencies.py',
+SOURCE = ('config/linux-ocr.json', 'config/linux-factory.json', 'scripts/linux_ocr_runtime.py', 'scripts/linux_dependencies.py',
     'scripts/linux_dependency_factory.py',
     'scripts/linux-ocr/Dockerfile', 'scripts/linux-ocr/collect.py')
 PROFILE = DependencyProfile('config/linux-ocr.json', SOURCE,

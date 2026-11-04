@@ -9,7 +9,7 @@ from host_platform import host_key
 
 PREFIX = 'runtime/container-host/native/'
 PROGRAMS = ('qemu-system-x86_64', 'qemu-img', 'ssh', 'ssh-keygen', 'scp')
-SOURCE = ('config/linux-host-runtime.json', 'scripts/linux_host_runtime.py', 'scripts/linux_dependencies.py',
+SOURCE = ('config/linux-host-runtime.json', 'config/linux-factory.json', 'scripts/linux_host_runtime.py', 'scripts/linux_dependencies.py',
           'scripts/linux_dependency_factory.py', 'scripts/linux-host/Dockerfile', 'scripts/linux-host/collect.py',
           'scripts/linux-host/launch.sh', 'scripts/linux-host/lima.sh')
 REQUIRED = frozenset({'bin/' + name for name in PROGRAMS} | {'lib/ld-linux-x86-64.so.2',
