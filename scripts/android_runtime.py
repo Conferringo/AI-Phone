@@ -23,6 +23,7 @@ MAX_FILES=20000
 MAX_FILE=4*1024**3
 MAX_TOTAL=8*1024**3
 RESERVE=4*1024**3
+COMPRESSION_PRESETS=(3,6,9)
 
 
 def checked_path_text(name):
@@ -214,7 +215,7 @@ def image_inventory(source, abi):
 
 
 def checked_compression(value):
-    if type(value) is not int or value not in (3,6):
+    if type(value) is not int or value not in COMPRESSION_PRESETS:
         raise ValueError('Unsupported Android compression preset')
     return value
 

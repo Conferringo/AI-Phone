@@ -2249,6 +2249,11 @@
       "sha256": "1adb34eecdaa84d029013f403be0df2ea9f0477006b3f2b5650dea8ade5a1991"
     },
     {
+      "path": "config/linux-factory.json",
+      "size": 358,
+      "sha256": "dbf22152db923603e9fb15353da8fd1ed98baffbac5b607930570eed8d0c1cf5"
+    },
+    {
       "path": "config/linux-host-runtime.json",
       "size": 426,
       "sha256": "ed45f53ad1337ebf652447cac99716605e85d2a4214ba6fdff2223a82697da04"
@@ -3385,8 +3390,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4391,
-      "sha256": "21ba6ffb5db7357f71659134f4e3c817f05f6f395a719a78192824f817e9a081"
+      "size": 5035,
+      "sha256": "7be37e4623d7601f97d9b43412a244cb63f1f1b64bb21917181d92275a88811f"
     },
     {
       "path": "docs/public/engineering/app-guides.md",
@@ -3440,8 +3445,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 3786,
-      "sha256": "273726c613dd10d1a30baf4b4c64eaa907b642f6e3b53fc2d27146c00055ccb9"
+      "size": 4447,
+      "sha256": "1ebd096ebed7d8f950051dfb6b193d2b7cfb36109983284244ba8ecc2d23cc31"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -4865,8 +4870,8 @@
     },
     {
       "path": "scripts/android_component_factory.py",
-      "size": 6084,
-      "sha256": "292d6231555e893e557d266a87b51dea020a9e775fb1397dec8c60db6cccb3b5"
+      "size": 6137,
+      "sha256": "20cfadb0086d817c6c0171410c4656edef453354c5f5a267f88029e7b17f0d4d"
     },
     {
       "path": "scripts/android_factory_stock.py",
@@ -4885,8 +4890,8 @@
     },
     {
       "path": "scripts/android_runtime.py",
-      "size": 12162,
-      "sha256": "8e5e2b2413f980282a472126468409d6ce33e54616141f8342a84705deb15eec"
+      "size": 12204,
+      "sha256": "6ecb08928aab12c8c99db44ccfeeec5ebafb221f4fb84ca70c4cac795b4c61ca"
     },
     {
       "path": "scripts/android_sdk.py",
@@ -5400,8 +5405,8 @@
     },
     {
       "path": "scripts/linux-host/Dockerfile",
-      "size": 541,
-      "sha256": "517cc1f3ffc75773a089f41381af8336680095da4638a22b83300f154ca2dd1b"
+      "size": 908,
+      "sha256": "a7bc3a82ee293cae95eaf83cf55d3089b2e83fefccdbfdf3808ed31c79c63f53"
     },
     {
       "path": "scripts/linux-host/collect.py",
@@ -5420,8 +5425,8 @@
     },
     {
       "path": "scripts/linux-ocr/Dockerfile",
-      "size": 977,
-      "sha256": "a182f9322610587b87263f6e1cc9bc48e17e3e52615abc83fde65b5def2adf4b"
+      "size": 1329,
+      "sha256": "733c28c6d05fc391df473d9ba8d64411dc279bd8a48412a6004062e46dc175b1"
     },
     {
       "path": "scripts/linux-ocr/collect.py",
@@ -5430,8 +5435,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 10810,
-      "sha256": "701337aaf41f35627c027b1d830c62206dbac5914fcab054dfbbd12c20471083"
+      "size": 11038,
+      "sha256": "e40cc09b6449c9e054469583c6a12ee634b9a6d3e4972746b8dd3af25ee847f3"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5455,8 +5460,8 @@
     },
     {
       "path": "scripts/linux_host_runtime.py",
-      "size": 1964,
-      "sha256": "d146db5de8f692bec0a174ccdf6cb10da33f9564c3d30d84a685f2e210a2ea81"
+      "size": 1993,
+      "sha256": "52d739bf912008e1b2d8c2818c45af028446131856f682b5213386cf849b08af"
     },
     {
       "path": "scripts/linux_kvm_snapshot.py",
@@ -5465,8 +5470,8 @@
     },
     {
       "path": "scripts/linux_ocr_runtime.py",
-      "size": 2018,
-      "sha256": "e9ea081f6239a6ade0997ad204aeafd4eaa54b757a233c43e4bd78592875bb4d"
+      "size": 2047,
+      "sha256": "fc7bea41a188034a17803c583b2e5ce05477dad61c90c03d2d01d409b373e02e"
     },
     {
       "path": "scripts/linux_services.py",
@@ -5490,8 +5495,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 8017,
-      "sha256": "7f33dde1be0ea059f3399e7d821434039c2aff6c2315fc91ea5efbf1882f82a5"
+      "size": 8038,
+      "sha256": "b7392c7b47b3944b5a92f111fafff09c0a53d1352e6e4a3820790b351afa5283"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5755,8 +5760,8 @@
     },
     {
       "path": "scripts/test_android_compression_profiles.py",
-      "size": 1850,
-      "sha256": "0f56424a08923d64167a7236526893d6efe8f17b5396d758fa7908e4eab4dc55"
+      "size": 2223,
+      "sha256": "646a57ab92114870c56f0a19454bc2c8647c7b17ab4bad30771bc90a7066d789"
     },
     {
       "path": "scripts/test_android_input.py",
@@ -5985,8 +5990,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 9990,
-      "sha256": "342158e0c301c87643baabb12290983bcf9047779bfff17247f7ed6a5b9f4948"
+      "size": 12557,
+      "sha256": "c1dddd04bc2a886333b974b757c9dbc64d4b96b9269c93cd05ba7c2b016b2309"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
@@ -6010,8 +6015,8 @@
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
-      "size": 9256,
-      "sha256": "c82f57e3ccfa1bdc330e4454a0164fc0af5fb8a87c6ff4e9755bd75a5dd5aea7"
+      "size": 9469,
+      "sha256": "3bb9f51c027a2e0e879ba0e41aaf0413360723b5c614d32fa408e489aeed3b7c"
     },
     {
       "path": "scripts/test_linux_resume_spec.py",
@@ -6025,8 +6030,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 10445,
-      "sha256": "9261be87ed55b4940839d863e4f90e012eb163e279ae1dc596c068d15be56be6"
+      "size": 11478,
+      "sha256": "63ef8310541cfa15240a4e2b11dc5fed39fee487a5342ab532017103dd0c430f"
     },
     {
       "path": "scripts/test_macos_disk_image.py",

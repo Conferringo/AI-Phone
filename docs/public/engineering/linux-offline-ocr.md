@@ -10,7 +10,9 @@ The factory archive is pinned in `config/linux-ocr.json`. Admission checks archi
 
 ## Maintainer build
 
-Create a dedicated factory context containing `scripts/linux-ocr/collect.py`, `scripts/linux_dependency_factory.py` as `factory.py`, and the Linux x64 `python.tar.gz` identified in `config/installer-tools.json`. Do not use a development checkout or user directory as the Docker build context.
+Create a dedicated factory context containing `scripts/linux-ocr/collect.py`, `scripts/linux_dependency_factory.py` as `factory.py`, and the Linux x64 `python.tar.gz` identified in `config/installer-tools.json`. The shared `factory_context` preparation also verifies and copies the bootstrap CA package from `config/linux-factory.json` and writes its selected snapshot to `snapshot.conf`. Do not use a development checkout or user directory as the Docker build context.
+
+OCR and QEMU dependency factories use the same pinned [Ubuntu archive snapshot](https://snapshot.ubuntu.com/). The minimal base image receives the reviewed Ubuntu CA certificates before accessing that snapshot over HTTPS; TLS verification, signed APT metadata and exact output archive checks remain enabled. A failed index update stops the build. These operations run on the maintainer's builder, not on an end user's host during client startup.
 
 ```sh
 docker buildx build --platform linux/amd64 \
@@ -22,7 +24,7 @@ python3 scripts/linux_ocr_runtime.py \
   --destination /factory/ocr
 ```
 
-The factory verifies the pinned Python archive and Pillow wheel, records distribution package versions and native file hashes, and retains package copyright files and wheel notices. Distribution repositories can change; a changed output requires a new reviewed archive pin, rather than accepting different bytes under an existing identity. Complete binary redistribution and corresponding-source review remain release requirements.
+The factory verifies the pinned Python archive and Pillow wheel, records distribution package versions and native file hashes, and retains package copyright files and wheel notices. Updates to the shared snapshot require verifying both dependency archives; a changed output requires a new reviewed archive pin, rather than accepting different bytes under an existing identity. Complete binary redistribution and corresponding-source review remain release requirements.
 
 On the matching Linux host, pass `--linux-ocr /factory/ocr` with `--with-service-runtime` and `--installer-tools /factory/tools` to `scripts/build_client.py`. The OCR verifier executes the Rust helper against a generated image and the included native dependency closure. A factory component alone does not constitute a complete Linux client.
 

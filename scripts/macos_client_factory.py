@@ -55,7 +55,7 @@ def prepare_host(root,cache):
 
 def prepare_android(root,cache):
     from android_component_factory import build,qualify
-    payload,receipt=build(root,cache/'android')
+    payload,receipt=build(root,cache/'android',compression_preset=9)
     installation=cache/'android-qualification'
     receipt['qualification']=qualify(root,payload,installation,receipt)
     # The freshly generated qualification SDK/profile has no installation data.

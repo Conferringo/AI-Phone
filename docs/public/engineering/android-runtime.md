@@ -6,7 +6,9 @@ The component contains emulator executables, platform tools and an Android facto
 
 New source and Android capsules use XZ compression. Existing gzip capsules remain readable, and the content-addressed component directories keep old installations separate from newly admitted resources. Compression does not alter the device/user directory layout or approve redistribution of factory inputs.
 
-The complete factory uses compression preset 6. Component-only Mac validation selects preset 3 to reduce encoding work; both profiles preserve the exact uncompressed SDK/TAR bytes and use the same admission and executable checks. The selected profile and actual archive digest are recorded by the Mac producer.
+The complete Mac factory uses XZ preset 9; the general component builder retains preset 6, and component-only Mac validation selects preset 3 to reduce encoding work. These profiles preserve the exact uncompressed SDK/TAR bytes and use the same admission and executable checks. The selected profile and actual archive digest are recorded by the producer. The decoder's 128 MiB memory limit is unchanged.
+
+In a read-only measurement of the `e9ecab37fbcb` Mac factory, preset 9 reduced the Android capsule from 867,495,492 to 785,368,004 bytes. All 3,118,755,840 uncompressed bytes matched by SHA-256 after round-trip decoding within that limit. Encoding took about 680 seconds on the measurement host; this is build work, not client startup latency. This capsule measurement does not verify a rebuilt DMG, other host architectures, installation, or redistribution rights. A complete same-source factory build must still establish the final installer size.
 
 Initialization uses the selected CPU, memory and storage presets to create an AVD offline. A complete existing AVD is preserved; an incomplete one stops creation for recovery. A bundled SDK bypasses SDK Manager and AVD Manager. Java is omitted only when the [prebuilt control applications](phone-apps.md) are also included. This does **not** yet make every service, Linux image, application, browser or platform runtime independent of downloads.
 
