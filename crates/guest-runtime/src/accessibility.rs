@@ -379,9 +379,98 @@ pub async fn find(screen: &impl Screen, settings: &Settings, args: Value) -> Res
     Ok(result)
 }
 
+fn editable_field(state: StateSet, role: atspi::Role) -> bool {
+    visible(state)
+        && state.contains(State::Focused)
+        && state.contains(State::Editable)
+        && state.contains(State::Enabled)
+        && state.contains(State::Sensitive)
+        && matches!(
+            role,
+            atspi::Role::Text
+                | atspi::Role::Entry
+                | atspi::Role::SpinButton
+                | atspi::Role::PasswordText
+        )
+}
+async fn focused_field(bus: &Connection, window: ObjectRefOwned) -> Result<bool> {
+    let mut traversal = Traversal::new(window);
+    while let Some((object, depth)) = traversal.next() {
+        let proxy = accessible(bus, &object).await?;
+        let state = proxy.get_state().await?;
+        if !visible(state) {
+            continue;
+        }
+        if state.contains(State::Focused) && editable_field(state, proxy.get_role().await?) {
+            return Ok(true);
+        }
+        traversal.descend(&proxy, state, depth).await?;
+    }
+    Ok(false)
+}
+pub async fn require_field(
+    screen: &impl Screen,
+    settings: &Settings,
+    window_id: u32,
+    process_id: u32,
+) -> Result<()> {
+    let query = Query {
+        window_id,
+        process_id,
+        text: String::new(),
+        role: String::new(),
+    };
+    same_window(&query, &screen.window()?)?;
+    let bus = connection(settings).await?;
+    let window = active_window(&bus, process_id).await?;
+    if !focused_field(&bus, window).await? {
+        return Err("未确认可编辑字段焦点，请先点击文本框；未输入".into());
+    }
+    same_window(&query, &screen.window()?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn replacement_accepts_editable_fields_and_excludes_document_and_canvas_focus() {
+        let states = [
+            State::Showing,
+            State::Visible,
+            State::Focused,
+            State::Editable,
+            State::Enabled,
+            State::Sensitive,
+        ];
+        let field = StateSet::from_iter(states);
+        for role in [
+            atspi::Role::Text,
+            atspi::Role::Entry,
+            atspi::Role::SpinButton,
+            atspi::Role::PasswordText,
+        ] {
+            assert!(editable_field(field, role));
+        }
+        for role in [
+            atspi::Role::DocumentText,
+            atspi::Role::DocumentFrame,
+            atspi::Role::DrawingArea,
+            atspi::Role::Paragraph,
+        ] {
+            assert!(!editable_field(field, role));
+        }
+        for missing in states {
+            assert!(!editable_field(
+                StateSet::from_iter(states.into_iter().filter(|s| *s != missing)),
+                atspi::Role::Entry
+            ));
+        }
+        assert!(!editable_field(
+            field | State::Defunct.into(),
+            atspi::Role::Entry
+        ));
+    }
 
     #[test]
     fn embedded_root_pane_uses_the_native_host_origin_only_for_the_same_allocation() {

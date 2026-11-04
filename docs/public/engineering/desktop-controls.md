@@ -6,6 +6,14 @@ The existing desktop observation carries an X11 window ID and process ID through
 
 Traversal is bounded to384 nodes and12 levels. Hidden/defunct nodes are excluded; virtualized descendants are not expanded into unbounded table cells or file lists. `partial=true` means the entire window was not inspected, including when a virtualized branch was deliberately omitted. An empty partial result does not prove that a control is absent. Use the existing OCR/crop tools when a window does not provide accessibility or the reported geometry does not match the screen.
 
+## Field replacement
+
+`computer_type` accepts optional `replace=true` to replace the focused editable field with one select-all/paste action. The default remains ordinary Unicode paste. The stored observation supplies the window/process identity; the native reader checks the current foreground window and real AT-SPI focus before any clipboard or keyboard input. Text entries, editable text and spin fields are eligible; document/canvas roles are excluded. This check runs only for replacement, not after every GUI action.
+
+The existing protobuf action carries the flag. A distinct native opcode prevents an older guest from silently treating replacement as append. A focus rejection returns `not_executed` and is recorded as a failed action, distinct from an interrupted or unknown result. Reusing the same action ID returns that rejection without retrying input. Genuine unknown outcomes retain the existing observe-before-replay contract.
+
+The exercised GTK Save dialog replaced Chinese and emoji exactly, then appended normally; clipboard copy through the UI confirmed the value. Canvas focus and a stale window ID rejected input without changing the clipboard. The dialog was cancelled and no document was saved. Application-specific accessibility availability still determines whether replacement can be confirmed; unavailable focus is not proof that the field is absent.
+
 ## Evidence and limits
 
 A real isolated LibreOffice GTK3 process in the existing Linux device exposed its Save dialog. Inspection found the filename field as editable and focused, distinguished its same-name label, and returned unique Save/Cancel buttons. The returned Cancel coordinates were used for a real click; the modal closed and the original window returned. Three lookup samples took approximately79–88ms including the container invocation. These are individual samples, not an overall latency benchmark or a general drawing qualification.

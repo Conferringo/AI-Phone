@@ -2585,8 +2585,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 74104,
-      "sha256": "369291fd276b8952fc455e8f1d748a70ad38c115b88c699a256ba5bdba74701e"
+      "size": 78544,
+      "sha256": "c361b9f96f30811665a6d53e8cb6e43b3ab954d579a999839f4e2665903cb71b"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2860,13 +2860,13 @@
     },
     {
       "path": "crates/guest-runtime/src/accessibility.rs",
-      "size": 17465,
-      "sha256": "ad0d5ad08a2e8eae3e87a843ca5f02a6c985d195e80f8f731e2c9a79d04c9536"
+      "size": 20259,
+      "sha256": "41998614199800f33f6eb5c661ba866d514ea5bcfb642a8900403fe14081deb2"
     },
     {
       "path": "crates/guest-runtime/src/actions.rs",
-      "size": 6758,
-      "sha256": "6e7ef2cf62c26a9bb3434e910c5c682a43d84e02a36c892fd2e2d16ad98cd247"
+      "size": 8949,
+      "sha256": "4e19a3d225ee7df415dd0197ea60be515dd8d7435a7d3be78f04c42d9d629b25"
     },
     {
       "path": "crates/guest-runtime/src/audio.rs",
@@ -2915,8 +2915,8 @@
     },
     {
       "path": "crates/guest-runtime/src/main.rs",
-      "size": 3802,
-      "sha256": "806ed278dcbc36538e61d5c0f7ae8df061a87df7dfe06f637e4a3b09abecc18e"
+      "size": 4005,
+      "sha256": "54ce123874e428e271b2b7143789096fb9296f69ee94294e4daf865a2a1fcabf"
     },
     {
       "path": "crates/guest-runtime/src/media.rs",
@@ -2960,8 +2960,8 @@
     },
     {
       "path": "crates/guest-runtime/tests/control_contract.rs",
-      "size": 15268,
-      "sha256": "88b1f6c95c1e7a067525e56890fb3db839181a4758d85510c14b12f52eafd966"
+      "size": 16024,
+      "sha256": "595589716e91423c0716e1f1b06f1e91d2f33cb77f15dcbd434b9651d975137f"
     },
     {
       "path": "crates/guest-runtime/tests/media_owned_contract.rs",
@@ -3405,8 +3405,8 @@
     },
     {
       "path": "docs/public/engineering/desktop-controls.md",
-      "size": 3573,
-      "sha256": "6ec2bbae57f3203b3b6b2e30188a2e8fc72bef7a8e54874aca89a7f5c49d15aa"
+      "size": 4953,
+      "sha256": "b6d1d1eac6c897d0b28783ad21187ec007d36fa238715f2b7314cc37ed63a45b"
     },
     {
       "path": "docs/public/engineering/device-bridge.md",
@@ -4560,8 +4560,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/desktop.proto",
-      "size": 3327,
-      "sha256": "c48f29cdb2944507c17a361ae25b1b716723d5801bfa90767df6037777f04fa1"
+      "size": 3509,
+      "sha256": "c6c7ce996de531a11335b2689aca2bc69bacbe63536979b3b5609b04098e218f"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/device_network.proto",
@@ -4640,8 +4640,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/desktop_pb.ts",
-      "size": 20027,
-      "sha256": "bb0b81c97dd5e10093b58e1c46e66459c8baa4839ab3059b72b05ecbce65aff3"
+      "size": 20296,
+      "sha256": "987d6aa1b99c7c659107cdafca6530259202c9d0da50b1d73dfb8a659991429e"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/device_network_pb.ts",
@@ -6325,8 +6325,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 6581,
-      "sha256": "c187e6e6f5dced8a7ba5b676d992ac709ea997a4535c306f6792b5b559727d49"
+      "size": 6851,
+      "sha256": "6b2231261883203dcd88457924bf76915dbbec5de0733f1a0fc79f292a6acaee"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",

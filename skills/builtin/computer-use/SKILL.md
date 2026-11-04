@@ -5,7 +5,7 @@ description: 真实Linux桌面的观察、键鼠操作、中文输入和办公�
 # Linux桌面
 先device_list确认本任务授权且已安装的电脑。computer_observe(device_id)返回真实1280×800截图、活动窗口、observation_id；按截图识别目标，不能从手机或历史图片猜坐标。
 
-GUI工具：computer_click（左键1/右键3，双击clicks=2）、computer_type（Unicode粘贴）、computer_key（Return、ctrl+l、ctrl+s、alt+F4等）、computer_scroll、computer_drag。每次使用本轮最新observation_id；动作后返回新截图，继续根据新图决策。观察过期、控制权变化、目标不见时重新观察，不盲点。手动接管后等待，不抢回用户控制。
+GUI工具：computer_click（左键1/右键3，双击clicks=2）、computer_type（Unicode粘贴；replace=true一次替换已聚焦字段）、computer_key（Return、ctrl+l、ctrl+s、alt+F4等）、computer_scroll、computer_drag。每次使用本轮最新observation_id；动作后返回新截图，继续根据新图决策。观察过期、控制权变化、目标不见时重新观察，不盲点。手动接管后等待，不抢回用户控制。
 
 手机工具仅操作Android。电脑上的桌面图标可双击打开工作文件、表格与浏览器；工作目录/home/ai/Files，文件管理器和LibreOffice均为真实GUI。
 
@@ -27,7 +27,7 @@ Ctrl+S保存新文件时同时选择正确的文件类型和扩展名，不能�
 
 小按钮或点偏时，按最新observation_id调用computer_find_text(text)定位文字；返回全屏bounds/center和confidence，同名标签保留多个位置，须结合当前截图确认窗口、遮挡和目标，不能把文字当作必可点击控件。小字或空列表时，可在computer_find_text中加入region:{x,y,width,height}缩小到目标附近，放大识别后仍返回全屏坐标；也可用computer_zoom核对画面。不要猜位置或重复原坐标。文字查找不创建新观察或动作授权。小字、表格单元格、密集工具栏可用computer_zoom放大最新观察的局部。它只裁剪已取得的真实截图，不创建新的执行授权。返回crop_origin和scale；动作仍使用全屏坐标（局部坐标除以倍率再加偏移），不要直接点击放大图坐标。没有看清就重新观察或缩小目标范围，不能靠记忆猜位置。
 
-点击前确认目标窗口、遮挡和焦点；输入前先聚焦，长文本优先Unicode粘贴。普通图标单击选中、桌面启动通常双击，不能把未变化的第一次单击误判为卡死。列表先从1–3格短滚动开始，核对可见内容后再调整；拖拽先看起点是否真可拖、落点是否允许放置。卡住时先查弹窗、焦点、加载状态，再执行下一步；不要连续重复同一坐标。
+点击前确认目标窗口、遮挡和焦点；输入前先聚焦，长文本优先Unicode粘贴。替换文件名、网址或数值字段用computer_type(replace=true)，会核对真实焦点并一次全选粘贴；未确认字段则不输入，先点击文本框，不降级追加。画布或文档正文不使用此选项。普通图标单击选中、桌面启动通常双击，不能把未变化的第一次单击误判为卡死。列表先从1–3格短滚动开始，核对可见内容后再调整；拖拽先看起点是否真可拖、落点是否允许放置。卡住时先查弹窗、焦点、加载状态，再执行下一步；不要连续重复同一坐标。
 
 AI动作会有界等待重绘，只返回最终一帧；frame_state为STABLE仅表示短暂画面收敛，不代表应用任务或网页加载完成。CHANGING表示仍在重绘，UNCHANGED表示没有明显视觉变化；结合窗口和产物判断，不能因此连续重发点击或保存。人工实时控制保留快速返回。每次GUI动作后阅读返回截图再决策；缩放图、命令输出和上一轮截图不能替代这一轮的操作后结果。压缩上下文保留当前设备最近观察、真实失败和待处理产物；命令处理、GUI处理分别说明。方法参考官方computer-use demo中的截图尺寸、坐标换算、有限重试与逐步核验；本项目不绑定某一模型厂商。
 

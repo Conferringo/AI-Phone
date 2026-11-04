@@ -469,3 +469,24 @@ fn cursor_receipts_are_atomic_bounded_and_preserve_action_id() {
     );
     assert_eq!(std::fs::read_dir(folder).unwrap().count(), 1);
 }
+
+#[tokio::test]
+async fn replacement_without_current_window_has_no_clipboard_or_key_side_effects() {
+    let home = tempfile::tempdir().unwrap();
+    let app = runtime(home.path());
+    let result = actions::execute(
+        &app.screen,
+        &app.runner,
+        &app.settings,
+        json!({"kind":"replace_text","text":"替换内容","window_id":17,"process_id":42}),
+    )
+    .await;
+    assert!(
+        result.is_err(),
+        "replacement must never degrade to ordinary append"
+    );
+    assert!(result.unwrap_err().is::<actions::InputRejected>());
+    assert!(app.runner.requests.lock().unwrap().is_empty());
+    assert!(app.screen.state.lock().unwrap().moves.is_empty());
+    assert!(app.screen.state.lock().unwrap().buttons.is_empty());
+}

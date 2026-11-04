@@ -108,9 +108,12 @@ async fn main() -> ExitCode {
         if stderr_only {
             eprintln!("{error}");
         } else {
-            let _ = emit(Response::Json(
-                json!({"success": false, "error": error.to_string()}),
-            ));
+            let mut value = json!({"success": false, "error": error.to_string()});
+            if error.is::<ai_phone_guest_runtime::actions::InputRejected>() {
+                value["not_executed"] = json!(true);
+                value["code"] = json!("field_focus");
+            }
+            let _ = emit(Response::Json(value));
         }
         return ExitCode::FAILURE;
     }

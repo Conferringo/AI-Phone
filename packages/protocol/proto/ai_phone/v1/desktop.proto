@@ -42,6 +42,9 @@ message DesktopActionRequest {
   string text = 14;
   // Automated input waits for repaint; interactive streamed control may omit it.
   bool wait_for_paint = 15;
+  // Replace the current editable field through real select-all/paste input.
+  // Rejected when the observed foreground window or editable focus is unavailable.
+  bool replace = 16;
 }
 message DeviceFilesRequest { string device_id = 1; string path = 2; }
 message DeviceFile { string name = 1; string path = 2; bool directory = 3; uint64 bytes = 4; }
