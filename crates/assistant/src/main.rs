@@ -285,6 +285,10 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .layer(DefaultBodyLimit::max(65536));
     let routes = routes
         .route(
+            "/v1/voice/playback",
+            axum::routing::get(speech::playback::route),
+        )
+        .route(
             "/v1/voice/stream",
             axum::routing::get(speech::realtime::route),
         )

@@ -68,7 +68,14 @@ message VoiceSpeechRequest {
   uint64 configuration_revision = 3;
   string text = 4;
 }
-message VoiceAudio { bytes wav = 1; }
+// One synthesis request per WebSocket. Closing it cancels generation and playback.
+message VoiceSpeechStreamOutput {
+  oneof event {
+    bytes wav_chunk = 1;
+    bool done = 2;
+    VoiceStreamError error = 3;
+  }
+}
 
 message VoiceStreamStart {
   string device_id = 1;

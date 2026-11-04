@@ -15,48 +15,18 @@ use tokio_tungstenite::{
 };
 type Provider = WebSocketStream<reqwest::Upgraded>;
 
-fn origin(app: &App, headers: &HeaderMap) -> bool {
-    let value = headers
-        .get("origin")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    if matches!(value, "http://127.0.0.1:17860" | "http://localhost:17860") {
-        return true;
-    }
-    let deployment = std::fs::read(app.root.join("data/deployment.json"))
-        .ok()
-        .and_then(|b| serde_json::from_slice::<Value>(&b).ok());
-    deployment
-        .and_then(|d| d["origin"].as_str().map(str::to_owned))
-        .is_some_and(|allowed| allowed == value)
-}
-fn cookie(headers: &HeaderMap) -> &str {
-    headers
-        .get("cookie")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("")
-        .split(';')
-        .map(str::trim)
-        .find_map(|v| v.strip_prefix("ai_phone_session="))
-        .unwrap_or("")
-}
 pub(crate) async fn route(
     axum::extract::State(app): axum::extract::State<Shared>,
     headers: HeaderMap,
     ws: WebSocketUpgrade,
 ) -> Response {
-    if !origin(&app, &headers) {
-        return error(StatusCode::FORBIDDEN, "wrong_origin", "请从工作台操作");
+    if let Err(response) = websocket_authorization(&app, &headers).await {
+        return response;
     }
-    match auth::valid_session(&app.db, cookie(&headers)).await {
-        Ok(true) => ws
-            .max_message_size(4096)
-            .max_frame_size(4096)
-            .on_upgrade(move |socket| serve(app, socket))
-            .into_response(),
-        Ok(false) => error(StatusCode::UNAUTHORIZED, "unauthorized", "请先进入工作台"),
-        Err(e) => db_error(e),
-    }
+    ws.max_message_size(4096)
+        .max_frame_size(4096)
+        .on_upgrade(move |socket| serve(app, socket))
+        .into_response()
 }
 async fn send(socket: &mut WebSocket, event: wire::voice_stream_output::Event) -> Result<()> {
     socket

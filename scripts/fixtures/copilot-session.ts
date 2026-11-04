@@ -1,6 +1,5 @@
 import {create,fromBinary,toBinary,type DescMessage,type MessageShape} from '@bufbuild/protobuf';
-import {ApiErrorSchema} from '../../packages/protocol/src/gen/ai_phone/v1/system_pb';
-import {VoiceSettingsRequestSchema,VoiceSettingsSchema,VoiceTranscribeRequestSchema,VoiceTranscriptSchema,VoiceSpeechRequestSchema,VoiceAudioSchema} from '../../packages/protocol/src/gen/ai_phone/v1/voice_pb';
+import {VoiceSettingsRequestSchema,VoiceSettingsSchema,VoiceTranscribeRequestSchema,VoiceTranscriptSchema,VoiceSpeechRequestSchema,VoiceSpeechStreamOutputSchema} from '../../packages/protocol/src/gen/ai_phone/v1/voice_pb';
 import {ChatSendRequestSchema} from '../../packages/protocol/src/gen/ai_phone/v1/assistant_pb';
 import {CopilotSession,type CopilotBinding,type MicrophonePort} from '../../apps/web/src/lib/copilot-session';
 import {ChatOutbox,type OutboxInput} from '../../apps/web/src/lib/chat-outbox';
@@ -16,13 +15,14 @@ class Mic implements MicrophonePort {
   played:AbortSignal[]=[];
   prepare(){return Promise.resolve();}
   async open(frame:(pcm:Int16Array,at:number)=>void,failed:(message:string)=>void){this.frame=frame;this.failed=failed;}
-  async play(bytes:Uint8Array,signal:AbortSignal){assert(new TextDecoder().decode(bytes.slice(0,4))==='RIFF','Not WAV');this.played.push(signal);await new Promise<void>(resolve=>signal.addEventListener('abort',()=>resolve(),{once:true}));}
+  async play(audio:(signal:AbortSignal)=>AsyncIterable<Uint8Array>,signal:AbortSignal){for await(const bytes of audio(signal)){assert(new TextDecoder().decode(bytes.slice(0,4))==='RIFF','Not WAV');this.played.push(signal);await new Promise<void>(resolve=>signal.addEventListener('abort',()=>resolve(),{once:true}));break;}}
   close(){this.closed=true;this.frame=null;}
 }
 const transcriptions:Array<MessageShape<typeof VoiceTranscribeRequestSchema>>=[];
 const spokenRevisions:bigint[]=[];
 let speechQuota=true,late=false,releaseLate:()=>void=()=>{};
-const server=Bun.serve({port:0,hostname:'127.0.0.1',async fetch(request){
+const server=Bun.serve({port:0,hostname:'127.0.0.1',async fetch(request,server){
+  if(new URL(request.url).pathname==='/playback'){if(server.upgrade(request))return;return new Response(null,{status:400});}
   const path=new URL(request.url).pathname,bytes=new Uint8Array(await request.arrayBuffer());
   assert(request.headers.get('content-type')==='application/x-protobuf','Non-protobuf voice request');
   const response=<T extends DescMessage>(schema:T,value:MessageShape<T>)=>new Response(toBinary(schema,value),{headers:{'content-type':'application/x-protobuf'}});
@@ -37,13 +37,14 @@ const server=Bun.serve({port:0,hostname:'127.0.0.1',async fetch(request){
     const prior=input.context[0];
     return response(VoiceTranscriptSchema,create(VoiceTranscriptSchema,{literal:prior?'不是，是北京':'打开天气',text:prior?'打开北京天气':'打开上海天气',correctsRequestId:prior?.requestId||''}));
   }
-  if(path.endsWith('/speech')){
-    spokenRevisions.push(fromBinary(VoiceSpeechRequestSchema,bytes).configurationRevision);
-    if(speechQuota)return new Response(toBinary(ApiErrorSchema,create(ApiErrorSchema,{code:'voice_error',message:'语音服务 HTTP 402'})),{status:402,headers:{'content-type':'application/x-protobuf'}});
-    return response(VoiceAudioSchema,create(VoiceAudioSchema,{wav:wav([new Int16Array(1600)])}));
-  }
   return new Response(null,{status:404});
-}});
+},websocket:{message(peer,bytes){
+  const request=fromBinary(VoiceSpeechRequestSchema,new Uint8Array(bytes as Uint8Array));spokenRevisions.push(request.configurationRevision);
+  const event:MessageShape<typeof VoiceSpeechStreamOutputSchema>['event']=speechQuota?{case:'error',value:{message:'语音服务 HTTP 402'}}:{case:'wavChunk',value:wav([new Int16Array(1600)])};
+  peer.send(toBinary(VoiceSpeechStreamOutputSchema,create(VoiceSpeechStreamOutputSchema,{event})));
+  if(!speechQuota)peer.send(toBinary(VoiceSpeechStreamOutputSchema,create(VoiceSpeechStreamOutputSchema,{event:{case:'done',value:true}})));
+  peer.close();
+}}});
 const nativeFetch=globalThis.fetch;
 globalThis.fetch=((url:Parameters<typeof fetch>[0],options?:Parameters<typeof fetch>[1])=>nativeFetch(typeof url==='string'&&url.startsWith('/api/voice/')?new URL(url,server.url):url,options)) as typeof fetch;
 const captures:Mic[]=[],recovered:string[]=[],stored:Record<string,string>={},sent:OutboxInput[]=[],received:OutboxInput[]=[],finish:Array<()=>void>=[],signals:AbortSignal[]=[];
@@ -52,7 +53,7 @@ function binding(deviceId:string):CopilotBinding {
   const box=new ChatOutbox<void>({read:()=>stored[deviceId]||'[]',write:value=>{stored[deviceId]=value;}},async(item,signal)=>{received.push(item);signals.push(signal);await new Promise<void>(resolve=>finish.push(resolve));},()=>{});boxes.set(deviceId,box);box.start();
   return {deviceId,agentId:'agent-'+deviceId,conversationId:'conversation-'+deviceId,ready:true,submit:input=>{sent.push(input);box.enqueue(input);},recover:text=>recovered.push(text),replies:[{id:'old',ordinal:1n,text:'旧消息。',complete:true}]};
 }
-const controller=new CopilotSession(()=>{throw Error('Unexpected configuration prompt');},()=>{const mic=new Mic();captures.push(mic);return mic;});
+const controller=new CopilotSession(()=>{throw Error('Unexpected configuration prompt');},()=>{const mic=new Mic();captures.push(mic);return mic;},undefined,()=>new WebSocket(new URL('/playback',server.url).href.replace('http:','ws:')));
 try{
   const phone=binding('phone'),desktop=binding('desktop');controller.register(phone);controller.register(desktop);await controller.start('phone');
   assert(controller.snapshot().enabled,'Capture did not enable');const mic=captures[0];

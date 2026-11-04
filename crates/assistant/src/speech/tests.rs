@@ -214,9 +214,13 @@ async fn real_http_audio_adapter_transcribes_interprets_speaks_and_reports_quota
     assert_eq!(transcript.text, "打开北京天气");
     assert_eq!(transcript.corrects_request_id, "previous");
     assert_eq!(
-        provider::speech(&client, &config, "正在处理")
+        provider::speech_response(&client, &config, "正在处理")
             .await
-            .unwrap(),
+            .unwrap()
+            .bytes()
+            .await
+            .unwrap()
+            .to_vec(),
         expected
     );
     config.base_url = format!("http://{address}/quota");

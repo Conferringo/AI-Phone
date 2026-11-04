@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@ai-phone/protocol"],
   async rewrites() {
-    return {beforeFiles:[{source:'/api/voice/stream',destination:'http://127.0.0.1:17863/v1/voice/stream'}]};
+    return {beforeFiles:['stream','playback'].map(operation=>({source:`/api/voice/${operation}`,destination:`http://127.0.0.1:17863/v1/voice/${operation}`}))};
   },
   async headers() {
     return [{ source: '/:path*', headers: [

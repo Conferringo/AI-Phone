@@ -1,4 +1,5 @@
 import {pcm16} from './copilot-audio';
+import {playWave} from './copilot-playback';
 
 export class Microphone {
   private context:AudioContext|null=null;
@@ -6,7 +7,7 @@ export class Microphone {
   private node:AudioWorkletNode|null=null;
   private source:MediaStreamAudioSourceNode|null=null;
   private generation=0;
-  private playback:AudioBufferSourceNode|null=null;
+  private playback:AbortController|null=null;
   /** Call from the activation gesture, before any configuration/network await. */
   prepare(){
     if(!isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('请通过本机地址或客户端使用麦克风');
@@ -27,26 +28,17 @@ export class Microphone {
     this.node.port.onmessage=event=>{if(generation===this.generation)frame(pcm16(event.data.samples,event.data.rate),origin+event.data.atMs);};
     this.source=context.createMediaStreamSource(stream);this.source.connect(this.node);this.node.connect(context.destination);
   }
-  async play(bytes:Uint8Array,signal:AbortSignal){
+  async play(audio:(signal:AbortSignal)=>AsyncIterable<Uint8Array>,signal:AbortSignal){
     const context=this.context;if(!context||signal.aborted)return;
-    const audio=await context.decodeAudioData(bytes.slice().buffer as ArrayBuffer);
-    if(signal.aborted||this.context!==context)return;
-    const source=context.createBufferSource();source.buffer=audio;source.connect(context.destination);this.playback=source;
-    let abort=()=>{};
-    try{
-      await new Promise<void>(resolve=>{
-        abort=()=>{try{source.stop();}catch{}resolve();};
-        source.onended=()=>resolve();
-        signal.addEventListener('abort',abort,{once:true});if(signal.aborted){abort();return;}source.start();
-      });
-    }finally{
-      signal.removeEventListener('abort',abort);source.onended=null;source.disconnect();if(this.playback===source)this.playback=null;
-    }
+    const control=new AbortController();this.playback?.abort();this.playback=control;
+    const abort=()=>control.abort();signal.addEventListener('abort',abort,{once:true});
+    try{await playWave(context,audio(control.signal),control.signal);}
+    finally{signal.removeEventListener('abort',abort);control.abort();if(this.playback===control)this.playback=null;}
   }
   close(){
     this.generation++;this.source?.disconnect();this.node?.disconnect();this.node?.port.close();this.node=null;this.source=null;
     this.stream?.getTracks().forEach(t=>{t.onended=null;t.stop();});this.stream=null;
-    try{this.playback?.stop();}catch{}this.playback=null;
+    this.playback?.abort();this.playback=null;
     const context=this.context;this.context=null;if(context)void context.close();
   }
 }

@@ -1,13 +1,13 @@
-import type {MessageShape} from '@bufbuild/protobuf';
-import {VoiceSettingsRequestSchema,VoiceSettingsSchema,VoiceTranscribeRequestSchema,VoiceTranscriptSchema,VoiceSpeechRequestSchema,VoiceAudioSchema} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
+import {create,type MessageShape} from '@bufbuild/protobuf';
+import {VoiceSettingsRequestSchema,VoiceSettingsSchema,VoiceTranscribeRequestSchema,VoiceTranscriptSchema} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
 import {settingsRpc} from './settings-client';
 import {CopilotInput,voiceOutboxInput,type VoiceCommit,type VoiceDraft} from './copilot-input';
 import {SpeechSegments,wav} from './copilot-audio';
 import {Microphone} from './copilot-capture';
+import {speechFrames,speechSocket} from './copilot-speech';
 import {CopilotOutput,type SpokenReply} from './copilot-output';
 import {CopilotStream,voiceSocket} from './copilot-stream';
-import {create} from '@bufbuild/protobuf';
-import {VoiceStreamStartSchema} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
+import {VoiceSpeechRequestSchema,VoiceStreamStartSchema} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
 import type {OutboxInput} from './chat-outbox';
 
 type Profile=MessageShape<typeof VoiceSettingsSchema>;
@@ -40,10 +40,11 @@ export class CopilotSession {
   private state:CopilotState={enabled:false,opening:false,error:'',currentDeviceId:'',drafts:{}};
   private speaker=new CopilotOutput<Target>(async(target,text,signal)=>{
     const b=target.session.binding,p=this.profiles.get(b.agentId)||target.profile;
-    const audio=await settingsRpc('speech',VoiceSpeechRequestSchema,{deviceId:b.deviceId,agentId:b.agentId,configurationRevision:p.revision,text},VoiceAudioSchema,'voice',signal);
-    await this.microphone?.play(audio.wav,signal);
+    if(!this.microphone)return;
+    const request=create(VoiceSpeechRequestSchema,{deviceId:b.deviceId,agentId:b.agentId,configurationRevision:p.revision,text});
+    await this.microphone.play(control=>speechFrames(request,control,this.openSpeech),signal);
   },message=>{this.outputError=message;this.publish();});
-  constructor(private configure:(agentId:string)=>void,private createMicrophone:()=>MicrophonePort=()=>new Microphone(),private openStream:()=>WebSocket=voiceSocket){}
+  constructor(private configure:(agentId:string)=>void,private createMicrophone:()=>MicrophonePort=()=>new Microphone(),private openStream:()=>WebSocket=voiceSocket,private openSpeech:()=>WebSocket=speechSocket){}
   subscribe=(callback:()=>void)=>{this.listeners.add(callback);return()=>{this.listeners.delete(callback);};};
   snapshot=()=>this.state;
   private publish(){
