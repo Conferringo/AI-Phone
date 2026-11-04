@@ -3100,8 +3100,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
-      "size": 9070,
-      "sha256": "a6cf94ad3b4103cc7cbaa69957814b0d50a06855fe78fa520511754a1ccf1f3a"
+      "size": 13214,
+      "sha256": "566a6da0ab6274bcdd7a3cb24b34acf3539767b7b89ce458251de06acd86d5b9"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/relay.rs",
@@ -3410,8 +3410,8 @@
     },
     {
       "path": "docs/public/engineering/device-bridge.md",
-      "size": 3925,
-      "sha256": "cdd0dadb6919f3f4a1ab00dc69cb1e9391edc0d46eb28f7b6c716222de652f7b"
+      "size": 4518,
+      "sha256": "431791289b92c149d82cdfc2ebb1e100a0d5c50d8478250f6e5bbbeffe7ab72c"
     },
     {
       "path": "docs/public/engineering/guest-apps.md",
