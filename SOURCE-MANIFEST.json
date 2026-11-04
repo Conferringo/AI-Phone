@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 20396,
-      "sha256": "31b923937fe491cd49e7974c6fd97092f45822114d15505adcd0c5fac3ed563f"
+      "size": 20484,
+      "sha256": "1e5aa1984cc788f34b99fcf3601a208c88fc872ca6fcd92206b3d6681d11424f"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
-      "size": 2634,
-      "sha256": "7a8970854fc5f88849fbd2382036d1f2167e76a79f2da1fe6897d19958430400"
+      "size": 2673,
+      "sha256": "931b3ab719046cb3259bc10fd9424e5adea436f9a5dd5a07ca003e32c609c44c"
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
@@ -4960,8 +4960,8 @@
     },
     {
       "path": "scripts/emulator-source-build/linux_bootstrap.py",
-      "size": 26066,
-      "sha256": "71bcf5b60598078c2ef304860aa7faf1f9c0b0bd5c8e827ac789b56f87e714e0"
+      "size": 26174,
+      "sha256": "a7273ea33889163f9b158da8e7b0b07291d93699416edc6c98dc46494ef8693c"
     },
     {
       "path": "scripts/emulator-source-build/qualify_display_session.py",
@@ -4985,8 +4985,8 @@
     },
     {
       "path": "scripts/emulator-source-build/test_linux_bootstrap.py",
-      "size": 43299,
-      "sha256": "3daa80bb4643f146b188c610ed28686033b4539259551d7572617d93bd23a2b2"
+      "size": 43407,
+      "sha256": "74ad7177ea9733a7ad637c8403a7385cf3fa7075f39cf4623b835d57125bf398"
     },
     {
       "path": "scripts/entry-language.test.ts",

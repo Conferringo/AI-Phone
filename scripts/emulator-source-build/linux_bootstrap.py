@@ -170,7 +170,8 @@ def isolated_environment(root):
     for name in ("tmp", "gnupg", "repo-config", "xdg/git", "cache", "pycache"):
         (root / name).mkdir(mode=0o700, parents=True)
     config = root / "xdg/git/config"
-    config.write_text("[user]\n\tname = AI Phone Source Builder\n\temail = source-build@localhost\n[core]\n\thooksPath = /dev/null\n[credential]\n\thelper =\n", encoding="utf-8")
+    # Repo's lazy checkout fetches also inherit this owned transport setting.
+    config.write_text("[user]\n\tname = AI Phone Source Builder\n\temail = source-build@localhost\n[core]\n\thooksPath = /dev/null\n[credential]\n\thelper =\n[http]\n\tversion = HTTP/1.1\n", encoding="utf-8")
     environment = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "LANG": "C.UTF-8",
             "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": str(config), "GIT_TERMINAL_PROMPT": "0",
             "GIT_ASKPASS": "/bin/false", "SSH_ASKPASS": "/bin/false", "GIT_SSH_COMMAND": "/bin/false",

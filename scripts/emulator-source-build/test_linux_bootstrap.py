@@ -96,6 +96,7 @@ class BootstrapInputTests(OwnedFixture):
         self.assertNotIn("XAUTHORITY", environment)
         self.assertEqual(environment["GIT_CONFIG_GLOBAL"], environment["XDG_CONFIG_HOME"] + "/git/config")
         self.assertTrue(Path(environment["GIT_CONFIG_GLOBAL"]).is_file())
+        self.assertIn("[http]\n\tversion = HTTP/1.1\n", Path(environment["GIT_CONFIG_GLOBAL"]).read_text())
         self.assertTrue(Path(environment["GNUPGHOME"]).is_relative_to(self.root))
         self.assertTrue(Path(environment["REPO_CONFIG_DIR"]).is_relative_to(self.root))
         self.assertNotIn("include", Path(environment["GIT_CONFIG_GLOBAL"]).read_text())

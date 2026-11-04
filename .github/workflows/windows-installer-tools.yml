@@ -11,6 +11,7 @@ jobs:
       PYTHONPATH: scripts
       PYTHONDONTWRITEBYTECODE: '1'
       CARGO_BUILD_JOBS: '2'
+      CARGO_HTTP_MULTIPLEXING: 'false'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
