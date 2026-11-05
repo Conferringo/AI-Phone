@@ -2,7 +2,7 @@
   "format": 1,
   "kind": "native-service-licenses",
   "scope": "Locked native service build graph, including target and build dependencies",
-  "lock_sha256": "3d377dd4e39f084032b1010eebd345c925d390161f0fcf77e389ce0d4cadb74b",
+  "lock_sha256": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c",
   "packages": [
     "adler2@2.0.1",
     "aho-corasick@1.1.5",

@@ -19,6 +19,14 @@ def elf(machine=183,kind=1):
 
 
 class MacGuestRuntimeTests(unittest.TestCase):
+    def test_guest_identity_includes_the_protocol_and_api_it_compiles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'Cargo.toml').write_text('fixture source')
+            for name in ('crates/api/src/lib.rs','packages/protocol/proto/ai_phone/v1/location.proto'):
+                source=root/name;source.parent.mkdir(parents=True,exist_ok=True);source.write_text('first source')
+                before=guest.source_identity(root);source.write_text('changed compiled dependency')
+                self.assertNotEqual(guest.source_identity(root),before,name)
+
     def test_precompiled_context_is_materialized_inside_the_shared_factory_tree(self):
         with tempfile.TemporaryDirectory(prefix='shared factory ') as shared,tempfile.TemporaryDirectory(prefix='unmounted compiler ') as outside:
             root=Path(shared).resolve();(root/'Cargo.toml').write_text('fixture source')

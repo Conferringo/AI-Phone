@@ -17,7 +17,6 @@ RUN test -x /usr/bin/localc && test -x /usr/bin/lowriter && test -x /usr/bin/loi
 RUN useradd -m -u 1000 -s /bin/bash ai && mkdir -p /home/ai/Files /home/ai/Desktop && chown -R ai:ai /home/ai
 RUN apt-get -o Acquire::Retries=4 update && DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=4 install -y --no-install-recommends pulseaudio pulseaudio-utils sudo dunst libnotify-bin && rm -rf /var/lib/apt/lists/*
 RUN printf 'ai ALL=(ALL:ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/ai-phone && chmod 440 /etc/sudoers.d/ai-phone
-COPY infra/desktop/location.js /usr/local/lib/ai-phone/location.js
 COPY --from=guest-runtime /build/target/release/desktop-bridge /usr/local/bin/desktop-bridge
 RUN /usr/local/bin/desktop-bridge --version
 COPY LICENSE NOTICE docs/public/native-services-licenses.txt docs/public/native-services-license-inventory.json /usr/share/doc/ai-phone/

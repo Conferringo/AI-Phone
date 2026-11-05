@@ -29,5 +29,5 @@ export XDG_RUNTIME_DIR=/tmp/ai-runtime
 export XDG_CACHE_HOME=/tmp/ai-cache
 export PULSE_SERVER=unix:/tmp/ai-runtime/pulse/native
 (for attempt in $(seq 1 60); do [ -s /tmp/ai-runtime/dbus-address ] && break; sleep .25; done; /usr/local/bin/ai-phone-clash --autostart >/tmp/clash-autostart.log 2>&1) &
-runuser -u ai -- bun /usr/local/lib/ai-phone/location.js --watch >/tmp/ai-location.log 2>&1 &
+runuser -u ai -- /usr/local/bin/desktop-bridge location-serve >/tmp/ai-location.log 2>&1 &
 exec runuser -u ai -- dbus-run-session sh -c 'printf "%s" "$DBUS_SESSION_BUS_ADDRESS" > /tmp/ai-runtime/dbus-address; gsettings set org.gnome.desktop.interface toolkit-accessibility true; dunst -config /etc/xdg/dunst/dunstrc >/tmp/ai-notifications.log 2>&1 & /usr/local/bin/desktop-bridge audio-supervise >/tmp/ai-audio.log 2>&1 & openbox & xsetroot -solid "#e7ebef"; tint2 & pcmanfm --desktop & wait'
