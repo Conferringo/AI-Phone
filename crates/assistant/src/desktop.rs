@@ -175,11 +175,21 @@ pub async fn authorized(app: &App, run: Uuid, device: &str) -> Result<()> {
     }
 }
 pub async fn file_authorized(app: &App, run: Uuid, device: &str) -> Result<()> {
-    if authorized(app, run, device).await.is_ok() {
-        return Ok(());
-    }
-    let connected:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM run_device_bindings b JOIN runs r ON r.id=b.run_id JOIN agent_device_bindings a ON a.agent_id=r.agent_id AND a.device_id=b.device_id JOIN device_links l ON l.connected AND ((l.source_device_id=b.device_id AND l.target_device_id=$2) OR(l.target_device_id=b.device_id AND l.source_device_id=$2)) WHERE b.run_id=$1)").bind(run).bind(device).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-    if connected {
+    let allowed: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM run_device_bindings b
+         JOIN runs r ON r.id=b.run_id
+         JOIN agent_device_bindings a ON a.agent_id=r.agent_id AND a.device_id=b.device_id
+         WHERE b.run_id=$1 AND (b.device_id=$2 OR EXISTS(
+             SELECT 1 FROM device_links l WHERE l.connected AND
+             ((l.source_device_id=b.device_id AND l.target_device_id=$2) OR
+              (l.target_device_id=b.device_id AND l.source_device_id=$2)))))",
+    )
+    .bind(run)
+    .bind(device)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
+    if allowed {
         Ok(())
     } else {
         Err("设备没有绑定给此Agent，数据线也未连接".into())
@@ -1152,7 +1162,6 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
             json!({"success":true,"files":f.files.iter().map(|f|json!({"name":f.name,"path":f.path,"directory":f.directory,"bytes":f.bytes})).collect::<Vec<_>>()}),
         ));
     }
-    authorized(app, run, device).await?;
     if name == "computer_observe" {
         return Ok(blocks(observe(app, device, Some(run), true).await?));
     }
@@ -1167,6 +1176,7 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         name,
         "computer_zoom" | "computer_find_text" | "computer_find_control"
     ) {
+        authorized(app, run, device).await?;
         let observation = {
             let mut connection = app.db.acquire().await.map_err(|e| e.to_string())?;
             stored_observation(&mut connection, observation_id).await?

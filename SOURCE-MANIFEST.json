@@ -2610,8 +2610,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 78544,
-      "sha256": "c361b9f96f30811665a6d53e8cb6e43b3ab954d579a999839f4e2665903cb71b"
+      "size": 78620,
+      "sha256": "88eed2451dd12ae0e3e7ad1bac03bd50845dac930cb121bfe39e1aa06a7fe5a6"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2660,8 +2660,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 16753,
-      "sha256": "d0a2646487d9e8cc303a90416800dfdbc43f92b026b543952515c3ad57847b01"
+      "size": 33067,
+      "sha256": "c3479717820d1e74b854874be7ed8114ef51b04e818b44abf15ef7a963cc2bd5"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2739,6 +2739,11 @@
       "sha256": "0cabc1bdbeea7c594ac4b31a9ff44026cc3a44ebf60c02c96d5abdb5d90c919b"
     },
     {
+      "path": "crates/assistant/src/notification_forwarding_tests.rs",
+      "size": 7800,
+      "sha256": "7f7b25ee085e0c14451b8aeb5839f686497e6237f8ab5f4c3c0115128e18cfba"
+    },
+    {
       "path": "crates/assistant/src/notification_policy.rs",
       "size": 2897,
       "sha256": "955281e644881ede572d0a2fcd159ab9c232ae395476ae97e1ba468e8133756a"
@@ -2750,13 +2755,13 @@
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
-      "size": 11008,
-      "sha256": "62930772cb36ad8fb3805ef60e5cff88f59455325992df099a4457f41b704e9b"
+      "size": 11020,
+      "sha256": "38cabccac1215b749b90a04d2d657087d1e8e49cfd8a56b832d629656f8f7069"
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 70199,
-      "sha256": "afdf8540879378e564863d841609219e1bb418e76b282751ef0c8bdc986c02c7"
+      "size": 70750,
+      "sha256": "62b8fb5db48f890b539b0e2b7bd8cb6804f0f37f9f9fee08d3acee65ceaaf302"
     },
     {
       "path": "crates/assistant/src/registry.rs",
@@ -2875,8 +2880,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 215975,
-      "sha256": "004671524ab207b8c9ba4de9822b864ab230de3cd9517ed49f0aea7c423c753b"
+      "size": 215367,
+      "sha256": "33810b090fbe3ef0a5e36e65556ff5a9e9288d1a4c5e5bb0b78f0173034db2f5"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
