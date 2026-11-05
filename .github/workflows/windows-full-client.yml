@@ -142,6 +142,9 @@ jobs:
         run: |
           python scripts/required_tests.py test_android_windows_runtime.WindowsAndroidRuntimeTests.test_sdk_component_junction_never_imports_an_outside_tree test_private_files.PrivateFileTests.test_native_windows_acl_rejects_an_extra_world_read_grant
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Required Windows candidate retention without skips
+        shell: bash
+        run: python3 scripts/required_tests.py test_candidate_retention test_retention_shell
       - name: Assemble native Android and Linux into one inspected EXE
         shell: pwsh
         run: |
