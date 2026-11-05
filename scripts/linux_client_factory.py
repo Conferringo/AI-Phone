@@ -102,6 +102,9 @@ def snapshot_sources(identity):
 
 
 def factory_context(root,folder,role,python_archive=None):
+    from native_factory_inputs import archive_directory
+    supplied=archive_directory(root,role)
+    if supplied is not None:return supplied
     folder.mkdir(parents=True)
     for source,target in [(root/'scripts'/role/'Dockerfile','Dockerfile'),(root/'scripts'/role/'collect.py','collect.py'),(root/'scripts/linux_dependency_factory.py','factory.py')]:
         shutil.copyfile(source,folder/target)

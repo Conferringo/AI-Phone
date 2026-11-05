@@ -14,6 +14,16 @@ import android_sdk_archive as sdk_archive
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    def test_explicit_pinned_native_archive_does_not_rebuild_ubuntu_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.context_fixture(root)
+            inputs=root/'inputs';inputs.mkdir();archive=inputs/'linux-x64-host.tar.gz';archive.write_bytes(b'pinned native fixture')
+            (root/'config/linux-host-runtime.json').write_text(json.dumps({'format':1,'host':'linux-x64','archive':{'file':archive.name,'size_bytes':archive.stat().st_size,'sha256':digest(archive)}}))
+            with patch.dict(os.environ,{'AI_PHONE_FACTORY_ARCHIVES':str(inputs)}),patch.object(factory,'run') as run:
+                self.assertEqual(factory.factory_context(root,root/'context','linux-host'),inputs)
+                run.assert_not_called()
+            self.assertFalse((root/'context').exists())
+
     def context_fixture(self,root):
         (root/'config').mkdir();(root/'scripts').mkdir()
         for role in ('linux-ocr','linux-host'):

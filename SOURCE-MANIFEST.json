@@ -70,8 +70,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3396,
-      "sha256": "c1d872fd8abcf24a9e19193efa24adfed989593e34698edfaa2e8b5276d90417"
+      "size": 3818,
+      "sha256": "1bd95f4a22800974f87b9ab49469de8d0b9d7937a91fdf5b46a774e766d7b14c"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-full-client.yml",
-      "size": 6976,
-      "sha256": "553fba3e2d400f30192316daa07b02e3372137c9df878eed391763abccb71b44"
+      "size": 7398,
+      "sha256": "535588d2253c1a0d44bef8aef2c7de21404e10f4c6fb46af9f062cadc8e9e390"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -100,8 +100,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2904,
-      "sha256": "979d7c332286ea8a8d95b5691ea8349c237db5ff7ebe46f6877bb7afed5b46e3"
+      "size": 3326,
+      "sha256": "7a82921ed541e6abf6e40ab3c5adf0472ec6f402913423226aae6d6934e31f67"
     },
     {
       "path": ".gitignore",
@@ -4425,8 +4425,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 4934,
-      "sha256": "08495c5f6e2c979401f733b00de671843d09a3819b90609f1bf8103654af140f"
+      "size": 6214,
+      "sha256": "4d1deb0c459ca820029079151a2436abd4f4cda9f5d455eca9e38b32c31cf636"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -5555,8 +5555,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11866,
-      "sha256": "d24ea27613b6466e54db317e62d3ff6dd8318da921b2c08550f8b2ba2fcdd22c"
+      "size": 12008,
+      "sha256": "a50fe8dea24d7c196048da8d11c6c1eb97cd902c34c6b3533a02eb1c485d5980"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5672,6 +5672,11 @@
       "path": "scripts/native_bundle.py",
       "size": 2464,
       "sha256": "627e86142380a6413582f17c1e44bb07716048a2ab781a319b2d4c70e4618388"
+    },
+    {
+      "path": "scripts/native_factory_inputs.py",
+      "size": 3354,
+      "sha256": "e99f44b3585aa0bb499a0b3068fee55a52df8965d6422341f9093fc59101c18e"
     },
     {
       "path": "scripts/oci_layer_transform.py",
@@ -6110,8 +6115,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 15372,
-      "sha256": "e79bad72ec2ff0ef44c37860c52efe9d76f3fe19a9024fc43519c0e96186e5e2"
+      "size": 16225,
+      "sha256": "8df0f80e47cb40d94eb3a7eabc5e6455c7203192447670461b0477305e93d8c0"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
@@ -6187,6 +6192,11 @@
       "path": "scripts/test_native_device_setup.py",
       "size": 4717,
       "sha256": "10eb890daf51ac51cefcd85777f4c27687125c936812b7616b067028ee1491f5"
+    },
+    {
+      "path": "scripts/test_native_factory_inputs.py",
+      "size": 7131,
+      "sha256": "532e44767fe376c0ad17a8146366a12d868657493e31000f4529a2ee5640559f"
     },
     {
       "path": "scripts/test_native_media_acceptance.py",
