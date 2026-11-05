@@ -3075,8 +3075,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/resources.rs",
-      "size": 5466,
-      "sha256": "b8182c5e068f3f8d86e0740917eaf5816d01651d4bafa42192a31bca6cef0f20"
+      "size": 5537,
+      "sha256": "59f5cfb9047b08786ab36fefb7175de597ca137f12595f1983e3631f7dbcd3b8"
     },
     {
       "path": "crates/host-runtime/src/android/session/adb.rs",
@@ -3120,8 +3120,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/tests.rs",
-      "size": 16369,
-      "sha256": "7161bc07d10a55f84d319983ef5b2cf1f557b5a03fdae42aa959f1c222d92899"
+      "size": 17756,
+      "sha256": "8f6ccae1076ee8a1a0a7f38db7069899cf7557191cf0871cda0319648ddb4a62"
     },
     {
       "path": "crates/host-runtime/src/archive.rs",

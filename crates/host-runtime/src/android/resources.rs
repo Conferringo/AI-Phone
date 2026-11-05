@@ -142,11 +142,12 @@ fn inspect(
     control: &Control<'_>,
 ) -> Result<(File, archive::RawInventory, Manifest)> {
     let mut file = filesystem::regular(payload)?;
-    capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
+    capsule::check_identity(&file, identity, manifest::LIMITS.total)?;
     let raw = archive::visit_component(&mut file, control, &manifest::LIMITS, |_, _, reader| {
         archive::drain(reader)
     })?;
     let manifest = manifest::parse(&raw, platform)?;
+    capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
     Ok((file, raw, manifest))
 }
 pub(super) fn stage(
