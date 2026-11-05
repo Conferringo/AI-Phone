@@ -103,8 +103,23 @@ fn platform_key(os: &str, arch: &str) -> String {
     format!("{os}-{arch}")
 }
 pub fn capability(os: &str, arch: &str) -> Capability {
+    let resources = serde_json::from_str(INTEGRITY).expect("bundled resource inventory");
+    capability_from_resources(os, arch, &resources)
+}
+
+fn capability_from_resources(
+    os: &str,
+    arch: &str,
+    resources: &std::collections::BTreeMap<String, String>,
+) -> Capability {
     let key = platform_key(os, arch);
     let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
+    // Native WSL owns its runtime; it never uses the source installer's SDK/Lima
+    // host table. Resource bytes and actual device readiness are checked on start.
+    let native_windows = os == "windows"
+        && arch == "x86_64"
+        && resources.contains_key("android.payload")
+        && resources.contains_key("wsl/manifest.json");
     Capability {
         platform: os.into(),
         arch: arch.into(),
@@ -116,7 +131,7 @@ pub fn capability(os: &str, arch: &str) -> Capability {
             _ => "unsupported",
         }
         .into(),
-        implemented: policy["hosts"][&key].is_object(),
+        implemented: policy["hosts"][&key].is_object() || native_windows,
     }
 }
 
@@ -177,6 +192,11 @@ impl ManagerState {
         } else {
             Ok(())
         }
+    }
+    #[cfg(any(target_os = "windows", test))]
+    fn complete(&self, folder: &Path) -> Result<(), String> {
+        self.check_cancelled()?;
+        self.set(folder, "ready", "ready", "")
     }
     fn process_error(&self) -> String {
         self.progress
@@ -408,7 +428,7 @@ fn register_windows_backend(
     native
         .complete_devices(&registered.distribution, &boot.backend_bridge_id)
         .map_err(|error| error.code().to_string())?;
-    Ok(())
+    manager.complete(folder)
 }
 
 fn run_source_installer(
@@ -702,8 +722,55 @@ mod tests {
             ("linux", "aarch64"),
             ("android", "aarch64"),
         ] {
-            assert!(!capability(os, arch).implemented);
+            assert!(!capability_from_resources(os, arch, &Default::default()).implemented);
         }
+    }
+    #[test]
+    fn only_the_complete_native_windows_pair_can_enter_device_configuration() {
+        use std::collections::BTreeMap;
+        let mut resources = BTreeMap::new();
+        assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);
+        resources.insert("wsl/manifest.json".into(), "a".repeat(64));
+        assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);
+        resources.insert("android.payload".into(), "b".repeat(64));
+        assert!(capability_from_resources("windows", "x86_64", &resources).implemented);
+        for (os, arch) in [
+            ("windows", "aarch64"),
+            ("linux", "aarch64"),
+            ("android", "aarch64"),
+        ] {
+            assert!(!capability_from_resources(os, arch, &resources).implemented);
+        }
+        resources.remove("wsl/manifest.json");
+        assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);
+    }
+    #[test]
+    fn native_completion_is_durable_and_cancellation_cannot_publish_ready() {
+        let folder = std::env::temp_dir().join(format!(
+            "aiphone-native-completion-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&folder).unwrap();
+        let manager = ManagerState::default();
+        manager.set(&folder, "devices", "running", "").unwrap();
+        assert!(!checkpoint::completed(&folder).unwrap());
+        manager.cancelled.store(true, Ordering::SeqCst);
+        assert_eq!(
+            manager.complete(&folder),
+            Err("installation_cancelled".into())
+        );
+        assert!(!checkpoint::completed(&folder).unwrap());
+        manager.cancelled.store(false, Ordering::SeqCst);
+        manager.complete(&folder).unwrap();
+        assert!(checkpoint::completed(&folder).unwrap());
+        let restarted = ManagerState::default();
+        restarted.recover(&folder).unwrap();
+        assert_eq!(restarted.progress.lock().unwrap().state, "installed");
+        fs::remove_dir_all(folder).unwrap();
     }
     #[test]
     fn deployment_contract_rejects_unknown_keys_and_unbounded_hardware() {

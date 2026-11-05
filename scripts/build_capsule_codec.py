@@ -109,4 +109,4 @@ def read_tar(source,maximum,*,stream=False,expected=None):
 
 
 def write_xz(destination):
-    return lzma.LZMAFile(destination,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=6)
+    return lzma.LZMAFile(destination,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=9)

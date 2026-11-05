@@ -87,16 +87,31 @@ def build_image(root,role,reference,*,workspace=None,clash=None,architecture='am
 
 def prepare_android(root,cache):
     from android_component_factory import build
-    return build(root,cache/'android')
+    preset=9
+    payload,receipt=build(root,cache/'android',compression_preset=preset)
+    return payload,{**receipt,'compression_preset':preset}
+
+
+def snapshot_sources(identity):
+    if not isinstance(identity,str) or re.fullmatch(r'[0-9]{8}T[0-9]{6}Z',identity) is None:
+        raise ValueError('Invalid factory snapshot identity')
+    return ('Types: deb\nURIs: https://snapshot.ubuntu.com/ubuntu/'+identity+'\n'
+            'Suites: noble noble-updates noble-security\nComponents: main universe\n'
+            'Architectures: amd64\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
+            'Snapshot: no\n')
 
 
 def factory_context(root,folder,role,python_archive=None):
+    from native_factory_inputs import archive_directory
+    supplied=archive_directory(root,role)
+    if supplied is not None:return supplied
     folder.mkdir(parents=True)
     for source,target in [(root/'scripts'/role/'Dockerfile','Dockerfile'),(root/'scripts'/role/'collect.py','collect.py'),(root/'scripts/linux_dependency_factory.py','factory.py')]:
         shutil.copyfile(source,folder/target)
     policy=json.loads((root/'config/linux-factory.json').read_text())
+    sources=snapshot_sources(policy['snapshot'])
     fetch(folder,'bootstrap-ca.deb',policy['ca_certificates'])
-    (folder/'snapshot.conf').write_text('APT::Snapshot '+json.dumps(policy['snapshot'])+';\n')
+    (folder/'ubuntu.sources').write_text(sources)
     if python_archive is not None:shutil.copyfile(python_archive,folder/'python.tar.gz')
     output=folder/'output'
     run(['docker','buildx','build','--platform','linux/amd64','--target','export','--output','type=local,dest='+str(output),folder],root)
@@ -162,6 +177,7 @@ def run_checks(root,**options):
 
 
 def compile_client(root,android,images,tools,ocr):
+    from client_delivery import installer_metadata
     run_checks(root)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','linux','--with-web-runtime','--with-service-runtime','--with-phone-apps',
          '--with-container-host','--with-js-services','--with-guest-apps','--android-runtime',android,'--images-runtime',images,'--installer-tools',tools,'--linux-ocr',ocr],root)
@@ -172,6 +188,8 @@ def compile_client(root,android,images,tools,ocr):
         artifact=root/'dist'/f'AI-Phone-{version}-linux-amd64.{extension}'
         receipt=json.loads(artifact.with_suffix(artifact.suffix+'.manifest.json').read_text())
         if not receipt['complete_device_bundle'] or receipt['sha256']!=digest(artifact):raise ValueError('Compiled Linux client is incomplete or changed')
+        if not installer_metadata(artifact,'linux-amd64')['github_asset_eligible']:
+            raise ValueError('Complete Linux '+extension+' exceeds the single-file release limit')
         artifacts.append({'file':artifact.name,'size':artifact.stat().st_size,'sha256':receipt['sha256'],'delivery':checked_delivery(receipt['prebuilt_components'])})
     return artifacts
 

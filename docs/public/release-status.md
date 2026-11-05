@@ -1,20 +1,20 @@
 # Release status
 
-Updated 2026-11-04. Source code and technical documentation are available. **Complete product installers are not published.** This page is the current reference for platform availability and known product limits.
+Updated 2026-11-05. Source code and technical documentation are available. **Complete product installers are not published.** This page is the current reference for platform availability and known product limits.
 
 ## Platform qualification
 
 | Target | Available implementation | Remaining delivery requirements |
 | --- | --- | --- |
 | macOS Apple Silicon | Native client and inspected complete App/DMG factory output | Fresh default-size dual-device installation, upgrades, signing/notarization and complete product acceptance |
-| Windows x64 | Native resources, offline WSL2 registration/initialization and a wired Rust phone-pair lifecycle | Installed WHPX/network qualification, full device provisioning, backend upgrade and complete first run |
+| Windows x64 | Native Android/WSL activation and a [same-source complete EXE factory](windows-client-factory.md) | Full EXE build result, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade and complete first run |
 | Linux x64 | Native client and inspected complete DEB/AppImage factory outputs | Single-file distribution, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
 | Android ARM64 root/KVM | Native client and privileged-host target | Kernel/runtime integration, matched resources and complete dual-guest initialization |
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
-The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/41758075411) and [Linux factory](https://github.com/Conferringo/AI-Phone/actions/runs/41758900254) succeeded from `e9ecab3`. Their DMG, DEB and AppImage include nine runtime resource groups and remain unpublished maintainer drafts. The installers still exceed the project's single-asset transport limit; internal volumes do not meet the single-download requirement. Successful factory output does not certify installation, source/licence closure or independent Windows/Android hosting.
+The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/41904124869) succeeded from `5ae36bc` with all nine runtime groups in one 2,084,332,533-byte DMG, below the single-asset limit. The earlier [Linux factory](https://github.com/Conferringo/AI-Phone/actions/runs/41758900254) succeeded from `e9ecab3` with complete DEB/AppImage outputs; its internal delivery volumes do not meet the single-download requirement. These are unpublished maintainer drafts from their stated source revisions. Successful factory output does not certify installation, source/licence closure or independent Windows/Android hosting.
 
 ## Capability limits
 
@@ -34,7 +34,7 @@ Non-macOS physical installation is waived for the current release scope and rema
 
 ## 中文
 
-源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的完整 DMG、Linux x64 的完整 DEB/AppImage 工厂已成功，包含九类运行资源，仍保留为未公开草稿。安装器仍超过本项目单附件传输上限，内部运输分卷不等于面向用户的单文件下载。Windows 已接通 Rust 专属 WSL 注册、后端初始化和原生手机配对生命周期；WHPX/网络、完整设备初始化、后端原地升级与首次就绪仍待验收。Linux ARM64 与 root/KVM Android 仍缺匹配资源及完整双客体初始化。
+源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的5ae完整工厂已产出2084332533字节的单文件DMG，包含九类资源并低于附件上限；Linux x64早期完整DEB/AppImage工厂已成功，其内部分卷仍不等于用户单文件下载，均为未公开草稿。Windows已接通原生手机/WSL最终激活与同源完整EXE工厂，完整EXE构建结果、WHPX/网络、缺失系统功能/内核、后端升级及首次就绪仍待验收。Linux ARM64与root/KVM Android仍缺匹配资源及完整双客体初始化。
 
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 

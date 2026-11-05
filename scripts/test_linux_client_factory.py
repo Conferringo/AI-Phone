@@ -14,6 +14,16 @@ import android_sdk_archive as sdk_archive
 
 
 class LinuxClientFactoryTests(unittest.TestCase):
+    def test_explicit_pinned_native_archive_does_not_rebuild_ubuntu_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);self.context_fixture(root)
+            inputs=root/'inputs';inputs.mkdir();archive=inputs/'linux-x64-host.tar.gz';archive.write_bytes(b'pinned native fixture')
+            (root/'config/linux-host-runtime.json').write_text(json.dumps({'format':1,'host':'linux-x64','archive':{'file':archive.name,'size_bytes':archive.stat().st_size,'sha256':digest(archive)}}))
+            with patch.dict(os.environ,{'AI_PHONE_FACTORY_ARCHIVES':str(inputs)}),patch.object(factory,'run') as run:
+                self.assertEqual(factory.factory_context(root,root/'context','linux-host'),inputs)
+                run.assert_not_called()
+            self.assertFalse((root/'context').exists())
+
     def context_fixture(self,root):
         (root/'config').mkdir();(root/'scripts').mkdir()
         for role in ('linux-ocr','linux-host'):
@@ -33,17 +43,31 @@ class LinuxClientFactoryTests(unittest.TestCase):
             for role in ('linux-ocr','linux-host'):
                 context=root/role
                 def build(command,_root):
-                    expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','snapshot.conf'}
+                    expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','ubuntu.sources'}
                     if role=='linux-ocr':expected.add('python.tar.gz')
                     self.assertEqual({p.name for p in context.iterdir()},expected)
                     self.assertEqual((context/'bootstrap-ca.deb').read_bytes(),source.read_bytes())
-                    self.assertEqual((context/'snapshot.conf').read_text(),'APT::Snapshot "20261031T040000Z";\n')
+                    configured=(context/'ubuntu.sources').read_text()
+                    self.assertIn('URIs: https://snapshot.ubuntu.com/ubuntu/20261031T040000Z\n',configured)
+                    self.assertIn('Suites: noble noble-updates noble-security\n',configured)
+                    self.assertIn('Components: main universe\n',configured)
+                    self.assertIn('Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n',configured)
+                    self.assertIn('Snapshot: no\n',configured)
                     self.assertEqual(command[-1],context)
                     (context/'output').mkdir()
                 with patch.object(factory,'run',side_effect=build):
                     output=factory.factory_context(root,context,role,python if role=='linux-ocr' else None)
                 self.assertEqual(output,context/'output');self.assertTrue(output.is_dir())
             self.assertEqual(private.read_bytes(),b'keep private')
+
+    def test_invalid_snapshot_cannot_change_repository_selection_or_start_a_builder(self):
+        for identity in ('latest','20261031T040000Z\nURIs: https://foreign.invalid',None):
+            with self.subTest(identity=identity),tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary);self.context_fixture(root)
+                policy=root/'config/linux-factory.json';value=json.loads(policy.read_text());value['snapshot']=identity;policy.write_text(json.dumps(value))
+                with patch.object(factory,'run') as run,self.assertRaisesRegex(ValueError,'snapshot'):
+                    factory.factory_context(root,root/'context','linux-host')
+                run.assert_not_called()
 
     def test_invalid_bootstrap_ca_never_starts_the_builder(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -170,6 +194,28 @@ class LinuxClientFactoryTests(unittest.TestCase):
         with patch('linux_client_factory.docker_image',return_value={'Id':'sha256:'+'c'*64}),patch('linux_client_factory.run') as run:
             with self.assertRaisesRegex(ValueError,'exists'):factory.build_image(Path('/source'),'workspace',namespace+'/workspace:build')
             run.assert_not_called()
+
+
+class LinuxSingleDeliveryTests(unittest.TestCase):
+    def test_either_oversized_installer_rejects_complete_delivery_before_any_volume_handoff(self):
+        from client_delivery import ASSET_LIMIT
+        from contextlib import ExitStack
+        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+        for oversized in ('deb','AppImage'):
+            with self.subTest(oversized=oversized),tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);(root/'config').mkdir();(root/'dist').mkdir()
+                (root/'config/release-policy.json').write_text('{"version":"fixture"}')
+                for extension in ('deb','AppImage'):
+                    artifact=root/'dist'/f'AI-Phone-fixture-linux-amd64.{extension}'
+                    with artifact.open('wb') as output:output.truncate(ASSET_LIMIT if extension==oversized else 7)
+                    artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps({'complete_device_bundle':True,'sha256':'a'*64,'prebuilt_components':full}))
+                with ExitStack() as stack:
+                    stack.enter_context(patch.object(factory,'run'))
+                    stack.enter_context(patch.object(factory,'run_checks'))
+                    stack.enter_context(patch.object(factory,'digest',return_value='a'*64))
+                    stack.enter_context(patch('prepare_client_host.payload_components',return_value=full))
+                    with self.assertRaisesRegex(ValueError,'single-file'):
+                        factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
 
 
 if __name__=='__main__':unittest.main()
