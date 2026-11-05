@@ -130,7 +130,7 @@ RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0
 RUN test ! -e /etc/ld-musl-x86_64.path && test ! -L /etc/ld-musl-x86_64.path && printf '%s\\n' '/opt/aiphone/engine/lib:/opt/aiphone/engine/usr/lib' > /etc/ld-musl-x86_64.path
 RUN /usr/bin/env -i PATH=/usr/bin:/bin /opt/aiphone/engine/usr/bin/runc --version
 RUN /usr/local/bin/docker --version && /usr/local/bin/docker compose version && /usr/local/bin/dockerd --version
-RUN test "$(/usr/local/libexec/aiphone-bootstrap --source-staging-contract)" = ai-phone-source-staging-v1
+RUN staging_contract=$(/usr/bin/timeout 10 /usr/local/libexec/aiphone-bootstrap --source-staging-contract) && test "$staging_contract" = ai-phone-source-staging-v1
 RUN /opt/aiphone/tools/python/bin/python3 -I -B /opt/aiphone/bootstrap/wsl_backend_entry.py --verify
 ENTRYPOINT ["/opt/aiphone/tools/python/bin/python3", "-I", "-B", "/opt/aiphone/bootstrap/wsl_backend_entry.py"]
 '''

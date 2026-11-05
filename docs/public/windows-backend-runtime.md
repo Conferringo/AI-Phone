@@ -28,7 +28,8 @@ initialization use that component to check, stage or resume the source tree and
 its persistent data links. The legacy Python entry consumes the native receipt;
 it no longer publishes WSL source trees itself. Configuration, engine/image
 activation and service-start orchestration still require Python, so this is a
-partial runtime migration. Registered guest disks are not replaced by this change.
+partial runtime migration in newly built root filesystems. Registered guests keep
+their installed bootstrap; in-place backend upgrades remain separate work.
 
 The [Rust phone/backend bridge](engineering/device-bridge.md) now supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. SDK/AVD startup, guest discovery/tools and complete first-run integration remain pending; this component does not enable independent Windows hosting.
 

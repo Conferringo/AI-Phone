@@ -4495,8 +4495,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 9188,
-      "sha256": "1f9ea834077e0b852c0154dadf57af6ffcfe0ce8c9451f65f1dd1998db000382"
+      "size": 9262,
+      "sha256": "e17666a5077e7787acc3de0953dbf706199f23aeb62071784f1a5d7b0d21a23a"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -6255,8 +6255,8 @@
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
-      "size": 5734,
-      "sha256": "d6d25718929501a6c13eaeba1d4c0db88585f6340ff81a11e16a7a1764758e4d"
+      "size": 6827,
+      "sha256": "fd1dfccdccdf1c74cbcd484e554db39196f6b7a2637adb37319c0983c0479ae1"
     },
     {
       "path": "scripts/verify_source_install.py",
@@ -6300,8 +6300,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 13110,
-      "sha256": "7b2e370ec647c553530ad41c0f45e445ddb9750eab383fe08b0c0ff8cd929099"
+      "size": 13168,
+      "sha256": "4a28412ade7ac99fecec5cb11071e830a3275da1d8fb6c53d8b58495c2051625"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
