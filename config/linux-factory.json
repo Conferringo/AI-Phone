@@ -1,7 +1,7 @@
 {
   "snapshot": "20261031T040000Z",
   "ca_certificates": {
-    "url": "https://snapshot.ubuntu.com/ubuntu/20261104T180000Z/pool/main/c/ca-certificates/ca-certificates_20240203_all.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20240203_all.deb",
     "file": "bootstrap-ca.deb",
     "version": "20240203",
     "size_bytes": 159378,

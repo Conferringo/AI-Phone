@@ -2250,8 +2250,8 @@
     },
     {
       "path": "config/linux-factory.json",
-      "size": 358,
-      "sha256": "dbf22152db923603e9fb15353da8fd1ed98baffbac5b607930570eed8d0c1cf5"
+      "size": 340,
+      "sha256": "c0f74260a62e34bb351a6acf5e9d8121d2e44743407e62729bb954dfac46be11"
     },
     {
       "path": "config/linux-host-runtime.json",
