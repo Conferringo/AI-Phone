@@ -21,6 +21,11 @@ draft. It does not publish a release.
 1. A disposable Linux x64 builder creates the clean backend with both offline
    phone application groups and qualifies backend startup, restart, actual desktop
    frames and owned cleanup.
+   The native client dependencies compile concurrently on a separate Windows
+   runner. The exact target, release profile, Tauri custom-protocol feature and
+   path-remapping flags are shared with installer compilation and native tests.
+   Only this workflow run's artifact ID transfers the compiled target tree and
+   Cargo registry; this does not reuse a previous source revision's build.
 2. Only the sealed backend capsule and its source-bound metadata pass to the
    Windows job. The artifact ID and metadata digest come directly from the
    producing job; source commit, source manifest and capsule bytes must match.
@@ -31,6 +36,13 @@ draft. It does not publish a release.
    identities, full resource inventory and private-material rules. A package over
    the single-file asset limit fails; delivery volumes are not accepted by this
    factory as the end-user artifact.
+
+The [de79 factory](https://github.com/Conferringo/AI-Phone/actions/runs/42097398073)
+qualified its backend, then exhausted the native job's 60-minute budget after
+resource preparation and cold dependency compilation. Parallel dependency
+compilation addresses that serial workload; the job limit, full-payload inspection
+and native tests remain unchanged. Its complete installer result is still pending
+validation on Windows.
 
 These are build-machine operations. Python/Node build tools are not an instruction
 for an end user to install development environments. The existing Linux backend
@@ -62,7 +74,9 @@ See [release status](release-status.md), [runtime format](runtime-bundles.md) an
 Windows工厂将原生Android系统/模拟器与独立WSL Linux后端组装进一个x64 EXE。
 后端包含网页、服务、OCR、数据库/桌面镜像、运行工具、手机输入/桌面和Clash应用，
 用户无需自行下载组件或部署服务。Linux工厂先验证启动、重启和真实桌面，再按同一
-源码、artifact ID及摘要交给原生Windows构建和解包审查；超过单文件上限直接失败，
+源码、artifact ID及摘要交给原生Windows构建和解包审查；依赖预编译与后端并行，
+仅交接本轮同源、同目标及编译参数的产物，不放宽60分钟上限或减少完整检查。
+并行后的真实Windows整包结果仍待验证。超过单文件上限直接失败，
 不把分卷当作用户的最终下载包。
 
 携带Android与WSL两类资源后才能进入Windows设备配置，真实配对、输入、通知和电脑
