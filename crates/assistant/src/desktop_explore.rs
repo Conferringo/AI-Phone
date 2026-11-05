@@ -1,6 +1,6 @@
 use crate::*;
 use sqlx::Row;
-pub async fn state(app: &App, device: &str) -> Result<wire::DesktopExploreState, String> {
+async fn ready(app: &App, device: &str) -> Result<(), String> {
     let kind: Option<String> =
         sqlx::query_scalar("SELECT kind FROM devices WHERE id=$1 AND runtime_state='managed'")
             .bind(device)
@@ -14,6 +14,10 @@ pub async fn state(app: &App, device: &str) -> Result<wire::DesktopExploreState,
         }
         _ => return Err("设备尚未接入此探索调度器".into()),
     }
+    Ok(())
+}
+pub async fn state(app: &App, device: &str) -> Result<wire::DesktopExploreState, String> {
+    ready(app, device).await?;
     sqlx::query("INSERT INTO desktop_exploration(device_id) VALUES($1) ON CONFLICT DO NOTHING")
         .bind(device)
         .execute(&app.db)
@@ -37,10 +41,10 @@ pub async fn update(
     app: &App,
     r: wire::DesktopExploreUpdate,
 ) -> Result<wire::DesktopExploreState, String> {
-    state(app, &r.device_id).await?;
     if !(30..=3600).contains(&r.interval_seconds) {
         return Err("间隔应为30–3600秒".into());
     }
+    ready(app, &r.device_id).await?;
     change_mode(
         app,
         &r.device_id,
@@ -184,3 +188,7 @@ pub async fn work(app: Shared) {
         tokio::time::sleep(Duration::from_secs(3)).await;
     }
 }
+
+#[cfg(test)]
+#[path = "desktop_explore_tests.rs"]
+mod tests;

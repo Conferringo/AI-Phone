@@ -1565,8 +1565,8 @@
     },
     {
       "path": "apps/web/src/app/api/assistant/[operation]/route.ts",
-      "size": 2103,
-      "sha256": "3f2db9990577aae94a94fde16d1a0f0de332b30d90a357b7611f79f8a0498b1b"
+      "size": 1972,
+      "sha256": "4ad3f2cd7a83a1fa70acf527008ba986519f876a5ffb81380f94b45d781a6290"
     },
     {
       "path": "apps/web/src/app/api/assistant/attachment/[id]/route.ts",
@@ -1580,8 +1580,8 @@
     },
     {
       "path": "apps/web/src/app/api/channels/[operation]/route.ts",
-      "size": 1621,
-      "sha256": "a631b6764f881fa51ccde263f204a71eda45232e929e869b6c7a56d070b49ef2"
+      "size": 1503,
+      "sha256": "1ede1e0ac2abd37bd61e637d523d583b4c5dd59d537cf04a633128df4ea232bd"
     },
     {
       "path": "apps/web/src/app/api/desktop/[operation]/route.ts",
@@ -1600,8 +1600,8 @@
     },
     {
       "path": "apps/web/src/app/api/phone/[operation]/route.ts",
-      "size": 2442,
-      "sha256": "b49cf856843d05ca90e15bf0b19fa8eb182f3e78ccf9428c5bf0b0abd7648217"
+      "size": 2029,
+      "sha256": "b8a80f031e9cbf0896e40722bcf4570946b502f4064634ee7a8b9a7020d640be"
     },
     {
       "path": "apps/web/src/app/api/phone/media/[kind]/route.ts",
@@ -1640,8 +1640,8 @@
     },
     {
       "path": "apps/web/src/app/api/workbench/[operation]/route.ts",
-      "size": 1849,
-      "sha256": "965a3e18dd34565d31b4b10889e35060494d1279732066042368df0cc4fe55a3"
+      "size": 1737,
+      "sha256": "894de08d882cb77fb74ae5936551b2cb4e3e4a1c137429f4e5fe64a08043fc89"
     },
     {
       "path": "apps/web/src/app/api/workbench/file/route.ts",
@@ -2080,13 +2080,13 @@
     },
     {
       "path": "apps/web/src/lib/settings-client.ts",
-      "size": 1000,
-      "sha256": "a0d7035afe55636e31fd45e05977293f930efb90f173bd2e85dbc55ed024ec6a"
+      "size": 968,
+      "sha256": "605b916eaf8994fbc47b5cbe030427b72e974a86c0a32c689865d2eae49c20ca"
     },
     {
       "path": "apps/web/src/lib/settings-server.ts",
-      "size": 2306,
-      "sha256": "9623a170441d9abc344395e159349abaafc809dfb7166a619fae7fbc610396fb"
+      "size": 2191,
+      "sha256": "a64a43b03ffbf52a9d7705404320f02160c369055df0658da91d9896614a4085"
     },
     {
       "path": "apps/web/src/lib/utils.ts",
@@ -2615,8 +2615,13 @@
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
-      "size": 9426,
-      "sha256": "0311306de4c56fad75aeb50a4adac70b0b5a8e6c0f596f263088ea7b9eed0d95"
+      "size": 9596,
+      "sha256": "155acd00a5bbc01cef6174305d681e618187b7ab3e2dd8a470726a137f65ccfd"
+    },
+    {
+      "path": "crates/assistant/src/desktop_explore_tests.rs",
+      "size": 3570,
+      "sha256": "914bacebfabad3c5493d6d20792a33db29882c68d996b78f10753e9eb2795ff0"
     },
     {
       "path": "crates/assistant/src/device_exchange.rs",
@@ -6440,8 +6445,8 @@
     },
     {
       "path": "scripts/wsl_engine_inputs.py",
-      "size": 5449,
-      "sha256": "8e2f1e9e18789183325626f3d4c31ec714e12c76f4cef66d8c376f5c92c0e22b"
+      "size": 3390,
+      "sha256": "7a7ced1617875f573786de7e2aa1805f436bbc44fb0b207b82528e1b46bfe43d"
     },
     {
       "path": "scripts/wsl_initialize_diagnostics.py",
