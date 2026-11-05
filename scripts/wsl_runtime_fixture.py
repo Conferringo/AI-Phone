@@ -9,7 +9,7 @@ import uuid
 from artifact_io import digest
 
 LABEL='dev.aiphone.qualification'
-CHECKS=frozenset(('assistant','web','channels','database_roles','redis','desktop_frame','work_file','database_marker','desktop_registered','desktop_media'))
+CHECKS=frozenset(('assistant','web','channels','runner_endpoint','database_roles','redis','desktop_frame','work_file','database_marker','desktop_registered','desktop_media'))
 
 
 def require_disposable():

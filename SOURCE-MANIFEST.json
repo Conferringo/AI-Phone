@@ -6295,8 +6295,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9966,
-      "sha256": "bc9af1a07fa7f522948c70a6a44380a088c2b091cb43d3502e10dd707c9e5ff0"
+      "size": 9984,
+      "sha256": "0f1cd355752daf0e79e0276b380deb3e019fe05c2c5c74d2e3fdd4a4f1d198ea"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
@@ -6320,8 +6320,8 @@
     },
     {
       "path": "scripts/test_wsl_provision_consumer.py",
-      "size": 10242,
-      "sha256": "a811cbb7afc69362b00283d70743121948ef921229b4c4d35b8f3b4a8baf7468"
+      "size": 11062,
+      "sha256": "bcc4cf20363a07f3f55c57f0a8763def50a28fb902f7dd422ea3de17f1a8fb80"
     },
     {
       "path": "scripts/test_wsl_resources.py",
@@ -6330,8 +6330,8 @@
     },
     {
       "path": "scripts/test_wsl_runtime.py",
-      "size": 19799,
-      "sha256": "93711dcca27ba626ad26b308b1b3d13796d08e018ef88ed02fabb536cce104f7"
+      "size": 21160,
+      "sha256": "f8e6222e990856ae65c25fd8817e4977067dcaf8d0810ce35268321e94d38744"
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
@@ -6375,8 +6375,8 @@
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7794,
-      "sha256": "1610090190ff4f4e069a04677d85dff8c81316b8e9347457927d4478f4765966"
+      "size": 7916,
+      "sha256": "5700a78ac7a6f35775c94afbc033f2310cefd01270fb38809f726caccb8cc901"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
@@ -6410,18 +6410,18 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9727,
-      "sha256": "6fd0b67857592b68e2683bcd253023f342515b1c355fcc6cb69b63cdf23baa11"
+      "size": 9745,
+      "sha256": "f86441392b6f06fc151ac6294bead0e75708540e15ee2b7643f4bd15bb54c446"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",
-      "size": 8473,
-      "sha256": "639ba27278fbba3e37e27e76804e1f8c679eb585a1d2ed614f0e83162a411ba0"
+      "size": 8929,
+      "sha256": "3dd4ef8fe96d4ce4bfd737f316fea66bda57d7b26fa70d4c3913a245afb2d33c"
     },
     {
       "path": "scripts/wsl_runtime_worker.py",
-      "size": 5737,
-      "sha256": "a98ed937036c6d1893a6b4d5224c7eaccfff8d30428304263c12a76f156e6634"
+      "size": 5746,
+      "sha256": "39812dc32526285aeb7d645b54c7cdb8bd28eae8e2e2c196b2caa7e5d8dd0574"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",

@@ -75,7 +75,7 @@ def shutdown(root):
     from linux_services import stop_unit
     from wsl_runtime_probes import execute
     # Every Docker command inherits the WSL-owned socket selected by initialize.
-    for name in ('channels','media','web','assistant'):stop_unit(root,name)
+    for name in ('channels','media','web','assistant','runner'):stop_unit(root,name)
     execute(root,['docker','compose','-f','compose.desktop.yaml','stop','--timeout','15','desktop'])
     execute(root,['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','stop','--timeout','15','postgres','redis'])
     stop_unit(root,'wsl-engine')

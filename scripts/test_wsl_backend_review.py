@@ -66,7 +66,7 @@ class WslRuntimeBoundaryTests(unittest.TestCase):
                 # runtime_env and web startup helper remain real: the regression covers their composition.
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             names=[name for name,_,_ in captured]
-            self.assertEqual(names,['assistant','web','channels','media'])
+            self.assertEqual(names,['runner','assistant','web','channels','media'])
             web=next(env for name,_,env in captured if name=='web')
             self.assertEqual(web['PORT'],'17860');self.assertEqual(web['HOSTNAME'],'127.0.0.1')
             self.assertEqual(web['DOCKER_HOST'],entry.SOCKET)
@@ -116,7 +116,7 @@ class WslOwnershipChainTests(unittest.TestCase):
             self.assertEqual([argv[5] for argv in docker_calls if argv[1:3]==['container','ls']],
                              ['name=^/'+name+'$' for name in
                               ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop','ai-phone-ocr')])
-            self.assertEqual([name for name,_ in captures],['assistant','web','channels','media'])
+            self.assertEqual([name for name,_ in captures],['runner','assistant','web','channels','media'])
             for _,env in captures:
                 self.assertEqual(env['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('LIMA_HOME',env)
                 self.assertNotIn('/wrong',env['PATH'])

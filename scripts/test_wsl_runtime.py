@@ -34,7 +34,7 @@ class QualificationScopeTests(unittest.TestCase):
 
     def test_public_evidence_rejects_extra_fields_and_false_completion(self):
         from wsl_runtime_fixture import worker_result
-        record={'format':1,'nonce':'a'*32,'phase':1,'status':'passed','stage':'stopped','checks':{'assistant':True,'web':True,'channels':True,'database_roles':True,'redis':True,'desktop_frame':True,'work_file':True,'database_marker':True,'desktop_registered':True,'desktop_media':True},'frame':{'width':1280,'height':800,'sha256':'b'*64},'windows_boot_verified':False,'phone_ready':False}
+        record={'format':1,'nonce':'a'*32,'phase':1,'status':'passed','stage':'stopped','checks':{'assistant':True,'web':True,'channels':True,'runner_endpoint':True,'database_roles':True,'redis':True,'desktop_frame':True,'work_file':True,'database_marker':True,'desktop_registered':True,'desktop_media':True},'frame':{'width':1280,'height':800,'sha256':'b'*64},'windows_boot_verified':False,'phone_ready':False}
         from wsl_initialize_diagnostics import initial
         record['initialization']={**initial(),'step':'complete'}
         self.assertEqual(worker_result(record,'a'*32,1),record)
@@ -54,6 +54,27 @@ class QualificationScopeTests(unittest.TestCase):
 
 
 class RuntimeProbesTests(unittest.TestCase):
+    def test_runner_probe_uses_its_own_token_and_a_read_only_scoped_request(self):
+        from wsl_runtime_probes import ready
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            for role in ('assistant','phone-runner'):
+                path=root/'data'/role/'token';path.parent.mkdir(parents=True);path.write_text(role+'-fixture-token')
+            with patch('wsl_runtime_probes.wait_response') as observe:
+                checks=ready(root)
+            request=next(call.args for call in observe.call_args_list if call.args[1]=='runner_endpoint')
+            self.assertEqual(request[2],'http://127.0.0.1:17862/v1/cursor')
+            self.assertEqual(request[3],b'\x0a\x0ephone-local-01\x12\x0alocal-user')
+            self.assertEqual(request[5],'phone-runner-fixture-token')
+            self.assertTrue(checks['runner_endpoint']);self.assertNotIn('phone_ready',checks)
+
+    def test_shutdown_stops_the_runner_before_the_owned_engine(self):
+        from wsl_runtime_worker import shutdown
+        stopped=[]
+        with patch('linux_services.stop_unit',side_effect=lambda _,name:stopped.append(name)),patch('wsl_runtime_probes.execute'):
+            shutdown(Path('/fixture'))
+        self.assertIn('runner',stopped);self.assertLess(stopped.index('runner'),stopped.index('wsl-engine'))
+
     def test_frame_probe_decodes_real_png_and_rejects_header_only(self):
         import struct,zlib
         from wsl_runtime_probes import frame_evidence

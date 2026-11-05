@@ -117,6 +117,8 @@ def start_backend(root,run,observer=None):
         run([sys.executable,root/'scripts/database.py','prepare'])
         run([*assistant['argv'],'--migrate'])
     observe(observer,'services_start')
+    runner=launch_spec(root,'runner')
+    start_unit(root,'runner',runner['argv'],{**os.environ,**runner['environment']})
     start_unit(root,'assistant',assistant['argv'],{**os.environ,**assistant['environment']})
     web_environment=dict(os.environ)
     def start(name,argv,extra_env=None):return start_unit(root,name,argv,{**web_environment,**(extra_env or {})})
