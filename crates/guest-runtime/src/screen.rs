@@ -137,6 +137,33 @@ impl Display {
         }
         Ok(String::from_utf8_lossy(&title).trim().into())
     }
+
+    fn process_id(&self, window: u32) -> Result<u32> {
+        let bytes = self.property(window, self.atom(b"_NET_WM_PID")?)?;
+        Ok(bytes
+            .get(..4)
+            .map(|v| u32::from_ne_bytes(v.try_into().unwrap()))
+            .unwrap_or_default())
+    }
+
+    fn application_class(&self, window: u32, process: u32) -> Result<String> {
+        let class = wm_class(&self.property(window, xproto::AtomEnum::WM_CLASS.into())?);
+        Ok(transient_class(window, process, class, |child| {
+            let bytes = self
+                .property(child, xproto::AtomEnum::WM_TRANSIENT_FOR.into())
+                .ok()?;
+            let parent = u32::from_ne_bytes(bytes.get(..4)?.try_into().ok()?);
+            Some((
+                parent,
+                self.process_id(parent).ok()?,
+                wm_class(
+                    &self
+                        .property(parent, xproto::AtomEnum::WM_CLASS.into())
+                        .ok()?,
+                ),
+            ))
+        }))
+    }
 }
 
 impl Screen for NativeScreen {
@@ -172,20 +199,12 @@ impl Screen for NativeScreen {
     fn window(&self) -> Result<WindowIdentity> {
         self.with(|display| {
             let window = display.active_window()?;
+            let process = display.process_id(window)?;
             Ok(WindowIdentity {
                 title: display.window_title(window)?,
-                application_class: wm_class(
-                    &display.property(window, xproto::AtomEnum::WM_CLASS.into())?,
-                ),
+                application_class: display.application_class(window, process)?,
                 window_id: window,
-                process_id: {
-                    let atom = display.atom(b"_NET_WM_PID")?;
-                    let bytes = display.property(window, atom)?;
-                    bytes
-                        .get(..4)
-                        .map(|v| u32::from_ne_bytes(v.try_into().unwrap()))
-                        .unwrap_or_default()
-                },
+                process_id: process,
             })
         })
     }
@@ -293,6 +312,34 @@ fn wm_class(bytes: &[u8]) -> String {
         .into()
 }
 
+fn transient_class(
+    window: u32,
+    process: u32,
+    class: String,
+    mut parent: impl FnMut(u32) -> Option<(u32, u32, String)>,
+) -> String {
+    let mut visited = vec![window];
+    let mut class = class;
+    if process == 0 {
+        return class;
+    }
+    // Follow the physical transient relationship, never the first same-PID
+    // document or a title. Keep the active dialog's window/PID for input checks.
+    for _ in 0..8 {
+        let Some((owner, owner_process, owner_class)) = parent(*visited.last().unwrap()) else {
+            break;
+        };
+        if owner == 0 || owner_process != process || visited.contains(&owner) {
+            break;
+        }
+        visited.push(owner);
+        if !owner_class.is_empty() {
+            class = owner_class;
+        }
+    }
+    class
+}
+
 #[cfg(test)]
 mod identity_tests {
     use super::*;
@@ -305,5 +352,52 @@ mod identity_tests {
         assert_eq!(wm_class(b"private-instance"), "");
         assert_eq!(wm_class(b"private-instance\0\0"), "");
         assert_eq!(wm_class(b"instance\0broken\nclass\0"), "");
+    }
+    #[test]
+    fn dialog_identity_follows_its_actual_parent_not_another_window_in_the_process() {
+        let parents = [
+            (20, (10, 180, "libreoffice-draw".into())),
+            (40, (30, 180, "libreoffice-calc".into())),
+        ];
+        for (dialog, expected) in [(20, "libreoffice-draw"), (40, "libreoffice-calc")] {
+            assert_eq!(
+                transient_class(dialog, 180, "Soffice".into(), |id| parents
+                    .iter()
+                    .find(|(child, _)| *child == id)
+                    .map(|(_, parent)| parent.clone())),
+                expected
+            );
+        }
+    }
+    #[test]
+    fn missing_cross_process_and_cyclic_parents_do_not_rebind_a_dialog() {
+        for process in [0, 181] {
+            assert_eq!(
+                transient_class(20, 180, "Soffice".into(), |_| Some((
+                    10,
+                    process,
+                    "other-app".into()
+                ))),
+                "Soffice"
+            );
+        }
+        assert_eq!(
+            transient_class(20, 180, "Soffice".into(), |_| None),
+            "Soffice"
+        );
+        assert_eq!(
+            transient_class(20, 180, "Soffice".into(), |_| Some((
+                20,
+                180,
+                "other-app".into()
+            ))),
+            "Soffice"
+        );
+        let mut calls = 0;
+        transient_class(20, 180, "Soffice".into(), |id| {
+            calls += 1;
+            Some((id + 1, 180, String::new()))
+        });
+        assert_eq!(calls, 8, "malformed parent chains remain bounded");
     }
 }

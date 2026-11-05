@@ -835,7 +835,7 @@ fn current_learning_application(context: &[Value]) -> Option<String> {
         .rev()
         .find(|call| {
             call["type"] == "function_call"
-                && learning_observation(call["name"].as_str().unwrap_or(""))
+                && crate::app_learning::observation_tool(call["name"].as_str().unwrap_or(""))
         })?;
     if !successful_call(latest, context) {
         return None;
@@ -854,19 +854,6 @@ fn guidance_read(name: &str) -> Value {
     json!({"type":"function_call","name":"skill_read","arguments":json!({"name":name}).to_string(),
         "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name})
 }
-fn learning_observation(name: &str) -> bool {
-    matches!(
-        name,
-        "phone_observe"
-            | "computer_observe"
-            | "computer_click"
-            | "computer_type"
-            | "computer_key"
-            | "computer_scroll"
-            | "computer_drag"
-    )
-}
-
 fn wechat_task(context: &[Value]) -> bool {
     let request = latest_request(context)
         .to_lowercase()
@@ -3023,7 +3010,7 @@ async fn retain_tool_observation(
     output: &Value,
 ) -> Result<(), String> {
     let name = call["name"].as_str().unwrap_or("");
-    if learning_observation(name) {
+    if crate::app_learning::observation_tool(name) {
         let after = call["local_after_action"].is_string()
             || !matches!(name, "phone_observe" | "computer_observe");
         crate::app_learning::observe(app, run, event, after, output).await?;

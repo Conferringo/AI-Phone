@@ -2250,8 +2250,8 @@
     },
     {
       "path": "config/linux-factory.json",
-      "size": 358,
-      "sha256": "dbf22152db923603e9fb15353da8fd1ed98baffbac5b607930570eed8d0c1cf5"
+      "size": 340,
+      "sha256": "c0f74260a62e34bb351a6acf5e9d8121d2e44743407e62729bb954dfac46be11"
     },
     {
       "path": "config/linux-host-runtime.json",
@@ -2565,8 +2565,8 @@
     },
     {
       "path": "crates/assistant/src/app_learning.rs",
-      "size": 20629,
-      "sha256": "6f230d4788a047b310f88741ce00fb292ccc9804e77079ac73d3576afe0bdc03"
+      "size": 20927,
+      "sha256": "523beb88c484d29ae2026eefcb8e8121e2f94ca3295c8409aa9f9f57d862ef1a"
     },
     {
       "path": "crates/assistant/src/application_identity.rs",
@@ -2590,8 +2590,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 16441,
-      "sha256": "3298c5210dad0f8dd171b161db0792902f446d239b63631e5f498d65f48e8692"
+      "size": 30177,
+      "sha256": "25642afdf52b0248e51ba4e205432fa295875aae2d00da9a1590942a26b7b1c0"
     },
     {
       "path": "crates/assistant/src/database.rs",
@@ -2865,8 +2865,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 216233,
-      "sha256": "9840677388126060534c029ac55b30998d864d5edfa31e1794da9d0b0f988f0a"
+      "size": 215975,
+      "sha256": "004671524ab207b8c9ba4de9822b864ab230de3cd9517ed49f0aea7c423c753b"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
@@ -2880,8 +2880,8 @@
     },
     {
       "path": "crates/guest-runtime/src/accessibility.rs",
-      "size": 20259,
-      "sha256": "41998614199800f33f6eb5c661ba866d514ea5bcfb642a8900403fe14081deb2"
+      "size": 23379,
+      "sha256": "fd387bad6c36a71526d45270d0a5a26294b97dc1dfa2fd7a17f8c5535d277500"
     },
     {
       "path": "crates/guest-runtime/src/actions.rs",
@@ -2965,8 +2965,8 @@
     },
     {
       "path": "crates/guest-runtime/src/screen.rs",
-      "size": 9789,
-      "sha256": "0fcbd54a73b3925254da5d4b59af3179b63262dcacf62f9553cc6460dab27455"
+      "size": 12860,
+      "sha256": "b1c12c07ebf54e7a2147a963ee6574a9c903bde8e7312a8e2f21f6b10eda8138"
     },
     {
       "path": "crates/guest-runtime/src/settings.rs",
@@ -3415,8 +3415,8 @@
     },
     {
       "path": "docs/public/engineering/app-learning.md",
-      "size": 3942,
-      "sha256": "7803e61fde8ee9bf87310c45b7230759f8623c50abb4e1690a9c3eb863b6fc7f"
+      "size": 5001,
+      "sha256": "3817899fa2a80ab371362f3883481098a576f8796226157d39c74f92c723333b"
     },
     {
       "path": "docs/public/engineering/channel-browser.md",
@@ -6345,8 +6345,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 6851,
-      "sha256": "6b2231261883203dcd88457924bf76915dbbec5de0733f1a0fc79f292a6acaee"
+      "size": 6986,
+      "sha256": "0cfdd71f141afb83b8797b51ea6c71151acc95a0c7fb374e6f518c811bd79414"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",

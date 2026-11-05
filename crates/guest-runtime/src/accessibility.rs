@@ -2,7 +2,7 @@
 use crate::{Result, Settings, screen::Screen};
 use atspi::{
     CoordType, Interface, ObjectRefOwned, RelationType, State, StateSet,
-    proxy::{accessible::AccessibleProxy, component::ComponentProxy},
+    proxy::{accessible::AccessibleProxy, component::ComponentProxy, text::TextProxy},
     zbus::{self, Connection, proxy::CacheProperties},
 };
 use serde::{Deserialize, Serialize};
@@ -153,6 +153,18 @@ impl Bounds {
         [(self.left + self.right) / 2, (self.top + self.bottom) / 2]
     }
 }
+fn click_center(control: &Bounds, text: Option<&Bounds>) -> [i64; 2] {
+    if let Some(text) = text {
+        let left = control.left.max(text.left);
+        let top = control.top.max(text.top);
+        let right = control.right.min(text.right);
+        let bottom = control.bottom.min(text.bottom);
+        if left < right && top < bottom {
+            return [left + (right - left) / 2, top + (bottom - top) / 2];
+        }
+    }
+    control.center()
+}
 fn bounds(
     (x, y, width, height): (i32, i32, i32, i32),
     offset: [i64; 2],
@@ -238,15 +250,41 @@ async fn origin_offset(bus: &Connection, object: &ObjectRefOwned) -> Result<[i64
 async fn control_role(
     proxy: &AccessibleProxy<'_>,
     query: &Query,
-) -> Result<Option<(String, atspi::InterfaceSet)>> {
+) -> Result<Option<(atspi::Role, atspi::InterfaceSet)>> {
     let (role, interfaces) = tokio::try_join!(proxy.get_role(), proxy.get_interfaces())?;
-    let role = role.to_string();
-    if !query.role.is_empty() && normalized(&query.role) != normalized(&role) {
+    if !query.role.is_empty() && normalized(&query.role) != normalized(&role.to_string()) {
         return Ok(None);
     }
     Ok(interfaces
         .contains(Interface::Component)
         .then_some((role, interfaces)))
+}
+
+async fn numeric_text_bounds(
+    bus: &Connection,
+    object: &ObjectRefOwned,
+    interfaces: atspi::InterfaceSet,
+    offset: [i64; 2],
+    settings: &Settings,
+) -> Result<Option<Bounds>> {
+    if !interfaces.contains(Interface::Text) {
+        return Ok(None);
+    }
+    let text = TextProxy::builder(bus)
+        .destination(object.name_as_str().ok_or("空控件引用")?)?
+        .path(object.path_as_str())?
+        .cache_properties(CacheProperties::No)
+        .build()
+        .await?;
+    let length = text.character_count().await?;
+    if length <= 0 {
+        return Ok(None);
+    }
+    Ok(bounds(
+        text.get_range_extents(0, length, CoordType::Screen).await?,
+        offset,
+        settings,
+    ))
 }
 async fn candidate(
     bus: &Connection,
@@ -263,15 +301,17 @@ async fn candidate(
     let Some((role, interfaces)) = control_role(proxy, query).await? else {
         return Ok(None);
     };
-    let Some(bounds) = bounds(
-        extents(bus, object).await?,
-        origin_offset(bus, object).await?,
-        settings,
-    ) else {
+    let offset = origin_offset(bus, object).await?;
+    let Some(bounds) = bounds(extents(bus, object).await?, offset, settings) else {
         return Ok(None);
     };
+    let text = if role == atspi::Role::SpinButton && state.contains(State::Editable) {
+        numeric_text_bounds(bus, object, interfaces, offset, settings).await?
+    } else {
+        None
+    };
     Ok(Some(
-        json!({"name":name,"role":role,"bounds":bounds,"center":bounds.center(),
+        json!({"name":name,"role":role.to_string(),"bounds":bounds,"center":click_center(&bounds,text.as_ref()),
         "enabled":state.contains(State::Enabled) && state.contains(State::Sensitive),
         "editable":state.contains(State::Editable),"focused":state.contains(State::Focused),
         "actionable":interfaces.contains(Interface::Action) || state.contains(State::Focusable)}),
@@ -432,6 +472,73 @@ pub async fn require_field(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn numeric_control_click_targets_text_without_stepping_its_value() {
+        let control = Bounds {
+            left: 458,
+            top: 292,
+            right: 594,
+            bottom: 326,
+        };
+        let text = Bounds {
+            left: 466,
+            top: 301,
+            right: 508,
+            bottom: 316,
+        };
+        assert_eq!(click_center(&control, Some(&text)), [487, 308]);
+    }
+
+    #[test]
+    fn ordinary_control_center_is_unchanged_without_text_geometry() {
+        let control = Bounds {
+            left: 458,
+            top: 292,
+            right: 594,
+            bottom: 326,
+        };
+        assert_eq!(click_center(&control, None), [526, 309]);
+    }
+
+    #[test]
+    fn input_hit_point_stays_in_the_visible_intersection() {
+        let control = Bounds {
+            left: 458,
+            top: 292,
+            right: 594,
+            bottom: 326,
+        };
+        let clipped_text = Bounds {
+            left: 440,
+            top: 301,
+            right: 480,
+            bottom: 316,
+        };
+        assert_eq!(click_center(&control, Some(&clipped_text)), [469, 308]);
+        for text in [
+            Bounds {
+                left: 600,
+                top: 301,
+                right: 620,
+                bottom: 316,
+            },
+            Bounds {
+                left: 466,
+                top: 301,
+                right: 466,
+                bottom: 316,
+            },
+            Bounds {
+                left: 466,
+                top: 330,
+                right: 508,
+                bottom: 345,
+            },
+        ] {
+            assert_eq!(click_center(&control, Some(&text)), control.center());
+        }
+    }
 
     #[test]
     fn replacement_accepts_editable_fields_and_excludes_document_and_canvas_focus() {
