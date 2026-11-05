@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/native_android.proto.
  */
 export const file_ai_phone_v1_native_android: GenFile = /*@__PURE__*/
-  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNIoIBChJOYXRpdmVBbmRyb2lkU3RhcnQSMQoFcGhvbmUYASABKAsyIi5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkUHJlcGFyZWQSEAoIYWRiX3BvcnQYAiABKA0SFAoMY29uc29sZV9wb3J0GAMgASgNEhEKCWdycGNfcG9ydBgEIAEoDSKaAQoTTmF0aXZlQW5kcm9pZEJvb3RlZBIPCgd2ZXJzaW9uGAEgASgNEg4KBnNlcmlhbBgCIAEoCRIVCg1yb290X3ZlcmlmaWVkGAMgASgIEg0KBXdpZHRoGAQgASgNEg4KBmhlaWdodBgFIAEoDRIUCgxmcmFtZV9zaGEyNTYYBiABKAkSFgoOcmV1c2VkX3Nlc3Npb24YByABKAgiiwEKGU5hdGl2ZUFuZHJvaWRTZXNzaW9uT3duZXISDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIQCghhdmRfaG9tZRgDIAEoCRIQCghhZGJfcG9ydBgEIAEoDRIUCgxjb25zb2xlX3BvcnQYBSABKA0SEQoJZ3JwY19wb3J0GAYgASgNIkQKG05hdGl2ZUFuZHJvaWRTZXNzaW9uRmFpbHVyZRIMCgRjb2RlGAEgASgJEhcKD291dGNvbWVfdW5rbm93bhgCIAEoCCKWAQoZTmF0aXZlQW5kcm9pZFNlc3Npb25SZXBseRIyCgZib290ZWQYASABKAsyIC5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkQm9vdGVkSAASOwoHZmFpbHVyZRgCIAEoCzIoLmFpX3Bob25lLnYxLk5hdGl2ZUFuZHJvaWRTZXNzaW9uRmFpbHVyZUgAQggKBnJlc3VsdCI1ChtOYXRpdmVBbmRyb2lkU2Vzc2lvbkNvbnRyb2wSFgoOY2FuY2VsX3N0YXJ0dXAYASABKAhiBnByb3RvMw");
+  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNIpwBChJOYXRpdmVBbmRyb2lkU3RhcnQSMQoFcGhvbmUYASABKAsyIi5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkUHJlcGFyZWQSEAoIYWRiX3BvcnQYAiABKA0SFAoMY29uc29sZV9wb3J0GAMgASgNEhEKCWdycGNfcG9ydBgEIAEoDRIYChB3c2xfZGlzdHJpYnV0aW9uGAUgASgJIrIBChNOYXRpdmVBbmRyb2lkQm9vdGVkEg8KB3ZlcnNpb24YASABKA0SDgoGc2VyaWFsGAIgASgJEhUKDXJvb3RfdmVyaWZpZWQYAyABKAgSDQoFd2lkdGgYBCABKA0SDgoGaGVpZ2h0GAUgASgNEhQKDGZyYW1lX3NoYTI1NhgGIAEoCRIWCg5yZXVzZWRfc2Vzc2lvbhgHIAEoCBIWCg5iYWNrZW5kX3BhaXJlZBgIIAEoCCKlAQoZTmF0aXZlQW5kcm9pZFNlc3Npb25Pd25lchIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGFkYl9wb3J0GAQgASgNEhQKDGNvbnNvbGVfcG9ydBgFIAEoDRIRCglncnBjX3BvcnQYBiABKA0SGAoQd3NsX2Rpc3RyaWJ1dGlvbhgHIAEoCSJEChtOYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmUSDAoEY29kZRgBIAEoCRIXCg9vdXRjb21lX3Vua25vd24YAiABKAgilgEKGU5hdGl2ZUFuZHJvaWRTZXNzaW9uUmVwbHkSMgoGYm9vdGVkGAEgASgLMiAuYWlfcGhvbmUudjEuTmF0aXZlQW5kcm9pZEJvb3RlZEgAEjsKB2ZhaWx1cmUYAiABKAsyKC5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmVIAEIICgZyZXN1bHQiNQobTmF0aXZlQW5kcm9pZFNlc3Npb25Db250cm9sEhYKDmNhbmNlbF9zdGFydHVwGAEgASgIYgZwcm90bzM");
 
 /**
  * Native installer IPC, never a model tool. The client owns the installation lock.
@@ -164,6 +164,13 @@ export type NativeAndroidStart = Message<"ai_phone.v1.NativeAndroidStart"> & {
    * @generated from field: uint32 grpc_port = 4;
    */
   grpcPort: number;
+
+  /**
+   * Only an already registered application-owned WSL backend may be paired.
+   *
+   * @generated from field: string wsl_distribution = 5;
+   */
+  wslDistribution: string;
 };
 
 /**
@@ -213,6 +220,13 @@ export type NativeAndroidBooted = Message<"ai_phone.v1.NativeAndroidBooted"> & {
    * @generated from field: bool reused_session = 7;
    */
   reusedSession: boolean;
+
+  /**
+   * Transport pairing differs from device provisioning and complete install.
+   *
+   * @generated from field: bool backend_paired = 8;
+   */
+  backendPaired: boolean;
 };
 
 /**
@@ -257,6 +271,11 @@ export type NativeAndroidSessionOwner = Message<"ai_phone.v1.NativeAndroidSessio
    * @generated from field: uint32 grpc_port = 6;
    */
   grpcPort: number;
+
+  /**
+   * @generated from field: string wsl_distribution = 7;
+   */
+  wslDistribution: string;
 };
 
 /**

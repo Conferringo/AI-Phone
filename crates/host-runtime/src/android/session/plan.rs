@@ -63,17 +63,33 @@ pub(super) struct Plan {
     pub resources: Resources,
     pub suffix: &'static str,
     pub abi: &'static str,
+    pub wsl_distribution: String,
 }
 impl Plan {
     pub fn parse(request: NativeAndroidStart) -> Result<Self> {
         let ports = Ports::parse(&request)?;
+        if !request.wsl_distribution.is_empty() {
+            if !request.wsl_distribution.starts_with("AIPhone-wsl-")
+                || request.wsl_distribution.len() > 80
+                || !request
+                    .wsl_distribution
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+                || (ports.adb, ports.console, ports.grpc) != (15037, 5564, 8558)
+            {
+                return Err(Error::Invalid("android_wsl_configuration"));
+            }
+            if !cfg!(windows) {
+                return Err(Error::Invalid("wsl_host_unsupported"));
+            }
+        }
         let phone = request
             .phone
             .ok_or(Error::Invalid("android_session_phone"))?;
         if phone.version != 1 || phone.avd_name != super::super::AVD_NAME {
             return Err(Error::Invalid("android_session_phone"));
         }
-        Self::from_prepared(
+        let mut plan = Self::from_prepared(
             Prepared {
                 sdk_root: phone.sdk_root.into(),
                 avd_home: phone.avd_home.into(),
@@ -81,7 +97,9 @@ impl Plan {
                 reused_device: phone.reused_device,
             },
             ports,
-        )
+        )?;
+        plan.wsl_distribution = request.wsl_distribution;
+        Ok(plan)
     }
     pub fn from_prepared(phone: Prepared, ports: Ports) -> Result<Self> {
         Self::from_prepared_for(phone, ports, Platform::current()?)
@@ -107,6 +125,7 @@ impl Plan {
             resources,
             suffix: spec.suffix,
             abi: spec.abi,
+            wsl_distribution: String::new(),
         })
     }
     pub fn owner(&self) -> NativeAndroidSessionOwner {
@@ -117,6 +136,7 @@ impl Plan {
             adb_port: self.ports.adb.into(),
             console_port: self.ports.console.into(),
             grpc_port: self.ports.grpc.into(),
+            wsl_distribution: self.wsl_distribution.clone(),
         }
     }
     pub fn serial(&self) -> String {
@@ -142,6 +162,7 @@ impl Plan {
             .env("USERPROFILE", format!("{home}/profile"))
             .env("LOCALAPPDATA", format!("{home}/profile/local"))
             .env("APPDATA", format!("{home}/profile/roaming"))
+            .env_remove("XDG_RUNTIME_DIR")
             .env("ADB_MDNS_AUTO_CONNECT", "0")
             .env_remove("ADB_VENDOR_KEYS")
             .env_remove("ANDROID_SERIAL")
@@ -241,7 +262,16 @@ fn private_home(avd: &std::path::Path) -> Result<PathBuf> {
         .ok_or(Error::Invalid("android_session_phone"))?
         .join("native");
     filesystem::directory(&home, false)?;
-    for name in ["android", "profile", "profile/local", "profile/roaming"] {
+    for name in [
+        "android",
+        "profile",
+        "profile/local",
+        "profile/roaming",
+        "profile/local/Temp",
+        "profile/Library",
+        "profile/Library/Caches",
+        "profile/Library/Caches/TemporaryItems",
+    ] {
         filesystem::directory(&home.join(name), false)?;
     }
     Ok(home)

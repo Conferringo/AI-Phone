@@ -71,6 +71,47 @@ impl<'a> Native<'a> {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum PhoneOperation {
+    Contract,
+    Address,
+    Peer,
+    Status,
+}
+
+pub(crate) fn phone_command(
+    distribution: &str,
+    operation: PhoneOperation,
+) -> Result<std::process::Command> {
+    #[cfg(windows)]
+    {
+        let mut command = system_program("wsl.exe")?;
+        let flag = match operation {
+            PhoneOperation::Contract => "--phone-peer-contract",
+            PhoneOperation::Address => "--phone-guest-address",
+            PhoneOperation::Peer => "--phone-peer",
+            PhoneOperation::Status => "--phone-peer-status",
+        };
+        command.args([
+            "--distribution",
+            distribution,
+            "--user",
+            "root",
+            "--cd",
+            "/",
+            "--exec",
+            "/usr/local/libexec/aiphone-bootstrap",
+            flag,
+        ]);
+        Ok(command)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (distribution, operation);
+        Err(Error::Invalid("wsl_host_unsupported"))
+    }
+}
+
 #[cfg(windows)]
 fn system_program(relative: &str) -> Result<std::process::Command> {
     use std::os::windows::process::CommandExt;

@@ -13,7 +13,10 @@ async fn cancelled(test: &dyn Fn() -> bool) {
         tokio::time::sleep(Duration::from_millis(50)).await;
     }
 }
-async fn launch(request: NativeAndroidStart, cancel: &dyn Fn() -> bool) -> Result<(), String> {
+async fn launch(
+    request: NativeAndroidStart,
+    cancel: &dyn Fn() -> bool,
+) -> Result<NativeAndroidBooted, String> {
     if cancel() {
         return Err("installation_cancelled".into());
     }
@@ -32,7 +35,7 @@ async fn launch(request: NativeAndroidStart, cancel: &dyn Fn() -> bool) -> Resul
     tauri::async_runtime::spawn(async move {
         let _ = child.wait().await;
     });
-    interpret(receipt?, cancel())
+    interpret(receipt?, cancel(), !request.wsl_distribution.is_empty())
 }
 
 async fn exchange(
@@ -74,13 +77,17 @@ fn valid_boot(boot: &NativeAndroidBooted) -> bool {
             .all(|value| value.is_ascii_hexdigit())
 }
 
-fn interpret(receipt: NativeAndroidSessionReply, cancelled: bool) -> Result<(), String> {
+fn interpret(
+    receipt: NativeAndroidSessionReply,
+    cancelled: bool,
+    paired: bool,
+) -> Result<NativeAndroidBooted, String> {
     match receipt.result {
-        Some(Reply::Booted(boot)) if valid_boot(&boot) => {
+        Some(Reply::Booted(boot)) if valid_boot(&boot) && (!paired || boot.backend_paired) => {
             if cancelled {
                 Err("installation_cancelled".into())
             } else {
-                Ok(())
+                Ok(boot)
             }
         }
         Some(Reply::Failure(failure)) => Err(if failure.outcome_unknown {
@@ -92,12 +99,17 @@ fn interpret(receipt: NativeAndroidSessionReply, cancelled: bool) -> Result<(), 
     }
 }
 
-pub(super) fn start(phone: &Prepared, cancel: &dyn Fn() -> bool) -> Result<(), String> {
+pub(super) fn start(
+    phone: &Prepared,
+    distribution: &str,
+    cancel: &dyn Fn() -> bool,
+) -> Result<NativeAndroidBooted, String> {
     let request = NativeAndroidStart {
         phone: Some(phone.wire().map_err(|e| e.code().to_string())?),
         adb_port: 0,
         console_port: 0,
         grpc_port: 0,
+        wsl_distribution: distribution.into(),
     };
     tauri::async_runtime::block_on(launch(request, cancel))
 }
@@ -114,7 +126,7 @@ mod tests {
             reused_device: false,
         };
         assert_eq!(
-            start(&phone, &|| true),
+            start(&phone, "", &|| true),
             Err("installation_cancelled".into())
         );
     }
@@ -130,6 +142,7 @@ mod tests {
                 height: 1440,
                 frame_sha256: "a".repeat(64),
                 reused_session: false,
+                backend_paired: false,
             },
         ] {
             assert_eq!(
@@ -137,6 +150,7 @@ mod tests {
                     NativeAndroidSessionReply {
                         result: Some(Reply::Booted(boot))
                     },
+                    false,
                     false
                 ),
                 Err("android_session_outcome_unknown".into())
@@ -151,8 +165,34 @@ mod tests {
             )),
         };
         assert_eq!(
-            interpret(unknown, false),
+            interpret(unknown, false, false),
             Err("android_session_outcome_unknown".into())
+        );
+    }
+    #[test]
+    fn a_local_boot_does_not_satisfy_a_requested_backend_pair() {
+        let mut boot = NativeAndroidBooted {
+            version: 1,
+            serial: "emulator-5564".into(),
+            root_verified: true,
+            width: 720,
+            height: 1440,
+            frame_sha256: "a".repeat(64),
+            ..Default::default()
+        };
+        let reply = |boot| NativeAndroidSessionReply {
+            result: Some(Reply::Booted(boot)),
+        };
+        assert!(interpret(reply(boot.clone()), false, false).is_ok());
+        assert_eq!(
+            interpret(reply(boot.clone()), false, true),
+            Err("android_session_outcome_unknown".into())
+        );
+        boot.backend_paired = true;
+        assert_eq!(interpret(reply(boot.clone()), false, true).unwrap(), boot);
+        assert_eq!(
+            interpret(reply(boot), true, true),
+            Err("installation_cancelled".into())
         );
     }
 }

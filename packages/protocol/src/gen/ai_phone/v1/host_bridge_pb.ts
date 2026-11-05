@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/host_bridge.proto.
  */
 export const file_ai_phone_v1_host_bridge: GenFile = /*@__PURE__*/
-  fileDesc("Ch1haV9waG9uZS92MS9ob3N0X2JyaWRnZS5wcm90bxILYWlfcGhvbmUudjEisAEKEkRldmljZUJyaWRnZUNvbmZpZxIPCgd2ZXJzaW9uGAEgASgNEisKBHJvbGUYAiABKA4yHS5haV9waG9uZS52MS5EZXZpY2VCcmlkZ2VSb2xlEhEKCWJyaWRnZV9pZBgDIAEoCRIOCgZzZWNyZXQYBCABKAwSEAoIZW5kcG9pbnQYBSABKAkSEAoIYWRiX3BvcnQYBiABKA0SFQoNZW11bGF0b3JfcG9ydBgHIAEoDSJ5ChBEZXZpY2VCcmlkZ2VPcGVuEg8KB3ZlcnNpb24YASABKA0SEQoJYnJpZGdlX2lkGAIgASgJEg4KBnNlY3JldBgDIAEoDBIxCgdzZXJ2aWNlGAQgASgOMiAuYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlU2VydmljZSImChJEZXZpY2VCcmlkZ2VPcGVuZWQSEAoIYWNjZXB0ZWQYASABKAgioQEKE0RldmljZUJyaWRnZVN0YXJ0ZWQSDwoHdmVyc2lvbhgBIAEoDRIrCgRyb2xlGAIgASgOMh0uYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlUm9sZRIRCglicmlkZ2VfaWQYAyABKAkSEAoIZW5kcG9pbnQYBCABKAkSEAoIYWRiX3BvcnQYBSABKA0SFQoNZW11bGF0b3JfcG9ydBgGIAEoDSKGAQoRRGV2aWNlQnJpZGdlUGhvbmUSMgoJdHJhbnNwb3J0GAEgASgLMh8uYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlQ29uZmlnEhkKEXJ1bnRpbWVfZGlyZWN0b3J5GAIgASgJEg4KBnNlcmlhbBgDIAEoCRISCgpncnBjX3Rva2VuGAQgASgJIksKFURldmljZUJyaWRnZVBlZXJPd25lchIPCgd2ZXJzaW9uGAEgASgNEhEKCWJyaWRnZV9pZBgCIAEoCRIOCgZzZWNyZXQYAyABKAwqcQoQRGV2aWNlQnJpZGdlUm9sZRIiCh5ERVZJQ0VfQlJJREdFX1JPTEVfVU5TUEVDSUZJRUQQABIbChdERVZJQ0VfQlJJREdFX1JPTEVfSE9TVBABEhwKGERFVklDRV9CUklER0VfUk9MRV9HVUVTVBACKn8KE0RldmljZUJyaWRnZVNlcnZpY2USJQohREVWSUNFX0JSSURHRV9TRVJWSUNFX1VOU1BFQ0lGSUVEEAASHQoZREVWSUNFX0JSSURHRV9TRVJWSUNFX0FEQhABEiIKHkRFVklDRV9CUklER0VfU0VSVklDRV9FTVVMQVRPUhACYgZwcm90bzM");
+  fileDesc("Ch1haV9waG9uZS92MS9ob3N0X2JyaWRnZS5wcm90bxILYWlfcGhvbmUudjEisAEKEkRldmljZUJyaWRnZUNvbmZpZxIPCgd2ZXJzaW9uGAEgASgNEisKBHJvbGUYAiABKA4yHS5haV9waG9uZS52MS5EZXZpY2VCcmlkZ2VSb2xlEhEKCWJyaWRnZV9pZBgDIAEoCRIOCgZzZWNyZXQYBCABKAwSEAoIZW5kcG9pbnQYBSABKAkSEAoIYWRiX3BvcnQYBiABKA0SFQoNZW11bGF0b3JfcG9ydBgHIAEoDSJ5ChBEZXZpY2VCcmlkZ2VPcGVuEg8KB3ZlcnNpb24YASABKA0SEQoJYnJpZGdlX2lkGAIgASgJEg4KBnNlY3JldBgDIAEoDBIxCgdzZXJ2aWNlGAQgASgOMiAuYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlU2VydmljZSImChJEZXZpY2VCcmlkZ2VPcGVuZWQSEAoIYWNjZXB0ZWQYASABKAgioQEKE0RldmljZUJyaWRnZVN0YXJ0ZWQSDwoHdmVyc2lvbhgBIAEoDRIrCgRyb2xlGAIgASgOMh0uYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlUm9sZRIRCglicmlkZ2VfaWQYAyABKAkSEAoIZW5kcG9pbnQYBCABKAkSEAoIYWRiX3BvcnQYBSABKA0SFQoNZW11bGF0b3JfcG9ydBgGIAEoDSKaAQoRRGV2aWNlQnJpZGdlUGhvbmUSMgoJdHJhbnNwb3J0GAEgASgLMh8uYWlfcGhvbmUudjEuRGV2aWNlQnJpZGdlQ29uZmlnEhkKEXJ1bnRpbWVfZGlyZWN0b3J5GAIgASgJEg4KBnNlcmlhbBgDIAEoCRISCgpncnBjX3Rva2VuGAQgASgJEhIKCm93bmVyX3BpcGUYBSABKAgiKAoYRGV2aWNlQnJpZGdlR3Vlc3RBZGRyZXNzEgwKBGlwdjQYASABKAkiSwoVRGV2aWNlQnJpZGdlUGVlck93bmVyEg8KB3ZlcnNpb24YASABKA0SEQoJYnJpZGdlX2lkGAIgASgJEg4KBnNlY3JldBgDIAEoDCpxChBEZXZpY2VCcmlkZ2VSb2xlEiIKHkRFVklDRV9CUklER0VfUk9MRV9VTlNQRUNJRklFRBAAEhsKF0RFVklDRV9CUklER0VfUk9MRV9IT1NUEAESHAoYREVWSUNFX0JSSURHRV9ST0xFX0dVRVNUEAIqfwoTRGV2aWNlQnJpZGdlU2VydmljZRIlCiFERVZJQ0VfQlJJREdFX1NFUlZJQ0VfVU5TUEVDSUZJRUQQABIdChlERVZJQ0VfQlJJREdFX1NFUlZJQ0VfQURCEAESIgoeREVWSUNFX0JSSURHRV9TRVJWSUNFX0VNVUxBVE9SEAJiBnByb3RvMw");
 
 /**
  * Installer-private input, supplied through stdin; never a model tool or argv.
@@ -185,6 +185,14 @@ export type DeviceBridgePhone = Message<"ai_phone.v1.DeviceBridgePhone"> & {
    * @generated from field: string grpc_token = 4;
    */
   grpcToken: string;
+
+  /**
+   * An owned native host keeps this Unix guest pipe open. EOF drains the peer;
+   * the default preserves detached component callers.
+   *
+   * @generated from field: bool owner_pipe = 5;
+   */
+  ownerPipe: boolean;
 };
 
 /**
@@ -193,6 +201,25 @@ export type DeviceBridgePhone = Message<"ai_phone.v1.DeviceBridgePhone"> & {
  */
 export const DeviceBridgePhoneSchema: GenMessage<DeviceBridgePhone> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_host_bridge, 4);
+
+/**
+ * Private native installer observation, not a network or model-facing API.
+ *
+ * @generated from message ai_phone.v1.DeviceBridgeGuestAddress
+ */
+export type DeviceBridgeGuestAddress = Message<"ai_phone.v1.DeviceBridgeGuestAddress"> & {
+  /**
+   * @generated from field: string ipv4 = 1;
+   */
+  ipv4: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.DeviceBridgeGuestAddress.
+ * Use `create(DeviceBridgeGuestAddressSchema)` to create a new message.
+ */
+export const DeviceBridgeGuestAddressSchema: GenMessage<DeviceBridgeGuestAddress> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_host_bridge, 5);
 
 /**
  * Stable pairing identity; endpoint and emulator token may change on restart.
@@ -221,7 +248,7 @@ export type DeviceBridgePeerOwner = Message<"ai_phone.v1.DeviceBridgePeerOwner">
  * Use `create(DeviceBridgePeerOwnerSchema)` to create a new message.
  */
 export const DeviceBridgePeerOwnerSchema: GenMessage<DeviceBridgePeerOwner> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_host_bridge, 5);
+  messageDesc(file_ai_phone_v1_host_bridge, 6);
 
 /**
  * @generated from enum ai_phone.v1.DeviceBridgeRole

@@ -308,7 +308,8 @@ fn ports_and_png_evidence_reject_ambiguous_or_invalid_inputs() {
                 adb_port: adb,
                 console_port: console,
                 grpc_port: grpc,
-                phone: None
+                phone: None,
+                wsl_distribution: String::new(),
             })
             .is_err()
         );

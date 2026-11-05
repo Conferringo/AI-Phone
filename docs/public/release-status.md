@@ -7,7 +7,7 @@ Updated 2026-11-04. Source code and technical documentation are available. **Com
 | Target | Available implementation | Remaining delivery requirements |
 | --- | --- | --- |
 | macOS Apple Silicon | Native client and inspected complete App/DMG factory output | Fresh default-size dual-device installation, upgrades, signing/notarization and complete product acceptance |
-| Windows x64 | Native client and Android/tools components; offline WSL2 backend with Rust registration and initialization | Native Android/WSL bridge, acceleration setup and complete first run |
+| Windows x64 | Native resources, offline WSL2 registration/initialization and a wired Rust phone-pair lifecycle | Installed WHPX/network qualification, full device provisioning, backend upgrade and complete first run |
 | Linux x64 | Native client and inspected complete DEB/AppImage factory outputs | Single-file distribution, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
 | Android ARM64 root/KVM | Native client and privileged-host target | Kernel/runtime integration, matched resources and complete dual-guest initialization |
@@ -34,7 +34,7 @@ Non-macOS physical installation is waived for the current release scope and rema
 
 ## 中文
 
-源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的完整 DMG、Linux x64 的完整 DEB/AppImage 工厂已成功，包含九类运行资源，仍保留为未公开草稿。安装器仍超过本项目单附件传输上限，内部运输分卷不等于面向用户的单文件下载。Windows 已接通 Rust 专属 WSL 注册及后端初始化，原生 Android 控制/媒体桥与完整首次就绪仍未完成。Linux ARM64 与 root/KVM Android 仍缺匹配资源及完整双客体初始化。
+源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的完整 DMG、Linux x64 的完整 DEB/AppImage 工厂已成功，包含九类运行资源，仍保留为未公开草稿。安装器仍超过本项目单附件传输上限，内部运输分卷不等于面向用户的单文件下载。Windows 已接通 Rust 专属 WSL 注册、后端初始化和原生手机配对生命周期；WHPX/网络、完整设备初始化、后端原地升级与首次就绪仍待验收。Linux ARM64 与 root/KVM Android 仍缺匹配资源及完整双客体初始化。
 
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 

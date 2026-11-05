@@ -20,6 +20,7 @@ pub(super) struct Phone {
     adb: Option<Child>,
     emulator: Option<Child>,
     pub receipt: Option<NativeAndroidBooted>,
+    link: Option<crate::device_bridge::Connection>,
 }
 fn owner_path(plan: &Plan) -> std::path::PathBuf {
     plan.home.join("session.pb")
@@ -88,13 +89,19 @@ fn space(plan: &Plan) -> Result<()> {
 }
 pub(super) async fn start(plan: Plan, stop: &mut watch::Receiver<bool>) -> Result<Started> {
     readiness::cancelled(stop)?;
+    if !plan.wsl_distribution.is_empty() {
+        super::link::ensure_backend(&plan, stop).await?;
+    }
     let lease = filesystem::lease(&plan.home.join("session.lock"))?;
     let owner = read_owner(&plan)?;
     let Some(lease) = lease else {
         owner.ok_or(Error::Invalid("android_session_starting"))?;
-        return Ok(Started::Existing(
-            readiness::existing(&client(&plan), stop).await?,
-        ));
+        let receipt = if plan.wsl_distribution.is_empty() {
+            readiness::existing(&client(&plan), stop).await?
+        } else {
+            super::link::observe(&plan, stop).await?
+        };
+        return Ok(Started::Existing(receipt));
     };
     let mut phone = Phone::new(plan, lease)?;
     if let Err(error) = phone.launch(stop).await {
@@ -118,6 +125,7 @@ impl Phone {
             adb: None,
             emulator: None,
             receipt: None,
+            link: None,
         };
         drop(reservations);
         Ok(value)
@@ -127,6 +135,12 @@ impl Phone {
         await_server(&mut self.adb, &client(&self.plan), stop).await?;
         self.emulator = Some(spawn(self.plan.emulator()?, &self.log)?);
         self.receipt = Some(self.wait_boot(stop).await?);
+        if !self.plan.wsl_distribution.is_empty() {
+            self.link = Some(super::link::start(&self.plan, stop).await?);
+            if let Some(receipt) = self.receipt.as_mut() {
+                receipt.backend_paired = true;
+            }
+        }
         Ok(())
     }
     async fn wait_boot(&mut self, stop: &mut watch::Receiver<bool>) -> Result<NativeAndroidBooted> {
@@ -157,10 +171,17 @@ impl Phone {
         if *stop.borrow() {
             return Ok(());
         }
-        tokio::select! {
-            _=stop.changed()=>Ok(()),
-            status=adb.wait()=>{status?;Err(Error::Invalid("android_adb_server_exited"))},
-            status=emulator.wait()=>if status?.success(){Ok(())}else{Err(Error::Invalid("android_emulator_exited"))},
+        let device = async {
+            tokio::select! {
+                _=stop.changed()=>Ok(()),
+                status=adb.wait()=>{status?;Err(Error::Invalid("android_adb_server_exited"))},
+                status=emulator.wait()=>if status?.success(){Ok(())}else{Err(Error::Invalid("android_emulator_exited"))},
+            }
+        };
+        if let Some(link) = self.link.as_mut() {
+            tokio::select! {result=device=>result,result=link.wait()=>result}
+        } else {
+            device.await
         }
     }
     async fn stop_emulator(&mut self) -> Result<()> {
@@ -192,6 +213,10 @@ impl Phone {
         }
     }
     pub async fn shutdown(&mut self) -> Result<()> {
+        if let Some(link) = self.link.as_mut() {
+            link.shutdown().await?;
+        }
+        self.link = None;
         self.stop_emulator().await?;
         stop_adb(&mut self.adb).await?;
         match std::fs::remove_file(owner_path(&self.plan)) {

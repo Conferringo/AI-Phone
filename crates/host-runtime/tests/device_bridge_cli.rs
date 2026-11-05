@@ -130,8 +130,13 @@ fn source_staging_termination_waits_for_the_writer_and_leaves_no_partial_release
         std::thread::sleep(Duration::from_millis(1));
     }
     assert!(
-        Command::new("/bin/kill")
-            .args(["-TERM", &child.0.id().to_string()])
+        Command::new("/bin/sh")
+            .args([
+                "-c",
+                "kill -TERM \"$1\"",
+                "aiphone-test",
+                &child.0.id().to_string()
+            ])
             .status()
             .unwrap()
             .success()
@@ -240,7 +245,7 @@ fn android_session_rejects_bad_frames_and_reports_typed_startup_failure() {
 fn phone_peer_has_a_fixed_contract_and_never_emits_ready_for_bad_input() {
     let output = invoke(&["--phone-peer-contract"], b"");
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"ai-phone-phone-peer-v1\n");
+    assert_eq!(output.stdout, b"ai-phone-phone-peer-v2\n");
     for (args, input) in [
         (vec!["--phone-peer-contract", "extra"], vec![]),
         (vec!["--phone-peer", "extra"], vec![]),

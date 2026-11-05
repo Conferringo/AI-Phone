@@ -1,6 +1,9 @@
 //! A paired transport, not guest authority or an Android-readiness shortcut.
 mod cli;
 mod config;
+mod connection;
+pub(crate) mod discovery;
+pub(crate) mod guest;
 mod peer;
 mod relay;
 #[cfg(test)]
@@ -18,6 +21,7 @@ use tokio::{net::TcpListener, sync::watch, task::JoinSet};
 
 pub const CONTRACT: &str = "ai-phone-device-bridge-v1";
 pub use cli::run;
+pub use connection::Connection;
 pub use peer::{CONTRACT as PEER_CONTRACT, run as run_peer};
 
 pub struct Bridge {

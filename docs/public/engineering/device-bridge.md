@@ -12,6 +12,30 @@ Each listener bounds concurrent connections. Admission has a five-second deadlin
 
 The guest peer holds one filesystem lease and records the discovery file present before authentication. Publication rejects files created, removed or changed while pairing, including changes retaining the same owner marker. If discovery was absent, atomic create-only publication also preserves a file appearing during the write. Failed publication does not delete another writer's file. Unchanged owned metadata can be replaced on resume. The lease serializes cooperating peers; replacement of an existing file is not a filesystem-wide compare-and-swap against arbitrary concurrent writers.
 
+## Native lifecycle and automatic pairing
+
+The Windows bootstrap initializes its owned WSL backend before starting the native phone worker with the selected distribution. That worker owns the SDK processes, host bridge and `wsl.exe` guest peer. Detaching the setup UI or changing the focused device does not own their lifetime. A native worker resuming the same phone re-observes the paired backend instead of starting another peer or trusting a saved ready flag.
+
+```mermaid
+flowchart LR
+  UI[Client setup] --> Backend[Owned WSL backend]
+  UI --> Worker[Native phone worker]
+  Worker --> SDK[Android SDK and ADB]
+  Worker --> Bridge[Rust host bridge]
+  Worker -->|owned stdin pipe| Peer[Linux Rust peer]
+  Backend -->|loopback ADB and gRPC| Peer
+  Peer --> Bridge
+  Bridge --> SDK
+```
+
+`--phone-peer-contract` reports `ai-phone-phone-peer-v2`; the wire frame version remains 1. The native worker queries this existing capability entry before sending new commands or launching the phone. An older installed bootstrap is refused with an upgrade-required result. This does not implement an in-place WSL upgrade.
+
+The native worker selects its private host interface from the observed guest address; matching host/guest addresses select loopback. NAT and mirrored WSL networking have different host-access behavior, documented by [Microsoft](https://learn.microsoft.com/en-us/windows/wsl/networking). This selection policy is covered by tests; actual Windows adapter/firewall and WHPX behavior remain unqualified. Global WSL or firewall settings are not changed.
+
+Pair identity is stored separately from ephemeral endpoints. The worker reads the SDK token from its private advertisement directories and supplies the pair secret/token through stdin. A managed Unix guest uses a cancellable owner pipe: EOF or owner control ends the peer, drains its streams and removes only its unchanged advertisement. SIGTERM also completes while that pipe remains open. Detached component callers retain the default behavior; Windows is the native owner, not a managed guest-peer platform.
+
+`--phone-guest-address` and `--phone-peer-status` are private protobuf installer observations. The latter requires the expected pair identity and current advertisement, then reads boot/root identity and a real screenshot through guest ADB. Its `backend_paired` result proves a paired transport observation, not installed applications, notification delivery, desktop readiness or complete product installation. A missing or conflicting pair cannot report ready.
+
 ## Runner ADB transport
 
 The phone Runner and native boot observer share `ai-phone-adb`, a Rust client for
@@ -34,10 +58,12 @@ not finish Windows first-run integration or the Python/Bun migration.
 
 The component has actual two-route transfer, half-close, invalid-credential, frame-boundary and cancellation tests. Maintainer validation also ran a separately compiled Linux Rust process against an existing native Android instance, reading root identity and a real PNG through the bridge. A temporary guest tone produced nonzero gRPC PCM through the native bridge; this does not certify host loudspeaker playback. No accounts, conversations or device disks are inputs to the distributed component.
 
-The WSL factory now supplies the Linux x64 ADB tools and AOSP emulator schema at the backend's configured SDK root. The Rust peer already publishes the discovery format consumed by the media service. Windows SDK/AVD startup, WHPX/WSL lifecycle coordination, device provisioning and the complete first-run readiness probe still require integration. Windows independent-host capability remains disabled. Non-Windows transport/resource tests are not Windows WSL/WHPX installation results. The current backend also retains documented Python/Bun runtime migration work.
+The WSL factory supplies the Linux x64 ADB tools and AOSP emulator schema at the backend's configured SDK root. The native lifecycle now calls the automatic pairing path. Maintainer checks paired, observed, disconnected and resumed the current Rust owner and Linux peer twice against an actual Android; the existing media consumer also returned valid PNGs. Wrong pair observations and observations after shutdown were rejected, with owned work and pair identity retained. These are Mac/Linux component results, not an installed Windows client acceptance.
+
+Windows WHPX/WSL integration, complete phone/desktop provisioning and first-run readiness still need qualification. The complete-install checkpoint and Windows independent-host capability remain disabled. The backend retains documented Python/Bun runtime migration work; no new business runtime is introduced by this Rust pairing unit.
 
 ## 中文
 
 Rust 桥接组件只转发原生手机的 ADB 与模拟器 gRPC，两条路由固定，客体监听保持本机回环。安装器通过标准输入传入 protobuf 配置和独立配对密钥；每个连接只核验一次，不增加模型调用、逐动作设卡或自动重放。取消时关闭监听并等待全部连接退出，未知动作结果仍由原 Runner 的观察/回执机制处理。
 
-已用独立编译的 Linux Rust 进程访问现有原生 Android，验证 root 与真实截图；临时测试音验证了非零 gRPC PCM，不能据此称宿主扬声器已验收。新 WSL 工厂包含 Linux x64 ADB 和 AOSP 媒体协议，沿用已有 SDK 路径与发现格式。启动回执只表示传输可用。Windows SDK/AVD、WHPX/WSL 生命周期协同、设备创建及完整首次就绪仍未接通完毕，Windows 独立宿主开关保持关闭；这些组件命令不应成为用户的手动部署步骤。
+原生手机工作进程已持有自动配对，前台窗口与设备焦点不决定其生命周期。受管 Unix 客体随父管道结束而清理，SIGTERM 也可在管道仍打开时正常退出；旧 bootstrap 在新命令发出前由 v2 能力检查拒绝。当前 Rust 主客体已对真实 Android 完成两次配对、root/画面观察、断开和恢复，保留隔离工作文件与配对身份；错误身份和断开后的观察均拒绝就绪。该验证不等于 Windows 实机、WHPX、防火墙、完整设备初始化或扬声器播放通过。完整安装标记与 Windows 独立宿主开关保持关闭，旧 WSL 原地升级也仍待完成。

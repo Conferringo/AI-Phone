@@ -12,7 +12,7 @@ use std::{
 };
 use tokio::sync::watch;
 
-pub const CONTRACT: &str = "ai-phone-phone-peer-v1";
+pub const CONTRACT: &str = "ai-phone-phone-peer-v2";
 const LIMIT: u64 = 16384;
 struct Claim {
     initial_owner: bool,
@@ -219,7 +219,13 @@ pub async fn run(arguments: &[std::ffi::OsString]) -> Result<()> {
     if !arguments.is_empty() {
         return Err(Error::Invalid("phone_peer_arguments"));
     }
-    let request = native_ipc::read_bounded(&mut tokio::io::stdin(), LIMIT as usize).await?;
+    let request: DeviceBridgePhone =
+        native_ipc::read_bounded(&mut tokio::io::stdin(), LIMIT as usize).await?;
+    let input = if request.owner_pipe {
+        Some(owner_input()?)
+    } else {
+        None
+    };
     let peer = PhonePeer::bind(request).await?;
     let reply = native_ipc::write(&mut tokio::io::stdout(), peer.receipt()).await;
     if let Err(error) = reply {
@@ -228,6 +234,16 @@ pub async fn run(arguments: &[std::ffi::OsString]) -> Result<()> {
         return Err(error.into());
     }
     let (end, stop) = watch::channel(false);
+    let control = input.map(|mut input| {
+        let end = end.clone();
+        tokio::spawn(async move {
+            use tokio::io::AsyncReadExt;
+            // The owner keeps an idle pipe open. EOF, an I/O failure or a
+            // control byte ends ownership; none can leave a detached peer.
+            let _ = input.read_u8().await;
+            let _ = end.send(true);
+        })
+    });
     let signal_end = end.clone();
     let signal = tokio::spawn(async move {
         if crate::component::interrupt().await.is_ok() {
@@ -237,7 +253,25 @@ pub async fn run(arguments: &[std::ffi::OsString]) -> Result<()> {
     let result = peer.serve(stop).await;
     signal.abort();
     let _ = signal.await;
+    if let Some(control) = control {
+        control.abort();
+        let _ = control.await;
+    }
     result
+}
+
+#[cfg(unix)]
+fn owner_input() -> Result<tokio::net::unix::pipe::Receiver> {
+    use std::os::fd::AsFd;
+    // A cancellable pipe avoids Tokio's blocking stdin worker keeping the
+    // process alive after SIGTERM while the native owner still holds stdin.
+    let input = std::io::stdin().as_fd().try_clone_to_owned()?;
+    Ok(tokio::net::unix::pipe::Receiver::from_owned_fd(input)?)
+}
+#[cfg(not(unix))]
+fn owner_input() -> Result<tokio::io::Empty> {
+    // Managed peers are Linux/Unix guests; the Windows side owns Connection.
+    Err(Error::Invalid("phone_peer_owner_pipe_unsupported"))
 }
 
 #[cfg(test)]
@@ -259,6 +293,7 @@ mod tests {
             runtime_directory: root.to_str().unwrap().into(),
             serial: "emulator-5564".into(),
             grpc_token: "test-token".into(),
+            owner_pipe: false,
         })
         .unwrap();
         (
