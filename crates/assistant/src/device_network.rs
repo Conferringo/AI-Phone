@@ -1,7 +1,6 @@
 use crate::*;
 use serde_json::{Value, json};
 use tokio::{io::AsyncWriteExt, process::Command};
-static MUTATION: Mutex<()> = Mutex::const_new(());
 
 async fn invoke(app: &App, value: Value) -> Result<Value, String> {
     let mut child =
@@ -88,7 +87,7 @@ pub async fn install_apps(app: &App) -> Result<(), String> {
 
 pub async fn recover(app: Shared) {
     loop {
-        if let Ok(_guard) = MUTATION.try_lock() {
+        if let Ok(_guard) = app.network_mutation.try_lock() {
             let devices=sqlx::query_as::<_,(String,String)>("SELECT id,kind FROM devices WHERE owner_id='local-user' AND runtime_state='managed' AND kind IN ('phone','desktop')").fetch_all(&app.db).await.unwrap_or_default();
             for (id, kind) in devices {
                 let _ = invoke(
@@ -111,7 +110,7 @@ pub async fn route(
   if operation=="save"{
    let input=match decode::<wire::DeviceNetworkSaveRequest>(&app,&headers,body){Ok(v)=>v,Err(e)=>return Ok(e.into())};
    Uuid::parse_str(&input.request_id).map_err(|_|"网络请求编号无效")?;
-   let _gate=MUTATION.lock().await;let device_kind=kind(&app,&input.device_id).await?;
+   let _gate=app.network_mutation.lock().await;let device_kind=kind(&app,&input.device_id).await?;
    let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM runs r JOIN run_device_bindings b ON b.run_id=r.id WHERE b.device_id=$1 AND r.status IN ('queued','running'))")
     .bind(&input.device_id).fetch_one(&app.db).await.map_err(|_|"无法检查运行任务")?;
    if busy{return Ok(error(StatusCode::CONFLICT,"device_busy","设备任务正在运行，请结束后应用网络配置"));}

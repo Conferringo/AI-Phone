@@ -856,6 +856,9 @@ mod tests {
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
+            workspace_init: Mutex::new(()),
+            location_mutation: Mutex::new(()),
+            network_mutation: Mutex::new(()),
         });
         let outcome=AssertUnwindSafe(async {
             sqlx::migrate!("./migrations").run(&app.db).await.unwrap();
