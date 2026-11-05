@@ -7,6 +7,7 @@ import tarfile
 import tempfile
 import unittest
 import sys
+import shlex
 from unittest.mock import patch
 
 import wsl_backend_entry as entry
@@ -15,6 +16,18 @@ import test_wsl_backend as source_fixture
 
 
 class WslNativeSourceTests(unittest.TestCase):
+    def test_recipe_capability_probe_requires_both_successful_exit_and_receipt(self):
+        recipe=factory.dockerfile({'base_image':'fixture-base','engine_image':'fixture-engine'})
+        probe=next(line[4:] for line in recipe.splitlines() if line.startswith('RUN ') and '--source-staging-contract' in line)
+        with tempfile.TemporaryDirectory() as temporary:
+            program=Path(temporary)/'fixture program'
+            # This checks exit/receipt semantics, not timeout timing. The real
+            # GNU deadline is exercised by the Linux rootfs factory.
+            command=probe.replace('/usr/bin/timeout 10 ','').replace('/usr/local/libexec/aiphone-bootstrap',shlex.quote(str(program)))
+            for status,receipt,accepted in [(0,'ai-phone-source-staging-v1',True),(7,'ai-phone-source-staging-v1',False),(0,'wrong',False)]:
+                program.write_text(f'#!/bin/sh\nprintf "%s\\n" "{receipt}"\nexit {status}\n');program.chmod(0o755)
+                self.assertEqual(subprocess.run(['/bin/sh','-c',command],capture_output=True).returncode==0,accepted)
+
     def test_factory_wires_the_native_program_and_pin_into_its_offline_recipe(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
