@@ -101,7 +101,7 @@ def snapshot_sources(identity):
             'Snapshot: no\n')
 
 
-def factory_context(root,folder,role,python_archive=None):
+def factory_context(root,folder,role):
     from native_factory_inputs import archive_directory
     supplied=archive_directory(root,role)
     if supplied is not None:return supplied
@@ -112,19 +112,18 @@ def factory_context(root,folder,role,python_archive=None):
     sources=snapshot_sources(policy['snapshot'])
     fetch(folder,'bootstrap-ca.deb',policy['ca_certificates'])
     (folder/'ubuntu.sources').write_text(sources)
-    if python_archive is not None:shutil.copyfile(python_archive,folder/'python.tar.gz')
     output=folder/'output'
     run(['docker','buildx','build','--platform','linux/amd64','--target','export','--output','type=local,dest='+str(output),folder],root)
     return output
 
 
-def prepare_host(root,cache,python_archive):
+def prepare_host(root,cache):
     from linux_host_runtime import build as build_native
     from linux_ocr_runtime import build as build_ocr
     from container_host_runtime import policy,build
     for role,name,producer,destination in [('linux-host','linux-x64-host.tar.gz',build_native,root/'.tools/linux-host-runtime'),
                                           ('linux-ocr','linux-x64-ocr.tar.gz',build_ocr,root/'.tools/linux-ocr-runtime')]:
-        output=factory_context(root,cache/'contexts'/role,role,python_archive if role=='linux-ocr' else None)
+        output=factory_context(root,cache/'contexts'/role,role)
         producer(root,output/name,destination)
     selected=policy(root);image=fetch(cache,'alpine.iso',selected['runtime']['image']);lima=fetch(cache,'lima.tar.gz',selected['lima'])
     packages=cache/'apks';packages.mkdir()
@@ -136,7 +135,7 @@ def prepare_host(root,cache,python_archive):
 def prepare_tools(root,cache):
     from installer_tool_factory import factory
     work=cache/'installer';result=factory(root,work)
-    return work/'component',work/'inputs/python.tar.gz',result
+    return work/'component',result
 
 
 def prepare_apps(root,env):
@@ -203,8 +202,8 @@ def build(root):
     check(root);cache=root/'.tools/complete-linux'
     if cache.exists():raise ValueError('Use a fresh factory checkout; existing outputs were preserved')
     cache.mkdir(parents=True);source=digest(root/'SOURCE-MANIFEST.json')
-    tools,python_archive,tool_result=prepare_tools(root,cache)
-    ocr,host=prepare_host(root,cache,python_archive)
+    tools,tool_result=prepare_tools(root,cache)
+    ocr,host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,dict(os.environ))
     images,image_result=prepare_images(root,cache,source)

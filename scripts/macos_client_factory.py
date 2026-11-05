@@ -122,7 +122,7 @@ def build(root,compiler_sdk,*,prebuilt_images=None):
     else:
         from factory_image_candidate import admit
         prepared=admit(root,*prebuilt_images,os.environ.get('GITHUB_SHA',''))
-    tools,_python,tool_result=prepare_tools(root,cache)
+    tools,tool_result=prepare_tools(root,cache)
     host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,env)

@@ -70,8 +70,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3818,
-      "sha256": "1bd95f4a22800974f87b9ab49469de8d0b9d7937a91fdf5b46a774e766d7b14c"
+      "size": 3745,
+      "sha256": "f655f0b571bf96251f97c376d931408d8764f1b459ba1962f0fea533e26adf66"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-full-client.yml",
-      "size": 7502,
-      "sha256": "195a954a41ea62dec575aa38a62a6a394fb9eb641cc49a86d064d3e09e041983"
+      "size": 7429,
+      "sha256": "51da99ca3c6847c1914e3904e8c39987b434b786f5393f1cacfbdf380b4282b5"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -100,8 +100,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 3438,
-      "sha256": "50bd4104c00d42c991dbe0a0247cf8a1132daf70c0fae450a682f19dea9f175f"
+      "size": 3365,
+      "sha256": "1fb93e3892e1c062c76396baaf4cf30678a8df337b47d0069eecc947d4a4b3cc"
     },
     {
       "path": ".gitignore",
@@ -175,8 +175,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 18129,
-      "sha256": "6e7df685a35f401ef9da8c8731313df02c8184a63644f2ff0e3524dfdfcedfd6"
+      "size": 18099,
+      "sha256": "b3d851f6fcefaab21e127b3d1d0dcc48e49666c2159aef9478ce9c0a5630c27f"
     },
     {
       "path": "ai-phone",
@@ -2260,13 +2260,13 @@
     },
     {
       "path": "config/linux-host-runtime.json",
-      "size": 426,
-      "sha256": "ed45f53ad1337ebf652447cac99716605e85d2a4214ba6fdff2223a82697da04"
+      "size": 453,
+      "sha256": "28c8572914264af020f146c76ad44f4a23ac105e3716dc8e897da6d8121425e7"
     },
     {
       "path": "config/linux-ocr.json",
-      "size": 532,
-      "sha256": "b64f2d94731ea2d4cf9faba7a30ce50067d871dc1dad17e1d00cca1370e854fa"
+      "size": 421,
+      "sha256": "42d855f10cb182fb56008a450e71457526bbdbe0158d416d30b693b3bfc6ea30"
     },
     {
       "path": "config/macos-factory.json",
@@ -3560,8 +3560,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 4447,
-      "sha256": "1ebd096ebed7d8f950051dfb6b193d2b7cfb36109983284244ba8ecc2d23cc31"
+      "size": 4513,
+      "sha256": "5c929a1b1f5409327f64a7b144dcf17c2279bdc8203eb7935900784263d46a0c"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -4435,8 +4435,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 6533,
-      "sha256": "0004bfdc437e268adf29fc2b3391f13c63c79c0239c0e3efbf5b73b9fa7448da"
+      "size": 7110,
+      "sha256": "c626c9a418126737bccfb30b3886e500ccbee4772f6d9a31206e5a0644a9d297"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -5555,18 +5555,18 @@
     },
     {
       "path": "scripts/linux-ocr/Dockerfile",
-      "size": 1330,
-      "sha256": "d42502bcbbdada7739223b6a65233cf141e51fa7fe844f41cb8703809f136e3d"
+      "size": 861,
+      "sha256": "7afbdc7161efac20711bcf321e83c86a9fc8fc01e28b6d57bb7d3d438cbb4194"
     },
     {
       "path": "scripts/linux-ocr/collect.py",
-      "size": 1213,
-      "sha256": "e8acbe852425e719cbb7a4bbe9f934f684b490579f1c7dd4be8fa61d23e2c6c6"
+      "size": 802,
+      "sha256": "b781020aa91b8f9c6c224499e2564c084a573c232418f0205d1c567d1c9fbdaa"
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 12008,
-      "sha256": "a50fe8dea24d7c196048da8d11c6c1eb97cd902c34c6b3533a02eb1c485d5980"
+      "size": 11780,
+      "sha256": "1d00756428c4ab5344a98527c536eeb35e78c35da87007b90979deb76e659413"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5575,8 +5575,8 @@
     },
     {
       "path": "scripts/linux_dependency_factory.py",
-      "size": 2237,
-      "sha256": "c94c44a5ea4cfc5395a389f547f29c1983761cd56f68b273ae10a642ce280a41"
+      "size": 2219,
+      "sha256": "74a43572acbe34f0164e1920a7e7c35ba69aa9bcd706fd7ac840702c044d0d63"
     },
     {
       "path": "scripts/linux_host.py",
@@ -5600,8 +5600,8 @@
     },
     {
       "path": "scripts/linux_ocr_runtime.py",
-      "size": 2047,
-      "sha256": "fc7bea41a188034a17803c583b2e5ce05477dad61c90c03d2d01d409b373e02e"
+      "size": 1962,
+      "sha256": "c5d1020bf77e5e3ce38eb8bc5a278a2d073e592f0c88da16057127a943469675"
     },
     {
       "path": "scripts/linux_services.py",
@@ -5625,8 +5625,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 8038,
-      "sha256": "b7392c7b47b3944b5a92f111fafff09c0a53d1352e6e4a3820790b351afa5283"
+      "size": 8030,
+      "sha256": "dd09a15d23e245a94a2b02220f0c57dfdc82de6256548138b8f04e9ba298de08"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5685,8 +5685,8 @@
     },
     {
       "path": "scripts/native_factory_inputs.py",
-      "size": 3354,
-      "sha256": "e99f44b3585aa0bb499a0b3068fee55a52df8965d6422341f9093fc59101c18e"
+      "size": 3373,
+      "sha256": "0753814017871a5beca2e0f96d5381b658e84d7ea747aaafa88afd4800ad9d0f"
     },
     {
       "path": "scripts/oci_layer_transform.py",
@@ -6125,8 +6125,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 16225,
-      "sha256": "8df0f80e47cb40d94eb3a7eabc5e6455c7203192447670461b0477305e93d8c0"
+      "size": 16031,
+      "sha256": "2561318d84358da12e69542a216e02c0b65d3bd1fb732c50aa85b85c7c3b0c15"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
@@ -6150,8 +6150,8 @@
     },
     {
       "path": "scripts/test_linux_ocr_runtime.py",
-      "size": 9469,
-      "sha256": "3bb9f51c027a2e0e879ba0e41aaf0413360723b5c614d32fa408e489aeed3b7c"
+      "size": 10158,
+      "sha256": "c42e4c5963fff990959c13103d572dcb76acb4c3d5bcd68172e47d5763d60ebf"
     },
     {
       "path": "scripts/test_linux_resume_spec.py",
@@ -6165,8 +6165,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 11478,
-      "sha256": "63ef8310541cfa15240a4e2b11dc5fed39fee487a5342ab532017103dd0c430f"
+      "size": 11450,
+      "sha256": "896558ae8632ec187da54591b81b27062bf2d572982cefb0b0302486f0b286c9"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
@@ -6205,8 +6205,8 @@
     },
     {
       "path": "scripts/test_native_factory_inputs.py",
-      "size": 7131,
-      "sha256": "532e44767fe376c0ad17a8146366a12d868657493e31000f4529a2ee5640559f"
+      "size": 8576,
+      "sha256": "b5388492b3086a5e3c2ccbad233033105b78b7f70d508f677c6709b5c9fa9ff9"
     },
     {
       "path": "scripts/test_native_media_acceptance.py",
@@ -6340,8 +6340,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 22870,
-      "sha256": "fed44f6dd53106bbb99b53419aa8580e0185de218145aa53ad9232398fad3cc0"
+      "size": 22856,
+      "sha256": "80a9c2499fe11c3b4f98084320fcb7069818e046d77ec42a90d24780de744a95"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -6440,8 +6440,8 @@
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
-      "size": 4310,
-      "sha256": "b861246c0224b49d1fd070c0be777bdc258cec6b8929d4100b9df39b6f28eff8"
+      "size": 4280,
+      "sha256": "4eb8da925a234b065063bc9f4e1131c8cffca990a9e70903a919c8a0ef1ef426"
     },
     {
       "path": "scripts/wsl_engine_inputs.py",

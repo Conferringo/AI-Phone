@@ -3,6 +3,7 @@
   "host": "linux-x64",
   "archive": {
     "file": "linux-x64-host.tar.gz",
+    "asset_id": 712764840,
     "size_bytes": 29802918,
     "sha256": "63a207036fb13b6e6cb208568314fdc54741037e1f8599cf990c991490ab258a"
   },
