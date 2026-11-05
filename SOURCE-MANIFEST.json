@@ -2660,8 +2660,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 16753,
-      "sha256": "d0a2646487d9e8cc303a90416800dfdbc43f92b026b543952515c3ad57847b01"
+      "size": 26399,
+      "sha256": "677ecdd98a47d16f827c07414ec2ddc34033dbecbb8023e65a5bf0a85669de67"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2750,8 +2750,8 @@
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
-      "size": 11008,
-      "sha256": "62930772cb36ad8fb3805ef60e5cff88f59455325992df099a4457f41b704e9b"
+      "size": 11020,
+      "sha256": "38cabccac1215b749b90a04d2d657087d1e8e49cfd8a56b832d629656f8f7069"
     },
     {
       "path": "crates/assistant/src/proactive.rs",
@@ -2875,8 +2875,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 215975,
-      "sha256": "004671524ab207b8c9ba4de9822b864ab230de3cd9517ed49f0aea7c423c753b"
+      "size": 215670,
+      "sha256": "45155faa4aba0d11e9f9ac101537fe94bdac9b14ee6a20df231e7f0dc6361229"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",

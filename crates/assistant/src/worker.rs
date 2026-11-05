@@ -3059,9 +3059,6 @@ async fn tool(
         let value = crate::app_learning::save(app, run, &arguments).await?;
         return Ok(json!([{"type":"input_text","text":value.to_string()}]));
     }
-    if name.starts_with("phone_") {
-        crate::phone_system::for_run(app, run).await?;
-    }
     if name == "device_notifications" {
         return crate::proactive::read_device_notifications(
             app,
@@ -3305,11 +3302,13 @@ async fn tool(
         return Ok(json!([{"type":"input_text","text":"未知工具"}]));
     }
     let phone_id = crate::phone_system::for_run(app, run).await?;
-    let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
+    let (stored, read_only_notification): (Value, bool) = sqlx::query_as(
+        "SELECT context,origin='notification' AND background_read_only FROM runs WHERE id=$1",
+    )
+    .bind(run)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     let current: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
     if latest_grounding(&current)
         .is_some_and(|frame| wechat_friend_request_action(&frame, name, &arguments))
@@ -3366,19 +3365,12 @@ async fn tool(
             json!([{"type":"input_text","text":json!({"connected":feed.connected,"error":feed.error,"notifications":feed.notifications.iter().rev().take(24).map(|n|json!({"event_id":n.event_id,"source":if n.notification_key.starts_with("wechat-badge:"){"unread_badge"}else{"android_notification"},"app":n.app_name,"package":n.package_name,"title":n.title,"text":n.text,"posted_at_ms":n.posted_at_ms})).collect::<Vec<_>>()} ).to_string()}]),
         );
     }
-    let read_only_notification: bool = sqlx::query_scalar(
-        "SELECT origin='notification' AND background_read_only FROM runs WHERE id=$1",
-    )
-    .bind(run)
-    .fetch_one(&app.db)
-    .await
-    .map_err(|e| e.to_string())?;
     if name == "phone_observe" && read_only_notification {
         let observation: wire::DeviceObservation = phone(
             app,
             "observe",
             wire::DeviceRequest {
-                phone_id: crate::phone_system::for_run(app, run).await?,
+                phone_id,
                 ..crate::proactive::device(false)
             },
         )
@@ -3398,7 +3390,7 @@ async fn tool(
                     phone_id: phone_id.clone(),
                     owner_id: "local-user".into(),
                     include_ui_tree: false,
-                    metadata_only: false,
+                    metadata_only: true,
                     ..Default::default()
                 },
             );

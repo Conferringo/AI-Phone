@@ -41,18 +41,22 @@ pub async fn target(app: &App, id: &str) -> Result<Target, String> {
     })
 }
 pub async fn for_run(app: &App, run: Uuid) -> Result<String, String> {
-    let primary: String = sqlx::query_scalar("SELECT device_id FROM runs WHERE id=$1")
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
-    let ids:Vec<String>=sqlx::query_scalar("SELECT d.id FROM run_device_bindings b JOIN devices d ON d.id=b.device_id WHERE b.run_id=$1 AND d.kind='phone' AND d.runtime_state='managed' ORDER BY d.created_at,d.id").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    let id = if ids.contains(&primary) {
-        primary
-    } else {
-        ids.first().cloned().ok_or("此Agent未授权手机")?
-    };
-    desktop::authorized(app, run, &id).await?;
+    let (id, authorized): (String, bool) = sqlx::query_as(
+        "SELECT d.id,EXISTS(SELECT 1 FROM agent_device_bindings a
+            WHERE a.agent_id=r.agent_id AND a.device_id=d.id)
+         FROM runs r JOIN run_device_bindings b ON b.run_id=r.id
+         JOIN devices d ON d.id=b.device_id
+         WHERE r.id=$1 AND d.kind='phone' AND d.runtime_state='managed'
+         ORDER BY (d.id=r.device_id) DESC,d.created_at,d.id LIMIT 1",
+    )
+    .bind(run)
+    .fetch_optional(&app.db)
+    .await
+    .map_err(|e| e.to_string())?
+    .ok_or("此Agent未授权手机")?;
+    if !authorized {
+        return Err("该任务没有此设备的授权".into());
+    }
     Ok(id)
 }
 fn row(r: &sqlx::postgres::PgRow) -> wire::PhoneProvisionJob {

@@ -384,3 +384,179 @@ async fn model_trace_database_failure_is_an_execution_failure() {
     })
     .await;
 }
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; phone dispatch preserves skill requests"]
+async fn phone_dispatch_preserves_skill_request_without_guest_side_effects() {
+    database_case(|app| async move {
+        crate::registry::initialize(&app.db, &app.settings)
+            .await
+            .unwrap();
+        let (run, message) = queued(&app, crate::registry::PHONE, "user").await;
+        sqlx::query("UPDATE runs SET agent_id=$2 WHERE id=$1")
+            .bind(run)
+            .bind(Uuid::from_u128(2))
+            .execute(&app.db)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
+            .bind(run)
+            .bind(crate::registry::PHONE)
+            .execute(&app.db)
+            .await
+            .unwrap();
+        let call = json!({"name":"phone_tap","arguments":"{\"x\":100,\"y\":100}"});
+        let mut epoch = 0;
+        sqlx::query("SELECT 'dispatch-benchmark-start'")
+            .execute(&app.db)
+            .await
+            .unwrap();
+        let start = std::time::Instant::now();
+        for _ in 0..100 {
+            let result = tool(
+                &app,
+                run,
+                message,
+                &call,
+                &mut epoch,
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+            let value = tool_value(&result).unwrap();
+            assert_eq!(value["not_executed"], true);
+            assert_eq!(value["next_tool"], "skill_read");
+            assert_eq!(epoch, 0);
+        }
+        println!(
+            "dispatch benchmark: 100 calls in {} microseconds",
+            start.elapsed().as_micros()
+        );
+        sqlx::query("SELECT 'dispatch-benchmark-end'")
+            .execute(&app.db)
+            .await
+            .unwrap();
+    })
+    .await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; phone target selection and current bindings"]
+async fn phone_target_keeps_primary_order_and_current_binding_decisions() {
+    database_case(|app| async move {
+        crate::registry::initialize(&app.db, &app.settings).await.unwrap();
+        let agent = Uuid::from_u128(2);
+        let (run, _) = queued(&app, crate::registry::PHONE, "user").await;
+        sqlx::query("UPDATE runs SET agent_id=$2 WHERE id=$1")
+            .bind(run).bind(agent).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state,created_at) VALUES
+            ('route-a','Older phone','phone','fixture','managed',now()-interval '1 day'),
+            ('route-b','Equal age phone','phone','fixture','managed',now()-interval '1 day'),
+            ('route-registered','Registered phone','phone','fixture','registered',now()-interval '2 days'),
+            ('route-desktop','Computer','desktop','fixture','managed',now()-interval '2 days')")
+            .execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) SELECT $1,id FROM devices")
+            .bind(run).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) SELECT $1,id FROM devices WHERE id<>$2")
+            .bind(agent).bind(crate::registry::PHONE).execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap(), crate::registry::PHONE);
+
+        sqlx::query("SELECT 'routing-benchmark-start'").execute(&app.db).await.unwrap();
+        let start = std::time::Instant::now();
+        for _ in 0..100 {
+            assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap(), crate::registry::PHONE);
+        }
+        println!("routing benchmark: 100 resolutions in {} microseconds", start.elapsed().as_micros());
+        sqlx::query("SELECT 'routing-benchmark-end'").execute(&app.db).await.unwrap();
+
+        sqlx::query("UPDATE runs SET device_id='route-desktop' WHERE id=$1")
+            .bind(run).execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap(), "route-a");
+        sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1 AND device_id='route-a'")
+            .bind(agent).execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap_err(), "该任务没有此设备的授权");
+        sqlx::query("DELETE FROM run_device_bindings WHERE run_id=$1 AND device_id='route-a'")
+            .bind(run).execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap(), "route-b");
+        sqlx::query("UPDATE devices SET runtime_state='registered' WHERE id='route-b'")
+            .execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap(), crate::registry::PHONE);
+        sqlx::query("DELETE FROM run_device_bindings WHERE run_id=$1 AND device_id=$2")
+            .bind(run).bind(crate::registry::PHONE).execute(&app.db).await.unwrap();
+        assert_eq!(crate::phone_system::for_run(&app, run).await.unwrap_err(), "此Agent未授权手机");
+    }).await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL and loopback protobuf guest; readiness and observation"]
+async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
+    use axum::{Router, body::Bytes, routing::post};
+    database_case(|mut app| async move {
+        crate::registry::initialize(&app.db, &app.settings).await.unwrap();
+        let (run, message) = queued(&app, crate::registry::PHONE, "user").await;
+        let context = json!([
+            {"type":"function_call","name":"skill_read","call_id":"skill","arguments":"{\"name\":\"phone-use\"}"},
+            {"type":"function_call_output","call_id":"skill","output":[{"type":"input_text","text":"Skill id=phone-use，name=phone-use，enabled=true\nBody"}]}
+        ]);
+        sqlx::query("UPDATE runs SET agent_id=$2,status='running',context=$3 WHERE id=$1")
+            .bind(run).bind(Uuid::from_u128(2)).bind(context).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
+            .bind(run).bind(crate::registry::PHONE).execute(&app.db).await.unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (sender, mut requests) = tokio::sync::mpsc::channel(4);
+        let controls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let control_calls = controls.clone();
+        let frame = b"fixture-current-frame";
+        let router = Router::new()
+            .route("/v1/observe", post(move |body: Bytes| {
+                let sender = sender.clone();
+                async move {
+                    let request = wire::DeviceRequest::decode(body).unwrap();
+                    assert_eq!(request.phone_id, crate::registry::PHONE);
+                    assert_eq!(request.owner_id, "local-user");
+                    sender.send(request.clone()).await.unwrap();
+                    pb(StatusCode::OK, wire::DeviceObservation {
+                        phone_id: request.phone_id, width: 720, height: 1440,
+                        root_identity: "0".into(), control_epoch: 7, controller: "agent".into(),
+                        png: if request.metadata_only { vec![] } else { frame.to_vec() },
+                        ..Default::default()
+                    })
+                }
+            }))
+            .route("/v1/control", post(move |body: Bytes| {
+                control_calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                async move {
+                    let request = wire::TakeControlRequest::decode(body).unwrap();
+                    assert_eq!(request.controller, "agent");
+                    pb(StatusCode::OK, wire::ControlState {
+                        phone_id: request.phone_id, control_epoch: 7, controller: "agent".into(),
+                    })
+                }
+            }));
+        let server = FixtureTask(tokio::spawn(async move { axum::serve(listener, router).await.unwrap(); }));
+        Arc::get_mut(&mut app).unwrap().local = reqwest::Client::builder()
+            .proxy(reqwest::Proxy::all(format!("http://{address}")).unwrap())
+            .timeout(Duration::from_secs(4)).build().unwrap();
+        let call = json!({"name":"phone_observe","arguments":"{}"});
+        let mut epoch = 0;
+        let result = tool(&app, run, message, &call, &mut epoch, &CancellationToken::new()).await.unwrap();
+        assert_eq!(epoch, 7);
+        assert!(requests.recv().await.unwrap().metadata_only, "readiness must not capture a discarded screenshot");
+        let observed = requests.recv().await.unwrap();
+        assert!(!observed.metadata_only);
+        assert!(observed.include_elements);
+        let image = format!("data:image/png;base64,{}", STANDARD.encode(frame));
+        assert!(result.as_array().unwrap().iter().any(|part| part["image_url"] == image));
+
+        sqlx::query("UPDATE runs SET origin='notification',background_read_only=true WHERE id=$1")
+            .bind(run).execute(&app.db).await.unwrap();
+        epoch = 0;
+        let result = tool(&app, run, message, &call, &mut epoch, &CancellationToken::new()).await.unwrap();
+        assert!(!requests.recv().await.unwrap().metadata_only);
+        assert_eq!(epoch, 0, "read-only notification must not take control");
+        assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert!(result.as_array().unwrap().iter().any(|part| part["image_url"] == image));
+        drop(server);
+    }).await;
+}
