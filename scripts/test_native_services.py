@@ -75,12 +75,21 @@ class NativeServiceTests(unittest.TestCase):
                 path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
                 path.chmod(0o755 if '/bin/' in name else 0o644)
             with patch('subprocess.run') as execute:
-                with self.assertRaisesRegex(ValueError,'phone input setup capability is missing'):
+                expected='host is not implemented' if platform.system()=='Windows' else 'phone input setup capability is missing'
+                with self.assertRaisesRegex(ValueError,expected):
                     input_setup_command(root)
                 execute.assert_not_called()
             path=root/'runtime/services/manifest.json';value=json.loads(path.read_bytes())
             value['phone_input_setup']=PHONE_INPUT_SETUP_CONTRACT;path.write_text(json.dumps(value))
-            self.assertEqual(input_setup_command(root),[str(root/binary_path('assistant'))])
+            if platform.system()=='Windows':
+                # Native backend components execute in the Linux WSL guest,
+                # even when their inventory declares a valid setup capability.
+                with patch('subprocess.run') as execute:
+                    with self.assertRaisesRegex(ValueError,'host is not implemented'):
+                        input_setup_command(root)
+                    execute.assert_not_called()
+            else:
+                self.assertEqual(input_setup_command(root),[str(root/binary_path('assistant'))])
 
     def test_source_input_requires_the_dedicated_helpers_read_only_contract(self):
         from prebuilt_services import input_setup_command, PHONE_INPUT_SETUP_CONTRACT, SOURCE_SUPERVISOR
