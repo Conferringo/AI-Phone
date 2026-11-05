@@ -12,10 +12,17 @@ from artifact_io import digest
 MANIFEST='WSL-BACKEND-MANIFEST.json'
 BODY='rootfs.tar.gz'
 MAX_BYTES=16*1024**3
+PHONE_ROOT='opt/aiphone/native-phone-bridge/'
+PHONE_SCHEMA='emulator/lib/emulator_controller.proto'
+PHONE_MANIFEST='PHONE-TOOLS-MANIFEST.json'
+PHONE_REQUIRED=frozenset(PHONE_ROOT+name for name in (
+    'platform-tools/adb','platform-tools/source.properties','platform-tools/NOTICE.txt',
+    PHONE_SCHEMA,PHONE_MANIFEST,'provenance.json','LICENSE'))
 REQUIRED=frozenset(('etc/os-release','etc/wsl.conf','opt/aiphone/bundle/source.payload',
-    'opt/aiphone/bundle/images.payload','opt/aiphone/tools/python/bin/python3',
+    'opt/aiphone/bundle/images.payload','opt/aiphone/bundle/source.sha256',
+    'usr/local/libexec/aiphone-bootstrap','opt/aiphone/tools/python/bin/python3',
     'opt/aiphone/tools/node/bin/node','opt/aiphone/bootstrap/wsl_backend_entry.py',
-    'usr/local/bin/docker','usr/local/bin/dockerd'))
+    'usr/local/bin/docker','usr/local/bin/dockerd')) | PHONE_REQUIRED
 
 
 def member_name(value):
@@ -33,7 +40,7 @@ def public_shell_config(parts):
 
 def permitted(name):
     parts=PurePosixPath(name).parts
-    if any(part in ('.git','.ssh','.env','authorized_keys','id_rsa','limactl','emulator') or part.startswith('qemu-system-') for part in parts):
+    if any(part in ('.git','.ssh','.env','authorized_keys','id_rsa','limactl') or part.startswith('qemu-system-') for part in parts) or ('emulator' in parts and name!=PHONE_ROOT+PHONE_SCHEMA):
         raise ValueError('Foreign runtime or private state in WSL rootfs')
     if name.startswith('var/lib/aiphone/') or (name.startswith(('home/','root/')) and not public_shell_config(parts)):
         raise ValueError('User state cannot be bundled in WSL rootfs')

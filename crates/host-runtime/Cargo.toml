@@ -18,6 +18,7 @@ flate2 = "=1.1.10"
 xz2 = { version = "=0.1.7", features = ["static"] }
 tar = { version = "=0.4.46", default-features = false }
 fs2 = "=0.4.3"
+getrandom = "=0.4.3"
 tempfile = "3"
 
 [lints.rust]

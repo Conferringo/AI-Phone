@@ -58,6 +58,7 @@ dependencies = [
  "ai-phone-api",
  "flate2",
  "fs2",
+ "getrandom 0.4.3",
  "prost",
  "rustix",
  "serde",

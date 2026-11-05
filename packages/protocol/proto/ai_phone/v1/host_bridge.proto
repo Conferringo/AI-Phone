@@ -54,6 +54,14 @@ message DeviceBridgePhone {
   string runtime_directory = 2;
   string serial = 3;
   string grpc_token = 4;
+  // An owned native host keeps this Unix guest pipe open. EOF drains the peer;
+  // the default preserves detached component callers.
+  bool owner_pipe = 5;
+}
+
+// Private native installer observation, not a network or model-facing API.
+message DeviceBridgeGuestAddress {
+  string ipv4 = 1;
 }
 
 // Stable pairing identity; endpoint and emulator token may change on restart.

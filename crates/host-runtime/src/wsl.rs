@@ -14,6 +14,7 @@ pub use initialize::{InitializeRequest, Initializer};
 mod command;
 mod windows;
 pub use windows::Native;
+pub(crate) use windows::{PhoneOperation, phone_command};
 
 #[derive(Clone)]
 pub struct Registration {

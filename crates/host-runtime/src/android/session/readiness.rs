@@ -56,6 +56,7 @@ pub(super) async fn snapshot(adb: &Adb, reused: bool) -> Result<NativeAndroidBoo
         height,
         frame_sha256,
         reused_session: reused,
+        backend_paired: false,
     })
 }
 pub(super) async fn existing(

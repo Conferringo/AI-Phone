@@ -363,7 +363,7 @@ fn register_windows_backend(
     let mut native = ai_phone_host_runtime::wsl::Native::new(&cancelled);
     let mut installation = ai_phone_host_runtime::Installation::lock(folder)
         .map_err(|error| error.code().to_string())?;
-    if let Some(identity) = android_identity {
+    let phone = if let Some(identity) = android_identity {
         manager.set(folder, "android", "running", "")?;
         let phone = installation
             .prepare_android(
@@ -378,8 +378,10 @@ fn register_windows_backend(
                 &cancelled,
             )
             .map_err(|error| error.code().to_string())?;
-        native_phone::start(&phone, &cancelled)?;
-    }
+        Some(phone)
+    } else {
+        None
+    };
     let request = ai_phone_host_runtime::wsl::InitializeRequest::from_json(
         serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?,
     )
@@ -394,6 +396,12 @@ fn register_windows_backend(
             &cancelled,
         )
         .map_err(|error| error.code().to_string())?;
+    if let Some(phone) = phone {
+        manager.set(folder, "android", "running", "")?;
+        // The native worker holds the WSL peer independently of this UI and
+        // re-observes the same pair when an existing session is resumed.
+        native_phone::start(&phone, &registered.distribution, &cancelled)?;
+    }
     // Registration preserves the imported disk; service and phone readiness have
     // separate contracts. Do not publish a completed deployment checkpoint here.
     if !registered.backend_initialized || !registered.phone_ready {

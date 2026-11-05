@@ -36,6 +36,8 @@ message NativeAndroidStart {
   uint32 adb_port = 2;
   uint32 console_port = 3;
   uint32 grpc_port = 4;
+  // Only an already registered application-owned WSL backend may be paired.
+  string wsl_distribution = 5;
 }
 
 // Live OS/transport evidence only; provisioning and complete-host readiness differ.
@@ -47,6 +49,8 @@ message NativeAndroidBooted {
   uint32 height = 5;
   string frame_sha256 = 6;
   bool reused_session = 7;
+  // Transport pairing differs from device provisioning and complete install.
+  bool backend_paired = 8;
 }
 
 // A running worker holds the separate lifecycle lock for this exact plan.
@@ -57,6 +61,7 @@ message NativeAndroidSessionOwner {
   uint32 adb_port = 4;
   uint32 console_port = 5;
   uint32 grpc_port = 6;
+  string wsl_distribution = 7;
 }
 
 // A terminal startup failure distinguishes cancellation from unknown cleanup.

@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+import subprocess
 from pathlib import Path
 import tarfile
 import tempfile
@@ -21,13 +22,17 @@ def archive(path, rows):
             else:entry.size=len(value);entry.mode=0o644;target.addfile(entry,io.BytesIO(value))
 
 
-def rootfs(path):
-    archive(path,[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
+def rootfs(path,*,phone_tools=True):
+    from wsl_phone_tools import REQUIRED
+    rows=[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
         ('opt/aiphone/bundle/source.payload',b'fixture-source'),('opt/aiphone/bundle/images.payload',b'fixture-images'),
+        ('opt/aiphone/bundle/source.sha256',b'a'*64+b'\n'),('usr/local/libexec/aiphone-bootstrap',b'fixture-native-bootstrap'),
         ('opt/aiphone/tools/python/bin/python3',b'fixture-python'),('opt/aiphone/tools/node/bin/node',b'fixture-node'),
         ('opt/aiphone/bootstrap/wsl_backend_entry.py',b'fixture-entry'),('usr/local/bin/docker',b'fixture-docker'),
         ('usr/local/bin/dockerd',b'fixture-dockerd'),('lib64/ld-linux-x86-64.so.2',('/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',)),
-        ('usr/share/doc/base-files/copyright',b'fixture-license')])
+        ('usr/share/doc/base-files/copyright',b'fixture-license')]
+    if phone_tools:rows.extend((name,b'fixture-phone-tools') for name in sorted(REQUIRED))
+    archive(path,rows)
 
 
 class WslBackendTests(unittest.TestCase):
@@ -101,8 +106,9 @@ class WslSourceTests(unittest.TestCase):
         components=components or ('web','native-services','js-services')
         for role in components:
             rows[COMPONENT_MANIFESTS[role]]=json.dumps({'host':host,'vision':'linux-tesseract-bundled'}).encode()
+        if 'native-services' in components:rows['runtime/services/bin/assistant']=b'fixture-native-staging-component'
         if extra:rows.update(extra)
-        records=[{'path':name,'size':len(data),'sha256':hashlib.sha256(data).hexdigest(),'mode':0o644} for name,data in rows.items()]
+        records=[{'path':name,'size':len(data),'sha256':hashlib.sha256(data).hexdigest(),'mode':0o755 if name=='runtime/services/bin/assistant' else 0o644} for name,data in rows.items()]
         manifest={'format':2,'components':[role for role in COMPONENT_MANIFESTS if role in components],'files':records}
         path=folder/'source.payload';archive(path,[*rows.items(),('HOST-MANIFEST.json',json.dumps(manifest).encode())]);return path
 
@@ -166,10 +172,14 @@ class WslSourceTests(unittest.TestCase):
 class WslEntryTests(unittest.TestCase):
     def test_verification_staging_never_activates_tools_or_populates_user_state(self):
         import wsl_backend_entry as entry
-        with tempfile.TemporaryDirectory() as folder,patch('client_host_entry.stage_source') as stage,patch('installer_tools.select') as select:
-            root=Path(folder);stage.return_value=root
-            try:self.assertEqual(entry.staged(root),root)
-            finally:__import__('sys').path.remove(str(root/'scripts'))
+        with tempfile.TemporaryDirectory() as folder,patch.object(entry.subprocess,'run') as stage,patch('installer_tools.select') as select,patch.object(entry,'BUNDLE',Path(folder)):
+            identity='a'*64;home=Path(folder)/'installation';root=home.resolve()/'releases'/identity
+            (Path(folder)/'source.sha256').write_text(identity+'\n')
+            stage.return_value=subprocess.CompletedProcess([],0,f'{identity} {root}\n','')
+            try:self.assertEqual(entry.staged(home),root)
+            finally:
+                paths=__import__('sys').path
+                if str(root/'scripts') in paths:paths.remove(str(root/'scripts'))
             select.assert_not_called();self.assertFalse((root/'data').exists())
 
     def test_initialize_serializes_writers_without_using_existing_installation(self):
@@ -294,6 +304,7 @@ class WslAssemblyTests(unittest.TestCase):
                 work=root/'work'
                 stack.enter_context(patch.object(factory,'qualification_preflight',return_value=work))
                 stack.enter_context(patch.object(factory,'prepare_tools',return_value=(root/'tools',root/'python',{})))
+                stack.enter_context(patch('wsl_phone_tools.prepare',return_value=root/'phone-tools'))
                 stack.enter_context(patch.object(factory,'factory_context',return_value=root/'ocr'))
                 stack.enter_context(patch('linux_ocr_runtime.build'))
                 stack.enter_context(patch('build_native_services.build'))

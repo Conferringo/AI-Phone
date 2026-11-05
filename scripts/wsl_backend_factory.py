@@ -25,9 +25,12 @@ def capacity(folder, context_bytes, rootfs_budget):
     return required
 
 
-def input_budget(source,images,tools,packages):
-    paths=[Path(source),Path(images),*Path(tools).rglob('*'),*Path(packages).rglob('*')]
-    total=sum(path.stat().st_size for path in paths if path.is_file())
+def input_budget(source,images,tools,packages,phone_tools):
+    paths=[Path(source),Path(images),*Path(tools).rglob('*'),*Path(packages).rglob('*'),*Path(phone_tools).rglob('*')]
+    with tarfile.open(source,'r:*') as archive:
+        _,records,_=archive_records(archive)
+        bootstrap_bytes=bootstrap_record(records)['size']
+    total=sum(path.stat().st_size for path in paths if path.is_file())+bootstrap_bytes+65
     # The pinned Ubuntu base and unpacked engine each have admission budgets, not optimistic compression estimates.
     rootfs_budget=total+1536*1024**2
     return total,rootfs_budget
@@ -58,6 +61,7 @@ def source_input(payload):
             if json.load(source.extractfile(name)).get('host')!='linux-x64':raise ValueError('WSL requires Linux x64 backend components')
         services=json.load(source.extractfile('runtime/services/manifest.json'))
         if services.get('vision')!='linux-tesseract-bundled':raise ValueError('WSL requires offline OCR')
+        bootstrap_record(records)
     return {'sha256':digest(payload),'components':manifest['components']}
 
 
@@ -109,8 +113,11 @@ RUN apk --no-network add /packages/*.apk && rm -rf /packages /var/cache/apk/*
 FROM {plan['base_image']}
 COPY --from=engine / /opt/aiphone/engine/
 COPY tools/ /opt/aiphone/tools/
+COPY phone-tools/ /opt/aiphone/native-phone-bridge/
 COPY scripts/ /opt/aiphone/bootstrap/
 COPY source.payload images.payload /opt/aiphone/bundle/
+COPY source.sha256 /opt/aiphone/bundle/source.sha256
+COPY bootstrap.program /usr/local/libexec/aiphone-bootstrap
 COPY docker dockerd /usr/local/bin/
 COPY wsl.conf /etc/wsl.conf
 COPY engine-sources.json /usr/share/doc/aiphone-engine/source-records.json
@@ -124,18 +131,22 @@ RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0
 RUN test ! -e /etc/ld-musl-x86_64.path && test ! -L /etc/ld-musl-x86_64.path && printf '%s\\n' '/opt/aiphone/engine/lib:/opt/aiphone/engine/usr/lib' > /etc/ld-musl-x86_64.path
 RUN /usr/bin/env -i PATH=/usr/bin:/bin /opt/aiphone/engine/usr/bin/runc --version
 RUN /usr/local/bin/docker --version && /usr/local/bin/docker compose version && /usr/local/bin/dockerd --version
+RUN /opt/aiphone/native-phone-bridge/platform-tools/adb version
+RUN staging_contract=$(/usr/bin/timeout 10 /usr/local/libexec/aiphone-bootstrap --source-staging-contract) && test "$staging_contract" = ai-phone-source-staging-v1
 RUN /opt/aiphone/tools/python/bin/python3 -I -B /opt/aiphone/bootstrap/wsl_backend_entry.py --verify
 ENTRYPOINT ["/opt/aiphone/tools/python/bin/python3", "-I", "-B", "/opt/aiphone/bootstrap/wsl_backend_entry.py"]
 '''
 
 
-def validated_inputs(root,source,images,tools,packages):
+def validated_inputs(root,source,images,tools,packages,phone_tools):
     from installer_tools import verify as verify_tools
     from container_images import stage
     plan=factory_plan(root);source_record=source_input(source)
     tool_manifest=verify_tools(tools,'linux-x64');image_manifest=stage(images).manifest
     if image_manifest['architecture']!='amd64':raise ValueError('WSL requires amd64 container images')
     package_inputs(packages,plan['engine_packages'])
+    from wsl_phone_tools import verify
+    verify(root,phone_tools)
     return plan,source_record,tool_manifest
 
 
@@ -148,11 +159,33 @@ def payload_scripts(source,scripts):
     if not (scripts/'wsl_backend_entry.py').is_file():raise ValueError('Rebuild backend source with its WSL entry')
 
 
-def prepare_context(root,folder,source,images,tools,packages):
-    plan,source_record,tool_manifest=validated_inputs(root,source,images,tools,packages)
+def bootstrap_record(records):
+    name='runtime/services/bin/assistant'
+    record=records.get(name)
+    if record is None or record['mode']!=0o755:raise ValueError('Missing native source staging component')
+    return record
+
+
+def bootstrap_program(source,destination):
+    # This is an already built, source-bound component, not an end-user compiler.
+    with tarfile.open(source,'r:*') as archive:
+        _,records,_=archive_records(archive)
+        record=bootstrap_record(records)
+        with archive.extractfile(record['path']) as stream:body=stream.read(record['size']+1)
+        if len(body)!=record['size'] or hashlib.sha256(body).hexdigest()!=record['sha256']:
+            raise ValueError('Native source staging component integrity differs')
+    with Path(destination).open('xb') as output:output.write(body)
+    Path(destination).chmod(0o755)
+
+
+def prepare_context(root,folder,source,images,tools,packages,phone_tools):
+    plan,source_record,tool_manifest=validated_inputs(root,source,images,tools,packages,phone_tools)
     folder.mkdir()
     for path,name in ((source,'source.payload'),(images,'images.payload')):shutil.copyfile(path,folder/name)
+    (folder/'source.sha256').write_text(source_record['sha256']+'\n')
+    bootstrap_program(folder/'source.payload',folder/'bootstrap.program')
     shutil.copytree(tools,folder/'tools');shutil.copytree(packages,folder/'packages')
+    shutil.copytree(phone_tools,folder/'phone-tools')
     payload_scripts(source,folder/'scripts')
     for name in ('docker','dockerd'):(folder/name).write_text(engine_script(name))
     (folder/'wsl.conf').write_text('[interop]\nenabled=false\nappendWindowsPath=false\n[automount]\nenabled=false\n')
@@ -160,7 +193,8 @@ def prepare_context(root,folder,source,images,tools,packages):
     (folder/'engine-sources.json').write_text(json.dumps(licenses(packages,plan['engine_packages']),sort_keys=True)+'\n')
     (folder/'Dockerfile').write_text(dockerfile(plan))
     return {'policy':plan,'source_sha256':source_record['sha256'],'source_components':source_record['components'],'images_sha256':digest(images),
-            'tools_manifest_sha256':digest(Path(tools)/'manifest.json'),'tools':tool_manifest['tools']}
+            'tools_manifest_sha256':digest(Path(tools)/'manifest.json'),'tools':tool_manifest['tools'],
+            'phone_tools_manifest_sha256':digest(Path(phone_tools)/'PHONE-TOOLS-MANIFEST.json')}
 
 
 def run(argv,**kwargs):
@@ -182,11 +216,11 @@ def export_owned(image,output,name):
         if owned:run(['docker','rm',identity],stdout=subprocess.DEVNULL)
 
 
-def build(root,work,source,images,tools,packages):
+def build(root,work,source,images,tools,packages,phone_tools):
     root,work=Path(root),Path(work)
-    capacity(work.parent,*input_budget(source,images,tools,packages))
+    capacity(work.parent,*input_budget(source,images,tools,packages,phone_tools))
     if work.exists():raise FileExistsError('Use a new WSL factory directory; existing inputs preserved')
-    work.mkdir();plan=prepare_context(root,work/'context',source,images,tools,packages)
+    work.mkdir();plan=prepare_context(root,work/'context',source,images,tools,packages,phone_tools)
     nonce=uuid.uuid4().hex;image='ai-phone-wsl-factory:'+nonce;name='ai-phone-wsl-factory-'+nonce
     run(['docker','buildx','build','--platform','linux/amd64','--network','none','--load','--provenance=false','-t',image,work/'context'])
     archive=work/'rootfs.tar';export_owned(image,archive,name)
@@ -202,5 +236,5 @@ def build(root,work,source,images,tools,packages):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parent.parent)
-    for name in ('work','source','images','tools','packages'):parser.add_argument('--'+name,type=Path,required=True)
-    args=parser.parse_args();print(json.dumps(build(args.root,args.work,args.source,args.images,args.tools,args.packages)))
+    for name in ('work','source','images','tools','packages','phone-tools'):parser.add_argument('--'+name,type=Path,required=True)
+    args=parser.parse_args();print(json.dumps(build(args.root,args.work,args.source,args.images,args.tools,args.packages,args.phone_tools)))

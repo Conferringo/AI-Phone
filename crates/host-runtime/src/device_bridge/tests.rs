@@ -91,6 +91,7 @@ fn phone_peer_request(
         runtime_directory: root.to_str().unwrap().into(),
         serial: "emulator-5564".into(),
         grpc_token: "private-test-token".into(),
+        owner_pipe: false,
     }
 }
 
