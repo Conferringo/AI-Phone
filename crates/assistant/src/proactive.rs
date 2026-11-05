@@ -509,7 +509,7 @@ async fn ingest_device_feed(
     }
     Ok(())
 }
-async fn schedule(app: &App) -> Result<(), sqlx::Error> {
+async fn schedule(app: &App, kinds: &[&str]) -> Result<(), sqlx::Error> {
     if !sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM registry_meta)")
         .fetch_one(&app.db)
         .await?
@@ -519,7 +519,7 @@ async fn schedule(app: &App) -> Result<(), sqlx::Error> {
         }
         crate::registry::initialize(&app.db, &app.settings).await?;
     }
-    let devices: Vec<(String, String)> = sqlx::query_as("SELECT d.id,d.kind FROM devices d JOIN agents a ON a.id=d.default_agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND m.model_revision>0 ORDER BY d.id").fetch_all(&app.db).await?;
+    let devices: Vec<(String, String)> = sqlx::query_as("SELECT d.id,d.kind FROM devices d JOIN agents a ON a.id=d.default_agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND m.model_revision>0 AND d.kind=ANY($1) ORDER BY d.id").bind(kinds).fetch_all(&app.db).await?;
     for (device_id, kind) in devices {
         sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(&device_id).execute(&app.db).await?;
         schedule_device(app, &device_id, &kind).await?;
@@ -705,7 +705,7 @@ async fn deliver(app: &App) -> Result<(), String> {
     }
     Ok(())
 }
-async fn attend(app: &App) {
+async fn attend_phone(app: &App) {
     let mut interval = tokio::time::interval(Duration::from_secs(3));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
@@ -715,12 +715,6 @@ async fn attend(app: &App) {
                 .execute(&app.db)
                 .await;
         }
-        let inbox_error = if ingest_desktops(app).await.is_err() {
-            "电脑通知暂不可用，请检查设备通知服务"
-        } else {
-            ""
-        };
-        let _ = sqlx::query("UPDATE proactive_state SET last_error=$1 WHERE $1<>'' OR last_error='电脑通知暂不可用，请检查设备通知服务'").bind(inbox_error).execute(&app.db).await;
         // Manual takeover pauses even between exploration cycles, before a new run can claim control.
         if let Ok(Some(epoch)) = sqlx::query_scalar::<_, i64>(
             "SELECT control_epoch FROM proactive_state WHERE exploring OR wechat_watch",
@@ -747,7 +741,23 @@ async fn attend(app: &App) {
             }
         }
         let _ = reconcile(app).await;
-        let _ = schedule(app).await;
+        let _ = schedule(app, &["phone"]).await;
+    }
+}
+
+async fn attend_desktops(app: &App) {
+    let mut interval = tokio::time::interval(Duration::from_secs(3));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        interval.tick().await;
+        let inbox_error = if ingest_desktops(app).await.is_err() {
+            "电脑通知暂不可用，请检查设备通知服务"
+        } else {
+            ""
+        };
+        let _ = sqlx::query("UPDATE proactive_state SET last_error=$1 WHERE $1<>'' OR last_error='电脑通知暂不可用，请检查设备通知服务'").bind(inbox_error).execute(&app.db).await;
+        let _ = reconcile(app).await;
+        let _ = schedule(app, &["desktop"]).await;
     }
 }
 
@@ -761,9 +771,14 @@ async fn forward_reports(app: &App) {
 }
 
 pub async fn work(app: Shared) {
-    // One owner per pipeline. A slow remote summary cannot hold up incoming
-    // work or manual supervision; dropping work also cancels both futures.
-    tokio::join!(attend(&app), forward_reports(&app));
+    // Each device's collection and admission has one owner. Phone supervision
+    // precedes phone admission without blocking desktop work or report delivery.
+    // Dropping work cancels all three futures; no detached collector remains.
+    tokio::join!(
+        attend_phone(&app),
+        attend_desktops(&app),
+        forward_reports(&app)
+    );
 }
 
 #[cfg(test)]
@@ -864,14 +879,14 @@ mod tests {
             sqlx::migrate!("./migrations").run(&app.db).await.unwrap();
             let defaults=state(&app).await.unwrap();
             assert!(defaults.exploring && defaults.notifications_enabled && defaults.forward_notifications && defaults.autonomous_reply && defaults.autonomous_install && defaults.wechat_watch,"fresh installations enable exploration and notification capabilities without visiting settings");
-            let (a,b)=tokio::join!(schedule(&app),schedule(&app));a.unwrap();b.unwrap();
+            let (a,b)=tokio::join!(schedule(&app, &["phone", "desktop"]),schedule(&app, &["phone", "desktop"]));a.unwrap();b.unwrap();
             let first:Uuid=sqlx::query_scalar("SELECT id FROM runs").fetch_one(&app.db).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs").fetch_one(&app.db).await.unwrap(),1,"concurrent schedulers create one cycle");
             sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1").bind(first).execute(&app.db).await.unwrap();
             reconcile(&app).await.unwrap();let wake=state(&app).await.unwrap().next_wake_at_ms;
             reconcile(&app).await.unwrap();assert_eq!(state(&app).await.unwrap().next_wake_at_ms,wake,"recovery does not extend the deadline");
-            schedule(&app).await.unwrap();assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs").fetch_one(&app.db).await.unwrap(),1);
-            sqlx::query("UPDATE proactive_state SET next_cycle_at=now()-interval '1 second'").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
+            schedule(&app, &["phone", "desktop"]).await.unwrap();assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs").fetch_one(&app.db).await.unwrap(),1);
+            sqlx::query("UPDATE proactive_state SET next_cycle_at=now()-interval '1 second'").execute(&app.db).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let second:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();assert_ne!(first,second,"second autonomous cycle needs no user message");
             let cancel=CancellationToken::new();app.active.lock().await.insert(second,cancel.clone());
             let mut headers=HeaderMap::new();headers.insert("authorization","Bearer test".parse().unwrap());headers.insert("content-type",MEDIA.parse().unwrap());
@@ -898,7 +913,7 @@ mod tests {
             let mut echo=newer.clone();echo.event_id="c".repeat(64);echo.text="AI Phone · 手机通知".into();
             ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![newer,echo],..Default::default()}).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM phone_notifications").fetch_one(&app.db).await.unwrap(),2,"replays and own push echoes are ignored");
-            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
+            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let notification:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE origin='notification'").fetch_one(&app.db).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM phone_notifications WHERE status='assigned'").fetch_one(&app.db).await.unwrap(),1,"latest revision replaces old notification snapshot");
             assert!(guard_tool(&app,notification,"phone_tap").await.is_ok());assert!(guard_tool(&app,notification,"workspace_run").await.is_ok());assert!(guard_tool(&app,notification,"phone_notifications").await.is_ok());
@@ -909,7 +924,7 @@ mod tests {
             assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM phone_notifications WHERE run_id=$1").bind(notification).fetch_one(&app.db).await.unwrap(),"pending-summary");
             reconcile(&app).await.unwrap();
             sqlx::query("UPDATE runs SET status='succeeded' WHERE origin='user'").execute(&app.db).await.unwrap();
-            sqlx::query("UPDATE proactive_state SET exploring=true").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
+            sqlx::query("UPDATE proactive_state SET exploring=true").execute(&app.db).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let resumed:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE origin='notification' AND status='queued'").fetch_one(&app.db).await.unwrap();
             assert_ne!(notification,resumed);assert!(guard_tool(&app,resumed,"phone_input").await.is_err());assert!(guard_tool(&app,resumed,"phone_notifications").await.is_ok());
             let revision=state(&app).await.unwrap().revision;
@@ -917,13 +932,13 @@ mod tests {
             assert_eq!(route(State(app.clone()),Path("update".into()),headers.clone(),Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::OK);
             assert_eq!(route(State(app.clone()),Path("update".into()),headers,Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
             assert!(guard_tool(&app,notification,"phone_notifications").await.is_err(),"disabling notifications revokes a queued summary");
-            schedule(&app).await.unwrap();assert!(state(&app).await.unwrap().active_run_id.is_empty());
+            schedule(&app, &["phone", "desktop"]).await.unwrap();assert!(state(&app).await.unwrap().active_run_id.is_empty());
             // All application notifications wake an idle worker without exploration.
             sqlx::query("UPDATE proactive_state SET exploring=false,wechat_watch=true,notifications_enabled=true,notifications_since='epoch',wechat_quiet_until='epoch'").execute(&app.db).await.unwrap();
             let mut wechat=event.clone();wechat.event_id="d".repeat(64);wechat.notification_key="wechat-message".into();wechat.package_name="com.tencent.mm".into();
             let mut other=event.clone();other.event_id="e".repeat(64);other.notification_key="other-message".into();
             ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![wechat.clone(),other],..Default::default()}).await.unwrap();
-            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
+            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let wake:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();
             assert!(guard_tool(&app,wake,"phone_tap_element").await.is_ok(),"WeChat watch independently authorizes inspection");
             assert!(guard_tool(&app,wake,"skill_install").await.is_err(),"WeChat event does not authorize unrelated installs");
@@ -931,7 +946,7 @@ mod tests {
             sqlx::query("UPDATE runs SET status='succeeded',finished_at=now() WHERE id=$1").bind(wake).execute(&app.db).await.unwrap();reconcile(&app).await.unwrap();
             let mut next_app=event.clone();next_app.event_id="8".repeat(64);next_app.notification_key="next-app-message".into();
             ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![next_app],..Default::default()}).await.unwrap();
-            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app).await.unwrap();
+            sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let other_run:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();
             assert!(guard_tool(&app,other_run,"phone_input").await.is_ok(),"other applications can act without exploration");
             sqlx::query("UPDATE runs SET origin='user',status='running' WHERE id=$1").bind(other_run).execute(&app.db).await.unwrap();
@@ -945,7 +960,7 @@ mod tests {
             assert_eq!(active_context,delivered);
             assert_eq!(sqlx::query_scalar::<_,Value>("SELECT context FROM runs WHERE id=$1").bind(other_run).fetch_one(&app.db).await.unwrap(),json!(active_context),"event and context survive restart together");
             assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM phone_notifications WHERE event_id=$1").bind("f".repeat(64)).fetch_one(&app.db).await.unwrap(),"attending");
-            sqlx::query("UPDATE runs SET status='canceled',finished_at=now() WHERE id=$1").bind(other_run).execute(&app.db).await.unwrap();reconcile(&app).await.unwrap();schedule(&app).await.unwrap();
+            sqlx::query("UPDATE runs SET status='canceled',finished_at=now() WHERE id=$1").bind(other_run).execute(&app.db).await.unwrap();reconcile(&app).await.unwrap();schedule(&app, &["phone", "desktop"]).await.unwrap();
             let followup:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();
             assert!(guard_tool(&app,followup,"phone_input").await.is_err(),"summary after active delivery must never repeat a social action");
             sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1").bind(followup).execute(&app.db).await.unwrap();reconcile(&app).await.unwrap();
@@ -960,7 +975,7 @@ mod tests {
             wechat=event.clone();wechat.event_id="9".repeat(64);wechat.notification_key="wechat-visible:paused-new-message".into();wechat.package_name="com.tencent.mm".into();
             ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![wechat],..Default::default()}).await.unwrap();
             sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();
-            let (a,b)=tokio::join!(schedule(&app),schedule(&app));a.unwrap();b.unwrap();
+            let (a,b)=tokio::join!(schedule(&app, &["phone", "desktop"]),schedule(&app, &["phone", "desktop"]));a.unwrap();b.unwrap();
             let summary:Uuid=sqlx::query_scalar("SELECT id FROM runs WHERE status='queued'").fetch_one(&app.db).await.unwrap();
             assert_eq!(state(&app).await.unwrap().active_run_id,summary.to_string());
             assert!(guard_tool(&app,summary,"phone_tap").await.is_ok(),"a paused old task cannot suppress owner-authorized new notification work");
@@ -982,7 +997,7 @@ mod tests {
             ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:true,notifications:vec![pc.clone()],..Default::default()}).await.unwrap();
             ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:true,notifications:vec![pc],..Default::default()}).await.unwrap();
             sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();
-            let (a,b)=tokio::join!(schedule(&app),schedule(&app));a.unwrap();b.unwrap();
+            let (a,b)=tokio::join!(schedule(&app, &["phone", "desktop"]),schedule(&app, &["phone", "desktop"]));a.unwrap();b.unwrap();
             let pc_run:(Uuid,bool)=sqlx::query_as("SELECT id,background_read_only FROM runs WHERE device_id=$1 AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap();
             assert!(!pc_run.1,"idle desktop notifications are actionable without exploration");
             assert!(guard_tool(&app,pc_run.0,"computer_click").await.is_ok());
@@ -994,7 +1009,7 @@ mod tests {
             sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds'").execute(&app.db).await.unwrap();
             assert!(should_yield(&app,pc_run.0).await.unwrap());
             sqlx::query("UPDATE runs SET status='queued',next_wake_at=now()+interval '5 seconds' WHERE id=$1").bind(pc_run.0).execute(&app.db).await.unwrap();
-            schedule(&app).await.unwrap();
+            schedule(&app, &["phone", "desktop"]).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs WHERE device_id=$1 AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap(),2,"notification and waiting exploration retain separate checkpoints");
 
 
@@ -1011,7 +1026,7 @@ mod tests {
             // This phase isolates exploration startup with no remaining notification work.
             sqlx::query("UPDATE phone_notifications SET status='succeeded' WHERE status IN ('pending','pending-summary')").execute(&app.db).await.unwrap();
             sqlx::query("UPDATE proactive_state SET exploring=true,next_cycle_at='epoch'").execute(&app.db).await.unwrap();
-            schedule(&app).await.unwrap();
+            schedule(&app, &["phone", "desktop"]).await.unwrap();
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs WHERE device_id='phone-local-01' AND origin='exploration' AND status='queued'").fetch_one(&app.db).await.unwrap(),1,"explicit free exploration must start independently of a paused owner task");
             assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM runs WHERE id=$1").bind(paused).fetch_one(&app.db).await.unwrap(),"paused","the old owner task is retained");
             sqlx::query("UPDATE runs SET status='paused',background_finalized=false WHERE id=$1").bind(claimed.0).execute(&app.db).await.unwrap();
@@ -1045,7 +1060,7 @@ mod tests {
             ingest_feed(&app,wire::PhoneNotificationList{connected:true,notifications:vec![event],..Default::default()}).await.unwrap();
             sqlx::query("UPDATE phone_notifications SET received_at=now()-interval '3 seconds' WHERE event_id=$1").bind("5".repeat(64)).execute(&app.db).await.unwrap();
             sqlx::query("UPDATE runs SET next_wake_at=now()+interval '60 seconds' WHERE origin='exploration' AND status='queued'").execute(&app.db).await.unwrap();
-            schedule(&app).await.unwrap();
+            schedule(&app, &["phone", "desktop"]).await.unwrap();
             let independent:Uuid=sqlx::query_scalar("SELECT run_id FROM phone_notifications WHERE event_id=$1").bind("5".repeat(64)).fetch_one(&app.db).await.unwrap();
             let current=state(&app).await.unwrap();let mut h=HeaderMap::new();h.insert("authorization","Bearer test".parse().unwrap());h.insert("content-type",MEDIA.parse().unwrap());
             let stop=wire::ProactiveUpdateRequest{expected_revision:current.revision,exploring:false,notifications_enabled:current.notifications_enabled,forward_notifications:current.forward_notifications,autonomous_reply:current.autonomous_reply,autonomous_install:current.autonomous_install,interval_seconds:current.interval_seconds,wechat_watch:Some(current.wechat_watch)};
