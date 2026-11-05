@@ -9,7 +9,7 @@ import tarfile
 import tempfile
 import zipfile
 from artifact_io import digest
-from client_host_entry import canonical_name,checked_record,verify_file
+from client_host_entry import COMPONENT_MANIFESTS,canonical_name,checked_record,verify_file
 from host_platform import host_key
 from host_filesystem import windows_path,is_alias,permissions_match,file_mode
 
@@ -17,6 +17,14 @@ ROLES=('python','node')
 MAX_FILES=12000
 MAX_BYTES=512*1024**2
 RESERVE=4*1024**3
+
+
+def required_roles(components):
+    return ('python',) if {'web','js-services'}<=set(components) else ROLES
+
+
+def needs_node(root):
+    return 'node' in required_roles(name for name,path in COMPONENT_MANIFESTS.items() if (Path(root)/path).is_file())
 
 
 def tool_path(name,host=None):
@@ -31,8 +39,8 @@ def checked_manifest(value, host):
     if not isinstance(value,dict) or type(value.get('format')) is not int or value['format']!=1 or value.get('host')!=host:
         raise ValueError('Installer tools do not match this host')
     records=inventory_records(value.get('files'),host);tools=value.get('tools')
-    if not isinstance(tools,dict) or set(tools)!=set(ROLES):raise ValueError('Incomplete installer tools')
-    for role in ROLES:checked_tool(role,tools[role],records)
+    if not isinstance(tools,dict) or 'python' not in tools or set(tools)-set(ROLES):raise ValueError('Incomplete installer tools')
+    for role,tool in tools.items():checked_tool(role,tool,records)
     return value
 
 
@@ -88,8 +96,9 @@ def tree_inventory(root):
 
 
 def environment(component,manifest,base_path=None):
-    root=Path(component).resolve();tools=manifest['tools'];paths=[str((root/tools[role]['executable']).parent) for role in ROLES]
-    return {'AI_PHONE_TOOL_RUNTIME':str(root),'AI_PHONE_PYTHON':str(root/tools['python']['executable']),
+    root=Path(component).resolve();tools=manifest['tools'];programs={role:str(root/tools[role]['executable']) for role in ROLES if role in tools}
+    paths=[str(Path(program).parent) for program in programs.values()]
+    return {'AI_PHONE_TOOL_RUNTIME':str(root),**{'AI_PHONE_'+role.upper():program for role,program in programs.items()},
             'PYTHONDONTWRITEBYTECODE':'1','PATH':os.pathsep.join([*paths,os.environ.get('PATH','') if base_path is None else base_path])}
 
 
@@ -112,17 +121,22 @@ def selected_environment(root,base_path=None):
     return environment(component,manifest,base_path)
 
 
-def prepare_resources(folder,component):
+def prepare_resources(folder,component,*,roles=ROLES):
     if component is None:return {}
-    component=Path(component).resolve();manifest=verify(component);target=Path(folder)/'tools';identity=digest(component/'manifest.json')
+    component=Path(component).resolve();manifest=verify(component);target=Path(folder)/'tools'
+    selected={**manifest,'tools':{role:manifest['tools'][role] for role in roles},
+              'files':[row for row in manifest['files'] if row['path'].split('/',1)[0] in roles]}
+    body=(json.dumps(selected,sort_keys=True)+'\n').encode();identity=hashlib.sha256(body).hexdigest()
     if target.exists():
         verify(target)
         if digest(target/'manifest.json')!=identity:raise ValueError('Generated installer tools differ; regenerate the owned tools directory')
     else:
-        size=sum(row['size'] for row in manifest['files'])
+        size=sum(row['size'] for row in selected['files'])
         if shutil.disk_usage(folder).free<RESERVE+size:raise ValueError('Keep 4 GiB free while preparing installer tools')
         target.mkdir()
-        try:shutil.copytree(component,target,dirs_exist_ok=True);verify(target)
+        try:
+            for role in roles:shutil.copytree(component/role,target/role)
+            (target/'manifest.json').write_bytes(body);verify(target)
         except BaseException:
             if target.exists():shutil.rmtree(target)
             raise

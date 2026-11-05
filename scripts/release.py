@@ -120,8 +120,9 @@ def host_checks(root):
             check_result('python-version',sys.version_info>=(3,11),'Python 3.11+ required')]
 
 
-def tool_checks(bundled_services):
-    tools=[('node','Install Node.js 22+'),('docker','Prepare the managed container host')]
+def tool_checks(bundled_services, *, node_required=True):
+    tools=[('docker','Prepare the managed container host')]
+    if node_required:tools.append(('node','Install Node.js 22+'))
     if not bundled_services:tools.append(('cargo','Install Rust via rustup'))
     if platform.system()=='Darwin':
         if not bundled_services:tools.append(('swiftc','Install Xcode Command Line Tools'))
@@ -185,8 +186,9 @@ def capacity_checks(root, minimum_free_gb):
 
 def doctor(root=ROOT, *, minimum_free_gb=35):
     from prebuilt_services import launch_spec
-    bundled=launch_spec(root,'assistant')['prebuilt']
-    return [*host_checks(root),*tool_checks(bundled),*node_checks(),*sdk_checks(runtime_env(root)),
+    from installer_tools import needs_node
+    bundled=launch_spec(root,'assistant')['prebuilt'];node_required=needs_node(root)
+    return [*host_checks(root),*tool_checks(bundled,node_required=node_required),*(node_checks() if node_required else []),*sdk_checks(runtime_env(root)),
             *rust_checks(bundled),*docker_checks(),*capacity_checks(root,minimum_free_gb)]
 
 

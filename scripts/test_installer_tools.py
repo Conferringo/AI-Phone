@@ -141,6 +141,28 @@ class InstallerToolTests(unittest.TestCase):
             (generated/'tools/python/bin/python3').write_bytes(b'changed')
             with self.assertRaises(ValueError):prepare_resources(generated,target)
 
+    def test_prebuilt_bun_resources_select_only_python_and_preserve_full_factory(self):
+        import os
+        from installer_tools import required_roles
+        with tempfile.TemporaryDirectory() as folder,patch('installer_tools.host_key',return_value='macos-arm64'):
+            root=Path(folder);archives,pins=self.fixture(root);component=root/'component'
+            self._build(archives,component,pins=pins,host='macos-arm64')
+            original=(component/'manifest.json').read_bytes();generated=root/'generated';generated.mkdir()
+            roles=required_roles(['web','js-services','native-services'])
+            prepare_resources(generated,component,roles=roles)
+            selected=generated/'tools';manifest=verify(selected)
+            self.assertEqual(set(manifest['tools']),{'python'});self.assertFalse((selected/'node').exists())
+            self.assertEqual((selected/'python/LICENSE').read_bytes(),b'Python licence fixture')
+            self.assertEqual((component/'manifest.json').read_bytes(),original);verify(component)
+            home=root/'installation';(home/'data').mkdir(parents=True);(home/'data/chat').write_text('keep')
+            env=select(home,selected)
+            self.assertEqual(env['AI_PHONE_PYTHON'],str(selected.resolve()/'python/bin/python3'))
+            self.assertNotIn('AI_PHONE_NODE',env)
+            self.assertEqual(selected_environment(home,base_path='/no-host-tools')['PATH'].split(os.pathsep),[str(selected.resolve()/'python/bin'),'/no-host-tools'])
+            self.assertEqual((home/'data/chat').read_text(),'keep')
+            for components in ([],['web'],['js-services']):
+                self.assertEqual(set(required_roles(components)),{'python','node'})
+
     def test_archive_identity_fields_are_independently_required(self):
         from installer_tools import archive_inputs
         from copy import deepcopy

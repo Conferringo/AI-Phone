@@ -21,9 +21,10 @@ def qualify(component):
         source='import ctypes,json,pathlib,sqlite3,ssl,sys;assert pathlib.Path(sys.executable).resolve()==pathlib.Path(sys.argv[1]).resolve();assert sqlite3.connect(":memory:").execute("select 7319").fetchone()[0]==7319;print(json.dumps({"version":".".join(map(str,sys.version_info[:3])),"sqlite":sqlite3.sqlite_version,"ssl":ssl.OPENSSL_VERSION}))'
         result=subprocess.run([python,'-I','-S','-B','-c',source,str(python)],env=env,cwd=root,capture_output=True,text=True,timeout=15,check=True)
         checks['python']=json.loads(result.stdout)
-        node=component/manifest['tools']['node']['executable']
-        result=subprocess.run([node,'--version'],env=env,cwd=root,capture_output=True,text=True,timeout=15,check=True)
-        checks['node']={'version':result.stdout.strip().removeprefix('v')}
+        if 'node' in manifest['tools']:
+            node=component/manifest['tools']['node']['executable']
+            result=subprocess.run([node,'--version'],env=env,cwd=root,capture_output=True,text=True,timeout=15,check=True)
+            checks['node']={'version':result.stdout.strip().removeprefix('v')}
     for role in checks:
         if checks[role]['version']!=manifest['tools'][role]['version']:raise ValueError('Installer tool version differs from its pin')
     verify(component)

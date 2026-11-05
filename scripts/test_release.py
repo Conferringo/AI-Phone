@@ -59,6 +59,29 @@ class ReleaseTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError,'verification failed'):release.install_guest_images(state,root,selected)
                 run.assert_not_called()
 
+    def test_bun_prebuilt_doctor_does_not_require_or_execute_host_node(self):
+        import release
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            patches=[patch('release.host_checks',return_value=[]),patch('release.sdk_checks',return_value=[]),
+                     patch('release.runtime_env',return_value={}),patch('release.rust_checks',return_value=[]),
+                     patch('release.docker_checks',return_value=[]),patch('release.capacity_checks',return_value=[]),
+                     patch('prebuilt_services.launch_spec',return_value={'prebuilt':True})]
+            from contextlib import ExitStack
+            with ExitStack() as stack:
+                for item in patches:stack.enter_context(item)
+                stack.enter_context(patch('release.shutil.which',side_effect=lambda name:None if name=='node' else '/owned/'+name))
+                node=stack.enter_context(patch('release.node_checks',side_effect=AssertionError('Host Node must not run')))
+                for relative in ('runtime/manifest.json','runtime/js-services/manifest.json'):
+                    path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('{}')
+                self.assertNotIn('node',[check['name'] for check in release.doctor(root)])
+                node.assert_not_called()
+                (root/'runtime/js-services/manifest.json').unlink()
+                node.side_effect=None;node.return_value=[]
+                checks=release.doctor(root)
+                self.assertFalse(next(check['passed'] for check in checks if check['name']=='node'))
+                node.assert_called_once()
+
     def test_sdk_checks_report_missing_and_unsupported_java(self):
         import release,subprocess
         with tempfile.TemporaryDirectory() as folder:

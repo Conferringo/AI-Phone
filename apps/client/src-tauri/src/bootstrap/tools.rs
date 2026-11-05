@@ -112,7 +112,11 @@ fn validate_tools(
     tools: &BTreeMap<String, Tool>,
     names: &BTreeMap<&str, &Record>,
 ) -> Result<(), String> {
-    if tools.keys().map(String::as_str).collect::<Vec<_>>() != ["node", "python"] {
+    if !tools.contains_key("python")
+        || tools
+            .keys()
+            .any(|role| !matches!(role.as_str(), "python" | "node"))
+    {
         return Err(invalid());
     }
     for (role, tool) in tools {
@@ -503,6 +507,42 @@ mod tests {
         fs::remove_dir_all(home).unwrap();
     }
     #[test]
+    fn python_only_runtime_activates_and_reuses_without_host_node() {
+        let home = home();
+        let (source, _) = fixture(&home);
+        fs::remove_dir_all(source.join("node")).unwrap();
+        let path = source.join("manifest.json");
+        let mut value: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["tools"].as_object_mut().unwrap().remove("node");
+        value["files"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|row| row["path"].as_str().unwrap().starts_with("python/"));
+        fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
+        let hash = super::super::download::hash(&path).unwrap();
+        fs::write(home.join("user-chat"), b"keep").unwrap();
+        let runtime = prepare(
+            &source,
+            &home,
+            &hash,
+            "fixture-host",
+            &|_| u64::MAX,
+            &|| Ok(()),
+        )
+        .unwrap();
+        assert!(!runtime.directory.join("node").exists());
+        assert_eq!(fs::read(&runtime.python).unwrap(), b"owned fixture");
+        assert_eq!(
+            prepare(&source, &home, &hash, "fixture-host", &|_| 0, &|| Ok(()))
+                .unwrap()
+                .directory,
+            runtime.directory
+        );
+        assert_eq!(fs::read(home.join("user-chat")).unwrap(), b"keep");
+        fs::remove_dir_all(home).unwrap();
+    }
+    #[test]
     fn tool_payload_hashes_are_not_repeated_before_copy_or_against_unused_sources() {
         let home = home();
         let (source, _) = fixture(&home);
@@ -776,11 +816,14 @@ from installer_tools import select,verify
 from runtime_config import runtime_env
 component=pathlib.Path(sys.argv[4]).resolve();manifest=verify(component)
 select(root,component);environment=runtime_env(root)
-assert environment['PATH'].split(':')[:2]==[str(component/'python/bin'),str(component/'node/bin')]
+bins=[str((component/manifest['tools'][role]['executable']).parent) for role in ('python','node') if role in manifest['tools']]
+assert environment['PATH'].split(':')[:len(bins)]==bins
 assert (home/'user/data/chat-fixture').read_text()=='keep'
 assert pathlib.Path(sys.prefix).resolve()==(component/'python').resolve()
-node=subprocess.check_output(['node','--version'],env={'PATH':str(component/'node/bin')},text=True).strip()
-assert node=='v'+manifest['tools']['node']['version']
+node=None
+if 'node' in manifest['tools']:
+    node=subprocess.check_output(['node','--version'],env={'PATH':str(component/'node/bin')},text=True).strip()
+    assert node=='v'+manifest['tools']['node']['version']
 print(json.dumps({'python':sys.version.split()[0],'node':node,'ssl':ssl.OPENSSL_VERSION,'sqlite':sqlite3.sqlite_version,'staged_source':True,'chat_fixture_preserved':True}))
 "#;
             let output = std::process::Command::new(&runtime.python)
