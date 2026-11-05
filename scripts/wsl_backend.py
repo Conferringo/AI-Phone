@@ -13,7 +13,8 @@ MANIFEST='WSL-BACKEND-MANIFEST.json'
 BODY='rootfs.tar.gz'
 MAX_BYTES=16*1024**3
 REQUIRED=frozenset(('etc/os-release','etc/wsl.conf','opt/aiphone/bundle/source.payload',
-    'opt/aiphone/bundle/images.payload','opt/aiphone/tools/python/bin/python3',
+    'opt/aiphone/bundle/images.payload','opt/aiphone/bundle/source.sha256',
+    'usr/local/libexec/aiphone-bootstrap','opt/aiphone/tools/python/bin/python3',
     'opt/aiphone/tools/node/bin/node','opt/aiphone/bootstrap/wsl_backend_entry.py',
     'usr/local/bin/docker','usr/local/bin/dockerd'))
 

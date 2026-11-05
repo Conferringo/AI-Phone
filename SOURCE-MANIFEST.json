@@ -95,8 +95,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2859,
-      "sha256": "4d10b3c098a3efc0653bf4f5169079f98dddeecb0918bcfcba05e237b00f9251"
+      "size": 2883,
+      "sha256": "d4dc3049a33a267c699d5c138f5bc4bd02cb1c0ab6caad804f15b0c9e7dc9d40"
     },
     {
       "path": ".gitignore",
@@ -3075,8 +3075,8 @@
     },
     {
       "path": "crates/host-runtime/src/bin/host-resources.rs",
-      "size": 1207,
-      "sha256": "4288c22169ef7334c80bc50073dbbf87adf7ad770caf46e906c7557e5632afc2"
+      "size": 545,
+      "sha256": "f890e6d25f4872d1752e91d2c4223391e585f890266fa909b7df830e78eab84b"
     },
     {
       "path": "crates/host-runtime/src/bin/package-volumes.rs",
@@ -3095,8 +3095,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 2429,
-      "sha256": "6b79692809bbd43856a50d324a5d11f1743326c332ae7411f338c556a5003613"
+      "size": 2691,
+      "sha256": "163827e7783fff5c9022b3075992737e65f02241caf310b7e9e8ae14887732fd"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3145,8 +3145,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2826,
-      "sha256": "4642d627b8f64645375d6ae245692c41f99ba53cfdbf83d0b058e520441c50a2"
+      "size": 2842,
+      "sha256": "865f586772cc44ae83f645e3b01864b3c31c1e052b6ef29f0990c0fc990fba69"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -3172,6 +3172,11 @@
       "path": "crates/host-runtime/src/package.rs",
       "size": 10629,
       "sha256": "f0f59ec49a81ce352ef93b6b3644303f41dd9cbf3e527e16501366bd7a680dcf"
+    },
+    {
+      "path": "crates/host-runtime/src/source_cli.rs",
+      "size": 1929,
+      "sha256": "77ce30bb8c7b040ed187a386a8a3117749f4300772a2bfbb68cf8f2ece6bd894"
     },
     {
       "path": "crates/host-runtime/src/staging.rs",
@@ -3225,8 +3230,8 @@
     },
     {
       "path": "crates/host-runtime/tests/device_bridge_cli.rs",
-      "size": 3894,
-      "sha256": "b739bdc6cd7c4ed2f277f77645dce530f76f457fb57a0babeba9a83927b5e402"
+      "size": 8879,
+      "sha256": "184d78f244617c9609a65264c9bde5f91775f062335f7934f049b57e68ae1150"
     },
     {
       "path": "crates/host-runtime/tests/fixtures/native_sdk.rs",
@@ -4490,8 +4495,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 8428,
-      "sha256": "d5c17ef6ef8072b2a7d75ef1ee009a9e9969f5c22c6d1b52412946c8ef2a34ec"
+      "size": 9188,
+      "sha256": "1f9ea834077e0b852c0154dadf57af6ffcfe0ce8c9451f65f1dd1998db000382"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -6210,8 +6215,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 21963,
-      "sha256": "0c2a2e0224a7e1c89673336584528ad8cdfe080d123a19d6980f3e8ace548c81"
+      "size": 22603,
+      "sha256": "7f28085a75b8597466958f8ea25f95a33860e00e1d0d23aeee1edd2ab0d772bd"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -6249,6 +6254,11 @@
       "sha256": "93711dcca27ba626ad26b308b1b3d13796d08e018ef88ed02fabb536cce104f7"
     },
     {
+      "path": "scripts/test_wsl_source_staging.py",
+      "size": 5734,
+      "sha256": "d6d25718929501a6c13eaeba1d4c0db88585f6340ff81a11e16a7a1764758e4d"
+    },
+    {
       "path": "scripts/verify_source_install.py",
       "size": 4604,
       "sha256": "998a47427568d26b9f543c4e13d16903f732558035c807ae4e4f996ed8d8e4a0"
@@ -6280,18 +6290,18 @@
     },
     {
       "path": "scripts/wsl_backend.py",
-      "size": 8440,
-      "sha256": "c8e717550f01c687710b1bcbbd98635801aebfc46f4de55b4c968aab4a5400d8"
+      "size": 8518,
+      "sha256": "be5d302704bb7f9b70eb1672154be5f41de45abc6c7334ab2b04bacb6b06797a"
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7305,
-      "sha256": "51848c582d068a8fd6ce6b4d075e28c883114217d9935a75d1b80830a5f64886"
+      "size": 7794,
+      "sha256": "1610090190ff4f4e069a04677d85dff8c81316b8e9347457927d4478f4765966"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 11683,
-      "sha256": "f8c8952ddaa0162cfe74c4545f160988fce76b095a8df1bc5f984e9152c19444"
+      "size": 13110,
+      "sha256": "7b2e370ec647c553530ad41c0f45e445ddb9750eab383fe08b0c0ff8cd929099"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
