@@ -5790,8 +5790,8 @@
     },
     {
       "path": "scripts/release_package.py",
-      "size": 6059,
-      "sha256": "339cd127559e5a1b0d82b98c491fca0407d6c4178d6d690e936f1f35bc2fd540"
+      "size": 6104,
+      "sha256": "3ac5e1f7fffbbd85d8aea9d547e16dc39a3e48f6c0cdc8d5b101c91c951611c1"
     },
     {
       "path": "scripts/release_stage.py",
@@ -6260,8 +6260,8 @@
     },
     {
       "path": "scripts/test_release_portability.py",
-      "size": 2416,
-      "sha256": "a14069194a87f501c13425ce784ab1543c12ef606be29bda1b5ed0ede97413db"
+      "size": 3534,
+      "sha256": "7323c5c167d97a471f73679151fb8dcfeda9365bec09b646f733d6a36a96d31f"
     },
     {
       "path": "scripts/test_required_tests.py",

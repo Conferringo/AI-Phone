@@ -43,7 +43,7 @@ def source_candidates(root):
 
 def select_files(root):
     found = []
-    for path in sorted(set(source_candidates(root))):
+    for path in sorted(set(source_candidates(root)),key=lambda path:path.relative_to(root).parts):
         rel = path.relative_to(root)
         name = rel.as_posix()
         if private_metadata(name): continue

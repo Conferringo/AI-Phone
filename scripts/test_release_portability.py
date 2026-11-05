@@ -9,6 +9,22 @@ import test_source_export
 from source_export import export
 
 class ReleasePortabilityTests(unittest.TestCase):
+    def test_source_manifest_order_is_independent_of_windows_path_comparison(self):
+        # Windows Path ordering folds case; the same reviewed files must retain
+        # the POSIX manifest order without rewriting any reviewed bytes.
+        class WindowsOrderedPath(type(Path())):
+            def __lt__(self,other):
+                return tuple(p.casefold() for p in self.parts)<tuple(p.casefold() for p in other.parts)
+        names=['README.md','apps/alpha.txt','LICENSE','apps/web/a.txt','apps/Zeta.txt']
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            for name in names:
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(name.encode()+b'\n')
+            with patch('release_package.source_candidates',return_value=[WindowsOrderedPath(root/name) for name in names]):
+                files=select_files(root)
+            self.assertEqual([name for name,_,_ in files],['LICENSE','README.md','apps/Zeta.txt','apps/alpha.txt','apps/web/a.txt'])
+            for name,content,_ in files:self.assertEqual(content,name.encode()+b'\n')
+
     def test_ignored_build_trees_are_never_traversed(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'apps/web/node_modules/private').mkdir(parents=True);(root/'apps/web/ui.ts').write_bytes(b'public\n')
