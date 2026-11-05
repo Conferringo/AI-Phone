@@ -6,6 +6,7 @@ pub mod cursor;
 pub mod files;
 pub mod home_identity;
 pub mod imaging;
+pub mod location;
 pub mod media;
 pub mod notifications;
 mod paint;

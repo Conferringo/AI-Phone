@@ -15,7 +15,7 @@ Public binary distribution remains pending the [release requirements](docs/publi
 | Component | Source / licence evidence | Distribution scope and obligations |
 | --- | --- | --- |
 | Static Linux ARM C runtime | [musl 1.2.5 copyright](docs/public/licenses/musl/COPYRIGHT), [Rust 1.96.0 build recipe and patches](https://github.com/rust-lang/rust/blob/1.96.0/src/ci/docker/scripts/musl.sh) | The Mac factory's Linux ARM desktop bridge uses Rust's musl target. The complete upstream copyright and terms are included in the native client and service notices |
-| Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 572 Rust and 425 JavaScript packages across the server and native client, licence metadata and notice-file hashes. One legacy package (async 0.2.10) omits its SPDX field; its packaged MIT grant is retained and hashed. Redistribution/source-offer review remains open |
+| Runtime dependencies | Exact versions in Cargo.lock / bun.lock | [Inventory](docs/public/dependency-licenses.json): 626 Rust and 425 JavaScript packages across the server and native client, licence metadata and notice-file hashes. One legacy package (async 0.2.10) omits its SPDX field; its packaged MIT grant is retained and hashed. Redistribution/source-offer review remains open |
 | Knowledge motion + native app icon | Original AI Phone TypeScript/SVG implementations, Apache-2.0; hashes in config/source-assets.json | Original project implementation; source asset identities are recorded in the asset policy. |
 | Native OCR test glyphs | DejaVu Sans; Bitstream Vera grant and public-domain DejaVu changes | Generated diagnostic PNG only, no font binary. [Font notice](docs/public/licenses/fixtures/dejavu.txt); font/image hashes in config/source-assets.json |
 | Linux QEMU/SSH host | Pinned Ubuntu factory packages, QEMU 8.2.2, OpenSSH, BIOS/UEFI and ELF dependencies | [Host component policy](docs/public/container-host-runtime.md). Distribution copyright files, package versions and hashes retained locally; no binaries in source exports. Complete binary attribution and corresponding-source review remain open |
@@ -74,7 +74,7 @@ The locked archive dependencies use glob 14.0.3 and minimatch 11.0.3, covering [
 
 ## Web and installer runtimes
 
-Complete macOS/Linux bundles include Next.js standalone output and the pinned Bun executable. Installer tools add portable Python and Node. Their runtime licences, third-party attribution and applicable source requirements are separate from the native Rust/WebView client graph. The JavaScript inventory identifies application packages; it does not by itself cover every native runtime or image dependency. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
+Complete macOS/Linux bundles include Next.js standalone output and the pinned Bun executable. Installer tools add portable Python, with Node retained for source/partially prebuilt installations. Their runtime licences, third-party attribution and applicable source requirements are separate from the native Rust/WebView client graph. The JavaScript inventory identifies application packages; it does not by itself cover every native runtime or image dependency. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
 
 ## Media and channel runtime component
 

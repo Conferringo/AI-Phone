@@ -21,8 +21,13 @@ PHONE_REQUIRED=frozenset(PHONE_ROOT+name for name in (
 REQUIRED=frozenset(('etc/os-release','etc/wsl.conf','opt/aiphone/bundle/source.payload',
     'opt/aiphone/bundle/images.payload','opt/aiphone/bundle/source.sha256',
     'usr/local/libexec/aiphone-bootstrap','opt/aiphone/tools/python/bin/python3',
-    'opt/aiphone/tools/node/bin/node','opt/aiphone/bootstrap/wsl_backend_entry.py',
+    'opt/aiphone/bootstrap/wsl_backend_entry.py',
     'usr/local/bin/docker','usr/local/bin/dockerd')) | PHONE_REQUIRED
+NODE_ENTRY='opt/aiphone/tools/node/bin/node'
+
+
+def has_required_files(files):
+    return set(files)-{NODE_ENTRY}==REQUIRED
 
 
 def member_name(value):
@@ -80,7 +85,7 @@ def collect_inventory(source):
 
 def record_file(source,entry,name,files,licenses):
     if not entry.isfile():return
-    if name in REQUIRED:files[name]=hashlib.file_digest(source.extractfile(entry),'sha256').hexdigest()
+    if name in REQUIRED or name==NODE_ENTRY:files[name]=hashlib.file_digest(source.extractfile(entry),'sha256').hexdigest()
     if name.startswith('usr/share/doc/') and name.endswith('/copyright'):licenses.append(name)
 
 
@@ -91,7 +96,7 @@ def inspect_rootfs(path=None, *, fileobj=None):
     for name in names:
         if any(str(parent) in links for parent in PurePosixPath(name).parents):
             raise ValueError('WSL archive writes through a link parent')
-    if set(files)!=REQUIRED or not licenses:
+    if not has_required_files(files) or not licenses:
         missing=','.join(sorted(REQUIRED-set(files))) or 'none'
         raise ValueError(f'Incomplete WSL backend rootfs or license inventory: missing={missing}; license_count={len(licenses)}')
     return {'entries':len(names),'uncompressed_bytes':total,'required_files':files,'base_license_files':sorted(licenses)}
@@ -177,5 +182,5 @@ def checked_manifest(value):
               'redistribution':'review-pending','windows_boot_verified':False,'complete_device_bundle':False}
     if not isinstance(value,dict) or any(value.get(key)!=item for key,item in expected.items()):
         raise ValueError('Unsupported WSL backend manifest')
-    if type(value['format']) is not int or value['rootfs']['path']!=BODY or set(value['inventory']['required_files'])!=REQUIRED:
+    if type(value['format']) is not int or value['rootfs']['path']!=BODY or not has_required_files(value['inventory']['required_files']):
         raise ValueError('Incomplete WSL backend manifest')

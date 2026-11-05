@@ -8,6 +8,8 @@ Route mode adds ordered waypoints by clicking the map; click a waypoint to remov
 
 Android uses the same owner/device/run/control-epoch/action-id receipt ledger as phone-use. Updating location does not invalidate screen targets or move the touch cursor. Linux support currently covers the built-in Chromium browser; other desktop applications and browsers need their own adapters. A guest-only loopback service keeps CDP sessions alive; acknowledgements are not treated as proof after a debugger disconnect. Website permission remains controlled inside the guest browser. Position simulation does not change public IP address, Wi-Fi, radio or account/device verification state.
 
+The guest service and protobuf CLI run in Rust as `desktop-bridge location-serve` and `desktop-bridge location`. They retain the existing loopback endpoint and private `state.pb` file. Fresh images start the matching service automatically. When upgrading an existing desktop, install the matching guest executable and restart only its location service before activating the assistant that calls the new CLI. Recreating a user's desktop or deleting its state is unnecessary; mixing the new caller with an older guest executable is unsupported.
+
 The local database stores configuration and receipts as private user data. No coordinate, route, map screenshot or state is included in source releases. OpenStreetMap tiles reveal the requested map area to their provider when enabled. Optional host lookup uses ipwho.is and reveals the host's network egress address to that provider. Provider failures are shown; the UI never reports an unsupported device as synchronized.
 
 Validated on the existing managed Android and Linux guests: static fix, route movement, pause, and removal. Fresh-host installation and other Linux applications are not validated. See the source of truth in the local development tracker for detailed private receipts.
@@ -19,3 +21,5 @@ Validated on the existing managed Android and Linux guests: static fix, route mo
 路线采用 WGS84 坐标之间的直线段，支持速度、单次/循环、暂停；不是道路导航。失败或结果未知时暂停，重启后需手动恢复。手机使用现有操作账本，关闭时移除本功能的模拟定位源；电脑当前覆盖内置 Chromium，其他 Linux 应用尚未接通。不会修改公网 IP、无线网络、通信基站或账号验证状态。网站的定位权限仍由客体浏览器控制。
 
 配置和路线只保存在本地用户数据库，公开源码不包含坐标。启用后地图服务可看到所请求区域，网络定位服务可看到宿主出口地址。已有真实客体的静态定位、路线移动、暂停和关闭已验证；不宣称全新安装或所有 Linux 应用已通过。
+
+客体定位服务与 protobuf 命令已迁入 Rust，保留原回环端点和私有 `state.pb`。新镜像自动启动同版服务；升级已有电脑时，须先安装匹配的客体程序并只重启定位服务，再激活使用新命令的助手。无需重建电脑或删除位置存档，不能把新调用方直接配给旧客体程序。

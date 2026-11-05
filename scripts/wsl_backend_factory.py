@@ -191,11 +191,16 @@ def bootstrap_program(source,destination):
 
 def prepare_context(root,folder,source,images,tools,packages,phone_tools):
     plan,source_record,tool_manifest=validated_inputs(root,source,images,tools,packages,phone_tools)
+    from installer_tools import select_roles,required_roles
+    tool_manifest=select_roles(tool_manifest,required_roles(source_record['components']))
     folder.mkdir()
     for path,name in ((source,'source.payload'),(images,'images.payload')):shutil.copyfile(path,folder/name)
     (folder/'source.sha256').write_text(source_record['sha256']+'\n')
     bootstrap_program(folder/'source.payload',folder/'bootstrap.program')
-    shutil.copytree(tools,folder/'tools');shutil.copytree(packages,folder/'packages')
+    selected=folder/'tools';selected.mkdir()
+    for role in tool_manifest['tools']:shutil.copytree(Path(tools)/role,selected/role)
+    (selected/'manifest.json').write_text(json.dumps(tool_manifest,sort_keys=True)+'\n')
+    shutil.copytree(packages,folder/'packages')
     shutil.copytree(phone_tools,folder/'phone-tools')
     payload_scripts(source,folder/'scripts')
     for name in ('docker','dockerd'):(folder/name).write_text(engine_script(name))
@@ -204,7 +209,7 @@ def prepare_context(root,folder,source,images,tools,packages,phone_tools):
     (folder/'engine-sources.json').write_text(json.dumps(licenses(packages,plan['engine_packages']),sort_keys=True)+'\n')
     (folder/'Dockerfile').write_text(dockerfile(plan))
     return {'policy':plan,'source_sha256':source_record['sha256'],'source_components':source_record['components'],'images_sha256':digest(images),
-            'tools_manifest_sha256':digest(Path(tools)/'manifest.json'),'tools':tool_manifest['tools'],
+            'tools_manifest_sha256':digest(selected/'manifest.json'),'tools':tool_manifest['tools'],
             'phone_tools_manifest_sha256':digest(Path(phone_tools)/'PHONE-TOOLS-MANIFEST.json')}
 
 

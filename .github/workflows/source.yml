@@ -32,7 +32,7 @@ jobs:
       - name: Fixed Bun and locked dependencies
         run: |
           ./scripts/bootstrap.sh
-          git diff --exit-code -- packages/protocol/src/gen infra/desktop/location.js
+          git diff --exit-code -- packages/protocol/src/gen
       - name: Source privacy and licence metadata
         run: |
           python3 scripts/check_source.py --repository --manifest

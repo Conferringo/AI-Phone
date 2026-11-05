@@ -12,7 +12,6 @@
     "esModuleInterop": true
   },
   "include": [
-    "*.ts",
-    "../../infra/desktop/location.ts"
+    "*.ts"
   ]
 }

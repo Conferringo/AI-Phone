@@ -10,11 +10,11 @@ AI Phone separates versioned application code, clean device baselines and persis
 |---|---|---|
 | Web | Next.js standalone output, static/public assets, pinned host-matched Bun | Installed file hashes and contained dependency aliases must match |
 | Native services | Release Rust assistant and phone runner, matched Rust PNG/OCR helper and generated fixture | Host, hashes, inventory and executable permissions must match; CPU Tesseract runs in the managed OCR service or the verified [Linux offline closure](engineering/linux-offline-ocr.md) |
-| Installer tools | Portable Python and Node in a separate native resource group | Compiled manifest digest, host, complete inventory and immutable activation must match |
+| Installer tools | Portable Python; Node only for source/partially prebuilt installations | Compiled manifest digest, host, complete inventory and immutable activation must match |
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages; Linux also includes QEMU/SSH/firmware | Matching host runtime, ownership and persisted selection must match; [host component contract](container-host-runtime.md) |
 | JavaScript services | Media, channels and setup helpers with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
-| Guest applications | Pinned Clash Meta APKs for ARM64 and x86_64 guests | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
+| Guest applications | Pinned Clash Meta APK matching the guest ABI; existing dual-ABI components remain readable | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | Android runtime | Matched emulator, platform tools and clean Android factory image | Host/guest ABI, complete file inventory and archive integrity must match; redistribution qualification is separate |
 | Container images | Clean Linux desktop/workspace, PostgreSQL and Redis images, including desktop browser and Clash Party | Role, architecture, image identities and capsule integrity must match before import |
 
@@ -33,7 +33,7 @@ Service launchers verify installed native components before choosing their comma
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
 
-Large installers use [verified delivery volumes](engineering/package-delivery.md) to preserve the complete installer across distribution size limits. Native verification binds each volume and the restored installer to their recorded digests.
+User distributions require one complete installer file. The [delivery-volume format](engineering/package-delivery.md) remains available for maintainer transport; internal volumes do not satisfy the single-download requirement. Complete factories reject oversized installers.
 
 ## Component build and verification
 
@@ -69,7 +69,7 @@ Next tracing excludes private state and environment files. The independent packa
 | Updates | Signed artifacts, backup, migrations and rollback activation |
 | First run | Client resource/model configuration followed by a usable workbench |
 
-Non-macOS physical installation is waived for this release scope and remains unverified. Compilation, complete contents, privacy and redistribution checks remain required. Engineering records are available through [review evidence](engineering/index.md).
+Physical installation is waived for previews on all four platforms and remains unverified. Compilation, complete contents, privacy and redistribution checks remain required. Engineering records are available through [review evidence](engineering/index.md).
 
 ## 中文
 

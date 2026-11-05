@@ -60,16 +60,22 @@ dependencies = [
 name = "ai-phone-guest-runtime"
 version = "0.1.0"
 dependencies = [
+ "ai-phone-api",
  "atspi",
+ "axum",
  "base64 0.22.1",
  "fs2",
+ "futures-util",
  "image",
+ "prost",
+ "reqwest",
  "rustix",
  "serde",
  "serde_json",
  "sha2",
  "tempfile",
  "tokio",
+ "tokio-tungstenite",
  "uuid",
  "x11rb",
 ]

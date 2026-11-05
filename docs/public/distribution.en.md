@@ -12,7 +12,7 @@ The product is an application that deploys its own devices and services. Users c
 | Linux ARM64 | Native client and prebuilt web builds | Reviewed matching Android runtime and complete host integration |
 | Android ARM64 root/KVM | Client APK builds | Privileged host checks, matching runtime and both independent devices |
 
-Non-macOS physical installation is waived by the maintainer; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
+Physical installation is waived for previews on all four platforms; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
 
 ## Implemented storage boundaries
 

@@ -15,7 +15,7 @@ BINARY='build/target/release/desktop-bridge'
 
 def source_identity(root):
     rows=[[name,hashlib.sha256(data).hexdigest()] for name,data,_ in select_files(root)
-          if name in ('Cargo.toml','Cargo.lock','scripts/macos_guest_runtime.py') or name.startswith('crates/guest-runtime/')]
+          if name in ('Cargo.toml','Cargo.lock','scripts/macos_guest_runtime.py') or name.startswith(('crates/guest-runtime/','crates/api/','packages/protocol/proto/'))]
     return hashlib.sha256(json.dumps(rows,separators=(',',':')).encode()).hexdigest()
 
 

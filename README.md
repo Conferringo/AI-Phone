@@ -75,7 +75,7 @@ Original code uses [Apache-2.0](LICENSE). Dependencies, SDKs, guest applications
 
 See [CONTRIBUTING](CONTRIBUTING.md) for development. Business APIs use protobuf; tests must be isolated and user state or live credentials must never be uploaded.
 
-Platform build and runtime evidence is documented in the compatibility matrix. Non-macOS physical installation tests are not required for this release scope and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
+Platform build and runtime evidence is documented in the compatibility matrix. Physical installation tests are waived for previews on all four platforms and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
 
 ---
 

@@ -13,6 +13,24 @@ COMPONENTS=['web','native-services','phone-apps','container-host','js-services',
 
 
 class MacClientFactoryTests(unittest.TestCase):
+    def test_dmg_at_release_limit_is_not_qualified_as_complete_delivery(self):
+        from client_delivery import ASSET_LIMIT
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'config').mkdir();(root/'dist').mkdir()
+            (root/'config/release-policy.json').write_text('{"version":"fixture"}')
+            artifact=root/'dist/AI-Phone-fixture-macos-arm64.dmg'
+            artifact.with_suffix('.dmg.manifest.json').write_text(json.dumps({'complete_device_bundle':True,'sha256':'a'*64,'prebuilt_components':COMPONENTS}))
+            with patch.object(mac,'run'),patch.object(mac,'run_checks'),patch.object(mac,'digest',return_value='a'*64),patch('prepare_client_host.payload_components',return_value=COMPONENTS):
+                for size in (ASSET_LIMIT-1,ASSET_LIMIT,ASSET_LIMIT+1):
+                    with self.subTest(size=size):
+                        with artifact.open('wb') as output:output.truncate(size)
+                        if size<ASSET_LIMIT:
+                            result=mac.compile_client(root,root/'android',root/'images',root/'tools',{})
+                            self.assertEqual(result['size'],size)
+                        else:
+                            with self.assertRaisesRegex(ValueError,'single-file'):
+                                mac.compile_client(root,root/'android',root/'images',root/'tools',{})
+
     def test_native_image_handoff_builds_complete_client_without_an_emulated_engine(self):
         from contextlib import ExitStack
         import factory_image_candidate as handoff

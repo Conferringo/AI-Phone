@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "3d3cfe782f974d48c58dc470e6d354a329200bed7287248fae379246de916281",
+    "Cargo.lock": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c",
     "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "f86e180640c169752c8af0d1c6b71adf6fc08da1dfc96a65b139f3d8d8d7a556"
+    "apps/client/src-tauri/Cargo.lock": "02a85825bdad7f2f6becdd71374bd4ddfe1d6d0ef0989a7d3c6e26749a4de1d6"
   },
   "rust": [
     {

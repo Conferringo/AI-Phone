@@ -9,5 +9,3 @@ else
   ./scripts/bun install
 fi
 ./scripts/bun run proto:generate
-
-./scripts/bun run location:generate
