@@ -41,10 +41,11 @@ def prepare(root,artifact):
 
 def file_record(root,path):
     from artifact_io import digest
-    dist=Path(root)/'dist';path=Path(path)
-    if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(dist.resolve()):
+    dist=(Path(root)/'dist').resolve();path=Path(path)
+    resolved=path.resolve()
+    if path.is_symlink() or not path.is_file() or not resolved.is_relative_to(dist):
         raise ValueError('Candidate file is outside the completed distribution')
-    relative=path.relative_to(dist)
+    relative=resolved.relative_to(dist)
     if any(re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,190}',part) is None for part in relative.parts):
         raise ValueError('Invalid candidate asset path')
     size=path.stat().st_size
