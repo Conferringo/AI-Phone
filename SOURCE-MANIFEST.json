@@ -2745,8 +2745,8 @@
     },
     {
       "path": "crates/assistant/src/notification_forwarding_tests.rs",
-      "size": 7800,
-      "sha256": "7f7b25ee085e0c14451b8aeb5839f686497e6237f8ab5f4c3c0115128e18cfba"
+      "size": 14819,
+      "sha256": "b7efe6e2cd149562b8edee8607619ebb70d95e8e88dcf53a100f6cc64aa7f263"
     },
     {
       "path": "crates/assistant/src/notification_policy.rs",
@@ -2765,8 +2765,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 70887,
-      "sha256": "7fd21c76f23863dc204e323bddad85235898166043a3fb1561316455284bf6e8"
+      "size": 71815,
+      "sha256": "e80bb208f04d1020a590b625c856221fc45a8fec989f718b918f89e9d6042644"
     },
     {
       "path": "crates/assistant/src/registry.rs",
@@ -4505,8 +4505,8 @@
     },
     {
       "path": "docs/public/notification-workflows.md",
-      "size": 7691,
-      "sha256": "859c89e8a5b25fb42973fee526b8e2e5cc81885d348571cc76221e1a079b5071"
+      "size": 8819,
+      "sha256": "7cd70d6d4ea4925145c3947a86c904abb4052ca2cd570e2e88b1f6746ec976d2"
     },
     {
       "path": "docs/public/preview-release.md",
