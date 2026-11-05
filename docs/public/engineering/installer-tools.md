@@ -6,7 +6,7 @@ The native client can carry a reviewed Python and Node runtime in `host/tools`. 
 
 `config/installer-tools.json` pins architecture-specific factory archives by URL, size and SHA-256. `scripts/installer_tools.py` builds the resource tree. Python's contained aliases become regular files; Node contributes its executable and licence/readme, without npm or Corepack. No personal interpreter installation or package cache is an input.
 
-The manifest declares host, versions, executable paths, hashes, sizes and permissions. Native activation accepts only inventoried regular files, checks all bytes, and copies to `components/installer-tools/<manifest-sha256>` in the client's private installation. Source resources and user state remain separate. The limits are 12,000 files, 24,000 visited members, depth 64, 512 MiB of file bodies and a 4 GiB recovery reserve.
+The manifest declares host, versions, executable paths, hashes, sizes and permissions. Native activation accepts only inventoried regular files and checks their bytes as it copies them to `components/installer-tools/<manifest-sha256>` in the client's private installation. Reuse verifies the installed files and does not hash unused source binaries. Source resources and user state remain separate. The limits are 12,000 files, 24,000 visited members, depth 64, 512 MiB of file bodies and a 4 GiB recovery reserve.
 
 An existing immutable runtime must match exactly. A competing publisher can be reused only after its manifest and files verify. Cancellation, copy errors and Rust unwinding reclaim the publisher's own staging directory. Partial state never becomes an active runtime. Old immutable versions remain available to their existing installations.
 

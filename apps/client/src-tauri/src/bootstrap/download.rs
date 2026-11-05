@@ -8,6 +8,11 @@ use std::{
     time::Duration,
 };
 
+#[cfg(test)]
+thread_local! {
+    pub(super) static HASHED_BYTES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
 pub(super) fn hash(path: &Path) -> Result<String, String> {
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
     let mut hash = Sha256::new();
@@ -18,6 +23,8 @@ pub(super) fn hash(path: &Path) -> Result<String, String> {
             break;
         }
         hash.update(&bytes[..length]);
+        #[cfg(test)]
+        HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
     }
     Ok(format!("{:x}", hash.finalize()))
 }

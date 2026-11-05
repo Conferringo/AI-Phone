@@ -200,7 +200,7 @@ function LocationControls({
   state: LocationState;
 }) {
   const { t } = useI18n(),
-    { view, edit, choose, save } = control,
+    { view, edit, choose } = control,
     { draft, pending } = view,
     [editing, setEditing] = useState(false);
   return (

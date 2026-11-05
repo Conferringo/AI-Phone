@@ -10,6 +10,8 @@ use std::{
     path::Path,
 };
 
+const MAX_COMPRESSED: u64 = 2 * 1024 * 1024 * 1024;
+
 fn layout(home: &Path) -> Result<()> {
     for name in ["releases", "user", "user/data"] {
         filesystem::directory(&home.join(name), false)?;
@@ -91,7 +93,6 @@ fn new_source(
     file: &mut File,
     home: &Path,
     destination: &Path,
-    expected: &str,
     index: &Inventory,
     control: &Control<'_>,
 ) -> Result<()> {
@@ -101,7 +102,7 @@ fn new_source(
         .prefix(".source-stage-")
         .tempdir_in(home.join("releases"))?;
     let work = temporary.path().join("source");
-    let result = fill_source(file, &work, home, expected, index, control)
+    let result = fill_source(file, &work, home, index, control)
         .and_then(|()| publish(&work, destination, index, home, control));
     filesystem::finish_temporary(result, temporary)
 }
@@ -110,13 +111,11 @@ fn fill_source(
     file: &mut File,
     work: &Path,
     home: &Path,
-    expected: &str,
     index: &Inventory,
     control: &Control<'_>,
 ) -> Result<()> {
     filesystem::directory(work, false)?;
     write_source(file, work, index, control)?;
-    capsule::verify_identity(file, expected, control)?;
     links::runtime(work, &index.manifest.components, true)?;
     links::persistent(work, home, true)?;
     filesystem::sync_tree(work, control)
@@ -128,11 +127,11 @@ fn inspect_payload(
     control: &Control<'_>,
 ) -> Result<(File, Inventory)> {
     let mut file = filesystem::regular(payload)?;
-    capsule::verify_identity(&mut file, expected, control)?;
+    capsule::check_identity(&file, expected, MAX_COMPRESSED)?;
     let index = archive::visit(&mut file, control, |_name, _size, source| {
         archive::drain(source)
     })?;
-    capsule::verify_identity(&mut file, expected, control)?;
+    capsule::verify_bounded_identity(&mut file, expected, control, MAX_COMPRESSED)?;
     Ok((file, index))
 }
 
@@ -150,7 +149,7 @@ pub(crate) fn stage(
     if reused {
         verify_existing(&destination, &index, home, control)?;
     } else {
-        new_source(&mut file, home, &destination, expected, &index, control)?;
+        new_source(&mut file, home, &destination, &index, control)?;
     }
     Ok(StagedSource {
         directory: destination,

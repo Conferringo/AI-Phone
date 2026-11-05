@@ -4,6 +4,7 @@ import {ChannelBindRequestSchema,ChannelListRequestSchema,ChannelListResponseSch
 import {mkdtempSync,mkdirSync,writeFileSync,existsSync,readFileSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
+import {createDecipheriv} from 'node:crypto';
 
 test('real protobuf channel server isolates QR sessions, preserves IDs and rejects overlapping mutations',async()=>{
  const root=resolve(import.meta.dir,'../..'),fixture=mkdtempSync(join(tmpdir(),'aiphone-channel-rpc-'));
@@ -39,6 +40,11 @@ test('real protobuf channel server isolates QR sessions, preserves IDs and rejec
   expect((await rpc('bind',ChannelBindRequestSchema,{agentId:'one',provider:'whatsapp'})).status).toBe(409);
   expect((await unbind).status).toBe(200);
   first=(await list('one')).bindings.find(v=>v.provider==='whatsapp')!;expect(first.configured).toBe(false);expect(first.error).toContain('未确认');
-  expect(readFileSync(join(fixture,'data/channels/vault.bin')).subarray(0,1).toString()).not.toBe('{');
+  const bytes=readFileSync(join(fixture,'data/channels/vault.bin'));
+  // A random nonce can start with '{'; validate the authenticated envelope.
+  const decipher=createDecipheriv('aes-256-gcm',readFileSync(join(fixture,'data/channels/vault.key')),bytes.subarray(0,12));
+  decipher.setAuthTag(bytes.subarray(12,28));
+  const stored=JSON.parse(Buffer.concat([decipher.update(bytes.subarray(28)),decipher.final()]).toString());
+  expect(stored.configs).toEqual({});
  }finally{child.kill('SIGTERM');await child.exited;rmSync(fixture,{recursive:true,force:true});}
 },15000);

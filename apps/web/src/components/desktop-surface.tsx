@@ -2,7 +2,7 @@
 import {useWorkbenchNotice} from './workbench-notices';
 import {clientId} from '@/lib/client-id';
 import {useLayoutEffect,useRef,useState} from 'react';
-import {create,type MessageInitShape,type MessageShape} from '@bufbuild/protobuf';
+import type {MessageInitShape,MessageShape} from '@bufbuild/protobuf';
 import {DesktopRequestSchema,DesktopObservationSchema,DesktopActionRequestSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
 import {settingsRpc} from '@/lib/settings-client';
 import {PhoneStreamImage} from './phone-stream-image';

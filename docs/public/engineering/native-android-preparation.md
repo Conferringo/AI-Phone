@@ -8,6 +8,8 @@ The installer holds the existing installation lock for resource and device prepa
 
 The shared Rust archive reader handles source and Android capsules with separate fixed budgets. Source limits are unchanged. Android admission checks the compiled payload digest, compressed stream and tar completion, the exact inventory, every file digest and executable metadata, matching host/image and Windows filename collisions. SDK symlinks and Windows junctions are rejected. The component's existing `review-pending` metadata is preserved; validation does not grant redistribution permission.
 
+Each compressed source or Android capsule receives one full SHA-256 pass during admission. Extraction verifies each file while writing it, and SDK reuse verifies the installed files. These checks share the admitted inventory instead of hashing the entire capsule again after extraction.
+
 The writable device lives under `user/data/android/avd`, separate from the immutable SDK. Its `ai_phone_p2.ini` record and `phone-local-01.avd` directory match the existing runtime. Resource choices are one, two or four CPUs, 1536–4096 MiB RAM from the existing presets, and 16, 24 or 32 GiB storage. A complete existing device is observed and reused without rewriting its configuration or data disk. A changed factory-image location requires a migration rather than an implicit replacement.
 
 ## Interruption and recovery

@@ -11,7 +11,6 @@ export async function settingsBridge(request:Request,operation:string,group:'set
   if(!operations.includes(operation))return assistantError(404,'not_found','操作不存在');
   if(request.headers.get('content-type')!=='application/x-protobuf')return assistantError(415,'unsupported_media_type','请求格式错误');
   const limit=group==='voice'?2*1024*1024:32768;
-  if(Number(request.headers.get('content-length')||0)>limit)return assistantError(413,'too_large','内容过大');
   try {
     const body=await readRequestBody(request,limit);if(body instanceof Response)return body;
     const signal=group==='voice'?AbortSignal.any([request.signal,AbortSignal.timeout(35000)]):AbortSignal.timeout(120000);

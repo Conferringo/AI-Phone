@@ -16,9 +16,8 @@ use std::{
     path::{Path as FilePath, PathBuf},
     process::Stdio,
 };
-use tokio::{io::AsyncReadExt, process::Command, sync::Mutex};
+use tokio::{io::AsyncReadExt, process::Command};
 
-static WORKSPACE: Mutex<()> = Mutex::const_new(());
 fn workspace(app: &App) -> PathBuf {
     app.root.join("data/workspaces/admin")
 }
@@ -114,7 +113,7 @@ async fn command(args: &[String], limit: u64, seconds: u64) -> Result<(bool, Str
     Ok((status.success(), String::from_utf8_lossy(&a).into_owned()))
 }
 async fn ensure_workspace(app: &App) -> Result<(), String> {
-    let _lock = WORKSPACE.lock().await;
+    let _lock = app.workspace_init.lock().await;
     skill_resources::reconcile(&app.db, &app.root).await?;
     let dir = workspace(app);
     tokio::fs::create_dir_all(dir.join(".home"))

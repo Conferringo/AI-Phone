@@ -1,5 +1,6 @@
 """Complete Windows payload and same-source backend handoff contracts."""
 import json
+from contextlib import chdir
 import os
 from pathlib import Path
 import tempfile
@@ -47,6 +48,17 @@ class WindowsClientFactoryTests(unittest.TestCase):
             admitted.write_bytes(b'changed capsule')
             with self.assertRaisesRegex(ValueError, 'bytes changed'):
                 factory.admit_backend(root, path.parent, identity)
+
+    def test_relative_backend_argument_admits_the_same_qualified_payload(self):
+        with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {'GITHUB_SHA': 'a'*40}):
+            root = Path(temporary).resolve()
+            payload, report = self.fixture(root)
+            path = factory.stage_backend(root, report, payload)
+            identity = digest(path)
+            with chdir(root):
+                admitted, component = factory.admit_backend(root, Path('dist/windows-backend'), identity)
+                self.assertEqual(admitted.read_bytes(), payload.read_bytes())
+                self.assertEqual(component, report['component'])
 
     def test_component_only_false_qualification_and_foreign_source_never_stage(self):
         with tempfile.TemporaryDirectory() as temporary, patch.dict(os.environ, {'GITHUB_SHA': 'a'*40}):
