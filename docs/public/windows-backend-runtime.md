@@ -17,6 +17,8 @@ separate integration boundaries and are not enabled by this component alone.
 | Guest phone tools | Pinned Linux x64 platform-tools, upstream notices and a vendored AOSP media schema; no nested emulator or system image |
 | User state | Created under `/var/lib/aiphone` at runtime; excluded from the distributed rootfs |
 
+The factory stores the pinned Python executable and shared-library aliases as hard links inside the new rootfs, retaining their names, contents and component manifest. The required `python3` entry remains an independent regular file for rootfs admission. Existing registered distributions are not rewritten.
+
 The backend does not import the host's Docker context or Lima state. It owns
 `unix:///run/aiphone/docker.sock` and its CLI configuration. Android SDK parsing is
 lazy: an unavailable phone returns a device error while desktop media can start.

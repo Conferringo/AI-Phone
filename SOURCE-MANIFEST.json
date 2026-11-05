@@ -4590,8 +4590,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 11894,
-      "sha256": "613e15bc276c8e1fb897b1dd938316b526b7130465fd9758a8c67000ef71689b"
+      "size": 12203,
+      "sha256": "58fe3d61ded22598da2d192b72ea5167734a88cb3ba3eb164ffb9ddab66355c7"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -6360,8 +6360,8 @@
     },
     {
       "path": "scripts/test_wsl_inventory.py",
-      "size": 9309,
-      "sha256": "f5c5586c1400f992920568dca3741d3a9436c19d6ff48dd8844651c2216efdaf"
+      "size": 11182,
+      "sha256": "be065a4e03bbdfe74e9268719d6d5e6c7c7d1e58df5e080adaecbdf83caf53d5"
     },
     {
       "path": "scripts/test_wsl_phone_tools.py",
@@ -6435,8 +6435,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 13648,
-      "sha256": "fb20a93a1634bc91b65e6fe68996c9975d4a8b7a152cbdb4a2d3f38a30ac5a9d"
+      "size": 14348,
+      "sha256": "5fa32fc968047eb52fc33e0c805935cc9e0f095139d000db3067e11d7f2eeffd"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
