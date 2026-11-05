@@ -2610,8 +2610,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 78544,
-      "sha256": "c361b9f96f30811665a6d53e8cb6e43b3ab954d579a999839f4e2665903cb71b"
+      "size": 78620,
+      "sha256": "88eed2451dd12ae0e3e7ad1bac03bd50845dac930cb121bfe39e1aa06a7fe5a6"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2660,8 +2660,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 26399,
-      "sha256": "677ecdd98a47d16f827c07414ec2ddc34033dbecbb8023e65a5bf0a85669de67"
+      "size": 33067,
+      "sha256": "c3479717820d1e74b854874be7ed8114ef51b04e818b44abf15ef7a963cc2bd5"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2875,8 +2875,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 215670,
-      "sha256": "45155faa4aba0d11e9f9ac101537fe94bdac9b14ee6a20df231e7f0dc6361229"
+      "size": 215367,
+      "sha256": "33810b090fbe3ef0a5e36e65556ff5a9e9288d1a4c5e5bb0b78f0173034db2f5"
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",

@@ -507,10 +507,13 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
         let (sender, mut requests) = tokio::sync::mpsc::channel(4);
         let controls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let control_calls = controls.clone();
+        let ready = Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let root_ready = ready.clone();
         let frame = b"fixture-current-frame";
         let router = Router::new()
             .route("/v1/observe", post(move |body: Bytes| {
                 let sender = sender.clone();
+                let root_ready = root_ready.clone();
                 async move {
                     let request = wire::DeviceRequest::decode(body).unwrap();
                     assert_eq!(request.phone_id, crate::registry::PHONE);
@@ -518,7 +521,7 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
                     sender.send(request.clone()).await.unwrap();
                     pb(StatusCode::OK, wire::DeviceObservation {
                         phone_id: request.phone_id, width: 720, height: 1440,
-                        root_identity: "0".into(), control_epoch: 7, controller: "agent".into(),
+                        root_identity: if root_ready.load(std::sync::atomic::Ordering::Relaxed) { "0".into() } else { String::new() }, control_epoch: 7, controller: "agent".into(),
                         png: if request.metadata_only { vec![] } else { frame.to_vec() },
                         ..Default::default()
                     })
@@ -557,6 +560,97 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
         assert_eq!(epoch, 0, "read-only notification must not take control");
         assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 1);
         assert!(result.as_array().unwrap().iter().any(|part| part["image_url"] == image));
+        sqlx::query("UPDATE runs SET origin='user',background_read_only=false WHERE id=$1")
+            .bind(run).execute(&app.db).await.unwrap();
+        ready.store(false, std::sync::atomic::Ordering::Relaxed);
+        let result = tokio::time::timeout(Duration::from_millis(700),
+            tool(&app, run, message, &call, &mut epoch, &CancellationToken::new())).await
+            .expect("an unready phone must return its status without a hidden retry loop");
+        assert_eq!(result.unwrap_err(), "手机尚未就绪，请稍后继续。");
+        assert!(requests.recv().await.unwrap().metadata_only);
+        assert!(requests.try_recv().is_err());
+        assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(epoch, 0);
         drop(server);
+    }).await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; connected files do not grant GUI control"]
+async fn file_authorization_tracks_bindings_and_both_link_directions() {
+    database_case(|app| async move {
+        crate::registry::initialize(&app.db, &app.settings).await.unwrap();
+        let (run, _) = queued(&app, crate::registry::PHONE, "user").await;
+        let agent = Uuid::from_u128(2);
+        sqlx::query("UPDATE runs SET agent_id=$2 WHERE id=$1")
+            .bind(run).bind(agent).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
+            .bind(run).bind(crate::registry::PHONE).execute(&app.db).await.unwrap();
+        let peer = "transfer-peer";
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Peer','desktop','fixture','managed')")
+            .bind(peer).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO device_links(id,source_device_id,target_device_id) VALUES($1,$2,$3)")
+            .bind(Uuid::now_v7()).bind(crate::registry::PHONE).bind(peer).execute(&app.db).await.unwrap();
+        crate::desktop::file_authorized(&app, run, crate::registry::PHONE).await.unwrap();
+        assert!(crate::desktop::authorized(&app, run, peer).await.is_err());
+        sqlx::query("SELECT 'files-benchmark-start'").execute(&app.db).await.unwrap();
+        let started = std::time::Instant::now();
+        for _ in 0..100 {
+            crate::desktop::file_authorized(&app, run, peer).await.unwrap();
+        }
+        println!("files benchmark: 100 calls in {} microseconds", started.elapsed().as_micros());
+        sqlx::query("SELECT 'files-benchmark-end'").execute(&app.db).await.unwrap();
+        sqlx::query("UPDATE device_links SET connected=false").execute(&app.db).await.unwrap();
+        assert!(crate::desktop::file_authorized(&app, run, peer).await.is_err());
+        crate::desktop::file_authorized(&app, run, crate::registry::PHONE).await.unwrap();
+        sqlx::query("UPDATE device_links SET connected=true").execute(&app.db).await.unwrap();
+        sqlx::query("DELETE FROM run_device_bindings WHERE run_id=$1").bind(run).execute(&app.db).await.unwrap();
+        assert!(crate::desktop::file_authorized(&app, run, peer).await.is_err());
+        sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,$2)")
+            .bind(agent).bind(peer).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
+            .bind(run).bind(peer).execute(&app.db).await.unwrap();
+        crate::desktop::file_authorized(&app, run, crate::registry::PHONE).await.unwrap();
+        sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1 AND device_id=$2")
+            .bind(agent).bind(peer).execute(&app.db).await.unwrap();
+        assert!(crate::desktop::file_authorized(&app, run, crate::registry::PHONE).await.is_err());
+    }).await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; desktop dispatch rejects input without guest calls"]
+async fn desktop_dispatch_checks_authority_once_at_the_execution_boundary() {
+    database_case(|app| async move {
+        crate::registry::initialize(&app.db, &app.settings).await.unwrap();
+        let (run, _) = queued(&app, crate::registry::PHONE, "user").await;
+        let agent = Uuid::from_u128(2);
+        sqlx::query("UPDATE runs SET agent_id=$2,status='running' WHERE id=$1")
+            .bind(run).bind(agent).execute(&app.db).await.unwrap();
+        let device = "dispatch-desktop";
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Computer','desktop','fixture','managed')")
+            .bind(device).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')")
+            .bind(device).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,$2)")
+            .bind(agent).bind(device).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
+            .bind(run).bind(device).execute(&app.db).await.unwrap();
+        let observation = Uuid::now_v7();
+        sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256) VALUES($1,$2,7,'Fixture','unused','unused')")
+            .bind(observation).bind(device).execute(&app.db).await.unwrap();
+        let call = json!({"name":"computer_click","local_action_id":Uuid::now_v7().to_string()});
+        let args = json!({"device_id":device,"observation_id":observation.to_string(),"x":-1,"y":100});
+        sqlx::query("SELECT 'desktop-benchmark-start'").execute(&app.db).await.unwrap();
+        let started = std::time::Instant::now();
+        for _ in 0..100 {
+            assert_eq!(crate::desktop::tool(&app, run, &call, &args).await.unwrap_err(), "坐标超出屏幕");
+        }
+        println!("desktop benchmark: 100 calls in {} microseconds", started.elapsed().as_micros());
+        sqlx::query("SELECT 'desktop-benchmark-end'").execute(&app.db).await.unwrap();
+        sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1 AND device_id=$2")
+            .bind(agent).bind(device).execute(&app.db).await.unwrap();
+        assert_eq!(crate::desktop::tool(&app, run, &call, &args).await.unwrap_err(), "该任务没有此设备的授权");
+        assert_eq!(sqlx::query_scalar::<_, i64>("SELECT count(*) FROM desktop_actions")
+            .fetch_one(&app.db).await.unwrap(), 0);
     }).await;
 }
