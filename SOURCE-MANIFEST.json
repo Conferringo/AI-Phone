@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 9264,
-      "sha256": "f31ad76249d35e2a0afccd69ced6e0915576e58ef55a72915177f5863c7561d9"
+      "size": 9289,
+      "sha256": "cae5848d96c668f875f235381c1e0adf5136c49efaeff36b8b506c4303eebacf"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -725,8 +725,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/tools.rs",
-      "size": 26294,
-      "sha256": "00ba24032edc7bf4d06158442b5dbb0cab7e576ad15a5eafed404f45534879fc"
+      "size": 27929,
+      "sha256": "6a1f4c067fe1bdc5b4b819b850abf18e0e1dfe17e4e43fe528517865b40178f2"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
@@ -3545,8 +3545,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 7572,
-      "sha256": "967f2233788663d4cb8cea96a49dff41df51e21118ce900c9c8a91f51e91e4d7"
+      "size": 8019,
+      "sha256": "3130aff5708ed51ded1b804a01b2094f3c4a6b59685c389f8a796efddc90febc"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -5220,8 +5220,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 18280,
-      "sha256": "3f97075deae6b38452ad0507aac3623f74331589cc071c9c3ec9b7bb8e8983a7"
+      "size": 18507,
+      "sha256": "d7dc0838bd26229b34d54d9352826c11127edc1f94060d7d93eb1a87f140f553"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -5490,13 +5490,13 @@
     },
     {
       "path": "scripts/installer_tool_factory.py",
-      "size": 2895,
-      "sha256": "5d55a2e851de20fa4b0c5d6b9209ca2a5dee48db48b7ec6d37e354322c815eff"
+      "size": 2947,
+      "sha256": "2363affad8502f4c624c001185e448fc25af48b73947e8234508117e6c86ed76"
     },
     {
       "path": "scripts/installer_tools.py",
-      "size": 11966,
-      "sha256": "8abb693822a0ce61d968c9b0dffd761db0ce51f6308a30b622139e2631b7b0bb"
+      "size": 12703,
+      "sha256": "2165c27ee81b407b4aa2771d1b7b77f26d15911648c2fab0cba7d7900253da70"
     },
     {
       "path": "scripts/js_dependencies.py",
@@ -5580,8 +5580,8 @@
     },
     {
       "path": "scripts/linux_host.py",
-      "size": 8521,
-      "sha256": "a1793a22818d00d5a6034f458c01c0455c4841f225ab16175c8e2ec5f0aa9c2a"
+      "size": 8632,
+      "sha256": "93d9b16a6ea7bbbea18ff406e4e6a9e0c14018ecd8bad887e56e014a8028de9d"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -5775,8 +5775,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 8422,
-      "sha256": "8642aecd867b2226f2e7881b3e8f2dd85257e669f709db67b81d1c449a5ab985"
+      "size": 8470,
+      "sha256": "38c6cef093d447b75d7809962df3893ff6d06d129b676aa82291b7d2d35356ed"
     },
     {
       "path": "scripts/prepare_ocr_models.py",
@@ -5800,8 +5800,8 @@
     },
     {
       "path": "scripts/release.py",
-      "size": 24062,
-      "sha256": "f8d459aa7a536f005d3d781002aea2bbba84321b3b325e5aed81c6e401464225"
+      "size": 24249,
+      "sha256": "44a8262b9867c2556731e3ae6ccbbf07a10982d387244c635cbdef2db39a4ab6"
     },
     {
       "path": "scripts/release_package.py",
@@ -5990,8 +5990,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 11749,
-      "sha256": "93f3492e4f8a790ab2f8a114e5a64d653a7387cc3aa8a8500e53b8737ae65202"
+      "size": 14575,
+      "sha256": "675f5487c99d8b019a6ec7f165e00f02a5c6b0f41c50a44b3ef383a4d7e853f0"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -6000,8 +6000,8 @@
     },
     {
       "path": "scripts/test_client_resources.py",
-      "size": 10582,
-      "sha256": "992628dda3789be6c4c559bc9bbac55dd3714dd3d2915d34614ba86379e888bf"
+      "size": 11707,
+      "sha256": "6e3d06c995ba29fe3400c876b9d17e14a83d9b77b0e0762034d92a7269754b9b"
     },
     {
       "path": "scripts/test_container_host_runtime.py",
@@ -6095,8 +6095,8 @@
     },
     {
       "path": "scripts/test_installer_tools.py",
-      "size": 16422,
-      "sha256": "00744af933f940b7fcf4af9608c06d46db4b56b327f28b1a2ed7afcf647c985d"
+      "size": 18144,
+      "sha256": "9975173b392cb0169034a78afbc59699cd4d8bfcb9cc51025e0536f85b37d4ef"
     },
     {
       "path": "scripts/test_js_dependencies.py",
@@ -6160,8 +6160,8 @@
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 17705,
-      "sha256": "e0ed2f3e267c0ecb74c777bbe8733394bdfcdd8bea40c7ecfba1ec9c4f6499fd"
+      "size": 20020,
+      "sha256": "a2a5e63b199a80578ff10664de19127100ee27f3e18033b970274a9341d814e4"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -6275,8 +6275,8 @@
     },
     {
       "path": "scripts/test_release.py",
-      "size": 19345,
-      "sha256": "72a3d88d257cf63aaa23da2c5338756e1a317b7780755f938de49fbaa40355fa"
+      "size": 21014,
+      "sha256": "7c469753e51c4924fde0c54f803e7b547adb36d69bab7516817a5f01c46228c6"
     },
     {
       "path": "scripts/test_release_portability.py",
@@ -6345,8 +6345,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9984,
-      "sha256": "0f1cd355752daf0e79e0276b380deb3e019fe05c2c5c74d2e3fdd4a4f1d198ea"
+      "size": 9962,
+      "sha256": "838dd9cefc5a621daee1062234a83900bce1ef2ee31c9ce91aa31de3bbc44979"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",

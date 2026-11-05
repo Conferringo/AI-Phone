@@ -101,6 +101,20 @@ class ClientResourceTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError,'Unexpected.*tool'):
                         inspect_payload({**files,name:b'private user note without a key'},root)
 
+    def test_prebuilt_bun_payload_omits_host_node_resources(self):
+        with tempfile.TemporaryDirectory() as folder,patch('installer_tools.host_key',return_value='macos-arm64'):
+            root=Path(folder);fixture=test_installer_tools.InstallerToolTests();archives,pins=fixture.fixture(root)
+            component=root/'component';fixture._build(archives,component,pins=pins,host='macos-arm64')
+            native=root/'apps/client/src-tauri';native.mkdir(parents=True)
+            (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{}}}))
+            (root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
+            with patch('prepare_client_host.component_records',return_value=(['web','js-services'],[])):
+                prepare(root,with_web_runtime=True,with_js_services=True,installer_tools=component)
+            mapping=resource_map(root)
+            self.assertIn('gen/host/tools/python/bin/python3',mapping)
+            self.assertFalse(any('/tools/node/' in name for name in mapping))
+            self.assertTrue((component/'node/bin/node').is_file())
+
     def test_scanning_is_bounded_and_finds_tokens_across_chunks(self):
         class Bounded(io.BytesIO):
             def read(self,size=-1):

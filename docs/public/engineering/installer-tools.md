@@ -1,16 +1,16 @@
 # Portable installer tools
 
-The native client can carry a reviewed Python and Node runtime in `host/tools`. It authenticates their manifest against its compiled resource inventory before executing Python. A complete toolchain uses these files directly; it does not bootstrap Python through Mise or ask users to install Node. Contributor/source installations retain the managed-tool path.
+The native client carries a reviewed installer runtime in `host/tools`. When both Web and JavaScript services are prebuilt for Bun, the client includes Python only: it neither carries, checks nor downloads host Node. Contributor/source installations retain the Python/Node toolchain. The native client authenticates the tool manifest against its compiled resource inventory before executing Python.
 
 ## Ownership and integrity
 
-`config/installer-tools.json` pins architecture-specific factory archives by URL, size and SHA-256. `scripts/installer_tools.py` builds the resource tree. Python's contained aliases become regular files; Node contributes its executable and licence/readme, without npm or Corepack. No personal interpreter installation or package cache is an input.
+`config/installer-tools.json` pins architecture-specific factory archives by URL, size and SHA-256. `scripts/installer_tools.py` builds the full maintainer tool tree; client preparation selects the tools needed by its bundled components. Python's contained aliases become regular files. When Node is needed, its executable and licence/readme are included without npm or Corepack. No personal interpreter installation or package cache is an input. Existing two-tool manifests remain readable; an installer manifest always requires Python.
 
 The manifest declares host, versions, executable paths, hashes, sizes and permissions. Native activation accepts only inventoried regular files and checks their bytes as it copies them to `components/installer-tools/<manifest-sha256>` in the client's private installation. Reuse verifies the installed files and does not hash unused source binaries. Source resources and user state remain separate. The limits are 12,000 files, 24,000 visited members, depth 64, 512 MiB of file bodies and a 4 GiB recovery reserve.
 
 An existing immutable runtime must match exactly. A competing publisher can be reused only after its manifest and files verify. Cancellation, copy errors and Rust unwinding reclaim the publisher's own staging directory. Partial state never becomes an active runtime. Old immutable versions remain available to their existing installations.
 
-The worker starts Python with isolated imports and bytecode writes disabled. After source staging, a verified private selection supplies the Python/Node paths to service launchers. Bundled executables precede host/project alternatives. With portable tools, native services and Android resources supplied, the installation tool list is empty and no package manager runs for those tools. Container-host, application and service dependency delivery remain independent distribution requirements.
+The worker starts Python with isolated imports and bytecode writes disabled. After source staging, a verified private selection supplies only the declared tool paths to service launchers. Bundled executables precede host/project alternatives. With all prebuilt components and portable tools supplied, the installation tool list is empty and no package manager runs for those tools. Container-host, application and service dependency delivery remain independent distribution requirements. This host-only selection leaves the development tools inside the Linux device and WSL backend unchanged.
 
 ## Maintainer build
 
@@ -22,7 +22,7 @@ python3 scripts/installer_tools.py \
   --output /path/to/new-tool-component
 
 python3 scripts/build_client.py --platform macos \
-  --with-web-runtime --with-service-runtime --with-phone-apps \
+  --with-web-runtime --with-js-services --with-service-runtime --with-phone-apps \
   --android-runtime /path/to/android.payload \
   --images-runtime /path/to/images.payload \
   --installer-tools /path/to/new-tool-component
@@ -59,7 +59,7 @@ Primary sources: [Python portable distributions](https://docs.astral.sh/python-b
 
 ## 中文
 
-原生客户端可随包携带 Python 与 Node，校验后直接启动安装程序；完整工具链不通过 Mise 联网准备解释器，也不要求用户安装 Node。组件来自固定摘要的官方归档，按清单复制到独立、不可变的私有目录。工具、应用版本和用户设备/聊天数据各自保存。
+Web 与 JavaScript 服务均预编译为 Bun 组件时，原生客户端只携带安装所需的 Python，不携带、检查或下载宿主 Node。源码安装保留 Python/Node，已有双工具清单仍可读取；Linux 客体及 WSL 后端内的开发工具不变。组件来自固定摘要的官方归档，按清单复制到独立、不可变的私有目录。工具、应用版本和用户设备/聊天数据各自保存。
 
 原生复制会检查全部文件、权限、架构和空间，取消、异常及并发发布均保持内容验证和暂存目录归属。服务优先使用选定的随包程序。Node 组件不含 npm/Corepack；公开上游构建路径仅按精确的已审阅文件摘要区分，凭据扫描保持开启。
 

@@ -50,8 +50,8 @@ def prepare(root=ROOT, *, with_web_runtime=False, with_service_runtime=False, wi
     digests = {name: digest(folder/name) for name in ['source.payload', 'entry.py']}
     digests.update(prepare_android(folder,android_runtime))
     digests.update(prepare_images(folder,image_runtime))
-    from installer_tools import prepare_resources
-    digests.update(prepare_resources(folder,installer_tools))
+    from installer_tools import prepare_resources,required_roles
+    digests.update(prepare_resources(folder,installer_tools,roles=required_roles(components)))
     from wsl_resources import prepare as prepare_wsl
     digests.update(prepare_wsl(folder,wsl_runtime))
     (folder / 'integrity.json').write_text(json.dumps(digests, sort_keys=True))

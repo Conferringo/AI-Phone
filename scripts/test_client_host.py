@@ -72,6 +72,36 @@ class NativeHostTests(unittest.TestCase):
         with patch('client_host.execute') as execute:
             install_tools(Path('/isolated'),None,tools,lambda *_:self.fail('No tool installation is needed'))
         execute.assert_not_called()
+
+    def test_prebuilt_bun_does_not_install_node_but_source_keeps_it(self):
+        from client_host import selected_tools,install_tools
+        tools=['python@3.13.18','node@22.23.4','rust@1.96.0','java@temurin-17']
+        selected=selected_tools(tools,True,True,('python',),True,node_required=False)
+        self.assertEqual(selected,[])
+        with patch('client_host.execute') as execute:
+            install_tools(Path('/isolated'),None,selected,lambda *_:self.fail('No tool installation needed'))
+        execute.assert_not_called()
+        self.assertEqual(selected_tools(tools,True,True,('python',),True),['node@22.23.4'])
+
+    def test_python_only_installer_reaches_profile_without_downloading_tools(self):
+        from client_host import install
+        from test_installer_tools import InstallerToolTests
+        import os
+        with tempfile.TemporaryDirectory() as folder,patch('installer_tools.host_key',return_value='macos-arm64'):
+            home=Path(folder);root=home/'source';root.mkdir();fixture=InstallerToolTests()
+            archives,pins=fixture.fixture(home);component=home/'component';fixture._build(archives,component,pins=pins,host='macos-arm64')
+            from installer_tools import prepare_resources
+            generated=home/'generated';generated.mkdir();prepare_resources(generated,component,roles=('python',))
+            for relative in ('runtime/manifest.json','runtime/js-services/manifest.json'):
+                path=root/relative;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('{}')
+            (root/'data').mkdir();(root/'data/chat').write_text('keep')
+            config={'tools':['python@3.13.18','node@22.23.4','rust@1.96.0','java@temurin-17']}
+            request=dict(locale='en',phone=dict(cpus=2,memory_mb=2048,storage_gb=16),desktop=dict(cpus=2,memory_mb=2560))
+            with patch.dict(os.environ,{},clear=True),patch('host_platform.host_policy',return_value=(config,{})),patch('prebuilt_services.launch_spec',return_value={'prebuilt':True}),patch('client_host.install_preflight',return_value=True),patch('client_host.deployment_sdk',return_value=home/'sdk'),patch('android_runtime.bundled_sdk',return_value={}),patch('prebuilt_phone.available',return_value=True),patch('linux_kvm_snapshot.emit_snapshot'),patch('client_host.prepare_profile',side_effect=RuntimeError('profile reached')),patch('client_host.download',side_effect=AssertionError('No tool downloads')),patch('client_host.execute',side_effect=AssertionError('No package manager')):
+                with self.assertRaisesRegex(RuntimeError,'profile reached'):
+                    install(root,home,request,None,lambda *_:None,tool_runtime=generated/'tools')
+                self.assertNotIn('AI_PHONE_NODE',os.environ)
+            self.assertEqual((root/'data/chat').read_text(),'keep')
     def test_owned_vm_keeps_architecture_resources_and_quoted_arguments(self):
         import os
         with tempfile.TemporaryDirectory(prefix='owned engine ') as temp:

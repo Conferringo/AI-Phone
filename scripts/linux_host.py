@@ -118,19 +118,22 @@ def start_execution_services(root, specs, run, start):
 def start_web_service(root, env, run, start):
     from prebuilt_web import web_command
     prebuilt=(root/'runtime/manifest.json').is_file()
-    if not prebuilt and not unit_state(root,'web'):run([root/'scripts/bun','run','build'])
-    node=shutil.which('node')
-    if not node:
-        raise ValueError('Owned Node runtime unavailable')
     # Working directory belongs to the unit owner, so Next receives an explicit project path.
-    if prebuilt:env.update({'PORT':'17860','HOSTNAME':'127.0.0.1'})
-    start('web',web_command(root) if prebuilt else [node,str(root/'apps/web/node_modules/next/dist/bin/next'),'start',str(root/'apps/web'),'--hostname','127.0.0.1','--port','17860'])
+    if prebuilt:
+        env.update({'PORT':'17860','HOSTNAME':'127.0.0.1'})
+        command=web_command(root)
+    else:
+        if not unit_state(root,'web'):run([root/'scripts/bun','run','build'])
+        node=shutil.which('node')
+        if not node:raise ValueError('Owned Node runtime unavailable')
+        command=[node,str(root/'apps/web/node_modules/next/dist/bin/next'),'start',str(root/'apps/web'),'--hostname','127.0.0.1','--port','17860']
+    start('web',command)
 
 
 def start_workbench_services(root, env, run, start):
     start_web_service(root,env,run,start)
-    node=shutil.which('node')
-    start('lan',[node,str(root/'scripts/lan-server.mjs')])
+    program=str(root/'runtime/bin/bun') if (root/'runtime/manifest.json').is_file() else shutil.which('node')
+    start('lan',[program,str(root/'scripts/lan-server.mjs')])
 
 
 def start_missing(root):

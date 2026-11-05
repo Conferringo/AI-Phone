@@ -271,8 +271,9 @@ def deployment_sdk(root, provided):
     return Path(json.loads(profile.read_text())['sdk_root']) if profile.exists() else provided
 
 
-def selected_tools(tools, bundled_services, bundled_android, bundled_tools=(), bundled_phone_apps=False):
+def selected_tools(tools, bundled_services, bundled_android, bundled_tools=(), bundled_phone_apps=False, *, node_required=True):
     excluded=set(bundled_tools)
+    if not node_required:excluded.add('node')
     if bundled_services:excluded.add('rust')
     if bundled_android and bundled_phone_apps:excluded.add('java')
     return [tool for tool in tools if tool.split('@',1)[0] not in excluded]
@@ -285,8 +286,9 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     config,host=host_policy(root)
     available=()
     if tool_runtime is not None:
-        from installer_tools import select
-        os.environ.update(select(root,tool_runtime));available=('python','node')
+        from installer_tools import select,ROLES
+        selected=select(root,tool_runtime);os.environ.update(selected)
+        available=tuple(role for role in ROLES if 'AI_PHONE_'+role.upper() in selected)
     bundled=launch_spec(root,'assistant')['prebuilt']
     if not install_preflight(root,home,config,bundled,emit):return
     from android_runtime import bundled_sdk
@@ -295,7 +297,8 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     from prebuilt_phone import available as phone_apps_available
     phone_apps=phone_apps_available(root)
     if android_bundled and not phone_apps:raise ValueError('Bundled Android needs prebuilt phone applications; no devices were changed')
-    tools=selected_tools(config['tools'],bundled,android_bundled,available,phone_apps)
+    from installer_tools import needs_node
+    tools=selected_tools(config['tools'],bundled,android_bundled,available,phone_apps,node_required=needs_node(root))
     if tools and mise is None:
         mise=download(config['mise'][host['mise']],home/'tools/bin/mise');mise.chmod(0o700)
     install_tools(home,mise,tools,emit)
