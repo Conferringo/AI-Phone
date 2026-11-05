@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 21549,
-      "sha256": "9313779b1cdc32597f7c8ed75f2c50fe82051d669b96ab2fe992cd08a635f547"
+      "size": 21762,
+      "sha256": "2d60841425ae942c78328e8969061286e0a6fcbda24140d947c61a37837447b8"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-full-client.yml",
-      "size": 7502,
-      "sha256": "195a954a41ea62dec575aa38a62a6a394fb9eb641cc49a86d064d3e09e041983"
+      "size": 7680,
+      "sha256": "b1ac7c72468ba7330172c49b6dac8456c72ff430192315f709d4c3effb402dbf"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -4550,8 +4550,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5490,
-      "sha256": "5a1f045616b1a15022a08f3fb7c37d6790f902ace5229d8d9bc802a747bcaf92"
+      "size": 6249,
+      "sha256": "ea3744742bb84e221c6b9583cd67af75cf61d88a42b56376eb7f7890c75f007e"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -5825,8 +5825,8 @@
     },
     {
       "path": "scripts/retain-client-candidate.sh",
-      "size": 4122,
-      "sha256": "b44dbd7f6a448917a38e41b4d7e42d9c5cb621b6e85d16ecd682fce37d9254f2"
+      "size": 4227,
+      "sha256": "57a69920dfff74eac73182acb5fe716b0567f11b7e2cecb262ba67d105914c52"
     },
     {
       "path": "scripts/route-stroke.test.ts",
@@ -6287,6 +6287,11 @@
       "path": "scripts/test_required_tests.py",
       "size": 2216,
       "sha256": "99b48dfbfdfa83b969252352878cb8965236aa1a1363977d21257e4ef15322fc"
+    },
+    {
+      "path": "scripts/test_retention_shell.py",
+      "size": 5423,
+      "sha256": "8a2a664dda6dd00abc87c47d70d94a796161ffd168a6f30c9e0fed9e11a1869c"
     },
     {
       "path": "scripts/test_runtime_integrity.py",
