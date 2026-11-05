@@ -33,17 +33,31 @@ class LinuxClientFactoryTests(unittest.TestCase):
             for role in ('linux-ocr','linux-host'):
                 context=root/role
                 def build(command,_root):
-                    expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','snapshot.conf'}
+                    expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','ubuntu.sources'}
                     if role=='linux-ocr':expected.add('python.tar.gz')
                     self.assertEqual({p.name for p in context.iterdir()},expected)
                     self.assertEqual((context/'bootstrap-ca.deb').read_bytes(),source.read_bytes())
-                    self.assertEqual((context/'snapshot.conf').read_text(),'APT::Snapshot "20261031T040000Z";\n')
+                    configured=(context/'ubuntu.sources').read_text()
+                    self.assertIn('URIs: https://snapshot.ubuntu.com/ubuntu/20261031T040000Z\n',configured)
+                    self.assertIn('Suites: noble noble-updates noble-security\n',configured)
+                    self.assertIn('Components: main universe\n',configured)
+                    self.assertIn('Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n',configured)
+                    self.assertIn('Snapshot: no\n',configured)
                     self.assertEqual(command[-1],context)
                     (context/'output').mkdir()
                 with patch.object(factory,'run',side_effect=build):
                     output=factory.factory_context(root,context,role,python if role=='linux-ocr' else None)
                 self.assertEqual(output,context/'output');self.assertTrue(output.is_dir())
             self.assertEqual(private.read_bytes(),b'keep private')
+
+    def test_invalid_snapshot_cannot_change_repository_selection_or_start_a_builder(self):
+        for identity in ('latest','20261031T040000Z\nURIs: https://foreign.invalid',None):
+            with self.subTest(identity=identity),tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary);self.context_fixture(root)
+                policy=root/'config/linux-factory.json';value=json.loads(policy.read_text());value['snapshot']=identity;policy.write_text(json.dumps(value))
+                with patch.object(factory,'run') as run,self.assertRaisesRegex(ValueError,'snapshot'):
+                    factory.factory_context(root,root/'context','linux-host')
+                run.assert_not_called()
 
     def test_invalid_bootstrap_ca_never_starts_the_builder(self):
         with tempfile.TemporaryDirectory() as temporary:

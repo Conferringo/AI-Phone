@@ -4425,8 +4425,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 4402,
-      "sha256": "e7e2cfaee14a3b74b6293f1f1e9bafc2f5bf8fcfb7ab499b167f37a372eb8deb"
+      "size": 4934,
+      "sha256": "08495c5f6e2c979401f733b00de671843d09a3819b90609f1bf8103654af140f"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -5525,8 +5525,8 @@
     },
     {
       "path": "scripts/linux-host/Dockerfile",
-      "size": 908,
-      "sha256": "a7bc3a82ee293cae95eaf83cf55d3089b2e83fefccdbfdf3808ed31c79c63f53"
+      "size": 798,
+      "sha256": "bd6f6af96dc170ceffc2bb997166a1b4e2f91c0eb79b1fc5c87e560f0c03cf2d"
     },
     {
       "path": "scripts/linux-host/collect.py",
@@ -5545,8 +5545,8 @@
     },
     {
       "path": "scripts/linux-ocr/Dockerfile",
-      "size": 1329,
-      "sha256": "733c28c6d05fc391df473d9ba8d64411dc279bd8a48412a6004062e46dc175b1"
+      "size": 1330,
+      "sha256": "d42502bcbbdada7739223b6a65233cf141e51fa7fe844f41cb8703809f136e3d"
     },
     {
       "path": "scripts/linux-ocr/collect.py",
@@ -5555,8 +5555,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11379,
-      "sha256": "f528b89ef83e3c213f1bbbe9e5814f1516d3f4b14c49160728cadf376e3dfa20"
+      "size": 11866,
+      "sha256": "d24ea27613b6466e54db317e62d3ff6dd8318da921b2c08550f8b2ba2fcdd22c"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -6110,8 +6110,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 14249,
-      "sha256": "a69cba528713f9a3591a7bba133f4d436f10f317eb7f6b38d422b86ef61ea2af"
+      "size": 15372,
+      "sha256": "e79bad72ec2ff0ef44c37860c52efe9d76f3fe19a9024fc43519c0e96186e5e2"
     },
     {
       "path": "scripts/test_linux_client_packages.py",

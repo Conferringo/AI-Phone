@@ -92,13 +92,23 @@ def prepare_android(root,cache):
     return payload,{**receipt,'compression_preset':preset}
 
 
+def snapshot_sources(identity):
+    if not isinstance(identity,str) or re.fullmatch(r'[0-9]{8}T[0-9]{6}Z',identity) is None:
+        raise ValueError('Invalid factory snapshot identity')
+    return ('Types: deb\nURIs: https://snapshot.ubuntu.com/ubuntu/'+identity+'\n'
+            'Suites: noble noble-updates noble-security\nComponents: main universe\n'
+            'Architectures: amd64\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n'
+            'Snapshot: no\n')
+
+
 def factory_context(root,folder,role,python_archive=None):
     folder.mkdir(parents=True)
     for source,target in [(root/'scripts'/role/'Dockerfile','Dockerfile'),(root/'scripts'/role/'collect.py','collect.py'),(root/'scripts/linux_dependency_factory.py','factory.py')]:
         shutil.copyfile(source,folder/target)
     policy=json.loads((root/'config/linux-factory.json').read_text())
+    sources=snapshot_sources(policy['snapshot'])
     fetch(folder,'bootstrap-ca.deb',policy['ca_certificates'])
-    (folder/'snapshot.conf').write_text('APT::Snapshot '+json.dumps(policy['snapshot'])+';\n')
+    (folder/'ubuntu.sources').write_text(sources)
     if python_archive is not None:shutil.copyfile(python_archive,folder/'python.tar.gz')
     output=folder/'output'
     run(['docker','buildx','build','--platform','linux/amd64','--target','export','--output','type=local,dest='+str(output),folder],root)
