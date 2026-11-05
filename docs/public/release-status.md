@@ -30,7 +30,7 @@ The [Windows build from 2a5b17d](https://github.com/Conferringo/AI-Phone/actions
 
 `config/release-policy.json` owns publication gates. Binary publication remains disabled and `self_contained_device_bundle` remains false. Packages must satisfy full contents, source/privacy checks, third-party notices and applicable corresponding-source requirements before publication.
 
-Non-macOS physical installation is waived for the current release scope and remains unverified. Compilation and component checks do not replace that result or qualify incomplete packages.
+Physical installation is waived for previews on all four platforms and remains unverified. Compilation and component checks do not replace that result or qualify incomplete packages.
 
 [Compatibility](compatibility.md) · [Distribution requirements](preview-release.md) · [Architecture](architecture.en.md) · [Contributing](../../CONTRIBUTING.md) · [Backup and recovery](backup-restore.en.md)
 
@@ -40,4 +40,4 @@ Non-macOS physical installation is waived for the current release scope and rema
 
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 
-发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。非 macOS 实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。
+发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。四平台预览客户端的实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。

@@ -7,7 +7,7 @@ AI Phone is developing complete local distributions for macOS Apple Silicon, Win
 - Include clean Android and Linux baselines, matching emulators, prebuilt services and their execution environments in each distribution.
 - Create the phone, computer and model configuration from one client, with resumable resource preparation and device readiness checks.
 - Keep device resource presets configurable while preserving existing disks, accounts and conversations. The default workspace contains one phone and one computer.
-- Support interruption recovery, host restart and a complete update path. Non-macOS physical installation remains untested under the current maintainer waiver; compilation, complete package contents and redistribution review remain required.
+- Support interruption recovery, host restart and a complete update path. Physical installation on all four platforms remains untested under the current preview waiver; compilation, complete package contents and redistribution review remain required.
 
 The installation contract is described in [distribution requirements](preview-release.md), [runtime bundles](runtime-bundles.md) and [self-contained hosts](integrated-hosts.md).
 

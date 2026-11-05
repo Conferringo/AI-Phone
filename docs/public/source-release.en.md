@@ -17,7 +17,7 @@ The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinn
 
 The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Configure models and device bindings in Configuration → Agent. No developer credentials or accounts are supplied. Repeated startup restores missing services while retaining existing state.
 
-See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md) and [backup/recovery](backup-restore.en.md). Non-macOS physical installer tests are outside the current acceptance scope and remain unverified; matching compilation and component checks are still required.
+See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md) and [backup/recovery](backup-restore.en.md). Physical installation tests are waived for previews on all four platforms and remain unverified; matching compilation and component checks are still required.
 
 ## Source and user data
 
