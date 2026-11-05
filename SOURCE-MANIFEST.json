@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 8458,
-      "sha256": "ab7ce238231b90bd7a27dbd6c6d5feb4eaa9a766d59ec249bf26911217603797"
+      "size": 8762,
+      "sha256": "4e4c22a0ad1424fd81526d62142f400c97875213a48df033cfd4154482dce6bb"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",

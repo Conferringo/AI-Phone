@@ -69,6 +69,11 @@ jobs:
             python3 scripts/required_tests.py test_desktop_media
       - name: Native guest interaction
         run: |
+          for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's@https\?://azure\.archive\.ubuntu\.com/ubuntu@https://archive.ubuntu.com/ubuntu@g' "$source"
+            fi
+          done
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y xvfb openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
           test ! -e /home/ai
