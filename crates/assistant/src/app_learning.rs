@@ -27,6 +27,18 @@ pub(crate) struct Metadata {
     pub device_id: String,
     pub observation_id: String,
 }
+pub(crate) fn observation_tool(name: &str) -> bool {
+    matches!(
+        name,
+        "phone_observe"
+            | "computer_observe"
+            | "computer_click"
+            | "computer_type"
+            | "computer_key"
+            | "computer_scroll"
+            | "computer_drag"
+    )
+}
 pub(crate) fn metadata(output: &Value) -> Option<Metadata> {
     output
         .as_array()?
