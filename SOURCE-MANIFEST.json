@@ -5695,8 +5695,8 @@
     },
     {
       "path": "scripts/package_delivery.py",
-      "size": 7576,
-      "sha256": "80c5612e1f93faf3275e0ddc320c15c35a52ba58736fb633cfce9d7d7bcdaa37"
+      "size": 7604,
+      "sha256": "34915ef8e22f703192577a5fdf764aaad98f745d8049f92d94dcde0e685e95f4"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -6325,8 +6325,8 @@
     },
     {
       "path": "scripts/test_windows_client_factory.py",
-      "size": 6056,
-      "sha256": "cbdaf317cb18dda8fd879669f778076b5f3f9146dee03d1c85c089b533df8fe4"
+      "size": 6744,
+      "sha256": "626a8b7276cb6c93e5306b7541f6f828b893dddc6f82d10f9cf91c2e4b5007ec"
     },
     {
       "path": "scripts/test_windows_installer_tools.py",
