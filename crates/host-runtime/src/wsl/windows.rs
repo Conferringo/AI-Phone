@@ -40,7 +40,7 @@ fn read_registrations(
 }
 
 pub struct Native<'a> {
-    cancelled: &'a dyn Fn() -> bool,
+    pub(super) cancelled: &'a dyn Fn() -> bool,
 }
 
 #[cfg(windows)]
@@ -77,6 +77,9 @@ pub(crate) enum PhoneOperation {
     Address,
     Peer,
     Status,
+    DeviceSetupContract,
+    #[cfg(windows)]
+    SetupDevices,
 }
 
 pub(crate) fn phone_command(
@@ -91,6 +94,8 @@ pub(crate) fn phone_command(
             PhoneOperation::Address => "--phone-guest-address",
             PhoneOperation::Peer => "--phone-peer",
             PhoneOperation::Status => "--phone-peer-status",
+            PhoneOperation::DeviceSetupContract => "--device-setup-contract",
+            PhoneOperation::SetupDevices => "--setup-wsl-devices",
         };
         command.args([
             "--distribution",

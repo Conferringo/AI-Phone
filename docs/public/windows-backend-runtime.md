@@ -22,6 +22,11 @@ The backend does not import the host's Docker context or Lima state. It owns
 lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
+Backend startup now includes the qualified Rust phone Runner before the assistant.
+Its authenticated, read-only cursor endpoint is qualified without requiring a
+connected phone. Restart retains the existing service supervisor; shutdown stops
+the Runner before the owned engine. Endpoint availability is not phone readiness.
+
 Source expansion uses the shared Rust resource publisher. The factory extracts
 the source-bound native component, verifies its staging capability and includes
 the exact source digest in the rootfs inventory. Both verification and first-run
@@ -68,9 +73,22 @@ installer component interface, not an end-user deployment procedure. Its result
 keeps `backend_initialized=false` and `phone_ready=false`. The separate
 `start-bundle` component initializes the existing backend through stdin and accepts
 only a successful bounded terminal acknowledgement. It retains `phone_ready=false`.
-The initializer still uses Python beyond the Rust source-publication step;
-the remaining migration, WSL feature enablement, the native Android bridge and live
-first-run readiness remain required before Windows independent deployment is enabled.
+The native client then starts or observes its detached phone worker and requests
+final device activation for that exact bridge identity. The source-bound Rust
+assistant requires the `ai-phone-device-setup-v2` capability before accepting the
+private `--setup-wsl-devices` command. It observes the live pair, configures the
+offline phone applications/input, verifies both notification channels through the
+Runner, and creates or recovers the desktop using the existing durable API request.
+It verifies the desktop frame and live pair again before emitting a bounded
+`NativeWslDevicesReady` protobuf receipt. Only that receipt can complete the client
+checkpoint. An interrupted or timed-out guest operation remains unknown; recovery
+observes its installation/provisioning records instead of recreating devices.
+
+This activation path is wired in code, not qualified as a complete Windows
+installation. Real Windows WSL/WHPX/firewall behavior, fresh device installation,
+remaining Python/Bun migration and in-place upgrades of registered guests still
+need qualification. Registration flags and distribution publication gates remain
+separate from the final runtime receipt.
 The Windows CI job compiles this component and exercises its registry adapter;
 those checks do not establish a real WSL/WHPX guest installation.
 

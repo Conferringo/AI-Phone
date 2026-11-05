@@ -1,5 +1,5 @@
 //! Device-setup decisions without transport, filesystem, or runtime dependencies.
-pub const CONTRACT: &str = "ai-phone-device-setup-v1";
+pub const CONTRACT: &str = ai_phone_host_runtime::wsl::DEVICE_SETUP_CONTRACT;
 
 pub fn resources(cpus: u32, memory_mb: u32) -> Result<(), &'static str> {
     if [1, 2, 4].contains(&cpus) && [2048, 2560, 3072, 4096].contains(&memory_mb) {

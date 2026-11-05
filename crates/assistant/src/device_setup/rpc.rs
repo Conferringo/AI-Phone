@@ -70,6 +70,22 @@ impl Rpc {
         crate::wire::DeviceObservation::decode(bytes.as_slice())
             .map_err(|_| Error("device_setup_protobuf"))
     }
+    pub async fn notifications(
+        &self,
+        input: crate::wire::DeviceRequest,
+    ) -> Result<crate::wire::PhoneNotificationList> {
+        let bytes = self
+            .exchange(
+                self.runner_port,
+                "notifications",
+                &self.runner_token,
+                input.encode_to_vec(),
+                Duration::from_secs(5),
+            )
+            .await?;
+        crate::wire::PhoneNotificationList::decode(bytes.as_slice())
+            .map_err(|_| Error("device_setup_protobuf"))
+    }
     async fn exchange(
         &self,
         port: u16,

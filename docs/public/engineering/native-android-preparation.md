@@ -1,6 +1,6 @@
 # Native Android preparation
 
-The Rust host runtime can admit an offline Android component and create one writable device configuration. The Windows native bootstrap calls this path when both the Android and WSL resource groups are bundled. Complete Windows hosting remains disabled until emulator startup, acceleration, service discovery and device readiness are integrated.
+The Rust host runtime can admit an offline Android component and create one writable device configuration. The Windows native bootstrap calls this path when both the Android and WSL resource groups are bundled. Native startup, pairing and final device activation are wired separately; complete Windows distribution still requires qualification of acceleration, service discovery and fresh installation.
 
 ## Ownership and compatibility
 

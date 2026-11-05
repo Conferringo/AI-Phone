@@ -1,4 +1,5 @@
 //! Serial-bound installer input/notification capabilities, separate from model tools.
+mod applications;
 mod device;
 mod policy;
 mod probe;
@@ -14,7 +15,7 @@ const IME: &str = "dev.aiphone.input/.UnicodeIme";
 const ATTENTION: &str = "dev.aiphone.input/.PhoneAttention";
 const NOTIFICATION: &str = "dev.aiphone.input/.PhoneNotifications";
 const REMOTE_PROBE: &str = "/data/local/tmp/ai-phone-input-notification-probe.jar";
-pub const CONTRACT: &str = "ai-phone-input-setup-v1";
+pub const CONTRACT: &str = "ai-phone-input-setup-v2";
 
 pub async fn run(arguments: &[OsString]) -> Result<()> {
     if !arguments.is_empty() {
@@ -62,7 +63,15 @@ pub async fn setup(request: NativeAndroidInputSetup, stop: watch::Receiver<bool>
         serial: request.serial,
         stop,
     };
-    configure(
+    let apps = if request.offline_apps {
+        Some(
+            applications::Applications::load(Path::new(&request.project_root), &state, &mut adb)
+                .await?,
+        )
+    } else {
+        None
+    };
+    let mut changed = configure(
         &state,
         &mut adb,
         pending,
@@ -70,7 +79,13 @@ pub async fn setup(request: NativeAndroidInputSetup, stop: watch::Receiver<bool>
         Path::new(&request.notification_probe_path),
         request.observe_only,
     )
-    .await
+    .await?;
+    if let Some(apps) = apps {
+        changed |= apps
+            .configure(&state, &mut adb, request.observe_only)
+            .await?;
+    }
+    Ok(changed)
 }
 async fn package(adb: &mut impl Device) -> Result<bool> {
     policy::package(
@@ -79,6 +94,7 @@ async fn package(adb: &mut impl Device) -> Result<bool> {
             10,
         )
         .await?,
+        PACKAGE,
     )
 }
 async fn setting(adb: &mut impl Device, key: &str) -> Result<String> {

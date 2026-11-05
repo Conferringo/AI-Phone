@@ -35,8 +35,8 @@ class NativeServiceTests(unittest.TestCase):
             path=target/name;path.write_bytes(payload)
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
-               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1',
-                         'service_supervision':'ai-phone-linux-supervision-v1', 'phone_input_setup':'ai-phone-input-setup-v1'}}
+               'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
+                         'service_supervision':'ai-phone-linux-supervision-v1', 'phone_input_setup':'ai-phone-input-setup-v2'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -263,7 +263,7 @@ class NativeServiceTests(unittest.TestCase):
             root = Path(folder); target = root / 'target/release'; target.mkdir(parents=True)
             fingerprint = source_fingerprint(root)
             self.assertIsNone(cached_build(root, fingerprint))
-            receipt = {'format': 1, 'host': host_key(), 'source_sha256': fingerprint, 'artifacts': {}, 'checks': {'device_setup':'ai-phone-device-setup-v1'}}
+            receipt = {'format': 1, 'host': host_key(), 'source_sha256': fingerprint, 'artifacts': {}, 'checks': {'device_setup':'ai-phone-device-setup-v2'}}
             path = target / 'native-service-build.json'; path.write_text(json.dumps(receipt))
             self.assertIsNone(cached_build(root, fingerprint))
             for role, name in [('assistant', 'ai-phone-assistant'), ('runner', 'ai-phone-runner'), ('vision', 'ai-phone-vision')]:

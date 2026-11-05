@@ -75,7 +75,6 @@ impl State {
         Ok(Some(value.stage))
     }
     pub fn save(&self, stage: Stage) -> Result<()> {
-        let mut file = tempfile::NamedTempFile::new_in(&self.directory)?;
         let value = Pending {
             format: 1,
             package: super::PACKAGE.into(),
@@ -83,16 +82,26 @@ impl State {
             user: "0".into(),
             stage,
         };
-        file.write_all(
+        self.persist(
+            "input-setup.pending.json",
             &serde_json::to_vec(&value).map_err(|_| Error::Invalid("phone_input_pending_owner"))?,
-        )?;
+        )
+    }
+    pub fn persist(&self, name: &str, bytes: &[u8]) -> Result<()> {
+        let mut file = tempfile::NamedTempFile::new_in(&self.directory)?;
+        file.write_all(bytes)?;
         file.as_file().sync_all()?;
-        file.persist(self.path()).map_err(|e| Error::Io(e.error))?;
+        file.persist(self.directory.join(name))
+            .map_err(|e| Error::Io(e.error))?;
         filesystem::sync_directory(&self.directory)
     }
     pub fn finish(&self) -> Result<()> {
-        if self.path().try_exists()? {
-            std::fs::remove_file(self.path())?;
+        self.clear("input-setup.pending.json")
+    }
+    pub fn clear(&self, name: &str) -> Result<()> {
+        let path = self.directory.join(name);
+        if path.try_exists()? {
+            std::fs::remove_file(path)?;
             filesystem::sync_directory(&self.directory)?;
         }
         Ok(())

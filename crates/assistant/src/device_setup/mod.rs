@@ -2,6 +2,7 @@
 mod policy;
 mod rpc;
 mod store;
+pub mod wsl;
 
 use crate::wire;
 use rpc::Rpc;
@@ -21,7 +22,11 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 type Result<T> = std::result::Result<T, Error>;
 
-pub async fn run(root: &Path, cancelled: CancellationToken) -> Result<()> {
+pub async fn run(
+    root: &Path,
+    cancelled: CancellationToken,
+    require_notifications: bool,
+) -> Result<String> {
     if root.join("data/restore-quarantine.json").exists() {
         return Err(Error("device_setup_restore_quarantined"));
     }
@@ -31,10 +36,39 @@ pub async fn run(root: &Path, cancelled: CancellationToken) -> Result<()> {
         store::token(root, "phone-runner")?,
         cancelled,
     )?;
+    if require_notifications {
+        verify_notifications(&rpc).await?;
+    }
     activate(&store, &rpc).await
 }
 
-async fn activate(store: &Store, rpc: &Rpc) -> Result<()> {
+async fn verify_notifications(rpc: &Rpc) -> Result<()> {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        let value = tokio::time::timeout_at(
+            deadline,
+            rpc.notifications(wire::DeviceRequest {
+                phone_id: "phone-local-01".into(),
+                owner_id: "local-user".into(),
+                ..Default::default()
+            }),
+        )
+        .await
+        .map_err(|_| Error("device_setup_notifications_unavailable"))??;
+        if value.connected && value.attention_connected {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(Error("device_setup_notifications_unavailable"));
+        }
+        tokio::select! {biased;
+            _=rpc.cancelled.cancelled()=>return Err(Error("device_setup_cancelled_remote_may_continue")),
+            _=tokio::time::sleep(Duration::from_millis(250))=>{},
+        }
+    }
+}
+
+async fn activate(store: &Store, rpc: &Rpc) -> Result<String> {
     let state: wire::RegistryState = rpc.call("registry/state", wire::RegistryRequest {}).await?;
     verify_phone(rpc).await?;
     let saved = store.load()?;
@@ -51,7 +85,8 @@ async fn activate(store: &Store, rpc: &Rpc) -> Result<()> {
             return Err(Error("device_setup_device_changed"));
         }
         if device.runtime_state == "managed" {
-            return verify_desktop(rpc, &device.id).await;
+            verify_desktop(rpc, &device.id).await?;
+            return Ok(device.id.clone());
         }
         if device.runtime_state == "archived" {
             return Err(Error("device_setup_device_archived"));
@@ -74,7 +109,8 @@ async fn activate(store: &Store, rpc: &Rpc) -> Result<()> {
         .await?;
     }
     provision(rpc, store, &intent).await?;
-    verify_desktop(rpc, &intent.device_id).await
+    verify_desktop(rpc, &intent.device_id).await?;
+    Ok(intent.device_id)
 }
 
 async fn verify_phone(rpc: &Rpc) -> Result<()> {

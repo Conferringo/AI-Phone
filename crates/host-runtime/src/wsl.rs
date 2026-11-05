@@ -8,12 +8,14 @@ use std::{
 };
 
 mod bundle;
+mod devices;
 mod initialize;
 pub use initialize::{InitializeRequest, Initializer};
 #[cfg(any(windows, test))]
 mod command;
 mod windows;
 pub use windows::Native;
+pub const DEVICE_SETUP_CONTRACT: &str = "ai-phone-device-setup-v2";
 pub(crate) use windows::{PhoneOperation, phone_command};
 
 #[derive(Clone)]

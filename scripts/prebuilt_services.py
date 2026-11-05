@@ -8,9 +8,9 @@ from client_host_entry import checked_record, verify_file
 from host_platform import host_key
 from release_package import SECRET
 
-DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v1'
+DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v2'
 SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
-PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v1'
+PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v2'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'

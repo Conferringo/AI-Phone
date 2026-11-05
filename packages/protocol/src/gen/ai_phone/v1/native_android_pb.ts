@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/native_android.proto.
  */
 export const file_ai_phone_v1_native_android: GenFile = /*@__PURE__*/
-  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNIpwBChJOYXRpdmVBbmRyb2lkU3RhcnQSMQoFcGhvbmUYASABKAsyIi5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkUHJlcGFyZWQSEAoIYWRiX3BvcnQYAiABKA0SFAoMY29uc29sZV9wb3J0GAMgASgNEhEKCWdycGNfcG9ydBgEIAEoDRIYChB3c2xfZGlzdHJpYnV0aW9uGAUgASgJIrIBChNOYXRpdmVBbmRyb2lkQm9vdGVkEg8KB3ZlcnNpb24YASABKA0SDgoGc2VyaWFsGAIgASgJEhUKDXJvb3RfdmVyaWZpZWQYAyABKAgSDQoFd2lkdGgYBCABKA0SDgoGaGVpZ2h0GAUgASgNEhQKDGZyYW1lX3NoYTI1NhgGIAEoCRIWCg5yZXVzZWRfc2Vzc2lvbhgHIAEoCBIWCg5iYWNrZW5kX3BhaXJlZBgIIAEoCCKlAQoZTmF0aXZlQW5kcm9pZFNlc3Npb25Pd25lchIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGFkYl9wb3J0GAQgASgNEhQKDGNvbnNvbGVfcG9ydBgFIAEoDRIRCglncnBjX3BvcnQYBiABKA0SGAoQd3NsX2Rpc3RyaWJ1dGlvbhgHIAEoCSJEChtOYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmUSDAoEY29kZRgBIAEoCRIXCg9vdXRjb21lX3Vua25vd24YAiABKAgilgEKGU5hdGl2ZUFuZHJvaWRTZXNzaW9uUmVwbHkSMgoGYm9vdGVkGAEgASgLMiAuYWlfcGhvbmUudjEuTmF0aXZlQW5kcm9pZEJvb3RlZEgAEjsKB2ZhaWx1cmUYAiABKAsyKC5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmVIAEIICgZyZXN1bHQiNQobTmF0aXZlQW5kcm9pZFNlc3Npb25Db250cm9sEhYKDmNhbmNlbF9zdGFydHVwGAEgASgIIq4BChdOYXRpdmVBbmRyb2lkSW5wdXRTZXR1cBIPCgd2ZXJzaW9uGAEgASgNEhQKDHByb2plY3Rfcm9vdBgCIAEoCRITCgthZGJfcHJvZ3JhbRgDIAEoCRIOCgZzZXJpYWwYBCABKAkSEAoIYXBrX3BhdGgYBSABKAkSHwoXbm90aWZpY2F0aW9uX3Byb2JlX3BhdGgYBiABKAkSFAoMb2JzZXJ2ZV9vbmx5GAcgASgIIjsKF05hdGl2ZUFuZHJvaWRJbnB1dFJlYWR5Eg8KB3ZlcnNpb24YASABKA0SDwoHY2hhbmdlZBgCIAEoCGIGcHJvdG8z");
+  fileDesc("CiBhaV9waG9uZS92MS9uYXRpdmVfYW5kcm9pZC5wcm90bxILYWlfcGhvbmUudjEiigEKFE5hdGl2ZUFuZHJvaWRQcmVwYXJlEg8KB3ZlcnNpb24YASABKA0SFAoMcGF5bG9hZF9wYXRoGAIgASgJEhYKDnBheWxvYWRfc2hhMjU2GAMgASgJEgwKBGNwdXMYBCABKA0SEQoJbWVtb3J5X21iGAUgASgNEhIKCnN0b3JhZ2VfZ2IYBiABKA0iiQEKFU5hdGl2ZUFuZHJvaWRQcmVwYXJlZBIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGF2ZF9uYW1lGAQgASgJEhIKCnJldXNlZF9zZGsYBSABKAgSFQoNcmV1c2VkX2RldmljZRgGIAEoCCJvChVOYXRpdmVBbmRyb2lkQ3JlYXRpb24SDwoHdmVyc2lvbhgBIAEoDRIQCghzZGtfcm9vdBgCIAEoCRIMCgRjcHVzGAMgASgNEhEKCW1lbW9yeV9tYhgEIAEoDRISCgpzdG9yYWdlX2diGAUgASgNIpwBChJOYXRpdmVBbmRyb2lkU3RhcnQSMQoFcGhvbmUYASABKAsyIi5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkUHJlcGFyZWQSEAoIYWRiX3BvcnQYAiABKA0SFAoMY29uc29sZV9wb3J0GAMgASgNEhEKCWdycGNfcG9ydBgEIAEoDRIYChB3c2xfZGlzdHJpYnV0aW9uGAUgASgJIs0BChNOYXRpdmVBbmRyb2lkQm9vdGVkEg8KB3ZlcnNpb24YASABKA0SDgoGc2VyaWFsGAIgASgJEhUKDXJvb3RfdmVyaWZpZWQYAyABKAgSDQoFd2lkdGgYBCABKA0SDgoGaGVpZ2h0GAUgASgNEhQKDGZyYW1lX3NoYTI1NhgGIAEoCRIWCg5yZXVzZWRfc2Vzc2lvbhgHIAEoCBIWCg5iYWNrZW5kX3BhaXJlZBgIIAEoCBIZChFiYWNrZW5kX2JyaWRnZV9pZBgJIAEoCSKlAQoZTmF0aXZlQW5kcm9pZFNlc3Npb25Pd25lchIPCgd2ZXJzaW9uGAEgASgNEhAKCHNka19yb290GAIgASgJEhAKCGF2ZF9ob21lGAMgASgJEhAKCGFkYl9wb3J0GAQgASgNEhQKDGNvbnNvbGVfcG9ydBgFIAEoDRIRCglncnBjX3BvcnQYBiABKA0SGAoQd3NsX2Rpc3RyaWJ1dGlvbhgHIAEoCSJEChtOYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmUSDAoEY29kZRgBIAEoCRIXCg9vdXRjb21lX3Vua25vd24YAiABKAgilgEKGU5hdGl2ZUFuZHJvaWRTZXNzaW9uUmVwbHkSMgoGYm9vdGVkGAEgASgLMiAuYWlfcGhvbmUudjEuTmF0aXZlQW5kcm9pZEJvb3RlZEgAEjsKB2ZhaWx1cmUYAiABKAsyKC5haV9waG9uZS52MS5OYXRpdmVBbmRyb2lkU2Vzc2lvbkZhaWx1cmVIAEIICgZyZXN1bHQiNQobTmF0aXZlQW5kcm9pZFNlc3Npb25Db250cm9sEhYKDmNhbmNlbF9zdGFydHVwGAEgASgIIsQBChdOYXRpdmVBbmRyb2lkSW5wdXRTZXR1cBIPCgd2ZXJzaW9uGAEgASgNEhQKDHByb2plY3Rfcm9vdBgCIAEoCRITCgthZGJfcHJvZ3JhbRgDIAEoCRIOCgZzZXJpYWwYBCABKAkSEAoIYXBrX3BhdGgYBSABKAkSHwoXbm90aWZpY2F0aW9uX3Byb2JlX3BhdGgYBiABKAkSFAoMb2JzZXJ2ZV9vbmx5GAcgASgIEhQKDG9mZmxpbmVfYXBwcxgIIAEoCCI7ChdOYXRpdmVBbmRyb2lkSW5wdXRSZWFkeRIPCgd2ZXJzaW9uGAEgASgNEg8KB2NoYW5nZWQYAiABKAgiawoeTmF0aXZlQW5kcm9pZEFwcGxpY2F0aW9uSW50ZW50Eg8KB3ZlcnNpb24YASABKA0SDgoGc2VyaWFsGAIgASgJEhQKDHBhY2thZ2VfbmFtZRgDIAEoCRISCgphcGtfc2hhMjU2GAQgASgJIkEKG05hdGl2ZVdzbERldmljZVNldHVwUmVxdWVzdBIPCgd2ZXJzaW9uGAEgASgNEhEKCWJyaWRnZV9pZBgCIAEoCSJPChVOYXRpdmVXc2xEZXZpY2VzUmVhZHkSDwoHdmVyc2lvbhgBIAEoDRIRCglicmlkZ2VfaWQYAiABKAkSEgoKZGVza3RvcF9pZBgDIAEoCWIGcHJvdG8z");
 
 /**
  * Native installer IPC, never a model tool. The client owns the installation lock.
@@ -227,6 +227,11 @@ export type NativeAndroidBooted = Message<"ai_phone.v1.NativeAndroidBooted"> & {
    * @generated from field: bool backend_paired = 8;
    */
   backendPaired: boolean;
+
+  /**
+   * @generated from field: string backend_bridge_id = 9;
+   */
+  backendBridgeId: string;
 };
 
 /**
@@ -397,6 +402,13 @@ export type NativeAndroidInputSetup = Message<"ai_phone.v1.NativeAndroidInputSet
    * @generated from field: bool observe_only = 7;
    */
   observeOnly: boolean;
+
+  /**
+   * Complete offline setup also admits the bundled launcher and guest Clash app.
+   *
+   * @generated from field: bool offline_apps = 8;
+   */
+  offlineApps: boolean;
 };
 
 /**
@@ -427,4 +439,89 @@ export type NativeAndroidInputReady = Message<"ai_phone.v1.NativeAndroidInputRea
  */
 export const NativeAndroidInputReadySchema: GenMessage<NativeAndroidInputReady> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_native_android, 10);
+
+/**
+ * Private install intent, persisted before a bundled application's only attempt.
+ *
+ * @generated from message ai_phone.v1.NativeAndroidApplicationIntent
+ */
+export type NativeAndroidApplicationIntent = Message<"ai_phone.v1.NativeAndroidApplicationIntent"> & {
+  /**
+   * @generated from field: uint32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string serial = 2;
+   */
+  serial: string;
+
+  /**
+   * @generated from field: string package_name = 3;
+   */
+  packageName: string;
+
+  /**
+   * @generated from field: string apk_sha256 = 4;
+   */
+  apkSha256: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeAndroidApplicationIntent.
+ * Use `create(NativeAndroidApplicationIntentSchema)` to create a new message.
+ */
+export const NativeAndroidApplicationIntentSchema: GenMessage<NativeAndroidApplicationIntent> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 11);
+
+/**
+ * @generated from message ai_phone.v1.NativeWslDeviceSetupRequest
+ */
+export type NativeWslDeviceSetupRequest = Message<"ai_phone.v1.NativeWslDeviceSetupRequest"> & {
+  /**
+   * @generated from field: uint32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string bridge_id = 2;
+   */
+  bridgeId: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeWslDeviceSetupRequest.
+ * Use `create(NativeWslDeviceSetupRequestSchema)` to create a new message.
+ */
+export const NativeWslDeviceSetupRequestSchema: GenMessage<NativeWslDeviceSetupRequest> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 12);
+
+/**
+ * Emitted only after live pairing, offline phone setup and desktop verification.
+ *
+ * @generated from message ai_phone.v1.NativeWslDevicesReady
+ */
+export type NativeWslDevicesReady = Message<"ai_phone.v1.NativeWslDevicesReady"> & {
+  /**
+   * @generated from field: uint32 version = 1;
+   */
+  version: number;
+
+  /**
+   * @generated from field: string bridge_id = 2;
+   */
+  bridgeId: string;
+
+  /**
+   * @generated from field: string desktop_id = 3;
+   */
+  desktopId: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeWslDevicesReady.
+ * Use `create(NativeWslDevicesReadySchema)` to create a new message.
+ */
+export const NativeWslDevicesReadySchema: GenMessage<NativeWslDevicesReady> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_native_android, 13);
 
