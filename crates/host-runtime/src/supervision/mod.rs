@@ -3,6 +3,8 @@ pub const CONTRACT: &str = "ai-phone-linux-supervision-v1";
 
 #[cfg(target_os = "linux")]
 mod linux;
+#[cfg(target_os = "linux")]
+pub(crate) use linux::stop_child;
 
 pub async fn run(arguments: &[std::ffi::OsString]) -> crate::Result<()> {
     #[cfg(target_os = "linux")]

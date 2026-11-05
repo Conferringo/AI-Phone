@@ -7,18 +7,16 @@ Updated 2026-11-06. Source code and technical documentation are available. **Com
 | Target | Available implementation | Remaining delivery requirements |
 | --- | --- | --- |
 | macOS Apple Silicon | Native client and inspected complete App/DMG factory output | Fresh default-size dual-device installation, upgrades, signing/notarization and complete product acceptance |
-| Windows x64 | Native Android/WSL activation and an inspected 2,118,848,707-byte single EXE from the [complete factory](windows-client-factory.md) | Candidate retention, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade, complete first run and source/licence review |
-| Linux x64 | Native client and inspected complete DEB/AppImage factory outputs | Single-file distribution, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
+| Windows x64 | Native Android/WSL activation; qualified backend startup/restart | Complete native installer build/retention, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade, complete first run and source/licence review |
+| Linux x64 | Inspected and retained complete single-file DEB/AppImage outputs | Binary publication, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
-| Android ARM64 root/KVM | Native client and privileged-host target | Kernel/runtime integration, matched resources and complete dual-guest initialization |
+| Android ARM64 root/KVM | Native client; [Rust root-host installation and Linux-guest worker](engineering/android-root-host.md) | APK/runtime integration, reviewed resources, real KVM qualification and complete GUI/dual-guest initialization |
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
-The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/41904124869) succeeded from `5ae36bc` with all nine runtime groups in one 2,084,332,533-byte DMG, below the single-asset limit. The earlier [Linux factory](https://github.com/Conferringo/AI-Phone/actions/runs/41758900254) succeeded from `e9ecab3` with complete DEB/AppImage outputs; its internal delivery volumes do not meet the single-download requirement. These are unpublished maintainer drafts from their stated source revisions. Successful factory output does not certify installation, source/licence closure or independent Windows/Android hosting.
+The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/41904124869) succeeded from `5ae36bc` with all nine runtime groups in one 2,084,332,533-byte DMG, below the single-asset limit. The complete [Linux factory](https://github.com/Conferringo/AI-Phone/actions/runs/42097421886) succeeded from `de79a091` with a 2,098,866,082-byte DEB and a 2,137,668,088-byte AppImage. Each Linux format is one installer file containing all nine resource groups; the retained assets match their producer inventories. These are unpublished maintainer drafts from their stated source revisions. Successful factory output does not certify installation, source/licence closure or independent Windows/Android hosting.
 
-The [Windows build from 2a5b17d](https://github.com/Conferringo/AI-Phone/actions/runs/42072341221) qualified backend startup/restart, assembled and inspected one complete EXE below 2 GiB, and passed 21 native client tests. Its final upload failed at a Windows shell line-ending boundary. The text receipt is retained; the installer itself is not available for download. The workflow therefore remains failed. Android guest boot and physical installation were not executed.
-
-The [Linux build from 160f](https://github.com/Conferringo/AI-Phone/actions/runs/42078930074) assembled and inspected both DEB and AppImage outputs, but its AppImage still exceeded the single-file limit. It failed without retaining installers. The denser packing described in the [factory guide](linux-client-factory.md) has passed an offline fixture check; its complete product size remains unverified.
+The latest [Windows factory](https://github.com/Conferringo/AI-Phone/actions/runs/42097398073), from `de79a091`, qualified backend startup/restart but reached its 60-minute native job limit while cold-compiling client dependencies. That job was cancelled and retained no new EXE. An earlier build produced an inspected 2,118,848,707-byte EXE, but its final upload failed and only its text receipt was retained. No complete Windows installer is available for download. Android guest boot and physical installation remain untested.
 
 ## Capability limits
 
@@ -38,7 +36,9 @@ Physical installation is waived for previews on all four platforms and remains u
 
 ## 中文
 
-源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的5ae完整工厂已产出2084332533字节的单文件DMG，包含九类资源并低于附件上限；Linux x64早期完整DEB/AppImage工厂已成功，其内部分卷仍不等于用户单文件下载，均为未公开草稿。Windows 的2a5b17d已通过后端启动/重启、单文件EXE组装和检查及21项原生测试，包体2118848707字节，低于2GiB；最终上传因Windows命令输出换行问题失败，只有文本回执留存，安装包本体还不能下载。工作流整体仍记失败，Android客体启动与实机安装未测。WHPX/网络、缺失系统功能/内核、后端升级及首次就绪仍待验收。Linux ARM64与root/KVM Android仍缺匹配资源及完整双客体初始化。
+源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的5ae完整工厂已产出2084332533字节的单文件DMG。Linux x64 的de79完整工厂已成功，单文件DEB为2098866082字节、AppImage为2137668088字节，均含九类资源并低于2GiB；实际留存资源的大小与摘要和生产回执一致，仍是未公开草稿。
+
+Windows最新de79工厂已通过后端启动/重启，原生依赖冷编译在60分钟的job上限被取消，未留新EXE。此前2118848707字节的完整EXE因上传失败也仅留下文本回执，目前没有可下载的完整Windows包。Android客体启动、WHPX/网络、后端升级及首次就绪仍待验收。root/KVM Android已有Rust安装和Linux客体执行单元，隔离测试覆盖即时重启、取消清理及恢复；仍缺APK接入、完整资源、真实KVM、GUI系统和双客体初始化。Linux ARM64亦未完成独立宿主。
 
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 
