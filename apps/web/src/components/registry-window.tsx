@@ -6,7 +6,7 @@ import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {create,type MessageShape} from '@bufbuild/protobuf';
 import {RegistryRequestSchema,RegistryStateSchema,DeviceSaveRequestSchema,AgentConfigurationSaveRequestSchema,ConnectionTestRequestSchema,ConnectionCredentialRequestSchema} from '@ai-phone/protocol/ai_phone/v1/registry_pb';
 import {ModelDraftSchema,ModelCredentialSchema,ModelTestResultSchema} from '@ai-phone/protocol/ai_phone/v1/settings_pb';
-import {Check,ChevronDown,Eye,EyeOff,LoaderCircle,Monitor,Plus,RefreshCw,Smartphone,Sparkles,X} from 'lucide-react';
+import {Check,ChevronDown,Eye,EyeOff,LoaderCircle,Monitor,Plus,RefreshCw,Smartphone,Sparkles} from 'lucide-react';
 import {FloatingWindow} from './floating-window';
 import {PhoneInstall} from './phone-install';
 import {DesktopInstall} from './desktop-install';

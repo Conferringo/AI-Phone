@@ -325,6 +325,9 @@ async fn committed_skill_survives_lost_commit_acknowledgement() {
                 remote: reqwest::Client::new(),
                 active: Mutex::new(Default::default()),
                 login_attempts: Mutex::new(vec![]),
+                workspace_init: Mutex::new(()),
+                location_mutation: Mutex::new(()),
+                network_mutation: Mutex::new(()),
             };
             let latest = text("committed despite lost acknowledgement");
             let result = skill_edit(

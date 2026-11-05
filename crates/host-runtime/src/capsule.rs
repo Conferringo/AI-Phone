@@ -11,8 +11,12 @@ use std::{
 };
 use xz2::{bufread::XzDecoder, stream::Stream};
 
-const MAX_COMPRESSED: u64 = 2 * 1024 * 1024 * 1024;
 const XZ_MEMORY: u64 = 128 * 1024 * 1024;
+
+#[cfg(test)]
+thread_local! {
+    pub(crate) static HASHED_BYTES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
 
 enum Decoder<'a> {
     Gzip(GzDecoder<BufReader<&'a mut File>>),
@@ -100,12 +104,11 @@ impl Read for Reader<'_, '_> {
     }
 }
 
-pub(crate) fn verify_identity(
-    file: &mut File,
-    expected: &str,
-    control: &Control<'_>,
-) -> Result<()> {
-    verify_bounded_identity(file, expected, control, MAX_COMPRESSED)
+pub(crate) fn check_identity(file: &File, expected: &str, maximum: u64) -> Result<()> {
+    if !identity(expected) || file.metadata()?.len() > maximum {
+        return Err(Error::Invalid("source_resource_identity"));
+    }
+    Ok(())
 }
 
 pub(crate) fn verify_bounded_identity(
@@ -114,9 +117,7 @@ pub(crate) fn verify_bounded_identity(
     control: &Control<'_>,
     maximum: u64,
 ) -> Result<()> {
-    if !identity(expected) || file.metadata()?.len() > maximum {
-        return Err(Error::Invalid("source_resource_identity"));
-    }
+    check_identity(file, expected, maximum)?;
     if hash(file, control)? != expected {
         return Err(Error::Invalid("source_resource_changed"));
     }
@@ -134,6 +135,8 @@ pub(crate) fn hash(file: &mut File, control: &Control<'_>) -> Result<String> {
             break;
         }
         hash.update(&buffer[..length]);
+        #[cfg(test)]
+        HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
     }
     Ok(format!("{:x}", hash.finalize()))
 }

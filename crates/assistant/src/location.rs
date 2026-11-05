@@ -4,7 +4,6 @@ use super::location_motion as motion;
 use crate::*;
 use axum::extract::{Path, State};
 use sha2::{Digest, Sha256};
-static MUTATION: Mutex<()> = Mutex::const_new(());
 pub(super) fn now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -151,7 +150,7 @@ fn repeated(
 }
 async fn update(app: &App, r: wire::LocationUpdate) -> Result<wire::LocationState, String> {
     validate(&r)?;
-    let _guard = MUTATION.lock().await;
+    let _guard = app.location_mutation.lock().await;
     let current = load(app).await?;
     let fingerprint = Sha256::digest(r.encode_to_vec()).to_vec();
     if repeated(&current, &r, &fingerprint)? {
@@ -218,7 +217,7 @@ pub async fn work(app: Shared) {
     }
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
-        let Ok(_guard) = MUTATION.try_lock() else {
+        let Ok(_guard) = app.location_mutation.try_lock() else {
             continue;
         };
         let Ok(mut s) = load(&app).await else {
@@ -313,6 +312,9 @@ mod persistence_tests {
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
+            workspace_init: Mutex::new(()),
+            location_mutation: Mutex::new(()),
+            network_mutation: Mutex::new(()),
         };
         let result = AssertUnwindSafe(async {
             sqlx::migrate!("./migrations").run(&db).await.unwrap();
@@ -348,12 +350,20 @@ mod persistence_tests {
                 ..Default::default()
             };
             assert!(update(&app, stale).await.is_err());
+            let concurrent = || wire::LocationUpdate {
+                request_id: Uuid::new_v4().to_string(),
+                expected_revision: first.revision,
+                ..Default::default()
+            };
+            let (left, right) =
+                tokio::join!(update(&app, concurrent()), update(&app, concurrent()));
+            assert_eq!(usize::from(left.is_ok()) + usize::from(right.is_ok()), 1);
             let bytes = load(&app).await.unwrap().encode_to_vec();
             assert_eq!(
                 wire::LocationState::decode(bytes.as_slice())
                     .unwrap()
                     .revision,
-                1
+                2
             );
         })
         .catch_unwind()

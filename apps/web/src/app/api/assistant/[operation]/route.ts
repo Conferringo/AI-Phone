@@ -28,8 +28,6 @@ export async function POST(
   if (operation !== "upload" && media !== "application/x-protobuf")
     return assistantError(415, "unsupported_media_type", "请求格式错误");
   const limit = operation === "upload" ? 9 * 1024 * 1024 : 65536;
-  if (Number(request.headers.get("content-length") ?? 0) > limit)
-    return assistantError(413, "body_rejected", "内容过大");
   try {
     const body = await readRequestBody(request,limit);if(body instanceof Response)return body;
     const response = await fetch("http://127.0.0.1:17863/v1/" + operation, {

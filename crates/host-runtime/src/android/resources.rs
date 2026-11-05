@@ -118,7 +118,6 @@ fn publish(
     file: &mut File,
     folder: &Path,
     destination: &Path,
-    identity: &str,
     raw: &archive::RawInventory,
     manifest: &Manifest,
     control: &Control<'_>,
@@ -130,7 +129,6 @@ fn publish(
     let work = temporary.path().join("runtime");
     let result = (|| {
         fill(file, &work, raw, manifest, control)?;
-        capsule::verify_bounded_identity(file, identity, control, manifest::LIMITS.total)?;
         control.check()?;
         fs::rename(&work, destination)?;
         filesystem::sync_directory(folder)
@@ -144,11 +142,12 @@ fn inspect(
     control: &Control<'_>,
 ) -> Result<(File, archive::RawInventory, Manifest)> {
     let mut file = filesystem::regular(payload)?;
-    capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
+    capsule::check_identity(&file, identity, manifest::LIMITS.total)?;
     let raw = archive::visit_component(&mut file, control, &manifest::LIMITS, |_, _, reader| {
         archive::drain(reader)
     })?;
     let manifest = manifest::parse(&raw, platform)?;
+    capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
     Ok((file, raw, manifest))
 }
 pub(super) fn stage(
@@ -167,17 +166,8 @@ pub(super) fn stage(
     let reused = fs::symlink_metadata(&destination).is_ok();
     if reused {
         existing(&destination, &raw, &manifest, control)?;
-        capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
     } else {
-        publish(
-            &mut file,
-            &folder,
-            &destination,
-            identity,
-            &raw,
-            &manifest,
-            control,
-        )?;
+        publish(&mut file, &folder, &destination, &raw, &manifest, control)?;
     }
     Ok((destination.join("sdk"), reused))
 }

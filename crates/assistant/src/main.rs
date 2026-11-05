@@ -65,6 +65,9 @@ struct App {
     remote: reqwest::Client,
     active: Mutex<std::collections::HashMap<Uuid, CancellationToken>>,
     login_attempts: Mutex<Vec<std::time::Instant>>,
+    workspace_init: Mutex<()>,
+    location_mutation: Mutex<()>,
+    network_mutation: Mutex<()>,
 }
 type Shared = Arc<App>;
 fn pb(status: StatusCode, value: impl Message) -> Response {
@@ -263,6 +266,9 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
             .build()?,
         active: Mutex::new(Default::default()),
         login_attempts: Mutex::new(Vec::new()),
+        workspace_init: Mutex::new(()),
+        location_mutation: Mutex::new(()),
+        network_mutation: Mutex::new(()),
     });
     workbench::initialize(&app.db, &app.root).await?;
     app_learning::backfill(&app).await?;

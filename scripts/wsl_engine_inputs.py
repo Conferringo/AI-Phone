@@ -53,45 +53,6 @@ def licenses(folder,pins):
     return result
 
 
-PROGRAMS={'usr/bin/docker','usr/bin/dockerd','usr/bin/containerd','usr/bin/runc','usr/libexec/docker/cli-plugins/docker-compose'}
-
-
-def package_programs(package):
-    import struct
-    programs={}
-    for executable in PROGRAMS:
-        try:member=package.getmember(executable)
-        except KeyError:continue
-        if not member.isfile():raise ValueError('Engine program is not a regular ELF')
-        header=package.extractfile(member).read(20)
-        if header[:5]!=b'\x7fELF\x02' or header[5]!=1 or struct.unpack('<H',header[18:20])[0]!=62:
-            raise ValueError('Engine program is not Linux x64')
-        programs[executable]={'elf_machine':62,'bytes':member.size}
-    return programs
-
-
-def pinned_member(source,entry,pin,seen):
-    import hashlib
-    if entry.name in seen or not entry.isfile() or entry.size!=pin['size_bytes']:raise ValueError('Invalid pinned engine archive member')
-    with source.extractfile(entry) as body:actual=hashlib.file_digest(body,'sha256').hexdigest()
-    if actual!=pin['sha256']:raise ValueError('Engine archive checksum differs')
-    seen.add(entry.name)
-
-
-def inspect_source(archive,root):
-    """Check pinned APKs and actual x64 ELF headers without extracting guest disks."""
-    pins={'packages/'+row['file']:row for row in records(root)};seen=set();programs={};attribution=[]
-    with tarfile.open(archive,'r:gz') as source:
-        for entry in source:
-            if entry.name not in pins:continue
-            pin=pins[entry.name];pinned_member(source,entry,pin,seen)
-            with tarfile.open(fileobj=source.extractfile(entry),mode='r:gz') as package:
-                attribution.append(package_license(package,pin));programs.update(package_programs(package))
-    if seen!=set(pins) or set(programs)!=PROGRAMS:raise ValueError('Engine closure is incomplete')
-    return {'host':'linux-x64','packages':len(seen),'bytes':sum(row['size_bytes'] for row in pins.values()),
-            'programs':programs,'attribution':attribution,'archive_sha256':digest(archive),'executed':False,'extracted':False}
-
-
 def relocate_links(root):
     """Relocate engine-internal absolute aliases; keep kernel /proc links external."""
     import os

@@ -37,6 +37,69 @@ fn prepare(
 fn digest(data: &[u8]) -> String {
     format!("{:x}", Sha256::digest(data))
 }
+
+#[test]
+fn android_payload_is_not_rehashed_after_every_extracted_file_was_verified() {
+    let temporary = tempfile::tempdir().unwrap();
+    let (payload, identity) = fixture(temporary.path());
+    let size = fs::metadata(&payload).unwrap().len();
+    let mut install = Installation::lock(&temporary.path().join("home")).unwrap();
+    crate::capsule::HASHED_BYTES.with(|bytes| bytes.set(0));
+    let staged = prepare(
+        &mut install,
+        &payload,
+        &identity,
+        resources(),
+        &|_| u64::MAX,
+        &|| false,
+    )
+    .unwrap();
+    assert!(!staged.reused_sdk);
+    let hashed = crate::capsule::HASHED_BYTES.with(std::cell::Cell::get);
+    println!("android capsule_bytes={size}; hashed_bytes={hashed}");
+    assert_eq!(hashed, size);
+}
+
+#[test]
+fn android_inventory_cannot_change_between_admission_and_extraction() {
+    let temporary = tempfile::tempdir().unwrap();
+    let (payload, identity) = fixture(temporary.path());
+    let original = fs::read(&payload).unwrap();
+    fixture_changed(temporary.path(), |manifest, files| {
+        files[0].1 = b"altered".to_vec();
+        manifest["files"][0]["sha256"] = json!(digest(&files[0].1));
+    });
+    let replacement = fs::read(&payload).unwrap();
+    fs::write(&payload, &original).unwrap();
+    let mut install = Installation::lock(&temporary.path().join("home")).unwrap();
+    crate::capsule::HASHED_BYTES.with(|bytes| bytes.set(0));
+    let after_hash = std::cell::Cell::new(0);
+    let cancelled = || {
+        if crate::capsule::HASHED_BYTES.with(std::cell::Cell::get) >= original.len() as u64 {
+            after_hash.set(after_hash.get() + 1);
+            if after_hash.get() == 2 {
+                fs::write(&payload, &replacement).unwrap();
+            }
+        }
+        false
+    };
+    let result = prepare(
+        &mut install,
+        &payload,
+        &identity,
+        resources(),
+        &|_| u64::MAX,
+        &cancelled,
+    );
+    assert!(
+        after_hash.get() >= 2,
+        "the input replacement must actually occur"
+    );
+    assert!(
+        result.is_err(),
+        "the extracted inventory must belong to the admitted digest"
+    );
+}
 fn resources() -> Resources {
     Resources {
         cpus: 2,
