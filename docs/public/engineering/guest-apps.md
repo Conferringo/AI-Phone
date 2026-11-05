@@ -1,6 +1,6 @@
 # Guest application resources
 
-The optional `guest-apps` component supplies Clash Meta for Android for both `arm64-v8a` and `x86_64` guests. It is independent of the client host architecture. The selected desktop image already contains the Clash Party GUI; the installer does not acquire another DEB when an inventoried offline desktop image is selected.
+The optional `guest-apps` component supplies Clash Meta for Android. Client packages include the APK matching their native guest: `arm64-v8a` on ARM64 hosts and `x86_64` on x64 hosts. The maintainer cache retains both pinned ABIs; an unused APK is omitted from the installation package. The selected desktop image already contains the Clash Party GUI; the installer does not acquire another DEB when an inventoried offline desktop image is selected.
 
 Applications run inside the guest operating systems. Proxy subscriptions and application accounts are configured there and are not part of the distribution. An existing Android application install and its data are preserved.
 
@@ -12,13 +12,13 @@ Keep source files and a local deliverable in the task directory. Check saved con
 
 ## Component contract
 
-The source capsule contains `runtime/guest-apps/manifest.json` and two APKs. The outer host manifest inventories the component; its own manifest binds the producer, shared APK review policy and `config/clash-apps.json`. File sizes, SHA-256 hashes, package/version and signer identities come from the pinned source configuration, not editable artifact declarations. Changing both an APK and its artifact hash does not admit a different application.
+The source capsule contains `runtime/guest-apps/manifest.json` and the selected APK. The manifest lists exactly the included ABIs and files. Existing universal capsules containing both APKs remain readable. Selecting an ABI absent from an installed component reports the missing resource instead of downloading another APK. The outer host manifest inventories the component; its own manifest binds the producer, shared APK review policy and `config/clash-apps.json`. File sizes, SHA-256 hashes, package/version and signer identities come from the pinned source configuration, not editable artifact declarations. Changing both an APK and its artifact hash does not admit a different application.
 
 Environment discovery selects `AI_PHONE_CLASH_ANDROID_APK` from the configured guest ABI. This path performs metadata checks without hashing the archives on every ADB command. Installation verifies the selected APK bytes against the source pin. A present but invalid component, missing selection or corrupt file fails explicitly; it never downloads a replacement. Source development without the component retains its separate pinned acquisition path.
 
 `scripts/prebuilt_guest_apps.py --build --tools SDK/build-tools/35.0.0` is a maintainer operation after the two official APKs have been acquired into `.tools/clash-apps/android`. It checks size/hash, SDK signature output, package/version, native ABI and bounded unpacked privacy inspection, then atomically publishes `.tools/guest-apps`. It does not acquire subscriptions or install into an existing user phone. The maintained SDK inspection has macOS evidence; native Windows maintainer-tool execution is not yet qualified.
 
-Use `--with-guest-apps` with `scripts/prepare_client_host.py` or `scripts/build_client.py` to include the verified component. Client initialization consumes the APKs without Java, an SDK compiler or an APK download. This is one component of the [complete bundle](../runtime-bundles.md), not proof that every platform's full installer is ready.
+Use `--with-guest-apps` with `scripts/prepare_client_host.py` or `scripts/build_client.py` to include the verified component. Client initialization consumes the selected APK without Java, an SDK compiler or an APK download. This is one component of the [complete bundle](../runtime-bundles.md), not proof that every platform's full installer is ready.
 
 ## Upstream and distribution review
 

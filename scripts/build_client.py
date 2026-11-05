@@ -122,7 +122,7 @@ if __name__=='__main__':
     parser.add_argument('--with-phone-apps',action='store_true',help='Include verified prebuilt phone input and launcher applications')
     parser.add_argument('--with-container-host',action='store_true',help='Include a matched Lima/ISO/offline engine component')
     parser.add_argument('--with-js-services',action='store_true',help='Include prebuilt media/channel services and their production dependencies')
-    parser.add_argument('--with-guest-apps',action='store_true',help='Include pinned Android Clash applications for both guest ABIs')
+    parser.add_argument('--with-guest-apps',action='store_true',help='Include the pinned Android Clash application matching the guest ABI')
     parser.add_argument('--wsl-runtime',type=Path,help='Verified WSL backend capsule for the Windows native installer')
     parser.add_argument('--linux-ocr',type=Path,help='Verified offline Linux x64 OCR component')
     args=parser.parse_args()

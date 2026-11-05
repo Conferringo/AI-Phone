@@ -126,6 +126,8 @@ def build(root, folder, identity):
     work = root/'.tools/complete-windows'
     work.mkdir()
     android, phone = prepare_android(root, work)
+    print(json.dumps({'stage': 'bundle-resources', 'android_runtime_bytes': android.stat().st_size,
+                      'wsl_backend_bytes': backend.stat().st_size}), flush=True)
     artifact = compile_client(root, android, backend)
     from package_delivery import prepare
     package = prepare(root, artifact)

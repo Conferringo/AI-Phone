@@ -1,4 +1,4 @@
-"""Pinned vendor APKs are staged with both guest ABIs and no runtime SDK/download."""
+"""Native clients stage one pinned guest ABI; existing universal resources remain readable."""
 import hashlib
 import json
 from pathlib import Path
@@ -32,25 +32,51 @@ class GuestAppsTests(unittest.TestCase):
         with patch('prebuilt_guest_apps.check_apk'):
             return build(root,Path('/fixture-sdk'),{})
 
-    def test_build_stage_and_select_both_abis_preserves_existing_chat(self):
+    def test_universal_cache_survives_native_staging_and_preserves_existing_chat(self):
         from prebuilt_guest_apps import prepare_apps,application,environment
         from prepare_client_host import prepare,payload_components
         from client_host_entry import stage_source
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);self.build_fixture(root)
-            self.assertEqual(len(prepare_apps(root)),3)
-            prepare(root,with_guest_apps=True)
+            with patch('host_platform.host_key',return_value='linux-x64'):
+                self.assertEqual(len(prepare_apps(root)),2)
+                prepare(root,with_guest_apps=True)
             self.assertEqual(payload_components(root),['guest-apps'])
             home=root/'installation';(home/'user/data').mkdir(parents=True);(home/'user/data/chat').write_text('keep')
             staged=stage_source(root/'apps/client/src-tauri/gen/host/source.payload',home)
+            path=application(staged,'x86_64')
+            with zipfile.ZipFile(path) as apk:self.assertEqual(apk.read('classes.dex').decode(),'x86_64')
+            self.assertEqual(environment(staged,'x86_64'),{'AI_PHONE_CLASH_ANDROID_APK':str(path)})
+            with self.assertRaisesRegex(ValueError,'not bundled'):application(staged,'arm64-v8a')
+            (root/'runtime').mkdir();shutil.copytree(root/'.tools/guest-apps',root/'runtime/guest-apps')
             for abi in ('arm64-v8a','x86_64'):
-                path=application(staged,abi)
+                path=application(root,abi)
                 with zipfile.ZipFile(path) as apk:self.assertEqual(apk.read('classes.dex').decode(),abi)
-                self.assertEqual(environment(staged,abi),{'AI_PHONE_CLASH_ANDROID_APK':str(path)})
+                self.assertEqual(environment(root,abi),{'AI_PHONE_CLASH_ANDROID_APK':str(path)})
             self.assertEqual((home/'user/data/chat').read_text(),'keep')
-            self.assertIsNone(application(root,'arm64-v8a'))
-            self.assertEqual(environment(root,'x86_64'),{})
+            empty=root/'empty';empty.mkdir()
+            self.assertIsNone(application(empty,'arm64-v8a'))
+            self.assertEqual(environment(empty,'x86_64'),{})
             with self.assertRaisesRegex(ValueError,'ABI'):application(root,'unknown')
+
+    def test_client_source_includes_only_its_native_guest_apk(self):
+        from prebuilt_guest_apps import prepare_apps,application
+        from prepare_client_host import prepare
+        from client_host_entry import stage_source
+        for host,abi in [('macos-arm64','arm64-v8a'),('linux-x64','x86_64'),('windows-x64','x86_64'),('linux-arm64','arm64-v8a')]:
+            with self.subTest(host=host),tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary);self.build_fixture(root)
+                with patch('host_platform.host_key',return_value=host):
+                    files=prepare_apps(root)
+                    self.assertEqual({row[0] for row in files},{'runtime/guest-apps/manifest.json','runtime/guest-apps/clash-'+abi+'.apk'})
+                    prepare(root,with_guest_apps=True)
+                home=root/'installation';(home/'user/data').mkdir(parents=True);(home/'user/data/chat').write_text('keep')
+                staged=stage_source(root/'apps/client/src-tauri/gen/host/source.payload',home)
+                with zipfile.ZipFile(application(staged,abi)) as apk:self.assertEqual(apk.read('classes.dex').decode(),abi)
+                other=next(value for value in ('arm64-v8a','x86_64') if value!=abi)
+                with self.assertRaisesRegex(ValueError,'not bundled'):application(staged,other)
+                self.assertFalse((staged/'runtime/guest-apps'/('clash-'+other+'.apk')).exists())
+                self.assertEqual((home/'user/data/chat').read_text(),'keep')
 
     def test_corruption_and_rewritten_manifest_hash_cannot_replace_pinned_apk(self):
         from prebuilt_guest_apps import application,verify

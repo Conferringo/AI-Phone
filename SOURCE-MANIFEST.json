@@ -3035,8 +3035,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/input/applications.rs",
-      "size": 17863,
-      "sha256": "1c0f07914df0d0a4e753faedc8f2b2b56d6fc4d18770f350dd230a79635080a1"
+      "size": 18870,
+      "sha256": "a0ae274eec6475ec7b8c42934f890dfed8522d4f71c3f4e5b9014a1e148e64ff"
     },
     {
       "path": "crates/host-runtime/src/android/input/device.rs",
@@ -3535,8 +3535,8 @@
     },
     {
       "path": "docs/public/engineering/guest-apps.md",
-      "size": 4218,
-      "sha256": "76f12fd0093055541f4e8a36479142041fdeb0ff48e90566e7cf34ffa1fb3085"
+      "size": 4599,
+      "sha256": "ebcd3296efc54e49953b1a4e85db3d36f7b55b3ae8b4b95fdbf760f22b2f14f7"
     },
     {
       "path": "docs/public/engineering/index.md",
@@ -5115,8 +5115,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 13367,
-      "sha256": "21e78453581462b81c02dca37dd53a322f4759bf2adc38cd1c93e2f846653837"
+      "size": 13373,
+      "sha256": "6a73d8faced7fcc7d55e20fd2284855cabf37ff6fe73d5834e86038d8ff90648"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -5745,8 +5745,8 @@
     },
     {
       "path": "scripts/prebuilt_guest_apps.py",
-      "size": 7954,
-      "sha256": "6754332fe6627f647be62f4c673ad30e94f89d3f21f4db6d69edee28ead8b602"
+      "size": 8650,
+      "sha256": "f93c61a520162a30d4bc8d30d807e4d1f81f1c7a749932d36c6a642ed59ac3ab"
     },
     {
       "path": "scripts/prebuilt_js.py",
@@ -6240,8 +6240,8 @@
     },
     {
       "path": "scripts/test_prebuilt_guest_apps.py",
-      "size": 15270,
-      "sha256": "f8daf7806fb011e00b9226a8bc0123a4c75ee3240fd675014ef997b417533fcb"
+      "size": 17391,
+      "sha256": "ee47a1de57a4504287a3f78f5d50cbf939489b9452534c8b7258b27b6d612c38"
     },
     {
       "path": "scripts/test_prebuilt_js.py",
@@ -6400,8 +6400,8 @@
     },
     {
       "path": "scripts/windows_client_factory.py",
-      "size": 7678,
-      "sha256": "9b0c9a2dfb5afd30f81472b1acbba7bfbea35b211fe0b140127ab5f14fc7a4ca"
+      "size": 7859,
+      "sha256": "c380523e724c721b84016dc40e418a5574ee5856b282941a5e787bba101f4825"
     },
     {
       "path": "scripts/windows_private.py",
