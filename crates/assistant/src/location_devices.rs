@@ -47,8 +47,8 @@ async fn desktop_bytes(fix: wire::LocationFix) -> Result<Vec<u8>, String> {
             "-u",
             "ai",
             "ai-phone-desktop",
-            "/usr/local/bin/bun",
-            "/usr/local/lib/ai-phone/location.js",
+            "/usr/local/bin/desktop-bridge",
+            "location",
         ])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
