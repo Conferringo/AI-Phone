@@ -155,13 +155,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7336,
-      "sha256": "21a9360afcb70e368c9503718f504afa441372180849e6dafe3863f9eeb6b9e0"
+      "size": 7332,
+      "sha256": "171092edf02bfb1ed57fa59873d69d20553c4d17c0af386bb140d9c393eb34c2"
     },
     {
       "path": "README.md",
-      "size": 12636,
-      "sha256": "6af8da930b9e64c1c551108738f81d297c939fa9420320a7fed1933ce218e614"
+      "size": 12632,
+      "sha256": "526ba1fe7a805a05fd58867cc8986fb3daf2fafd6beceb5441ea561e158f8db4"
     },
     {
       "path": "SECURITY.md",
@@ -175,8 +175,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 18129,
-      "sha256": "6e7df685a35f401ef9da8c8731313df02c8184a63644f2ff0e3524dfdfcedfd6"
+      "size": 18184,
+      "sha256": "18348848cff9c3e2d06aa16e0011957b2ba7a840f0d6e41cc25b91f70333e486"
     },
     {
       "path": "ai-phone",
@@ -2305,8 +2305,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2018,
-      "sha256": "edf94d0f610b8946753313f1af75bf55d59404804d8b4391f6d35af823f731c7"
+      "size": 2120,
+      "sha256": "692e5c8e294425f17233dfeaa36043770536f259169cde872b3c0cac7f67f3a9"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -3495,13 +3495,13 @@
     },
     {
       "path": "docs/public/distribution.en.md",
-      "size": 4517,
-      "sha256": "dc95987a2fa8f0a75e2f0331f1aae87282955cfe2237945ba2255b53d71a38a9"
+      "size": 4524,
+      "sha256": "151704ff77808d46339bfac0707aa73545656b8da63fc6ffd9f79d411847264e"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
-      "size": 3777,
-      "sha256": "21e6fc039582071df883f74df63931ccc5fa02002ad113935ece156dc9552c7b"
+      "size": 3796,
+      "sha256": "b91ca8db32257dcab0cd057fa2ef046b51765b0fdcc8e9a0cb3b271368247828"
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
@@ -3565,8 +3565,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 6326,
-      "sha256": "b6b0123307757d9ffab9e13af8db85ed7439fcda6f04bb4e93686559f2a6ceec"
+      "size": 6412,
+      "sha256": "36bbf8cf6088064c45d8f3ae052481573bff4b9d03feff1da5997773f440f478"
     },
     {
       "path": "docs/public/engineering/native-android-preparation.md",
@@ -3575,8 +3575,8 @@
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
-      "size": 2805,
-      "sha256": "bd19be4363bb8b112cf026f6f59f2d79bc9afea550a5c181c2b127dc5394335c"
+      "size": 2961,
+      "sha256": "4d3ed4ec16cd25d00cdb486dae21e5012d5bc039d65d795f6901ed4bf4bfc8e5"
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
@@ -3615,8 +3615,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 7102,
-      "sha256": "58414ddd5ddd4a6e08814aabe3cd2f76ba1cd7f8303055d33d1cb8331d00f4bf"
+      "size": 7212,
+      "sha256": "63de89cd93c65fd49fc84c3050ced12178d745495cb166d73ecfab285bb78c3e"
     },
     {
       "path": "docs/public/languages.md",
@@ -4435,8 +4435,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 6533,
-      "sha256": "0004bfdc437e268adf29fc2b3391f13c63c79c0239c0e3efbf5b73b9fa7448da"
+      "size": 6604,
+      "sha256": "9bcc4e2688e18de34c7a8338850668a6bc2df6b3a3f7f3d58b505fb2b5ccca87"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4540,23 +4540,23 @@
     },
     {
       "path": "docs/public/release-roadmap.en.md",
-      "size": 4388,
-      "sha256": "b5871da1aa58915d4a401614876454d7fd401813203e00b639ec60a5c0061a1b"
+      "size": 4397,
+      "sha256": "8cd1ff9a890a646f3e4f7d4678d82182497bc0dbbadf75f5bd62d0ed481d60e2"
     },
     {
       "path": "docs/public/release-roadmap.zh-CN.md",
-      "size": 3491,
-      "sha256": "494aafbb7c6b49e2dddb694209ba45fb1628598f67598e771c3a055f31d0127b"
+      "size": 3502,
+      "sha256": "a6e56248a08556acbfcb7a339200d5c63e81915fa4fc01cb91cd21a2de920fb6"
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5490,
-      "sha256": "5a1f045616b1a15022a08f3fb7c37d6790f902ace5229d8d9bc802a747bcaf92"
+      "size": 5502,
+      "sha256": "e6aa874ff46eaac303b0d52216c10cb09f4b567741396cee3b0de3b8e425e81e"
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 9746,
-      "sha256": "879e1bc8071ea7950cd2c740c3891b6a541c72f983566c9da4907041fc7fa245"
+      "size": 9831,
+      "sha256": "9b8629c129684f115b1269df896c3dc495e6e66b0611bf280ba096b1299c029d"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4565,13 +4565,13 @@
     },
     {
       "path": "docs/public/source-release.en.md",
-      "size": 3564,
-      "sha256": "b0baf5ecfcdf1091c1e656d20c7c43fa19df1f30139fe40be195116589446c21"
+      "size": 3562,
+      "sha256": "16907da3636fa60dd36884c7dd2dac3e645acedf7a0be35f266f2c4d4776244e"
     },
     {
       "path": "docs/public/source-release.zh-CN.md",
-      "size": 3007,
-      "sha256": "bb57eec8c2db15948b5e23996c87fff0c84f74cdc88bbfc9488f88c6a8326ba8"
+      "size": 3021,
+      "sha256": "16d2870a1c331d1941e509834aa5e1aae759a88e67d1001528be482274df477c"
     },
     {
       "path": "docs/public/task-recovery.md",
@@ -5625,8 +5625,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 8038,
-      "sha256": "b7392c7b47b3944b5a92f111fafff09c0a53d1352e6e4a3820790b351afa5283"
+      "size": 8272,
+      "sha256": "b803ac349f99f04ec202fbb752d5d1cc6aa48d1b0fb25d6d1a5bc96fd7183389"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -6165,8 +6165,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 11478,
-      "sha256": "63ef8310541cfa15240a4e2b11dc5fed39fee487a5342ab532017103dd0c430f"
+      "size": 12877,
+      "sha256": "db33ac35824bdc6d8d3d9f24f33bb43d0b53c0109b35e11b1f0d746580bf42e3"
     },
     {
       "path": "scripts/test_macos_disk_image.py",

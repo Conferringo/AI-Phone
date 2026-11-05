@@ -88,6 +88,7 @@ def prepare_guest(root,cache):
 
 
 def compile_client(root,android,images,tools,env):
+    from client_delivery import installer_metadata
     run_checks(root,env=env)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','macos',
          '--with-web-runtime','--with-service-runtime','--with-phone-apps',
@@ -100,7 +101,10 @@ def compile_client(root,android,images,tools,env):
     receipt=json.loads(artifact.with_suffix('.dmg.manifest.json').read_text())
     if not receipt['complete_device_bundle'] or receipt['sha256']!=digest(artifact):
         raise ValueError('Compiled macOS client is incomplete or changed')
-    return {'file':artifact.name,'size':artifact.stat().st_size,'sha256':receipt['sha256'],
+    installer=installer_metadata(artifact,'macos-arm64')
+    if not installer['github_asset_eligible']:
+        raise ValueError('Complete macOS DMG exceeds the single-file release limit')
+    return {'file':artifact.name,'size':installer['size'],'sha256':receipt['sha256'],
             'delivery':checked_delivery(receipt['prebuilt_components'])}
 
 

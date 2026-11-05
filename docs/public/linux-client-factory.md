@@ -9,7 +9,7 @@ The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disp
 - Android API 35 x86_64 base image, emulator and platform tools.
 - App-owned Lima, QEMU, firmware and offline container-engine packages.
 - Clean workspace, Linux desktop, PostgreSQL and Redis images in one archive with shared layers.
-- Portable Python/Node and the offline English/Chinese OCR runtime.
+- Portable installer Python and the offline English/Chinese OCR runtime; development tools inside the Linux device remain separate.
 
 The [factory entry](../../scripts/linux_client_factory.py) uses fresh output directories and unique image references. It never exports a running container or reads guest disks, credentials or conversations. Android archives are fixed by size, Google-provided SHA-1 and the independently recorded SHA-256 in the [input inventory](../../config/android-factory.json). The [metadata selector](../../scripts/android_sdk_repository.py) requires the stable channel and its license identifier; archive ordering and numeric build IDs do not determine stability. Byte verification does not establish redistribution permission.
 
@@ -23,7 +23,7 @@ Each compiled package is unpacked and inspected against all nine required runtim
 
 The Android and container-image capsules use XZ preset9, with the existing128MiB decoder budget retained. This changes the build-time compression effort, not their system, image or file contents. AppImage's outer compression uses Zstandard. Its GUI libraries receive the normal AppImage relocation; the embedded host runtimes retain their verified bytes and original RPATHs through the [packaging adapter](../../scripts/linux-appimage-patchelf.sh). Post-packaging inspection requires those runtime bytes to match the sealed inputs.
 
-The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, both inspected packages and their checksums are retained in an unpublished maintainer draft. Both must be below the single-file delivery limit; an oversized DEB or AppImage fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Non-macOS physical installation is waived by the maintainer and must be disclosed as untested; compilation and payload inspection are still required.
+The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, both inspected packages and their checksums are retained in an unpublished maintainer draft. Both must be below the single-file delivery limit; an oversized DEB or AppImage fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Physical installation is waived for previews on all four platforms and must be disclosed as untested; compilation and payload inspection are still required.
 
 ## Local maintainer build
 

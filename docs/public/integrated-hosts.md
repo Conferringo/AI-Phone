@@ -11,7 +11,7 @@ The [release-status platform table](release-status.md#platform-qualification) ow
 - **Linux:** the x64 source path uses Android Emulator/KVM and an existing Docker engine or app-owned Lima/QEMU host. ARM64 needs architecture-matched components.
 - **Android ARM64:** the independent-host target requires root and exposed KVM. A normal unrooted APK is outside this scope; restricted AVF APIs do not provide arbitrary dual-guest hosting.
 
-Physical non-macOS installation tests are waived and remain unverified; component completeness, build evidence and redistribution review are still required.
+Physical installation tests are waived for previews on all four platforms and remain unverified; component completeness, build evidence and redistribution review are still required.
 The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, memory and initial phone storage are configurable. Existing device storage is never silently resized by changing a creation preset. The Linux desktop shares its container host kernel; a separate-kernel Fedora desktop is a future adapter.
 
 ## Installation and recovery contract
@@ -24,7 +24,7 @@ The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, mem
 
 Stopping installation terminates its child process group and retains completed work. SDK license prompts are never automatically accepted from a saved pending prompt. Foreign jobs/containers and quarantined restored data are rejected before startup changes. This is not full upgrade rollback or a signed updater.
 
-The Windows adapter now imports the owned WSL bundle and invokes its existing backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. A successful process exit and final backend acknowledgement set only `backend_initialized`; they do not prove live service health, phone readiness or a complete installation. Cancellation after launch leaves the guest outcome explicitly unknown and retains the registered distribution. The native phone bridge, full readiness probe and Windows capability activation remain unfinished; initialization still uses the existing Python guest entry, pending the Rust runtime migration.
+The Windows adapter imports the owned WSL bundle and invokes its backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. Backend acknowledgement sets only `backend_initialized`. The native client then starts the owned Android/bridge worker and completes the durable device setup and service-readiness check before reporting ready. Cancellation after launch leaves unknown guest results explicit and retains the registered distribution. This activation path is implemented; the complete EXE, WSL2/WHPX and first-run runtime qualification remain pending. Initialization still uses the existing Python guest entry, pending the Rust runtime migration.
 
 ## Isolation
 
@@ -46,4 +46,4 @@ Component execution, package inspection and complete installation are separate c
 
 首次安装需要至少12GiB内存、35GiB可用存储，推荐16GiB内存。设备资源在创建时设置，已有设备不会随预设变化被重建或扩容。关闭、中断、重试、缺失组件和恢复隔离均要明确反馈；单项测试或阶段完成不能代替完整初装验收。现有设备、聊天、账号和密钥不进入源码或运行组件。
 
-Windows适配器已接通所属WSL资源导入和既有后端初始化，配置经有界标准输入传入，不挂载Windows磁盘、不写入进程参数。成功退出和回执只确认后端初始化，不证明服务实时可用、手机就绪或完整安装；启动后取消保留明确的未知结果及原发行实例。原生手机桥、完整就绪探测和Windows能力开放仍未完成；客体初始化暂复用既有Python入口，纯Rust运行链迁移尚未全部完成。
+Windows适配器已接通所属WSL资源导入和后端初始化，配置经有界标准输入传入，不挂载Windows磁盘、不写入进程参数。后端回执只确认初始化；原生客户端随后启动所属Android/桥接worker，完成持久设备配置与服务就绪检查后才进入ready。启动后取消保留明确的未知结果及原发行实例。该激活路径已实现，完整EXE、WSL2/WHPX及首次运行资格仍待验证；客体初始化暂复用既有Python入口，纯Rust运行链迁移尚未全部完成。

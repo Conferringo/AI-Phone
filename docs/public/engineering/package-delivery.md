@@ -1,4 +1,4 @@
-# Installer delivery volumes
+# Maintainer delivery volumes
 
 Large installers retain their complete DMG or Debian package format. Delivery
 volumes divide those bytes into files of at most 1 GiB. Each volume has a size
@@ -11,10 +11,11 @@ Restoration writes a temporary file, checks each volume and the complete install
 then activates the destination without replacing an existing file. Cancellation,
 invalid input or insufficient storage does not publish a partial installer.
 
-The macOS and Linux complete-package factories use this handoff for installers
-that exceed the distribution service's single-asset limit. Component inventories,
-third-party terms and publication gates apply to the complete installer and all
-of its volumes. Splitting does not remove system images or runtime dependencies.
+This format serves maintainer transport and existing internal candidates. User
+distributions require one complete installer file. The macOS, Windows and Linux
+complete factories reject installers at or above the single-asset limit; splitting
+does not qualify them for release. Component inventories, third-party terms and
+publication gates still apply to internal volumes and their complete contents.
 
 ```sh
 cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
@@ -25,9 +26,8 @@ cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
   restore installer.deb.volumes/installer.deb.volumes.json downloads MANIFEST_SHA256
 ```
 
-These are maintainer commands. Automatic retrieval and restoration in the graphical
-installer remain a separate integration requirement; command-line reconstruction
-does not qualify the one-click installation experience.
+These are maintainer commands. Users are not asked to retrieve or reconstruct
+volumes. Command-line reconstruction does not qualify one-click installation.
 
 ## Candidate retention
 
@@ -42,7 +42,8 @@ independent requirements.
 
 ## 中文
 
-完整安装包超过单附件上限时，交付卷将原始 DMG 或 Debian 安装包按最多 1 GiB 分段，
+交付卷仅用于维护传输及已有内部候选。用户发行必须是一个完整安装文件；Mac、Windows、
+Linux完整工厂拒绝达到或超过单附件上限的安装包，不以分卷计作交付。维护格式将原始安装包按最多 1 GiB 分段，
 逐卷及完整文件均使用 SHA-256 校验，清单摘要由发行方单独固定。Rust 程序负责分卷、
 无额外全包副本的流式验证和原子还原；失败、取消或空间不足不发布半成品，也不覆盖
-已有安装包。图形安装器的自动获取与还原仍需独立接通，维护命令不代表一键安装验收。
+已有安装包。用户无需自行下载或还原分卷；维护命令不代表一键安装验收。

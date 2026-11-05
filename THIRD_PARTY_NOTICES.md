@@ -74,7 +74,7 @@ The locked archive dependencies use glob 14.0.3 and minimatch 11.0.3, covering [
 
 ## Web and installer runtimes
 
-Complete macOS/Linux bundles include Next.js standalone output and the pinned Bun executable. Installer tools add portable Python and Node. Their runtime licences, third-party attribution and applicable source requirements are separate from the native Rust/WebView client graph. The JavaScript inventory identifies application packages; it does not by itself cover every native runtime or image dependency. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
+Complete macOS/Linux bundles include Next.js standalone output and the pinned Bun executable. Installer tools add portable Python, with Node retained for source/partially prebuilt installations. Their runtime licences, third-party attribution and applicable source requirements are separate from the native Rust/WebView client graph. The JavaScript inventory identifies application packages; it does not by itself cover every native runtime or image dependency. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
 
 ## Media and channel runtime component
 
