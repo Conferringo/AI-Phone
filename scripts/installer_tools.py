@@ -121,11 +121,15 @@ def selected_environment(root,base_path=None):
     return environment(component,manifest,base_path)
 
 
+def select_roles(manifest,roles):
+    return {**manifest,'tools':{role:manifest['tools'][role] for role in roles},
+            'files':[row for row in manifest['files'] if row['path'].split('/',1)[0] in roles]}
+
+
 def prepare_resources(folder,component,*,roles=ROLES):
     if component is None:return {}
     component=Path(component).resolve();manifest=verify(component);target=Path(folder)/'tools'
-    selected={**manifest,'tools':{role:manifest['tools'][role] for role in roles},
-              'files':[row for row in manifest['files'] if row['path'].split('/',1)[0] in roles]}
+    selected=select_roles(manifest,roles)
     body=(json.dumps(selected,sort_keys=True)+'\n').encode();identity=hashlib.sha256(body).hexdigest()
     if target.exists():
         verify(target)

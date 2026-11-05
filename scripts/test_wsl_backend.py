@@ -22,20 +22,31 @@ def archive(path, rows):
             else:entry.size=len(value);entry.mode=0o644;target.addfile(entry,io.BytesIO(value))
 
 
-def rootfs(path,*,phone_tools=True):
+def rootfs(path,*,phone_tools=True,node=True):
     from wsl_phone_tools import REQUIRED
     rows=[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
         ('opt/aiphone/bundle/source.payload',b'fixture-source'),('opt/aiphone/bundle/images.payload',b'fixture-images'),
         ('opt/aiphone/bundle/source.sha256',b'a'*64+b'\n'),('usr/local/libexec/aiphone-bootstrap',b'fixture-native-bootstrap'),
-        ('opt/aiphone/tools/python/bin/python3',b'fixture-python'),('opt/aiphone/tools/node/bin/node',b'fixture-node'),
+        ('opt/aiphone/tools/python/bin/python3',b'fixture-python'),
         ('opt/aiphone/bootstrap/wsl_backend_entry.py',b'fixture-entry'),('usr/local/bin/docker',b'fixture-docker'),
         ('usr/local/bin/dockerd',b'fixture-dockerd'),('lib64/ld-linux-x86-64.so.2',('/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',)),
         ('usr/share/doc/base-files/copyright',b'fixture-license')]
+    if node:rows.append(('opt/aiphone/tools/node/bin/node',b'fixture-node'))
     if phone_tools:rows.extend((name,b'fixture-phone-tools') for name in sorted(REQUIRED))
     archive(path,rows)
 
 
 class WslBackendTests(unittest.TestCase):
+    def test_python_only_and_existing_two_tool_capsules_both_remain_readable(self):
+        for node in (False,True):
+            with self.subTest(node=node),tempfile.TemporaryDirectory() as folder:
+                root=Path(folder);image=root/'rootfs.tar.gz';rootfs(image,node=node)
+                payload=root/'backend.payload';publish_capsule(image,payload,{'fixture':True})
+                manifest=verify_capsule(payload)
+                files=manifest['inventory']['required_files']
+                self.assertIn('opt/aiphone/tools/python/bin/python3',files)
+                self.assertEqual('opt/aiphone/tools/node/bin/node' in files,node)
+
     def test_capsule_can_be_moved_verified_and_rejects_tampered_body(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);image=root/'rootfs.tar.gz';rootfs(image)

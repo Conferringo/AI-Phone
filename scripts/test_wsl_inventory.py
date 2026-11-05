@@ -172,14 +172,14 @@ class WslInventoryTests(unittest.TestCase):
             root = Path(folder) / 'rootfs'
             rootfs_tree(root)
             factory.normalize_os_release(root)
-            (root / 'opt/aiphone/tools/node/bin/node').unlink()
+            (root / 'opt/aiphone/tools/python/bin/python3').unlink()
             (root / 'usr/share/doc/base-files/copyright').unlink()
             sensitive = root / 'opt/arbitrary-sensitive-filename'
             sensitive.write_text('fixture-sensitive-content')
             archive = Path(folder) / 'rootfs.tar.gz'
             archive_tree(root, archive)
             with self.assertRaises(ValueError) as raised: backend.inspect_rootfs(archive)
-            self.assertEqual(str(raised.exception), 'Incomplete WSL backend rootfs or license inventory: missing=opt/aiphone/tools/node/bin/node; license_count=0')
+            self.assertEqual(str(raised.exception), 'Incomplete WSL backend rootfs or license inventory: missing=opt/aiphone/tools/python/bin/python3; license_count=0')
             self.assertNotIn('sensitive', str(raised.exception))
 
 
