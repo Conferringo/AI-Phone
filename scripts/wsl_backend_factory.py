@@ -27,7 +27,10 @@ def capacity(folder, context_bytes, rootfs_budget):
 
 def input_budget(source,images,tools,packages):
     paths=[Path(source),Path(images),*Path(tools).rglob('*'),*Path(packages).rglob('*')]
-    total=sum(path.stat().st_size for path in paths if path.is_file())
+    with tarfile.open(source,'r:*') as archive:
+        _,records,_=archive_records(archive)
+        bootstrap_bytes=bootstrap_record(records)['size']
+    total=sum(path.stat().st_size for path in paths if path.is_file())+bootstrap_bytes+65
     # The pinned Ubuntu base and unpacked engine each have admission budgets, not optimistic compression estimates.
     rootfs_budget=total+1536*1024**2
     return total,rootfs_budget
@@ -58,6 +61,7 @@ def source_input(payload):
             if json.load(source.extractfile(name)).get('host')!='linux-x64':raise ValueError('WSL requires Linux x64 backend components')
         services=json.load(source.extractfile('runtime/services/manifest.json'))
         if services.get('vision')!='linux-tesseract-bundled':raise ValueError('WSL requires offline OCR')
+        bootstrap_record(records)
     return {'sha256':digest(payload),'components':manifest['components']}
 
 
@@ -111,6 +115,8 @@ COPY --from=engine / /opt/aiphone/engine/
 COPY tools/ /opt/aiphone/tools/
 COPY scripts/ /opt/aiphone/bootstrap/
 COPY source.payload images.payload /opt/aiphone/bundle/
+COPY source.sha256 /opt/aiphone/bundle/source.sha256
+COPY bootstrap.program /usr/local/libexec/aiphone-bootstrap
 COPY docker dockerd /usr/local/bin/
 COPY wsl.conf /etc/wsl.conf
 COPY engine-sources.json /usr/share/doc/aiphone-engine/source-records.json
@@ -124,6 +130,7 @@ RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0
 RUN test ! -e /etc/ld-musl-x86_64.path && test ! -L /etc/ld-musl-x86_64.path && printf '%s\\n' '/opt/aiphone/engine/lib:/opt/aiphone/engine/usr/lib' > /etc/ld-musl-x86_64.path
 RUN /usr/bin/env -i PATH=/usr/bin:/bin /opt/aiphone/engine/usr/bin/runc --version
 RUN /usr/local/bin/docker --version && /usr/local/bin/docker compose version && /usr/local/bin/dockerd --version
+RUN test "$(/usr/local/libexec/aiphone-bootstrap --source-staging-contract)" = ai-phone-source-staging-v1
 RUN /opt/aiphone/tools/python/bin/python3 -I -B /opt/aiphone/bootstrap/wsl_backend_entry.py --verify
 ENTRYPOINT ["/opt/aiphone/tools/python/bin/python3", "-I", "-B", "/opt/aiphone/bootstrap/wsl_backend_entry.py"]
 '''
@@ -148,10 +155,31 @@ def payload_scripts(source,scripts):
     if not (scripts/'wsl_backend_entry.py').is_file():raise ValueError('Rebuild backend source with its WSL entry')
 
 
+def bootstrap_record(records):
+    name='runtime/services/bin/assistant'
+    record=records.get(name)
+    if record is None or record['mode']!=0o755:raise ValueError('Missing native source staging component')
+    return record
+
+
+def bootstrap_program(source,destination):
+    # This is an already built, source-bound component, not an end-user compiler.
+    with tarfile.open(source,'r:*') as archive:
+        _,records,_=archive_records(archive)
+        record=bootstrap_record(records)
+        with archive.extractfile(record['path']) as stream:body=stream.read(record['size']+1)
+        if len(body)!=record['size'] or hashlib.sha256(body).hexdigest()!=record['sha256']:
+            raise ValueError('Native source staging component integrity differs')
+    with Path(destination).open('xb') as output:output.write(body)
+    Path(destination).chmod(0o755)
+
+
 def prepare_context(root,folder,source,images,tools,packages):
     plan,source_record,tool_manifest=validated_inputs(root,source,images,tools,packages)
     folder.mkdir()
     for path,name in ((source,'source.payload'),(images,'images.payload')):shutil.copyfile(path,folder/name)
+    (folder/'source.sha256').write_text(source_record['sha256']+'\n')
+    bootstrap_program(folder/'source.payload',folder/'bootstrap.program')
     shutil.copytree(tools,folder/'tools');shutil.copytree(packages,folder/'packages')
     payload_scripts(source,folder/'scripts')
     for name in ('docker','dockerd'):(folder/name).write_text(engine_script(name))

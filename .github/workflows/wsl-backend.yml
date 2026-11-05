@@ -47,7 +47,7 @@ jobs:
             {"features":{"containerd-snapshotter":true}}
       - name: Admission and lifecycle regressions
         run: |
-          PYTHONPATH=scripts python3 -m unittest test_wsl_backend test_wsl_backend_review test_wsl_runtime test_native_services.NativeHostToolsTests
+          PYTHONPATH=scripts python3 -m unittest test_wsl_backend test_wsl_backend_review test_wsl_runtime test_wsl_source_staging test_native_services.NativeHostToolsTests
           ./scripts/bun test ./apps/device-stream/phone-grpc.test.ts ./apps/device-stream/phone-runtime-startup.test.ts ./scripts/wsl-desktop-qualification.test.ts
       - name: Assemble, boot and restart the isolated Linux backend
         env:

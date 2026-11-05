@@ -11,6 +11,7 @@ import tempfile
 import time
 
 BUNDLE=Path('/opt/aiphone/bundle')
+BOOTSTRAP=Path('/usr/local/libexec/aiphone-bootstrap')
 TOOLS=Path('/opt/aiphone/tools')
 INSTALLATION=Path('/var/lib/aiphone/installation')
 SOCKET='unix:///run/aiphone/docker.sock'
@@ -35,8 +36,13 @@ def require_owned_backend(root):
 
 
 def staged(home):
-    from client_host_entry import stage_source
-    root=stage_source(BUNDLE/'source.payload',home)
+    identity=(BUNDLE/'source.sha256').read_text().strip()
+    if len(identity)!=64 or any(char not in '0123456789abcdef' for char in identity):
+        raise ValueError('Invalid sealed source identity')
+    result=subprocess.run([str(BOOTSTRAP),'--stage-source',str(BUNDLE/'source.payload'),str(home),identity],
+                          capture_output=True,text=True,check=True)
+    root=Path(home).resolve()/'releases'/identity
+    if result.stdout!=f'{identity} {root}\n':raise ValueError('Invalid native source staging receipt')
     sys.path.insert(0,str(root/'scripts'))
     return root
 

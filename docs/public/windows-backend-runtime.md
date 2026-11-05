@@ -21,6 +21,15 @@ The backend does not import the host's Docker context or Lima state. It owns
 lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
+Source expansion uses the shared Rust resource publisher. The factory extracts
+the source-bound native component, verifies its staging capability and includes
+the exact source digest in the rootfs inventory. Both verification and first-run
+initialization use that component to check, stage or resume the source tree and
+its persistent data links. The legacy Python entry consumes the native receipt;
+it no longer publishes WSL source trees itself. Configuration, engine/image
+activation and service-start orchestration still require Python, so this is a
+partial runtime migration. Registered guest disks are not replaced by this change.
+
 The [Rust phone/backend bridge](engineering/device-bridge.md) now supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. SDK/AVD startup, guest discovery/tools and complete first-run integration remain pending; this component does not enable independent Windows hosting.
 
 ## Native client resources
@@ -55,8 +64,8 @@ installer component interface, not an end-user deployment procedure. Its result
 keeps `backend_initialized=false` and `phone_ready=false`. The separate
 `start-bundle` component initializes the existing backend through stdin and accepts
 only a successful bounded terminal acknowledgement. It retains `phone_ready=false`.
-The initializer inside the current rootfs still uses the existing Python runtime;
-its migration to Rust, WSL feature enablement, the native Android bridge and live
+The initializer still uses Python beyond the Rust source-publication step;
+the remaining migration, WSL feature enablement, the native Android bridge and live
 first-run readiness remain required before Windows independent deployment is enabled.
 The Windows CI job compiles this component and exercises its registry adapter;
 those checks do not establish a real WSL/WHPX guest installation.
@@ -107,6 +116,7 @@ Contributor setup and automated checks are described in [Contributing](../../CON
 专用 Linux 工厂会实际检查后端、认证网页画面，以及两次启动间的工作文件和数据库
 保留；结果只保存为 JSON 回执。该验证不等同于 Windows 安装通过。Rust 已接通专属 WSL 注册与客体后端初始化，
 通过标准输入传递配置并核对有界终态回执；中断后保留未知结果与原设备盘，不重复导入。
-现有客体初始化仍用 Python，纯 Rust 迁移、系统重启恢复、WHPX、原生 Android 桥与
+源码展开、完整性核对、恢复和持久数据链接已复用 Rust 资源层；配置、镜像激活与服务
+编排仍用 Python，不能称纯 Rust 完成。剩余迁移、系统重启恢复、WHPX、原生 Android 桥与
 真实双设备就绪仍未通过，Windows 独立部署保持关闭，完整发行状态见
 [发行范围](release-status.md)。
