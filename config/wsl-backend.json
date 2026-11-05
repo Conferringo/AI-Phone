@@ -9,6 +9,6 @@
   "engine_host": "linux-x64",
   "factory_capacity": "context + 4 * rootfs_budget + 4 GiB reserve",
   "minimum_runtime_free_gb": 4,
-  "runtime_components": ["web", "native-services", "js-services", "container-images", "installer-tools"],
+  "runtime_components": ["web", "native-services", "js-services", "container-images", "installer-tools", "phone-tools"],
   "redistribution_review_complete": false
 }

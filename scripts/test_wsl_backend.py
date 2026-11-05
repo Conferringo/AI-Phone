@@ -22,14 +22,17 @@ def archive(path, rows):
             else:entry.size=len(value);entry.mode=0o644;target.addfile(entry,io.BytesIO(value))
 
 
-def rootfs(path):
-    archive(path,[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
+def rootfs(path,*,phone_tools=True):
+    from wsl_phone_tools import REQUIRED
+    rows=[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
         ('opt/aiphone/bundle/source.payload',b'fixture-source'),('opt/aiphone/bundle/images.payload',b'fixture-images'),
         ('opt/aiphone/bundle/source.sha256',b'a'*64+b'\n'),('usr/local/libexec/aiphone-bootstrap',b'fixture-native-bootstrap'),
         ('opt/aiphone/tools/python/bin/python3',b'fixture-python'),('opt/aiphone/tools/node/bin/node',b'fixture-node'),
         ('opt/aiphone/bootstrap/wsl_backend_entry.py',b'fixture-entry'),('usr/local/bin/docker',b'fixture-docker'),
         ('usr/local/bin/dockerd',b'fixture-dockerd'),('lib64/ld-linux-x86-64.so.2',('/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',)),
-        ('usr/share/doc/base-files/copyright',b'fixture-license')])
+        ('usr/share/doc/base-files/copyright',b'fixture-license')]
+    if phone_tools:rows.extend((name,b'fixture-phone-tools') for name in sorted(REQUIRED))
+    archive(path,rows)
 
 
 class WslBackendTests(unittest.TestCase):
@@ -301,6 +304,7 @@ class WslAssemblyTests(unittest.TestCase):
                 work=root/'work'
                 stack.enter_context(patch.object(factory,'qualification_preflight',return_value=work))
                 stack.enter_context(patch.object(factory,'prepare_tools',return_value=(root/'tools',root/'python',{})))
+                stack.enter_context(patch('wsl_phone_tools.prepare',return_value=root/'phone-tools'))
                 stack.enter_context(patch.object(factory,'factory_context',return_value=root/'ocr'))
                 stack.enter_context(patch('linux_ocr_runtime.build'))
                 stack.enter_context(patch('build_native_services.build'))

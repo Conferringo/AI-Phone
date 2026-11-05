@@ -14,6 +14,7 @@ separate integration boundaries and are not enabled by this component alone.
 | Python, Node, web, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
 | Docker Engine and Compose | Pinned Alpine dependency closure in an isolated musl prefix; private Unix socket and client state |
 | Database, cache, workspace and desktop images | Four-role sealed image capsule; no build or pull during initialization |
+| Guest phone tools | Pinned Linux x64 platform-tools, upstream notices and a vendored AOSP media schema; no nested emulator or system image |
 | User state | Created under `/var/lib/aiphone` at runtime; excluded from the distributed rootfs |
 
 The backend does not import the host's Docker context or Lima state. It owns
@@ -31,7 +32,9 @@ activation and service-start orchestration still require Python, so this is a
 partial runtime migration in newly built root filesystems. Registered guests keep
 their installed bootstrap; in-place backend upgrades remain separate work.
 
-The [Rust phone/backend bridge](engineering/device-bridge.md) now supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. SDK/AVD startup, guest discovery/tools and complete first-run integration remain pending; this component does not enable independent Windows hosting.
+The [Rust phone/backend bridge](engineering/device-bridge.md) supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. Newly built root filesystems include `/opt/aiphone/native-phone-bridge`, the SDK root already used by the backend profile. The maintainer downloads platform-tools using the existing Android factory pin; assembly then verifies and copies the offline resource, including its version, file digests and notices. The rootfs factory executes the packaged Linux ADB version command without network access. Archive admission requires ADB and the media schema and permits only that schema under the `emulator` directory, never an emulator executable.
+
+The source-provenance record identifies the exact vendored AOSP schema; it is not claimed byte-identical to every SDK release. Maintainer checks exercise the existing discovery/media consumer against an actual Android. These resources do not connect the native Windows and WSL process lifecycles, provision the phone or establish complete readiness. Older backend capsules must be rebuilt for the new resource inventory. Existing registered guests are preserved; an in-place upgrade is not supplied by this resource factory.
 
 ## Native client resources
 
@@ -84,7 +87,7 @@ Android 35 compiler tools and Java 17 on the disposable build host. Admission
 accepts either the three backend components or those components with both phone
 application groups; partial groups and a nested container host are rejected.
 The additional resources do not establish native phone, transport or complete
-Windows first-run readiness. The default backend-only qualification is unchanged.
+Windows first-run readiness. Both qualification modes now include the guest phone tools; only the optional mode carries the two phone application groups.
 
 [`wsl-backend.yml`](../../.github/workflows/wsl-backend.yml) runs on each pull
 request and can also be dispatched explicitly. The disposable Linux factory

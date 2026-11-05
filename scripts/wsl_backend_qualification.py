@@ -27,6 +27,8 @@ def assemble(root,*,device_apps=False):
         from linux_client_factory import prepare_apps
         prepare_apps(root,dict(os.environ))
     tools,python_archive,_=prepare_tools(root,work)
+    from wsl_phone_tools import prepare as prepare_phone_tools
+    phone_tools=prepare_phone_tools(root,work/'phone-tools')
     output=factory_context(root,work/'ocr-context','linux-ocr',python_archive)
     from linux_ocr_runtime import build as build_ocr
     ocr=root/'.tools/linux-ocr-runtime';build_ocr(root,output/'linux-x64-ocr.tar.gz',ocr)
@@ -46,7 +48,7 @@ def assemble(root,*,device_apps=False):
     (work/'cache-retirement.json').write_text(json.dumps(retired,sort_keys=True)+'\n')
     packages=work/'packages';packages.mkdir()
     for row in factory_plan(root)['engine_packages']:fetch(packages,row['file'],row)
-    result=build(root,work/'assembled',root/'apps/client/src-tauri/gen/host/source.payload',images,tools,packages)
+    result=build(root,work/'assembled',root/'apps/client/src-tauri/gen/host/source.payload',images,tools,packages,phone_tools)
     return result,work,images
 
 

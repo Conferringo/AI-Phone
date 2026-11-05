@@ -1,0 +1,10 @@
+{
+  "commit": "bbe98768a47ce9166f768e791768ae5f066c04df",
+  "url": "https://android.googlesource.com/platform/prebuilts/android-emulator/+/bbe98768a47ce9166f768e791768ae5f066c04df/linux-x86_64/lib/emulator_controller.proto",
+  "bytes": 52659,
+  "sha256": "d40bd471b91ba0014e22f60c1a824dfddde8564340f95a6cf01df15fe2fbd335",
+  "file": "emulator_controller.proto",
+  "license": "Apache-2.0",
+  "copied_verbatim": true,
+  "git_blob_sha1": "65e58e10455c66f85675b370cfd823b278baa542"
+}

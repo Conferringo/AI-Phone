@@ -36,9 +36,10 @@ class WslNativeSourceTests(unittest.TestCase):
             images=root/'images.payload';images.write_bytes(b'fixture sealed images')
             tools=root/'tools';tools.mkdir();(tools/'manifest.json').write_text('{"format":1}')
             packages=root/'packages';packages.mkdir()
+            phone=root/'phone-tools';phone.mkdir();(phone/'PHONE-TOOLS-MANIFEST.json').write_text('fixture phone manifest')
             plan={'base_image':'fixture-base','engine_image':'fixture-engine','engine_packages':[]}
             with patch.object(factory,'validated_inputs',return_value=(plan,identity,{'tools':{}})), patch('wsl_engine_inputs.licenses',return_value=[]):
-                factory.prepare_context(root,root/'context',source,images,tools,packages)
+                factory.prepare_context(root,root/'context',source,images,tools,packages,phone)
             context=root/'context'
             self.assertEqual((context/'source.sha256').read_text(),identity['sha256']+'\n')
             self.assertEqual((context/'bootstrap.program').read_bytes(),b'fixture-native-staging-component')
@@ -47,6 +48,8 @@ class WslNativeSourceTests(unittest.TestCase):
             self.assertIn('COPY bootstrap.program /usr/local/libexec/aiphone-bootstrap',recipe)
             self.assertIn('COPY source.sha256 /opt/aiphone/bundle/source.sha256',recipe)
             self.assertIn('--source-staging-contract',recipe)
+            self.assertIn('COPY phone-tools/ /opt/aiphone/native-phone-bridge/',recipe)
+            self.assertEqual((context/'phone-tools/PHONE-TOOLS-MANIFEST.json').read_text(),'fixture phone manifest')
             self.assertNotIn('cargo ',recipe)
 
     def test_staging_calls_only_the_fixed_component_and_checks_its_receipt(self):
@@ -100,7 +103,7 @@ class WslNativeSourceTests(unittest.TestCase):
                 self.assertEqual((root / 'bootstrap').read_bytes(), program)
                 images = root / 'images.payload'
                 images.write_bytes(b'fixture images')
-                total, budget = factory.input_budget(source, images, root / 'tools', root / 'packages')
+                total, budget = factory.input_budget(source, images, root / 'tools', root / 'packages',root/'phone-tools')
                 self.assertEqual(total, source.stat().st_size + images.stat().st_size + len(program) + 65)
                 self.assertEqual(budget, total + 1536 * 1024 ** 2)
                 records[name]['sha256'] = '0' * 64

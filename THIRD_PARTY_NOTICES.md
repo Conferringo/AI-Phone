@@ -90,6 +90,8 @@ Two small verbatim AOSP Emulator inputs at commit `d1bfd6eb0ea9f697dc4cc1d258887
 
 ## Native host and guest services
 
+The WSL phone bridge includes a verbatim AOSP `emulator_controller.proto` schema from `platform/prebuilts/android-emulator` commit `bbe98768a47ce9166f768e791768ae5f066c04df`. Its original 2018 Android Open Source Project copyright and Apache-2.0 header are preserved. [Exact provenance](packages/protocol/vendor/android-emulator/provenance.json) records the upstream URL, Git blob identity, byte count and SHA-256 digest. This is a protocol definition, not a bundled emulator executable. The Linux ADB archive uses the existing [Android factory pin](config/android-factory.json) and retains its `NOTICE.txt`; its SDK binary redistribution review remains pending.
+
 The [native service licence collection](docs/public/native-services-licenses.txt) and [inventory](docs/public/native-services-license-inventory.json) identify the locked Rust service dependencies, full terms, copyright notices and source references. The Linux guest image retains these materials under `/usr/share/doc/ai-phone/`.
 
 Image processing enables PNG in image 0.25.10. The x11rb protocol bindings retain the separate xcb-proto copyright and permission notice. The host archive decoder links liblzma through xz2 and lzma-sys; the collection preserves the vendored XZ terms separately from the Rust wrapper licences. XZ command-line programs and shell utilities are not part of this static library build. This software includes code from [XZ Utils](https://tukaani.org/xz/).
