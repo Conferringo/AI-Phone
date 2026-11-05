@@ -1,5 +1,6 @@
 """Owned-rootfs normalization keeps admission strictly regular-file based."""
 import hashlib
+import json
 import os
 from pathlib import Path
 import shlex
@@ -144,6 +145,27 @@ class WslInventoryTests(unittest.TestCase):
             self.assertEqual(os.readlink(root / 'etc/os-release'), '../usr/lib/os-release')
             self.assertEqual((root / 'usr/lib/os-release').read_bytes(), OS_RELEASE)
             self.assertFalse(list((root / 'etc').glob('.aiphone-os-release-*')))
+
+    def test_duplicate_tool_aliases_share_storage_without_changing_entry_or_inventory(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'rootfs';rootfs_tree(root);factory.normalize_os_release(root)
+            tools=root/'opt/aiphone/tools';python=tools/'python'
+            (tools/'manifest.json').write_text(json.dumps({'tools':{'python':{'version':'3.13.18'}}}))
+            paths={'bin/python':b'python executable','bin/python3.13':b'python executable',
+                   'lib/libpython3.13.so':b'python shared library','lib/libpython3.13.so.1.0':b'python shared library'}
+            for name,body in paths.items():
+                path=python/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(body)
+            archive=Path(folder)/'before.tar.gz';archive_tree(root,archive);before=backend.inspect_rootfs(archive)
+            factory.link_tool_aliases(tools)
+            self.assertEqual((python/'bin/python').stat().st_ino,(python/'bin/python3.13').stat().st_ino)
+            self.assertEqual((python/'lib/libpython3.13.so').stat().st_ino,(python/'lib/libpython3.13.so.1.0').stat().st_ino)
+            self.assertEqual((python/'bin/python3').stat().st_nlink,1)
+            for name,body in paths.items():self.assertEqual((python/name).read_bytes(),body)
+            archive=Path(folder)/'after.tar.gz';archive_tree(root,archive);after=backend.inspect_rootfs(archive)
+            self.assertEqual(after['required_files'],before['required_files'])
+            self.assertEqual(after['uncompressed_bytes'],before['uncompressed_bytes']-len(paths['bin/python'])-len(paths['lib/libpython3.13.so']))
+            recipe=factory.dockerfile(factory.factory_plan(Path(__file__).parent.parent))
+            self.assertLess(recipe.index('link_tool_aliases('),recipe.index('wsl_backend_entry.py --verify'))
 
     def test_missing_diagnostic_has_only_fixed_required_paths_and_license_count(self):
         with tempfile.TemporaryDirectory() as folder:

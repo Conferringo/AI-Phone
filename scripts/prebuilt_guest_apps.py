@@ -1,4 +1,4 @@
-"""Stage pinned vendor phone apps for offline installation, independent of host ABI."""
+"""Keep a universal vendor cache; package only the native guest APK for each client."""
 import argparse
 import hashlib
 import json
@@ -46,7 +46,7 @@ def app_identity(pin):
 
 
 def records(metadata):
-    return [{'path':PREFIX+'clash-'+abi+'.apk','size':metadata[abi]['size_bytes'],'sha256':metadata[abi]['sha256'],'mode':0o644} for abi in ABIS]
+    return [{'path':PREFIX+'clash-'+abi+'.apk','size':metadata[abi]['size_bytes'],'sha256':metadata[abi]['sha256'],'mode':0o644} for abi in metadata]
 
 
 def read_manifest(folder):
@@ -60,14 +60,17 @@ def read_manifest(folder):
 
 
 def checked_inventory(value,metadata):
-    if value['apps']!={abi:app_identity(pin) for abi,pin in metadata.items()}:raise ValueError('Guest application identity differs from pinned source')
-    if not isinstance(value['files'],list) or len(value['files'])!=len(ABIS):raise ValueError('Incomplete guest application inventory')
+    apps=value['apps']
+    if not isinstance(apps,dict) or not apps or not apps.keys()<=metadata.keys():raise ValueError('Invalid guest application ABIs')
+    metadata={abi:pin for abi,pin in metadata.items() if abi in apps}
+    if apps!={abi:app_identity(pin) for abi,pin in metadata.items()}:raise ValueError('Guest application identity differs from pinned source')
+    if not isinstance(value['files'],list) or len(value['files'])!=len(metadata):raise ValueError('Incomplete guest application inventory')
     if sorted(map(checked_record,value['files']),key=lambda r:r['path'])!=records(metadata):raise ValueError('Guest application inventory differs from pinned source')
     return value
 
 
-def component_files(folder):
-    expected={'manifest.json',*['clash-'+abi+'.apk' for abi in ABIS]}
+def component_files(folder,value):
+    expected={'manifest.json',*[Path(row['path']).name for row in value['files']]}
     if {p.name for p in folder.iterdir()}!=expected:raise ValueError('Unexpected guest application files')
     for name in expected:
         path=folder/name
@@ -77,7 +80,7 @@ def component_files(folder):
 def manifest(root,folder):
     value=read_manifest(folder)
     if value['source_sha256']!=source_fingerprint(root):raise ValueError('Guest application source changed; rebuild before packaging')
-    checked_inventory(value,pins(root));component_files(folder)
+    checked_inventory(value,pins(root));component_files(folder,value)
     return value
 
 
@@ -91,7 +94,8 @@ def selected(root,abi):
     if abi not in ABIS:raise ValueError('Unsupported guest application ABI')
     root=Path(root).resolve();folder=root/'runtime/guest-apps'
     if not folder.exists() and not folder.is_symlink():return None
-    manifest(root,folder)
+    value=manifest(root,folder)
+    if abi not in value['apps']:raise ValueError('Guest application ABI not bundled: '+abi)
     return folder/('clash-'+abi+'.apk')
 
 
@@ -137,8 +141,13 @@ def build(root,tools,env):
 
 
 def prepare_apps(root):
-    folder=Path(root)/'.tools/guest-apps';verify(root,folder)
-    return [(PREFIX+path.name,path.read_bytes(),0o644) for path in sorted(folder.iterdir())]
+    from host_platform import host_key
+    folder=Path(root)/'.tools/guest-apps';value=verify(root,folder)
+    abi='arm64-v8a' if host_key().endswith('-arm64') else 'x86_64'
+    row=next(row for row in value['files'] if row['path']==PREFIX+'clash-'+abi+'.apk')
+    selected={**value,'apps':{abi:value['apps'][abi]},'files':[row]}
+    return [(PREFIX+'manifest.json',(json.dumps(selected,sort_keys=True)+'\n').encode(),0o644),
+            (row['path'],(folder/Path(row['path']).name).read_bytes(),0o644)]
 
 
 if __name__=='__main__':

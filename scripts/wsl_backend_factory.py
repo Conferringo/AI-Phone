@@ -106,6 +106,16 @@ def normalize_os_release(root):
         finally:temporary.unlink(missing_ok=True)
 
 
+def link_tool_aliases(folder):
+    folder=Path(folder)
+    version='.'.join(json.loads((folder/'manifest.json').read_text())['tools']['python']['version'].split('.')[:2])
+    python=folder/'python'
+    # Keep the required python3 entry independent: rootfs admission hashes it as a regular file.
+    for source,alias in [('bin/python','bin/python'+version),('lib/libpython'+version+'.so.1.0','lib/libpython'+version+'.so')]:
+        (python/alias).unlink()
+        os.link(python/source,python/alias)
+
+
 def dockerfile(plan):
     return f'''FROM {plan['engine_image']} AS engine
 COPY packages/ /packages/
@@ -122,6 +132,7 @@ COPY docker dockerd /usr/local/bin/
 COPY wsl.conf /etc/wsl.conf
 COPY engine-sources.json /usr/share/doc/aiphone-engine/source-records.json
 RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0,"/opt/aiphone/bootstrap");from wsl_backend_factory import normalize_os_release;normalize_os_release("/")'
+RUN /opt/aiphone/tools/python/bin/python3 -I -B -c 'import sys;sys.path.insert(0,"/opt/aiphone/bootstrap");from wsl_backend_factory import link_tool_aliases;link_tool_aliases("/opt/aiphone/tools")'
 RUN chmod 755 /usr/local/bin/docker /usr/local/bin/dockerd && \\
     ln -s /opt/aiphone/engine/lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1 && \\
     mkdir -p /usr/local/lib/docker/cli-plugins && \\

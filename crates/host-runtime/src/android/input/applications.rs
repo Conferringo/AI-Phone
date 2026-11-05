@@ -378,6 +378,28 @@ mod tests {
         assert!(phone.packages.contains("user.application"));
     }
     #[tokio::test]
+    async fn native_only_bundle_installs_matching_apps_without_an_unused_abi() {
+        for (abi, other) in [("arm64-v8a", "x86_64"), ("x86_64", "arm64-v8a")] {
+            let root = tempfile::tempdir().unwrap();
+            resources(root.path());
+            std::fs::remove_file(
+                root.path()
+                    .join(format!("runtime/guest-apps/clash-{other}.apk")),
+            )
+            .unwrap();
+            let state = State::lock(root.path(), "emulator-fixture").unwrap();
+            let mut phone = Phone::new(&state);
+            phone.abi = abi.into();
+            phone.packages.insert("user.application".into());
+            let apps = Applications::load(root.path(), &state, &mut phone)
+                .await
+                .unwrap();
+            assert!(apps.configure(&state, &mut phone, false).await.unwrap());
+            assert_eq!(phone.count("install"), 2);
+            assert!(phone.packages.contains("user.application"));
+        }
+    }
+    #[tokio::test]
     async fn existing_apps_keep_the_users_home_and_are_not_reinstalled() {
         let root = tempfile::tempdir().unwrap();
         resources(root.path());
