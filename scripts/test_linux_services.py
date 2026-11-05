@@ -309,4 +309,31 @@ class NativeSupervisorLaunchTests(unittest.TestCase):
                 self.assertNotIn('pass_fds',launch.call_args.kwargs)
 
 
+class WorkbenchLaunchTests(unittest.TestCase):
+    def test_prebuilt_web_and_lan_start_without_node_or_build_tools(self):
+        from linux_host import start_workbench_services
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
+            environment={};commands=[]
+            with patch('linux_host.shutil.which',return_value=None),patch('prebuilt_web.web_command',return_value=[str(root/'runtime/bin/bun'),str(root/'runtime/web/apps/web/server.js')]):
+                start_workbench_services(root,environment,lambda _args:self.fail('Prebuilt client must not compile'),lambda name,argv:commands.append((name,argv)))
+            self.assertEqual(commands,[('web',[str(root/'runtime/bin/bun'),str(root/'runtime/web/apps/web/server.js')]),('lan',[str(root/'runtime/bin/bun'),str(root/'scripts/lan-server.mjs')])])
+            self.assertEqual(environment,{'PORT':'17860','HOSTNAME':'127.0.0.1'})
+
+    def test_source_web_and_lan_keep_the_existing_node_commands(self):
+        from linux_host import start_workbench_services
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);builds=[];commands=[]
+            with patch('linux_host.shutil.which',return_value='/fixture/node'),patch('linux_host.unit_state',return_value=None):
+                start_workbench_services(root,{},builds.append,lambda name,argv:commands.append((name,argv)))
+            self.assertEqual(builds,[[root/'scripts/bun','run','build']])
+            self.assertEqual(commands,[('web',['/fixture/node',str(root/'apps/web/node_modules/next/dist/bin/next'),'start',str(root/'apps/web'),'--hostname','127.0.0.1','--port','17860']),('lan',['/fixture/node',str(root/'scripts/lan-server.mjs')])])
+
+    def test_source_web_still_reports_a_missing_node_before_launch(self):
+        from linux_host import start_web_service
+        with tempfile.TemporaryDirectory() as temporary,patch('linux_host.shutil.which',return_value=None),patch('linux_host.unit_state',return_value={}):
+            with self.assertRaisesRegex(ValueError,'Node runtime unavailable'):
+                start_web_service(Path(temporary),{},lambda _args:None,lambda *_args:self.fail('Source web must not launch without Node'))
+
+
 if __name__=='__main__':unittest.main()

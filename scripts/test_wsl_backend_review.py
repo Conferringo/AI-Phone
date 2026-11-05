@@ -62,7 +62,7 @@ class WslRuntimeBoundaryTests(unittest.TestCase):
         def capture(root,name,argv,environment):captured.append((name,list(map(str,argv)),dict(environment)))
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{},clear=False):
             root=Path(folder);(root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
-            with patch('client_host.verify_container_ownership',return_value={}),patch('container_images.stage'),patch('container_images.activate',return_value={}),patch('linux_services.unit_state',return_value=None),patch('linux_services.start_unit',side_effect=capture),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_host.shutil.which',return_value='/fixture/node'):
+            with patch('client_host.verify_container_ownership',return_value={}),patch('container_images.stage'),patch('container_images.activate',return_value={}),patch('linux_services.unit_state',return_value=None),patch('linux_services.start_unit',side_effect=capture),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_host.shutil.which',return_value=None):
                 # runtime_env and web startup helper remain real: the regression covers their composition.
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             names=[name for name,_,_ in captured]
@@ -109,7 +109,7 @@ class WslOwnershipChainTests(unittest.TestCase):
                 else:self.fail('Unexpected external command: '+str(argv))
                 return SimpleNamespace(returncode=0,stdout=text)
             def start(root,name,argv,env):captures.append((name,dict(env)))
-            with patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value='/fixture/node'):
+            with patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value=None):
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             managed.assert_called_once_with(root)
             self.assertEqual(len(docker_calls),17)

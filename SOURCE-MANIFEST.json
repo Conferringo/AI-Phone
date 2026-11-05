@@ -5580,8 +5580,8 @@
     },
     {
       "path": "scripts/linux_host.py",
-      "size": 8521,
-      "sha256": "a1793a22818d00d5a6034f458c01c0455c4841f225ab16175c8e2ec5f0aa9c2a"
+      "size": 8632,
+      "sha256": "93d9b16a6ea7bbbea18ff406e4e6a9e0c14018ecd8bad887e56e014a8028de9d"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -6160,8 +6160,8 @@
     },
     {
       "path": "scripts/test_linux_services.py",
-      "size": 17705,
-      "sha256": "e0ed2f3e267c0ecb74c777bbe8733394bdfcdd8bea40c7ecfba1ec9c4f6499fd"
+      "size": 20020,
+      "sha256": "a2a5e63b199a80578ff10664de19127100ee27f3e18033b970274a9341d814e4"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -6345,8 +6345,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9984,
-      "sha256": "0f1cd355752daf0e79e0276b380deb3e019fe05c2c5c74d2e3fdd4a4f1d198ea"
+      "size": 9962,
+      "sha256": "838dd9cefc5a621daee1062234a83900bce1ef2ee31c9ce91aa31de3bbc44979"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
