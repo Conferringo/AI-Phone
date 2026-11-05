@@ -13,6 +13,10 @@ on:
         description: Assemble the complete Mac client with native ARM64 image builders
         type: boolean
         default: false
+      complete_windows_factory:
+        description: Assemble one complete Windows EXE with its qualified Linux backend
+        type: boolean
+        default: false
       retain_complete_candidate:
         description: Retain the complete factory installer in an unpublished maintainer draft
         type: boolean
@@ -20,11 +24,18 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: client-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.complete_macos_factory && 'complete' || 'components' }}
-  cancel-in-progress: ${{ !inputs.complete_macos_factory }}
+  group: client-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ (inputs.complete_macos_factory || inputs.complete_windows_factory) && 'complete' || 'components' }}
+  cancel-in-progress: ${{ !(inputs.complete_macos_factory || inputs.complete_windows_factory) }}
 jobs:
+  full-windows:
+    if: github.event_name == 'workflow_dispatch' && inputs.complete_windows_factory
+    permissions:
+      contents: write
+    uses: ./.github/workflows/windows-full-client.yml
+    with:
+      retain_complete_candidate: ${{ inputs.retain_complete_candidate }}
   macos-arm64:
-    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
+    if: github.event_name != 'workflow_dispatch' || !(inputs.complete_macos_factory || inputs.complete_windows_factory)
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -271,7 +282,7 @@ jobs:
       # Signing keys, guest state and accounts never enter retention.
 
   desktop-packages:
-    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
+    if: github.event_name != 'workflow_dispatch' || !(inputs.complete_macos_factory || inputs.complete_windows_factory)
     strategy:
       fail-fast: false
       matrix:
@@ -371,7 +382,7 @@ jobs:
           compression-level: 0
 
   android-arm64:
-    if: github.event_name != 'workflow_dispatch' || !inputs.complete_macos_factory
+    if: github.event_name != 'workflow_dispatch' || !(inputs.complete_macos_factory || inputs.complete_windows_factory)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:

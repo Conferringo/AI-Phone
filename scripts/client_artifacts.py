@@ -144,6 +144,8 @@ def record(path, os_name, arch, inspection, root=ROOT, signing='unsigned', runti
         'payload': inspection}
     from client_delivery import delivery_metadata,installer_metadata
     manifest.update(delivery_metadata(payload_components(root),os_name+'-'+arch))
+    if os_name=='windows' and manifest['complete_device_bundle']:
+        manifest['local_bootstrap']['implemented_on'].append('windows-x64')
     manifest['installer_delivery']=installer_metadata(path,os_name+'-'+arch)
     path.with_suffix(path.suffix+'.manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
     return manifest

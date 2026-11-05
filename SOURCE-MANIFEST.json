@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 20923,
-      "sha256": "118e9011897e0b726391b3cd56f985e67de3692d98cbc482c6fbf377fcded2d7"
+      "size": 21549,
+      "sha256": "9313779b1cdc32597f7c8ed75f2c50fe82051d669b96ab2fe992cd08a635f547"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -87,6 +87,11 @@
       "path": ".github/workflows/windows-android-component.yml",
       "size": 2258,
       "sha256": "44addd7c3b842ebcfa3245303e2cfd14d53802d57473244bee77d4668b306fd5"
+    },
+    {
+      "path": ".github/workflows/windows-full-client.yml",
+      "size": 6976,
+      "sha256": "553fba3e2d400f30192316daa07b02e3372137c9df878eed391763abccb71b44"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -725,8 +730,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 27861,
-      "sha256": "33b0ada39b8620f7126086b3967085a0d2599914f3a07b74dc7ef66d26262166"
+      "size": 30934,
+      "sha256": "b22fce37a3f9aff0f1e89df583860e56c601abe80b74eed1a3ff54b1af3aee8e"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -4535,8 +4540,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 5411,
-      "sha256": "0ea780b196a5c9e0985cf9c850d262fb8ad6ec7f957b846b97904578fffac6d6"
+      "size": 5490,
+      "sha256": "5a1f045616b1a15022a08f3fb7c37d6790f902ace5229d8d9bc802a747bcaf92"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4577,6 +4582,11 @@
       "path": "docs/public/windows-backend-runtime.md",
       "size": 11894,
       "sha256": "613e15bc276c8e1fb897b1dd938316b526b7130465fd9758a8c67000ef71689b"
+    },
+    {
+      "path": "docs/public/windows-client-factory.md",
+      "size": 4312,
+      "sha256": "2e821e7576a7945eb95fb14b34e5c14ea3d25b8eaf50537066cf16686043ea68"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -5190,13 +5200,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 8072,
-      "sha256": "60db25770969e4ba4433c09bc605e3d10dc88a6dd21fd9c9afb522f04ce860fc"
+      "size": 8214,
+      "sha256": "89919e22e28c3b375650e78358407f80a02ea8471d0bfbc2824d0398311f3404"
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 2520,
-      "sha256": "a0fc11e457ad179288c135cf5476c097a5b8511a5df3aff6fb71335df849be2f"
+      "size": 2591,
+      "sha256": "56bcebdba14d96a44044b612f0ccecd1c2e8f18e5ced7d2bafe81f9e672db3f9"
     },
     {
       "path": "scripts/client_host.py",
@@ -5960,8 +5970,8 @@
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 5329,
-      "sha256": "50057ec71b8bfa93db997981068559bc5edd42a82d6793064bd3e2a95634f184"
+      "size": 5501,
+      "sha256": "675411377a05373dc3340829ac370432d2b9355096a82e872c2a15e812777159"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -6294,6 +6304,11 @@
       "sha256": "2217220baa84af4a961dc9cffb5b7f861379b5c3debaf1b09d37cde4164af433"
     },
     {
+      "path": "scripts/test_windows_client_factory.py",
+      "size": 6056,
+      "sha256": "cbdaf317cb18dda8fd879669f778076b5f3f9146dee03d1c85c089b533df8fe4"
+    },
+    {
       "path": "scripts/test_windows_installer_tools.py",
       "size": 5536,
       "sha256": "f836dca15d8e818d8d65e205e5c9264a8c620469c4288cc1b927ce62fd4e68fd"
@@ -6362,6 +6377,11 @@
       "path": "scripts/verify_task_recovery.py",
       "size": 15895,
       "sha256": "1e12c715c279d45f3fd520491129661dcd359acd2b1ea297d1679728e04a528d"
+    },
+    {
+      "path": "scripts/windows_client_factory.py",
+      "size": 7678,
+      "sha256": "9b0c9a2dfb5afd30f81472b1acbba7bfbea35b211fe0b140127ab5f14fc7a4ca"
     },
     {
       "path": "scripts/windows_private.py",
