@@ -54,6 +54,17 @@ class LinuxOcrTests(unittest.TestCase):
                 ocr.build(root, archive, target)
             self.assertEqual((target / 'tessdata/eng.traineddata').read_bytes(), b'tampered')
 
+    def test_native_ocr_closure_runs_without_a_python_or_pillow_tree(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);archive=self.fixture(root)
+            with tarfile.open(archive,'r:gz') as source:
+                members={row.name:source.extractfile(row).read() for row in source if not row.name.startswith('python/')}
+            archive=self.fixture(root,members)
+            target=root/'component';receipt=ocr.build(root,archive,target)
+            self.assertFalse((target/'python').exists())
+            self.assertTrue((target/'bin/tesseract').is_file())
+            self.assertEqual(ocr.verify(root,target,host='linux-x64'),receipt)
+
     def test_source_changes_extra_files_modes_and_aliases_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); archive = self.fixture(root); target = root / 'component'

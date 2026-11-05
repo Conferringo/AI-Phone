@@ -303,7 +303,7 @@ class WslAssemblyTests(unittest.TestCase):
                 root=Path(temporary);(root/'SOURCE-MANIFEST.json').write_text('fixture source')
                 work=root/'work'
                 stack.enter_context(patch.object(factory,'qualification_preflight',return_value=work))
-                stack.enter_context(patch.object(factory,'prepare_tools',return_value=(root/'tools',root/'python',{})))
+                stack.enter_context(patch.object(factory,'prepare_tools',return_value=(root/'tools',{})))
                 stack.enter_context(patch('wsl_phone_tools.prepare',return_value=root/'phone-tools'))
                 stack.enter_context(patch.object(factory,'factory_context',return_value=root/'ocr'))
                 stack.enter_context(patch('linux_ocr_runtime.build'))

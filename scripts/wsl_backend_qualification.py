@@ -26,10 +26,10 @@ def assemble(root,*,device_apps=False):
     if device_apps:
         from linux_client_factory import prepare_apps
         prepare_apps(root,dict(os.environ))
-    tools,python_archive,_=prepare_tools(root,work)
+    tools,_=prepare_tools(root,work)
     from wsl_phone_tools import prepare as prepare_phone_tools
     phone_tools=prepare_phone_tools(root,work/'phone-tools')
-    output=factory_context(root,work/'ocr-context','linux-ocr',python_archive)
+    output=factory_context(root,work/'ocr-context','linux-ocr')
     from linux_ocr_runtime import build as build_ocr
     ocr=root/'.tools/linux-ocr-runtime';build_ocr(root,output/'linux-x64-ocr.tar.gz',ocr)
     from build_native_services import build as build_services

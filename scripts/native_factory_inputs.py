@@ -11,12 +11,11 @@ from linux_host_runtime import PROFILE as HOST
 from linux_ocr_runtime import PROFILE as OCR
 
 ROOT = Path(__file__).resolve().parent.parent
-PROFILES = {'linux-host': (HOST, 'AI_PHONE_NATIVE_HOST_ASSET'),
-            'linux-ocr': (OCR, 'AI_PHONE_NATIVE_OCR_ASSET')}
+PROFILES = {'linux-host': HOST, 'linux-ocr': OCR}
 
 
 def record(root, role):
-    archive = pin(root, PROFILES[role][0])
+    archive = pin(root, PROFILES[role])
     return {'path': archive['file'], 'size': archive['size_bytes'],
             'sha256': archive['sha256'], 'mode': 0o644}
 
@@ -66,7 +65,8 @@ def acquire(root, assets, repository):
 
 
 def main():
-    assets = {role: os.environ.get(variable, '') for role, (_profile, variable) in PROFILES.items()}
+    assets = ({role:str(pin(ROOT,profile)['asset_id']) for role,profile in PROFILES.items()}
+              if os.environ.get('AI_PHONE_USE_FACTORY_ASSETS')=='1' else {role:'' for role in PROFILES})
     folder = acquire(ROOT, assets, os.environ.get('GITHUB_REPOSITORY', ''))
     if folder is not None and os.environ.get('GITHUB_ENV'):
         with Path(os.environ['GITHUB_ENV']).open('a') as output:

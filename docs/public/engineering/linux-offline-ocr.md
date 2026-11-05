@@ -1,6 +1,6 @@
 # Offline Linux OCR
 
-The Linux x64 OCR component provides Tesseract, its ELF dependency closure, English and Simplified Chinese language data, and the TSV configuration. It is embedded in the native service component. The version-one archive also carries portable dependency files, including Pillow; the Rust OCR runtime does not execute Python or install packages on the user's host.
+The Linux x64 OCR component provides Tesseract, its ELF dependency closure, English and Simplified Chinese language data, and the TSV configuration. It is embedded in the native service component. The current archive no longer carries the unused Pillow tree or orientation model; the Rust OCR runtime does not execute Python or install packages on the user's host.
 
 ## Execution and integrity
 
@@ -10,7 +10,7 @@ The factory archive is pinned in `config/linux-ocr.json`. Admission checks archi
 
 ## Maintainer build
 
-Create a dedicated factory context containing `scripts/linux-ocr/collect.py`, `scripts/linux_dependency_factory.py` as `factory.py`, and the Linux x64 `python.tar.gz` identified in `config/installer-tools.json`. The shared `factory_context` preparation also verifies and copies the bootstrap CA package from `config/linux-factory.json` and writes its selected snapshot to `snapshot.conf`. Do not use a development checkout or user directory as the Docker build context.
+Create a dedicated factory context containing `scripts/linux-ocr/collect.py`, `scripts/linux_dependency_factory.py` as `factory.py`, and the OCR Dockerfile. The shared `factory_context` preparation also verifies and copies the bootstrap CA package from `config/linux-factory.json` and writes its selected snapshot to `ubuntu.sources`. Do not use a development checkout or user directory as the Docker build context.
 
 OCR and QEMU dependency factories use the same pinned [Ubuntu archive snapshot](https://snapshot.ubuntu.com/). The minimal base image receives the reviewed Ubuntu CA certificates before accessing that snapshot over HTTPS; TLS verification, signed APT metadata and exact output archive checks remain enabled. A failed index update stops the build. These operations run on the maintainer's builder, not on an end user's host during client startup.
 
@@ -24,7 +24,7 @@ python3 scripts/linux_ocr_runtime.py \
   --destination /factory/ocr
 ```
 
-The factory verifies the pinned Python archive and Pillow wheel, records distribution package versions and native file hashes, and retains package copyright files and wheel notices. Updates to the shared snapshot require verifying both dependency archives; a changed output requires a new reviewed archive pin, rather than accepting different bytes under an existing identity. Complete binary redistribution and corresponding-source review remain release requirements.
+The factory uses its own system Python only for collection; it does not download portable Python or Pillow. It records distribution package versions and native file hashes, and retains package copyright files. Updates to the shared snapshot require verifying both dependency archives; a changed output requires a new archive pin, rather than accepting different bytes under an existing identity. Complete binary redistribution and corresponding-source review remain release requirements.
 
 On the matching Linux host, pass `--linux-ocr /factory/ocr` with `--with-service-runtime` and `--installer-tools /factory/tools` to `scripts/build_client.py`. The OCR verifier executes the Rust helper against a generated image and the included native dependency closure. A factory component alone does not constitute a complete Linux client.
 
@@ -34,6 +34,6 @@ Current platform support, installer availability and distribution requirements a
 
 ## 中文
 
-Linux x64 OCR 组件内置 Tesseract、ELF 动态依赖、英文与简体中文字库和TSV配置。Rust负责PNG解码、画面摘要和结果解析，为识别进程选择自带加载器、库及字库，不执行Python或修改用户系统库。v1依赖归档同时保留Pillow等便携依赖文件。有效组件接入原生服务清单后，安装器不再通过 apt 重复安装 OCR。
+Linux x64 OCR 组件内置 Tesseract、ELF 动态依赖、英文与简体中文字库和TSV配置。Rust负责PNG解码、画面摘要和结果解析，为识别进程选择自带加载器、库及字库，不执行Python或修改用户系统库。当前归档已移除未使用的Pillow与方向识别模型；生产者只用构建环境的系统Python收集文件，不再下载便携Python或Pillow。有效组件接入原生服务清单后，安装器不再通过 apt 重复安装 OCR。
 
 封装清单包含 TSV 配置文件；Rust 通过 `tessedit_create_tsv=1` 直接选择输出格式，不依赖该文件启用 TSV。适配器拒绝无效 TSV 头，不把错误格式当成空识别结果。当前宿主范围、完整安装包供应和分发要求统一见[发行状态](../release-status.md)。

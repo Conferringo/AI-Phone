@@ -19,7 +19,7 @@ class NativeFactoryInputsTests(unittest.TestCase):
             data = ('fixed '+role).encode()
             source = root/(role+'.source');source.write_bytes(data)
             archive = {'file': 'linux-x64-'+('host' if role=='linux-host' else 'ocr')+'.tar.gz',
-                       'size_bytes': len(data), 'sha256': digest(source)}
+                       'size_bytes': len(data), 'sha256': digest(source), 'asset_id':int(asset)}
             (root/'config'/config).write_text(json.dumps({'format':1,'host':'linux-x64','archive':archive,'redistribution_review_complete':False}))
             metadata[asset] = {'name':archive['file'],'size':len(data),'digest':'sha256:'+archive['sha256']}
             content[asset] = data
@@ -66,9 +66,27 @@ class NativeFactoryInputsTests(unittest.TestCase):
     def test_unconfigured_source_path_has_no_github_or_environment_side_effect(self):
         with tempfile.TemporaryDirectory() as temporary:
             env=Path(temporary)/'github-env'
-            with patch.dict(os.environ,{'AI_PHONE_NATIVE_HOST_ASSET':'','AI_PHONE_NATIVE_OCR_ASSET':'','GITHUB_ENV':str(env)}),patch.object(inputs.subprocess,'check_output') as read:
+            with patch.dict(os.environ,{'AI_PHONE_USE_FACTORY_ASSETS':'','GITHUB_ENV':str(env)}),patch.object(inputs.subprocess,'check_output') as read:
                 inputs.main();read.assert_not_called()
             self.assertFalse(env.exists())
+
+    def test_pinned_inputs_belong_to_each_source_revision_not_old_repository_variables(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reads=[]
+            environment={'AI_PHONE_USE_FACTORY_ASSETS':'1','AI_PHONE_NATIVE_HOST_ASSET':'999','AI_PHONE_NATIVE_OCR_ASSET':'998','GITHUB_REPOSITORY':'example/project','GITHUB_ENV':''}
+            for revision in (0,1):
+                root=Path(temporary)/str(revision);root.mkdir();metadata,content=self.fixture(root)
+                for path in (root/'config').iterdir():
+                    value=json.loads(path.read_text());value['archive']['asset_id']+=revision*20;path.write_text(json.dumps(value))
+                def inspect(command,**_):
+                    asset=command[2].rsplit('/',1)[1];reads.append(asset)
+                    return json.dumps(metadata[str(int(asset)-revision*20)])
+                def download(command,**kwargs):
+                    asset=command[2].rsplit('/',1)[1];kwargs['stdout'].write(content[str(int(asset)-revision*20)])
+                with patch.object(inputs,'ROOT',root),patch.dict(os.environ,environment),patch.object(inputs.subprocess,'check_output',side_effect=inspect),patch.object(inputs.subprocess,'run',side_effect=download):
+                    inputs.main()
+                self.assertEqual({p.name for p in (root/'.tools/factory-native-inputs').iterdir()},{row['name'] for row in metadata.values()})
+            self.assertEqual(reads,['11','12','31','32'])
 
     def test_later_steps_only_receive_the_directory_after_both_downloads_succeed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -78,7 +96,7 @@ class NativeFactoryInputsTests(unittest.TestCase):
                 asset=command[2].rsplit('/',1)[1]
                 if asset=='12':raise subprocess.CalledProcessError(1,command)
                 kwargs['stdout'].write(content[asset])
-            env={'AI_PHONE_NATIVE_HOST_ASSET':'11','AI_PHONE_NATIVE_OCR_ASSET':'12','GITHUB_REPOSITORY':'example/project','GITHUB_ENV':str(environment)}
+            env={'AI_PHONE_USE_FACTORY_ASSETS':'1','GITHUB_REPOSITORY':'example/project','GITHUB_ENV':str(environment)}
             with patch.object(inputs,'ROOT',root),patch.dict(os.environ,env),patch.object(inputs.subprocess,'check_output',side_effect=inspect),patch.object(inputs.subprocess,'run',side_effect=download):
                 with self.assertRaises(subprocess.CalledProcessError):inputs.main()
             self.assertFalse(environment.exists())

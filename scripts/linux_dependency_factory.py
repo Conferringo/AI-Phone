@@ -31,13 +31,13 @@ def native_closure(root, programs, modules=()):
     return files
 
 
-def package_records(root, files, **extra):
+def package_records(root, files):
     packages = subprocess.check_output(['dpkg-query', '-W', '-f=${Package} ${Version}\n'], text=True).splitlines()
     (root / 'licenses').mkdir()
     for package in packages:
         name = package.split()[0]; source = Path('/usr/share/doc') / name / 'copyright'
         if source.is_file(): shutil.copyfile(source, root / 'licenses' / (name + '.copyright'))
-    (root / 'source-records.json').write_text(json.dumps({'native_files': files, 'packages': packages, **extra}, sort_keys=True) + '\n')
+    (root / 'source-records.json').write_text(json.dumps({'native_files': files, 'packages': packages}, sort_keys=True) + '\n')
 
 
 def archive(root, destination):

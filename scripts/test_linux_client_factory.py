@@ -39,12 +39,10 @@ class LinuxClientFactoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);source=self.context_fixture(root)
             private=root/'data/chat';private.parent.mkdir();private.write_bytes(b'keep private')
-            python=root/'python.tar.gz';python.write_bytes(b'pinned Python fixture')
             for role in ('linux-ocr','linux-host'):
                 context=root/role
                 def build(command,_root):
                     expected={'Dockerfile','collect.py','factory.py','bootstrap-ca.deb','ubuntu.sources'}
-                    if role=='linux-ocr':expected.add('python.tar.gz')
                     self.assertEqual({p.name for p in context.iterdir()},expected)
                     self.assertEqual((context/'bootstrap-ca.deb').read_bytes(),source.read_bytes())
                     configured=(context/'ubuntu.sources').read_text()
@@ -56,7 +54,7 @@ class LinuxClientFactoryTests(unittest.TestCase):
                     self.assertEqual(command[-1],context)
                     (context/'output').mkdir()
                 with patch.object(factory,'run',side_effect=build):
-                    output=factory.factory_context(root,context,role,python if role=='linux-ocr' else None)
+                    output=factory.factory_context(root,context,role)
                 self.assertEqual(output,context/'output');self.assertTrue(output.is_dir())
             self.assertEqual(private.read_bytes(),b'keep private')
 

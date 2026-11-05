@@ -1,22 +1,16 @@
-"""Maintainer factory: preserve the OCR closure, wheel and attribution."""
+"""Maintainer factory: native OCR closure and attribution."""
 from pathlib import Path
 import shutil
-import zipfile
-from factory import archive, native_closure, package_records, sha
-
-PILLOW_SHA = '5f56499c1a74d2b862beb0c33b8016f99d095858455df9d21583bbbc1c15b582'
+from factory import archive, native_closure, package_records
 
 
 def assemble(root):
     files = native_closure(root, {'tesseract': '/usr/bin/tesseract'})
     (root / 'tessdata/configs').mkdir(parents=True)
-    for language in ('eng', 'chi_sim', 'osd'):
+    for language in ('eng', 'chi_sim'):
         shutil.copyfile('/usr/share/tesseract-ocr/5/tessdata/' + language + '.traineddata', root / 'tessdata' / (language + '.traineddata'))
     shutil.copyfile('/usr/share/tesseract-ocr/5/tessdata/configs/tsv', root / 'tessdata/configs/tsv')
-    wheel = next(root.glob('pillow*.whl'))
-    if sha(wheel) != PILLOW_SHA: raise ValueError('Pillow wheel differs from the reviewed PyPI bytes')
-    with zipfile.ZipFile(wheel) as source: source.extractall(root / 'python')
-    package_records(root, files, wheel={'file': wheel.name, 'sha256': PILLOW_SHA}); wheel.unlink()
+    package_records(root, files)
 
 
 if __name__ == '__main__':
