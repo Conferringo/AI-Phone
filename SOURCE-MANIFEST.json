@@ -4455,8 +4455,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 7097,
-      "sha256": "c3869a0c02e1ec1845fb5e231c57e517ad190c935b8ac7e6801574b3b73a73b9"
+      "size": 7879,
+      "sha256": "0e3eeaef5b78ec422ebecf329bd4bce2018accc9d128c331ab75a9080a496c79"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4570,8 +4570,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6261,
-      "sha256": "181f3a67d8966071dfed639252536056e5f4d472b29c511551bc3bd838f9d472"
+      "size": 6666,
+      "sha256": "5a9aa95f4d0626cafe474acf9d2932180ac378f65e53499848c7791c41531a8d"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -5125,8 +5125,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 13373,
-      "sha256": "6a73d8faced7fcc7d55e20fd2284855cabf37ff6fe73d5834e86038d8ff90648"
+      "size": 14894,
+      "sha256": "f36de66f788fe798d008142aab12058fbde78421f19c4b583d629f115569ff98"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -6135,8 +6135,8 @@
     },
     {
       "path": "scripts/test_linux_client_packages.py",
-      "size": 3637,
-      "sha256": "f04cf7dfc542e77e0a528bc91eb5c57398c38980991c3b4a0044cdb30b3aa180"
+      "size": 4759,
+      "sha256": "586f5bf893976017e745b8609a244b35c9b6a34092b25813b8e3640f86d48923"
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",

@@ -18,6 +18,8 @@ The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/
 
 The [Windows build from 2a5b17d](https://github.com/Conferringo/AI-Phone/actions/runs/42072341221) qualified backend startup/restart, assembled and inspected one complete EXE below 2 GiB, and passed 21 native client tests. Its final upload failed at a Windows shell line-ending boundary. The text receipt is retained; the installer itself is not available for download. The workflow therefore remains failed. Android guest boot and physical installation were not executed.
 
+The [Linux build from 160f](https://github.com/Conferringo/AI-Phone/actions/runs/42078930074) assembled and inspected both DEB and AppImage outputs, but its AppImage still exceeded the single-file limit. It failed without retaining installers. The denser packing described in the [factory guide](linux-client-factory.md) has passed an offline fixture check; its complete product size remains unverified.
+
 ## Capability limits
 
 - Real Android/Linux execution, input and persisted state exist in the development runtime. Component startup does not establish a complete first-time client installation.

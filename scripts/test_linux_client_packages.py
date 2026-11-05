@@ -1,5 +1,7 @@
 """One native compilation produces both independently inspected Linux formats."""
 from pathlib import Path
+import json
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -19,13 +21,17 @@ class LinuxClientPackageTests(unittest.TestCase):
             with patch.object(client.platform,'system',return_value='Linux'),patch.object(client.platform,'machine',return_value='x86_64'),\
                  patch.object(client.subprocess,'run') as run,patch.object(client.shutil,'which',return_value='/usr/bin/patchelf'),patch.object(client,'inspect_deb',return_value={'deb':'inspected'}) as deb,\
                  patch.object(client,'inspect_appimage',return_value={'appimage':'inspected'}) as appimage,\
-                 patch.object(client,'record',return_value={'server_included':True,'complete_device_bundle':True}) as record:
+                 patch.object(client,'record',return_value={'server_included':True,'complete_device_bundle':True}) as record,\
+                 patch.object(client,'compact_appimage') as compact:
                 value=client.build_linux(root,'fixture',env,command,False)
                 self.assertEqual(run.call_count,1)
                 arguments=run.call_args.args[0];self.assertEqual(arguments[arguments.index('--bundles')+1],'deb,appimage')
                 self.assertEqual(run.call_args.kwargs['env']['CI'],env['CI'])
                 self.assertEqual(run.call_args.kwargs['env']['AI_PHONE_REAL_PATCHELF'],'/usr/bin/patchelf')
                 self.assertEqual(run.call_args.kwargs['env']['LDAI_COMP'],'zstd')
+                self.assertIn(json.dumps({'bundle':{'useLocalToolsDir':True}},separators=(',',':')),arguments)
+                folder=root/'apps/client/src-tauri/target/release/bundle/appimage'
+                compact.assert_called_once_with(root,folder/'AI Phone.AppDir',folder/'AI Phone_fixture_amd64.AppImage','amd64',run.call_args.kwargs['env'])
                 self.assertEqual(len(value),2);self.assertEqual(record.call_count,2)
                 deb.assert_called_once_with(root/'dist/AI-Phone-fixture-linux-amd64.deb',root)
                 appimage.assert_called_once_with(root/'dist/AI-Phone-fixture-linux-amd64.AppImage','amd64',root)
@@ -33,6 +39,15 @@ class LinuxClientPackageTests(unittest.TestCase):
                 self.assertTrue(all(row['complete_device_bundle'] for row in value))
                 for name,body in [('deb',b'deb'),('AppImage',b'appimage')]:
                     self.assertEqual((root/f'dist/AI-Phone-fixture-linux-amd64.{name}').read_bytes(),body)
+
+    def test_failed_repack_preserves_the_built_image_and_stops_the_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'built.AppImage';source.write_bytes(b'original built image')
+            with patch.object(client.subprocess,'check_output',return_value='8\n'),\
+                 patch.object(client.subprocess,'run',side_effect=[None,subprocess.CalledProcessError(1,'appimagetool')]),\
+                 self.assertRaises(subprocess.CalledProcessError):
+                client.compact_appimage(root,root/'AppDir',source,'amd64',{})
+            self.assertEqual(source.read_bytes(),b'original built image')
 
     def test_existing_arm_packages_do_not_recompile_and_keep_the_appimage_executable(self):
         with tempfile.TemporaryDirectory() as temporary:

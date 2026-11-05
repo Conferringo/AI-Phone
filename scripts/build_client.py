@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import os
 import argparse
+import tempfile
 from native_bundle import inspect_macos_bundle
 from client_artifacts import inspect_apk, inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
 
@@ -41,6 +42,25 @@ def build_macos():
     destination.with_suffix('.dmg.manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps({'dmg':str(destination),'application':str(bundles/'macos/AI Phone.app'),'server_included':manifest['server_included'],'complete_device_bundle':manifest['complete_device_bundle'],'remote_upload':False}))
 
+def compact_appimage(root,appdir,source,arch,env):
+    # Reuse Tauri's own tool and the built image's runtime; change compression only.
+    plugin=root/'apps/client/src-tauri/target/.tauri/linuxdeploy-plugin-appimage.AppImage'
+    with tempfile.TemporaryDirectory(prefix='ai-phone-appimage-pack-') as temporary:
+        work=Path(temporary)
+        subprocess.run([plugin,'--appimage-extract'],cwd=work,check=True,stdout=subprocess.DEVNULL)
+        tools=work/'squashfs-root/usr'
+        offset=int(subprocess.check_output([source,'--appimage-offset'],text=True))
+        runtime=work/'runtime'
+        with source.open('rb') as original:runtime.write_bytes(original.read(offset))
+        packed=work/'packed.AppImage'
+        environment={**env,'ARCH':{'amd64':'x86_64','arm64':'aarch64'}[arch]}
+        subprocess.run([tools/'bin/appimagetool',appdir,packed,'--runtime-file',runtime,'--comp','zstd',
+                        '--mksquashfs-opt','-b','--mksquashfs-opt','1M',
+                        '--mksquashfs-opt','-Xcompression-level','--mksquashfs-opt','19'],
+                       env=environment,check=True)
+        shutil.copy2(packed,source)
+
+
 def build_linux(root,version,env,command,package_only):
     if platform.system()!='Linux':raise SystemExit('Build Linux packages on a Linux host/container')
     arch={'aarch64':'arm64','x86_64':'amd64'}.get(platform.machine())
@@ -50,7 +70,11 @@ def build_linux(root,version,env,command,package_only):
         if not patchelf:raise ValueError('Install native patchelf before building Linux AppImages')
         env={**env,'PATCHELF':str(root/'scripts/linux-appimage-patchelf.sh'),'AI_PHONE_REAL_PATCHELF':patchelf,
              'NO_STRIP':'1','LDAI_COMP':'zstd'}
-        subprocess.run(command+['build','--verbose','--config','src-tauri/gen/host/resources.json','--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
+        local_tools=json.dumps({'bundle':{'useLocalToolsDir':True}},separators=(',',':'))
+        subprocess.run(command+['build','--verbose','--config','src-tauri/gen/host/resources.json','--config',local_tools,'--bundles','deb,appimage','--ci','--no-sign','--','--locked'],cwd=root/'apps/client',env=env,check=True)
+        folder=root/'apps/client/src-tauri/target/release/bundle/appimage'
+        label='aarch64' if arch=='arm64' else arch
+        compact_appimage(root,folder/'AI Phone.AppDir',folder/f'AI Phone_{version}_{label}.AppImage',arch,env)
     variants=[('deb','deb',arch),('appimage','AppImage','aarch64' if arch=='arm64' else arch)]
     results=[]
     for kind,extension,label in variants:
