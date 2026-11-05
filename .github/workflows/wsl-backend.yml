@@ -11,6 +11,8 @@ jobs:
   linux-x64-component:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
+    permissions:
+      contents: write # GitHub denies this unpublished input cache to a read-only integration.
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'

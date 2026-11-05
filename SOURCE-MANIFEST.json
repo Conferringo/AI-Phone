@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-full-client.yml",
-      "size": 7398,
-      "sha256": "535588d2253c1a0d44bef8aef2c7de21404e10f4c6fb46af9f062cadc8e9e390"
+      "size": 7502,
+      "sha256": "195a954a41ea62dec575aa38a62a6a394fb9eb641cc49a86d064d3e09e041983"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -100,8 +100,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 3326,
-      "sha256": "7a82921ed541e6abf6e40ab3c5adf0472ec6f402913423226aae6d6934e31f67"
+      "size": 3438,
+      "sha256": "50bd4104c00d42c991dbe0a0247cf8a1132daf70c0fae450a682f19dea9f175f"
     },
     {
       "path": ".gitignore",
@@ -4425,8 +4425,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 6214,
-      "sha256": "4d1deb0c459ca820029079151a2436abd4f4cda9f5d455eca9e38b32c31cf636"
+      "size": 6533,
+      "sha256": "0004bfdc437e268adf29fc2b3391f13c63c79c0239c0e3efbf5b73b9fa7448da"
     },
     {
       "path": "docs/public/managed-linux.md",
