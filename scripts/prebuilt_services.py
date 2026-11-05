@@ -8,8 +8,9 @@ from client_host_entry import checked_record, verify_file
 from host_platform import host_key
 from release_package import SECRET
 
-DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v1'
+DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v2'
 SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
+PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v2'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -32,6 +33,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Native device setup capability was not qualified')
     if receipt['checks'].get('service_supervision') != SERVICE_SUPERVISION_CONTRACT:
         raise ValueError('Native service supervision capability was not qualified')
+    if receipt['checks'].get('phone_input_setup') != PHONE_INPUT_SETUP_CONTRACT:
+        raise ValueError('Native phone input setup capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -48,7 +51,7 @@ def prepare_services(root, *, linux_ocr=None):
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
                 'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT,
-                'service_supervision': SERVICE_SUPERVISION_CONTRACT}
+                'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -161,6 +164,22 @@ def supervisor_command(root):
     from build_native_services import contract_receipt
     binary=root/SOURCE_SUPERVISOR
     contract_receipt(binary,'--service-supervision-contract',SERVICE_SUPERVISION_CONTRACT)
+    return [str(binary)]
+
+
+def input_setup_command(root):
+    root = Path(root).resolve()
+    folder = root / 'runtime/services'
+    if folder.exists() or folder.is_symlink():
+        manifest = load_manifest(root)
+        if manifest.get('phone_input_setup') != PHONE_INPUT_SETUP_CONTRACT:
+            raise ValueError('Native phone input setup capability is missing; rebuild the complete client')
+        return [str(root / binary_path('assistant'))]
+    # This dedicated source helper rejects unknown flags without starting a
+    # business server. Old assistant programs must never receive this new flag.
+    from build_native_services import contract_receipt
+    binary = root / SOURCE_SUPERVISOR
+    contract_receipt(binary, '--phone-input-setup-contract', PHONE_INPUT_SETUP_CONTRACT)
     return [str(binary)]
 
 

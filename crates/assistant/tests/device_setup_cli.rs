@@ -60,7 +60,7 @@ fn capability_is_read_only_and_does_not_require_an_installation_or_interpreter()
     let fixture = Fixture::new();
     let output = fixture.invoke(&["--device-setup-contract"], false);
     assert!(output.status.success());
-    assert_eq!(output.stdout, b"ai-phone-device-setup-v1\n");
+    assert_eq!(output.stdout, b"ai-phone-device-setup-v2\n");
     assert!(output.stderr.is_empty());
     fixture.unchanged();
 }
@@ -71,6 +71,7 @@ fn setup_rejects_missing_root_and_mixed_arguments_before_service_startup() {
     for arguments in [
         vec!["--setup-devices"],
         vec!["--setup-devices", "--version"],
+        vec!["--setup-wsl-devices", "--version"],
         vec!["--device-setup-contract", "--setup-devices"],
         vec!["--device-setup-contract", "--set-admin"],
     ] {
@@ -85,6 +86,20 @@ fn setup_rejects_missing_root_and_mixed_arguments_before_service_startup() {
         assert!(String::from_utf8(output.stderr).unwrap().contains(expected));
         fixture.unchanged();
     }
+}
+
+#[test]
+fn wsl_completion_rejects_missing_input_without_starting_a_server() {
+    let fixture = Fixture::new();
+    let output = fixture.invoke(&["--setup-wsl-devices"], false);
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8(output.stderr)
+            .unwrap()
+            .contains("wsl_device_setup")
+    );
+    fixture.unchanged();
 }
 
 #[test]

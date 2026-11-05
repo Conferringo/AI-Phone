@@ -700,8 +700,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/native_phone.rs",
-      "size": 6890,
-      "sha256": "7a8a7654523b6e65d7a9252864d5c615c5ad52a913d06cd96070eda9406220e5"
+      "size": 7285,
+      "sha256": "4966511c506cfcd94914c9afb9c25d097a781b63a87d9b5c161142f44aa5d495"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/process.rs",
@@ -725,8 +725,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 27833,
-      "sha256": "99d936202923c941c3cd0a2d0c8ae6fab7bfa5ea57e82b208880dcc58bd85989"
+      "size": 27861,
+      "sha256": "33b0ada39b8620f7126086b3967085a0d2599914f3a07b74dc7ef66d26262166"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -2625,18 +2625,18 @@
     },
     {
       "path": "crates/assistant/src/device_setup/mod.rs",
-      "size": 8628,
-      "sha256": "5da71732d41d86e5f590631a92e2ddb7414e9dd14b0fa8268f66bd3f92afaf58"
+      "size": 9773,
+      "sha256": "9da6d5b8259d806b5bbfb9a5e9e2b283a3445322dd2b1b637b029697d21a96b7"
     },
     {
       "path": "crates/assistant/src/device_setup/policy.rs",
-      "size": 6966,
-      "sha256": "2f1400c072be2016c974db6b2d519128af5effc5b1061b8926e1d33a1bbf4cbf"
+      "size": 6989,
+      "sha256": "5b0b253d850710221052401c4d0efad79ae1c375bf222ab72a807303ac6f7092"
     },
     {
       "path": "crates/assistant/src/device_setup/rpc.rs",
-      "size": 4229,
-      "sha256": "d01747d58f3825003d1ac79e3fced9b66efc0f77502168f2494b6a2dc5d6c8a6"
+      "size": 4770,
+      "sha256": "467299608c2e2528213f45185888a73cfe7a8a14f5aa6e6d0987e90723568627"
     },
     {
       "path": "crates/assistant/src/device_setup/store.rs",
@@ -2645,8 +2645,13 @@
     },
     {
       "path": "crates/assistant/src/device_setup/tests.rs",
-      "size": 17446,
-      "sha256": "b48cee167251aabaa0e2f78116ffcf73c87a97953b2a4486f3291fa526f242ad"
+      "size": 19318,
+      "sha256": "83b95d4110d2ff171f4fbd182be64848d8fc6ab79702c3a5c0f5d59a444836f7"
+    },
+    {
+      "path": "crates/assistant/src/device_setup/wsl.rs",
+      "size": 5293,
+      "sha256": "9273483be5b87e0aa48344a999fe914cc7f9904404c7fd2f24a67bc39168f636"
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
@@ -2700,8 +2705,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 10872,
-      "sha256": "3c301b28fccb1b786902a840ec373660a64086fad8236bb562d223900df78e3a"
+      "size": 11302,
+      "sha256": "a41fe40ec7f8b594a2cdb85f1e5f1e7f95dd586cf7097b072a316c43252b836d"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -2870,8 +2875,8 @@
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
-      "size": 3337,
-      "sha256": "9b05cf86853c464cf38b82e23044f2e18fbd90bff56372734f41ef370ee833c8"
+      "size": 3796,
+      "sha256": "9702a6e19232886e994d19ac1f634ec7638911487b84cc2f0c895d229da3b617"
     },
     {
       "path": "crates/guest-runtime/Cargo.toml",
@@ -3014,14 +3019,49 @@
       "sha256": "d8f6583d17138b52ae28ca056d3f3d42955b5e7dfc03a0a4167fadac73521e0b"
     },
     {
+      "path": "crates/host-runtime/src/android/input/applications.rs",
+      "size": 17863,
+      "sha256": "1c0f07914df0d0a4e753faedc8f2b2b56d6fc4d18770f350dd230a79635080a1"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/device.rs",
+      "size": 2921,
+      "sha256": "458960eb5c85307f4754d36ee001148026978eda25816b53abea8c353dfff7f9"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/mod.rs",
+      "size": 10441,
+      "sha256": "5f94a5b908c82b12d0dc0d293a4c5d758569a2398a4813335e2c7b04ce4e4518"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/policy.rs",
+      "size": 1869,
+      "sha256": "0924d5fcf779625b174ca45fab132b98475b0915083a9e009d4f999d20f2c186"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/probe.rs",
+      "size": 2068,
+      "sha256": "8e2d6a14f7e3fa1b91580f24e1f1ea743a2e5aaf9aa75452b20c842b4cb86554"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/state.rs",
+      "size": 3576,
+      "sha256": "da2399e40bf6e6d5639b243bcb48903e50d93e28d44387b2f3e56e4b50f04e4e"
+    },
+    {
+      "path": "crates/host-runtime/src/android/input/tests.rs",
+      "size": 21511,
+      "sha256": "8c37487961eb45a617e5cf2bdb3e488cabd690fe7a4a21137aa2812b1f9420b3"
+    },
+    {
       "path": "crates/host-runtime/src/android/manifest.rs",
       "size": 6012,
       "sha256": "e2766ebd63a2a6a4d25e7e52b28113c4e80349cacd8eec7ddb65fdf17335a9e2"
     },
     {
       "path": "crates/host-runtime/src/android/mod.rs",
-      "size": 2796,
-      "sha256": "806f0b56842b7a90dd1e28d3247f42779f332337c29e24d7865ecfff20b90f15"
+      "size": 2811,
+      "sha256": "164ed43b4a937f2d2ed28a5e204294d4e6e71c0bde55f53c4bdcf98df360d7b8"
     },
     {
       "path": "crates/host-runtime/src/android/resources.rs",
@@ -3040,8 +3080,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/session/link.rs",
-      "size": 8557,
-      "sha256": "075a2a9efea6649aeed22565db05667f78d912c0def3448f047d5b2bb9a76b12"
+      "size": 8792,
+      "sha256": "8fd0e694deb94a71c11280331ba6ba19d97a5bcfe8057308c2b7c497a5f626ed"
     },
     {
       "path": "crates/host-runtime/src/android/session/mod.rs",
@@ -3060,8 +3100,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/session/readiness.rs",
-      "size": 2472,
-      "sha256": "95ca515d93755ac6c868bab9c928134f65d98133c1fe2f8b3de46c8e9a9058d1"
+      "size": 2514,
+      "sha256": "8a0bfc21c5309ce9d3aaac032854c48779fe1bb65072cfdec403ca5caa0fe7ca"
     },
     {
       "path": "crates/host-runtime/src/android/session/tests.rs",
@@ -3100,8 +3140,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3094,
-      "sha256": "7d14c96a9f647b9aaf19b0dd75a4ec59ee3ca27d68a597a94c8dcea43530274d"
+      "size": 3392,
+      "sha256": "6ae9c35acfc8d2ee7ad4912d623412d3d861840d7d146087b1f176553da10de9"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3130,13 +3170,13 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/guest.rs",
-      "size": 2309,
-      "sha256": "ca610af64bb99e1a46cbca9c2a45fe900c4464148a2067254eef49e969b892b0"
+      "size": 3025,
+      "sha256": "15e898b969011125dfa8b92eeeae43a9dc76d016aad63b60bfd023d8730892cc"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/mod.rs",
-      "size": 3416,
-      "sha256": "9961cecdcd56e1f773c461d3d86116aaee75a05b64f35c046d5fdf6bfbe7d226"
+      "size": 3445,
+      "sha256": "5e7d155e665ff112558c6407f3baae3bac22b90131ce3914895f9698d7235e07"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
@@ -3229,6 +3269,11 @@
       "sha256": "df02ebd8484b7008538b5ace2699add5a4d31cbad3cc8bf7f8687da847711e3e"
     },
     {
+      "path": "crates/host-runtime/src/wsl/devices.rs",
+      "size": 4777,
+      "sha256": "6872fd6737a89d8c1ce931617c85504f50dda771039b536ccc652b60f80c288f"
+    },
+    {
       "path": "crates/host-runtime/src/wsl/initialize.rs",
       "size": 6686,
       "sha256": "c21cdc866e9dfe8dc881746e16e4b4d620ba417b92f406c25b06f7c2e7bb4a7a"
@@ -3240,13 +3285,13 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/windows.rs",
-      "size": 7144,
-      "sha256": "b70311760a7955e43c70ce7498e5f901030671af583a3a2652bba74336b73306"
+      "size": 7363,
+      "sha256": "511c8e3be50434b4af8dc52d4047bc30de4a93f08bcb49efc75e1a944b6f0690"
     },
     {
       "path": "crates/host-runtime/src/wsl.rs",
-      "size": 8027,
-      "sha256": "c5e232536c28f63bc4debdefec710a78ea50f6897584e824cfcaa92f3d4baf66"
+      "size": 8108,
+      "sha256": "142b02775360b3026f9282f8d884ee806664ee91781057c9f72d68a6bd943f0f"
     },
     {
       "path": "crates/host-runtime/tests/connection_owner.rs",
@@ -3510,8 +3555,8 @@
     },
     {
       "path": "docs/public/engineering/native-android-preparation.md",
-      "size": 4813,
-      "sha256": "eee1f64d5604449ce1f93ed1e9a3d6cba8700499c4fc807f67028a89fac87e8b"
+      "size": 4870,
+      "sha256": "be82a07955a395b315e8b39f5a18a379ed36b5626cfa6ef2f13b891878c399a3"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -3520,8 +3565,8 @@
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
-      "size": 3104,
-      "sha256": "86c133134407784fe267c7e6536fcae4e2374dff53305d4f9f7053483454d862"
+      "size": 6415,
+      "sha256": "590c904eb171033a7d9bc7e435d1a2a6976950d38e3771ab50d1c84e44e97497"
     },
     {
       "path": "docs/public/engineering/private-install-state.md",
@@ -4530,8 +4575,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 10646,
-      "sha256": "82825474b0fab3fbfefb71de6a1e0079cac89d4d86ca59e47272dc16f79dc44f"
+      "size": 11894,
+      "sha256": "613e15bc276c8e1fb897b1dd938316b526b7130465fd9758a8c67000ef71689b"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -4640,8 +4685,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/native_android.proto",
-      "size": 2249,
-      "sha256": "f825e365738fd3714953c0020140211e79275a770b0fcb33cd2edb9ec4b9030f"
+      "size": 3263,
+      "sha256": "b66571a12b634f26241797dfc03095a7b66f802927f3cb4dcc0530d4c57eaff9"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/phone_runtime.proto",
@@ -4720,8 +4765,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/native_android_pb.ts",
-      "size": 10924,
-      "sha256": "b44737d0253250b662827d0cd33000bc5ac043849939ddf09f38e77e3ecde46a"
+      "size": 16023,
+      "sha256": "a8d639229c896c684a9e20656f2980fe98ff189ac494993a044c1038519a91d9"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/phone_runtime_pb.ts",
@@ -4880,8 +4925,8 @@
     },
     {
       "path": "scripts/android-install-input.sh",
-      "size": 240,
-      "sha256": "6dc7233c50d45d14e3a953c2605a8aa39edc5bb1ffb7ca7d77681eb31def767a"
+      "size": 627,
+      "sha256": "5430a8e6bd395072f6e69187243746ae8a898bc1bc0391cdb128ebc230db579b"
     },
     {
       "path": "scripts/android-network/DataUsageWarnings.java",
@@ -4945,8 +4990,8 @@
     },
     {
       "path": "scripts/android_input.py",
-      "size": 10193,
-      "sha256": "12d0c16ff4eb6b96f8600d9c634d4a4df0b1ccc12057d07f455836dfa329222d"
+      "size": 2341,
+      "sha256": "1d318183a8aa12429ccd4013c45df5d59474cca47d419c2e8f06227353a20f67"
     },
     {
       "path": "scripts/android_notices.py",
@@ -5060,8 +5105,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 7057,
-      "sha256": "231811f35d0de28d50c7178e646476b671e6eb35054564bbada36755faf176ba"
+      "size": 7220,
+      "sha256": "de5e17ddb4c426ddf850c1ff13c51964434175eea7200400ffc533ace8f2e93e"
     },
     {
       "path": "scripts/bun",
@@ -5690,8 +5735,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 7670,
-      "sha256": "8906802ee3e06428985b5febf4aa3888eaa39a0e0dbda81ff7cbbe740e9cedef"
+      "size": 8728,
+      "sha256": "d0025367bd2c2de7b0b8708d49ddaafab321a1d368f6420064bbbcb9bd21f222"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5775,8 +5820,8 @@
     },
     {
       "path": "scripts/service_start.py",
-      "size": 4052,
-      "sha256": "c210cdf0729a9cd1243a3c1270327df38b3dd612e9a9adb3221a6aa7de0fcc8d"
+      "size": 4051,
+      "sha256": "af9e7581d06a4fe7dc784ac49be55c62fe3c481f24d5ca5f64a01006773ffed4"
     },
     {
       "path": "scripts/service_stop.py",
@@ -5830,8 +5875,8 @@
     },
     {
       "path": "scripts/test_android_input.py",
-      "size": 20410,
-      "sha256": "22bde03b9498e8c77ced578fb88dfeea19be090a73cced50f67ab08304749c0d"
+      "size": 4463,
+      "sha256": "190bed39e323ec87d09f0a363d83a473e055ee70246a1a05b480af5b9177bb95"
     },
     {
       "path": "scripts/test_android_macos_factory.py",
@@ -6140,8 +6185,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 40160,
-      "sha256": "db78a5da0a27487e3eff967dda983e3527eaed7f313f2d60e115f62af6de4db2"
+      "size": 42484,
+      "sha256": "438a9224f06a411f6bc2b3f74d1191ffbf9dccaca2932dc1acc77df395186fdc"
     },
     {
       "path": "scripts/test_notification_probe.py",
@@ -6265,8 +6310,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9966,
-      "sha256": "bc9af1a07fa7f522948c70a6a44380a088c2b091cb43d3502e10dd707c9e5ff0"
+      "size": 9984,
+      "sha256": "0f1cd355752daf0e79e0276b380deb3e019fe05c2c5c74d2e3fdd4a4f1d198ea"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
@@ -6290,8 +6335,8 @@
     },
     {
       "path": "scripts/test_wsl_provision_consumer.py",
-      "size": 10242,
-      "sha256": "a811cbb7afc69362b00283d70743121948ef921229b4c4d35b8f3b4a8baf7468"
+      "size": 11062,
+      "sha256": "bcc4cf20363a07f3f55c57f0a8763def50a28fb902f7dd422ea3de17f1a8fb80"
     },
     {
       "path": "scripts/test_wsl_resources.py",
@@ -6300,8 +6345,8 @@
     },
     {
       "path": "scripts/test_wsl_runtime.py",
-      "size": 19799,
-      "sha256": "93711dcca27ba626ad26b308b1b3d13796d08e018ef88ed02fabb536cce104f7"
+      "size": 21160,
+      "sha256": "f8e6222e990856ae65c25fd8817e4977067dcaf8d0810ce35268321e94d38744"
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
@@ -6345,8 +6390,8 @@
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7794,
-      "sha256": "1610090190ff4f4e069a04677d85dff8c81316b8e9347457927d4478f4765966"
+      "size": 7916,
+      "sha256": "5700a78ac7a6f35775c94afbc033f2310cefd01270fb38809f726caccb8cc901"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
@@ -6380,18 +6425,18 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9727,
-      "sha256": "6fd0b67857592b68e2683bcd253023f342515b1c355fcc6cb69b63cdf23baa11"
+      "size": 9745,
+      "sha256": "f86441392b6f06fc151ac6294bead0e75708540e15ee2b7643f4bd15bb54c446"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",
-      "size": 8473,
-      "sha256": "639ba27278fbba3e37e27e76804e1f8c679eb585a1d2ed614f0e83162a411ba0"
+      "size": 8929,
+      "sha256": "3dd4ef8fe96d4ce4bfd737f316fea66bda57d7b26fa70d4c3913a245afb2d33c"
     },
     {
       "path": "scripts/wsl_runtime_worker.py",
-      "size": 5737,
-      "sha256": "a98ed937036c6d1893a6b4d5224c7eaccfff8d30428304263c12a76f156e6634"
+      "size": 5746,
+      "sha256": "39812dc32526285aeb7d645b54c7cdb8bd28eae8e2e2c196b2caa7e5d8dd0574"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",

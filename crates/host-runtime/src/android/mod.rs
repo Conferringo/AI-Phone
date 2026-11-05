@@ -3,6 +3,7 @@ use crate::{Error, Installation, Result, control::Control};
 use std::path::{Path, PathBuf};
 pub mod cli;
 mod device;
+pub mod input;
 mod manifest;
 mod resources;
 pub mod session;

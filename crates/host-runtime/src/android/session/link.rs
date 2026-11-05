@@ -159,7 +159,13 @@ fn contract(bytes: &[u8]) -> Result<()> {
 pub(super) async fn ensure_backend(plan: &Plan, stop: &mut watch::Receiver<bool>) -> Result<()> {
     // This query exists in v1 too. Refuse an old installed bootstrap before
     // sending it newer commands or a pipe-owned peer request.
-    contract(&request(plan, PhoneOperation::Contract, None, stop).await?)
+    contract(&request(plan, PhoneOperation::Contract, None, stop).await?)?;
+    if request(plan, PhoneOperation::DeviceSetupContract, None, stop).await?
+        != format!("{}\n", wsl::DEVICE_SETUP_CONTRACT).as_bytes()
+    {
+        return Err(Error::Invalid("phone_link_upgrade_required"));
+    }
+    Ok(())
 }
 
 pub(super) async fn observe(

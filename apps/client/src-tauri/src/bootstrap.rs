@@ -396,17 +396,18 @@ fn register_windows_backend(
             &cancelled,
         )
         .map_err(|error| error.code().to_string())?;
-    if let Some(phone) = phone {
-        manager.set(folder, "android", "running", "")?;
-        // The native worker holds the WSL peer independently of this UI and
-        // re-observes the same pair when an existing session is resumed.
-        native_phone::start(&phone, &registered.distribution, &cancelled)?;
-    }
-    // Registration preserves the imported disk; service and phone readiness have
-    // separate contracts. Do not publish a completed deployment checkpoint here.
-    if !registered.backend_initialized || !registered.phone_ready {
+    if !registered.backend_initialized {
         return Err("host_backend_pending".into());
     }
+    let phone = phone.ok_or("android_runtime_missing")?;
+    manager.set(folder, "android", "running", "")?;
+    // The detached worker owns the phone and bridge. Completion observes the
+    // same pair and durable device setup; registration alone is never ready.
+    let boot = native_phone::start(&phone, &registered.distribution, &cancelled)?;
+    manager.set(folder, "devices", "running", "")?;
+    native
+        .complete_devices(&registered.distribution, &boot.backend_bridge_id)
+        .map_err(|error| error.code().to_string())?;
     Ok(())
 }
 

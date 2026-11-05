@@ -10,6 +10,7 @@ enum Service {
     Source,
     GuestAddress,
     PeerStatus,
+    Input,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -23,6 +24,7 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Source => runtime.block_on(crate::source_cli::run(arguments)),
         Service::GuestAddress => runtime.block_on(crate::device_bridge::guest::address(arguments)),
         Service::PeerStatus => runtime.block_on(crate::device_bridge::guest::status(arguments)),
+        Service::Input => runtime.block_on(crate::android::input::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -41,6 +43,10 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--phone-peer" => Some(start(Service::PhonePeer, &arguments[1..])),
         "--phone-guest-address" => Some(start(Service::GuestAddress, &arguments[1..])),
         "--phone-peer-status" => Some(start(Service::PeerStatus, &arguments[1..])),
+        "--setup-phone-input" => Some(start(Service::Input, &arguments[1..])),
+        "--phone-input-setup-contract" => {
+            Some(contract(arguments, crate::android::input::CONTRACT))
+        }
         "--phone-peer-contract" => Some(contract(arguments, crate::device_bridge::PEER_CONTRACT)),
         "--prepare-android" => Some(crate::android::cli::run(&arguments[1..])),
         "--prepare-android-contract" => Some(contract(arguments, crate::android::cli::CONTRACT)),

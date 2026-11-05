@@ -83,7 +83,16 @@ fn interpret(
     paired: bool,
 ) -> Result<NativeAndroidBooted, String> {
     match receipt.result {
-        Some(Reply::Booted(boot)) if valid_boot(&boot) && (!paired || boot.backend_paired) => {
+        Some(Reply::Booted(boot))
+            if valid_boot(&boot)
+                && (!paired
+                    || (boot.backend_paired
+                        && boot.backend_bridge_id.len() == 32
+                        && boot
+                            .backend_bridge_id
+                            .bytes()
+                            .all(|v| v.is_ascii_hexdigit()))) =>
+        {
             if cancelled {
                 Err("installation_cancelled".into())
             } else {
@@ -143,6 +152,7 @@ mod tests {
                 frame_sha256: "a".repeat(64),
                 reused_session: false,
                 backend_paired: false,
+                backend_bridge_id: String::new(),
             },
         ] {
             assert_eq!(
@@ -189,6 +199,7 @@ mod tests {
             Err("android_session_outcome_unknown".into())
         );
         boot.backend_paired = true;
+        boot.backend_bridge_id = "a".repeat(32);
         assert_eq!(interpret(reply(boot.clone()), false, true).unwrap(), boot);
         assert_eq!(
             interpret(reply(boot), true, true),

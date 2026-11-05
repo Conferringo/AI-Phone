@@ -4,6 +4,7 @@ mod config;
 mod connection;
 pub(crate) mod discovery;
 pub(crate) mod guest;
+pub use guest::paired_phone;
 mod peer;
 mod relay;
 #[cfg(test)]

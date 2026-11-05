@@ -51,6 +51,7 @@ message NativeAndroidBooted {
   bool reused_session = 7;
   // Transport pairing differs from device provisioning and complete install.
   bool backend_paired = 8;
+  string backend_bridge_id = 9;
 }
 
 // A running worker holds the separate lifecycle lock for this exact plan.
@@ -80,4 +81,42 @@ message NativeAndroidSessionReply {
 // Private pipe control during startup. EOF detaches; it does not stop the phone.
 message NativeAndroidSessionControl {
   bool cancel_startup = 1;
+}
+
+// Local provisioning IPC. Paths refer to verified, bundled installer resources.
+message NativeAndroidInputSetup {
+  uint32 version = 1;
+  string project_root = 2;
+  string adb_program = 3;
+  string serial = 4;
+  string apk_path = 5;
+  string notification_probe_path = 6;
+  bool observe_only = 7;
+  // Complete offline setup also admits the bundled launcher and guest Clash app.
+  bool offline_apps = 8;
+}
+
+message NativeAndroidInputReady {
+  uint32 version = 1;
+  bool changed = 2;
+}
+
+// Private install intent, persisted before a bundled application's only attempt.
+message NativeAndroidApplicationIntent {
+  uint32 version = 1;
+  string serial = 2;
+  string package_name = 3;
+  string apk_sha256 = 4;
+}
+
+message NativeWslDeviceSetupRequest {
+  uint32 version = 1;
+  string bridge_id = 2;
+}
+
+// Emitted only after live pairing, offline phone setup and desktop verification.
+message NativeWslDevicesReady {
+  uint32 version = 1;
+  string bridge_id = 2;
+  string desktop_id = 3;
 }

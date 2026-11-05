@@ -46,6 +46,7 @@ def container_query(name, inspection):
 
 class ProvisionOrderingTests(unittest.TestCase):
     def run_backend(self, root, query):
+        self.service_specs={}
         commands=[];started=[];images=[]
         self.effects={'commands':commands,'started':started,'images':images}
         def execute(argv, **_):
@@ -62,12 +63,23 @@ class ProvisionOrderingTests(unittest.TestCase):
             stack.enter_context(patch('runtime_config.runtime_env',return_value={}))
             stack.enter_context(patch('linux_host.private_token'))
             stack.enter_context(patch('linux_host.start_web_service',side_effect=lambda _r,_e,_run,start:start('web',['web'])))
-            stack.enter_context(patch('linux_services.start_unit',side_effect=lambda _r,name,argv,env:started.append(name)))
+            def service(_root,name,argv,env):
+                self.service_specs[name]={'argv':argv,'environment':env}
+                started.append(name)
+            stack.enter_context(patch('linux_services.start_unit',side_effect=service))
             stack.enter_context(patch('linux_services.unit_state',return_value=None))
-            stack.enter_context(patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}))
+            stack.enter_context(patch('prebuilt_services.launch_spec',side_effect=lambda _,role:{'argv':['native-'+role],'environment':{'AI_PHONE_OCR':'qualified-ocr'} if role=='runner' else {}}))
             stack.enter_context(patch('prebuilt_js.launch_spec',side_effect=lambda _r,name:{'argv':[name],'environment':{}}))
             entry.start_backend(root,execute)
         return commands,started
+
+    def test_phone_runner_uses_qualified_program_and_ocr_before_assistant(self):
+        with tempfile.TemporaryDirectory() as folder:
+            calls,names=self.run_backend(Path(folder),lambda *_,**__:response())
+            self.assertEqual(self.service_specs['runner']['argv'],['native-runner'])
+            self.assertEqual(self.service_specs['runner']['environment']['AI_PHONE_OCR'],'qualified-ocr')
+            self.assertLess(names.index('runner'),names.index('assistant'))
+            self.assertFalse(any('android-start.sh' in part for call in calls for part in call))
 
     def test_fresh_backend_does_not_create_desktop_before_api_provision(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -76,7 +88,7 @@ class ProvisionOrderingTests(unittest.TestCase):
             self.assertFalse((root/'data/device-network/desktop').exists())
             self.assertFalse(any('compose.desktop.yaml' in call or call[:2]==['docker','start'] for call in calls))
             self.assertTrue(any(call[-3:]==['postgres','redis','ocr'] and '--no-build' in call and '--pull' in call and 'never' in call for call in calls))
-            self.assertEqual(names,['assistant','web','channels','media'])
+            self.assertEqual(names,['runner','assistant','web','channels','media'])
 
     def test_existing_desktop_only_resumes_exact_verified_id_without_recreation(self):
         for running in (False,True):
@@ -87,7 +99,7 @@ class ProvisionOrderingTests(unittest.TestCase):
                 starts=[call for call in calls if call[:2]==['docker','start']]
                 self.assertEqual(starts,[] if running else [['docker','start',identity['id']]])
                 self.assertFalse(any('compose.desktop.yaml' in call or '--cpus' in call or '--memory' in call for call in calls))
-                self.assertEqual(marker.read_text(),'keep');self.assertEqual(names,['assistant','web','channels','media'])
+                self.assertEqual(marker.read_text(),'keep');self.assertEqual(names,['runner','assistant','web','channels','media'])
 
     def test_foreign_or_unknown_ownership_fails_before_any_backend_effect(self):
         with tempfile.TemporaryDirectory() as folder:

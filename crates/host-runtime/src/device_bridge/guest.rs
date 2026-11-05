@@ -46,13 +46,22 @@ async fn observe(
     home: &Path,
     expected: &DeviceBridgePeerOwner,
 ) -> Result<ai_phone_api::wire::NativeAndroidBooted> {
-    let actual = DeviceBridgePeerOwner::decode(
-        filesystem::bounded_file_with_limit(&home.join(".phone-peer.pb"), 512)?.as_slice(),
-    )
-    .map_err(|_| Error::Invalid("phone_peer_identity"))?;
+    let actual = owner(home)?;
     if expected.version != 1 || expected != &actual {
         return Err(Error::Invalid("phone_peer_identity"));
     }
+    live(home, expected).await
+}
+fn owner(home: &Path) -> Result<DeviceBridgePeerOwner> {
+    DeviceBridgePeerOwner::decode(
+        filesystem::bounded_file_with_limit(&home.join(".phone-peer.pb"), 512)?.as_slice(),
+    )
+    .map_err(|_| Error::Invalid("phone_peer_identity"))
+}
+async fn live(
+    home: &Path,
+    expected: &DeviceBridgePeerOwner,
+) -> Result<ai_phone_api::wire::NativeAndroidBooted> {
     if super::discovery::token(
         &home.join("avd/running"),
         5564,
@@ -65,5 +74,16 @@ async fn observe(
     }
     let mut value = crate::android::session::backend_observation().await?;
     value.backend_paired = true;
+    value.backend_bridge_id = expected.bridge_id.clone();
     Ok(value)
+}
+
+/// Installer-only observation of the expected pair in this owned Linux guest.
+pub async fn paired_phone(bridge_id: &str) -> Result<ai_phone_api::wire::NativeAndroidBooted> {
+    let home = Path::new(RUNTIME);
+    let owner = owner(home)?;
+    if owner.version != 1 || owner.bridge_id != bridge_id || owner.secret.len() != 32 {
+        return Err(Error::Invalid("phone_peer_identity"));
+    }
+    live(home, &owner).await
 }

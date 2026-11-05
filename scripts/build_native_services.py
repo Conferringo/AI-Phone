@@ -11,7 +11,7 @@ from host_platform import host_key
 from release_package import select_files
 from check_native_services import version_receipt, vision_receipt
 from client_host_entry import checked_record, verify_file
-from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT, SERVICE_SUPERVISION_CONTRACT
+from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT, SERVICE_SUPERVISION_CONTRACT, PHONE_INPUT_SETUP_CONTRACT
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner', 'vision':'vision'}
@@ -125,6 +125,7 @@ def build(root=ROOT):
               for role, path in artifacts.items()}
     checks['device_setup'] = device_setup_receipt(artifacts['assistant'])
     checks['service_supervision'] = contract_receipt(artifacts['assistant'],'--service-supervision-contract',SERVICE_SUPERVISION_CONTRACT)
+    checks['phone_input_setup'] = contract_receipt(artifacts['assistant'], '--phone-input-setup-contract', PHONE_INPUT_SETUP_CONTRACT)
     checks['vision_version'] = checks.pop('vision')
     checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE, qualification=True)
     if platform.system() == 'Darwin':

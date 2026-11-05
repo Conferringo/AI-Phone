@@ -40,9 +40,16 @@ def wait_response(opener,name,url,data,content,token):
 def ready(root):
     opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
     token=(root/'data/assistant/token').read_text().strip()
-    targets=[('assistant','http://127.0.0.1:17863/v1/setup/status',b'','application/x-protobuf'),('web','http://127.0.0.1:17860/phone',None,'text/html'),('channels','http://127.0.0.1:17864/v1/list',b'','application/x-protobuf')]
-    for name,url,data,content in targets:wait_response(opener,name,url,data,content,token)
-    return {name:True for name,_,_,_ in targets}
+    runner_token=(root/'data/phone-runner/token').read_text().strip()
+    # Cursor reads need neither a connected phone nor control acquisition. This
+    # qualifies the service endpoint only; phone_ready remains separate.
+    cursor=b'\x0a\x0ephone-local-01\x12\x0alocal-user'
+    targets=[('assistant','http://127.0.0.1:17863/v1/setup/status',b'','application/x-protobuf',token),
+             ('web','http://127.0.0.1:17860/phone',None,'text/html',token),
+             ('channels','http://127.0.0.1:17864/v1/list',b'','application/x-protobuf',token),
+             ('runner_endpoint','http://127.0.0.1:17862/v1/cursor',cursor,'application/x-protobuf',runner_token)]
+    for name,url,data,content,credential in targets:wait_response(opener,name,url,data,content,credential)
+    return {name:True for name,_,_,_,_ in targets}
 
 
 def database_roles(root):

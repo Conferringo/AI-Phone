@@ -99,7 +99,7 @@ impl Drop for Server {
 }
 async fn respond(State(trace): State<Arc<Mutex<Trace>>>, request: Request<Body>) -> Response {
     let path = request.uri().path().to_owned();
-    let expected = if path == "/v1/observe" {
+    let expected = if matches!(path.as_str(), "/v1/observe" | "/v1/notifications") {
         "Bearer fixture-runner"
     } else {
         "Bearer fixture-assistant"
@@ -135,6 +135,67 @@ async fn respond(State(trace): State<Arc<Mutex<Trace>>>, request: Request<Body>)
         response = response.header("content-type", "application/x-protobuf");
     }
     response.body(Body::from(reply.body)).unwrap()
+}
+
+#[tokio::test]
+async fn notification_readiness_requires_both_live_channels_and_the_runner_scope() {
+    let server = Server::new(vec![
+        Reply::pb(
+            "/v1/notifications",
+            wire::PhoneNotificationList {
+                connected: true,
+                ..Default::default()
+            },
+        ),
+        Reply::pb(
+            "/v1/notifications",
+            wire::PhoneNotificationList {
+                attention_connected: true,
+                ..Default::default()
+            },
+        ),
+        Reply::pb(
+            "/v1/notifications",
+            wire::PhoneNotificationList {
+                connected: true,
+                attention_connected: true,
+                ..Default::default()
+            },
+        ),
+    ])
+    .await;
+    verify_notifications(&server.rpc()).await.unwrap();
+    let calls = server.checked();
+    assert_eq!(calls.len(), 3);
+    for (_, body) in calls {
+        let value = wire::DeviceRequest::decode(body.as_slice()).unwrap();
+        assert_eq!(value.phone_id, "phone-local-01");
+        assert_eq!(value.owner_id, "local-user");
+    }
+}
+
+#[tokio::test]
+async fn notification_unknown_or_cancelled_observation_cannot_publish_readiness() {
+    let server = Server::new(vec![Reply {
+        path: "/v1/notifications",
+        status: StatusCode::OK,
+        body: vec![0xff],
+        media: true,
+    }])
+    .await;
+    assert_eq!(
+        verify_notifications(&server.rpc()).await.unwrap_err().0,
+        "device_setup_protobuf"
+    );
+    assert_eq!(server.checked().len(), 1);
+    let server = Server::new(vec![]).await;
+    let rpc = server.rpc();
+    rpc.cancelled.cancel();
+    assert_eq!(
+        verify_notifications(&rpc).await.unwrap_err().0,
+        "device_setup_cancelled_remote_may_continue"
+    );
+    assert!(server.checked().is_empty());
 }
 fn registry(managed: bool) -> wire::RegistryState {
     wire::RegistryState {
