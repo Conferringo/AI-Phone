@@ -46,7 +46,7 @@ def _start_missing(root,query=None,execute=None,package_installed=None):
     ready=False
     if 'dev.aiphone.emulator.p2' not in jobs:
         run('android-create.sh');run('android-start.sh');run('android-ready.sh');ready=True
-    # The input owner preserves legacy preferences and resumes only its pending intent.
+    # One input owner verifies required capabilities and preserves unrelated services.
     run('android-install-input.sh')
     for package,script in [('dev.aiphone.home','android-install-home.sh'),('com.github.metacubex.clash.meta','android-install-clash.sh')]:
         if not installed(package):

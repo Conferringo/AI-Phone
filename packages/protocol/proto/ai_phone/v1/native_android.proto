@@ -81,3 +81,19 @@ message NativeAndroidSessionReply {
 message NativeAndroidSessionControl {
   bool cancel_startup = 1;
 }
+
+// Local provisioning IPC. Paths refer to verified, bundled installer resources.
+message NativeAndroidInputSetup {
+  uint32 version = 1;
+  string project_root = 2;
+  string adb_program = 3;
+  string serial = 4;
+  string apk_path = 5;
+  string notification_probe_path = 6;
+  bool observe_only = 7;
+}
+
+message NativeAndroidInputReady {
+  uint32 version = 1;
+  bool changed = 2;
+}

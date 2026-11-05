@@ -36,7 +36,7 @@ class NativeServiceTests(unittest.TestCase):
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v1',
-                         'service_supervision':'ai-phone-linux-supervision-v1'}}
+                         'service_supervision':'ai-phone-linux-supervision-v1', 'phone_input_setup':'ai-phone-input-setup-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -66,6 +66,30 @@ class NativeServiceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'host is not implemented'):
                     supervisor_command(root)
                 execute.assert_not_called()
+
+    def test_input_selection_rejects_old_bundles_without_invoking_an_unknown_flag(self):
+        from prebuilt_services import input_setup_command, PHONE_INPUT_SETUP_CONTRACT
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder).resolve()
+            for name,data in self.component().items():
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+                path.chmod(0o755 if '/bin/' in name else 0o644)
+            with patch('subprocess.run') as execute:
+                with self.assertRaisesRegex(ValueError,'phone input setup capability is missing'):
+                    input_setup_command(root)
+                execute.assert_not_called()
+            path=root/'runtime/services/manifest.json';value=json.loads(path.read_bytes())
+            value['phone_input_setup']=PHONE_INPUT_SETUP_CONTRACT;path.write_text(json.dumps(value))
+            self.assertEqual(input_setup_command(root),[str(root/binary_path('assistant'))])
+
+    def test_source_input_requires_the_dedicated_helpers_read_only_contract(self):
+        from prebuilt_services import input_setup_command, PHONE_INPUT_SETUP_CONTRACT, SOURCE_SUPERVISOR
+        with tempfile.TemporaryDirectory() as folder,patch('build_native_services.contract_receipt') as qualify:
+            root=Path(folder).resolve();binary=root/SOURCE_SUPERVISOR
+            self.assertEqual(input_setup_command(root),[str(binary)])
+            qualify.assert_called_once_with(binary,'--phone-input-setup-contract',PHONE_INPUT_SETUP_CONTRACT)
+            qualify.side_effect=ValueError('old helper')
+            with self.assertRaisesRegex(ValueError,'old helper'):input_setup_command(root)
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
         for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:
