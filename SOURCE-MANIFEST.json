@@ -290,8 +290,8 @@
     },
     {
       "path": "apps/channels/server.test.ts",
-      "size": 4665,
-      "sha256": "59bd313fb5a1bdbf40eb19c18e5f1980b25f80b34ce3b3341a7a7aa9bb1a671f"
+      "size": 5071,
+      "sha256": "87b7531d107dd7a151cb397f6d774a987b43ba853da698ff0e9c219e4dadf47c"
     },
     {
       "path": "apps/channels/server.ts",
