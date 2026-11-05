@@ -34,13 +34,24 @@ class WslNativeSourceTests(unittest.TestCase):
             source=source_fixture.WslSourceTests().payload(root,extra={'scripts/wsl_backend_entry.py':b'fixture bootstrap entry'})
             identity=factory.source_input(source)
             images=root/'images.payload';images.write_bytes(b'fixture sealed images')
-            tools=root/'tools';tools.mkdir();(tools/'manifest.json').write_text('{"format":1}')
+            from test_installer_tools import InstallerToolTests
+            from installer_tools import verify
+            fixture=InstallerToolTests();archives,pins=fixture.fixture(root);tools=root/'tools'
+            fixture._build(archives,tools,pins=pins,host='linux-x64')
+            tool_manifest=verify(tools,'linux-x64');original=(tools/'manifest.json').read_bytes()
             packages=root/'packages';packages.mkdir()
             phone=root/'phone-tools';phone.mkdir();(phone/'PHONE-TOOLS-MANIFEST.json').write_text('fixture phone manifest')
             plan={'base_image':'fixture-base','engine_image':'fixture-engine','engine_packages':[]}
-            with patch.object(factory,'validated_inputs',return_value=(plan,identity,{'tools':{}})), patch('wsl_engine_inputs.licenses',return_value=[]):
-                factory.prepare_context(root,root/'context',source,images,tools,packages,phone)
+            with patch.object(factory,'validated_inputs',return_value=(plan,identity,tool_manifest)), patch('wsl_engine_inputs.licenses',return_value=[]):
+                result=factory.prepare_context(root,root/'context',source,images,tools,packages,phone)
             context=root/'context'
+            selected=verify(context/'tools','linux-x64')
+            self.assertEqual(set(selected['tools']),{'python'})
+            self.assertFalse((context/'tools/node').exists())
+            self.assertEqual(result['tools'],selected['tools'])
+            self.assertEqual(result['tools_manifest_sha256'],hashlib.sha256((context/'tools/manifest.json').read_bytes()).hexdigest())
+            self.assertEqual((tools/'manifest.json').read_bytes(),original)
+            self.assertTrue((tools/'node/bin/node').is_file())
             self.assertEqual((context/'source.sha256').read_text(),identity['sha256']+'\n')
             self.assertEqual((context/'bootstrap.program').read_bytes(),b'fixture-native-staging-component')
             self.assertEqual((context/'bootstrap.program').stat().st_mode&0o777,0o755)

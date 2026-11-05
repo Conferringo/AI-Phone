@@ -11,13 +11,15 @@ separate integration boundaries and are not enabled by this component alone.
 | Resource | Owner and contract |
 | --- | --- |
 | Ubuntu root filesystem | Immutable base digest, original notices and a bounded archive inventory |
-| Python, Node, web, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
+| Installer Python, Bun web/services, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
 | Docker Engine and Compose | Pinned Alpine dependency closure in an isolated musl prefix; private Unix socket and client state |
 | Database, cache, workspace and desktop images | Four-role sealed image capsule; no build or pull during initialization |
 | Guest phone tools | Pinned Linux x64 platform-tools, upstream notices and a vendored AOSP media schema; no nested emulator or system image |
 | User state | Created under `/var/lib/aiphone` at runtime; excluded from the distributed rootfs |
 
 The factory stores the pinned Python executable and shared-library aliases as hard links inside the new rootfs, retaining their names, contents and component manifest. The required `python3` entry remains an independent regular file for rootfs admission. Existing registered distributions are not rewritten.
+
+WSL source admission requires prebuilt Web and JavaScript services, both launched with Bun. New root filesystems therefore select Python-only installer tools using the same component policy as the native client. The recorded tool manifest describes the selected files. Existing two-tool capsules remain readable and verify their recorded Node entry when present; Python remains required. The Linux desktop's development tools are separate and unchanged.
 
 The backend does not import the host's Docker context or Lima state. It owns
 `unix:///run/aiphone/docker.sock` and its CLI configuration. Android SDK parsing is
@@ -41,7 +43,7 @@ their installed bootstrap; in-place backend upgrades remain separate work.
 
 The [Rust phone/backend bridge](engineering/device-bridge.md) supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. Newly built root filesystems include `/opt/aiphone/native-phone-bridge`, the SDK root already used by the backend profile. The maintainer downloads platform-tools using the existing Android factory pin; assembly then verifies and copies the offline resource, including its version, file digests and notices. The rootfs factory executes the packaged Linux ADB version command without network access. Archive admission requires ADB and the media schema and permits only that schema under the `emulator` directory, never an emulator executable.
 
-The source-provenance record identifies the exact vendored AOSP schema; it is not claimed byte-identical to every SDK release. Maintainer checks exercise the existing discovery/media consumer against an actual Android. The [native phone lifecycle](engineering/device-bridge.md#native-lifecycle-and-automatic-pairing) now starts and holds the paired guest after backend initialization. This resource slice alone does not provision the phone or establish complete readiness. Older backend capsules must be rebuilt for the new resource inventory. Existing registered guests are preserved; an in-place upgrade is not supplied by this resource factory.
+The source-provenance record identifies the exact vendored AOSP schema; it is not claimed byte-identical to every SDK release. Maintainer checks exercise the existing discovery/media consumer against an actual Android. The [native phone lifecycle](engineering/device-bridge.md#native-lifecycle-and-automatic-pairing) now starts and holds the paired guest after backend initialization. This resource slice alone does not provision the phone or establish complete readiness. Capsules without the phone-bridge resources must be rebuilt for that inventory. Existing registered guests are preserved; an in-place upgrade is not supplied by this resource factory.
 
 ## Native client resources
 
@@ -136,6 +138,10 @@ Contributor setup and automated checks are described in [Contributing](../../CON
 该组件为应用专属 WSL2 环境生成离线 Linux 根文件系统，包含预编译后端、工具和四类
 容器镜像。用户数据在初始化时单独创建，不进入发行镜像。Docker 使用独立 socket 与
 配置，电脑媒体服务不依赖手机 SDK 已经就绪。
+
+预编译 WSL 的 Web 与服务使用 Bun，新根文件系统按同一组件策略只携带安装所需的
+Python；旧双工具包仍可读取并核对其已记录的 Node 文件。Python 和手机桥资源仍是
+必需项，已注册的系统不重写，Linux 电脑内部的开发工具保持。
 
 专用 Linux 工厂会实际检查后端、认证网页画面，以及两次启动间的工作文件和数据库
 保留；结果只保存为 JSON 回执。该验证不等同于 Windows 安装通过。Rust 已接通专属 WSL 注册与客体后端初始化，

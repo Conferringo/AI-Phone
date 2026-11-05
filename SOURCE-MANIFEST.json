@@ -3545,8 +3545,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 8019,
-      "sha256": "3130aff5708ed51ded1b804a01b2094f3c4a6b59685c389f8a796efddc90febc"
+      "size": 8035,
+      "sha256": "e9b49384f329a5b6b83473198a6da5a72ec8ff9c77dbd5f2bfcbebf95acb9f46"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -4590,8 +4590,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 12203,
-      "sha256": "58fe3d61ded22598da2d192b72ea5167734a88cb3ba3eb164ffb9ddab66355c7"
+      "size": 12985,
+      "sha256": "d07c7f5b4d39f1c97d53cc667b64a15a56bb1a3075ae64a14e34e6c3b662954d"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -5495,8 +5495,8 @@
     },
     {
       "path": "scripts/installer_tools.py",
-      "size": 12703,
-      "sha256": "2165c27ee81b407b4aa2771d1b7b77f26d15911648c2fab0cba7d7900253da70"
+      "size": 12777,
+      "sha256": "78d7f73d2102362cd4dbd02f9551058888341b1dd7a72ae12a81af2bc9822e8c"
     },
     {
       "path": "scripts/js_dependencies.py",
@@ -6340,8 +6340,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 22856,
-      "sha256": "80a9c2499fe11c3b4f98084320fcb7069818e046d77ec42a90d24780de744a95"
+      "size": 23541,
+      "sha256": "394ee876d671a389b5e394516895f563050c219edc464d314c1b110cf34e813a"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -6360,8 +6360,8 @@
     },
     {
       "path": "scripts/test_wsl_inventory.py",
-      "size": 11182,
-      "sha256": "be065a4e03bbdfe74e9268719d6d5e6c7c7d1e58df5e080adaecbdf83caf53d5"
+      "size": 11192,
+      "sha256": "8f47618b1d19e6db939b72fc8220e81bb0ea8883ac0e3d88412f9df5ff79d9bc"
     },
     {
       "path": "scripts/test_wsl_phone_tools.py",
@@ -6385,8 +6385,8 @@
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
-      "size": 7181,
-      "sha256": "552b814e52458f3a8abf72efb022937cf123ecabdaafef2759c700558a39df9c"
+      "size": 7989,
+      "sha256": "b2ee41adc5bbd7152816a5b63f4f35812eea13b798e499f3a1a9823d92a45293"
     },
     {
       "path": "scripts/verify_source_install.py",
@@ -6425,8 +6425,8 @@
     },
     {
       "path": "scripts/wsl_backend.py",
-      "size": 8932,
-      "sha256": "0ca9ad11100d8e510422c5ade3ee844dc93ef0de36cd07c7e1b6144ff851e048"
+      "size": 9059,
+      "sha256": "b50ae43fbb205ede177a36df575a26ffee486f92494fde4744fab3081240ea3f"
     },
     {
       "path": "scripts/wsl_backend_entry.py",
@@ -6435,8 +6435,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 14348,
-      "sha256": "5fa32fc968047eb52fc33e0c805935cc9e0f095139d000db3067e11d7f2eeffd"
+      "size": 14678,
+      "sha256": "b45ac5ae12665b7d6c6c5d79ee6dc597b2ea0258843fc4a9ebbb4530e73cd4a6"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
