@@ -77,6 +77,63 @@ fn empty_releases(home: &Path) -> bool {
 }
 
 #[test]
+fn source_payload_is_hashed_once_after_inventory_scan() {
+    for xz in [false, true] {
+        let temporary = tempfile::tempdir().unwrap();
+        let (path, identity) = minimal(temporary.path(), b"verified file copy", xz);
+        let size = fs::metadata(&path).unwrap().len();
+        let mut install = Installation::lock(&temporary.path().join("install")).unwrap();
+        crate::capsule::HASHED_BYTES.with(|bytes| bytes.set(0));
+        let staged = install
+            .stage_source(&path, &identity, &free, &|| false)
+            .unwrap();
+        assert_eq!(
+            fs::read(staged.directory.join("scripts/main.rs")).unwrap(),
+            b"verified file copy"
+        );
+        let hashed = crate::capsule::HASHED_BYTES.with(Cell::get);
+        println!("source xz={xz}; capsule_bytes={size}; hashed_bytes={hashed}");
+        assert_eq!(hashed, size);
+    }
+}
+
+#[test]
+fn file_copy_still_rejects_payload_changes_after_inspection() {
+    for xz in [false, true] {
+        let temporary = tempfile::tempdir().unwrap();
+        let root = temporary.path();
+        let (path, identity) = minimal(root, b"original", xz);
+        let manifest = json!({"format":1,"files":[record("scripts/main.rs",b"original",0o755)]});
+        let changed = encoded(
+            &tar_bytes(&[("scripts/main.rs", b"modified")], &manifest, false),
+            xz,
+        );
+        let home = root.join("install");
+        let mut installation = Installation::lock(&home).unwrap();
+        fs::create_dir_all(home.join("user/data")).unwrap();
+        fs::write(home.join("user/data/chat"), b"keep user data").unwrap();
+        let mutated = Cell::new(false);
+        let available = |at: &Path| {
+            if !mutated.replace(true) {
+                fs::write(&path, &changed).unwrap();
+            }
+            free(at)
+        };
+        assert!(
+            installation
+                .stage_source(&path, &identity, &available, &|| false)
+                .is_err()
+        );
+        assert!(mutated.get());
+        assert!(empty_releases(&home));
+        assert_eq!(
+            fs::read(home.join("user/data/chat")).unwrap(),
+            b"keep user data"
+        );
+    }
+}
+
+#[test]
 fn full_gzip_and_xz_source_chain_preserves_users_and_reuses_exact_release() {
     for xz in [false, true] {
         let temporary = tempfile::tempdir().unwrap();

@@ -37,6 +37,28 @@ fn prepare(
 fn digest(data: &[u8]) -> String {
     format!("{:x}", Sha256::digest(data))
 }
+
+#[test]
+fn android_payload_is_not_rehashed_after_every_extracted_file_was_verified() {
+    let temporary = tempfile::tempdir().unwrap();
+    let (payload, identity) = fixture(temporary.path());
+    let size = fs::metadata(&payload).unwrap().len();
+    let mut install = Installation::lock(&temporary.path().join("home")).unwrap();
+    crate::capsule::HASHED_BYTES.with(|bytes| bytes.set(0));
+    let staged = prepare(
+        &mut install,
+        &payload,
+        &identity,
+        resources(),
+        &|_| u64::MAX,
+        &|| false,
+    )
+    .unwrap();
+    assert!(!staged.reused_sdk);
+    let hashed = crate::capsule::HASHED_BYTES.with(std::cell::Cell::get);
+    println!("android capsule_bytes={size}; hashed_bytes={hashed}");
+    assert_eq!(hashed, size);
+}
 fn resources() -> Resources {
     Resources {
         cpus: 2,

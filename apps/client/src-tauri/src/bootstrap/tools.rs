@@ -192,28 +192,39 @@ fn verify(
     component: &Component,
     cancel: &impl Fn() -> Result<(), String>,
 ) -> Result<(), String> {
-    let value = &component.manifest;
     if super::download::hash(&root.join("manifest.json"))? != component.identity {
         return Err("installer_tools_changed".into());
     }
+    verify_inventory(root, component)?;
+    for row in &component.manifest.files {
+        cancel()?;
+        let path = record_path(root, row)?;
+        if super::download::hash(&path)? != row.sha256 {
+            return Err("installer_tools_changed".into());
+        }
+    }
+    Ok(())
+}
+fn verify_inventory(root: &Path, component: &Component) -> Result<(), String> {
     let mut actual = BTreeSet::new();
     let mut visited = 0;
     tree_files(root, root, &mut actual, &mut visited)?;
-    let mut expected: BTreeSet<_> = value.files.iter().map(|r| r.path.clone()).collect();
+    let mut expected: BTreeSet<_> = component
+        .manifest
+        .files
+        .iter()
+        .map(|r| r.path.clone())
+        .collect();
     expected.insert("manifest.json".into());
     if actual != expected {
         return Err("installer_tools_inventory".into());
     }
-    for row in &value.files {
-        cancel()?;
-        verify_record(root, row)?;
-    }
     Ok(())
 }
-fn verify_record(root: &Path, row: &Record) -> Result<(), String> {
+fn record_path(root: &Path, row: &Record) -> Result<PathBuf, String> {
     let path = root.join(&row.path);
     let meta = fs::metadata(&path).map_err(|_| invalid())?;
-    if meta.len() != row.size || super::download::hash(&path)? != row.sha256 {
+    if meta.len() != row.size {
         return Err("installer_tools_changed".into());
     }
     #[cfg(unix)]
@@ -223,7 +234,7 @@ fn verify_record(root: &Path, row: &Record) -> Result<(), String> {
             return Err("installer_tools_permissions".into());
         }
     }
-    Ok(())
+    Ok(path)
 }
 fn directory(path: &Path) -> Result<(), String> {
     if !path.exists() {
@@ -248,7 +259,7 @@ fn copy_record(
 ) -> Result<(), String> {
     let target = stage.join(&row.path);
     fs::create_dir_all(target.parent().ok_or_else(invalid)?).map_err(|_| invalid())?;
-    let mut input = fs::File::open(source.join(&row.path)).map_err(|_| invalid())?;
+    let mut input = fs::File::open(record_path(source, row)?).map_err(|_| invalid())?;
     let mut output = fs::File::create_new(&target).map_err(|_| invalid())?;
     copy_body(&mut input, &mut output, row, check)?;
     #[cfg(unix)]
@@ -277,6 +288,8 @@ fn copy_body(
         check(length as u64)?;
         output.write_all(&buffer[..length]).map_err(|_| invalid())?;
         hash.update(&buffer[..length]);
+        #[cfg(test)]
+        super::download::HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
     }
     if size != row.size || format!("{:x}", hash.finalize()) != row.sha256 {
         return Err("installer_tools_changed".into());
@@ -402,7 +415,6 @@ pub(super) fn prepare(
 ) -> Result<Runtime, String> {
     cancel()?;
     let component = read_manifest(source, expected, host)?;
-    verify(source, &component, cancel)?;
     let components = home.join("components");
     directory(&components)?;
     let folder = components.join("installer-tools");
@@ -411,6 +423,7 @@ pub(super) fn prepare(
     if target.exists() {
         verify(&target, &component, cancel)?;
     } else {
+        verify_inventory(source, &component)?;
         publish(source, &folder, &target, &component, free, cancel)?;
     }
     let python = target.join(&component.manifest.tools["python"].executable);
@@ -488,6 +501,81 @@ mod tests {
         );
         assert_eq!(fs::read(home.join("user-chat")).unwrap(), b"keep");
         fs::remove_dir_all(home).unwrap();
+    }
+    #[test]
+    fn tool_payload_hashes_are_not_repeated_before_copy_or_against_unused_sources() {
+        let home = home();
+        let (source, _) = fixture(&home);
+        let path = source.join("manifest.json");
+        let mut manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let body = vec![b'x'; 16 * 1024 * 1024];
+        for row in manifest["files"].as_array_mut().unwrap() {
+            let file = source.join(row["path"].as_str().unwrap());
+            fs::write(&file, &body).unwrap();
+            row["size"] = serde_json::json!(body.len());
+            row["sha256"] = serde_json::json!(super::super::download::hash(&file).unwrap());
+        }
+        fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+        let identity = super::super::download::hash(&path).unwrap();
+        let metadata_bytes = fs::metadata(&path).unwrap().len();
+        let payload_bytes = body.len() as u64 * 2;
+        super::super::download::HASHED_BYTES.with(|bytes| bytes.set(0));
+        let started = std::time::Instant::now();
+        let runtime = prepare(
+            &source,
+            &home,
+            &identity,
+            "fixture-host",
+            &|_| u64::MAX,
+            &|| Ok(()),
+        )
+        .unwrap();
+        let fresh = super::super::download::HASHED_BYTES.with(std::cell::Cell::get);
+        let fresh_ms = started.elapsed().as_millis();
+        super::super::download::HASHED_BYTES.with(|bytes| bytes.set(0));
+        let started = std::time::Instant::now();
+        prepare(
+            &source,
+            &home,
+            &identity,
+            "fixture-host",
+            &|_| 0,
+            &|| Ok(()),
+        )
+        .unwrap();
+        let reused = super::super::download::HASHED_BYTES.with(std::cell::Cell::get);
+        let reused_ms = started.elapsed().as_millis();
+        fs::write(source.join("python/bin/python"), b"unused source changed").unwrap();
+        let unaffected = prepare(
+            &source,
+            &home,
+            &identity,
+            "fixture-host",
+            &|_| 0,
+            &|| Ok(()),
+        );
+        assert_eq!(
+            fs::metadata(runtime.python).unwrap().len(),
+            body.len() as u64
+        );
+        fs::remove_dir_all(home).unwrap();
+        println!(
+            "payload={payload_bytes}; metadata={metadata_bytes}; fresh_hashed={fresh}; reused_hashed={reused}; fresh_ms={fresh_ms}; reused_ms={reused_ms}"
+        );
+        assert_eq!(
+            fresh, payload_bytes,
+            "copy must hash each payload byte only once"
+        );
+        assert_eq!(
+            reused,
+            payload_bytes + metadata_bytes,
+            "reuse must hash only the installed copy"
+        );
+        assert!(
+            unaffected.is_ok(),
+            "unused source binaries must not block an intact installed copy"
+        );
     }
     #[test]
     fn cancellation_during_copy_reclaims_only_its_staging_directory() {
