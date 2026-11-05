@@ -705,17 +705,17 @@ async fn deliver(app: &App) -> Result<(), String> {
     }
     Ok(())
 }
-pub async fn work(app: Shared) {
+async fn attend(app: &App) {
     let mut interval = tokio::time::interval(Duration::from_secs(3));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         interval.tick().await;
-        if ingest(&app).await.is_err() {
+        if ingest(app).await.is_err() {
             let _ = sqlx::query("UPDATE proactive_state SET listener_connected=false")
                 .execute(&app.db)
                 .await;
         }
-        let inbox_error = if ingest_desktops(&app).await.is_err() {
+        let inbox_error = if ingest_desktops(app).await.is_err() {
             "电脑通知暂不可用，请检查设备通知服务"
         } else {
             ""
@@ -728,14 +728,14 @@ pub async fn work(app: Shared) {
         .fetch_optional(&app.db)
         .await
             && let Ok(observation) =
-                crate::worker::phone::<_, wire::DeviceObservation>(&app, "observe", device(true))
+                crate::worker::phone::<_, wire::DeviceObservation>(app, "observe", device(true))
                     .await
         {
             if epoch > 0
                 && observation.controller == "manual"
                 && observation.control_epoch > epoch as u64
             {
-                let _ = stop_exploration(&app, "你已接管手机，自主探索已暂停").await;
+                let _ = stop_exploration(app, "你已接管手机，自主探索已暂停").await;
                 let _=sqlx::query("UPDATE proactive_state SET wechat_quiet_until=now()+interval '60 seconds',control_epoch=$1").bind(observation.control_epoch as i64).execute(&app.db).await;
             } else {
                 let _ = sqlx::query(
@@ -746,10 +746,24 @@ pub async fn work(app: Shared) {
                 .await;
             }
         }
-        let _ = reconcile(&app).await;
-        let _ = deliver(&app).await;
-        let _ = schedule(&app).await;
+        let _ = reconcile(app).await;
+        let _ = schedule(app).await;
     }
+}
+
+async fn forward_reports(app: &App) {
+    let mut interval = tokio::time::interval(Duration::from_secs(3));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        interval.tick().await;
+        let _ = deliver(app).await;
+    }
+}
+
+pub async fn work(app: Shared) {
+    // One owner per pipeline. A slow remote summary cannot hold up incoming
+    // work or manual supervision; dropping work also cancels both futures.
+    tokio::join!(attend(&app), forward_reports(&app));
 }
 
 #[cfg(test)]
@@ -1062,3 +1076,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "notification_forwarding_tests.rs"]
+mod forwarding_tests;
