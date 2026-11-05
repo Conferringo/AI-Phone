@@ -75,7 +75,7 @@ jobs:
             fi
           done
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y xvfb openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
+          sudo apt-get install --no-install-recommends -y xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
           test ! -e /home/ai
           test ! -e /tmp/.X0-lock
           git fetch --no-tags --depth=1 origin cccef152c552a860710b4c76bdc9262e01728eab
@@ -85,21 +85,30 @@ jobs:
           sudo install -d -o "$(id -u)" -g "$(id -g)" /home/ai /home/ai/Files
           printf '%s' "$nonce" > /home/ai/.aiphone-qualification-owner
           export DISPLAY=:0 LANG=C.UTF-8 AI_PHONE_GUEST_QUALIFICATION="$nonce"
-          Xvfb :0 -screen 0 1280x800x24 -nolisten tcp -ac & xvfb=$!
-          wm=""
           cleanup() {
-            if [ -n "$wm" ]; then kill "$wm" 2>/dev/null || true; wait "$wm" 2>/dev/null || true; fi
-            kill "$xvfb" 2>/dev/null || true
-            wait "$xvfb" 2>/dev/null || true
             if [ "$(cat /home/ai/.aiphone-qualification-owner 2>/dev/null)" = "$nonce" ]; then
               rm -rf /home/ai/Files/qualification-"$nonce"
               rm /home/ai/.aiphone-qualification-owner
             fi
           }
           trap cleanup EXIT
-          for n in $(seq 1 100); do xdpyinfo >/dev/null 2>&1 && break; sleep .05; done
+          # xvfb-run waits for the server's ready signal and owns its cleanup.
+          # Starting the WM after an exhausted display poll left a live server
+          # without a WM; last-client resets then erased the RGB oracle.
+          xvfb-run --server-num=0 --server-args="-screen 0 1280x800x24 -nolisten tcp -ac" bash -euo pipefail <<'X11_QUALIFICATION'
+          wm=""
+          cleanup_wm() {
+            if [ -n "$wm" ]; then kill "$wm" 2>/dev/null || true; wait "$wm" 2>/dev/null || true; fi
+          }
+          trap cleanup_wm EXIT
           openbox & wm=$!
-          for n in $(seq 1 100); do xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id' && break; sleep .05; done
+          wm_ready=false
+          for n in $(seq 1 100); do
+            kill -0 "$wm" 2>/dev/null || { echo 'Owned window manager exited before readiness' >&2; exit 1; }
+            if xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id'; then wm_ready=true; break; fi
+            sleep .05
+          done
+          "$wm_ready" || { echo 'Owned window manager did not become ready' >&2; exit 1; }
           cargo test -p ai-phone-guest-runtime --test x11_paint --locked -- --ignored --test-threads=1 --nocapture > "$RUNNER_TEMP/x11-paint.log"
           cat "$RUNNER_TEMP/x11-paint.log"
           grep -q 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/x11-paint.log"
@@ -107,6 +116,7 @@ jobs:
             "$PWD/target/debug/desktop-bridge" "$RUNNER_TEMP/legacy-desktop-bridge.py" \
             "$RUNNER_TEMP/guest-control-qualification.json"
           cat "$RUNNER_TEMP/guest-control-qualification.json"
+          X11_QUALIFICATION
       - name: Production web build
         run: |
           python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"
