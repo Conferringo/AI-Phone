@@ -6,6 +6,8 @@ This describes unreleased runtime changes. Earlier connection-client previews ha
 
 The assistant service polls Android's notification/accessibility feed and the Linux guest's Dunst notification inbox. Notifications can wake a configured Agent with exploration disabled. Each event retains its source device, event ID, source key and original receipt. The device's configured Agent and model are pinned when its run is created.
 
+Phone collection, phone supervision and phone admission run in one ordered pipeline. Desktop collection and admission run independently, so a stalled device does not hold the other device's durable notification work. Each pipeline admits only its own device kind on the existing three-second cadence. Outgoing summaries have their own owner; dropping the coordinator cancels all three futures.
+
 New owner instructions take priority. Existing tasks yield at checkpoints so another device's notification is not starved. A paused task keeps its history and unknown-action receipts while a new notification receives a separate run. Manual takeover remains authoritative.
 
 `pending` events are deduplicated by ID and newer versions of a source key are coalesced per device. A scheduled run owns `assigned` events; events delivered to an existing run become `attending`. Successful audited work seals those events. Interrupted attention becomes a history-only summary, which cannot repeat a social reply or file transfer.
@@ -42,7 +44,7 @@ Persisted context and the execution ledger remain complete. The Responses reques
 
 ## Verification and limits
 
-Isolated PostgreSQL tests cover deduplication, source-key updates, concurrent scheduling, paused-task preservation, owner preemption, interrupted summaries, per-device wake and scheduling fairness. Guest inbox tests cover concurrent writers, file permissions, byte/count bounds and inert message content. Runtime fixtures also exercise backup/restore and process interruption without using existing chats as test fixtures.
+Isolated PostgreSQL tests cover deduplication, source-key updates, concurrent scheduling, paused-task preservation, owner preemption, interrupted summaries, per-device wake and scheduling fairness. A blocked loopback phone request and a real PostgreSQL lock on desktop collection additionally verify independent admission, retention of the blocked device's supervision boundary, and cancellation without late admission. These fixtures begin with durable notifications; their measured admission delay is not fresh notification latency or model execution speed. Guest inbox tests cover concurrent writers, file permissions, byte/count bounds and inert message content. Runtime fixtures also exercise backup/restore and process interruption without using existing chats as test fixtures.
 
 Handoff regressions additionally exercise early wake, once-only return consumption, transfer-ledger provenance, reverse-dispatch prevention, disconnected queued assignments, publication failure rollback and locked-row recovery. These are real database contracts with fixture records; they do not certify a real messaging account's notification-to-office-to-social-delivery loop.
 
@@ -53,6 +55,8 @@ Native model protocols and channel-specific delivery guarantees remain separate 
 # 通知驱动的工作
 
 通知在探索关闭时也可唤醒设备对应的 Agent。普通消息自行判断、默认回复；工作请求可连接授权设备、处理附件、保留工作目录副本并回原会话交付。任务、事件和实际动作回执分别持久化，旧暂停任务保留，未知动作不自动重放。
+
+手机采集、接管核对和手机入队保持原顺序；电脑采集与入队独立运行，各自只调度对应设备。某设备采集挂起不再拖住另一设备已有通知；原3秒周期和去重不变。摘要转发仍独立，停止协调器后所有分支一同取消。隔离HTTP/数据库锁验证不等于真实微信或模型端到端速度验收。
 
 跨Agent交接时，原任务使用task_wait等待；接收端核验并传回产物后task_finish，系统自动唤醒原任务，将回执、摘要及真实回传文件账本接入原上下文，不反向创建任务或让模型忙轮询。回执与上下文在同一事务中一次性发布；暂停、取消和服务商退避不被覆盖。原任务仍须真实核对手机文件并在来源会话交付，不能把另一端完成或文件传输完成称为社交消息已发送。
 
