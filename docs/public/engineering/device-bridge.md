@@ -34,10 +34,10 @@ not finish Windows first-run integration or the Python/Bun migration.
 
 The component has actual two-route transfer, half-close, invalid-credential, frame-boundary and cancellation tests. Maintainer validation also ran a separately compiled Linux Rust process against an existing native Android instance, reading root identity and a real PNG through the bridge. A temporary guest tone produced nonzero gRPC PCM through the native bridge; this does not certify host loudspeaker playback. No accounts, conversations or device disks are inputs to the distributed component.
 
-Windows SDK/AVD startup, WHPX/WSL lifecycle, guest-side tools and discovery, device provisioning and the complete first-run readiness probe still require integration. Windows independent-host capability remains disabled. Non-Windows transport tests are not Windows WSL/WHPX installation results. The current backend also retains documented Python/Bun runtime migration work.
+The WSL factory now supplies the Linux x64 ADB tools and AOSP emulator schema at the backend's configured SDK root. The Rust peer already publishes the discovery format consumed by the media service. Windows SDK/AVD startup, WHPX/WSL lifecycle coordination, device provisioning and the complete first-run readiness probe still require integration. Windows independent-host capability remains disabled. Non-Windows transport/resource tests are not Windows WSL/WHPX installation results. The current backend also retains documented Python/Bun runtime migration work.
 
 ## 中文
 
 Rust 桥接组件只转发原生手机的 ADB 与模拟器 gRPC，两条路由固定，客体监听保持本机回环。安装器通过标准输入传入 protobuf 配置和独立配对密钥；每个连接只核验一次，不增加模型调用、逐动作设卡或自动重放。取消时关闭监听并等待全部连接退出，未知动作结果仍由原 Runner 的观察/回执机制处理。
 
-已用独立编译的 Linux Rust 进程访问现有原生 Android，验证 root 与真实截图；临时测试音验证了非零 gRPC PCM，不能据此称宿主扬声器已验收。启动回执只表示传输可用。Windows SDK/AVD、WHPX/WSL、客体工具与发现、设备创建及完整首次就绪仍未接通完毕，Windows 独立宿主开关保持关闭；这些组件命令不应成为用户的手动部署步骤。
+已用独立编译的 Linux Rust 进程访问现有原生 Android，验证 root 与真实截图；临时测试音验证了非零 gRPC PCM，不能据此称宿主扬声器已验收。新 WSL 工厂包含 Linux x64 ADB 和 AOSP 媒体协议，沿用已有 SDK 路径与发现格式。启动回执只表示传输可用。Windows SDK/AVD、WHPX/WSL 生命周期协同、设备创建及完整首次就绪仍未接通完毕，Windows 独立宿主开关保持关闭；这些组件命令不应成为用户的手动部署步骤。

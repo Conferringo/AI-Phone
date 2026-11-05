@@ -95,8 +95,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2883,
-      "sha256": "d4dc3049a33a267c699d5c138f5bc4bd02cb1c0ab6caad804f15b0c9e7dc9d40"
+      "size": 2904,
+      "sha256": "979d7c332286ea8a8d95b5691ea8349c237db5ff7ebe46f6877bb7afed5b46e3"
     },
     {
       "path": ".gitignore",
@@ -170,8 +170,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 17465,
-      "sha256": "09c605499cc7ec4f9372c489b79756e57fc01753f46fcbafb1a91586bb3f652a"
+      "size": 18129,
+      "sha256": "6e7df685a35f401ef9da8c8731313df02c8184a63644f2ff0e3524dfdfcedfd6"
     },
     {
       "path": "ai-phone",
@@ -2315,8 +2315,8 @@
     },
     {
       "path": "config/wsl-backend.json",
-      "size": 619,
-      "sha256": "9eec4635d70a2b247cc6453431422990f0a0da2cef4ce921a2a6e051aa63d030"
+      "size": 634,
+      "sha256": "75bfe67af64e84ec6ac087cc549cca20bd854038eaa6b20862fa28a0520ea2a3"
     },
     {
       "path": "crates/adb-client/Cargo.toml",
@@ -3435,8 +3435,8 @@
     },
     {
       "path": "docs/public/engineering/device-bridge.md",
-      "size": 5731,
-      "sha256": "fabd43ef7b8d8dfd6a6ae1ab6136f4e0391d3eb891cd43917f8ce92da691268c"
+      "size": 6016,
+      "sha256": "55a0ec5900ddda93a8773ea7eca212b6957d912cec44c1284af84b401ac239af"
     },
     {
       "path": "docs/public/engineering/guest-apps.md",
@@ -4495,8 +4495,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 9262,
-      "sha256": "e17666a5077e7787acc3de0953dbf706199f23aeb62071784f1a5d7b0d21a23a"
+      "size": 10391,
+      "sha256": "e2b6431e5cfbfcc06b7f6ac42fc6ebe4b8a5b80fec0d2662a72ba6efa88dc9ec"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -4727,6 +4727,16 @@
       "path": "packages/protocol/src/gen/ai_phone/v1/workspace_pb.ts",
       "size": 8825,
       "sha256": "7de78cf2c1776e60efb7977320d81f333449ea9c1fa9c8b3bf29f2bb337d0b8d"
+    },
+    {
+      "path": "packages/protocol/vendor/android-emulator/emulator_controller.proto",
+      "size": 52659,
+      "sha256": "d40bd471b91ba0014e22f60c1a824dfddde8564340f95a6cf01df15fe2fbd335"
+    },
+    {
+      "path": "packages/protocol/vendor/android-emulator/provenance.json",
+      "size": 480,
+      "sha256": "f768bdc2f40b5fc099eec575843be5d902b9fc172dc4c42c2acf8f67818166b4"
     },
     {
       "path": "scripts/android-adb",
@@ -6215,8 +6225,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 22603,
-      "sha256": "7f28085a75b8597466958f8ea25f95a33860e00e1d0d23aeee1edd2ab0d772bd"
+      "size": 22870,
+      "sha256": "fed44f6dd53106bbb99b53419aa8580e0185de218145aa53ad9232398fad3cc0"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -6239,6 +6249,11 @@
       "sha256": "f5c5586c1400f992920568dca3741d3a9436c19d6ff48dd8844651c2216efdaf"
     },
     {
+      "path": "scripts/test_wsl_phone_tools.py",
+      "size": 4927,
+      "sha256": "1236e5912e3e54fb65ea2801b3adb408c584102804387a89963d12244e64dc7a"
+    },
+    {
       "path": "scripts/test_wsl_provision_consumer.py",
       "size": 10242,
       "sha256": "a811cbb7afc69362b00283d70743121948ef921229b4c4d35b8f3b4a8baf7468"
@@ -6255,8 +6270,8 @@
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
-      "size": 6827,
-      "sha256": "fd1dfccdccdf1c74cbcd484e554db39196f6b7a2637adb37319c0983c0479ae1"
+      "size": 7181,
+      "sha256": "552b814e52458f3a8abf72efb022937cf123ecabdaafef2759c700558a39df9c"
     },
     {
       "path": "scripts/verify_source_install.py",
@@ -6290,8 +6305,8 @@
     },
     {
       "path": "scripts/wsl_backend.py",
-      "size": 8518,
-      "sha256": "be5d302704bb7f9b70eb1672154be5f41de45abc6c7334ab2b04bacb6b06797a"
+      "size": 8932,
+      "sha256": "0ca9ad11100d8e510422c5ade3ee844dc93ef0de36cd07c7e1b6144ff851e048"
     },
     {
       "path": "scripts/wsl_backend_entry.py",
@@ -6300,13 +6315,13 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 13168,
-      "sha256": "4a28412ade7ac99fecec5cb11071e830a3275da1d8fb6c53d8b58495c2051625"
+      "size": 13648,
+      "sha256": "fb20a93a1634bc91b65e6fe68996c9975d4a8b7a152cbdb4a2d3f38a30ac5a9d"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
-      "size": 4174,
-      "sha256": "f0154d1a74f19247c692a2d90f9e81d453dbaf222fc0c3658db718e8c47d75c4"
+      "size": 4310,
+      "sha256": "b861246c0224b49d1fd070c0be777bdc258cec6b8929d4100b9df39b6f28eff8"
     },
     {
       "path": "scripts/wsl_engine_inputs.py",
@@ -6317,6 +6332,11 @@
       "path": "scripts/wsl_initialize_diagnostics.py",
       "size": 8631,
       "sha256": "28a8fa9be6a14d6a051f2199d3eeb2970ea364506c96f39029eb8df1fe2c07ab"
+    },
+    {
+      "path": "scripts/wsl_phone_tools.py",
+      "size": 3924,
+      "sha256": "8cf70b335725966e7932e40f4d2a23fdabcf39131dca1cd90894286f992c22b7"
     },
     {
       "path": "scripts/wsl_resources.py",
