@@ -4425,8 +4425,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 4088,
-      "sha256": "3c190d5dd522652c5881ffcea1adb59a41d05b63e3de39eaa308e63fbda91d49"
+      "size": 4402,
+      "sha256": "e7e2cfaee14a3b74b6293f1f1e9bafc2f5bf8fcfb7ab499b167f37a372eb8deb"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -5101,7 +5101,7 @@
     {
       "path": "scripts/build_capsule_codec.py",
       "size": 4221,
-      "sha256": "854789081b18e0d1dd538b2b2a5e433cf086077c69cdb6b74098cbe3f43114ae"
+      "sha256": "8ec374351aef12b0f2edb8efc720bc489cc0d4ad85f7c3fae300bfac8155dff9"
     },
     {
       "path": "scripts/build_client.py",
@@ -5555,8 +5555,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11038,
-      "sha256": "e40cc09b6449c9e054469583c6a12ee634b9a6d3e4972746b8dd3af25ee847f3"
+      "size": 11379,
+      "sha256": "f528b89ef83e3c213f1bbbe9e5814f1516d3f4b14c49160728cadf376e3dfa20"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -6110,8 +6110,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 12557,
-      "sha256": "c1dddd04bc2a886333b974b757c9dbc64d4b96b9269c93cd05ba7c2b016b2309"
+      "size": 14249,
+      "sha256": "a69cba528713f9a3591a7bba133f4d436f10f317eb7f6b38d422b86ef61ea2af"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
