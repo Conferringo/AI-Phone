@@ -2739,6 +2739,11 @@
       "sha256": "0cabc1bdbeea7c594ac4b31a9ff44026cc3a44ebf60c02c96d5abdb5d90c919b"
     },
     {
+      "path": "crates/assistant/src/notification_forwarding_tests.rs",
+      "size": 7800,
+      "sha256": "7f7b25ee085e0c14451b8aeb5839f686497e6237f8ab5f4c3c0115128e18cfba"
+    },
+    {
       "path": "crates/assistant/src/notification_policy.rs",
       "size": 2897,
       "sha256": "955281e644881ede572d0a2fcd159ab9c232ae395476ae97e1ba468e8133756a"
@@ -2755,8 +2760,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 70199,
-      "sha256": "afdf8540879378e564863d841609219e1bb418e76b282751ef0c8bdc986c02c7"
+      "size": 70750,
+      "sha256": "62b8fb5db48f890b539b0e2b7bd8cb6804f0f37f9f9fee08d3acee65ceaaf302"
     },
     {
       "path": "crates/assistant/src/registry.rs",
