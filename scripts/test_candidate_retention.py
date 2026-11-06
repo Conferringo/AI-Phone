@@ -13,9 +13,18 @@ class CandidateRetentionTests(unittest.TestCase):
             root=Path(temporary);legacy=self.fixture(root)
             deb={key:legacy[key] for key in ('artifact','package_delivery')}
             report={key:value for key,value in legacy.items() if key not in ('artifact','package_delivery')}
-            report.update({'format':2,'installers':[deb]})
+            folder=root/'dist/apt';folder.mkdir()
+            metadata=[]
+            for name in ('Packages','Packages.gz','Release'):
+                path=folder/name;path.write_bytes(name.encode())
+                metadata.append({'file':'apt/'+name,'size':path.stat().st_size,'sha256':digest(path)})
+            report.update({'format':2,'installers':[deb],'apt_metadata':metadata})
             plan=delivery.upload_plan(root,report,'a'*40)
-            self.assertEqual(len(plan['files']),3)
+            self.assertEqual(len(plan['files']),6)
+            self.assertTrue({'Packages','Packages.gz','Release'} <= {row['name'] for row in plan['files']})
+            (folder/'Packages').write_bytes(b'changed index')
+            with self.assertRaisesRegex(ValueError,'APT'):delivery.upload_plan(root,report,'a'*40)
+            (folder/'Packages').write_bytes(b'Packages')
             for entries in ([],[deb,deb]):
                 with self.assertRaisesRegex(ValueError,'formats'):delivery.upload_plan(root,{**report,'installers':entries},'a'*40)
 

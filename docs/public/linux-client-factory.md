@@ -26,7 +26,7 @@ Each compiled package is unpacked and inspected against all nine required runtim
 The Android and container-image capsules use XZ preset9, with the existing128MiB decoder budget retained. This changes the build-time compression effort, not their system, image or file contents.
 
 
-The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, the inspected DEB and their checksums are retained in an unpublished maintainer draft. It must be below the single-file delivery limit; an oversized DEB fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Physical installation is waived for previews on all desktop platforms and must be disclosed as untested; compilation and payload inspection are still required.
+The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, the inspected DEB, its checksums and unsigned APT indexes are retained in an unpublished maintainer draft. It must be below the single-file delivery limit; an oversized DEB fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Physical installation is waived for previews on all desktop platforms and must be disclosed as untested; compilation and payload inspection are still required.
 
 ## Local maintainer build
 
@@ -37,7 +37,7 @@ Use a fresh Linux x64 checkout with Docker Buildx with client/engine API 1.49 or
 python3 scripts/linux_client_factory.py
 ```
 
-The factory writes the inspected `.deb`, its manifest and a combined JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
+The factory writes the inspected `.deb`, its manifest, unsigned APT indexes, and a combined JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
 
 ## Availability
 

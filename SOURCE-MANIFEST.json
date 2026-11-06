@@ -70,8 +70,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3740,
-      "sha256": "b482a370965219b0ce76a1a0f1038a6bc9a7637b5f122178e696f5315ed3fe4f"
+      "size": 3759,
+      "sha256": "7209884ca2dad05fc8c01fb8dd5521c315ae202150d429ce2d2d87f20b085bbd"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -3240,8 +3240,8 @@
     },
     {
       "path": "docs/public/apt-repository.md",
-      "size": 3788,
-      "sha256": "b7af2d3e8cba30b9472d1dae1bf2a5fc81b990c3fc2222e7d4be5d73f036ab65"
+      "size": 4465,
+      "sha256": "bbcff539c07ff76d952dd2b3d60c790d75867c74c9b59ddecb83261694a419d7"
     },
     {
       "path": "docs/public/architecture.en.md",
@@ -3725,8 +3725,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 6422,
-      "sha256": "c0795101cbf5137c8f14b5c31baa7092032e76fb9f8b3880c40c7cc6a17d4aea"
+      "size": 6465,
+      "sha256": "4b3c53bf39372807349126a61419f83d6dbaac03be8f509a88cfc129a3b57314"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4325,8 +4325,8 @@
     },
     {
       "path": "scripts/apt_repository.py",
-      "size": 2614,
-      "sha256": "29cab4ba05fc41d59af5617696b2a42be660ae00def4cf9fbec08f31ce170f56"
+      "size": 3590,
+      "sha256": "3ec56771b174f25b9ceb941c457b70426d959c2cc7072d16aebca07ea0b09b39"
     },
     {
       "path": "scripts/artifact_io.py",
@@ -4840,8 +4840,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11770,
-      "sha256": "0862ed669f40932b627e09d97a3d6b5bb0b0a773cd20b100bfe95a818f438e79"
+      "size": 11855,
+      "sha256": "edc8a28816c2413d351ac4603ab940c8e6fb36b0119d0ab2f04732f2958dba3f"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4965,8 +4965,8 @@
     },
     {
       "path": "scripts/package_delivery.py",
-      "size": 7604,
-      "sha256": "34915ef8e22f703192577a5fdf764aaad98f745d8049f92d94dcde0e685e95f4"
+      "size": 7971,
+      "sha256": "843aa2738a9e06fac32f14a22d31fcc51ee931f464d519702aef470380ece16f"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -5180,8 +5180,8 @@
     },
     {
       "path": "scripts/test_apt_repository.py",
-      "size": 4924,
-      "sha256": "faa2a6d8f0a6625f3d4657fc325af6033e6017826619a69ca799f33cea930fbb"
+      "size": 5364,
+      "sha256": "56cd142ba0a0e5284c30017660d24edf6adc502bcb8c3cfeeb9b9eeaf169a78a"
     },
     {
       "path": "scripts/test_bootstrap_bun.py",
@@ -5210,8 +5210,8 @@
     },
     {
       "path": "scripts/test_candidate_retention.py",
-      "size": 6685,
-      "sha256": "a8da0def47911233d83bc85c395626237687f831c0990fc5627e35553fb81d37"
+      "size": 7339,
+      "sha256": "43fbb916ebc999f9f9ccd8f27693859238900f8374ee00f76ac6aeecd72ca066"
     },
     {
       "path": "scripts/test_channel_browser.py",
@@ -5370,8 +5370,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 15975,
-      "sha256": "3aa2db48080cd1c906e05ffbed43923b5d7359b303b0a1421bbf496cc7348c26"
+      "size": 16129,
+      "sha256": "41502bf2449e3866cddefac18f04c2c383a44e49a9532747936e123af9f9ac7f"
     },
     {
       "path": "scripts/test_linux_client_packages.py",

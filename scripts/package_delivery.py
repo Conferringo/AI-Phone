@@ -120,6 +120,12 @@ def upload_plan(root,report,source):
         metadata=metadata_path(root,artifact,source)
         records.extend(installer_records(root,entry['package_delivery'],artifact))
         records.extend(file_record(root,path) for path in [metadata,Path(root)/'dist'/(artifact['file']+'.sha256')])
+    if report['format']==2 and report['host'].startswith('linux-'):
+        for entry in report['apt_metadata']:
+            record=file_record(root,Path(root)/'dist'/entry['file'])
+            if record['sha256']!=entry['sha256'] or record['size']!=entry['size']:
+                raise ValueError('APT candidate metadata changed')
+            records.append(record)
     if len({row['name'] for row in records})!=len(records):raise ValueError('Duplicate candidate asset name')
     return {'format':1,'source_commit':source,'host':report['host'],'binary_publication':False,'files':records}
 

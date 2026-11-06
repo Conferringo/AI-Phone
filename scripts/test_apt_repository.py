@@ -2,6 +2,7 @@
 import functools
 import getpass
 import http.server
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -38,7 +39,13 @@ class AptRepositoryTests(unittest.TestCase):
                 control.write_text(f'Package: aiphone-apt-fixture\nVersion: {version}\nArchitecture: {architecture}\nMaintainer: AI Phone fixture\nDescription: Isolated package\n')
                 payload=package/'usr/share/aiphone-apt-fixture/version';payload.parent.mkdir(parents=True);payload.write_text(version)
                 deb=root/f'aiphone-apt-fixture_{version}_{architecture}.deb';run('dpkg-deb','--build','--root-owner-group',package,deb)
-                repository=repos/version;result=build([deb],repository,base,key,home)
+                repository=repos/version
+                if version=='1.0':result=build([deb],repository,base,key,home)
+                else:
+                    tool=Path(__file__).with_name('apt_repository.py')
+                    result=json.loads(run(sys.executable,tool,'index',deb,'--output',repository).stdout)
+                    self.assertFalse((repository/'InRelease').exists())
+                    run(sys.executable,tool,'sign','--output',repository,'--base-url',base,'--key',key,'--gnupg-home',home)
                 self.assertEqual(result['packages'],[deb.name])
                 # This is the same DEB, not a repackaged APT binary.
                 (repository/deb.name).symlink_to(deb)

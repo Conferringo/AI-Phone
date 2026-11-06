@@ -42,7 +42,7 @@ jobs:
           # These paths belong to this disposable GitHub runner, never a user's host.
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl patchelf file gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64 acl apt-utils dpkg-dev patchelf file gstreamer1.0-plugins-base gstreamer1.0-plugins-good
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
