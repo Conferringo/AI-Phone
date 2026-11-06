@@ -3295,8 +3295,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 12875,
-      "sha256": "71ea6866a700858b3da4973981a9ad4c2a0fa3ef77d0622435be2e35c11af292"
+      "size": 12862,
+      "sha256": "e7ff984aed23a51c79b8b2a292c9a688baff01fdee02d5bdb2c3ab7ea32f42a0"
     },
     {
       "path": "docs/public/database-roles.md",
