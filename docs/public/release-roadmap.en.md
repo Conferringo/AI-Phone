@@ -25,11 +25,11 @@ Extend model discovery with manual-ID fallback, configuration-bound capability c
 
 ## Copilot voice
 
-The [Copilot contract](copilot-voice.md) defines continuous listening, 1.5-second commits, transcript corrections, same-conversation steering and interruptible spoken feedback. The durable input foundation exists; microphone capture, real speech providers and playback interruption remain unshipped.
+The [Copilot contract](copilot-voice.md) defines continuous listening, 1.5-second commits, transcript corrections, same-conversation steering and interruptible spoken feedback. Browser PCM capture, per-Agent speech adapters, durable text/correction submission and streamed, interruptible WAV playback are implemented and covered by isolated transport tests. These checks do not establish real microphone or speech-provider quality.
 
-1. Add per-Agent streaming STT/TTS adapters with independent microphone, device-audio and playback tracks.
-2. Integrate continuous capture, endpoint detection and ordered transcription with the existing conversation path.
-3. Add echo handling, low-latency spoken feedback and playback generations so new speech stops obsolete output.
+1. Qualify real microphones and configured speech providers across languages, corrections, noise, echo and device switching.
+2. Measure capture-to-final-text, first spoken reply, playback interruption and first real device action separately.
+3. Extend provider protocols and native speech-to-speech without coupling microphone, device-audio and playback ownership.
 4. Provide an explicit guest-microphone route for voice messages and designated app-call tests.
 
 ## Calls and extensions
