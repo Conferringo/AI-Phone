@@ -79,7 +79,7 @@ def cleanup(nonce,resources,run=docker):
 
 def check_worker_identity(value,nonce,phase):
     expected={'format','nonce','phase','status','stage','checks','frame','windows_boot_verified','phone_ready','initialization'}
-    if not isinstance(value,dict) or set(value)!=expected:raise ValueError('Invalid runtime evidence fields')
+    if not isinstance(value,dict) or set(value) not in (expected,expected|{'failure'}):raise ValueError('Invalid runtime evidence fields')
     identity_fields={'format':1,'nonce':nonce,'phase':phase,'windows_boot_verified':False,'phone_ready':False}
     if any(type(value[key]) is not type(expected) or value[key]!=expected for key,expected in identity_fields.items()):
         raise ValueError('Invalid runtime evidence identity or readiness')
@@ -99,11 +99,14 @@ def check_worker_checks(checks):
 
 
 def worker_result(value,nonce,phase):
-    from wsl_initialize_diagnostics import checked,initial
+    from wsl_initialize_diagnostics import checked,initial,checked_runtime_failure
     check_worker_identity(value,nonce,phase)
     if value['status'] not in ('passed','failed') or value['stage'] not in ('guard','nesting','initialize','readiness','desktop','persistence','stopping','stopped'):
         raise ValueError('Invalid runtime evidence stage')
     check_worker_checks(value['checks']);check_worker_frame(value['frame'])
+    if 'failure' in value:
+        if value['status']!='failed':raise ValueError('Runtime failure conflicts with passed result')
+        checked_runtime_failure(value['failure'])
     checked(value['initialization'],passed=value['status']=='passed')
     if value['stage'] in ('guard','nesting') and value['initialization']!=initial():raise ValueError('Premature initialization evidence')
     if value['stage'] in ('readiness','desktop','persistence','stopping','stopped'):checked(value['initialization'],passed=True)

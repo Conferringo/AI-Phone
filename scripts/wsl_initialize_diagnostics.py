@@ -1,5 +1,6 @@
 """Closed WSL initialization evidence; no exception text, environment or raw logs."""
 import os
+import re
 import stat
 import subprocess
 from android_boot_diagnostics import owned_data, regular_reader
@@ -69,6 +70,33 @@ def error_fields(error):
     number=error.returncode if isinstance(error,subprocess.CalledProcessError) else None
     if type(number) is not int or not -(2**31)<=number<2**31 or number==0:number=None
     return {'error':code,'returncode':number}
+
+
+PROBE_ERRORS=frozenset(('qualification_failed','qualification_identity','qualification_environment',
+    'qualification_marker_invalid','qualification_marker_owner','qualification_provision_identity',
+    'qualification_provision_failed','qualification_desktop_exists','qualification_agent_missing',
+    'qualification_desktop_unmanaged','qualification_observation','qualification_marker_exists'))
+
+
+def known_probe(value):
+    return isinstance(value,str) and (value in PROBE_ERRORS or re.fullmatch(
+        r'qualification_rpc_(?:registry/(?:state|device-save)|desktop/(?:provision|state|observe))_[1-5][0-9]{2}',value) is not None)
+
+
+def runtime_failure(error):
+    value={**error_fields(error),'probe':'unclassified'}
+    if isinstance(error,subprocess.CalledProcessError):
+        output=error.stderr
+        if isinstance(output,bytes):output=output.decode('utf-8',errors='replace')
+        if isinstance(output,str) and known_probe(output.strip()):value['probe']=output.strip()
+    return value
+
+
+def checked_runtime_failure(value):
+    if not isinstance(value,dict) or set(value)!={'error','returncode','probe'} or not isinstance(value['error'],str) or value['error'] not in ERRORS-{'none'}:
+        raise ValueError('Invalid runtime failure evidence')
+    _checked_returncode(value['returncode'],value['error'])
+    if value['probe']!='unclassified' and not known_probe(value['probe']):raise ValueError('Invalid runtime probe code')
 
 
 def engine_path(root):
