@@ -45,10 +45,11 @@ describe('subscription isolation',()=>{
 
 describe('private state and retry contract (no live devices)',()=>{
  const project=resolve(import.meta.dir,'../..');
+ const nativeProgram=resolve(process.env.CARGO_TARGET_DIR||project+'/target','debug',process.platform==='win32'?'host-resources.exe':'host-resources');
  async function isolated(work:(dir:string,call:(request:object)=>Promise<any>)=>Promise<void>){
   const dir=mkdtempSync(tmpdir()+'/aiphone-network-test-');mkdirSync(dir+'/scripts');writeFileSync(dir+'/scripts/android-adb','#!/bin/sh\nexit 1\n',{mode:0o700});mkdirSync(dir+'/data/device-network/phone-local-01',{recursive:true});
   const call=async(request:object)=>{
-   const child=Bun.spawn([process.execPath,project+'/apps/device-network/control.ts'],{cwd:dir,env:{...process.env,AI_PHONE_PROJECT_ROOT:dir},stdin:new TextEncoder().encode(JSON.stringify({deviceId:'phone-local-01',kind:'phone',...request})),stdout:'pipe',stderr:'pipe'});
+   const child=Bun.spawn([process.execPath,project+'/apps/device-network/control.ts'],{cwd:dir,env:{...process.env,AI_PHONE_PROJECT_ROOT:dir,AI_PHONE_NATIVE_HOST_PROGRAM:nativeProgram},stdin:new TextEncoder().encode(JSON.stringify({deviceId:'phone-local-01',kind:'phone',...request})),stdout:'pipe',stderr:'pipe'});
    const output=await new Response(child.stdout).text();await child.exited;return JSON.parse(output);
   };
   try{await work(dir,call);}finally{rmSync(dir,{recursive:true,force:true});}

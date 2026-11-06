@@ -1,5 +1,5 @@
 import {createHash,randomBytes} from 'node:crypto';
-import {readFileSync,writeFileSync,renameSync,mkdirSync,existsSync,copyFileSync,chmodSync,symlinkSync,lstatSync,realpathSync,unlinkSync} from 'node:fs';
+import {readFileSync,writeFileSync,renameSync,mkdirSync,existsSync,copyFileSync,chmodSync,unlinkSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {makeConfig,downloadSubscription,subscriptionUrl} from './config';
 export const root=process.env.AI_PHONE_PROJECT_ROOT||resolve(import.meta.dir,'../..');
@@ -25,17 +25,11 @@ async function run(args:string[],input?:string,seconds=20){
 const adb=(...args:string[])=>run([root+'/scripts/android-adb',...args]);
 async function shell(t:Target,command:string){return t.kind==='phone'?adb('shell',command):run([docker,'exec','-i','ai-phone-desktop','sh','-c',command]);}
 async function put(t:Target,local:string,name:string){if(t.kind==='phone')await adb('push',local,remote+'/'+name);else if(resolve(local)!==resolve(folder(t),name))copyFileSync(local,folder(t)+'/'+name);}
-export function prepare(value:any){
+export async function prepare(value:any){
  const t=target(value);
- mkdirSync(folder(t),{recursive:true,mode:0o700});
- if(t.kind==='desktop'){
-  const alias=root+'/data/device-network/desktop';
-  if(existsSync(alias)||(()=>{try{return lstatSync(alias).isSymbolicLink();}catch{return false;}})()){
-   if(realpathSync(alias)!==realpathSync(folder(t)))throw Error('电脑网络目录属于其他设备');
-  }else symlinkSync(folder(t),alias,'dir');
-  // The optional legacy core is a read-only bind; the host owns its source directory.
-  mkdirSync(root+'/.tools/mihomo/linux-arm64',{recursive:true,mode:0o755});
- }
+ const program=process.env.AI_PHONE_NATIVE_HOST_PROGRAM;
+ if(!program)throw Error('原生设备管理程序未配置');
+ if(await run([program,'--prepare-device-network',root,t.kind,t.deviceId])!=='prepared')throw Error('设备目录准备未确认');
  return {prepared:true};
 }
 export async function install(){
@@ -129,7 +123,7 @@ export async function probe(value:any){
  atomic(folder(t)+'/checks.json',{revision:source.revision,at:Date.now(),items});return state(t);
 }
 export async function apply(value:any){
- const t=target(value),dir=folder(t);prepare(t);chmodSync(dir,0o700);
+ const t=target(value),dir=folder(t);await prepare(t);chmodSync(dir,0o700);
  if(existsSync(dir+'/app-managed.json'))throw Error('请在设备内的 Clash 应用中管理网络');
  const old=json(dir+'/source.json'),last=json(dir+'/last-request.json');
  if(!Number.isSafeInteger(value.expectedRevision)||value.expectedRevision<0)throw Error('网络配置版本无效');

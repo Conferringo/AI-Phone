@@ -3,19 +3,39 @@ use serde_json::{Value, json};
 use tokio::{io::AsyncWriteExt, process::Command};
 
 async fn invoke(app: &App, value: Value) -> Result<Value, String> {
-    let mut child =
-        Command::new(std::env::var_os("AI_PHONE_PYTHON").unwrap_or_else(|| "python3".into()))
-            .arg(app.root.join("scripts/prebuilt_js.py"))
-            .args(["--role", "device-network", "--run", "--root"])
-            .arg(&app.root)
-            .env("AI_PHONE_PROJECT_ROOT", &app.root)
-            .current_dir(&app.root)
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
-            .kill_on_drop(true)
-            .spawn()
-            .map_err(|_| "网络管理进程不可用")?;
+    let bundled = match std::fs::symlink_metadata(app.root.join("runtime/js-services")) {
+        Ok(_) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(_) => return Err("网络运行组件无法读取".into()),
+    };
+    let program = app.root.join(if bundled {
+        "runtime/bin/bun"
+    } else {
+        ".tools/bin/bun"
+    });
+    let entry = app.root.join(if bundled {
+        "runtime/js-services/apps/device-network/control.js"
+    } else {
+        "apps/device-network/control.ts"
+    });
+    let mut command = Command::new(program);
+    if bundled {
+        command.arg("--no-install");
+    }
+    let mut child = command
+        .arg(entry)
+        .env("AI_PHONE_PROJECT_ROOT", &app.root)
+        .env(
+            "AI_PHONE_NATIVE_HOST_PROGRAM",
+            std::env::current_exe().map_err(|_| "原生设备管理程序不可用")?,
+        )
+        .current_dir(&app.root)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|_| "网络管理进程不可用")?;
     child
         .stdin
         .take()
@@ -73,12 +93,8 @@ fn state(v: Value) -> wire::DeviceNetworkState {
     }
 }
 pub async fn prepare(app: &App, device: &str) -> Result<(), String> {
-    invoke(
-        app,
-        json!({"operation":"prepare","deviceId":device,"kind":"desktop"}),
-    )
-    .await?;
-    Ok(())
+    ai_phone_host_runtime::network_paths::prepare(&app.root, "desktop", device)
+        .map_err(|error| error.to_string())
 }
 pub async fn install_apps(app: &App) -> Result<(), String> {
     invoke(app, json!({"operation":"install-apps"})).await?;
