@@ -6,7 +6,7 @@ export function phrase(text:string,complete:boolean):string {
   if(Array.from(text).length>=180)return Array.from(text).slice(0,180).join('');
   return complete?text:'';
 }
-type Pending<T>={scope:string;ordinal:bigint;target:T;text:string;offset:number;complete:boolean};
+type Pending<T>={scope:string;ordinal:bigint;target:T;text:string;offset:number;complete:boolean;interrupted:boolean};
 /** One audible output owner. Speaking never blocks an Agent or input capture. */
 export class CopilotOutput<T>{
   private pending=new Map<string,Pending<T>>();
@@ -18,13 +18,13 @@ export class CopilotOutput<T>{
   feed(scope:string,target:T,replies:SpokenReply[]){
     if(!this.baselines.has(scope)){
       this.baselines.set(scope,replies.reduce((n,r)=>r.ordinal>n?r.ordinal:n,0n));
-      for(const reply of replies){const text=readable(reply.text);this.pending.set(scope+':'+reply.id,{scope,ordinal:reply.ordinal,target,text,offset:text.length,complete:reply.complete});}
+      for(const reply of replies){const text=readable(reply.text);this.pending.set(scope+':'+reply.id,{scope,ordinal:reply.ordinal,target,text,offset:text.length,complete:reply.complete,interrupted:false});}
       return;
     }
     for(const reply of replies){
       const key=scope+':'+reply.id,text=readable(reply.text),old=this.pending.get(key);
       if(!old&&reply.ordinal<=this.baselines.get(scope)!)continue;
-      this.pending.set(key,{scope,ordinal:reply.ordinal,target,text,complete:reply.complete,offset:old?(text.startsWith(old.text)?old.offset:text.length):0});
+      this.pending.set(key,{scope,ordinal:reply.ordinal,target,text,complete:reply.complete,interrupted:old?.interrupted??false,offset:old?(old.interrupted||!text.startsWith(old.text)?text.length:old.offset):0});
     }
     // Keep offsets for the supplied view, including late suffixes. Retired history
     // stays behind an ordinal fence and cannot be replayed when scrolled back in.
@@ -32,7 +32,7 @@ export class CopilotOutput<T>{
     for(const [key,p]of this.pending)if(p.scope===scope&&!visible.has(key)&&p.complete&&p.offset>=p.text.length){this.baselines.set(p.scope,p.ordinal>this.baselines.get(p.scope)!?p.ordinal:this.baselines.get(p.scope)!);this.pending.delete(key);}
     void this.pump();
   }
-  hold(){this.held=true;this.active?.abort();for(const p of this.pending.values())p.offset=p.text.length;}
+  hold(){this.held=true;this.active?.abort();for(const p of this.pending.values()){p.interrupted=true;p.offset=p.text.length;}}
   release(){this.held=false;void this.pump();}
   close(){this.hold();this.pending.clear();this.baselines.clear();}
   private async pump(){

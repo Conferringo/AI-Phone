@@ -83,18 +83,28 @@ try{
   // A new syllable interrupts playback before waiting for an ASR/network result.
   mic.frame!(speech,origin+8000);mic.frame!(speech,origin+8050);
   assert(mic.played[0].aborted,'Barge-in did not stop playback');
-  phase='late-cancellation';late=true;
+  phase='input-after-barge-in';
   for(let i=8100;i<8400;i+=50)mic.frame!(speech,origin+i);
   for(let i=8400;i<=9850;i+=50)mic.frame!(quiet,origin+i);
-  await wait(()=>transcriptions.length===5);controller.stop();releaseLate();await Bun.sleep(20);
-  assert(sent.length===4,'Late cancelled recognition executed a command');assert(mic.closed,'Microphone was left open');
+  await wait(()=>sent.length===5);
+  phase='late-interrupted-output';
+  const interrupted={id:'next-reply',ordinal:3n,text:'已经收到。旧回复仍在继续生成。',complete:true};
+  controller.register({...phone,replies:[...phone.replies,interrupted]});await Bun.sleep(20);
+  assert(mic.played.length===1,'Late text from an interrupted reply resumed playback');
+  controller.register({...phone,replies:[...phone.replies,interrupted,{id:'current-reply',ordinal:4n,text:'按新指令处理。',complete:true}]});
+  await wait(()=>mic.played.length===2);
+  phase='late-cancellation';late=true;
+  for(let i=10000;i<10400;i+=50)mic.frame!(speech,origin+i);
+  for(let i=10400;i<=11850;i+=50)mic.frame!(quiet,origin+i);
+  await wait(()=>transcriptions.length===6);controller.stop();releaseLate();await Bun.sleep(20);
+  assert(sent.length===5,'Late cancelled recognition executed a command');assert(mic.closed,'Microphone was left open');
   assert(signals.every(s=>!s.aborted),'Closing Copilot cancelled accepted background work');
   phase='duplicate-retry';await controller.start('phone');captures[1].failed('fixture microphone disconnected');
   const first=controller.retry(),duplicate=controller.retry();
   assert(captures.length===3,'Repeated retry opened competing microphones');await Promise.all([first,duplicate]);
   assert(captures[1].closed&&!captures[2].closed,'Capture retry lost resource ownership');
-  for(let i=0;i<4;i++){finish.shift()?.();await Bun.sleep(0);}
-  console.log(JSON.stringify({passed:true,spokenInputs:sent.length,devicePinning:true,correctionReceipt:true,durableOutbox:true,ttsFailureDoesNotBlockInput:true,bargeIn:true,lateCancellation:true,acceptedWorkPreserved:true,realMicrophoneOrProvider:false}));
+  for(let i=0;i<5;i++){finish.shift()?.();await Bun.sleep(0);}
+  console.log(JSON.stringify({passed:true,spokenInputs:sent.length,devicePinning:true,correctionReceipt:true,durableOutbox:true,ttsFailureDoesNotBlockInput:true,bargeIn:true,interruptedReplyStaysSilent:true,newReplySpeaks:true,lateCancellation:true,acceptedWorkPreserved:true,realMicrophoneOrProvider:false}));
 }finally{
   controller.stop();for(const box of boxes.values())box.dispose();globalThis.fetch=nativeFetch;server.stop(true);
 }
