@@ -7,6 +7,8 @@ pub mod component;
 mod control;
 pub mod device_bridge;
 mod filesystem;
+#[cfg(unix)]
+mod images;
 mod links;
 #[cfg(unix)]
 mod managed_engine;

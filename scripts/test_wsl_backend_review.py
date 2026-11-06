@@ -96,11 +96,18 @@ class WslOwnershipChainTests(unittest.TestCase):
 
     def test_real_image_activation_profile_ownership_and_web_chain_share_one_socket(self):
         import managed_engine
+        import shutil
+        from test_release import native_profile_program
+        native_run=__import__('subprocess').run;program=native_profile_program()
         captures=[];docker_calls=[]
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{'DOCKER_CONTEXT':'wrong','LIMA_HOME':'wrong','AI_PHONE_MANAGED_BIN':'/wrong'}):
             root=Path(folder);bundle=root/'bundle';bundle.mkdir();manifest=self.image_payload(bundle)
+            (root/'expected.json').write_text(json.dumps(manifest));(root/'bin').mkdir();shutil.copy2(Path(program).with_name('image-test-engine'),root/'bin/docker')
             (root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
             def docker(argv,**kwargs):
+                if str(argv[0])==program:
+                    env={**os.environ,'PATH':str(root/'bin')+os.pathsep+os.environ['PATH'],'AI_PHONE_IMAGE_TEST_STATE':str(root),'AI_PHONE_IMAGE_TEST_SOCKET':entry.SOCKET}
+                    return native_run(argv,env=env,**kwargs)
                 docker_calls.append(list(map(str,argv)))
                 self.assertEqual(os.environ['DOCKER_HOST'],entry.SOCKET);self.assertNotIn('DOCKER_CONTEXT',os.environ)
                 if argv[1:3]==['container','ls']:text='a'*64
@@ -113,10 +120,10 @@ class WslOwnershipChainTests(unittest.TestCase):
                 else:self.fail('Unexpected external command: '+str(argv))
                 return SimpleNamespace(returncode=0,stdout=text)
             def start(root,name,argv,env):captures.append((name,dict(env)))
-            with patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value=None):
+            with patch('prebuilt_services.image_activation_command',return_value=[program]),patch.object(entry,'BUNDLE',bundle),patch('subprocess.run',side_effect=docker),patch('managed_engine.environment',wraps=managed_engine.environment) as managed,patch('linux_services.start_unit',side_effect=start),patch('linux_services.unit_state',return_value=None),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/web']),patch('linux_host.shutil.which',return_value=None):
                 entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
             managed.assert_called_once_with(root)
-            self.assertEqual(len(docker_calls),17)
+            self.assertEqual(len(docker_calls),8);self.assertTrue((root/'socket-verified').is_file())
             self.assertEqual([argv[5] for argv in docker_calls if argv[1:3]==['container','ls']],
                              ['name=^/'+name+'$' for name in
                               ('ai-phone-postgres-1','ai-phone-redis-1','ai-phone-desktop','ai-phone-ocr')])
@@ -126,7 +133,8 @@ class WslOwnershipChainTests(unittest.TestCase):
                 self.assertNotIn('/wrong',env['PATH'])
             self.assertEqual(next(env for name,env in captures if name=='web')['PORT'],'17860')
             recorded=json.loads((root/'data/deployment/image-runtime.json').read_text())
-            self.assertEqual(recorded,manifest)
+            self.assertEqual(recorded['archive'],manifest['archive']);self.assertEqual(recorded['import_layout'],'oci-v1')
+            for role in manifest['images']:self.assertEqual(recorded['images'][role]['config_digest'],manifest['images'][role]['config_digest'])
 
     def test_lima_owned_state_is_rejected_before_queries_or_environment_changes(self):
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{'DOCKER_CONTEXT':'original'}):

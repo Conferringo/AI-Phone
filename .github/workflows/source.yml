@@ -55,7 +55,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
       - name: Installer and archive tests
         run: |
-          cargo build -p ai-phone-host-runtime --bin host-resources --locked
+          cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
           python3 -m unittest discover -s scripts -p 'test_*.py'
           python3 scripts/required_tests.py test_linux_services
       - name: Rust tests

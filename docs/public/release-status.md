@@ -1,6 +1,6 @@
 # Release status
 
-Updated 2026-11-06. Source code and technical documentation are available. **Complete product installers are not published.** This page is the current reference for platform availability and known product limits.
+Updated 2026-11-07. Source code and technical documentation are available. **Complete product installers are not published.** This page is the current reference for platform availability and known product limits.
 
 ## Platform qualification
 
@@ -21,7 +21,7 @@ The final first-party runtime, installation/recovery, build, test and release to
 
 Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
 
-First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Native component qualification and real-process data-preservation tests cover these boundaries. Full host orchestration, runtime environment/image activation, recovery and portable-tool retirement remain incomplete.
+First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Offline image admission, streaming import and activation records now use the native runtime. Legacy archives are normalized to explicit OCI targets while retaining source archive provenance and leaving old aliases untouched. Real Docker import/resume checks cover gzip, XZ and OCI; they do not constitute complete client installation. Full host orchestration, runtime environment selection, recovery and portable-tool retirement remain incomplete.
 
 ## Capability limits
 
@@ -47,7 +47,7 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 
 Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
 
-首次配置、显式编辑、预设/结构校验和初始数据库密码发布也已迁Rust，并有组件资格及真实进程保留数据回归。宿主编排、运行环境/镜像激活、恢复及私有工具退役仍未完成。
+首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验，不能据此声称完整安装通过。宿主编排、恢复及构建/发行工具的Python退役仍未完成。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

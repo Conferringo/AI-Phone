@@ -12,6 +12,8 @@ enum Service {
     PeerStatus,
     Input,
     Control,
+    #[cfg(unix)]
+    Images,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -27,6 +29,8 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::PeerStatus => runtime.block_on(crate::device_bridge::guest::status(arguments)),
         Service::Input => runtime.block_on(crate::android::input::run(arguments)),
         Service::Control => runtime.block_on(crate::supervision::control(arguments)),
+        #[cfg(unix)]
+        Service::Images => runtime.block_on(crate::images::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -64,6 +68,10 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
         "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
+        #[cfg(unix)]
+        "--activate-images" => Some(start(Service::Images, &arguments[1..])),
+        #[cfg(unix)]
+        "--image-activation-contract" => Some(contract(arguments, crate::images::CONTRACT)),
         #[cfg(unix)]
         "--managed-engine" => Some(crate::managed_engine::run(&arguments[1..])),
         #[cfg(unix)]

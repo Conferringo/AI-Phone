@@ -37,7 +37,7 @@ class NativeServiceTests(unittest.TestCase):
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
                          'service_supervision':'ai-phone-linux-supervision-v2', 'phone_input_setup':'ai-phone-input-setup-v2',
-                         'database_prepare':'ai-phone-database-prepare-v1','host_profile':'ai-phone-host-profile-v1','managed_engine':'ai-phone-managed-engine-v1'}}
+                         'database_prepare':'ai-phone-database-prepare-v1','host_profile':'ai-phone-host-profile-v1','managed_engine':'ai-phone-managed-engine-v1','image_activation':'ai-phone-image-activation-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -122,6 +122,17 @@ class NativeServiceTests(unittest.TestCase):
             self.assertEqual(managed_engine_command(root),[str(binary)])
             build.assert_called_once_with(['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked','--target-dir',str(root/'target')],cwd=root,check=True)
             qualify.assert_called_once_with(binary,'--managed-engine-contract',MANAGED_ENGINE_CONTRACT)
+
+    def test_image_activation_requires_the_new_component_before_any_execution(self):
+        from prebuilt_services import image_activation_command,IMAGE_ACTIVATION_CONTRACT,SOURCE_SUPERVISOR
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.load_manifest',return_value={}) as manifest,patch('subprocess.run') as execute:
+            root=Path(folder).resolve();(root/'runtime/services').mkdir(parents=True)
+            with self.assertRaisesRegex(ValueError,'image activation capability is missing'):image_activation_command(root)
+            execute.assert_not_called();manifest.return_value={'image_activation':IMAGE_ACTIVATION_CONTRACT}
+            self.assertEqual(image_activation_command(root),[str(root/binary_path('assistant'))])
+        with tempfile.TemporaryDirectory() as folder,patch('build_native_services.contract_receipt') as qualify,patch('subprocess.run') as build:
+            root=Path(folder).resolve();self.assertEqual(image_activation_command(root),[str(root/SOURCE_SUPERVISOR)])
+            build.assert_called_once();qualify.assert_called_once_with(root/SOURCE_SUPERVISOR,'--image-activation-contract',IMAGE_ACTIVATION_CONTRACT)
 
     def test_source_profile_builds_and_qualifies_one_native_helper(self):
         from prebuilt_services import profile_command, HOST_PROFILE_CONTRACT, SOURCE_SUPERVISOR
