@@ -50,7 +50,7 @@ python3 scripts/build_client.py --platform macos --with-web-runtime --with-servi
 
 For full distribution commands and factory-resource requirements, use the [Apple Silicon build guide](engineering/macos-full-runtime.md#build) or [Linux factory guide](linux-client-factory.md). The commands above exercise individual components.
 
-Build on the matching host. Native services currently target macOS and Linux; Windows builds can carry the prebuilt web and JavaScript service components, while Android requires a separate privileged host runtime. Cross-compiling a client does not produce matching host services.
+Build on the matching host. Native services currently target macOS and Linux; Windows builds can carry the prebuilt web and JavaScript service components, while Windows uses its matched WSL backend. Cross-compiling a client does not produce matching host services.
 
 Verification stages the actual archive into an empty temporary installation. It launches the copied web runtime, checks `/phone`, JavaScript and PNG byte hashes, executes side-effect-free native version commands and recognizes a generated OCR image. An optional labelled, loopback-only disposable PostgreSQL fixture checks embedded migrations, the runtime role and DDL denial. No model credentials, user devices or production database are test inputs.
 
@@ -65,11 +65,11 @@ Next tracing excludes private state and environment files. The independent packa
 | Android and emulator | Clean redistributable baseline, matching host ABI, offline device creation |
 | Linux and container/VM runtime | Clean prepared image, offline import, owned process supervision |
 | Media, channels and browser | Matching prebuilt dependencies and real startup checks |
-| Windows and root/KVM Android hosts | Independent services and both guest devices |
+| Windows host | Independent services and both guest devices |
 | Updates | Signed artifacts, backup, migrations and rollback activation |
 | First run | Client resource/model configuration followed by a usable workbench |
 
-Physical installation is waived for previews on all four platforms and remains unverified. Compilation, complete contents, privacy and redistribution checks remain required. Engineering records are available through [review evidence](engineering/index.md).
+Physical installation is waived for previews on all desktop platforms and remains unverified. Compilation, complete contents, privacy and redistribution checks remain required. Engineering records are available through [review evidence](engineering/index.md).
 
 ## 中文
 

@@ -33,8 +33,8 @@
     },
     "physical_installation": {
       "date": "2026-11-05",
-      "scope": "all-platform-complete-client-previews",
-      "decision": "Physical installation tests are waived by the maintainer for previews on all four platforms. Target compilation, payload inspection, complete runtime contents and applicable redistribution review remain required. Untested runtime behavior must be disclosed; the waiver is not a passed installation check."
+      "scope": "desktop-complete-client-previews",
+      "decision": "Physical installation tests are waived by the maintainer for previews on Windows, Apple Silicon macOS and Linux. Target compilation, payload inspection, complete runtime contents and applicable redistribution review remain required. Untested runtime behavior must be disclosed; the waiver is not a passed installation check."
     }
   },
   "distribution": {
@@ -54,7 +54,6 @@
     "single_installer_file": true,
     "user_assembles_volumes": false,
     "user_state_included": false,
-    "android_host": "root-and-kvm",
     "status": "not-ready"
   }
 }

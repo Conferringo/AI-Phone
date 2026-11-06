@@ -1,7 +1,6 @@
 //! Application-owned native resources, lifecycle and paired device transports.
 //! Device permissions and action receipts remain owned by their callers.
 pub mod android;
-pub mod android_root;
 mod archive;
 mod capsule;
 pub mod component;

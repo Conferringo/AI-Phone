@@ -69,7 +69,7 @@ class ClientDeliveryTests(unittest.TestCase):
             self.assertFalse(result['complete_device_bundle']);self.assertIn(missing,result['missing_runtime_components'])
 
     def test_component_presence_does_not_claim_an_unimplemented_host(self):
-        for host in ('linux-arm64','android-arm64'):
+        for host in ('linux-arm64',):
             value=delivery_metadata(FULL,host);self.assertTrue(value['server_included']);self.assertFalse(value['complete_device_bundle']);self.assertIn('host-runtime',value['missing_runtime_components'])
         windows=delivery_metadata(FULL,'windows-x64')
         self.assertFalse(windows['complete_device_bundle']);self.assertEqual(windows['missing_runtime_components'],['wsl-backend'])

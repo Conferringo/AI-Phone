@@ -9,7 +9,6 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 - [Offline container host](../container-host-runtime.md)
 - [Android runtime](android-runtime.md)
 - [Android distribution review](android-distribution.md)
-- [Rooted Android host worker](android-root-host.md)
 - [Windows Android runtime](windows-android-runtime.md)
 - [Windows WSL backend](../windows-backend-runtime.md)
 - [Linux client factory](../linux-client-factory.md)

@@ -36,7 +36,7 @@ An optional proxy is under **Advanced**. Empty uses the host's configured defaul
 
 **Rescan** removes that session locally and starts a new identity/owner pairing. **Unbind** attempts remote logout and removes the local profile. If remote confirmation is unknown, the interface reports it; check WhatsApp's Linked devices and remove the old session there. Network reconnect keeps the same local profile; shutdown waits for browser cleanup.
 
-Developer/source bootstrap prepares a project Chromium component automatically. Existing source checkouts can run `./scripts/bun apps/channels/install-browser.ts`; `--verify` is offline. A reviewed absolute executable can be supplied through `AI_PHONE_WHATSAPP_CHROMIUM`. Linux ARM source bootstrap currently needs an architecture-matched external/bundled runtime; Android root/KVM integration is not accepted yet. **Complete product distributions must bundle this component and its notices**, just like guest images/emulators. Downloading a developer Chromium is not a completed offline product installer.
+Developer/source bootstrap prepares a project Chromium component automatically. Existing source checkouts can run `./scripts/bun apps/channels/install-browser.ts`; `--verify` is offline. A reviewed absolute executable can be supplied through `AI_PHONE_WHATSAPP_CHROMIUM`. Linux ARM source bootstrap currently needs an architecture-matched external/bundled runtime. **Complete product distributions must bundle this component and its notices**, just like guest images/emulators. Downloading a developer Chromium is not a completed offline product installer.
 
 Real WhatsApp Web generated a valid QR twice in disposable sessions, including the pinned Puppeteer 25.16.0 override replacing an advisory-affected older dependency chain. No account was scanned and no real message was sent in this verification. Account pairing, restart/reconnect and actual text/image delivery still need account-level acceptance. QQ, WeCom, Feishu and Telegram retain their existing adapters; [the matrix](compatibility.md) distinguishes code evidence from real-account tests.
 
@@ -59,4 +59,4 @@ Real WhatsApp Web generated a valid QR twice in disposable sessions, including t
 
 WhatsApp 采用用户选择的本地扫码关联设备，无需公网回调。入口在 Agent → 连接应用 → WhatsApp。扫码后，从另一个私聊账号发送界面上的配对指令，再进行远程操作；不接收群聊、状态、自发消息或“发给自己”。文字和PNG回复进入原持久任务队列，未知送达不自动重发，入站附件暂未支持。高级项可选代理；用户浏览器资料不会被复用。解绑/重扫会清理当前本地会话；远端注销不确定时会明确提示。
 
-真实浏览器已两次生成有效二维码，未绑定任何真实账号，也未发送测试消息。新服务商缺少实号密钥的验收保持待验证，不将下拉选项视为通过。完整四平台发行包仍需预装浏览器、客体镜像、模拟器和服务组件，不能用开发安装脚本替代最终交付。完整技术与边界、官方资料见上方英文部分。
+真实浏览器已两次生成有效二维码，未绑定任何真实账号，也未发送测试消息。新服务商缺少实号密钥的验收保持待验证，不将下拉选项视为通过。完整桌面发行包仍需预装浏览器、客体镜像、模拟器和服务组件，不能用开发安装脚本替代最终交付。完整技术与边界、官方资料见上方英文部分。

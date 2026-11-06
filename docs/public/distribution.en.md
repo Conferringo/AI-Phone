@@ -10,9 +10,8 @@ The product is an application that deploys its own devices and services. Users c
 | Windows x64 | Native client builds; each revision also checks relocated web resources | Device/backend supervision, paths, permissions, OCR and virtualization |
 | Linux x64 | Native builds and managed KVM/systemd installation code | Complete payload and first-run acceptance |
 | Linux ARM64 | Native client and prebuilt web builds | Reviewed matching Android runtime and complete host integration |
-| Android ARM64 root/KVM | Client APK builds | Privileged host checks, matching runtime and both independent devices |
 
-Physical installation is waived for previews on all four platforms; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
+Physical installation is waived for previews on Windows, Apple Silicon macOS and Linux; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
 
 ## Implemented storage boundaries
 

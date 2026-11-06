@@ -11,7 +11,6 @@ use std::{
 use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
 mod bootstrap;
 
-#[cfg(any(desktop, test))]
 const DEFAULT_SERVER: &str = "http://127.0.0.1:17860";
 
 #[derive(Serialize, Deserialize)]
@@ -91,18 +90,9 @@ fn load_connection(app: &tauri::AppHandle) -> Result<Url, String> {
     let raw = match fs::read(path) {
         Ok(bytes) => serde_json::from_slice::<Connection>(&bytes)
             .map_err(|_| "Invalid saved server configuration")?,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            #[cfg(desktop)]
-            {
-                Connection {
-                    server_url: DEFAULT_SERVER.into(),
-                }
-            }
-            #[cfg(mobile)]
-            {
-                return Err("Server not configured".into());
-            }
-        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Connection {
+            server_url: DEFAULT_SERVER.into(),
+        },
         Err(e) => return Err(e.to_string()),
     };
     server_origin(&raw.server_url)
@@ -157,26 +147,14 @@ async fn probe(url: &Url) -> Result<(), String> {
 
 fn show_connection(app: &tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("connection") {
-        #[cfg(mobile)]
-        window
-            .navigate(Url::parse("http://tauri.localhost/").unwrap())
-            .map_err(|e| e.to_string())?;
         return window.set_focus().map_err(|e| e.to_string());
     }
-    #[cfg(mobile)]
-    let handle = app.clone();
     WebviewWindowBuilder::new(app, "connection", WebviewUrl::App("index.html".into()))
         .title("AI Phone")
         .inner_size(680., 620.)
         .min_inner_size(360., 260.)
         .resizable(true)
-        .on_navigation(move |url| {
-            #[cfg(mobile)]
-            if handle.state::<Navigation>().permits(url) {
-                return true;
-            }
-            local_connection_url(url)
-        })
+        .on_navigation(local_connection_url)
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()
         .map(|_| ())
@@ -209,10 +187,7 @@ fn show_workbench(
     let url = workbench_url(server, locale)?;
     let navigation = app.state::<Navigation>();
     let previous = navigation.replace(Some(server.clone()))?;
-    #[cfg(desktop)]
     let label = "workbench";
-    #[cfg(mobile)]
-    let label = "connection";
     let result = if let Some(window) = app.get_webview_window(label) {
         window
             .navigate(url)
@@ -220,7 +195,6 @@ fn show_workbench(
             .map_err(|e| e.to_string())
     } else {
         let handle = app.clone();
-        #[cfg(desktop)]
         let (width, height) = app
             .primary_monitor()
             .ok()
@@ -234,16 +208,11 @@ fn show_workbench(
                 )
             })
             .unwrap_or((1440., 980.));
-        #[cfg(mobile)]
-        let (width, height) = (1440., 980.);
         WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
             .title("AI Phone")
             .inner_size(width, height)
             .min_inner_size(700., 600.)
-            .on_navigation(move |url| {
-                (cfg!(mobile) && local_connection_url(url))
-                    || handle.state::<Navigation>().permits(url)
-            })
+            .on_navigation(move |url| handle.state::<Navigation>().permits(url))
             .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
             .build()
             .map(|_| ())
@@ -253,7 +222,6 @@ fn show_workbench(
         navigation.replace(previous)?;
         return Err(error);
     }
-    #[cfg(desktop)]
     if let Some(window) = app.get_webview_window("connection") {
         let _ = window.close();
     }
@@ -272,9 +240,6 @@ fn require_local_window(window: &tauri::WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
     require_local_window(&window)?;
-    #[cfg(mobile)]
-    let _ = height;
-    #[cfg(desktop)]
     if height.is_finite()
         && !window.is_maximized().unwrap_or(false)
         && !window.is_fullscreen().unwrap_or(false)
@@ -307,12 +272,7 @@ fn current_server(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result
     app.state::<Navigation>()
         .startup_cancelled
         .store(true, Ordering::SeqCst);
-    match load_connection(&app) {
-        Ok(url) => Ok(url.origin().ascii_serialization()),
-        #[cfg(mobile)]
-        Err(error) if error == "Server not configured" => Ok(String::new()),
-        Err(error) => Err(error),
-    }
+    load_connection(&app).map(|url| url.origin().ascii_serialization())
 }
 
 #[tauri::command]
@@ -398,9 +358,7 @@ async fn resume_local_host(app: &tauri::AppHandle) -> Option<Url> {
     Some(url)
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(desktop)]
     {
         let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
         if let Some(result) = ai_phone_host_runtime::component::run(&arguments) {
@@ -427,7 +385,6 @@ pub fn run() {
             accept_deployment_license
         ])
         .setup(|app| {
-            #[cfg(desktop)]
             {
                 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
                 let connection =
@@ -488,7 +445,6 @@ pub fn run() {
             });
             Ok(())
         });
-    #[cfg(desktop)]
     let builder = builder.on_menu_event(|app, event| {
         if event.id().as_ref() == "connection" {
             app.state::<Navigation>()

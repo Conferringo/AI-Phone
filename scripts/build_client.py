@@ -9,7 +9,7 @@ import os
 import argparse
 import tempfile
 from native_bundle import inspect_macos_bundle
-from client_artifacts import inspect_apk, inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
+from client_artifacts import inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
 
 ROOT=Path(__file__).resolve().parent.parent
 WINDOWS_TARGET='x86_64-pc-windows-msvc'
@@ -110,21 +110,7 @@ def build_other(target, package_only=False):
     env=native_environment()
     command=['node', str(client/'node_modules/@tauri-apps/cli/tauri.js')]
     dist=ROOT/'dist';dist.mkdir(exist_ok=True)
-    if target=='android':
-        from prepare_android_client import prepare
-        from sign_android_preview import sign
-        from android_notices import verify
-        env={**prepare(), 'CARGO_ENCODED_RUSTFLAGS':env['CARGO_ENCODED_RUSTFLAGS']}
-        if not package_only:
-            subprocess.run(command+['android','build','--config','src-tauri/gen/host/resources.json','--apk','--target','aarch64','--ci','--','--locked'],cwd=client,env=env,check=True)
-        # Tauri's build creates plugin settings/includes absent after a fresh init.
-        # Check the resolved graph before accepting/signing the resulting artifact.
-        verify(ROOT,env)
-        source=native/'gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk'
-        destination=dist/f'AI-Phone-{version}-android-arm64.apk'
-        sign(source,destination)
-        manifest=record(destination,'android','arm64',inspect_apk(destination),signing='local-preview-key; not release identity')
-    elif target=='windows':
+    if target=='windows':
         cross=platform.system()!='Windows'
         if cross and not package_only:
             cache=Path(env.get('XWIN_CACHE_DIR',str(Path.home()/'.cache/ai-phone-xwin'))).resolve()
@@ -148,7 +134,7 @@ def build_other(target, package_only=False):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--platform',choices=['macos','windows','linux','android'],default='macos')
+    parser.add_argument('--platform',choices=['macos','windows','linux'],default='macos')
     parser.add_argument('--images-runtime',type=Path,help='Include architecture-matched desktop and database image capsule')
     parser.add_argument('--installer-tools',type=Path,help='Include a reviewed portable Python/Node installer runtime')
     parser.add_argument('--android-runtime',type=Path,help='Embed a host-matched Android development runtime; complete distribution review remains required')
@@ -166,7 +152,7 @@ if __name__=='__main__':
     check(ROOT)
     from prepare_client_host import prepare
     if args.wsl_runtime and (args.platform!='windows' or args.package_only):parser.error('WSL runtime requires a Windows native build')
-    if args.with_web_runtime and (args.platform=='android' or args.package_only):parser.error('Build a matching host runtime before including it; Android uses a separate Linux guest payload')
+    if args.with_web_runtime and args.package_only:parser.error('Build a matching host runtime before including it')
     if args.with_service_runtime and (args.platform not in ('macos','linux') or args.package_only):parser.error('Native service component requires a matching macOS/Linux build')
     if args.linux_ocr and (args.platform!='linux' or not args.with_service_runtime):parser.error('Offline Linux OCR requires a matching Linux native service build')
     if args.with_phone_apps and args.package_only:parser.error('Phone applications must be supplied before compilation')

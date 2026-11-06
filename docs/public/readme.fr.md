@@ -6,7 +6,7 @@
 
 Les installateurs complets ne sont pas encore disponibles. La configuration suit le parcours ressources des appareils → modèle → espace de travail. Un paquet complet contient les systèmes Android/Linux, l’émulateur et les services précompilés. Le client prépare l’environnement ; l’utilisateur n’a pas à chercher des images ni à compiler un serveur.
 
-Les cibles de compilation sont macOS Apple Silicon, Windows x64, Linux x64/ARM64 et Android ARM64. Un hôte Android nécessite root et KVM. La disponibilité des paquets et la portée des vérifications figurent dans l’état de publication.
+Les cibles de compilation sont macOS Apple Silicon, Windows x64 et Linux. La disponibilité des paquets et la portée des vérifications figurent dans l’état de publication.
 
 ## Fonctions et scénarios
 

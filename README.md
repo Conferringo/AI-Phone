@@ -17,7 +17,6 @@ Installation flow: **device resources → model → workbench**. A complete pack
 | macOS Apple Silicon | Desktop application with local device runtime | Full package compiled; release qualification |
 | Windows x64 | Desktop application with local device runtime | Host integration in progress |
 | Linux x64 | Desktop application with local device runtime | Full package compiled; release qualification |
-| Android ARM64 | Root/KVM application with local device runtime | Privileged runtime integration in progress |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
@@ -75,7 +74,7 @@ Original code uses [Apache-2.0](LICENSE). Dependencies, SDKs, guest applications
 
 See [CONTRIBUTING](CONTRIBUTING.md) for development. Business APIs use protobuf; tests must be isolated and user state or live credentials must never be uploaded.
 
-Platform build and runtime evidence is documented in the compatibility matrix. Physical installation tests are waived for previews on all four platforms and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
+Platform build and runtime evidence is documented in the compatibility matrix. Physical installation tests are waived for previews on all desktop platforms and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
 
 ---
 
@@ -87,7 +86,7 @@ Platform build and runtime evidence is documented in the compatibility matrix. P
 
 **完整安装包尚未提供下载。** 各平台可用性见上方表格；源码、技术架构与配置指南已在仓库内提供。
 
-安装流程为：**设备资源 → 模型 → 工作台**。完整安装包内含 Android/Linux 基础系统、模拟器和预构建服务，由客户端完成设备创建与环境配置。Android 宿主面向已 root 且开放 KVM 的设备；各平台编译与运行验收范围单独列明。
+安装流程为：**设备资源 → 模型 → 工作台**。完整安装包内含 Android/Linux 基础系统、模拟器和预构建服务，由客户端完成设备创建与环境配置。各平台编译与运行验收范围单独列明。
 
 [发行标准](docs/public/preview-release.md) · [当前进度](docs/public/release-status.md) · [Issue 反馈](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
@@ -128,7 +127,7 @@ QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[�
 ## 后续开发
 
 1. 社区安装反馈、安装中断恢复、资源迁移和签名更新；未实测平台不标为通过。
-2. 四平台输入、声音、触屏、语言及可访问性验收；Windows/Linux 宿主管理。
+2. 桌面平台输入、声音、触屏、语言及可访问性验收；Windows/Linux 宿主管理。
 3. 继续收敛大型UI/执行模块的职责，补齐长时任务、宿主休眠/重启恢复。
 4. 模型发现与能力检测、更多应用特化、Skill升级/回退。
 5. 语音输入/播报 → 可打断实时语音 → 通话沙盒 → 用户配置的真实通信线路。

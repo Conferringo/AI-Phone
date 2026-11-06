@@ -17,7 +17,7 @@
 
 SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 Clash 应用，订阅由使用者提供。在「配置中心 → Agent」配置模型及设备绑定。程序不提供开发者密钥或账号，重复启动仅补缺失服务并保留现有状态。
 
-详见[安装](getting-started.zh-CN.md)、[预构建组件](runtime-bundles.md)、[架构](architecture.zh-CN.md)与[备份恢复](backup-restore.zh-CN.md)。当前验收范围豁免四平台预览客户端的实机安装；未实测仍标为未验证，匹配平台编译和组件检查继续必需。
+详见[安装](getting-started.zh-CN.md)、[预构建组件](runtime-bundles.md)、[架构](architecture.zh-CN.md)与[备份恢复](backup-restore.zh-CN.md)。当前验收范围豁免桌面预览客户端的实机安装；未实测仍标为未验证，匹配平台编译和组件检查继续必需。
 
 ## 源码与用户数据
 
@@ -34,4 +34,4 @@ python3 scripts/source_export.py --destination /path/to/new-review-directory --g
 
 Source CI 执行 protobuf、TypeScript、Rust、隔离前端与适配器、归档和安装契约、生产网页构建。预构建验证展开并执行实际包内文件。临时 PostgreSQL 检查迁移、受限角色、备份恢复与 worker 故障；重启测试按顺序运行，不使用真实设备、账号或付费模型。
 
-Native CI 在匹配环境构建 macOS ARM64、Windows x64、Linux x64/ARM64、Android ARM64 客户端。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。运行组件及职责见[组件目录](engineering/index.md)，当前可用范围见[发行状态](release-status.md)与[兼容矩阵](compatibility.md)。
+Native CI 在匹配环境构建 macOS ARM64、Windows x64、Linux桌面客户端，并验证虚拟手机控制应用。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。运行组件及职责见[组件目录](engineering/index.md)，当前可用范围见[发行状态](release-status.md)与[兼容矩阵](compatibility.md)。

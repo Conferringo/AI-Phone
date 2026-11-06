@@ -50,7 +50,6 @@
       "../../../DISCLAIMER.md": "legal/DISCLAIMER.md",
       "../../../THIRD_PARTY_NOTICES.md": "legal/THIRD_PARTY_NOTICES.md",
       "../../../docs/public/native-client-licenses.txt": "legal/native-client-licenses.txt",
-      "../../../docs/public/android-client-licenses.txt": "legal/android-client-licenses.txt",
       "gen/host/source.payload": "host/source.payload",
       "gen/host/entry.py": "host/entry.py"
     },

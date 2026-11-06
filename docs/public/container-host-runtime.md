@@ -49,7 +49,7 @@ The VM mounts only its installation directory. Apple Silicon uses virtiofs; Linu
 
 Persistent Lima state has a short path under `.aiphone-vms`, keyed by the resolved installation data directory. An ownership marker prevents accidental adoption. Missing, replaced or foreign state is reported. A private selection record restores the same wrapper, command and state after reopening; hashes and ownership are checked at startup. This does not add work to every model token or media frame. The engine does not change global Docker context or create a public endpoint.
 
-A valid Linux host component also avoids installing another QEMU/SSH toolchain through apt. Graphics/audio libraries and KVM access prerequisites for the Android host remain separate packaging work; the complete Linux client is not yet qualified as fully offline.
+A valid Linux host component also avoids installing another QEMU/SSH toolchain through apt. Graphics/audio libraries and KVM access prerequisites for the virtual Android phone remain separate packaging work; the complete Linux client is not yet qualified as fully offline.
 
 ## Availability
 

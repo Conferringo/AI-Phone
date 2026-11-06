@@ -19,7 +19,7 @@ Service startup does not compile over a live web/runner/assistant process. On re
 
 The `Managed Linux host acceptance` workflow uses the same source payload and Python entry point as the native installer, with both existing-engine and managed-engine cases. It only copies SDK license files already accepted in the hosted CI image; a new license prompt fails rather than auto-accepting. No private guest files or raw token-bearing logs are uploaded.
 
-Host architecture differs on Windows and Android; see [integrated-host scope](integrated-hosts.md#platform-scope). Initialization, phone/backend bridges and device lifecycles follow the corresponding host contract.
+Host architecture differs on Windows; see [integrated-host scope](integrated-hosts.md#platform-scope). Initialization, phone/backend bridges and device lifecycles follow the corresponding host contract.
 
 ---
 

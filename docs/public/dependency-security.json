@@ -6,13 +6,12 @@
     "aarch64-apple-darwin": [],
     "aarch64-unknown-linux-gnu": [],
     "x86_64-unknown-linux-gnu": [],
-    "x86_64-pc-windows-msvc": [],
-    "aarch64-linux-android": []
+    "x86_64-pc-windows-msvc": []
   },
   "rust": {
     "server": {
-      "lock_sha256": "7e7f162d553e02ccbf16aab440c36cd3867d77c42c8a25c5fce3e40cec996320",
-      "database_commit": "965bf9ad083b58e6340d65829d85217b18be9290",
+      "lock_sha256": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c",
+      "database_commit": "26fd2d43f7280a1fb925a3743ec463017afe7119",
       "findings": [
         {
           "package": "rsa@0.9.10",
@@ -20,12 +19,48 @@
           "category": "vulnerability",
           "active_targets": [],
           "blocking_when_active": true
+        },
+        {
+          "package": "zbus_names@4.3.5",
+          "advisory": "RUSTSEC-2026-0371",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "zvariant@5.15.1",
+          "advisory": "RUSTSEC-2026-0370",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "zvariant_derive@5.15.1",
+          "advisory": "RUSTSEC-2026-0372",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
         }
       ]
     },
     "client": {
-      "lock_sha256": "8008118a57bca9ce28621f3ad5a8582ba7db45e2119b6f615f7493b9cdc7caac",
-      "database_commit": "965bf9ad083b58e6340d65829d85217b18be9290",
+      "lock_sha256": "02a85825bdad7f2f6becdd71374bd4ddfe1d6d0ef0989a7d3c6e26749a4de1d6",
+      "database_commit": "26fd2d43f7280a1fb925a3743ec463017afe7119",
       "findings": [
         {
           "package": "proc-macro-error@1.0.4",
@@ -45,8 +80,7 @@
             "aarch64-apple-darwin",
             "aarch64-unknown-linux-gnu",
             "x86_64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "aarch64-linux-android"
+            "x86_64-pc-windows-msvc"
           ],
           "blocking_when_active": false
         },
@@ -58,8 +92,7 @@
             "aarch64-apple-darwin",
             "aarch64-unknown-linux-gnu",
             "x86_64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "aarch64-linux-android"
+            "x86_64-pc-windows-msvc"
           ],
           "blocking_when_active": false
         },
@@ -71,8 +104,7 @@
             "aarch64-apple-darwin",
             "aarch64-unknown-linux-gnu",
             "x86_64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "aarch64-linux-android"
+            "x86_64-pc-windows-msvc"
           ],
           "blocking_when_active": false
         },
@@ -84,8 +116,7 @@
             "aarch64-apple-darwin",
             "aarch64-unknown-linux-gnu",
             "x86_64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "aarch64-linux-android"
+            "x86_64-pc-windows-msvc"
           ],
           "blocking_when_active": false
         },
@@ -97,8 +128,7 @@
             "aarch64-apple-darwin",
             "aarch64-unknown-linux-gnu",
             "x86_64-unknown-linux-gnu",
-            "x86_64-pc-windows-msvc",
-            "aarch64-linux-android"
+            "x86_64-pc-windows-msvc"
           ],
           "blocking_when_active": false
         },

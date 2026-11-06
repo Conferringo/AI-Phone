@@ -14,9 +14,8 @@ class PreviewNoticeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'docs/public').mkdir(parents=True);(root/'config').mkdir()
             (root/'docs/public/dependency-licenses.json').write_text(json.dumps({'native_client_missing_notice_files':[]}))
-            (root/'config/android-dependency-notices.json').write_text(json.dumps({'packages':[{'package':'test:lib:1'}]}))
-            for name in ['native-client-licenses.txt','android-client-licenses.txt']:(root/'docs/public'/name).write_text('Full notice '+name)
-            first=notice_manifest(root);self.assertEqual(first['rust_missing_files'],[]);self.assertEqual(first['android_runtime_modules'],1)
+            for name in ['native-client-licenses.txt']:(root/'docs/public'/name).write_text('Full notice '+name)
+            first=notice_manifest(root);self.assertEqual(first['rust_missing_files'],[])
             (root/'docs/public/native-client-licenses.txt').write_text('updated')
             self.assertNotEqual(notice_manifest(root)['texts'],first['texts'])
 

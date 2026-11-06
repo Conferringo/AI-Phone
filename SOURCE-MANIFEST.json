@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 22171,
-      "sha256": "46e96d59fb3f8093f20ec6a83ece24f94af53314ce9ce0534e900b9a7eef4150"
+      "size": 20844,
+      "sha256": "4df993c86556eb5625938c3f3a94ab1a7face904e282a62eedec19175a684e69"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -155,13 +155,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7332,
-      "sha256": "171092edf02bfb1ed57fa59873d69d20553c4d17c0af386bb140d9c393eb34c2"
+      "size": 7223,
+      "sha256": "41175801932cf892fab195ddfad7d8ee2f19553467f907c0a57b063979da7218"
     },
     {
       "path": "README.md",
-      "size": 12632,
-      "sha256": "526ba1fe7a805a05fd58867cc8986fb3daf2fafd6beceb5441ea561e158f8db4"
+      "size": 12471,
+      "sha256": "08584324ca845fa56ff6cade328848fc38867a03de2cd419c73ef5cbb3e87420"
     },
     {
       "path": "SECURITY.md",
@@ -175,8 +175,8 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "size": 18231,
-      "sha256": "5cc27cb74309761d4d13cee58699dad58962ff16f709efca8aab5305321c8c0e"
+      "size": 17625,
+      "sha256": "077ecdea688b9dbaff1ed4cca6fa330ac052d31898d743093bf07198bc7a2a3d"
     },
     {
       "path": "ai-phone",
@@ -354,21 +354,6 @@
       "sha256": "b4ed855bff5a9e32b2fe4b0d85fd52b12b5f2c8aabb20dbda1a3619cef9881c3"
     },
     {
-      "path": "apps/client/android/AndroidManifest.xml",
-      "size": 1501,
-      "sha256": "d6065d1005a26eaa005af01c07ada74956d36a6582aa7d808595188a769156db"
-    },
-    {
-      "path": "apps/client/android/MainActivity.kt",
-      "size": 968,
-      "sha256": "a85bdabe5ba64cf2c6eb6d8a0b682472080eb1008d2d3baf81f4cc8f62cdf0a2"
-    },
-    {
-      "path": "apps/client/android/licenses.init.gradle",
-      "size": 597,
-      "sha256": "c84af42f3fe576011d4dd08c638f91512ed35934d6b82ae34409c60e60148af6"
-    },
-    {
       "path": "apps/client/package.json",
       "size": 242,
       "sha256": "a68fd5182eeb20f61969980569fffc7882101fd37946567405354c3d7934cffc"
@@ -380,8 +365,8 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
-      "size": 1294,
-      "sha256": "6afb1abfeeb4a86e24d0aac52c7267c3dcdc80383d3319638641c03b91bc02df"
+      "size": 1150,
+      "sha256": "a6e25c9c8101a0cc38add2e9626fce7143888cba3960ed7fb8e59dedef28bd06"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -464,91 +449,6 @@
       "sha256": "d8171bc1e6b95943d4f40dc4e517151d3c2147fba40e0aeb05a407edf8520815"
     },
     {
-      "path": "apps/client/src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml",
-      "size": 261,
-      "sha256": "760d4b8a06bf7163dd010c33ad2cac9e4a75fa0177afaba042f83e311eef0c3e"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-hdpi/ic_launcher.png",
-      "size": 2610,
-      "sha256": "b91d9963288a6e1132ca2939bb238f5115e71e8ada85b6b8fbe0ed166b9129c9"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-hdpi/ic_launcher_foreground.png",
-      "size": 2557,
-      "sha256": "d03d6ba1c3d5b6d352bdd881889d7a259dd9985921105af5db82b143d19f3bb4"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-hdpi/ic_launcher_round.png",
-      "size": 1851,
-      "sha256": "717a84ef16ed12b8e52a20ec213a17d0a5f9edf1b3e356930652ac6228236595"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-mdpi/ic_launcher.png",
-      "size": 1717,
-      "sha256": "cdf0d59220738e1d3885988bc640ce25791ec389b1816cf595e3c3d16414e9e3"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-mdpi/ic_launcher_foreground.png",
-      "size": 1778,
-      "sha256": "1fc91f6ca625635764977e7b3b45db2a8dfd50a5b58d21d492c9910ee997ab49"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-mdpi/ic_launcher_round.png",
-      "size": 1268,
-      "sha256": "a2790f19f9852755d04b9323cfcb5a0bdd05239ce28f2b9d4c4621c9d4e3e68e"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xhdpi/ic_launcher.png",
-      "size": 3094,
-      "sha256": "14e4f16ae3f36d268cd5f0638fb9dcaad8860eb678bb01f400bc319a171de283"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xhdpi/ic_launcher_foreground.png",
-      "size": 3404,
-      "sha256": "f07c43c16c6f1554131f1fee3553820377bbaa7b8a80db5e8fefaf5aa2d6b425"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xhdpi/ic_launcher_round.png",
-      "size": 2231,
-      "sha256": "3656cb7ba969b746c11a9eea95c9ec6a3e86346bf824534178e8d0278ce7b86b"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher.png",
-      "size": 5055,
-      "sha256": "1add1f4d841d6e969154349ae43662e5c261f773943118f75615e9698dd10a26"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_foreground.png",
-      "size": 4932,
-      "sha256": "9675099b5a34c517c875723466eb624e230023a08c1fe303b25e436634eac1af"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_round.png",
-      "size": 3504,
-      "sha256": "d425784e1bb9ed2651645e4d586bedf98ccc6a5b3582b6ee7a0e637ac4b00862"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher.png",
-      "size": 6462,
-      "sha256": "d8e02e03c72a02e3f41a5c5686cbfa360fa0940934ade15eb2800bcdc1f3cc49"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
-      "size": 6426,
-      "sha256": "1eb0f1478641caf7d051f438289896233725dd489b1fad4c6edf4d9ac5d5a401"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_round.png",
-      "size": 4584,
-      "sha256": "b680dc56bb0e869b1ccae92edb33c0b12a5c4c941e8fc7aab5a14a4d24b97093"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/android/values/ic_launcher_background.xml",
-      "size": 118,
-      "sha256": "b1c42868a1777ed1cf61108b506ffc91d0a826318d8516e36cf8f76fab8c4ced"
-    },
-    {
       "path": "apps/client/src-tauri/icons/icon.icns",
       "size": 47906,
       "sha256": "27e944a0da0c90eb7bf0a2e5241520e03e3dd991a42726a010b738731e40eaca"
@@ -562,96 +462,6 @@
       "path": "apps/client/src-tauri/icons/icon.png",
       "size": 7774,
       "sha256": "29d56a3a7c81dbba4d96e1b3dca31560bbecc84445e08cfd32d8addd5783b298"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-20x20@1x.png",
-      "size": 502,
-      "sha256": "ab62c6e0fac677fc21bcbe2ced55e08d015f3e239aff885b9775d88dd91f9bf7"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-20x20@2x-1.png",
-      "size": 776,
-      "sha256": "b27cc1f5648c308f41462208f5ba0ee55166a1e69625c8e5810a9fdab6f7a5c4"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-20x20@2x.png",
-      "size": 776,
-      "sha256": "b27cc1f5648c308f41462208f5ba0ee55166a1e69625c8e5810a9fdab6f7a5c4"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-20x20@3x.png",
-      "size": 1054,
-      "sha256": "34fbab9a65899ec36f1073972cc97fbe899f4ebe356096708bfa968d83659736"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-29x29@1x.png",
-      "size": 669,
-      "sha256": "1d10e112a05bbe810de6c12b6572b26b2f754c3fcb8d3d249c6f35e9bd950d04"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-29x29@2x-1.png",
-      "size": 976,
-      "sha256": "57497a78d1f1ce174c5e38cab7041fc314d3188f57f5109efac6bd236c1c4086"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-29x29@2x.png",
-      "size": 976,
-      "sha256": "57497a78d1f1ce174c5e38cab7041fc314d3188f57f5109efac6bd236c1c4086"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-29x29@3x.png",
-      "size": 1410,
-      "sha256": "faafbfdde48aed70de03d397390a3a5a57b2671715150cbe4fff09b03ce12528"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-40x40@1x.png",
-      "size": 776,
-      "sha256": "b27cc1f5648c308f41462208f5ba0ee55166a1e69625c8e5810a9fdab6f7a5c4"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-40x40@2x-1.png",
-      "size": 1391,
-      "sha256": "f121207a88e96567af9ff54a5746d7adb42b55bd2054319d18ca4617236d19e6"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-40x40@2x.png",
-      "size": 1391,
-      "sha256": "f121207a88e96567af9ff54a5746d7adb42b55bd2054319d18ca4617236d19e6"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-40x40@3x.png",
-      "size": 1799,
-      "sha256": "40e6be28d45708aafd8b3b5809923d9a473d90f96199202ec5d7c9eb0f04a9d3"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-512@2x.png",
-      "size": 16532,
-      "sha256": "d153c01ae8e14c8725f287fb036d747f9f0df184058687c6e4f2963b11d3341b"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-60x60@2x.png",
-      "size": 1799,
-      "sha256": "40e6be28d45708aafd8b3b5809923d9a473d90f96199202ec5d7c9eb0f04a9d3"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-60x60@3x.png",
-      "size": 2732,
-      "sha256": "d02d4d01e8e0a32efae8f553464ae3a5394ff667fad3f3d52c31dd6a7afdf78e"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-76x76@1x.png",
-      "size": 1290,
-      "sha256": "f01a5e52e39e40ea436fe82e19e1bbe01ff8164bbca318a56f88675707d5e0e2"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-76x76@2x.png",
-      "size": 2263,
-      "sha256": "476dc5423cf1f297b2810687998a51210a4ba6f7cf8bd6661922f965189063c3"
-    },
-    {
-      "path": "apps/client/src-tauri/icons/ios/AppIcon-83.5x83.5@2x.png",
-      "size": 2580,
-      "sha256": "25a93a18cbf4a4fa68a732b6a339af658be118c5998eae86d5f665f4b865e1a0"
     },
     {
       "path": "apps/client/src-tauri/icons/source.svg",
@@ -730,13 +540,13 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 30934,
-      "sha256": "b22fce37a3f9aff0f1e89df583860e56c601abe80b74eed1a3ff54b1af3aee8e"
+      "size": 30343,
+      "sha256": "d77cb26d982c70d4e8c30eb7eb6b241bb89dae51f11ad54d441088bdd079c604"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
-      "size": 22490,
-      "sha256": "122a07876f1f0551e18ef0cff0af5f07ae3076b5bfcd031aae5a961345570b72"
+      "size": 21266,
+      "sha256": "76cc9d576cec5074c78fe7e6ee1690d00e254227de3dab8c7c6834319f4e135f"
     },
     {
       "path": "apps/client/src-tauri/src/main.rs",
@@ -744,14 +554,9 @@
       "sha256": "59ac8370fc1ad11004c5105b3c794bf78436e3799e2d5ecee5fc01c5c24d942b"
     },
     {
-      "path": "apps/client/src-tauri/tauri.android.conf.json",
-      "size": 51,
-      "sha256": "3cf2f190c65a6b629ee50c183ddb12ad76165246081a0c6cafe9fa9319c5f9a1"
-    },
-    {
       "path": "apps/client/src-tauri/tauri.conf.json",
-      "size": 1866,
-      "sha256": "ed88e5cf1514529dfb34b53ddbe38f07bcfa5094e84a526e93e628c4750d4f2a"
+      "size": 1771,
+      "sha256": "5fa34850fe5dc6bcd8459e14844999dc92b6089e241a0118c2d34c6075ad46b3"
     },
     {
       "path": "apps/client/src-tauri/tauri.linux.conf.json",
@@ -1380,8 +1185,8 @@
     },
     {
       "path": "apps/client/ui/connection.js",
-      "size": 9914,
-      "sha256": "71d778a781da8edc0c04cfc1426a73f7bfbc4907cdfbddcde0fb309fba8cf2cc"
+      "size": 9896,
+      "sha256": "537648af28e5cbf6e586cf62d8ff99db311b511d3ae4808192b5c302394f02d9"
     },
     {
       "path": "apps/client/ui/index.html",
@@ -2204,11 +2009,6 @@
       "sha256": "5f62527815ec96f10cfd8896f8340338579f75394cb71511035d842402ece354"
     },
     {
-      "path": "config/android-dependency-notices.json",
-      "size": 49711,
-      "sha256": "ec85f9e3ffa1de869763b0f18eb9405e6ff67685888948fc5f5b6baa8e90933f"
-    },
-    {
       "path": "config/android-factory-images.json",
       "size": 535,
       "sha256": "d422bdc308deba43573ad6d46b60b38c8ed4bcb47461962cbd2cc28caa7721b8"
@@ -2305,8 +2105,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2120,
-      "sha256": "692e5c8e294425f17233dfeaa36043770536f259169cde872b3c0cac7f67f3a9"
+      "size": 2099,
+      "sha256": "ece9990219653642f9842c8bb62c5bc61337ef41a658a45e7d04a2d8830a3b47"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -3040,8 +2840,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 876,
-      "sha256": "4f5046669806fa8b73ac19499c8b0f8866e49c02fd6712ea1c7ad01f0728e6fa"
+      "size": 867,
+      "sha256": "7eed99f50ac43594164e7afde64e77dc709e8633fad64f49ac787dfdbac30515"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -3149,21 +2949,6 @@
       "sha256": "8f6ccae1076ee8a1a0a7f38db7069899cf7557191cf0871cda0319648ddb4a62"
     },
     {
-      "path": "crates/host-runtime/src/android_root/linux/tests.rs",
-      "size": 4563,
-      "sha256": "1d4c35b9d4b62dba4f4541667497e7f617fda41c4d37e7ca8f5a09d3db1a6e25"
-    },
-    {
-      "path": "crates/host-runtime/src/android_root/linux.rs",
-      "size": 8269,
-      "sha256": "5fbf0debe12c31672bf2a547a3124f0958bdfe07f7354b0c240eff54fc741378"
-    },
-    {
-      "path": "crates/host-runtime/src/android_root.rs",
-      "size": 501,
-      "sha256": "afeb013356d609e13a0ff9b1e39a01210213e4ed701e9d73d037a3f5aebaaf81"
-    },
-    {
       "path": "crates/host-runtime/src/archive.rs",
       "size": 8102,
       "sha256": "f1104afe9cc72de777b41d6c0a3c5c1e1aacd8d458ef3868ffe3c3afd7de2dce"
@@ -3190,8 +2975,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3671,
-      "sha256": "304fa5dca87b1aa245106b7e76290e5b51cc9650011c911e116c566e4a894127"
+      "size": 3392,
+      "sha256": "6ae9c35acfc8d2ee7ad4912d623412d3d861840d7d146087b1f176553da10de9"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3255,8 +3040,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2864,
-      "sha256": "a23c334ca6884eb6d0c092f23125c70269441761d721a475392962ffe9fed461"
+      "size": 2842,
+      "sha256": "865f586772cc44ae83f645e3b01864b3c31c1e052b6ef29f0990c0fc990fba69"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -3454,11 +3239,6 @@
       "sha256": "4e2c68fdc9111ca913c32ac1655ff34e54e4b54bbac44c29754f69827ce2066e"
     },
     {
-      "path": "docs/public/android-client-licenses.txt",
-      "size": 275577,
-      "sha256": "64bf0869eeb38a6629ce9dadeb31d288bec6787f9a486754d44cc8edb6fde692"
-    },
-    {
       "path": "docs/public/architecture.en.md",
       "size": 8776,
       "sha256": "0cc5c34b519d03084a501abb36a31654a9e2dbfcda6606f2c949dc67e6df04b2"
@@ -3470,8 +3250,8 @@
     },
     {
       "path": "docs/public/autonomous-exploration.md",
-      "size": 4344,
-      "sha256": "acdffd1fb60b6963da91044dbd861b228149162f06a8802384b9b911086989bf"
+      "size": 4338,
+      "sha256": "ec2cd11ccb09c982fef9ed55735f353bd30ecfa2c7db2a5db6afac957932b59b"
     },
     {
       "path": "docs/public/backup-restore.en.md",
@@ -3500,8 +3280,8 @@
     },
     {
       "path": "docs/public/container-host-runtime.md",
-      "size": 4855,
-      "sha256": "d0f111952c689124c5d78c1a8b54163d43a053b470d4756c3224b605f6df2708"
+      "size": 4864,
+      "sha256": "d64b0aec6559bca3955a02b243d08d6a3b41b70ffa70d784ec3c66f0ee6f3fd5"
     },
     {
       "path": "docs/public/conversation-steering.md",
@@ -3525,18 +3305,18 @@
     },
     {
       "path": "docs/public/dependency-security.json",
-      "size": 3724,
-      "sha256": "798d8e6072a7f083ae6c42159616e87c51b3abf607462392b972cd6c6d7e0bed"
+      "size": 4651,
+      "sha256": "ad37982ee8e46cbf9e5d2331ce1e22a7dc6ba3ba8414dd115ac709be60a6bdcb"
     },
     {
       "path": "docs/public/distribution.en.md",
-      "size": 4524,
-      "sha256": "151704ff77808d46339bfac0707aa73545656b8da63fc6ffd9f79d411847264e"
+      "size": 4425,
+      "sha256": "ed8a9962753f4544c8cd718afdf270609eb449942b7a98041a05de8a70215a2a"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
-      "size": 3796,
-      "sha256": "b91ca8db32257dcab0cd057fa2ef046b51765b0fdcc8e9a0cb3b271368247828"
+      "size": 3682,
+      "sha256": "657eae0a82ee7a1ff70a95aadf4532cfd3a3d1ee5d7433b31dfcd7ca4a0694b8"
     },
     {
       "path": "docs/public/engineering/android-distribution.md",
@@ -3544,14 +3324,9 @@
       "sha256": "539c34cdd8e72b574fbb0bce88a549c3297a33fcbb9327881cc38d3c4127488e"
     },
     {
-      "path": "docs/public/engineering/android-root-host.md",
-      "size": 4526,
-      "sha256": "59ccb5cb6d078acdaaa29660e56e8f78b19cf334e4dd1bfd7b9786e77480c8d2"
-    },
-    {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 5035,
-      "sha256": "7be37e4623d7601f97d9b43412a244cb63f1f1b64bb21917181d92275a88811f"
+      "size": 4912,
+      "sha256": "ea754c35e6b44716e75a4ae2f50da0e273dddba2b090a5828b844a5dccbf5aee"
     },
     {
       "path": "docs/public/engineering/app-guides.md",
@@ -3585,8 +3360,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1548,
-      "sha256": "0ffd7fabc9184a63ac45f7e19aee3972e46c8dd621c844e5b8ab3b24d87f250e"
+      "size": 1495,
+      "sha256": "7bc0581d529695f369706cfbef0dc1322be28970d1f21c3f40ded0ed30435508"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -3595,13 +3370,13 @@
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
-      "size": 5191,
-      "sha256": "9659d3874cf2581b86d19948ba3bc805c106d832ac2bdcaad726e25d77bb5dce"
+      "size": 5140,
+      "sha256": "e09a0aa0af5a5ea355bb9bd10b8503ad62e9b1fe76f3290088ebdb41bac4028c"
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
-      "size": 5789,
-      "sha256": "9efe64aa6e8c634a47a5e81ade0fd4a58954d7501807efed40e19b4c3c148055"
+      "size": 5786,
+      "sha256": "a2f520fc3558dcbcca1715cc84428a3e2624f07dee0f0cbd8f7e8dd10c99ff92"
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
@@ -3615,8 +3390,8 @@
     },
     {
       "path": "docs/public/engineering/native-android-preparation.md",
-      "size": 5158,
-      "sha256": "4091031af602eef6788295fbce626077d0e81c58e7e6da8b3d758ee4c2f50b07"
+      "size": 5149,
+      "sha256": "7b478e2f90a7b27f3b9dfc3c18c818088728dd7b3c8ab54bd29e274e12716fab"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -3660,548 +3435,13 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 7212,
-      "sha256": "63de89cd93c65fd49fc84c3050ced12178d745495cb166d73ecfab285bb78c3e"
+      "size": 6994,
+      "sha256": "68676a1818d3df9cf9841483cec1fc3db24042c34bf48aef3eac1d8ffeabaa6f"
     },
     {
       "path": "docs/public/languages.md",
       "size": 1753,
       "sha256": "7199637e2fe64c6ec05045e77dbefc822aacb6323168b6973f7ea28477e7ed3e"
-    },
-    {
-      "path": "docs/public/licenses/android/013288a9317a5527-documentfile-1.0.0.pom.xml",
-      "size": 1608,
-      "sha256": "013288a9317a552706ce625fb24493e8223288529223ec578cf855a5ae9c16e5"
-    },
-    {
-      "path": "docs/public/licenses/android/060ad1753381e7af-lifecycle-runtime-ktx-2.10.0.pom.xml",
-      "size": 6070,
-      "sha256": "060ad1753381e7af9d7a5b89829f394ef6fd47f77e31ba4c812462bc37bda618"
-    },
-    {
-      "path": "docs/public/licenses/android/0a0042db627fe915-jackson-core-NOTICE.txt",
-      "size": 1227,
-      "sha256": "0a0042db627fe915c6a1d9ef74927af5081446063e8888494be6718d692dd2b8"
-    },
-    {
-      "path": "docs/public/licenses/android/0aa171a50f50a85c-lifecycle-viewmodel-android-2.10.0.pom.xml",
-      "size": 6428,
-      "sha256": "0aa171a50f50a85c90687ad82dcd37f31afdd1bfd2463c215d1322960e51e228"
-    },
-    {
-      "path": "docs/public/licenses/android/0ae4de888974f5ce-activity-1.10.1.pom.xml",
-      "size": 4588,
-      "sha256": "0ae4de888974f5cef982660900ec32a33f10968750db7afa9438daec183f14e7"
-    },
-    {
-      "path": "docs/public/licenses/android/0ddc07cc39699f48-interpolator-1.0.0.pom.xml",
-      "size": 1608,
-      "sha256": "0ddc07cc39699f48ecd9ec894b5830c0f09e22e82959294edf37217224c88b7b"
-    },
-    {
-      "path": "docs/public/licenses/android/0f953706598140d9-core-runtime-2.2.0.pom.xml",
-      "size": 1920,
-      "sha256": "0f953706598140d9d8735cdd5aeb1fa35933f4e2f31c0bf3eb81a053a4c8c1a5"
-    },
-    {
-      "path": "docs/public/licenses/android/1004f4df05118b13-lifecycle-common-2.10.0.pom.xml",
-      "size": 5986,
-      "sha256": "1004f4df05118b13c2a909846badc66646ed277944706a604e4dd8284d53548b"
-    },
-    {
-      "path": "docs/public/licenses/android/14ebbea8234f0132-emoji2-1.3.0.pom.xml",
-      "size": 3702,
-      "sha256": "14ebbea8234f013211965fdd08b42ee907ce0075af321018c8c2865c2e5db0eb"
-    },
-    {
-      "path": "docs/public/licenses/android/19c4889941b3aa09-kotlinx-coroutines-core-jvm-1.9.0.pom.xml",
-      "size": 2195,
-      "sha256": "19c4889941b3aa098bd57cc64f02f9adacc654d571a12a956de4b5bb148c6499"
-    },
-    {
-      "path": "docs/public/licenses/android/1d860aff0ca598d4-lifecycle-viewmodel-2.10.0.pom.xml",
-      "size": 6236,
-      "sha256": "1d860aff0ca598d48e8e83da3f4e6769078498574a18d3b889ec2b8c4090b198"
-    },
-    {
-      "path": "docs/public/licenses/android/1e17d4af8d6425be-core-common-2.2.0.pom.xml",
-      "size": 1704,
-      "sha256": "1e17d4af8d6425be2a69f8af4d654a87e0456259a9eef1542869bcb023547e28"
-    },
-    {
-      "path": "docs/public/licenses/android/1f72f836339d03c6-viewpager-1.0.0.pom.xml",
-      "size": 1997,
-      "sha256": "1f72f836339d03c6eb013f65075e76ca87075a577578eb4f95f74a3a5d253128"
-    },
-    {
-      "path": "docs/public/licenses/android/1f79910cc20de198-appcompat-1.7.1.pom.xml",
-      "size": 5366,
-      "sha256": "1f79910cc20de198acf3867b1e93f9ed59ddb643585b2e9c28ee55518af1bc00"
-    },
-    {
-      "path": "docs/public/licenses/android/230b7ba1631c5f6b-webkit-1.14.0.pom.xml",
-      "size": 2534,
-      "sha256": "230b7ba1631c5f6baad08f3915f9db6d550d215b3658c82eb38ceb2dff72cad1"
-    },
-    {
-      "path": "docs/public/licenses/android/2673b0f5859d4361-emoji2-views-helper-1.3.0.pom.xml",
-      "size": 3230,
-      "sha256": "2673b0f5859d4361a4e9a30457852a6745d0c3c85b5e0412070483f3963ef526"
-    },
-    {
-      "path": "docs/public/licenses/android/276a20116b705fb7-vectordrawable-animated-1.1.0.pom.xml",
-      "size": 1798,
-      "sha256": "276a20116b705fb75b9003ee9496c56f6fd3b32375fb232472811eba60a040bd"
-    },
-    {
-      "path": "docs/public/licenses/android/2ab080dba155f303-jackson-core-FASTDOUBLEPARSER-NOTICE.txt",
-      "size": 1704,
-      "sha256": "2ab080dba155f30307a3ad98a6b0ab6526fd1f6745de92436ad54dba8a7940f9"
-    },
-    {
-      "path": "docs/public/licenses/android/2faf922e8c3d706f-appcompat-resources-1.7.1.pom.xml",
-      "size": 2993,
-      "sha256": "2faf922e8c3d706f29d862b3fbb3aa1347705c21c6eae18586d2bb1f7366ea01"
-    },
-    {
-      "path": "docs/public/licenses/android/31cc345b8c6cdd20-core-ktx-1.13.1.pom.xml",
-      "size": 2450,
-      "sha256": "31cc345b8c6cdd2046dcf67872df8a8cb4f44ea0cade4df80002caa7e3b71809"
-    },
-    {
-      "path": "docs/public/licenses/android/31d111776b9af777-kotlinx-serialization-core-1.7.3.pom.xml",
-      "size": 2086,
-      "sha256": "31d111776b9af777ca167103f2d61fbeeaa32dae6dd6635906b76d8278ba5730"
-    },
-    {
-      "path": "docs/public/licenses/android/4063bca7fe94fe65-viewpager2-1.0.0.pom.xml",
-      "size": 2120,
-      "sha256": "4063bca7fe94fe65c98f4168f97ae10e02da0248598ad3ac21c432c7f608a17a"
-    },
-    {
-      "path": "docs/public/licenses/android/4213490e4ce2b575-activity-ktx-1.10.1.pom.xml",
-      "size": 2905,
-      "sha256": "4213490e4ce2b5750e4445246dfe9de4f6655c2123c04a79a8248cc8893e2bf4"
-    },
-    {
-      "path": "docs/public/licenses/android/4226a491c5b59ce9-kotlinx-serialization-bom-1.7.3.pom.xml",
-      "size": 4037,
-      "sha256": "4226a491c5b59ce909f73b65aa98944191c8dcac3825637c6be1069e6b589a46"
-    },
-    {
-      "path": "docs/public/licenses/android/44ce22ee620d28f1-dynamicanimation-1.0.0.pom.xml",
-      "size": 1923,
-      "sha256": "44ce22ee620d28f17301bcc60ad49b69b7d0596c2a87b054ad1e3feac7b4a898"
-    },
-    {
-      "path": "docs/public/licenses/android/454ba507a3d36b4a-kotlin-stdlib-2.2.10.pom.xml",
-      "size": 2322,
-      "sha256": "454ba507a3d36b4ac253df6df96f8739bd26ea19df3f332b10b13f2c5715f787"
-    },
-    {
-      "path": "docs/public/licenses/android/4a8b5eec54d5ecdf-lifecycle-runtime-2.10.0.pom.xml",
-      "size": 6221,
-      "sha256": "4a8b5eec54d5ecdf099ea53b2e4e9f24db2967ea5d393097b6a6c549ed69308d"
-    },
-    {
-      "path": "docs/public/licenses/android/4bed5e91cd2a7c01-lifecycle-livedata-core-2.10.0.pom.xml",
-      "size": 6209,
-      "sha256": "4bed5e91cd2a7c01558320b6a176dbb867fca3c4c697db948e203be45f910d64"
-    },
-    {
-      "path": "docs/public/licenses/android/527abfa5a8d6af74-core-1.13.1.pom.xml",
-      "size": 3654,
-      "sha256": "527abfa5a8d6af748b37e1c0162d1633a2d5ea4387b0205a8b436b6214ba1cf6"
-    },
-    {
-      "path": "docs/public/licenses/android/53693b7e8191e970-material-1.12.0.pom.xml",
-      "size": 5475,
-      "sha256": "53693b7e8191e9707f1cc0f2788217a6c4d9de0ebcf548151af69ffa7e12b1d4"
-    },
-    {
-      "path": "docs/public/licenses/android/53873caf26bc1ed8-listenablefuture-1.0.pom.xml",
-      "size": 2226,
-      "sha256": "53873caf26bc1ed8a567ea6c939ab2aaa3f47a5e32d5cade95ddf5080d23238a"
-    },
-    {
-      "path": "docs/public/licenses/android/59656ffcae1e0e14-lifecycle-viewmodel-savedstate-2.10.0.pom.xml",
-      "size": 7039,
-      "sha256": "59656ffcae1e0e147043b0d6d89966a5f96752f05291ebfa028406ed94444dd1"
-    },
-    {
-      "path": "docs/public/licenses/android/5b0e2d5b2179e548-vectordrawable-1.1.0.pom.xml",
-      "size": 1726,
-      "sha256": "5b0e2d5b2179e54804785cbc21ce5f473b5e1ddd55a57da482e94dcd39492bb2"
-    },
-    {
-      "path": "docs/public/licenses/android/5c1a269dd0f0ace8-lifecycle-runtime-ktx-android-2.10.0.pom.xml",
-      "size": 6089,
-      "sha256": "5c1a269dd0f0ace87f22832883b898bd7b4252d6a87f04c17347d83e3128660e"
-    },
-    {
-      "path": "docs/public/licenses/android/5f51e65873ca612d-versionedparcelable-1.1.1.pom.xml",
-      "size": 1643,
-      "sha256": "5f51e65873ca612de3838fa90d2ee95b8d040efd31b9c390a19bf94d615cdb2f"
-    },
-    {
-      "path": "docs/public/licenses/android/5fcd429ba57e1dde-lifecycle-viewmodel-savedstate-android-2.10.0.pom.xml",
-      "size": 7505,
-      "sha256": "5fcd429ba57e1dde1b438534e53c23d6274d234e33c748963f6faa9f81933c87"
-    },
-    {
-      "path": "docs/public/licenses/android/612b14bc77c944ce-jackson-annotations-NOTICE.txt",
-      "size": 738,
-      "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201"
-    },
-    {
-      "path": "docs/public/licenses/android/612b14bc77c944ce-jackson-databind-NOTICE.txt",
-      "size": 738,
-      "sha256": "612b14bc77c944ce229cbba0d14919162cfea8ed802cbf06a8e865e032d03201"
-    },
-    {
-      "path": "docs/public/licenses/android/62482c0594841bee-print-1.0.0.pom.xml",
-      "size": 1586,
-      "sha256": "62482c0594841bee24bb996abb6cb7b320a6a3b77dca9f0a0ba4fe3be5530aa7"
-    },
-    {
-      "path": "docs/public/licenses/android/62d95c89850af210-cursoradapter-1.0.0.pom.xml",
-      "size": 1611,
-      "sha256": "62d95c89850af21030b19f14d5f7ecd6d8bcc9a3014c59002ec99624caac8100"
-    },
-    {
-      "path": "docs/public/licenses/android/66fc9945c16716bc-jackson-bom-2.15.3.pom.xml",
-      "size": 17995,
-      "sha256": "66fc9945c16716bc202f4b9d7e6d969df3f509feffbe1acf1a31511b753d5c9d"
-    },
-    {
-      "path": "docs/public/licenses/android/67e9066ca4acfdc6-collection-1.1.0.pom.xml",
-      "size": 1338,
-      "sha256": "67e9066ca4acfdc6e3cc508293c31ba0398057ff118e4f70b1e1813c9a3456d1"
-    },
-    {
-      "path": "docs/public/licenses/android/734f5f749208dd0b-kotlinx-serialization-core-jvm-1.7.3.pom.xml",
-      "size": 2044,
-      "sha256": "734f5f749208dd0bef3d98caa594cf9222afdf0fee5b6843347a8fe64e240427"
-    },
-    {
-      "path": "docs/public/licenses/android/748a34eb5d13d19d-concurrent-futures-1.1.0.pom.xml",
-      "size": 1888,
-      "sha256": "748a34eb5d13d19d187adecaea82667fded5f1b0b98a655e13ed2e4a8b3d8ae6"
-    },
-    {
-      "path": "docs/public/licenses/android/770f2793d05e2b02-kotlinx-coroutines-core-1.9.0.pom.xml",
-      "size": 2057,
-      "sha256": "770f2793d05e2b027b9c799938ec1d2d4ef141ce5819c780c32c3995cadb0a47"
-    },
-    {
-      "path": "docs/public/licenses/android/7bae617e32681ebb-error_prone_annotations-2.15.0.pom.xml",
-      "size": 2163,
-      "sha256": "7bae617e32681ebbb289c203c905f646c2a0397598af786d961a54aaa3d2b1e6"
-    },
-    {
-      "path": "docs/public/licenses/android/800a2a1fa6141763-jackson-core-BIGINT-LICENSE.txt",
-      "size": 1274,
-      "sha256": "800a2a1fa6141763161e6d9ea5ceb283152ef3695dad10cee7243b63b9986c9f"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-activity-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-activity-ktx-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-annotation-jvm-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-core-viewtree-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-common-jvm-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-livedata-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-livedata-core-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-livedata-core-ktx-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-process-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-runtime-android-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-runtime-ktx-android-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-viewmodel-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-viewmodel-android-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-viewmodel-ktx-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-lifecycle-viewmodel-savedstate-android-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-profileinstaller-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-savedstate-android-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-savedstate-ktx-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/809fa1ed21450f59-webkit-LICENSE.TXT.txt",
-      "size": 10175,
-      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
-    },
-    {
-      "path": "docs/public/licenses/android/81beab01fd168168-constraintlayout-solver-2.0.1.pom.xml",
-      "size": 1109,
-      "sha256": "81beab01fd168168c6f8428a13359ab3fc2f406740a96f6d9121e807a3baeddb"
-    },
-    {
-      "path": "docs/public/licenses/android/89b99c218d600193-annotation-jvm-1.9.1.pom.xml",
-      "size": 1826,
-      "sha256": "89b99c218d60019316b50aab79816707bc21696c896a030e1b1ae038961bcb8e"
-    },
-    {
-      "path": "docs/public/licenses/android/8fd093008b3ee7c0-legacy-support-core-utils-1.0.0.pom.xml",
-      "size": 2633,
-      "sha256": "8fd093008b3ee7c06e52c78da2af980a7b47b69b967fa91dad7af466f7a00a38"
-    },
-    {
-      "path": "docs/public/licenses/android/a000041f5a1f7928-localbroadcastmanager-1.0.0.pom.xml",
-      "size": 1636,
-      "sha256": "a000041f5a1f79283c5175e1bb60cf3683780f401c6a9d34fbe9751253fa6ff9"
-    },
-    {
-      "path": "docs/public/licenses/android/a2c3062320873f9a-lifecycle-process-2.10.0.pom.xml",
-      "size": 6026,
-      "sha256": "a2c3062320873f9ac29ded1d9ca4a2415529c2e4568d53b5f2b813ec52adc664"
-    },
-    {
-      "path": "docs/public/licenses/android/a67c52c9ddfaff2f-coordinatorlayout-1.1.0.pom.xml",
-      "size": 2187,
-      "sha256": "a67c52c9ddfaff2ffb2fd4b97cd94fa382e837ea8a5874d029e0a04fa63e5caf"
-    },
-    {
-      "path": "docs/public/licenses/android/b085af7cc4bb297e-savedstate-ktx-1.4.0.pom.xml",
-      "size": 2775,
-      "sha256": "b085af7cc4bb297ed0f25ca85d3629613ab253c0b532684c6cf77c2aee7471c5"
-    },
-    {
-      "path": "docs/public/licenses/android/b44b215b4cce24ca-savedstate-android-1.4.0.pom.xml",
-      "size": 3923,
-      "sha256": "b44b215b4cce24ca64b5faa58ff463f4b91abc02af95ba405ade488828f4f779"
-    },
-    {
-      "path": "docs/public/licenses/android/b6b93686c55a1ca8-lifecycle-livedata-2.10.0.pom.xml",
-      "size": 6650,
-      "sha256": "b6b93686c55a1ca8ec20e7d84a5fe341267e5dac6e390fb1cca398383111eb08"
-    },
-    {
-      "path": "docs/public/licenses/android/b6e3cd4ae77d0ff9-jackson-databind-2.15.3.pom.xml",
-      "size": 19311,
-      "sha256": "b6e3cd4ae77d0ff9507eab1ce794b3aa9ee278241c6544333bdb7efbc5a2e4f9"
-    },
-    {
-      "path": "docs/public/licenses/android/b8eb4938ed95d7fc-resourceinspection-annotation-1.0.1.pom.xml",
-      "size": 1808,
-      "sha256": "b8eb4938ed95d7fcdaa2712ebca363e46a0f9228b8be7f23154def56846815dc"
-    },
-    {
-      "path": "docs/public/licenses/android/be86020cd5b93b8a-kotlinx-coroutines-android-1.9.0.pom.xml",
-      "size": 2220,
-      "sha256": "be86020cd5b93b8a68ca43185a049b9b0baa345fd1be1fdaa014fdaef92d6e7c"
-    },
-    {
-      "path": "docs/public/licenses/android/bea5511e9001f2c5-kotlinx-coroutines-bom-1.9.0.pom.xml",
-      "size": 4291,
-      "sha256": "bea5511e9001f2c593ab5080df131b219ab5e2085cc5979ce583eacd4946fd78"
-    },
-    {
-      "path": "docs/public/licenses/android/c12fa903ba530059-drawerlayout-1.1.1.pom.xml",
-      "size": 1986,
-      "sha256": "c12fa903ba53005962a72405f37896608718f41673fc4a62312e4536132f6f45"
-    },
-    {
-      "path": "docs/public/licenses/android/c733881c2e17d5f7-annotation-1.9.1.pom.xml",
-      "size": 2008,
-      "sha256": "c733881c2e17d5f7c8661cc02a9159cb160b7b2094a27d593916c87d3e250636"
-    },
-    {
-      "path": "docs/public/licenses/android/c814d435f73e9e6d-customview-1.1.0.pom.xml",
-      "size": 1957,
-      "sha256": "c814d435f73e9e6d169886d0eb96b5c5361feb48449fbbb315c908c03c588c94"
-    },
-    {
-      "path": "docs/public/licenses/android/c8d794eb761888d3-kotlin-bom-1.8.22.pom.xml",
-      "size": 9338,
-      "sha256": "c8d794eb761888d34369e677de8eaba0b01f9e8a756cfbff53215ccfa5c58c3f"
-    },
-    {
-      "path": "docs/public/licenses/android/c9490f655132328d-annotations-23.0.0.pom.xml",
-      "size": 1354,
-      "sha256": "c9490f655132328df2cfbcfdf743f53fc3916d6c1d10437175a6ca6e3a67771c"
-    },
-    {
-      "path": "docs/public/licenses/android/c978d550808b4743-loader-1.0.0.pom.xml",
-      "size": 2207,
-      "sha256": "c978d550808b47434aa49a63164110a50b55b0bcc6160a93a2e37d5110df8c5e"
-    },
-    {
-      "path": "docs/public/licenses/android/ca062b9abb0298b0-lifecycle-common-jvm-2.10.0.pom.xml",
-      "size": 6157,
-      "sha256": "ca062b9abb0298b0d40ae10c2d1ca06d4129f5f60efdc5e8c44c6c2b3375d15b"
-    },
-    {
-      "path": "docs/public/licenses/android/ccd500917483b21a-jackson-core-2.15.3.pom.xml",
-      "size": 9771,
-      "sha256": "ccd500917483b21ae1835df9845b91ab11ac9aba08b793d2ecf82d28c069ece2"
-    },
-    {
-      "path": "docs/public/licenses/android/cd0299a90d4720d7-tracing-1.0.0.pom.xml",
-      "size": 1717,
-      "sha256": "cd0299a90d4720d78f1cfb5ff7505f4dbc1a70d05fe23fd9f4d4b77ea59ca05e"
-    },
-    {
-      "path": "docs/public/licenses/android/cdab929a3b95211f-jspecify-1.0.0.pom.xml",
-      "size": 1511,
-      "sha256": "cdab929a3b95211f43d2090c5e2d0dfe8465960e378bc32b35841dab324433a6"
-    },
-    {
-      "path": "docs/public/licenses/android/cfc7749b96f63bd3-jackson-annotations-LICENSE.txt",
-      "size": 11358,
-      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
-    },
-    {
-      "path": "docs/public/licenses/android/cfc7749b96f63bd3-jackson-core-FASTDOUBLEPARSER-LICENSE.txt",
-      "size": 11358,
-      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
-    },
-    {
-      "path": "docs/public/licenses/android/cfc7749b96f63bd3-jackson-databind-LICENSE.txt",
-      "size": 11358,
-      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
-    },
-    {
-      "path": "docs/public/licenses/android/d2b68a2d0cc76f23-savedstate-1.4.0.pom.xml",
-      "size": 3716,
-      "sha256": "d2b68a2d0cc76f23cebc6d4ea9bbf2d63fb536ffd94e05514ad9da6c5f530492"
-    },
-    {
-      "path": "docs/public/licenses/android/d4f2ed1176fa8c56-core-viewtree-1.0.0.pom.xml",
-      "size": 2107,
-      "sha256": "d4f2ed1176fa8c5612b80f74c952a8799142a9ed36022a1a238fde5b140580d9"
-    },
-    {
-      "path": "docs/public/licenses/android/d5fe39981a3b4b7c-profileinstaller-1.4.0.pom.xml",
-      "size": 2477,
-      "sha256": "d5fe39981a3b4b7c39585130da0bfc93835054c834a438d3e63e065e5f78be55"
-    },
-    {
-      "path": "docs/public/licenses/android/d982082c3279eeb9-lifecycle-livedata-core-ktx-2.10.0.pom.xml",
-      "size": 5701,
-      "sha256": "d982082c3279eeb9c187d9897665ca9a90d3443f35dadc689261f4b27c72d9ac"
-    },
-    {
-      "path": "docs/public/licenses/android/db6c7497f0f094ff-transition-1.5.0.pom.xml",
-      "size": 2674,
-      "sha256": "db6c7497f0f094ff2eecfb329e1700658f0d6c56fb088482f7e9b774de9ad53f"
-    },
-    {
-      "path": "docs/public/licenses/android/e139dbb1a00ce08a-lifecycle-viewmodel-ktx-2.10.0.pom.xml",
-      "size": 5876,
-      "sha256": "e139dbb1a00ce08aaed86557aa968eec7151d6d4b304c324e2e572275aacd908"
-    },
-    {
-      "path": "docs/public/licenses/android/e25665eff711bb3f-constraintlayout-2.0.1.pom.xml",
-      "size": 1711,
-      "sha256": "e25665eff711bb3f6511e86a143f9f3bd2b46a7fe571bf9e114cfc299c1df307"
-    },
-    {
-      "path": "docs/public/licenses/android/e64ef4e08b58358f-cardview-1.0.0.pom.xml",
-      "size": 1349,
-      "sha256": "e64ef4e08b58358fe27b599e6fe80a1b153db014c644beee630ab271061c3e6c"
-    },
-    {
-      "path": "docs/public/licenses/android/e97ee01daf6f4dcc-lifecycle-runtime-android-2.10.0.pom.xml",
-      "size": 7174,
-      "sha256": "e97ee01daf6f4dccb900bdb7672baab5ad3c7c25c45491fdccf5eba33b6eafff"
-    },
-    {
-      "path": "docs/public/licenses/android/f4114b5c6859bb1b-startup-runtime-1.1.1.pom.xml",
-      "size": 1949,
-      "sha256": "f4114b5c6859bb1bc3caf281cb6d6f25998fa7f7292c64ceaea74a93210e746b"
-    },
-    {
-      "path": "docs/public/licenses/android/f8698ab46ca996ce-guava-parent-26.0-android.pom.xml",
-      "size": 10180,
-      "sha256": "f8698ab46ca996ce889c1afc8ca4f25eb8ac6b034dc898d4583742360016cc04"
-    },
-    {
-      "path": "docs/public/licenses/android/f8ca1877c66e642c-fragment-1.5.4.pom.xml",
-      "size": 4234,
-      "sha256": "f8ca1877c66e642c554907e1ce5a493a897ca29270cb19e2bb6d424ba43b6c98"
-    },
-    {
-      "path": "docs/public/licenses/android/fe321062a6e4e168-recyclerview-1.1.0.pom.xml",
-      "size": 1929,
-      "sha256": "fe321062a6e4e168b9c2b39a1137564c8784a2e5849402729768d5d7c4d972ef"
-    },
-    {
-      "path": "docs/public/licenses/android/fe57b228417f4d7c-annotation-experimental-1.4.1.pom.xml",
-      "size": 2031,
-      "sha256": "fe57b228417f4d7c677903dc61fb4a7cf993d603499de26d8d8113e477cc4f1b"
-    },
-    {
-      "path": "docs/public/licenses/android/ffa67166fbe4cff3-jackson-annotations-2.15.3.pom.xml",
-      "size": 7058,
-      "sha256": "ffa67166fbe4cff3497d0cc629c2019cd0e7cd5ed01bec683a7cbf213d030ec8"
     },
     {
       "path": "docs/public/licenses/fixtures/dejavu.txt",
@@ -4480,18 +3720,18 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 7879,
-      "sha256": "0e3eeaef5b78ec422ebecf329bd4bce2018accc9d128c331ab75a9080a496c79"
+      "size": 7882,
+      "sha256": "e8de82d044bd39a4d4266c80a545a10844d5812f0f2536dd2ce135abcb4c1763"
     },
     {
       "path": "docs/public/managed-linux.md",
-      "size": 4308,
-      "sha256": "406d97d7f711b3b8fa927fd13c36ba54c3e9352978ef98b6ebcc1d6d253065ec"
+      "size": 4296,
+      "sha256": "09525b771a704bf1853fc32706e56f6e97f1ac9985c5ff77fa86c7a3d45bc6e1"
     },
     {
       "path": "docs/public/model-and-channel-setup.md",
-      "size": 8766,
-      "sha256": "f1d8643dacb28f0c0efda1697dd900a2f48b5c91dd34c37b69100808bc9bf9c4"
+      "size": 8713,
+      "sha256": "8c7549401e30d756b8751962bf7b452669e9fcbf13e0205a82847d7af6ca56f1"
     },
     {
       "path": "docs/public/native-backports.md",
@@ -4505,13 +3745,13 @@
     },
     {
       "path": "docs/public/native-client.en.md",
-      "size": 3586,
-      "sha256": "db0a4a828f0b3f245dc93d090c8d89c1f3367d68a4b6d2059e068a567da3e550"
+      "size": 3501,
+      "sha256": "27c22dcfec76228a29a487d41b92cf5458dd4223f42a0a09f6aa67c6ed1327e1"
     },
     {
       "path": "docs/public/native-client.zh-CN.md",
-      "size": 2628,
-      "sha256": "4721c88038029490b5dcb0cda5406b83181407205c538f81a6547e80f909f0f4"
+      "size": 2559,
+      "sha256": "e69326c6d558b060d49a2b0350d484922b9f5eff1717270b6827bdd178fb367e"
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
@@ -4545,63 +3785,63 @@
     },
     {
       "path": "docs/public/readme.ar.md",
-      "size": 4953,
-      "sha256": "2233dfa886d872d12b1590b17f95c13de96aa4f917cb66876aa40a2d8e9dec04"
+      "size": 4872,
+      "sha256": "9c3682a94da5cb722750bbeae3bdf659ff8af998c4b5b5f0c6b5b580655ecc1f"
     },
     {
       "path": "docs/public/readme.de.md",
-      "size": 3745,
-      "sha256": "9cd5c3101394110474226a6d1294903707f7b7b4c023a03fe7fb6603a1385a43"
+      "size": 3681,
+      "sha256": "a4d7d0f1a75e25041d1b5c55c789f3a5f1506cdbe62ed3acd4b3de97e297477d"
     },
     {
       "path": "docs/public/readme.es.md",
-      "size": 3726,
-      "sha256": "62672270cd79d46f8f2c12d361c6ac7b302f6ce35354ef5d3771a91da33e83ff"
+      "size": 3658,
+      "sha256": "4a7e0c6c87d161b77f140147c2232ce8347f85899341516f9b59eee095b76243"
     },
     {
       "path": "docs/public/readme.fr.md",
-      "size": 3994,
-      "sha256": "a0885bc3722964095ea367b329d75778d674e8af128f48cf0cf020f25c55e284"
+      "size": 3928,
+      "sha256": "fd8232333a2f8f297223f29302ff0afe7b46cd0d313f3532e98e3b82ca896ede"
     },
     {
       "path": "docs/public/readme.ja.md",
-      "size": 3921,
-      "sha256": "563e2d811458c02065b455cef191edec1657b3251e68fe58952ec0b0e73c3383"
+      "size": 3840,
+      "sha256": "54f5f58e3399b0142add3c31778f39d427d6dc0cccaf5249574d37236a8af38f"
     },
     {
       "path": "docs/public/readme.ko.md",
-      "size": 3886,
-      "sha256": "7cef3f531c1121e4ea26e6cf4a50f42d9df8c015dd11ca6c378607b7c1ad165a"
+      "size": 3805,
+      "sha256": "5b769bbbd4739ca48155a2f96d06fba96eab9bf6cdea3c541a06ab905f12bc8f"
     },
     {
       "path": "docs/public/readme.ru.md",
-      "size": 6086,
-      "sha256": "c7428391f53486d9872f6282b1638c017f1e3586190f18d73114bd590ff630f5"
+      "size": 6016,
+      "sha256": "877e3fa67aa5ba7dd1c84a52ca71d38270c0f09bc4d2d0a529ca4e7e066dc5bf"
     },
     {
       "path": "docs/public/readme.zh-TW.md",
-      "size": 3071,
-      "sha256": "97c5c5452d6631c1852cb362405c22a211af4c6718332893c66e5bc2ac4771f4"
+      "size": 3000,
+      "sha256": "f3f74dcfd0ee6c9957034e7662195c206aea39901ec54ce46dbede7b9f57b7e0"
     },
     {
       "path": "docs/public/release-roadmap.en.md",
-      "size": 4560,
-      "sha256": "43a2dd5ae14c5ded8f579d3b68c5fbae43322ff17421edca8bd82359f3d4c26c"
+      "size": 4545,
+      "sha256": "6f8c3fe9b62a5310dbfde9f70bc853e9faa2fdc97cdf1023bd1bbb9d8bb6816c"
     },
     {
       "path": "docs/public/release-roadmap.zh-CN.md",
-      "size": 3653,
-      "sha256": "b61acad0f80228a139cb8b62e5ab7af9ff0f31226c252b52b9652184ae1edc86"
+      "size": 3631,
+      "sha256": "36a9d5ff97926d3c6d667663633cca9c222f54bbde9f04004f42e504cbbae707"
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6994,
-      "sha256": "f7dcb2699fe8c06ddfa1364d9a80bd2d08cfb241b2835ecdd1f357f0569c4ca5"
+      "size": 6523,
+      "sha256": "a6e3dd76a635bc211fdb3922c991c57a08a38173801ac8ee36d3c18aba9d2c34"
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 9831,
-      "sha256": "9b8629c129684f115b1269df896c3dc495e6e66b0611bf280ba096b1299c029d"
+      "size": 9797,
+      "sha256": "8af4ddc37772e5ca6825ab7fe3bcd5adb1a971098146c2b09a4a45db8b4c8dec"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4610,13 +3850,13 @@
     },
     {
       "path": "docs/public/source-release.en.md",
-      "size": 3562,
-      "sha256": "16907da3636fa60dd36884c7dd2dac3e645acedf7a0be35f266f2c4d4776244e"
+      "size": 3597,
+      "sha256": "6a08e738508b86152a3b86d5a248ea41f6a15a1d2431406fcf12bb1aa357c720"
     },
     {
       "path": "docs/public/source-release.zh-CN.md",
-      "size": 3021,
-      "sha256": "16d2870a1c331d1941e509834aa5e1aae759a88e67d1001528be482274df477c"
+      "size": 3033,
+      "sha256": "bb5278dd6a64aadd2b213f5b524a51681fe3d30e8572a4332e6628f0c62accfc"
     },
     {
       "path": "docs/public/task-recovery.md",
@@ -4740,8 +3980,8 @@
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/native_android.proto",
-      "size": 4170,
-      "sha256": "c218184d174fea89c046085bf16daf412498710a7d14be2672db81b8ca379f73"
+      "size": 3263,
+      "sha256": "b66571a12b634f26241797dfc03095a7b66f802927f3cb4dcc0530d4c57eaff9"
     },
     {
       "path": "packages/protocol/proto/ai_phone/v1/phone_runtime.proto",
@@ -4820,8 +4060,8 @@
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/native_android_pb.ts",
-      "size": 19953,
-      "sha256": "6b38b2d767982968e322a347caeddd8295f54324d873d9fe17ae70fcf0a252d1"
+      "size": 16023,
+      "sha256": "a8d639229c896c684a9e20656f2980fe98ff189ac494993a044c1038519a91d9"
     },
     {
       "path": "packages/protocol/src/gen/ai_phone/v1/phone_runtime_pb.ts",
@@ -5049,11 +4289,6 @@
       "sha256": "1d318183a8aa12429ccd4013c45df5d59474cca47d419c2e8f06227353a20f67"
     },
     {
-      "path": "scripts/android_notices.py",
-      "size": 1217,
-      "sha256": "0c0532633cca27476617c3e6d2a23b537094ad26c8d6d34447cb876acf1be1e1"
-    },
-    {
       "path": "scripts/android_runtime.py",
       "size": 12204,
       "sha256": "6ecb08928aab12c8c99db44ccfeeec5ebafb221f4fb84ca70c4cac795b4c61ca"
@@ -5100,8 +4335,8 @@
     },
     {
       "path": "scripts/audit_dependencies.py",
-      "size": 5455,
-      "sha256": "fa1cb52d2346a5b2e21eab71735042d468ca6c60b3ff01191645f7aae92887b6"
+      "size": 5430,
+      "sha256": "976d8efaf5ea6e3790ce5f36763f7731be2cb05ea5ad85931e3f80094b4e070c"
     },
     {
       "path": "scripts/background-conversations.test.ts",
@@ -5150,8 +4385,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 15400,
-      "sha256": "ec09f732abe03e24052249d8029e0aef0f8783dc87bbe898fafbc04e92358073"
+      "size": 14304,
+      "sha256": "21abe2296eaee2b4514c2c6cb5d580f1cb0b0cf693332692290303229e36d5d7"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -5220,8 +4455,8 @@
     },
     {
       "path": "scripts/check_source.py",
-      "size": 4984,
-      "sha256": "b23d938d827615df9d6a8c49539d3fb13e11c010ce2e0f78027055c4580c94ec"
+      "size": 4950,
+      "sha256": "356143c6d9ff59ba8a2f3095ce60dfa54ebd9d4bceb0ef2e93a25559b626c857"
     },
     {
       "path": "scripts/ci_integration.py",
@@ -5245,13 +4480,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 8214,
-      "sha256": "89919e22e28c3b375650e78358407f80a02ea8471d0bfbc2824d0398311f3404"
+      "size": 6788,
+      "sha256": "5b5eb3de7d66aaacf175e8f27c921110ac0ea4caa24d371d9858f721e961ddc1"
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 2591,
-      "sha256": "56bcebdba14d96a44044b612f0ccecd1c2e8f18e5ced7d2bafe81f9e672db3f9"
+      "size": 2567,
+      "sha256": "2ca0500056fa34782d45f8b195042d5f72d21a7533b9162a5b5ac8f326cb49ea"
     },
     {
       "path": "scripts/client_host.py",
@@ -5799,11 +5034,6 @@
       "sha256": "60cbed1a0709c2fef0b1780087fbb1018a6414ebaa93d10d9411f46ad98d23ef"
     },
     {
-      "path": "scripts/prepare_android_client.py",
-      "size": 5105,
-      "sha256": "7dc46ea46eb4f5a21c3fa7ff1adb3b1b87b95ede450e67df94758654ccc26f0f"
-    },
-    {
       "path": "scripts/prepare_client_host.py",
       "size": 8470,
       "sha256": "38c6cef093d447b75d7809962df3893ff6d06d129b676aa82291b7d2d35356ed"
@@ -5884,11 +5114,6 @@
       "sha256": "1dfdfbbf45d0723042425d03d26698b80c877c60db3f331dff6069e143042572"
     },
     {
-      "path": "scripts/sign_android_preview.py",
-      "size": 1893,
-      "sha256": "f1e34e3343742588ecb0190f1d6883112274ed769926c10c4e4fe62518c6118d"
-    },
-    {
       "path": "scripts/smoke-protocol.ts",
       "size": 2123,
       "sha256": "7ffe65743e3ac709fcd0d9c6121eaf1140387091ee6182952934e719d7d1b245"
@@ -5919,11 +5144,6 @@
       "sha256": "f72bad3f04868d55087e64f3d72c87a16c896b397cb530e9e65bbc77662a7048"
     },
     {
-      "path": "scripts/test_android_build_task.py",
-      "size": 1158,
-      "sha256": "1de9029b02007c10edccfdd9aeeb403055149564f7ec9f92555221cda8518713"
-    },
-    {
       "path": "scripts/test_android_compression_profiles.py",
       "size": 2223,
       "sha256": "646a57ab92114870c56f0a19454bc2c8647c7b17ab4bad30771bc90a7066d789"
@@ -5937,11 +5157,6 @@
       "path": "scripts/test_android_macos_factory.py",
       "size": 12795,
       "sha256": "7f5682cefd7b6aecf18e3b4134e8319de7329af8aa2958055a5ee266d96d9e6a"
-    },
-    {
-      "path": "scripts/test_android_notices.py",
-      "size": 682,
-      "sha256": "2c4b9aed46ca2d7e5a859e7b0008cb6281576e3c551bd665a42118972c057dda"
     },
     {
       "path": "scripts/test_android_runtime.py",
@@ -6010,13 +5225,13 @@
     },
     {
       "path": "scripts/test_client_artifacts.py",
-      "size": 4454,
-      "sha256": "8d18b1b68966489dfb73f7833d158128f38781258d58507ad488301907241c70"
+      "size": 3649,
+      "sha256": "df6f85f7d283bac7ba25663cd336d304045f014ee91e56fb307c3a2937436958"
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 5501,
-      "sha256": "675411377a05373dc3340829ac370432d2b9355096a82e872c2a15e812777159"
+      "size": 5486,
+      "sha256": "19a46458bddd4adecfd9626c5f335753eb0623267fa95f1154ea41fafc5f86d6"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -6295,8 +5510,8 @@
     },
     {
       "path": "scripts/test_preview_notices.py",
-      "size": 1531,
-      "sha256": "5efdb36155f7c092bd93d8a773af150677eb1376adfc3aecb2d7746baeadf769"
+      "size": 1324,
+      "sha256": "1e6c764181d33b283dc936baba63a4a7205413d00851dfa98cfb6770ae31ce29"
     },
     {
       "path": "scripts/test_private_files.py",

@@ -120,35 +120,3 @@ message NativeWslDevicesReady {
   string bridge_id = 2;
   string desktop_id = 3;
 }
-
-// Privileged Android-host worker IPC, never an Agent tool. The installer admits
-// the bundled archive before handing it to this worker. Existing devices are not
-// inputs to runtime extraction.
-message NativeAndroidRootInstall {
-  uint32 version = 1;
-  string payload_path = 2;
-  string installation = 3;
-}
-
-message NativeAndroidRootPrepared {
-  uint32 version = 1;
-  string runtime_root = 2;
-}
-
-// Foreground Linux-guest lifecycle. Kernel/initramfs are part of the prepared
-// runtime. TCG is an explicit maintainer diagnostic, never a KVM fallback.
-message NativeAndroidRootStart {
-  uint32 version = 1;
-  string runtime_root = 2;
-  uint32 cpus = 3;
-  uint32 memory_mb = 4;
-  bool diagnostic_tcg = 5;
-}
-
-// Process exit only; it does not certify a desktop, a phone or APK readiness.
-message NativeAndroidRootExited {
-  uint32 version = 1;
-  int32 exit_code = 2;
-  bool kvm = 3;
-  bool cancelled = 4;
-}
