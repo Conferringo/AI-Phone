@@ -443,5 +443,20 @@
   "语音会话已关闭": "Session vocale fermée",
   "语音服务响应过大": "Réponse vocale trop volumineuse",
   "语音服务未返回文字": "Le service vocal n’a pas renvoyé de texte",
-  "实时转写": "Transcription en direct"
+  "实时转写": "Transcription en direct",
+  "文件管理": "Fichiers",
+  "连接数据线": "Connecter le câble",
+  "断开数据线": "Déconnecter le câble",
+  "复制": "Copier",
+  "剪切": "Couper",
+  "粘贴": "Coller",
+  "删除选中的 {count} 项？": "Supprimer les {count} éléments sélectionnés ?",
+  "新建文件夹": "Nouveau dossier",
+  "重命名": "Renommer",
+  "路径": "Chemin",
+  "全选": "Tout sélectionner",
+  "选择 {name}": "Sélectionner {name}",
+  "取消选择": "Effacer la sélection",
+  "尚未安装设备": "Appareil non installé",
+  "修改时间": "Modifié"
 }

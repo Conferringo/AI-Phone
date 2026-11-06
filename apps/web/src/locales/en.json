@@ -443,5 +443,20 @@
   "语音会话已关闭": "Voice session closed",
   "语音服务响应过大": "Voice service response is too large",
   "语音服务未返回文字": "The voice service did not return text",
-  "实时转写": "Live transcription"
+  "实时转写": "Live transcription",
+  "文件管理": "Files",
+  "连接数据线": "Connect cable",
+  "断开数据线": "Disconnect cable",
+  "复制": "Copy",
+  "剪切": "Cut",
+  "粘贴": "Paste",
+  "删除选中的 {count} 项？": "Delete {count} selected items?",
+  "新建文件夹": "New folder",
+  "重命名": "Rename",
+  "路径": "Path",
+  "全选": "Select all",
+  "选择 {name}": "Select {name}",
+  "取消选择": "Clear selection",
+  "尚未安装设备": "Device not installed",
+  "修改时间": "Modified"
 }
