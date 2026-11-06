@@ -31,3 +31,12 @@ message MemorySaveRequest { string id = 1; string content = 2; uint64 expected_r
 message MemoryDeleteRequest { string id = 1; uint64 expected_revision = 2; string agent_id = 3; }
 
 message KnowledgeLinkRequest { string id = 1; string target_id = 2; bool present = 3; uint64 expected_revision = 4; }
+
+// Empty device_id addresses the shared harness workspace; device paths are absolute.
+message FileLocation { string device_id = 1; string path = 2; }
+message FileEntry { string path = 1; string name = 2; bool directory = 3; uint64 size_bytes = 4; uint64 modified_at_ms = 5; bool symlink = 6; }
+message FileListing { FileLocation location = 1; repeated FileEntry entries = 2; }
+enum FileOperation { FILE_OPERATION_UNSPECIFIED = 0; FILE_OPERATION_COPY = 1; FILE_OPERATION_MOVE = 2; FILE_OPERATION_DELETE = 3; FILE_OPERATION_MKDIR = 4; FILE_OPERATION_RENAME = 5; }
+message FileManageRequest { FileOperation operation = 1; repeated FileLocation sources = 2; FileLocation target = 3; string name = 4; }
+message FileResult { FileLocation source = 1; FileLocation target = 2; string error = 3; }
+message FileManageResult { repeated FileResult results = 1; }

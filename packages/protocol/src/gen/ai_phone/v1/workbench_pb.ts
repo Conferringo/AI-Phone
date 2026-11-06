@@ -2,15 +2,15 @@
 // @generated from file ai_phone/v1/workbench.proto (package ai_phone.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file ai_phone/v1/workbench.proto.
  */
 export const file_ai_phone_v1_workbench: GenFile = /*@__PURE__*/
-  fileDesc("ChthaV9waG9uZS92MS93b3JrYmVuY2gucHJvdG8SC2FpX3Bob25lLnYxIk8KEFdvcmtiZW5jaFJlcXVlc3QSDQoFcXVlcnkYASABKAkSCgoCaWQYAiABKAkSEAoIYWdlbnRfaWQYBCABKAlKBAgDEARSCGFyY2hpdmVkIpgBCgxSdW50aW1lU2tpbGwSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIOCgZzb3VyY2UYBCABKAkSDwoHY29udGVudBgFIAEoCRIPCgdlbmFibGVkGAYgASgIEg8KB2J1aWx0aW4YByABKAgSFgoOY29udGVudF9zaGEyNTYYCCABKAkiNgoJU2tpbGxMaXN0EikKBnNraWxscxgBIAMoCzIZLmFpX3Bob25lLnYxLlJ1bnRpbWVTa2lsbCJDChJTa2lsbEltcG9ydFJlcXVlc3QSDgoGc291cmNlGAEgASgJEg8KB2NvbnRlbnQYAiABKAkSDAoEbmFtZRgDIAEoCSJBChJTa2lsbFVwZGF0ZVJlcXVlc3QSCgoCaWQYASABKAkSDwoHZW5hYmxlZBgCIAEoCBIOCgZyZW1vdmUYAyABKAgiUAoQU2tpbGxFZGl0UmVxdWVzdBIKCgJpZBgBIAEoCRIPCgdjb250ZW50GAIgASgJEh8KF2V4cGVjdGVkX2NvbnRlbnRfc2hhMjU2GAMgASgJIncKEUtub3dsZWRnZURvY3VtZW50EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSEAoIcmV2aXNpb24YBCABKAQSEwoLcmVsYXRlZF9pZHMYBSADKAkSDwoHdHJhc2hlZBgGIAEoCCJCCg1Lbm93bGVkZ2VMaXN0EjEKCWRvY3VtZW50cxgBIAMoCzIeLmFpX3Bob25lLnYxLktub3dsZWRnZURvY3VtZW50InIKFEtub3dsZWRnZVNhdmVSZXF1ZXN0EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YBCABKAQSEwoLcmVsYXRlZF9pZHMYBSADKAkiPwoWS25vd2xlZGdlRGVsZXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgCIAEoBCK8AQoPTW9kZWxDYWxsVGltaW5nEhYKDnByZXBhcmF0aW9uX21zGAEgASgEEhcKCmhlYWRlcnNfbXMYAiABKARIAIgBARIaCg1maXJzdF9ieXRlX21zGAMgASgESAGIAQESEAoIbW9kZWxfbXMYBCABKAQSEgoKZWxhcHNlZF9tcxgFIAEoBBIVCg1yZXF1ZXN0X2J5dGVzGAYgASgEQg0KC19oZWFkZXJzX21zQhAKDl9maXJzdF9ieXRlX21zIt8BCgxIYXJuZXNzRXZlbnQSCgoCaWQYASABKAkSDgoGcnVuX2lkGAIgASgJEhIKCm1lc3NhZ2VfaWQYAyABKAkSDAoEa2luZBgEIAEoCRINCgV0aXRsZRgFIAEoCRIPCgdjb250ZW50GAYgASgJEg4KBnN0YXR1cxgHIAEoCRIVCg1jcmVhdGVkX2F0X21zGAggASgEEhYKDmZpbmlzaGVkX2F0X21zGAkgASgEEjIKDG1vZGVsX3RpbWluZxgKIAEoCzIcLmFpX3Bob25lLnYxLk1vZGVsQ2FsbFRpbWluZyJLChNIYXJuZXNzRXZlbnRSZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEhAKCGFmdGVyX21zGAMgASgEIj0KEEhhcm5lc3NFdmVudExpc3QSKQoGZXZlbnRzGAEgAygLMhkuYWlfcGhvbmUudjEuSGFybmVzc0V2ZW50IlMKDldvcmtzcGFjZUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglkaXJlY3RvcnkYAyABKAgSEgoKc2l6ZV9ieXRlcxgEIAEoBCJKCg5Xb3Jrc3BhY2VGaWxlcxIqCgVmaWxlcxgBIAMoCzIbLmFpX3Bob25lLnYxLldvcmtzcGFjZUVudHJ5EgwKBHBhdGgYAiABKAkiPAoLTW9kZWxNZW1vcnkSCgoCaWQYASABKAkSDwoHY29udGVudBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoBCI4CgpNZW1vcnlMaXN0EioKCG1lbW9yaWVzGAEgAygLMhguYWlfcGhvbmUudjEuTW9kZWxNZW1vcnkiXQoRTWVtb3J5U2F2ZVJlcXVlc3QSCgoCaWQYASABKAkSDwoHY29udGVudBgCIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgDIAEoBBIQCghhZ2VudF9pZBgEIAEoCSJOChNNZW1vcnlEZWxldGVSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEhAKCGFnZW50X2lkGAMgASgJImEKFEtub3dsZWRnZUxpbmtSZXF1ZXN0EgoKAmlkGAEgASgJEhEKCXRhcmdldF9pZBgCIAEoCRIPCgdwcmVzZW50GAMgASgIEhkKEWV4cGVjdGVkX3JldmlzaW9uGAQgASgEYgZwcm90bzM");
+  fileDesc("ChthaV9waG9uZS92MS93b3JrYmVuY2gucHJvdG8SC2FpX3Bob25lLnYxIk8KEFdvcmtiZW5jaFJlcXVlc3QSDQoFcXVlcnkYASABKAkSCgoCaWQYAiABKAkSEAoIYWdlbnRfaWQYBCABKAlKBAgDEARSCGFyY2hpdmVkIpgBCgxSdW50aW1lU2tpbGwSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRIOCgZzb3VyY2UYBCABKAkSDwoHY29udGVudBgFIAEoCRIPCgdlbmFibGVkGAYgASgIEg8KB2J1aWx0aW4YByABKAgSFgoOY29udGVudF9zaGEyNTYYCCABKAkiNgoJU2tpbGxMaXN0EikKBnNraWxscxgBIAMoCzIZLmFpX3Bob25lLnYxLlJ1bnRpbWVTa2lsbCJDChJTa2lsbEltcG9ydFJlcXVlc3QSDgoGc291cmNlGAEgASgJEg8KB2NvbnRlbnQYAiABKAkSDAoEbmFtZRgDIAEoCSJBChJTa2lsbFVwZGF0ZVJlcXVlc3QSCgoCaWQYASABKAkSDwoHZW5hYmxlZBgCIAEoCBIOCgZyZW1vdmUYAyABKAgiUAoQU2tpbGxFZGl0UmVxdWVzdBIKCgJpZBgBIAEoCRIPCgdjb250ZW50GAIgASgJEh8KF2V4cGVjdGVkX2NvbnRlbnRfc2hhMjU2GAMgASgJIncKEUtub3dsZWRnZURvY3VtZW50EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSEAoIcmV2aXNpb24YBCABKAQSEwoLcmVsYXRlZF9pZHMYBSADKAkSDwoHdHJhc2hlZBgGIAEoCCJCCg1Lbm93bGVkZ2VMaXN0EjEKCWRvY3VtZW50cxgBIAMoCzIeLmFpX3Bob25lLnYxLktub3dsZWRnZURvY3VtZW50InIKFEtub3dsZWRnZVNhdmVSZXF1ZXN0EgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg8KB2NvbnRlbnQYAyABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YBCABKAQSEwoLcmVsYXRlZF9pZHMYBSADKAkiPwoWS25vd2xlZGdlRGVsZXRlUmVxdWVzdBIKCgJpZBgBIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgCIAEoBCK8AQoPTW9kZWxDYWxsVGltaW5nEhYKDnByZXBhcmF0aW9uX21zGAEgASgEEhcKCmhlYWRlcnNfbXMYAiABKARIAIgBARIaCg1maXJzdF9ieXRlX21zGAMgASgESAGIAQESEAoIbW9kZWxfbXMYBCABKAQSEgoKZWxhcHNlZF9tcxgFIAEoBBIVCg1yZXF1ZXN0X2J5dGVzGAYgASgEQg0KC19oZWFkZXJzX21zQhAKDl9maXJzdF9ieXRlX21zIt8BCgxIYXJuZXNzRXZlbnQSCgoCaWQYASABKAkSDgoGcnVuX2lkGAIgASgJEhIKCm1lc3NhZ2VfaWQYAyABKAkSDAoEa2luZBgEIAEoCRINCgV0aXRsZRgFIAEoCRIPCgdjb250ZW50GAYgASgJEg4KBnN0YXR1cxgHIAEoCRIVCg1jcmVhdGVkX2F0X21zGAggASgEEhYKDmZpbmlzaGVkX2F0X21zGAkgASgEEjIKDG1vZGVsX3RpbWluZxgKIAEoCzIcLmFpX3Bob25lLnYxLk1vZGVsQ2FsbFRpbWluZyJLChNIYXJuZXNzRXZlbnRSZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEhAKCGFmdGVyX21zGAMgASgEIj0KEEhhcm5lc3NFdmVudExpc3QSKQoGZXZlbnRzGAEgAygLMhkuYWlfcGhvbmUudjEuSGFybmVzc0V2ZW50IlMKDldvcmtzcGFjZUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglkaXJlY3RvcnkYAyABKAgSEgoKc2l6ZV9ieXRlcxgEIAEoBCJKCg5Xb3Jrc3BhY2VGaWxlcxIqCgVmaWxlcxgBIAMoCzIbLmFpX3Bob25lLnYxLldvcmtzcGFjZUVudHJ5EgwKBHBhdGgYAiABKAkiPAoLTW9kZWxNZW1vcnkSCgoCaWQYASABKAkSDwoHY29udGVudBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoBCI4CgpNZW1vcnlMaXN0EioKCG1lbW9yaWVzGAEgAygLMhguYWlfcGhvbmUudjEuTW9kZWxNZW1vcnkiXQoRTWVtb3J5U2F2ZVJlcXVlc3QSCgoCaWQYASABKAkSDwoHY29udGVudBgCIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgDIAEoBBIQCghhZ2VudF9pZBgEIAEoCSJOChNNZW1vcnlEZWxldGVSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEhAKCGFnZW50X2lkGAMgASgJImEKFEtub3dsZWRnZUxpbmtSZXF1ZXN0EgoKAmlkGAEgASgJEhEKCXRhcmdldF9pZBgCIAEoCRIPCgdwcmVzZW50GAMgASgIEhkKEWV4cGVjdGVkX3JldmlzaW9uGAQgASgEIi8KDEZpbGVMb2NhdGlvbhIRCglkZXZpY2VfaWQYASABKAkSDAoEcGF0aBgCIAEoCSJ3CglGaWxlRW50cnkSDAoEcGF0aBgBIAEoCRIMCgRuYW1lGAIgASgJEhEKCWRpcmVjdG9yeRgDIAEoCBISCgpzaXplX2J5dGVzGAQgASgEEhYKDm1vZGlmaWVkX2F0X21zGAUgASgEEg8KB3N5bWxpbmsYBiABKAgiYwoLRmlsZUxpc3RpbmcSKwoIbG9jYXRpb24YASABKAsyGS5haV9waG9uZS52MS5GaWxlTG9jYXRpb24SJwoHZW50cmllcxgCIAMoCzIWLmFpX3Bob25lLnYxLkZpbGVFbnRyeSKnAQoRRmlsZU1hbmFnZVJlcXVlc3QSLQoJb3BlcmF0aW9uGAEgASgOMhouYWlfcGhvbmUudjEuRmlsZU9wZXJhdGlvbhIqCgdzb3VyY2VzGAIgAygLMhkuYWlfcGhvbmUudjEuRmlsZUxvY2F0aW9uEikKBnRhcmdldBgDIAEoCzIZLmFpX3Bob25lLnYxLkZpbGVMb2NhdGlvbhIMCgRuYW1lGAQgASgJInEKCkZpbGVSZXN1bHQSKQoGc291cmNlGAEgASgLMhkuYWlfcGhvbmUudjEuRmlsZUxvY2F0aW9uEikKBnRhcmdldBgCIAEoCzIZLmFpX3Bob25lLnYxLkZpbGVMb2NhdGlvbhINCgVlcnJvchgDIAEoCSI8ChBGaWxlTWFuYWdlUmVzdWx0EigKB3Jlc3VsdHMYASADKAsyFy5haV9waG9uZS52MS5GaWxlUmVzdWx0KrEBCg1GaWxlT3BlcmF0aW9uEh4KGkZJTEVfT1BFUkFUSU9OX1VOU1BFQ0lGSUVEEAASFwoTRklMRV9PUEVSQVRJT05fQ09QWRABEhcKE0ZJTEVfT1BFUkFUSU9OX01PVkUQAhIZChVGSUxFX09QRVJBVElPTl9ERUxFVEUQAxIYChRGSUxFX09QRVJBVElPTl9NS0RJUhAEEhkKFUZJTEVfT1BFUkFUSU9OX1JFTkFNRRAFYgZwcm90bzM");
 
 /**
  * @generated from message ai_phone.v1.WorkbenchRequest
@@ -643,4 +643,209 @@ export type KnowledgeLinkRequest = Message<"ai_phone.v1.KnowledgeLinkRequest"> &
  */
 export const KnowledgeLinkRequestSchema: GenMessage<KnowledgeLinkRequest> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_workbench, 20);
+
+/**
+ * Empty device_id addresses the shared harness workspace; device paths are absolute.
+ *
+ * @generated from message ai_phone.v1.FileLocation
+ */
+export type FileLocation = Message<"ai_phone.v1.FileLocation"> & {
+  /**
+   * @generated from field: string device_id = 1;
+   */
+  deviceId: string;
+
+  /**
+   * @generated from field: string path = 2;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.FileLocation.
+ * Use `create(FileLocationSchema)` to create a new message.
+ */
+export const FileLocationSchema: GenMessage<FileLocation> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 21);
+
+/**
+ * @generated from message ai_phone.v1.FileEntry
+ */
+export type FileEntry = Message<"ai_phone.v1.FileEntry"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool directory = 3;
+   */
+  directory: boolean;
+
+  /**
+   * @generated from field: uint64 size_bytes = 4;
+   */
+  sizeBytes: bigint;
+
+  /**
+   * @generated from field: uint64 modified_at_ms = 5;
+   */
+  modifiedAtMs: bigint;
+
+  /**
+   * @generated from field: bool symlink = 6;
+   */
+  symlink: boolean;
+};
+
+/**
+ * Describes the message ai_phone.v1.FileEntry.
+ * Use `create(FileEntrySchema)` to create a new message.
+ */
+export const FileEntrySchema: GenMessage<FileEntry> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 22);
+
+/**
+ * @generated from message ai_phone.v1.FileListing
+ */
+export type FileListing = Message<"ai_phone.v1.FileListing"> & {
+  /**
+   * @generated from field: ai_phone.v1.FileLocation location = 1;
+   */
+  location?: FileLocation | undefined;
+
+  /**
+   * @generated from field: repeated ai_phone.v1.FileEntry entries = 2;
+   */
+  entries: FileEntry[];
+};
+
+/**
+ * Describes the message ai_phone.v1.FileListing.
+ * Use `create(FileListingSchema)` to create a new message.
+ */
+export const FileListingSchema: GenMessage<FileListing> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 23);
+
+/**
+ * @generated from message ai_phone.v1.FileManageRequest
+ */
+export type FileManageRequest = Message<"ai_phone.v1.FileManageRequest"> & {
+  /**
+   * @generated from field: ai_phone.v1.FileOperation operation = 1;
+   */
+  operation: FileOperation;
+
+  /**
+   * @generated from field: repeated ai_phone.v1.FileLocation sources = 2;
+   */
+  sources: FileLocation[];
+
+  /**
+   * @generated from field: ai_phone.v1.FileLocation target = 3;
+   */
+  target?: FileLocation | undefined;
+
+  /**
+   * @generated from field: string name = 4;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.FileManageRequest.
+ * Use `create(FileManageRequestSchema)` to create a new message.
+ */
+export const FileManageRequestSchema: GenMessage<FileManageRequest> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 24);
+
+/**
+ * @generated from message ai_phone.v1.FileResult
+ */
+export type FileResult = Message<"ai_phone.v1.FileResult"> & {
+  /**
+   * @generated from field: ai_phone.v1.FileLocation source = 1;
+   */
+  source?: FileLocation | undefined;
+
+  /**
+   * @generated from field: ai_phone.v1.FileLocation target = 2;
+   */
+  target?: FileLocation | undefined;
+
+  /**
+   * @generated from field: string error = 3;
+   */
+  error: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.FileResult.
+ * Use `create(FileResultSchema)` to create a new message.
+ */
+export const FileResultSchema: GenMessage<FileResult> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 25);
+
+/**
+ * @generated from message ai_phone.v1.FileManageResult
+ */
+export type FileManageResult = Message<"ai_phone.v1.FileManageResult"> & {
+  /**
+   * @generated from field: repeated ai_phone.v1.FileResult results = 1;
+   */
+  results: FileResult[];
+};
+
+/**
+ * Describes the message ai_phone.v1.FileManageResult.
+ * Use `create(FileManageResultSchema)` to create a new message.
+ */
+export const FileManageResultSchema: GenMessage<FileManageResult> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_workbench, 26);
+
+/**
+ * @generated from enum ai_phone.v1.FileOperation
+ */
+export enum FileOperation {
+  /**
+   * @generated from enum value: FILE_OPERATION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: FILE_OPERATION_COPY = 1;
+   */
+  COPY = 1,
+
+  /**
+   * @generated from enum value: FILE_OPERATION_MOVE = 2;
+   */
+  MOVE = 2,
+
+  /**
+   * @generated from enum value: FILE_OPERATION_DELETE = 3;
+   */
+  DELETE = 3,
+
+  /**
+   * @generated from enum value: FILE_OPERATION_MKDIR = 4;
+   */
+  MKDIR = 4,
+
+  /**
+   * @generated from enum value: FILE_OPERATION_RENAME = 5;
+   */
+  RENAME = 5,
+}
+
+/**
+ * Describes the enum ai_phone.v1.FileOperation.
+ */
+export const FileOperationSchema: GenEnum<FileOperation> = /*@__PURE__*/
+  enumDesc(file_ai_phone_v1_workbench, 0);
 

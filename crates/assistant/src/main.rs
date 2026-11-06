@@ -31,6 +31,7 @@ mod device_exchange;
 mod device_network;
 mod device_setup;
 mod exploration_policy;
+mod files;
 mod history_window;
 mod http;
 mod location;
@@ -308,6 +309,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
             post(device_network::route),
         )
         .route("/v1/desktop/{operation}", post(desktop::route))
+        .route("/v1/files/{operation}", post(files::route))
         .route("/v1/phone-system/{operation}", post(phone_system::route))
         .route("/v1/settings/{operation}", post(settings::route))
         .route("/v1/proactive/{operation}", post(proactive::route))
@@ -336,6 +338,10 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .route(
             "/v1/voice/{operation}",
             post(speech::route).layer(DefaultBodyLimit::max(2 * 1024 * 1024)),
+        )
+        .route(
+            "/v1/files/upload",
+            post(files::upload).layer(DefaultBodyLimit::disable()),
         )
         .route(
             "/v1/workbench/upload-file",

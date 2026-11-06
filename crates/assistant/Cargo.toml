@@ -10,12 +10,14 @@ license.workspace = true
 [dependencies]
 ai-phone-vision = { path = "../vision" }
 ai-phone-api = { path = "../api" }
+ai-phone-adb = { path = "../adb-client" }
+
 ai-phone-host-runtime = { path = "../host-runtime" }
 axum = { version = "=0.8.9", features = ["multipart", "ws"] }
 tokio-tungstenite = { version = "=0.29.0", default-features = false, features = ["handshake"] }
 prost = "=0.14.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "time", "sync", "fs", "process", "io-util"] }
-tokio-util = "0.7"
+tokio-util = { version = "0.7", features = ["io"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "=0.22.1"
@@ -29,3 +31,6 @@ argon2 = "0.5"
 
 [lints]
 workspace = true
+
+[features]
+file-manager-device-qa = []

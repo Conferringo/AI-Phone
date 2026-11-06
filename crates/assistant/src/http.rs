@@ -706,6 +706,9 @@ pub async fn upload(
     {
         return db_error(e);
     }
+    if let Err(e) = crate::files::archive_attachment(&app, id, &name, &bytes).await {
+        return db_error(e);
+    }
     pb(
         StatusCode::OK,
         wire::ChatAttachment {

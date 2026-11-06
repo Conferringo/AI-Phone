@@ -43,7 +43,6 @@ import {
   FolderOpen,
   RefreshCw,
   Settings,
-  Cable,
 } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -64,7 +63,7 @@ import {ProactiveProvider,ExplorationToggle} from "@/components/proactive-contro
 import { RegistryWindow,type Registry } from "@/components/registry-window";
 import { FloatingWindow, WindowTrigger } from "@/components/floating-window";
 import {DesktopRequestSchema,DesktopObservationSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
-import {DeviceCable} from '@/components/device-cable';
+import {DeviceCableToggle} from '@/components/device-cable';
 import {useDesktopExploration,DesktopExploreToggle} from '@/components/desktop-exploration';
 import {DesktopSurface} from '@/components/desktop-surface';
 import { PhoneStreamImage } from "@/components/phone-stream-image";
@@ -114,6 +113,7 @@ function DeviceWorkbench(){
  const {t}=useI18n();
 
  const [registry,setRegistry]=useState<Registry|null>(null),[focus,setFocus]=useState<string[]>(['phone-local-01']),[current,setCurrent]=useState('phone-local-01');
+ const [cableError,setCableError]=useState('');useWorkbenchNotice(cableError);
  const [locationEnabled,setLocationEnabled]=useState(false);
  const [feature,setFeature]=useState(''),[states,setStates]=useState<Record<string,SessionState>>({}),[horizontal,setHorizontal]=useState<Record<string,boolean>>({}),[linked,setLinked]=useState<string[]>([]);
  const scene=useRef<HTMLElement>(null),refreshers=useRef<Record<string,()=>void>>({}),orientations=useRef<Record<string,boolean>>({});
@@ -128,7 +128,7 @@ function DeviceWorkbench(){
  }
  function enter(id:string){if(focus.length===1&&focus[0]===id){setCurrent(id);return;}move(()=>{setFocus(linked.length>1?linked:[id]);setCurrent(id);});}
  const previousLinks=useRef<string[]>([]);
- const receiveLinks=useCallback((ids:string[])=>{const previous=previousLinks.current;if(previous.join()===ids.join())return;capture();previousLinks.current=ids;setLinked(ids);if(previous.length&&ids.length===0){setFocus([current]);setFeature('');}else if(ids.length>1){setFocus(ids);}},[current,capture]);
+ const receiveLinks=useCallback((ids:string[])=>{const previous=previousLinks.current;if(previous.join()===ids.join())return;capture();previousLinks.current=ids;setLinked(ids);if(previous.length&&ids.length===0){setFocus([current]);}else if(ids.length>1){setFocus(ids);}},[current,capture]);
  const close=(name:string)=>setFeature(old=>old===name?'':old);
  const voiceAgentId=feature.startsWith('settings:voice:')?feature.slice('settings:voice:'.length):'';
  const settingsOpen=feature==='settings'||!!voiceAgentId;
@@ -136,28 +136,28 @@ function DeviceWorkbench(){
   <header className="workbench-navigation">
    <WorkbenchNotices activeFeature={feature}/>
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>
+    <DeviceCableToggle devices={devices} linked={linked} onLinks={receiveLinks} onError={setCableError}/>
     <LanguageTrigger open={feature==='language'} onOpen={()=>setFeature('language')}/>
     <WindowTrigger label={t("Skill管理")} open={feature==='skills'} onOpen={()=>setFeature('skills')}><Wrench size={18}/></WindowTrigger>
     <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
-    <WindowTrigger label={t("工作文件")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
+    <WindowTrigger label={t("文件管理")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("配置中心")} open={settingsOpen} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
    </nav>
    <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!states[current]} onClick={()=>refreshers.current[current]?.()}><RefreshCw size={18}/></Button>
   </header>
   <div className="device-focus-grid" data-stacked={solo} data-wide={wide} data-count={focus.length} data-mixed={focus.length>1&&focus.some(id=>devices.find(d=>d.id===id)?.kind==='phone'&&!horizontal[id])} style={{'--device-columns':solo?'minmax(360px,1.65fr)':focus.map(id=>devices.find(d=>d.id===id)?.kind==='desktop'?'minmax(220px,1.3fr)':'minmax(180px,.8fr)').join(' '),'--chat-column':focus.length+1,'--chat-rows':groups.map(()=> 'minmax(0,1fr)').join(' ')} as CSSProperties}>
-   {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <DeviceNoticeScope key={d.id} id={d.id} name={d.name}><PhoneWorkspace deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} linked={linked.includes(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/></DeviceNoticeScope>;})}
+   {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <DeviceNoticeScope key={d.id} id={d.id} name={d.name}><PhoneWorkspace deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/></DeviceNoticeScope>;})}
   </div>
   <DeviceCableLine root={scene} devices={devices} linked={linked}/>
   <RegistryWindow open={settingsOpen} voiceAgentId={voiceAgentId} onClose={()=>setFeature(old=>old==='settings'||old.startsWith('settings:voice:')?'':old)} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
-  <DeviceCable devices={devices} current={current} open={feature===`cable:${current}`} onClose={()=>close(`cable:${current}`)} onLinks={receiveLinks}/>
   <LanguageWindow open={feature==='language'} onClose={()=>close('language')}/>
   <LocationWindow open={feature==='location'} onClose={()=>close('location')} onEnabled={setLocationEnabled}/>
-  <SkillsWindow open={feature==='skills'} onClose={()=>close('skills')}/><KnowledgeWindow open={feature==='knowledge'} onClose={()=>close('knowledge')}/><WorkspaceWindow open={feature==='files'} onClose={()=>close('files')}/>
+  <SkillsWindow open={feature==='skills'} onClose={()=>close('skills')}/><KnowledgeWindow open={feature==='knowledge'} onClose={()=>close('knowledge')}/><WorkspaceWindow devices={devices} open={feature==='files'} onClose={()=>close('files')}/>
  </main></CopilotProvider>;
 }
-type SessionProps={linked:boolean;stageStyle:CSSProperties;onSelect:()=>void;deviceId:string;registry:Registry;focused:boolean;showChat:boolean;screenColumn:number;chatColumn:number;chatRow:number;onActivate:(id:string)=>void;onState:(id:string,value:SessionState)=>void;onOrientation:(id:string,value:boolean)=>void;registerRefresh:(id:string,refresh:(()=>void)|null)=>void;feature:string;setFeature:Dispatch<SetStateAction<string>>};
-function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,showChat,screenColumn,chatColumn,chatRow,onActivate,onState,onOrientation,registerRefresh,feature,setFeature}:SessionProps) {
+type SessionProps={stageStyle:CSSProperties;onSelect:()=>void;deviceId:string;registry:Registry;focused:boolean;showChat:boolean;screenColumn:number;chatColumn:number;chatRow:number;onActivate:(id:string)=>void;onState:(id:string,value:SessionState)=>void;onOrientation:(id:string,value:boolean)=>void;registerRefresh:(id:string,refresh:(()=>void)|null)=>void;feature:string;setFeature:Dispatch<SetStateAction<string>>};
+function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,screenColumn,chatColumn,chatRow,onActivate,onState,onOrientation,registerRefresh,feature,setFeature}:SessionProps) {
  const {t}=useI18n();
 
   const selectedDevice=registry.devices.find(d=>d.id===deviceId)!;
@@ -445,7 +445,7 @@ function PhoneWorkspace({linked,stageStyle,onSelect,deviceId,registry,focused,sh
     <div ref={container} className="device-session" data-landscape={landscape} onPointerDownCapture={()=>{if(focused)onActivate(deviceId);}} onFocusCapture={()=>{if(focused)onActivate(deviceId);}}>
       <div className="workspace-panes">
         <section className="device-pane" onClick={()=>{if(!focused)onSelect();}} data-focused={focused} data-kind={selectedDevice.kind} aria-label={selectedDevice.name} style={{...stageStyle,'--device-aspect':desktopAvailable?1.6:size.width/size.height,gridColumn:screenColumn,gridRow:'1 / -1'} as CSSProperties}>
-          <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} audio={audio} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/><WindowTrigger label={t("数据线")} open={activeFeature==='cable'} onOpen={()=>openFeature('cable')}><Cable size={17} className={linked?'cable-connected':undefined}/></WindowTrigger></div>}</header>
+          <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} audio={audio} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/></div>}</header>
         {!focused&&<button className="device-front" aria-label={`转到${selectedDevice.name}`} onClick={onSelect}/> }
         {desktopAvailable?<DesktopSurface deviceId={deviceId} active={focused}/>:phoneAvailable?<>
           <div className="device-screen" data-scene-device={deviceId} style={{aspectRatio:`${size.width}/${size.height}`,'--device-aspect':size.width/size.height} as CSSProperties}>

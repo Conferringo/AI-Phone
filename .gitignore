@@ -83,3 +83,5 @@ GEMINI.md
 /scripts/verify-*.ts
 /scripts/verify-*.py
 /scripts/cleanup-retired-projects.py
+
+.playwright-cli/

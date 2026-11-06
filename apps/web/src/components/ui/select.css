@@ -6,4 +6,4 @@
 @media(prefers-reduced-motion:reduce){.field-select,.field-select-menu{animation:none;transition:none}}@media(prefers-reduced-transparency:reduce),(forced-colors:active){.field-select-menu{background:var(--background);backdrop-filter:none}.field-select-option[data-highlighted]{outline:1px solid Highlight}}
 .field-select.language-select{width:130px;max-width:140px;height:var(--control-height);min-height:var(--control-height);padding:0 11px;flex:0 0 auto}
 .floating-window button.field-select{height:var(--control-height);min-height:var(--control-height);padding:0 11px;line-height:1.4;justify-content:space-between;text-align:left}
-.cable-pair .field-select,.cable-direction .field-select{width:min(150px,45%)}.proactive-options .field-select{width:140px}
+.proactive-options .field-select{width:140px}
