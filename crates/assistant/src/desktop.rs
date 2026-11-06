@@ -707,13 +707,22 @@ pub async fn files(app: &App, r: wire::DeviceFilesRequest) -> Result<wire::Devic
     })
 }
 pub async fn link(app: &App, r: wire::DeviceLinkRequest) -> Result<()> {
-    let a = device_kind(app, &r.source_device_id).await?;
-    let b = device_kind(app, &r.target_device_id).await?;
+    let mut ids = [r.source_device_id, r.target_device_id];
+    ids.sort();
+    if !r.connected {
+        let changed = sqlx::query("UPDATE device_links l SET connected=false,revision=l.revision+CASE WHEN l.connected THEN 1 ELSE 0 END,updated_at=now() FROM devices a,devices b WHERE l.source_device_id=$1 AND l.target_device_id=$2 AND a.id=l.source_device_id AND b.id=l.target_device_id AND a.owner_id='local-user' AND b.owner_id='local-user'")
+            .bind(&ids[0]).bind(&ids[1]).execute(&app.db).await.map_err(|e|e.to_string())?;
+        return if changed.rows_affected() == 1 {
+            Ok(())
+        } else {
+            Err("数据线不存在".into())
+        };
+    }
+    let a = device_kind(app, &ids[0]).await?;
+    let b = device_kind(app, &ids[1]).await?;
     if a == b {
         return Err("数据线需要一台手机和一台电脑".into());
     }
-    let mut ids = [r.source_device_id, r.target_device_id];
-    ids.sort();
     sqlx::query("INSERT INTO device_links(id,source_device_id,target_device_id,connected) VALUES($1,$2,$3,$4) ON CONFLICT(source_device_id,target_device_id) DO UPDATE SET connected=excluded.connected,revision=device_links.revision+CASE WHEN device_links.connected<>excluded.connected THEN 1 ELSE 0 END,updated_at=now()")
  .bind(Uuid::now_v7()).bind(&ids[0]).bind(&ids[1]).bind(r.connected).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(())

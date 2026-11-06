@@ -431,3 +431,54 @@ async fn database_loss_after_publication_keeps_unknown_receipt() {
         assert!(app.root.join("guest").join(result.target_path.trim_start_matches('/')).is_file());
     })).await;
 }
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL; never real devices"]
+async fn disconnected_runtime_does_not_prevent_cable_removal() {
+    database_case(|app| {
+        Box::pin(async move {
+            transfer_devices(app).await;
+            let (id, revision): (Uuid, i64) =
+                sqlx::query_as("SELECT id,revision FROM device_links")
+                    .fetch_one(&app.db)
+                    .await
+                    .unwrap();
+            sqlx::query("DELETE FROM device_runtimes WHERE device_id='desktop-fixture'")
+                .execute(&app.db)
+                .await
+                .unwrap();
+            for _ in 0..2 {
+                crate::desktop::link(
+                    app,
+                    wire::DeviceLinkRequest {
+                        source_device_id: "desktop-fixture".into(),
+                        target_device_id: "phone-local-01".into(),
+                        connected: false,
+                    },
+                )
+                .await
+                .expect("an offline runtime must not block removing its cable");
+            }
+            let link: (Uuid, bool, i64) =
+                sqlx::query_as("SELECT id,connected,revision FROM device_links")
+                    .fetch_one(&app.db)
+                    .await
+                    .unwrap();
+            assert_eq!(link, (id, false, revision + 1));
+            assert!(
+                crate::desktop::link(
+                    app,
+                    wire::DeviceLinkRequest {
+                        source_device_id: "phone-local-01".into(),
+                        target_device_id: "desktop-fixture".into(),
+                        connected: true,
+                    },
+                )
+                .await
+                .is_err(),
+                "connecting still requires the device runtime"
+            );
+        })
+    })
+    .await;
+}

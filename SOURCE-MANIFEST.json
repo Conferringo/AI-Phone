@@ -2610,8 +2610,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 78620,
-      "sha256": "88eed2451dd12ae0e3e7ad1bac03bd50845dac930cb121bfe39e1aa06a7fe5a6"
+      "size": 79204,
+      "sha256": "2447d1c1ba1f7eef236e04bde53a0c5f85b0ac88b4e3e1cb5857bdd43b3163c8"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -2755,8 +2755,8 @@
     },
     {
       "path": "crates/assistant/src/persistence_tests.rs",
-      "size": 18402,
-      "sha256": "dabf6b4ad10ad19018d2f1345e54995d6774222e8cfd5d0b9d900da5ef618422"
+      "size": 20291,
+      "sha256": "87f8049d55df879756e7347eb790c0bb23e8786d92d392ec4d1db5abb8812334"
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
@@ -3460,13 +3460,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 8628,
-      "sha256": "07860227daad562243db2f4118185361b8aea11814d12443d7d88d256a963cb2"
+      "size": 8776,
+      "sha256": "0cc5c34b519d03084a501abb36a31654a9e2dbfcda6606f2c949dc67e6df04b2"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 7486,
-      "sha256": "39db081a3654c78d1b615568076121aba0267e73c187cb3b869e3a4707287612"
+      "size": 7600,
+      "sha256": "84d54e1dd238ca065c1d481bf0d6de3ea6ea1146d086a386b68fba71d948563e"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
