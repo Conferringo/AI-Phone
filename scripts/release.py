@@ -117,7 +117,7 @@ def rust_checks(bundled_services):
     import re
     result=subprocess.run(['rustc','--version'],capture_output=True,text=True,timeout=10)
     version=re.search(r'rustc (\d+)\.(\d+)',result.stdout)
-    return [check_result('rust-version',result.returncode==0 and version and tuple(map(int,version.groups()))>=(1,88),'Rust 1.88+ required')]
+    return [check_result('rust-version',result.returncode==0 and version and tuple(map(int,version.groups()))>=(1,95),'Rust 1.95+ required')]
 
 
 def docker_checks():

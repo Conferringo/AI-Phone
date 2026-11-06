@@ -3495,13 +3495,13 @@
     },
     {
       "path": "docs/public/getting-started.en.md",
-      "size": 6052,
-      "sha256": "c9c26c3e6208f9a0f7bbbb4e92e466e4027cf0d13916c3524930400cf40fd8bd"
+      "size": 6080,
+      "sha256": "38fc2e3c60186994ba6549135bb269f2fd88e3e11d45432205f04bfa63ff954a"
     },
     {
       "path": "docs/public/getting-started.zh-CN.md",
-      "size": 5796,
-      "sha256": "82d5c7995d8df048823d3726152ed6144a14cd6a6778f5e46490d2b447c000fc"
+      "size": 5910,
+      "sha256": "9d205369f41d0e563e8fc94072a293d1fd148b75f0aab68238da59449d3d945b"
     },
     {
       "path": "docs/public/index.md",
@@ -5131,7 +5131,7 @@
     {
       "path": "scripts/release.py",
       "size": 21432,
-      "sha256": "5fd124571549fd733ed146fc2d5693d17fd02b8bf76f8ac23caac93900b1a79f"
+      "sha256": "f1b6899266439f04116f944309c7ba32171975600ba1211caa7dc637680f5261"
     },
     {
       "path": "scripts/release_package.py",
@@ -5580,8 +5580,8 @@
     },
     {
       "path": "scripts/test_release.py",
-      "size": 21590,
-      "sha256": "30d65cb7618f164b4730c9008b93e1958b291a12030db61c462286edc7c93209"
+      "size": 22086,
+      "sha256": "d9b9aa18a351b1bb7ab19712d5ef69f6a85bc93c43de8e021ecc18e243cab68f"
     },
     {
       "path": "scripts/test_release_portability.py",

@@ -20,6 +20,12 @@ def native_profile_program():
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_source_rust_preflight_matches_the_native_host_minimum(self):
+        import release
+        for version,expected in [('1.88.0',False),('1.94.0',False),('1.95.0',True),('1.96.0',True)]:
+            with self.subTest(version=version),patch('release.shutil.which',return_value='/fixture/rustc'),patch('release.subprocess.run',return_value=MagicMock(returncode=0,stdout='rustc '+version+' (fixture)')):
+                self.assertEqual(release.rust_checks(False)[0]['passed'],expected)
+
     def test_contributor_browser_preparation_happens_before_verification(self):
         import release
         from install_state import InstallState

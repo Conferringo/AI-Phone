@@ -12,7 +12,7 @@
 
 这条源码路径使用 macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux 电脑使用 Docker 内的 Debian 13/Openbox。以下前置条件用于开发环境，不代表全新宿主安装已通过验收。
 
-安装器要求已有Node.js 22+、Bun（项目自动安装）、Rust 1.88+、Python 3.11+、Java 17、Docker Desktop、Xcode命令行工具，以及包含sdkmanager的Android SDK。可从各项目官方渠道安装。默认检测 `~/Library/Android/sdk`，兼容旧Homebrew路径；不要求相同用户名或固定局域网IP。全新镜像/编译预留35GiB磁盘，内存建议16GB以上。
+源码安装需要Node.js 22+、Bun（项目自动安装）、Rust 1.95+（发行构建固定1.96.0）、Python 3.11+、Java 17、Docker Desktop、Xcode命令行工具，以及包含sdkmanager的Android SDK。可从各项目官方渠道安装。默认检测 `~/Library/Android/sdk`，兼容旧Homebrew路径；不要求相同用户名或固定局域网IP。全新镜像/编译预留35GiB磁盘，内存建议16GB以上。这些是当前源码开发依赖，完整发行客户端应随包供应所需组件。
 
 ## 首次安装
 
