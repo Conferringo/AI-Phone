@@ -1745,8 +1745,8 @@
     },
     {
       "path": "apps/web/src/components/workspace-window.tsx",
-      "size": 15529,
-      "sha256": "8f29b382ec1b13e829ec210328b52c48579e59b07c73314f5b1e504886592354"
+      "size": 15254,
+      "sha256": "31594897367ca47eacc949c418305924294711f627858cc33e336b61e3ebac95"
     },
     {
       "path": "apps/web/src/lib/assistant-server.ts",
@@ -4909,6 +4909,11 @@
       "sha256": "14f064871b3c93c7d1627b45aced9a21523a7176ebfc75c3f67a1a59968a42f0"
     },
     {
+      "path": "scripts/file-manager-batch-component.test.ts",
+      "size": 971,
+      "sha256": "b11e350d1f312620fef617bdb4b75c0accdcaf666dbe3df699227283ac95cbf2"
+    },
+    {
       "path": "scripts/fixtures/background-conversations.ts",
       "size": 18900,
       "sha256": "711bc6d7a442bd744f2b8ea62ed00ae255f86664d17a71a2e238c07ad5c54851"
@@ -4947,6 +4952,11 @@
       "path": "scripts/fixtures/device-audio-hook.ts",
       "size": 7610,
       "sha256": "b4050203d3910c6aa2bf79db30e0775a064437d3c62b771ef79c14dc46299fc9"
+    },
+    {
+      "path": "scripts/fixtures/file-manager-batch.ts",
+      "size": 5363,
+      "sha256": "39a01ecc8f5fdaa6db0e1830eb22a89670e1d89daad205a20e17ceaa406d0aeb"
     },
     {
       "path": "scripts/fixtures/native-audio.Dockerfile",

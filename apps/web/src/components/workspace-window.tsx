@@ -27,15 +27,10 @@ export function WorkspaceWindow({open,onClose,devices}:{open:boolean;onClose:()=
  async function manage(operation:FileOperation,sources:Location[],target?:Location,name=''){
   if(working.current)return;working.current=true;setBusy(true);setError('');let complete=true;
   try{
-   const batches=sources.length?sources.map(source=>[source]):[[]];
-   const failures:string[]=[],remaining:Location[]=[];
-   for(let i=0;i<batches.length;i++){
-    setProgress(`${i+1} / ${batches.length}`);
-    const result=await fileRpc('manage',FileManageRequestSchema,{operation,sources:batches[i],target,name},FileManageResultSchema);
-    const failed=result.results.filter(r=>r.error);if(failed.length){complete=false;failures.push(...failed.map(r=>`${r.source?.path||''}: ${r.error}`));remaining.push(...batches[i]);}
-   }
-   setError(failures.join('\n'));
-   if(operation===FileOperation.MOVE)setClipboard(complete?null:{sources:remaining,operation});
+   const result=await fileRpc('manage',FileManageRequestSchema,{operation,sources,target,name},FileManageResultSchema);
+   const failed=result.results.filter(r=>r.error);complete=failed.length===0;
+   setError(failed.map(r=>`${r.source?.path||''}: ${r.error}`).join('\n'));
+   if(operation===FileOperation.MOVE)setClipboard(complete?null:{sources:failed.map(r=>r.source!),operation});
   }catch(e){setError(e instanceof Error?e.message:String(e));complete=false;}
   finally{working.current=false;setBusy(false);setProgress('');refresh();}
   return complete;
