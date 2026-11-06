@@ -147,6 +147,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(debug_assertions)]
+    if arguments.as_slice() == [std::ffi::OsStr::new("--qualify-file-manager-devices")] {
+        files::qualify_devices().await;
+        return Ok(());
+    }
     if arguments.iter().any(|arg| {
         arg == "--device-setup-contract" || arg == "--setup-devices" || arg == "--setup-wsl-devices"
     }) {

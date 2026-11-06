@@ -712,6 +712,96 @@ pub async fn archive_attachment(app: &App, id: Uuid, name: &str, bytes: &[u8]) -
         .map_err(err)
 }
 
+#[cfg(debug_assertions)]
+pub async fn qualify_devices() {
+    let root = std::env::temp_dir().join(format!("aiphone-files-{}", Uuid::now_v7()));
+    fs::create_dir(&root).await.unwrap();
+    let phone = Store::Phone(Client::new(15037, "emulator-5564".into()).unwrap());
+    let desktop = Store::Desktop;
+    let phone_root = phone.list("/").await.unwrap();
+    let desktop_root = desktop.list("/").await.unwrap();
+    assert!(phone_root.entries.iter().any(|e| e.name == "data"));
+    assert!(desktop_root.entries.iter().any(|e| e.name == "etc"));
+    let id = Uuid::now_v7();
+    let remote = format!("/data/local/tmp/aiphone-files-{id}");
+    let computer = format!("/tmp/aiphone-files-{id}");
+    fs::create_dir(root.join("source")).await.unwrap();
+    fs::create_dir(root.join("source/nested")).await.unwrap();
+    let payload: Vec<u8> = (0..180_031).map(|n| (n % 251) as u8).collect();
+    fs::write(root.join("source/nested/中文 data.bin"), &payload)
+        .await
+        .unwrap();
+    let start = std::time::Instant::now();
+    phone.import(&root.join("source"), &remote).await.unwrap();
+    let entries = phone.list(&join(&remote, "nested")).await.unwrap();
+    assert_eq!(entries.entries[0].size_bytes, payload.len() as u64);
+    phone
+        .export(&remote, &root.join("from-phone"))
+        .await
+        .unwrap();
+    desktop
+        .import(&root.join("from-phone"), &computer)
+        .await
+        .unwrap();
+    desktop
+        .export(&computer, &root.join("from-desktop"))
+        .await
+        .unwrap();
+    assert_eq!(
+        fs::read(root.join("from-desktop/nested/中文 data.bin"))
+            .await
+            .unwrap(),
+        payload
+    );
+    phone
+        .copy_within(
+            &join(&remote, "nested/中文 data.bin"),
+            &join(&remote, "copy.bin"),
+        )
+        .await
+        .unwrap();
+    assert!(
+        phone
+            .copy_within(&join(&remote, "copy.bin"), &join(&remote, "copy.bin"))
+            .await
+            .is_err()
+    );
+    phone
+        .rename(&join(&remote, "copy.bin"), &join(&remote, "renamed.bin"))
+        .await
+        .unwrap();
+    desktop
+        .copy_within(&computer, &format!("{computer}-copy"))
+        .await
+        .unwrap();
+    desktop.remove(&format!("{computer}-copy")).await.unwrap();
+    phone.remove(&remote).await.unwrap();
+    let back = format!("{remote}-back");
+    phone
+        .import(&root.join("from-desktop"), &back)
+        .await
+        .unwrap();
+    phone
+        .export(&back, &root.join("back-to-phone"))
+        .await
+        .unwrap();
+    assert_eq!(
+        fs::read(root.join("back-to-phone/nested/中文 data.bin"))
+            .await
+            .unwrap(),
+        payload
+    );
+    phone.remove(&back).await.unwrap();
+    desktop.remove(&computer).await.unwrap();
+    fs::remove_dir_all(root).await.unwrap();
+    eprintln!(
+        "real roots: phone={} desktop={}; 180031-byte nested binary phone→harness→desktop verified; collision/rename/delete verified; {} ms",
+        phone_root.entries.len(),
+        desktop_root.entries.len(),
+        start.elapsed().as_millis()
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -762,95 +852,5 @@ mod tests {
         assert!(name("..").is_err());
         assert!(name("a/b").is_err());
         assert!(path("a\0b").is_err());
-    }
-    #[cfg(feature = "file-manager-device-qa")]
-    #[tokio::test]
-    async fn real_phone_and_desktop_file_roundtrip() {
-        let root = folder();
-        fs::create_dir(&root).await.unwrap();
-        let phone = Store::Phone(Client::new(15037, "emulator-5564".into()).unwrap());
-        let desktop = Store::Desktop;
-        let phone_root = phone.list("/").await.unwrap();
-        let desktop_root = desktop.list("/").await.unwrap();
-        assert!(phone_root.entries.iter().any(|e| e.name == "data"));
-        assert!(desktop_root.entries.iter().any(|e| e.name == "etc"));
-        let id = Uuid::now_v7();
-        let remote = format!("/data/local/tmp/aiphone-files-{id}");
-        let computer = format!("/tmp/aiphone-files-{id}");
-        fs::create_dir(root.join("source")).await.unwrap();
-        fs::create_dir(root.join("source/nested")).await.unwrap();
-        let payload: Vec<u8> = (0..180_031).map(|n| (n % 251) as u8).collect();
-        fs::write(root.join("source/nested/中文 data.bin"), &payload)
-            .await
-            .unwrap();
-        let start = std::time::Instant::now();
-        phone.import(&root.join("source"), &remote).await.unwrap();
-        let entries = phone.list(&join(&remote, "nested")).await.unwrap();
-        assert_eq!(entries.entries[0].size_bytes, payload.len() as u64);
-        phone
-            .export(&remote, &root.join("from-phone"))
-            .await
-            .unwrap();
-        desktop
-            .import(&root.join("from-phone"), &computer)
-            .await
-            .unwrap();
-        desktop
-            .export(&computer, &root.join("from-desktop"))
-            .await
-            .unwrap();
-        assert_eq!(
-            fs::read(root.join("from-desktop/nested/中文 data.bin"))
-                .await
-                .unwrap(),
-            payload
-        );
-        phone
-            .copy_within(
-                &join(&remote, "nested/中文 data.bin"),
-                &join(&remote, "copy.bin"),
-            )
-            .await
-            .unwrap();
-        assert!(
-            phone
-                .copy_within(&join(&remote, "copy.bin"), &join(&remote, "copy.bin"))
-                .await
-                .is_err()
-        );
-        phone
-            .rename(&join(&remote, "copy.bin"), &join(&remote, "renamed.bin"))
-            .await
-            .unwrap();
-        desktop
-            .copy_within(&computer, &format!("{computer}-copy"))
-            .await
-            .unwrap();
-        desktop.remove(&format!("{computer}-copy")).await.unwrap();
-        phone.remove(&remote).await.unwrap();
-        let back = format!("{remote}-back");
-        phone
-            .import(&root.join("from-desktop"), &back)
-            .await
-            .unwrap();
-        phone
-            .export(&back, &root.join("back-to-phone"))
-            .await
-            .unwrap();
-        assert_eq!(
-            fs::read(root.join("back-to-phone/nested/中文 data.bin"))
-                .await
-                .unwrap(),
-            payload
-        );
-        phone.remove(&back).await.unwrap();
-        desktop.remove(&computer).await.unwrap();
-        fs::remove_dir_all(root).await.unwrap();
-        eprintln!(
-            "real roots: phone={} desktop={}; 180031-byte nested binary phone→harness→desktop verified; collision/rename/delete verified; {} ms",
-            phone_root.entries.len(),
-            desktop_root.entries.len(),
-            start.elapsed().as_millis()
-        );
     }
 }

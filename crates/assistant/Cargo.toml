@@ -31,6 +31,3 @@ argon2 = "0.5"
 
 [lints]
 workspace = true
-
-[features]
-file-manager-device-qa = []

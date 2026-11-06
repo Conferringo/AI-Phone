@@ -20,7 +20,7 @@ The Agent uses `device_file_list` and `device_file_manage` with the same impleme
 
 ## Verification scope
 
-macOS development validation covers real Android and Linux guest roots, nested directories, Chinese filenames, binary round trips, collision refusal, rename/delete, authenticated protobuf operations and retained chats. The real-device suite is explicitly enabled with `cargo test -p ai-phone-assistant --features file-manager-device-qa files::tests`. Default tests do not contact installed devices. Windows and Linux host installation are not claimed as tested by this change.
+macOS development validation covers real Android and Linux guest roots, nested directories, Chinese filenames, binary round trips, collision refusal, rename/delete, authenticated protobuf operations and retained chats. Run isolated file tests with `cargo test -p ai-phone-assistant files::tests`. Run the explicit development-only real-device qualification with `cargo run -p ai-phone-assistant -- --qualify-file-manager-devices`; this command is excluded from release builds. Even `--all-features` unit tests do not contact installed devices. Windows and Linux host installation are not claimed as tested by this change.
 
 ---
 

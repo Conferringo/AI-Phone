@@ -2180,8 +2180,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1318,
-      "sha256": "1d5d4876a2a26b6884f359f741f2d5e6cf16d3999d9e30bbf0eb1a856ee78895"
+      "size": 1278,
+      "sha256": "a7f13329f0052b2520b4e609b8b725fb1c0904d358b55fbccf2350c22c774c93"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2515,8 +2515,8 @@
     },
     {
       "path": "crates/assistant/src/files.rs",
-      "size": 33860,
-      "sha256": "f5f3598e669e6c544f1f91da4ad4fb8b064365b6f5bdc48592b751a673d4e54b"
+      "size": 33512,
+      "sha256": "69bb11325b53adb14b638cc58e3dbc4eb335fcab60feeb786a8d763be49f42ac"
     },
     {
       "path": "crates/assistant/src/handoff_returns.rs",
@@ -2560,8 +2560,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 12319,
-      "sha256": "1108e535a3be9c7dfbd48e07a39a69cc2293295fcb504fbb381886e696bc1426"
+      "size": 12507,
+      "sha256": "a25227fb7f04b37eb37bcd7a9f2c45e678cb255c12ce292220c7114cd8780759"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -3535,8 +3535,8 @@
     },
     {
       "path": "docs/public/file-management.md",
-      "size": 4415,
-      "sha256": "62aef2a71989c2a8acebf7110eefd7ddbca0a6fbe02447d45d79ea59b9b270ba"
+      "size": 4560,
+      "sha256": "e0b11fee934db45e1d6a2b370c88eaeccce8a3e1f93215c2b62d359397280bb8"
     },
     {
       "path": "docs/public/getting-started.en.md",
