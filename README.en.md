@@ -54,11 +54,13 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 
 [Architecture](docs/public/architecture.en.md) · [Documentation index](docs/public/index.md) · [Conversation steering](docs/public/conversation-steering.md) · [Capabilities and data](docs/public/capabilities-and-data.md)
 
+The final first-party runtime and build/release tools target Rust, alongside the existing Next.js frontend. Legacy Python installation/recovery orchestration and Python CI/build tooling remain in the current source and must be retired before final distribution. The project is not Python-free yet.
+
 Models/APIs, connections and memory belong to Agents; Skills, knowledge and work files are shared. Code is separate from user state. Environment secrets, guest disks, accounts, chats, attachments and private evidence are excluded from the repository. Updates require versioned artifacts, backups, migrations and rollback rather than a direct `git pull` into user state.
 
 ## Roadmap
 
-1. Clean-host installation, interrupted-install recovery, resource migration and signed updates.
+1. Complete the Rust runtime/build-tool migration, integrated installation, recovery and signed updates.
 2. Native platform input/audio/touch, language and accessibility acceptance; Windows/Linux host providers.
 3. Smaller UI/execution ownership boundaries; long-running tasks and host sleep/reboot recovery.
 4. Model discovery/capability probes, specialized app Skills and Skill upgrade/rollback.

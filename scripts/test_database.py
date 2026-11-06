@@ -46,8 +46,13 @@ class PostgreSQLRoleTests(unittest.TestCase):
         return subprocess.run(['docker','exec','-i',self.container,'sh','-c',command,'role-test',config['username'],self.name],input=config['password']+'\n'+"\\set VERBOSITY sqlstate\n"+sql,text=True,capture_output=True)
     def binary(self,flag):
         return subprocess.run([service_binary(),flag],env={**os.environ,'AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},text=True,capture_output=True)
+    def prepare(self):
+        # Empty PATH proves the native preparation does not launch Python, Docker or psql.
+        result=subprocess.run([service_binary(),'--prepare-database'],env={**os.environ,'PATH':'','AI_PHONE_PROJECT_ROOT':str(self.root),'AI_PHONE_PG_PORT':self.port},text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(json.loads(result.stdout),{'prepared':True,'runtime':'ai_phone_runtime','migration':'ai_phone_migrator','bootstrap_preserved':True})
     def test_fresh_install_runtime_crud_and_denied_ddl_role_elevation(self):
-        prepare(self.root,self.container);migrated=self.binary('--migrate');self.assertEqual(migrated.returncode,0,migrated.stderr)
+        self.prepare();migrated=self.binary('--migrate');self.assertEqual(migrated.returncode,0,migrated.stderr)
         self.assertEqual(self.binary('--database-check').returncode,0)
         self.assertEqual(int(self.admin('SELECT count(*) FROM _sqlx_migrations;')),len(list((ROOT/'crates/assistant/migrations').glob('*.sql'))))
         created=self.query('migration','CREATE TABLE public.permission_fixture(id integer PRIMARY KEY,content text);');self.assertEqual(created.returncode,0)
@@ -58,20 +63,20 @@ class PostgreSQLRoleTests(unittest.TestCase):
                 denied=self.query('runtime',sql);self.assertNotEqual(denied.returncode,0);self.assertIn('42501',denied.stderr)
         self.assertEqual(self.admin("SELECT rolsuper FROM pg_roles WHERE rolname='ai_phone';"),'t')
     def test_legacy_ownership_migration_is_idempotent_and_transactional(self):
-        prepare(self.root,self.container);self.assertEqual(self.binary('--migrate').returncode,0)
+        self.prepare();self.assertEqual(self.binary('--migrate').returncode,0)
         self.admin("CREATE TABLE public.permission_fixture(id int PRIMARY KEY,content text); INSERT INTO permission_fixture VALUES(1,'preserve me'); ALTER TABLE messages OWNER TO ai_phone;")
         before=self.admin("SELECT md5(row_to_json(x)::text) FROM permission_fixture x;");passwords=credentials(self.root)
-        prepare(self.root,self.container);prepare(self.root,self.container)
+        self.prepare();self.prepare()
         self.assertEqual(credentials(self.root),passwords);self.assertEqual(self.admin("SELECT md5(row_to_json(x)::text) FROM permission_fixture x;"),before)
         self.assertEqual(self.admin("SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='messages'::regclass;"),'ai_phone_migrator')
         self.admin("COMMENT ON ROLE ai_phone_runtime IS 'foreign role';")
-        with self.assertRaises(ValueError):prepare(self.root,self.container)
+        failed=self.binary('--prepare-database');self.assertNotEqual(failed.returncode,0)
         self.assertEqual(self.query('migration','SELECT 1;').returncode,0)
         self.admin('COMMENT ON ROLE ai_phone_runtime IS '+literal(MARKER)+';')
         self.assertEqual(self.binary('--database-check').returncode,0)
 
     def test_restore_verifier_matches_postgresql_generated_formats(self):
-        prepare(self.root,self.container)
+        self.prepare()
         login=credentials(self.root)['runtime']
         for algorithm in ('scram-sha-256','md5'):
             self.admin("SET password_encryption="+literal(algorithm)+"; ALTER ROLE ai_phone_runtime PASSWORD "+literal(login['password'])+";")

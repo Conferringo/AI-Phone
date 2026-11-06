@@ -63,6 +63,30 @@ fn capability_is_read_only_and_does_not_require_an_installation_or_interpreter()
     assert_eq!(output.stdout, b"ai-phone-device-setup-v2\n");
     assert!(output.stderr.is_empty());
     fixture.unchanged();
+    let output = fixture.invoke(&["--database-prepare-contract"], false);
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"ai-phone-database-prepare-v1\n");
+    assert!(output.stderr.is_empty());
+    fixture.unchanged();
+}
+
+#[test]
+fn database_preparation_rejects_mixed_arguments_without_starting_a_service() {
+    let fixture = Fixture::new();
+    for arguments in [
+        vec!["--prepare-database", "--migrate"],
+        vec!["--database-prepare-contract", "--prepare-database"],
+    ] {
+        let output = fixture.invoke(&arguments, false);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+        assert!(
+            String::from_utf8(output.stderr)
+                .unwrap()
+                .contains("database_prepare_arguments")
+        );
+        fixture.unchanged();
+    }
 }
 
 #[test]

@@ -88,20 +88,21 @@ def verify_restore_roles(container, admin, database, value):
     return set(existing)
 
 def preparation_sql(env, value, *, verified_existing_roles=None):
-    database = identifier(env['POSTGRES_DB']); admin = env['POSTGRES_USER']
+    admin = env['POSTGRES_USER']
     if admin in (RUNTIME, MIGRATION): raise ValueError('Bootstrap and application roles must be separate')
+    policy=Path(__file__).resolve().parent.parent/'crates/assistant/src/database'
     sql = ['BEGIN;', "SET LOCAL lock_timeout='5s';", "SET LOCAL statement_timeout='60s';"]
-    for name in ('migration', 'runtime'):
+    if verified_existing_roles is None:
+        sql.append(f"SELECT set_config('aiphone.runtime_password',{literal(value['runtime']['password'])},true),set_config('aiphone.migration_password',{literal(value['migration']['password'])},true);")
+        sql.append((policy/'roles.sql').read_text())
+    for name in (() if verified_existing_roles is None else ('migration','runtime')):
         role = value[name]['username']; password = value[name]['password']
         configure=f'ALTER ROLE {identifier(role)} WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD {literal(password)};\n COMMENT ON ROLE {identifier(role)} IS {literal(MARKER)};'
-        existing=configure
         missing=f'CREATE ROLE {identifier(role)} LOGIN;\n {configure}'
-        if verified_existing_roles is not None:
-            # A credential check happens before decoding/importing the dump. Recheck
-            # membership/flags here, but never mutate an existing cluster-global role.
-            existing=(f"IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname={literal(role)} AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR NOT rolcanlogin)) OR EXISTS(SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname={literal(role)})) THEN RAISE EXCEPTION 'Unsafe existing database role; use a dedicated restore cluster'; END IF;"
-                      if role in verified_existing_roles else "RAISE EXCEPTION 'An existing database role appeared after restore preflight';")
-            if role in verified_existing_roles:missing="RAISE EXCEPTION 'An existing database role disappeared after restore preflight';"
+        # Restore reuses verified cluster-global roles without rotating passwords.
+        existing=(f"IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname={literal(role)} AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls OR NOT rolcanlogin)) OR EXISTS(SELECT 1 FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname={literal(role)})) THEN RAISE EXCEPTION 'Unsafe existing database role; use a dedicated restore cluster'; END IF;"
+                  if role in verified_existing_roles else "RAISE EXCEPTION 'An existing database role appeared after restore preflight';")
+        if role in verified_existing_roles:missing="RAISE EXCEPTION 'An existing database role disappeared after restore preflight';"
         sql.append(f"""DO $role$
 BEGIN
  IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname={literal(role)}) THEN
@@ -113,34 +114,7 @@ BEGIN
   {missing}
  END IF;
 END $role$;""")
-    # Remove unexpected membership left by an older/manual deployment.
-    if verified_existing_roles is None:sql.append(f"""DO $membership$ DECLARE item record; BEGIN
- FOR item IN SELECT p.rolname AS parent,c.rolname AS child FROM pg_auth_members m JOIN pg_roles p ON p.oid=m.roleid JOIN pg_roles c ON c.oid=m.member WHERE c.rolname IN ({literal(RUNTIME)},{literal(MIGRATION)}) LOOP
-  EXECUTE format('REVOKE %I FROM %I',item.parent,item.child);
- END LOOP;
-END $membership$;""")
-    sql += [f'REVOKE CREATE,TEMPORARY ON DATABASE {database} FROM PUBLIC;',
-            f'REVOKE ALL ON DATABASE {database} FROM {identifier(RUNTIME)};',
-            f'GRANT CONNECT ON DATABASE {database} TO {identifier(RUNTIME)};',
-            f'GRANT CONNECT,CREATE ON DATABASE {database} TO {identifier(MIGRATION)};',
-            'REVOKE CREATE ON SCHEMA public FROM PUBLIC;',
-            f'GRANT USAGE,CREATE ON SCHEMA public TO {identifier(MIGRATION)};',
-            f'GRANT USAGE ON SCHEMA public TO {identifier(RUNTIME)};']
-    # Never REASSIGN OWNED: that could transfer bootstrap-owned template databases.
-    sql.append(f"""DO $objects$ DECLARE item record; BEGIN
- FOR item IN SELECT c.relname,c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-  WHERE n.nspname='public' AND c.relkind IN ('r','p','S','v','m','f')
-  AND NOT EXISTS(SELECT 1 FROM pg_depend d WHERE d.classid='pg_class'::regclass AND d.objid=c.oid AND d.deptype='e')
-  ORDER BY (c.relkind='S'),c.oid LOOP
-  EXECUTE format('ALTER %s public.%I OWNER TO %I',CASE item.relkind WHEN 'S' THEN 'SEQUENCE' WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW' WHEN 'f' THEN 'FOREIGN TABLE' ELSE 'TABLE' END,item.relname,{literal(MIGRATION)});
- END LOOP;
-END $objects$;""")
-    sql += [f'GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO {identifier(RUNTIME)};',
-            f'GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO {identifier(RUNTIME)};',
-            f'ALTER DEFAULT PRIVILEGES FOR ROLE {identifier(MIGRATION)} IN SCHEMA public GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO {identifier(RUNTIME)};',
-            f'ALTER DEFAULT PRIVILEGES FOR ROLE {identifier(MIGRATION)} IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO {identifier(RUNTIME)};',
-            f"DO $migrations$ BEGIN IF to_regclass('public._sqlx_migrations') IS NOT NULL THEN REVOKE ALL ON public._sqlx_migrations FROM {identifier(RUNTIME)}; GRANT SELECT ON public._sqlx_migrations TO {identifier(RUNTIME)}; END IF; END $migrations$;",
-            'COMMIT;']
+    sql += [(policy/'grants.sql').read_text(),'COMMIT;']
     return '\n'.join(sql)
 
 def prepare(root, container=None):

@@ -5,7 +5,6 @@ from pathlib import Path
 import secrets
 import shutil
 import subprocess
-import sys
 from client_host import execute
 from linux_services import start_unit, unit_state
 from runtime_config import runtime_env
@@ -109,7 +108,7 @@ def start_execution_services(root, specs, run, start):
     if not unit_state(root,'assistant'):
         run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','--wait','postgres','redis','ocr'])
         if not specs['assistant']['prebuilt']:run(['cargo','build','-p','ai-phone-assistant','--locked'])
-        run([sys.executable,root/'scripts/database.py','prepare'])
+        run([*specs['assistant']['argv'],'--prepare-database'])
         run([*specs['assistant']['argv'],'--migrate'])
     start('assistant',specs['assistant']['argv'],specs['assistant']['environment'])
     channels=js_launch_spec(root,'channels');start('channels',channels['argv'],channels['environment'])

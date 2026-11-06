@@ -42,6 +42,7 @@ mod model_sse;
 mod model_timing;
 mod notification_policy;
 mod phone_system;
+mod private_file;
 mod proactive;
 mod registry;
 mod run_notice;
@@ -182,6 +183,16 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         }
         return Ok(());
     }
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--database-prepare-contract")
+    {
+        if arguments.len() != 1 {
+            return Err("database_prepare_arguments".into());
+        }
+        println!("{}", database::bootstrap::CONTRACT);
+        return Ok(());
+    }
     if std::env::args().any(|arg| arg == "--version") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return Ok(());
@@ -193,6 +204,15 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     let root = std::env::var_os("AI_PHONE_PROJECT_ROOT")
         .map(PathBuf::from)
         .unwrap_or(std::env::current_dir()?);
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--prepare-database")
+    {
+        if arguments.len() != 1 {
+            return Err("database_prepare_arguments".into());
+        }
+        return database::bootstrap::prepare(&root).await;
+    }
     if !setup_admin
         && !sync_skills
         && !migrate_database

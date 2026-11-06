@@ -11,6 +11,7 @@ from release_package import SECRET
 DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v2'
 SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
 PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v2'
+DATABASE_PREPARE_CONTRACT = 'ai-phone-database-prepare-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -35,6 +36,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Native service supervision capability was not qualified')
     if receipt['checks'].get('phone_input_setup') != PHONE_INPUT_SETUP_CONTRACT:
         raise ValueError('Native phone input setup capability was not qualified')
+    if receipt['checks'].get('database_prepare') != DATABASE_PREPARE_CONTRACT:
+        raise ValueError('Native database preparation capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -51,7 +54,8 @@ def prepare_services(root, *, linux_ocr=None):
     manifest = {'format': 1, 'host': host_key(), 'source_sha256': receipt['source_sha256'],
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
                 'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT,
-                'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT}
+                'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT,
+                'database_prepare': DATABASE_PREPARE_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -131,7 +135,10 @@ def launch_spec(root, role):
     root = Path(root).resolve()
     folder = root / 'runtime/services'
     if folder.exists() or folder.is_symlink():
-        command = service_command(root, role)
+        manifest = load_manifest(root)
+        if role=='assistant' and manifest.get('database_prepare')!=DATABASE_PREPARE_CONTRACT:
+            raise ValueError('Native database preparation is missing; rebuild the complete client')
+        command = [str(root/binary_path(role))]
         environment = {'AI_PHONE_OCR': str(root / binary_path('vision'))} if role == 'runner' else {}
         return {'argv': command, 'environment': environment, 'prebuilt': True}
     return {'argv': [str(root / 'target/debug' / ('ai-phone-' + role))], 'environment': {}, 'prebuilt': False}

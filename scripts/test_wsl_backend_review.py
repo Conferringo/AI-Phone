@@ -58,15 +58,19 @@ class WslRuntimeBoundaryTests(unittest.TestCase):
                 self.assertNotIn(name,value)
 
     def test_real_web_helper_gets_final_port_and_does_not_start_lan_or_phone(self):
-        captured=[]
+        captured=[];commands=[]
         def capture(root,name,argv,environment):captured.append((name,list(map(str,argv)),dict(environment)))
+        def execute(argv,**_kwargs):commands.append(list(map(str,argv)));return SimpleNamespace(returncode=0)
         with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{},clear=False):
             root=Path(folder);(root/'runtime').mkdir();(root/'runtime/manifest.json').write_text('{}')
             with patch('client_host.verify_container_ownership',return_value={}),patch('container_images.stage'),patch('container_images.activate',return_value={}),patch('linux_services.unit_state',return_value=None),patch('linux_services.start_unit',side_effect=capture),patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}),patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}),patch('prebuilt_web.web_command',return_value=['/fixture/bun','/fixture/server.js']),patch('linux_host.shutil.which',return_value=None):
                 # runtime_env and web startup helper remain real: the regression covers their composition.
-                entry.start_backend(root,lambda *_args,**_kwargs:SimpleNamespace(returncode=0))
+                entry.start_backend(root,execute)
             names=[name for name,_,_ in captured]
             self.assertEqual(names,['runner','assistant','web','channels','media'])
+            self.assertIn(['assistant','--prepare-database'],commands)
+            self.assertLess(commands.index(['assistant','--prepare-database']),commands.index(['assistant','--migrate']))
+            self.assertFalse(any('database.py' in argument for command in commands for argument in command))
             web=next(env for name,_,env in captured if name=='web')
             self.assertEqual(web['PORT'],'17860');self.assertEqual(web['HOSTNAME'],'127.0.0.1')
             self.assertEqual(web['DOCKER_HOST'],entry.SOCKET)
