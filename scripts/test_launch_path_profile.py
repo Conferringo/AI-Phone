@@ -21,9 +21,14 @@ with ExitStack() as guards:
     if os.name == 'posix':
         import linux_services
 
+from test_release import native_profile_program
+
 
 class LaunchPathTests(unittest.TestCase):
     def setUp(self):
+        native_run = subprocess.run
+        native_popen = subprocess.Popen
+        program = Path(native_profile_program())
         self.temporary = tempfile.TemporaryDirectory(prefix='launch-path-profile-')
         self.addCleanup(self.temporary.cleanup)
         self.home = Path(self.temporary.name).resolve()
@@ -47,6 +52,14 @@ class LaunchPathTests(unittest.TestCase):
             guard = patch(boundary, side_effect=AssertionError('Unmocked external operation: ' + boundary))
             guard.start()
             self.addCleanup(guard.stop)
+        def native(argv,**kwargs):
+            self.assertEqual(argv[0],str(program))
+            self.assertIn(argv[1],('--prepare-host-profile','--write-host-profile','--validate-host-profile'))
+            if argv[1]!='--validate-host-profile':self.assertEqual(Path(argv[2]),self.root)
+            with patch('subprocess.Popen',native_popen):
+                return native_run(list(map(str,argv)),**kwargs)
+        for guard in (patch('subprocess.run',side_effect=native),patch('prebuilt_services.profile_command',return_value=[str(program)])):
+            guard.start();self.addCleanup(guard.stop)
 
     def prepare(self, request=None):
         with redirect_stdout(io.StringIO()):

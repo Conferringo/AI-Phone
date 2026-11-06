@@ -288,6 +288,20 @@ pub(crate) fn sync_directory(path: &Path) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn publish_private(home: &Path, name: &str, bytes: &[u8], initial: bool) -> Result<()> {
+    let mut output = tempfile::NamedTempFile::new_in(home)?;
+    output.write_all(bytes)?;
+    output.as_file().sync_all()?;
+    let path = home.join(name);
+    if initial {
+        output.persist_noclobber(path)
+    } else {
+        output.persist(path)
+    }
+    .map_err(|error| Error::Io(error.error))?;
+    sync_directory(home)
+}
+
 pub(crate) fn finish_temporary(result: Result<()>, temporary: tempfile::TempDir) -> Result<()> {
     match (result, temporary.close()) {
         (Ok(()), Ok(())) => Ok(()),

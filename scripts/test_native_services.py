@@ -37,7 +37,7 @@ class NativeServiceTests(unittest.TestCase):
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
                          'service_supervision':'ai-phone-linux-supervision-v2', 'phone_input_setup':'ai-phone-input-setup-v2',
-                         'database_prepare':'ai-phone-database-prepare-v1'}}
+                         'database_prepare':'ai-phone-database-prepare-v1','host_profile':'ai-phone-host-profile-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -100,6 +100,25 @@ class NativeServiceTests(unittest.TestCase):
             qualify.assert_called_once_with(binary,'--phone-input-setup-contract',PHONE_INPUT_SETUP_CONTRACT)
             qualify.side_effect=ValueError('old helper')
             with self.assertRaisesRegex(ValueError,'old helper'):input_setup_command(root)
+
+    def test_profile_selection_rejects_old_bundles_before_running_a_program(self):
+        from prebuilt_services import profile_command, HOST_PROFILE_CONTRACT
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.load_manifest',return_value={}) as manifest,patch('subprocess.run') as execute:
+            root=Path(folder).resolve();(root/'runtime/services').mkdir(parents=True)
+            with self.assertRaisesRegex(ValueError,'host profile capability is missing'):profile_command(root)
+            execute.assert_not_called()
+            manifest.return_value={'host_profile':HOST_PROFILE_CONTRACT}
+            self.assertEqual(profile_command(root),[str(root/binary_path('assistant'))])
+
+    def test_source_profile_builds_and_qualifies_one_native_helper(self):
+        from prebuilt_services import profile_command, HOST_PROFILE_CONTRACT, SOURCE_SUPERVISOR
+        with tempfile.TemporaryDirectory() as folder,patch('build_native_services.contract_receipt') as qualify,patch('subprocess.run') as build:
+            root=Path(folder).resolve();binary=root/SOURCE_SUPERVISOR
+            self.assertEqual(profile_command(root),[str(binary)])
+            build.assert_called_once_with(['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked','--target-dir',str(root/'target')],cwd=root,check=True)
+            qualify.assert_called_once_with(binary,'--host-profile-contract',HOST_PROFILE_CONTRACT)
+            binary.parent.mkdir(parents=True);binary.write_bytes(b'prebuilt native helper')
+            build.reset_mock();profile_command(root);build.assert_not_called()
 
     def test_packager_emits_canonical_host_matched_inventory_and_blocks_private_bytes(self):
         for system,backend in [('Darwin','container-tesseract'),('Linux','container-tesseract')]:
@@ -499,17 +518,18 @@ class NativeHostToolsTests(unittest.TestCase):
 
     def test_profile_creation_does_not_replace_existing_device_resources(self):
         from client_host import prepare_profile
-        import release
-        with tempfile.TemporaryDirectory() as folder,patch.dict(os.environ,{'JAVA_HOME':folder}):
+        with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);host={'phone_template':'android35-arm64'}
             request={'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2560}}
-            prepare_profile(root,root,request,host)
-            path=root/release.PROFILE;before=path.read_bytes()
-            prepare_profile(root,root,{**request,'locale':'de'},host)
-            self.assertEqual(path.read_bytes(),before)
-            with self.assertRaisesRegex(ValueError,'architecture'):
-                prepare_profile(root,root,request,{'phone_template':'android35-x86_64'})
-            self.assertEqual(path.read_bytes(),before)
+            credentials=root/'.env';credentials.write_bytes(b'private-existing-credentials')
+            with patch('prebuilt_services.profile_command',return_value=['/fixture/native']) as qualified,patch('client_host.execute') as execute:
+                prepare_profile(root,root,request,host,root/'SDK with spaces')
+                qualified.assert_called_once_with(root)
+                execute.assert_called_once_with(['/fixture/native','--prepare-host-profile',root,root/'SDK with spaces','android35-arm64'],input=json.dumps(request),text=True,cwd=root)
+                execute.side_effect=subprocess.CalledProcessError(1,'native profile')
+                with self.assertRaises(subprocess.CalledProcessError):prepare_profile(root,root,request,host)
+            self.assertEqual(credentials.read_bytes(),b'private-existing-credentials')
+            self.assertFalse((root/'data').exists())
 
     def test_prebuilt_install_does_not_install_rust_or_request_xcode(self):
         from client_host import install

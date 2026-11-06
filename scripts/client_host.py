@@ -252,18 +252,9 @@ def install_tools(home, mise, tools, emit):
 
 
 def prepare_profile(root, home, request, host, android_sdk=None):
-    import release
-    profile_path=root/'data/deployment/profile.json'
-    if profile_path.exists():
-        existing=json.loads(profile_path.read_text())
-        release.validate(existing)
-        if existing['phone']['template']!=host['phone_template']:
-            raise ValueError('Existing phone architecture differs from this host; no devices were changed')
-        return
-    value=dict(schema_version=1,local_entry=True,locale=request['locale'],launch_path=os.environ.get('PATH',os.defpath),sdk_root=str(android_sdk or home/'tools/android-sdk'),java_home=os.environ.get('JAVA_HOME',''),host_proxy='',container_proxy='',
-               phone={'template':host['phone_template'],**request['phone']},desktop={'template':'debian13-openbox',**request['desktop']})
-    profile=home/'request-profile.json';profile.write_text(json.dumps(value));profile.chmod(0o600)
-    release.configure(root,profile)
+    from prebuilt_services import profile_command
+    execute([*profile_command(root),'--prepare-host-profile',root,android_sdk or home/'tools/android-sdk',host['phone_template']],
+            input=json.dumps(request),text=True,cwd=root)
 
 
 def deployment_sdk(root, provided):

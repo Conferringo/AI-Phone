@@ -23,6 +23,8 @@ The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, mem
 
 Stopping installation terminates its child process group and retains completed work. SDK license prompts are never automatically accepted from a saved pending prompt. Foreign jobs/containers and quarantined restored data are rejected before startup changes. This is not full upgrade rollback or a signed updater.
 
+Initial profile creation, validation and explicit edits now use the qualified Rust host-profile component. It preserves existing device resources, credentials and staged user-directory links. The installer and contributor CLI delegate to that component; remaining Python orchestration is still scheduled for retirement. See [private installation state](engineering/private-install-state.md).
+
 The Windows adapter imports the owned WSL bundle and invokes its backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. Backend acknowledgement sets only `backend_initialized`. The native client then starts the owned Android/bridge worker and completes the durable device setup and service-readiness check before reporting ready. Cancellation after launch leaves unknown guest results explicit and retains the registered distribution. This activation path is implemented; the complete EXE, WSL2/WHPX and first-run runtime qualification remain pending. Initialization still uses the existing Python guest entry, pending the Rust runtime migration.
 
 ## Isolation

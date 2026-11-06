@@ -3,7 +3,6 @@ use crate::{Error, Installation, Result, capsule, control::Control, filesystem, 
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    io::Write,
     path::{Path, PathBuf},
 };
 
@@ -92,18 +91,12 @@ fn validate_owner(value: Owner) -> Result<Owner> {
 }
 
 fn save(home: &Path, owner: &Owner, initial: bool) -> Result<()> {
-    let mut output = tempfile::NamedTempFile::new_in(home)?;
-    output
-        .write_all(&serde_json::to_vec(owner).map_err(|_| Error::Invalid("wsl_owner_invalid"))?)?;
-    output.as_file().sync_all()?;
-    let path = home.join("wsl-owner.json");
-    if initial {
-        output.persist_noclobber(path)
-    } else {
-        output.persist(path)
-    }
-    .map_err(|error| Error::Io(error.error))?;
-    filesystem::sync_directory(home)
+    filesystem::publish_private(
+        home,
+        "wsl-owner.json",
+        &serde_json::to_vec(owner).map_err(|_| Error::Invalid("wsl_owner_invalid"))?,
+        initial,
+    )
 }
 
 fn verify_rootfs(rootfs: &Rootfs<'_>, home: &Path, control: &Control<'_>) -> Result<()> {

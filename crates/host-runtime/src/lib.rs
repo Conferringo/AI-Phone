@@ -11,6 +11,7 @@ mod links;
 mod manifest;
 pub mod native_ipc;
 pub mod package;
+mod profile;
 mod source_cli;
 mod staging;
 pub mod supervision;

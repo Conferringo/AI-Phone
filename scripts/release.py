@@ -4,15 +4,13 @@ import json
 import os
 from pathlib import Path
 import platform
-import secrets
 import shlex
 import shutil
 import subprocess
 import sys
-import tempfile
 import urllib.request
-from runtime_config import profile_launch_path, runtime_env
-from install_language import LOCALES, CATALOGS, choose_language
+from runtime_config import runtime_env
+from install_language import CATALOGS, choose_language
 
 ROOT = Path(__file__).resolve().parent.parent
 PROFILE = 'data/deployment/profile.json'
@@ -22,42 +20,16 @@ def run(args, root=ROOT, env=None):
     subprocess.run([str(a) for a in args], cwd=root, env=env, check=True)
 
 
-def validate(value):
-    if not isinstance(value,dict): raise ValueError('Profile must be a JSON object')
-    profile_launch_path(value)
-    for section in ('phone','desktop'):
-        if not isinstance(value.get(section),dict) or not all(k in value[section] for k in ('template','cpus','memory_mb')):
-            raise ValueError('Profile missing device fields: '+section)
-    if 'storage_gb' not in value['phone']: raise ValueError('Phone storage missing')
-    for key in ('sdk_root','java_home','host_proxy','container_proxy','locale'):
-        if not isinstance(value.get(key),str): raise ValueError('Profile missing string: '+key)
-    if 'local_entry' in value and type(value['local_entry']) is not bool: raise ValueError('local_entry must be a boolean')
-    if value.get('schema_version') != 1:
-        raise ValueError('Unsupported profile schema')
-    if value.get('locale') not in LOCALES:
-        raise ValueError('Unsupported interface language')
-    if value['phone'].get('template') not in ('android35-arm64','android35-x86_64') or value['desktop'].get('template') != 'debian13-openbox':
-        raise ValueError('Only the Android 15 / Debian 13 templates are available')
-    for section in ('phone', 'desktop'):
-        p = value[section]
-        if type(p['cpus']) is not int or p['cpus'] not in (1, 2, 4):
-            raise ValueError('CPU must be 1, 2 or 4')
-        memory_presets=(1536,2048,3072,4096) if section=='phone' else (2048,2560,3072,4096)
-        if type(p['memory_mb']) is not int or p['memory_mb'] not in memory_presets:
-            raise ValueError('Unsupported memory preset')
-    if value['phone']['storage_gb'] not in (16, 24, 32):
-        raise ValueError('Phone storage must be 16, 24 or 32 GB')
-    for key in ('sdk_root', 'java_home'):
-        if key=='java_home' and not value[key]:continue
-        if not Path(value[key]).is_absolute() or any(ord(c) < 32 for c in value[key]):
-            raise ValueError(f'{key} must be an absolute path')
-    from urllib.parse import urlparse
-    for key in ('host_proxy', 'container_proxy'):
-        if value[key]:
-            url = urlparse(value[key])
-            if url.scheme not in ('http', 'https') or not url.hostname or url.username or url.password or url.path not in ('', '/') or url.query or url.fragment:
-                raise ValueError('Use an HTTP(S) proxy URL without credentials or path')
+def native_profile(root,value,*,save):
+    from prebuilt_services import profile_command
+    operation=['--write-host-profile',str(root)] if save else ['--validate-host-profile']
+    result=subprocess.run([*profile_command(root),*operation],input=json.dumps(value,ensure_ascii=False),capture_output=True,text=True,cwd=root)
+    if result.returncode:raise ValueError(result.stderr.strip())
     return value
+
+
+def validate(value):
+    return native_profile(ROOT,value,save=False)
 
 
 def default_profile(root=ROOT):
@@ -85,23 +57,7 @@ def configure(root=ROOT, source=None):
                 answer = input(f'{labels[section]} · {labels[key]} [{value[section][key]}]: ').strip()
                 if answer:
                     value[section][key] = int(answer)
-    validate(value)
-    destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    fd, temp = tempfile.mkstemp(dir=destination.parent)
-    try:
-        with os.fdopen(fd, 'w') as f:
-            json.dump(value, f, ensure_ascii=False, indent=2)
-            f.write('\n'); f.flush(); os.fsync(f.fileno())
-        os.replace(temp, destination)
-    finally:
-        if os.path.exists(temp): os.unlink(temp)
-    # Never overwrite the current database password or account.
-    env = root / '.env'
-    if not env.exists():
-        # Managed release links persist the database password across versions.
-        env = env.resolve() if env.is_symlink() else env
-        with os.fdopen(os.open(env, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'w') as f:
-            f.write('POSTGRES_DB=ai_phone\nPOSTGRES_USER=ai_phone\nPOSTGRES_PASSWORD=' + secrets.token_hex(24) + '\n')
+    native_profile(root,value,save=True)
     print(CATALOGS[value['locale']]['saved'])
 
 
