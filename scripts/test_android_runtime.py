@@ -87,6 +87,7 @@ class AndroidRuntimeTests(unittest.TestCase):
 
     def test_bundled_install_never_invokes_sdk_manager_or_java(self):
         import release
+        from test_release import native_profile_program
         from client_host import prepare_profile, deployment_sdk, selected_tools
         from types import SimpleNamespace
         with tempfile.TemporaryDirectory() as temp:
@@ -105,11 +106,12 @@ class AndroidRuntimeTests(unittest.TestCase):
             self.assertEqual(selected_tools(tools,True,True,(),True),tools[:2])
             request={'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2560}}
             host={'phone_template':'android35-arm64' if manifest['abi']=='arm64-v8a' else 'android35-x86_64'}
-            with patch.dict('os.environ',{'JAVA_HOME':''}):prepare_profile(root,root,request,host,sdk)
-            saved=(root/release.PROFILE).read_text();self.assertEqual(json.loads(saved)['sdk_root'],str(sdk))
-            self.assertEqual(deployment_sdk(root,root/'different'),sdk)
-            prepare_profile(root,root,request,host,root/'different')
-            self.assertEqual((root/release.PROFILE).read_text(),saved)
+            with patch('prebuilt_services.profile_command',return_value=[native_profile_program()]):
+                with patch.dict('os.environ',{'JAVA_HOME':''}):prepare_profile(root,root,request,host,sdk)
+                saved=(root/release.PROFILE).read_text();self.assertEqual(json.loads(saved)['sdk_root'],str(sdk))
+                self.assertEqual(deployment_sdk(root,root/'different'),sdk)
+                prepare_profile(root,root,request,host,root/'different')
+                self.assertEqual((root/release.PROFILE).read_text(),saved)
 
     def test_builder_streams_only_factory_images_and_is_deterministic(self):
         import zipfile

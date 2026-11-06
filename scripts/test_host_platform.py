@@ -2,6 +2,8 @@ import unittest
 from pathlib import Path
 from host_platform import host_policy
 import release
+from unittest.mock import patch
+from test_release import native_profile_program
 
 ROOT=Path(__file__).resolve().parent.parent
 
@@ -20,9 +22,10 @@ class HostPlatformTests(unittest.TestCase):
         value=release.default_profile(ROOT)
         value['java_home']='/fixture/java';value['sdk_root']='/fixture/sdk'
         value['phone']['template']=host['phone_template']
-        self.assertIs(release.validate(value),value)
-        value['phone']['template']='android35-x86_64'
-        self.assertIs(release.validate(value),value)
+        with patch('prebuilt_services.profile_command',return_value=[native_profile_program()]):
+            self.assertIs(release.validate(value),value)
+            value['phone']['template']='android35-x86_64'
+            self.assertIs(release.validate(value),value)
 
     def test_unimplemented_hosts_are_explicitly_refused(self):
         for os_name,arch in [('Linux','aarch64'),('Windows','AMD64'),('Android','aarch64')]:

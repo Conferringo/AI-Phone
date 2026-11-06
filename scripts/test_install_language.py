@@ -5,8 +5,14 @@ from pathlib import Path
 from unittest.mock import patch
 from release import configure, default_profile
 from runtime_config import runtime_env
+from test_release import native_profile_program
 
 class InstallationLanguageTests(unittest.TestCase):
+    def setUp(self):
+        native=patch('prebuilt_services.profile_command',return_value=[native_profile_program()])
+        native.start()
+        self.addCleanup(native.stop)
+
     def test_language_is_the_first_prompt_and_drives_configuration(self):
         with tempfile.TemporaryDirectory() as name:
             root=Path(name); profile=default_profile(root);profile['java_home']='/fixture/java'

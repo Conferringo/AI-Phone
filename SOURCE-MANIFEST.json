@@ -125,8 +125,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 91414,
-      "sha256": "8b038b40a859574467cfe0ee810b3a9858d3f70e286d81a479bed3e5042729d0"
+      "size": 91422,
+      "sha256": "3573b1dc32c5a0715ec32120d9f51e519cad9b9dfe3208dee587b592438b95dd"
     },
     {
       "path": "Cargo.toml",
@@ -360,8 +360,8 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
-      "size": 126134,
-      "sha256": "02a85825bdad7f2f6becdd71374bd4ddfe1d6d0ef0989a7d3c6e26749a4de1d6"
+      "size": 126142,
+      "sha256": "4735c5454571b3c134bd21d11725ff49bd4c46797d6ca45795a2dcab1c9198de"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
@@ -2860,8 +2860,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 974,
-      "sha256": "da4ade151ba6745bf83864aa6ca39eefe64b6c9b34df136feaa74e3fca97c769"
+      "size": 969,
+      "sha256": "8cf12547ee99afb790ebc6160b71f6f3ba1cdcf0826e158cef7a6bd707da1f96"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -2995,8 +2995,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3570,
-      "sha256": "5902b974a7796fa1450b3186a57b46a82bfe104b8e97a5282224b1e168fae9ee"
+      "size": 4125,
+      "sha256": "8e4f17aa861b3e1fb066a3e5f13849579a9dc4dc96296780cc1fbd9bea9faec4"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3055,18 +3055,23 @@
     },
     {
       "path": "crates/host-runtime/src/filesystem.rs",
-      "size": 10794,
-      "sha256": "d9448ddcf57ec90de659baa60330facd2916494123037fdecb980dfb87e4c92d"
+      "size": 11230,
+      "sha256": "b6baaffd7732c884262747e49d36cd502b0b3ac915b1c80f9c64907369f2de74"
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2842,
-      "sha256": "865f586772cc44ae83f645e3b01864b3c31c1e052b6ef29f0990c0fc990fba69"
+      "size": 2888,
+      "sha256": "ca26461bd11f7cf3bead40b54e015c863835744d62feba9f51b75ce92836ec40"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
       "size": 5315,
       "sha256": "55aa84bf962eff422bc87b28adabccc49cd810a587f0ac3dcb79b794428ec2ec"
+    },
+    {
+      "path": "crates/host-runtime/src/managed_engine.rs",
+      "size": 9690,
+      "sha256": "87fc72bda12b02f0d9c1cd00844a71ab9f4a8e661dded7201474d4253bb5b885"
     },
     {
       "path": "crates/host-runtime/src/manifest.rs",
@@ -3087,6 +3092,11 @@
       "path": "crates/host-runtime/src/package.rs",
       "size": 10629,
       "sha256": "f0f59ec49a81ce352ef93b6b3644303f41dd9cbf3e527e16501366bd7a680dcf"
+    },
+    {
+      "path": "crates/host-runtime/src/profile.rs",
+      "size": 8620,
+      "sha256": "538a37ac2405421f95190ca495000adbb22cbc86376ae2fb9b431d2217a82171"
     },
     {
       "path": "crates/host-runtime/src/source_cli.rs",
@@ -3155,8 +3165,8 @@
     },
     {
       "path": "crates/host-runtime/src/wsl.rs",
-      "size": 8108,
-      "sha256": "142b02775360b3026f9282f8d884ee806664ee91781057c9f72d68a6bd943f0f"
+      "size": 7838,
+      "sha256": "ae187fd741d243ff64b06c833919af57be41a7289551b71534fc9c1880ce18f9"
     },
     {
       "path": "crates/host-runtime/tests/connection_owner.rs",
@@ -3184,9 +3194,19 @@
       "sha256": "6fda6e60defe6efff666b58321c484e7edb136446c066fa81210e20e245bf3b3"
     },
     {
+      "path": "crates/host-runtime/tests/host_profile_cli.rs",
+      "size": 12211,
+      "sha256": "9e00237bb8b4a6b39d209218bf88405b2595b5f8fd23904359e372fa508efba5"
+    },
+    {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
       "size": 2347,
       "sha256": "d61dc8c268ae6f13e6016183261b26f70977d36f5733365ebab7d8aebe0ab081"
+    },
+    {
+      "path": "crates/host-runtime/tests/managed_engine_cli.rs",
+      "size": 10206,
+      "sha256": "2583559e5ecdba978e0d1342f3a8c50c9ffaef9c90c29c8a1a1efd2629a81b55"
     },
     {
       "path": "crates/host-runtime/tests/peer_owner_pipe.rs",
@@ -3470,8 +3490,8 @@
     },
     {
       "path": "docs/public/engineering/private-install-state.md",
-      "size": 3791,
-      "sha256": "c9316afb0dd41c1e972d621780e7a7ee678df47f16de5ef9098960e22c3e149a"
+      "size": 5596,
+      "sha256": "76002285803337b6a0806e249799f370efac4bf87518f2973935de1e6d8ce31f"
     },
     {
       "path": "docs/public/engineering/service-supervision.md",
@@ -3485,13 +3505,13 @@
     },
     {
       "path": "docs/public/getting-started.en.md",
-      "size": 6052,
-      "sha256": "c9c26c3e6208f9a0f7bbbb4e92e466e4027cf0d13916c3524930400cf40fd8bd"
+      "size": 6080,
+      "sha256": "38fc2e3c60186994ba6549135bb269f2fd88e3e11d45432205f04bfa63ff954a"
     },
     {
       "path": "docs/public/getting-started.zh-CN.md",
-      "size": 5796,
-      "sha256": "82d5c7995d8df048823d3726152ed6144a14cd6a6778f5e46490d2b447c000fc"
+      "size": 5910,
+      "sha256": "9d205369f41d0e563e8fc94072a293d1fd148b75f0aab68238da59449d3d945b"
     },
     {
       "path": "docs/public/index.md",
@@ -3500,8 +3520,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 6994,
-      "sha256": "68676a1818d3df9cf9841483cec1fc3db24042c34bf48aef3eac1d8ffeabaa6f"
+      "size": 7387,
+      "sha256": "35ee828fd4f4a898851255e54ce4fd9e40b253a0a22ef487907dceb20102593d"
     },
     {
       "path": "docs/public/languages.md",
@@ -3900,8 +3920,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6970,
-      "sha256": "7c62b4e3966c9be48656cbb58fb5dac591854e709767aa20e58fbf6c05ed25f4"
+      "size": 7732,
+      "sha256": "d43feba622da9b502b792057ba390b406e1759aa5357d8a4e167df379a21e4fe"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4460,8 +4480,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 7379,
-      "sha256": "c7c52df0f7005645a73f595afa01d8fbe4b23e7a467300e7fae4b27123923329"
+      "size": 7673,
+      "sha256": "f20d11e5c5ae556bfde0678e7e16bf042d1c2b3ed2e098c686e96d658eeb653a"
     },
     {
       "path": "scripts/bun",
@@ -4555,8 +4575,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 18507,
-      "sha256": "d7dc0838bd26229b34d54d9352826c11127edc1f94060d7d93eb1a87f140f553"
+      "size": 17844,
+      "sha256": "3adccd67f94aff7c58ba4404efb494ae8c986122aabcd778aa0c21e606ec43b8"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4980,8 +5000,8 @@
     },
     {
       "path": "scripts/managed_engine.py",
-      "size": 6310,
-      "sha256": "3de2000123dac042e8d622a68e003ed08bdb64aaa441a9bae7bdaa4ab43301dd"
+      "size": 1277,
+      "sha256": "bfa099127f58b2d63b2d56335fdbca2d61ece49d590a90506321e4f67f9d3d21"
     },
     {
       "path": "scripts/media-relay.test.ts",
@@ -5085,8 +5105,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 9249,
-      "sha256": "00af26625815dd6dd3ccddfcfdc2ad5abba58f0f9850e70d98c84c4ee2e97e3d"
+      "size": 10823,
+      "sha256": "8cebe00163224c892e939d3d5db7a46563d3c43da4e5b22c6b2191eb4f003c59"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5120,8 +5140,8 @@
     },
     {
       "path": "scripts/release.py",
-      "size": 24249,
-      "sha256": "44a8262b9867c2556731e3ae6ccbbf07a10982d387244c635cbdef2db39a4ab6"
+      "size": 21432,
+      "sha256": "f1b6899266439f04116f944309c7ba32171975600ba1211caa7dc637680f5261"
     },
     {
       "path": "scripts/release_package.py",
@@ -5220,8 +5240,8 @@
     },
     {
       "path": "scripts/test_android_runtime.py",
-      "size": 15064,
-      "sha256": "532fa3ffd8df40624a8930de8cc0e48ff265cfea12ea6a5161b0879d8de911de"
+      "size": 15241,
+      "sha256": "c83eed2d7cba1c1933ebfbc5457788492f00bdd7b962e6beec6054f945aaaf2b"
     },
     {
       "path": "scripts/test_android_sdk_repository.py",
@@ -5285,8 +5305,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 14575,
-      "sha256": "675f5487c99d8b019a6ec7f165e00f02a5c6b0f41c50a44b3ef383a4d7e853f0"
+      "size": 14840,
+      "sha256": "52b7e590172d76e5dcc1b7567b47e69020612f75a27f09ab57e7020f98ea365e"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -5365,8 +5385,8 @@
     },
     {
       "path": "scripts/test_host_platform.py",
-      "size": 1423,
-      "sha256": "402d48d6ce2393c8f9acaa3a26bdc1f32e65300ecff35ad7c5b91c601aa6b6da"
+      "size": 1612,
+      "sha256": "cb91ec253c5298e09e6c61b89e18821b4fa322bf9ecf9c3cef386222a78378b5"
     },
     {
       "path": "scripts/test_image_import_stream.py",
@@ -5380,8 +5400,8 @@
     },
     {
       "path": "scripts/test_install_language.py",
-      "size": 2737,
-      "sha256": "93ea6ff1625cf9c05ac94b9a5172e3624adccf386922748757db6cae831949f4"
+      "size": 2965,
+      "sha256": "ec14a36db0de085883ce1e0812584ce95584c3928fa583e792ce3a967c7712fe"
     },
     {
       "path": "scripts/test_install_state.py",
@@ -5405,8 +5425,8 @@
     },
     {
       "path": "scripts/test_launch_path_profile.py",
-      "size": 9774,
-      "sha256": "f86fc725b808fd89bd37196f7596605d1cb1aee8185982b81bc8fd9dbf9d5fd6"
+      "size": 10550,
+      "sha256": "ab23eac8b6f12245520aa2cd90d6740a9f95f857cc482ce83fed0874c609b1dc"
     },
     {
       "path": "scripts/test_lima_native.py",
@@ -5475,8 +5495,8 @@
     },
     {
       "path": "scripts/test_managed_engine.py",
-      "size": 8822,
-      "sha256": "35deca65c55af8084ce282633034eb139d3ed235dd689f5e7ac667c7955bde69"
+      "size": 2455,
+      "sha256": "b7587b422f44f886b9219bcea3d24b858f9917ea298fbc56ebae7a751394da6a"
     },
     {
       "path": "scripts/test_native_backports.py",
@@ -5510,8 +5530,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 43487,
-      "sha256": "731db9241bdc0cd6c8087032338f903031fef6d9248cfcaf268c8c1d4bdcf2c6"
+      "size": 46901,
+      "sha256": "6cfae7b5913794d59aaff14b17a80bf604abd4eed4e64d7584ed31290b53b7ba"
     },
     {
       "path": "scripts/test_notification_probe.py",
@@ -5570,8 +5590,8 @@
     },
     {
       "path": "scripts/test_release.py",
-      "size": 21014,
-      "sha256": "7c469753e51c4924fde0c54f803e7b547adb36d69bab7516817a5f01c46228c6"
+      "size": 22086,
+      "sha256": "d9b9aa18a351b1bb7ab19712d5ef69f6a85bc93c43de8e021ecc18e243cab68f"
     },
     {
       "path": "scripts/test_release_portability.py",

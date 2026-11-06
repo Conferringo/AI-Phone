@@ -21,6 +21,8 @@ The final first-party runtime, installation/recovery, build, test and release to
 
 Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
 
+First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Native component qualification and real-process data-preservation tests cover these boundaries. Full host orchestration, runtime environment/image activation, recovery and portable-tool retirement remain incomplete.
+
 ## Capability limits
 
 - Real Android/Linux execution, input and persisted state exist in the development runtime. Component startup does not establish a complete first-time client installation.
@@ -44,6 +46,8 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 最终自研运行链、安装/恢复与构建、测试、发行工具必须清除Python，前端保留Next.js。数据库角色初始化已迁到Rust/SQLx，并以空PATH执行隔离数据库验证；其余宿主编排、恢复和构建/CI仍有Python，渠道/媒体JavaScript服务也待迁Rust。当前不满足最终纯Rust目标，不能据此发布最终安装包。
 
 Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
+
+首次配置、显式编辑、预设/结构校验和初始数据库密码发布也已迁Rust，并有组件资格及真实进程保留数据回归。宿主编排、运行环境/镜像激活、恢复及私有工具退役仍未完成。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

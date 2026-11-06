@@ -1,5 +1,6 @@
 """Isolation tests: never write to the live deployment, accounts or device disks."""
 import json
+import os
 from pathlib import Path
 import tarfile
 import tempfile
@@ -11,7 +12,20 @@ from runtime_config import runtime_env
 from release_stage import stage_bundle
 
 
+def native_profile_program():
+    project=Path(__file__).resolve().parent.parent
+    program=Path(os.environ.get('CARGO_TARGET_DIR',project/'target'))/'debug'/('host-resources.exe' if os.name=='nt' else 'host-resources')
+    if not program.is_file():raise AssertionError('Build the real native host-resources before profile tests')
+    return str(program)
+
+
 class ReleaseTests(unittest.TestCase):
+    def test_source_rust_preflight_matches_the_native_host_minimum(self):
+        import release
+        for version,expected in [('1.88.0',False),('1.94.0',False),('1.95.0',True),('1.96.0',True)]:
+            with self.subTest(version=version),patch('release.shutil.which',return_value='/fixture/rustc'),patch('release.subprocess.run',return_value=MagicMock(returncode=0,stdout='rustc '+version+' (fixture)')):
+                self.assertEqual(release.rust_checks(False)[0]['passed'],expected)
+
     def test_contributor_browser_preparation_happens_before_verification(self):
         import release
         from install_state import InstallState
@@ -240,7 +254,7 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'checksum mismatch'):stage_bundle(tampered,root/'install')
             self.assertFalse((root/'install/app/releases/test').exists())
     def test_configuration_preserves_database_and_devices(self):
-        with tempfile.TemporaryDirectory() as name:
+        with tempfile.TemporaryDirectory() as name,patch('prebuilt_services.profile_command',return_value=[native_profile_program()]):
             root = Path(name)
             (root / '.env').write_text('POSTGRES_PASSWORD=private-fixture\n')
             (root / 'data/android').mkdir(parents=True)
@@ -258,13 +272,14 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(runtime_env(root)['AI_PHONE_EMULATOR_PROXY'],'', 'Guest network must not inherit a new host proxy')
 
     def test_invalid_and_authenticated_proxy_rejected(self):
-        for invalid in [None,[],{},dict(schema_version=1,phone=None,desktop={})]:
-            with self.assertRaises(ValueError):validate(invalid)
-        profile = default_profile(); profile['java_home'] = '/fixture/java'
-        for proxy in ['http://user:password@example.test:1', 'file:///tmp/a', 'http://example.test/path']:
-            with self.subTest(proxy=proxy):
-                profile['host_proxy'] = proxy
-                with self.assertRaises(ValueError): validate(profile)
+        with patch('prebuilt_services.profile_command',return_value=[native_profile_program()]):
+            for invalid in [None,[],{},dict(schema_version=1,phone=None,desktop={})]:
+                with self.assertRaises(ValueError):validate(invalid)
+            profile = default_profile(); profile['java_home'] = '/fixture/java'
+            for proxy in ['http://user:password@example.test:1', 'file:///tmp/a', 'http://example.test/path']:
+                with self.subTest(proxy=proxy):
+                    profile['host_proxy'] = proxy
+                    with self.assertRaises(ValueError): validate(profile)
 
     def test_bundle_excludes_private_state_and_checks_all_publication_gates(self):
         with tempfile.TemporaryDirectory() as name:

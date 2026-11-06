@@ -98,6 +98,7 @@ dependencies = [
  "tar",
  "tempfile",
  "tokio",
+ "url",
  "windows-registry",
  "xz2",
 ]

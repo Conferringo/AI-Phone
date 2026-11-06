@@ -60,6 +60,14 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--service-control" => Some(start(Service::Control, &arguments[1..])),
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),
+        "--prepare-host-profile" => Some(crate::profile::run(&arguments[1..])),
+        "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
+        "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
+        "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
+        #[cfg(unix)]
+        "--managed-engine" => Some(crate::managed_engine::run(&arguments[1..])),
+        #[cfg(unix)]
+        "--managed-engine-contract" => Some(contract(arguments, crate::managed_engine::CONTRACT)),
         _ => None,
     }
 }
