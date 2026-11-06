@@ -443,5 +443,20 @@
   "语音会话已关闭": "Sprachsitzung geschlossen",
   "语音服务响应过大": "Antwort des Sprachdienstes zu groß",
   "语音服务未返回文字": "Sprachdienst lieferte keinen Text",
-  "实时转写": "Live-Transkription"
+  "实时转写": "Live-Transkription",
+  "文件管理": "Dateien",
+  "连接数据线": "Kabel verbinden",
+  "断开数据线": "Kabel trennen",
+  "复制": "Kopieren",
+  "剪切": "Ausschneiden",
+  "粘贴": "Einfügen",
+  "删除选中的 {count} 项？": "{count} ausgewählte Elemente löschen?",
+  "新建文件夹": "Neuer Ordner",
+  "重命名": "Umbenennen",
+  "路径": "Pfad",
+  "全选": "Alle auswählen",
+  "选择 {name}": "{name} auswählen",
+  "取消选择": "Auswahl aufheben",
+  "尚未安装设备": "Gerät nicht installiert",
+  "修改时间": "Geändert"
 }

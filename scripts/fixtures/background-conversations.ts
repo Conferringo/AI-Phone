@@ -45,7 +45,7 @@ const components:Record<string,string[]>={
  'workspace-window':['WorkspaceWindow'],'execution-trace':['ExecutionTrace'],
  'proactive-controls':['ProactiveProvider','ExplorationToggle'],'registry-window':['RegistryWindow'],
  'copilot':['CopilotProvider','CopilotToggle','useCopilotBinding'],
- 'floating-window':['FloatingWindow','WindowTrigger'],'device-cable':['DeviceCable'],
+ 'floating-window':['FloatingWindow','WindowTrigger'],'device-cable':['DeviceCableToggle'],
  'desktop-surface':['DesktopSurface'],'phone-stream-image':['PhoneStreamImage'],'phone-toolbar':['PhoneToolbar'],
 };
 for(const [path,names] of Object.entries(components))mock.module('@/components/'+path,()=>Object.fromEntries(names.map(name=>[name,stub])));

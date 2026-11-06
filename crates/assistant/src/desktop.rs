@@ -26,7 +26,7 @@ fn now() -> u64 {
 fn quote(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
 }
-async fn process(
+pub(crate) async fn process(
     mut command: Command,
     input: Vec<u8>,
     limit: usize,
@@ -90,7 +90,7 @@ async fn process(
         .await
         .map_err(|_| "操作超时，结果可能未知，请先观察或核对文件".to_string())?
 }
-fn docker() -> Command {
+pub(crate) fn docker() -> Command {
     // The installer owns PATH and can select its private container host.
     Command::new("docker")
 }
@@ -1088,6 +1088,9 @@ fn plain(value: Value) -> Value {
 pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Value> {
     let name = call["name"].as_str().unwrap_or("");
     let device = args["device_id"].as_str().unwrap_or("");
+    if matches!(name, "device_file_list" | "device_file_manage") {
+        return Ok(plain(crate::files::tool(app, run, name, args).await?));
+    }
     if name == "device_message" {
         let result = crate::device_exchange::send(
             app,
@@ -1247,10 +1250,23 @@ pub fn catalog() -> Vec<Value> {
         json!({"type":"function","name":name,"description":desc,"parameters":{"type":"object","properties":props,"required":required,"additionalProperties":false}})
     }
     let id = json!({"type":"string"});
+    let location = json!({"type":"object","properties":{"device_id":id,"path":id},"required":["device_id","path"],"additionalProperties":false});
     let num = json!({"type":"integer"});
     let origin = json!({"type":"integer","minimum":0});
     let extent = json!({"type":"integer","minimum":1});
     vec![
+        f(
+            "device_file_list",
+            "列出手机/电脑根目录或共享工作文件。device_id为空表示harness工作文件；path为绝对路径，默认/。仅文件管理；应用操作仍须phone-use/computer-use。",
+            json!({"device_id":id,"path":id}),
+            vec!["device_id", "path"],
+        ),
+        f(
+            "device_file_manage",
+            "统一文件管理：批量copy/move/delete/mkdir/rename。sources和target含device_id/path；空device_id为工作文件。目标是目录，name为空沿用文件名。跨设备需device_link；不覆盖已有文件。复制到工作文件即可交给harness；文件到达不代表社交软件发送成功。",
+            json!({"operation":{"type":"string","enum":["copy","move","delete","mkdir","rename"]},"sources":{"type":"array","items":location},"target":location,"name":id}),
+            vec!["operation", "sources", "target", "name"],
+        ),
         f(
             "device_message",
             "向已连线的另一设备Agent交接任务、文件路径或进展。对方空闲时自动唤醒；排队不等于已处理。禁止无意义循环回复。",

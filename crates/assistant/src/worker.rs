@@ -161,7 +161,7 @@ async fn initial_context(
         ));
     }
     let kind:String=sqlx::query_scalar("SELECT d.kind FROM runs r JOIN devices d ON d.id=r.device_id WHERE r.assistant_message_id=$1").bind(message).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立、device_files查真实路径、device_transfer传输，之后核对SHA256和目标路径。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
+    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；统一文件管理用device_file_list/device_file_manage，手机/电脑根路径为/，device_id空字符串为共享工作文件，copy/move支持跨工作区与设备的真实文件/目录。传输后核对实际目标路径；应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
     let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal").bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
@@ -2841,6 +2841,7 @@ async fn recorded_tool(
             "workspace_run",
             "computer_run",
             "workspace_write",
+            "device_file_manage",
             "workspace_fetch",
             "skill_install",
             "skill_create",
@@ -2866,6 +2867,8 @@ async fn recorded_tool(
         "computer_run" => "电脑执行命令",
         "device_list" => "查看可用设备",
         "device_files" => "查看设备文件",
+        "device_file_list" => "查看文件目录",
+        "device_file_manage" => "管理文件",
         "device_link" => "连接设备数据线",
         "device_transfer" => "传输设备文件",
         "device_message" => "设备间交接",

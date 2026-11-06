@@ -992,10 +992,10 @@ pub async fn file(
     let Ok(metadata) = tokio::fs::metadata(&file).await else {
         return issue("文件不存在".into());
     };
-    if !metadata.is_file() || metadata.len() > 50_000_000 {
-        return issue("文件不存在或超过50MB".into());
+    if !metadata.is_file() {
+        return issue("请选择文件".into());
     }
-    let bytes = match tokio::fs::read(&file).await {
+    let stream = match tokio::fs::File::open(&file).await {
         Ok(v) => v,
         Err(e) => return issue(e.to_string()),
     };
@@ -1021,7 +1021,7 @@ pub async fn file(
                 &format!("attachment; filename*=UTF-8''{escaped}"),
             ),
         ],
-        bytes,
+        axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(stream)),
     )
         .into_response()
 }

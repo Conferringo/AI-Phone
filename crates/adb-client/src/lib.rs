@@ -1,4 +1,5 @@
 //! Bounded, serial-scoped ADB server transport. Never starts a host executable or retries a command.
+pub mod sync;
 use std::{fmt, io, net::Ipv4Addr, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},

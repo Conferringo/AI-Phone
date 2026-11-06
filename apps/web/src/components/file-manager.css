@@ -1,0 +1,31 @@
+.file-manager{height:100%;min-height:0;display:flex;flex-direction:column;gap:16px;position:relative}
+.file-manager-workspace{flex:0 0 36%;min-height:150px;display:flex;flex-direction:column}
+.file-manager-devices{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.file-pane{min-height:0;min-width:0;display:flex;flex-direction:column;border:.75px solid var(--border);border-radius:var(--radius);overflow:hidden;background:rgb(255 255 255 / 18%);outline-offset:2px;transition:background var(--motion-feedback),border-color var(--motion-feedback)}
+.file-pane[data-over=true],.file-list tr[data-over=true]{border-color:var(--foreground);background:var(--accent)}
+.file-pane-header,.file-pane-toolbar{display:flex;align-items:center;min-height:var(--control-height);padding:0 8px;gap:4px;flex-shrink:0;border-bottom:.75px solid var(--border)}
+.file-pane-header h3{font-size:var(--text-body);font-weight:500;display:flex;align-items:center;gap:8px;min-width:0;flex:1;margin:0}
+.file-pane-header h3 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-pane-header>div{display:flex}.file-pane [data-slot=button],.file-pane button[data-size=icon]{flex-shrink:0}
+.file-pane-toolbar form{flex:1;min-width:0}.file-pane-toolbar input:not([type=checkbox]){height:var(--control-height);width:100%;font:inherit;font-size:var(--text-caption);border:0;background:transparent;color:var(--foreground);padding:0 4px}
+.file-selection-count{min-width:28px;font-size:var(--text-caption);font-variant-numeric:tabular-nums;padding-inline:4px}
+.file-list-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.file-list{table-layout:fixed;border-collapse:collapse;width:100%;font-size:var(--text-caption);text-align:start}
+.file-list th{position:sticky;top:0;background:var(--secondary);font-weight:500;color:var(--muted-foreground);z-index:1;height:32px}
+.file-list td{height:40px;border-bottom:.75px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.file-list th,.file-list td{padding:0 8px;text-align:start}
+.file-list tr[data-selected=true]{background:var(--accent)}.file-list tbody tr:hover{background:color-mix(in srgb,var(--accent) 65%,transparent)}
+.file-list .file-check{width:36px;text-align:center;padding:0}.file-check input{width:15px;height:15px;accent-color:var(--foreground);vertical-align:middle;cursor:pointer}
+.file-list .file-size{width:80px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted-foreground)}.file-list .file-modified{width:112px;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted-foreground)}
+.file-name{display:flex;align-items:center;gap:8px;width:100%;height:40px;background:none;border:0;padding:0;text-align:start;color:var(--foreground);cursor:pointer;font:inherit}
+.file-name svg{flex-shrink:0}.file-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-pane-empty{padding:20px 12px;text-align:center;color:var(--muted-foreground);font-size:var(--text-caption);overflow-wrap:anywhere;display:flex;justify-content:center}
+.file-manager-status{display:flex;align-items:center;gap:8px;flex-shrink:0;min-height:24px;font-size:var(--text-caption);color:var(--muted-foreground)}.file-manager-status[role=alert]{color:var(--destructive)}.file-manager-status span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.file-manager-edit{position:absolute;inset:auto 0 0;padding:12px;background:var(--glass-fill);backdrop-filter:blur(var(--glass-blur));border:.75px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 28px #0001;display:flex;align-items:center;gap:8px;z-index:3}.file-manager-edit label{font-size:var(--text-body);white-space:nowrap}.file-manager-edit input{min-width:0;flex:1}
+.device-cable-toggle{color:var(--muted-foreground)}.device-cable-toggle[data-connected=true]{background:var(--foreground);color:var(--primary-foreground)}.device-cable-toggle[data-connected=true]:hover{background:var(--primary);color:var(--primary-foreground)}
+@media(max-width:700px){.file-manager{gap:10px}.file-manager-devices{gap:8px}.file-pane-header{flex-wrap:wrap}.file-pane-header h3{flex-basis:100%;padding-block:6px}.file-list .file-modified{width:92px}.file-list .file-size{width:62px}.file-list .file-check{width:28px}.file-list th,.file-list td{padding-inline:4px}.file-manager-edit{flex-wrap:wrap}.file-manager-edit label{flex-basis:100%}.file-list{min-width:280px}.file-pane-toolbar{overflow-x:auto}.file-pane-toolbar form{min-width:70px}}
+@media(pointer:coarse){.file-name,.file-list td,.file-pane-header,.file-pane-toolbar{min-height:44px;height:44px}.file-check input{width:20px;height:20px}}
+@media(prefers-reduced-motion:reduce){.file-pane{transition:none}}
+.file-manager-edit .file-edit-input{height:var(--control-height);border:.75px solid var(--input);border-radius:var(--radius);background:var(--glass-fill);padding:0 10px;font:inherit;color:var(--foreground)}
+@media(prefers-reduced-transparency:reduce),(forced-colors:active){.file-pane,.file-manager-edit{background:var(--background);backdrop-filter:none}}
+.floating-window[data-window-id=workspace-files] .floating-body{display:flex;flex-direction:column;overflow:hidden}.floating-window[data-window-id=workspace-files] .file-manager{flex:1}
