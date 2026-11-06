@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 21762,
-      "sha256": "2d60841425ae942c78328e8969061286e0a6fcbda24140d947c61a37837447b8"
+      "size": 22171,
+      "sha256": "46e96d59fb3f8093f20ec6a83ece24f94af53314ce9ce0534e900b9a7eef4150"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -90,8 +90,8 @@
     },
     {
       "path": ".github/workflows/windows-full-client.yml",
-      "size": 7607,
-      "sha256": "43eb31dfa27b8791fe38175dce89f2944849905c2cfec30d03043d097981c6a7"
+      "size": 10609,
+      "sha256": "fb029c4ee06780d4e36db35c916e5f03d1c024c0ac340ce60fba40c00777bc9a"
     },
     {
       "path": ".github/workflows/windows-installer-tools.yml",
@@ -4635,8 +4635,8 @@
     },
     {
       "path": "docs/public/windows-client-factory.md",
-      "size": 4312,
-      "sha256": "2e821e7576a7945eb95fb14b34e5c14ea3d25b8eaf50537066cf16686043ea68"
+      "size": 5323,
+      "sha256": "c5b53c0fcf9216ef55814a401523d04f3ce842d618d30af48d5aca2f42fa5f98"
     },
     {
       "path": "infra/desktop/Dockerfile",
@@ -5145,8 +5145,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 14894,
-      "sha256": "f36de66f788fe798d008142aab12058fbde78421f19c4b583d629f115569ff98"
+      "size": 15400,
+      "sha256": "ec09f732abe03e24052249d8029e0aef0f8783dc87bbe898fafbc04e92358073"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -6222,6 +6222,11 @@
       "path": "scripts/test_native_bundle.py",
       "size": 2219,
       "sha256": "afd3c561e722da0a8c1d6696062cbd53f8762fd616b9692a62c910010f21bba4"
+    },
+    {
+      "path": "scripts/test_native_client_cargo.py",
+      "size": 3122,
+      "sha256": "afb1c10a0926e4a881767e4d4ee8150881693244d70b3dfcf67d444ca60fd2d3"
     },
     {
       "path": "scripts/test_native_device_setup.py",

@@ -12,6 +12,21 @@ from native_bundle import inspect_macos_bundle
 from client_artifacts import inspect_apk, inspect_deb, inspect_appimage, inspect_windows, record, notice_manifest
 
 ROOT=Path(__file__).resolve().parent.parent
+WINDOWS_TARGET='x86_64-pc-windows-msvc'
+
+def native_environment():
+    env={**os.environ, 'CI':'true', 'CARGO_BUILD_JOBS':os.environ.get('CARGO_BUILD_JOBS','2'), 'CARGO_INCREMENTAL':'0'}
+    env['CARGO_HOME']=env.get('CARGO_HOME', str(Path.home()/'.cargo'))
+    cargo_bin=Path(env['CARGO_HOME'])/'bin'
+    if cargo_bin.is_dir():env['PATH']=str(cargo_bin)+os.pathsep+env.get('PATH','')
+    env['CARGO_ENCODED_RUSTFLAGS']='--remap-path-prefix='+str(Path.home())+'=/build-user'
+    return env
+
+def windows_cargo(operation):
+    subprocess.run(['cargo',operation,'--manifest-path',str(ROOT/'apps/client/src-tauri/Cargo.toml'),
+                    '--release','--target',WINDOWS_TARGET,'--features','tauri/custom-protocol',
+                    *(['--bins'] if operation=='build' else []),'--locked'],
+                   cwd=ROOT,env=native_environment(),check=True)
 
 def build_macos():
     if platform.system()!='Darwin' or platform.machine()!='arm64':
@@ -92,10 +107,7 @@ def build_other(target, package_only=False):
     version=json.loads((ROOT/'config/release-policy.json').read_text())['version']
     native=ROOT/'apps/client/src-tauri'
     client=ROOT/'apps/client'
-    env={**os.environ, 'CI':'true', 'CARGO_BUILD_JOBS':os.environ.get('CARGO_BUILD_JOBS','2'), 'CARGO_INCREMENTAL':'0'}
-    cargo_bin=Path(env.get('CARGO_HOME', str(Path.home()/'.cargo')))/'bin'
-    if cargo_bin.is_dir():env['PATH']=str(cargo_bin)+os.pathsep+env.get('PATH','')
-    env['CARGO_ENCODED_RUSTFLAGS']='--remap-path-prefix='+str(Path.home())+'=/build-user'
+    env=native_environment()
     command=['node', str(client/'node_modules/@tauri-apps/cli/tauri.js')]
     dist=ROOT/'dist';dist.mkdir(exist_ok=True)
     if target=='android':
@@ -122,8 +134,8 @@ def build_other(target, package_only=False):
             env['XWIN_CACHE_DIR']=str(cache)
         if not package_only:
             subprocess.run(command+['build','--config','src-tauri/gen/host/resources.json',*(['--runner','cargo-xwin'] if cross else []),
-                '--target','x86_64-pc-windows-msvc','--bundles','nsis','--ci','--no-sign','--','--locked'],cwd=client,env=env,check=True)
-        source=native/f'target/x86_64-pc-windows-msvc/release/bundle/nsis/AI Phone_{version}_x64-setup.exe'
+                '--target',WINDOWS_TARGET,'--bundles','nsis','--ci','--no-sign','--','--locked'],cwd=client,env=env,check=True)
+        source=native/f'target/{WINDOWS_TARGET}/release/bundle/nsis/AI Phone_{version}_x64-setup.exe'
         destination=dist/f'AI-Phone-{version}-windows-x64-setup.exe'
         shutil.copy2(source,destination)
         manifest=record(destination,'windows','x64',inspect_windows(destination))

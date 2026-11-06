@@ -12,6 +12,49 @@ concurrency:
   group: full-windows-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  native-dependencies:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    outputs:
+      artifact: ${{ steps.handoff.outputs.artifact-id }}
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_HTTP_MULTIPLEXING: 'false'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: scripts
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Precompile the native client while the Linux backend builds
+        shell: pwsh
+        run: |
+          rustup default 1.96.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/required_tests.py test_native_client_cargo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "from build_client import windows_cargo; windows_cargo('build')"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Preserve compiled dependencies and source timestamps
+        shell: pwsh
+        run: |
+          $cargoRoot = python -c "from build_client import native_environment; print(native_environment()['CARGO_HOME'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          tar -czf "$env:RUNNER_TEMP/windows-native-dependencies.tar.gz" -C apps/client/src-tauri target -C $cargoRoot registry
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Transfer only this build's native compilation inputs
+        id: handoff
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: windows-native-dependencies
+          path: ${{ runner.temp }}/windows-native-dependencies.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
   backend:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -102,7 +145,7 @@ jobs:
           retention-days: 14
 
   windows-x64:
-    needs: backend
+    needs: [backend, native-dependencies]
     runs-on: windows-2022
     timeout-minutes: 60
     permissions:
@@ -137,6 +180,24 @@ jobs:
           artifact-ids: ${{ needs.backend.outputs.artifact }}
           path: dist/windows-backend
           merge-multiple: true
+      - name: Acquire this run's native dependency handoff
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          artifact-ids: ${{ needs.native-dependencies.outputs.artifact }}
+          path: dist/windows-native-dependencies
+          merge-multiple: true
+      - name: Restore the matching compiler inputs before installer assembly
+        shell: pwsh
+        env:
+          PYTHONPATH: scripts
+        run: |
+          $cargoRoot = python -c "from build_client import native_environment; print(native_environment()['CARGO_HOME'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force $cargoRoot | Out-Null
+          tar -xzf dist/windows-native-dependencies/windows-native-dependencies.tar.gz -C apps/client/src-tauri target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          tar -xzf dist/windows-native-dependencies/windows-native-dependencies.tar.gz -C $cargoRoot registry
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Required Windows filesystem contracts without skips
         shell: pwsh
         run: |
@@ -150,7 +211,8 @@ jobs:
         run: |
           python scripts/windows_client_factory.py build --backend dist/windows-backend --identity $env:AI_PHONE_BACKEND_IDENTITY
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked --release
+          $env:PYTHONPATH = 'scripts'
+          python -c "from build_client import windows_cargo; windows_cargo('test')"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Retain complete-build text receipt
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
