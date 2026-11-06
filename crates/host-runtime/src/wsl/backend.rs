@@ -1,5 +1,5 @@
 //! Complete sealed WSL backend initialization; native phone readiness belongs to the host.
-mod process;
+pub(crate) mod process;
 use crate::{Error, Result, filesystem, profile};
 use process::{Execute, Process};
 use serde::Deserialize;
@@ -67,14 +67,14 @@ fn environment(
     env.insert("NEXT_TELEMETRY_DISABLED".into(), "1".into());
     Ok(env)
 }
-struct Backend<'a, E> {
-    root: &'a Path,
-    program: &'a OsStr,
-    env: BTreeMap<String, String>,
-    execute: E,
+pub(crate) struct Backend<'a, E> {
+    pub(crate) root: &'a Path,
+    pub(crate) program: &'a OsStr,
+    pub(crate) env: BTreeMap<String, String>,
+    pub(crate) execute: E,
 }
 impl<E: Execute> Backend<'_, E> {
-    fn command(
+    pub(crate) fn command(
         &self,
         program: impl AsRef<OsStr>,
         args: impl IntoIterator<Item = impl AsRef<OsStr>>,
@@ -87,7 +87,7 @@ impl<E: Execute> Backend<'_, E> {
             .envs(&self.env);
         command
     }
-    async fn checked(&mut self, command: Command, input: Vec<u8>) -> Result<Vec<u8>> {
+    pub(crate) async fn checked(&mut self, command: Command, input: Vec<u8>) -> Result<Vec<u8>> {
         let output = self.execute.run(command, input).await?;
         if !output.status.success() {
             return Err(Error::Invalid("wsl_initializer_command"));
@@ -97,10 +97,10 @@ impl<E: Execute> Backend<'_, E> {
     async fn docker(&mut self, args: &[&str]) -> Result<Vec<u8>> {
         self.checked(self.command("docker", args), Vec::new()).await
     }
-    async fn native(&mut self, args: &[OsString], input: Vec<u8>) -> Result<Vec<u8>> {
+    pub(crate) async fn native(&mut self, args: &[OsString], input: Vec<u8>) -> Result<Vec<u8>> {
         self.checked(self.command(self.program, args), input).await
     }
-    async fn unit(
+    pub(crate) async fn unit(
         &mut self,
         name: &str,
         operation: &str,
@@ -211,7 +211,7 @@ impl<E: Execute> Backend<'_, E> {
             tokio::time::sleep(Duration::from_millis(250)).await;
         }
     }
-    async fn start(&mut self, images: &Path) -> Result<()> {
+    pub(crate) async fn start(&mut self, images: &Path, user: &Path) -> Result<()> {
         phase("container_ownership");
         let existing = self.containers().await?;
         phase("images");
@@ -231,8 +231,7 @@ impl<E: Execute> Backend<'_, E> {
         phase("environment");
         self.env
             .extend(crate::runtime_environment::profile_environment(
-                self.root,
-                Path::new("/root"),
+                self.root, user,
             )?);
         for name in ["assistant", "phone-runner", "channels"] {
             token(self.root, name)?;
@@ -459,7 +458,9 @@ async fn initialize<E: Execute>(
         "",
     )?;
     backend.start_engine(home, run).await?;
-    backend.start(&bundle.join("images.payload")).await
+    backend
+        .start(&bundle.join("images.payload"), Path::new("/root"))
+        .await
 }
 
 #[cfg(test)]

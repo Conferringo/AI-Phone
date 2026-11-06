@@ -346,7 +346,7 @@ async fn malformed_container_receipts_and_failed_listing_stop_before_import() {
         );
         assert_eq!(
             backend
-                .start(Path::new("images.payload"))
+                .start(Path::new("images.payload"), Path::new("/root"))
                 .await
                 .unwrap_err()
                 .code(),
@@ -371,7 +371,7 @@ async fn malformed_container_receipts_and_failed_listing_stop_before_import() {
     );
     assert_eq!(
         backend
-            .start(Path::new("images.payload"))
+            .start(Path::new("images.payload"), Path::new("/root"))
             .await
             .unwrap_err()
             .code(),
@@ -419,7 +419,10 @@ async fn fresh_backend_uses_native_services_and_never_creates_desktop_or_starts_
     let folder = tempfile::tempdir().unwrap();
     let root = folder.path().canonicalize().unwrap();
     let mut backend = fixture(&root, Fixture::default());
-    backend.start(Path::new("images.payload")).await.unwrap();
+    backend
+        .start(Path::new("images.payload"), Path::new("/root"))
+        .await
+        .unwrap();
     let calls = &backend.execute.calls;
     let names: Vec<_> = calls
         .iter()
@@ -480,7 +483,10 @@ async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_d
         );
         fs::create_dir_all(root.join("data/assistant")).unwrap();
         fs::write(root.join("data/assistant/token"), "keep-token").unwrap();
-        backend.start(Path::new("images.payload")).await.unwrap();
+        backend
+            .start(Path::new("images.payload"), Path::new("/root"))
+            .await
+            .unwrap();
         assert_eq!(
             fs::read(root.join("data/assistant/token")).unwrap(),
             b"keep-token"
@@ -519,7 +525,7 @@ async fn foreign_container_rejects_before_import_database_or_service_changes() {
     );
     assert_eq!(
         backend
-            .start(Path::new("images.payload"))
+            .start(Path::new("images.payload"), Path::new("/root"))
             .await
             .unwrap_err()
             .code(),
@@ -547,7 +553,7 @@ async fn unknown_image_import_does_not_run_database_or_services() {
     );
     assert_eq!(
         backend
-            .start(Path::new("images.payload"))
+            .start(Path::new("images.payload"), Path::new("/root"))
             .await
             .unwrap_err()
             .code(),

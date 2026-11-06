@@ -35,6 +35,29 @@ pub(crate) struct Request {
     desktop: Desktop,
 }
 
+pub(crate) fn phone_resources(
+    root: &Path,
+    template: &str,
+    request: &Request,
+) -> Result<crate::android::Resources> {
+    let path = root.join("data/deployment/profile.json");
+    if path.try_exists()? {
+        let value: Value =
+            serde_json::from_slice(&fs::read(path)?).map_err(|_| Error::Invalid("host_profile"))?;
+        validate(&value, template)?;
+        return Ok(crate::android::Resources {
+            cpus: value["phone"]["cpus"].as_u64().unwrap() as u32,
+            memory_mb: value["phone"]["memory_mb"].as_u64().unwrap() as u32,
+            storage_gb: value["phone"]["storage_gb"].as_u64().unwrap() as u32,
+        });
+    }
+    Ok(crate::android::Resources {
+        cpus: request.phone.cpus,
+        memory_mb: request.phone.memory_mb,
+        storage_gb: request.phone.storage_gb,
+    })
+}
+
 fn resources(phone: &Phone, desktop: &Desktop) -> bool {
     [phone.cpus, desktop.cpus]
         .iter()
@@ -281,4 +304,59 @@ pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
     )?;
     println!("{{\"prepared\":true}}");
     Ok(())
+}
+
+#[cfg(test)]
+mod resume_resources_tests {
+    use super::*;
+    fn request(cpus: u32, memory: u32) -> Request {
+        parse_request(&serde_json::to_vec(&json!({"locale":"en","phone":{"cpus":cpus,"memory_mb":memory,"storage_gb":16},"desktop":{"cpus":2,"memory_mb":2048}})).unwrap()).unwrap()
+    }
+    #[test]
+    fn first_run_defaults_cannot_resize_an_existing_phone_or_change_its_credentials() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        prepare_request(
+            root,
+            Path::new("/owned/sdk"),
+            "android35-arm64",
+            request(4, 4096),
+            "/usr/bin:/bin",
+            "",
+        )
+        .unwrap();
+        let before = fs::read(root.join("data/deployment/profile.json")).unwrap();
+        let credentials = fs::read(root.join(".env")).unwrap();
+        let selected = phone_resources(root, "android35-arm64", &request(2, 2048)).unwrap();
+        assert_eq!(
+            (selected.cpus, selected.memory_mb, selected.storage_gb),
+            (4, 4096, 16)
+        );
+        assert_eq!(
+            fs::read(root.join("data/deployment/profile.json")).unwrap(),
+            before
+        );
+        assert_eq!(fs::read(root.join(".env")).unwrap(), credentials);
+    }
+    #[test]
+    fn invalid_saved_resources_are_rejected_instead_of_being_replaced_by_defaults() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        prepare_request(
+            root,
+            Path::new("/owned/sdk"),
+            "android35-arm64",
+            request(4, 4096),
+            "/usr/bin:/bin",
+            "",
+        )
+        .unwrap();
+        let path = root.join("data/deployment/profile.json");
+        let mut value: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["phone"]["cpus"] = json!(9);
+        let body = serde_json::to_vec(&value).unwrap();
+        fs::write(&path, &body).unwrap();
+        assert!(phone_resources(root, "android35-arm64", &request(2, 2048)).is_err());
+        assert_eq!(fs::read(path).unwrap(), body);
+    }
 }

@@ -24,6 +24,8 @@ mod runtime_environment;
 mod source_cli;
 mod staging;
 pub mod supervision;
+#[cfg(unix)]
+mod unix_initializer;
 pub mod wsl;
 
 use std::{

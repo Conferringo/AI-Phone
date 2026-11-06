@@ -16,6 +16,8 @@ enum Service {
     Images,
     #[cfg(unix)]
     WslBackend,
+    #[cfg(unix)]
+    UnixHost,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -35,6 +37,8 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Images => runtime.block_on(crate::images::run(arguments)),
         #[cfg(unix)]
         Service::WslBackend => runtime.block_on(crate::wsl::backend::run(arguments)),
+        #[cfg(unix)]
+        Service::UnixHost => runtime.block_on(crate::unix_initializer::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -78,6 +82,12 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--runtime-environment-contract" => {
             Some(contract(arguments, crate::runtime_environment::CONTRACT))
         }
+        #[cfg(unix)]
+        "--unix-host-initializer-contract" => {
+            Some(contract(arguments, crate::unix_initializer::CONTRACT))
+        }
+        #[cfg(unix)]
+        "--initialize-unix-host" => Some(start(Service::UnixHost, &arguments[1..])),
         "--wsl-backend-initializer-contract" => Some(contract(
             arguments,
             crate::wsl::BACKEND_INITIALIZER_CONTRACT,

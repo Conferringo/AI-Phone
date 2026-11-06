@@ -244,7 +244,7 @@ fn selected_path<const N: usize>(configured: String, keys: [&str; N]) -> String 
 pub(crate) fn profile_environment(root: &Path, user: &Path) -> Result<Environment> {
     Profile::load(root)?.environment(root, user)
 }
-fn resolve(root: &Path, user: &Path) -> Result<Environment> {
+pub(crate) fn resolve(root: &Path, user: &Path) -> Result<Environment> {
     let profile = Profile::load(root)?;
     let base = profile.base_path(root)?;
     let host = match (std::env::consts::OS, std::env::consts::ARCH) {

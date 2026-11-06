@@ -25,6 +25,8 @@ First-run profile creation, explicit configuration edits, schema/preset validati
 
 The read-only runtime environment policy is now native, including selected tool components, saved launch PATH, SDK/Java, guest resources, proxies and installed image/app metadata. It replaces the former Python policy and WSL's duplicate profile mapping. Client tool preparation shares that native tool implementation; the existing portable-tool and installer callers have not all been retired. This source change does not qualify new complete installers.
 
+The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. A downstream desktop/network preparation call still launches legacy Python and must be retired before qualifying a Python-free cold start. Local compilation and controller tests are not a completed cold install or a newly released package. WSL qualification currently reaches running services but fails during desktop provisioning; the underlying cause remains unconfirmed.
+
 ## Capability limits
 
 The sealed WSL first-run initializer is now Rust, including its source/profile, engine, image, database and service sequence. Its former Python runtime orchestration has been removed, and the qualification driver calls the same native command. Factory verification, the qualification driver and portable Python used by other consumers remain; full first boot and newly assembled installers are not certified by the local component tests.
@@ -54,6 +56,8 @@ Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调�
 首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验。密封WSL的源码/配置、引擎、镜像、数据库和服务初始化已串联到Rust，旧Python运行编排已删除，验收驱动调用同一原生命令。本地组件检查不代表完整首启或新安装包通过；工厂/验收工具、其他运行消费者、恢复及构建/发行工具的Python退役仍未完成。
 
 只读运行环境策略也已迁Rust，包含工具组件、保存的PATH、SDK/Java、客体资源/代理及镜像/应用元数据，旧Python策略与WSL重复配置映射已替换；客户端工具准备复用同一原生实现。其余portable工具与安装调用尚未全部退役，此源码改动不等于新完整安装包验收。
+
+macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。下游桌面/网络目录准备仍有Python转发调用，必须退役后才能验证无Python冷启动。本地编译/控制器测试不等于完整冷安装或新包发布。WSL当前实际验收到服务运行，但桌面创建失败，底层原因仍未确认。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

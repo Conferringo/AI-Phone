@@ -37,11 +37,15 @@ Tools stay inside the installation, and backend/development dependencies belong 
 
 ## Evidence limits
 
+The Unix client entry now invokes the Rust initializer rather than `entry.py` or a downloaded mise/Python toolchain. It stages bundled source and Android resources, preserves the saved device profile, starts the owned offline container host and backend, boots the native phone owner, installs input/notification and guest applications, and runs native device setup before emitting ready. Missing components fail explicitly. Local controller, CLI and Tauri tests cover this source change; a complete cold installation with both devices has not yet been qualified. Legacy desktop/network runtime Python calls, source-maintenance tooling and JavaScript channel/media services remain migration work.
+
 Component execution, package inspection and complete installation are separate checks. Booting an Android image, displaying a desktop or starting an offline container host does not establish that a final installer can create both default-sized devices, configure a model and complete the whole workflow on a clean host. The [release status](release-status.md) records their verified scopes and remaining qualification. Redistribution permission and corresponding-source obligations apply even when a package builds successfully.
 
 ---
 
 # 一体化宿主运行时
+
+Unix客户端入口现调用Rust初始化器，移除原entry.py及下载mise/Python工具链路径。初始化串联包内源码/Android资源、保存的设备配置、自有离线容器宿主、数据库与服务、原生手机owner、输入/通知及客体应用安装，最后通过原生设备创建与画面检查才发出ready；缺少组件直接报错。本地控制器、CLI及Tauri测试覆盖这次源码改动，完整双设备冷安装尚未通过。桌面/网络运行Python转发、源码维护工具和渠道/媒体JavaScript服务仍须继续迁移。
 
 目标是下载安装客户端后，直接配置手机、电脑和模型，不要求用户手动部署服务。安装包供应、已有组件和各平台待验收项统一见[发行状态](release-status.md)；源码引导和连接客户端是独立的开发/远程使用路径。macOS 仅支持 M 系列芯片；Windows 目标组合原生 Android/WHPX 与 WSL2 后端；Linux 使用匹配架构的 Android/KVM 与容器宿主。
 

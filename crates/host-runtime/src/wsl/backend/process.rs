@@ -11,10 +11,10 @@ use tokio::{
     sync::watch,
 };
 
-pub(super) trait Execute {
+pub(crate) trait Execute {
     async fn run(&mut self, command: Command, input: Vec<u8>) -> Result<Output>;
 }
-pub(super) struct Process(pub watch::Receiver<bool>);
+pub(crate) struct Process(pub watch::Receiver<bool>);
 
 async fn cancelled(stop: &mut watch::Receiver<bool>) {
     while !*stop.borrow_and_update() {

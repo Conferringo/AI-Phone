@@ -60,7 +60,7 @@ fn installation_home(data: &Path) -> Result<PathBuf> {
         .to_owned())
 }
 
-fn state_directory(root: &Path, home: &Path, user: &Path) -> Result<PathBuf> {
+pub(crate) fn state_directory(root: &Path, home: &Path, user: &Path) -> Result<PathBuf> {
     let data = data_root(root)?;
     let home = home.canonicalize()?;
     if home != installation_home(&data)? {
@@ -146,7 +146,7 @@ fn publish(path: &Path, value: &impl Serialize) -> Result<()> {
     )
 }
 
-fn claim_state(data: &Path, path: &Path) -> Result<()> {
+pub(crate) fn claim_state(data: &Path, path: &Path) -> Result<()> {
     let parent = path
         .parent()
         .ok_or(Error::Invalid("managed_engine_state"))?;
@@ -239,7 +239,7 @@ pub(crate) fn environment(root: &Path, user: &Path) -> Result<BTreeMap<String, S
     }
     Ok(environment)
 }
-fn save(
+pub(crate) fn save(
     root: &Path,
     user: &Path,
     home: &Path,
