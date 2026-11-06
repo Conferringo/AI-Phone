@@ -48,6 +48,10 @@ fn native_environment_keeps_profile_path_owner_resources_and_user_files() {
     fs::write(root.join("data/user.img"), "device disk").unwrap();
     let before = fs::read(root.join("data/deployment/profile.json")).unwrap();
     let a = value(invoke(&root, "/caller/a"));
+    assert_eq!(
+        a["AI_PHONE_NATIVE_HOST_PROGRAM"],
+        env!("CARGO_BIN_EXE_host-resources")
+    );
     assert_eq!(a, value(invoke(&root, "/caller/b")));
     assert_eq!(
         a["PATH"],

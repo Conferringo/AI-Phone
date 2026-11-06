@@ -271,6 +271,10 @@ pub(crate) fn resolve(root: &Path, user: &Path) -> Result<Environment> {
     env.extend(images::environment(root)?);
     env.extend(profile.environment(root, user)?);
     env.insert("PATH".into(), path);
+    env.insert(
+        "AI_PHONE_NATIVE_HOST_PROGRAM".into(),
+        text(&std::env::current_exe()?)?,
+    );
     Ok(env)
 }
 pub(crate) fn run(arguments: &[OsString]) -> Result<()> {

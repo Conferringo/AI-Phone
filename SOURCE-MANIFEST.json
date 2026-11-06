@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 20844,
-      "sha256": "4df993c86556eb5625938c3f3a94ab1a7face904e282a62eedec19175a684e69"
+      "size": 21046,
+      "sha256": "19e2b42f4ea08f89a3dfe40a42f914ad8a836fe94b5bda7496b1e2fbb5ebd21f"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -3160,8 +3160,8 @@
     },
     {
       "path": "crates/host-runtime/src/runtime_environment.rs",
-      "size": 10612,
-      "sha256": "68e28d4dc44ab00d39cd4f2099f03edd99bf7c598019ae04d10dcf6a8742bfc8"
+      "size": 10724,
+      "sha256": "cfda5701a95c137f600721c16688d8fc7831ef3f2a567e4a862e6d90a7186d69"
     },
     {
       "path": "crates/host-runtime/src/source_cli.rs",
@@ -3340,8 +3340,8 @@
     },
     {
       "path": "crates/host-runtime/tests/runtime_environment_cli.rs",
-      "size": 11784,
-      "sha256": "f3f294484cb0760a0fb037fb8b7708dd507bfec96905692f179510045ca5afda"
+      "size": 11895,
+      "sha256": "7bf6d4ec41d9178815147080390d6a848ec5d6e1bdc939488a145c88b978afe2"
     },
     {
       "path": "crates/host-runtime/tests/service_control_cli.rs",
@@ -5680,8 +5680,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 49580,
-      "sha256": "d7adcc6fde88bb912b2b288cb23517110301d0d935616f6a630ed2380cb5fe13"
+      "size": 49843,
+      "sha256": "f4b45c98050cd43b25f6bf7f21e26a220834147c54a9d1063c2801fac78b8ce6"
     },
     {
       "path": "scripts/test_notification_probe.py",
