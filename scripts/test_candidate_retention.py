@@ -8,24 +8,16 @@ import package_delivery as delivery
 
 
 class CandidateRetentionTests(unittest.TestCase):
-    def test_linux_collection_requires_both_formats_with_independent_file_identities(self):
+    def test_linux_collection_contains_only_the_complete_deb_and_metadata(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);legacy=self.fixture(root)
-            image=root/'dist/AI-Phone-fixture.AppImage';image.write_bytes(b'complete AppImage fixture')
-            metadata={'sha256':digest(image),'complete_device_bundle':True,'source_commit':'a'*40,'local_bootstrap':{'user_state_bundled':False}}
-            image.with_suffix('.AppImage.manifest.json').write_text(json.dumps(metadata))
-            image.with_suffix('.AppImage.sha256').write_text(digest(image)+'  '+image.name+'\n')
-            appimage={'artifact':{'file':image.name,'size':image.stat().st_size,'sha256':digest(image),'delivery':{'complete_device_bundle':True}},'package_delivery':{'format':'single'}}
             deb={key:legacy[key] for key in ('artifact','package_delivery')}
             report={key:value for key,value in legacy.items() if key not in ('artifact','package_delivery')}
-            report.update({'format':2,'installers':[deb,appimage]})
+            report.update({'format':2,'installers':[deb]})
             plan=delivery.upload_plan(root,report,'a'*40)
-            self.assertEqual(len(plan['files']),6)
-            self.assertIn(image.name,{row['name'] for row in plan['files']})
-            for entries in ([deb],[appimage],[deb,deb],[appimage,appimage]):
+            self.assertEqual(len(plan['files']),3)
+            for entries in ([],[deb,deb]):
                 with self.assertRaisesRegex(ValueError,'formats'):delivery.upload_plan(root,{**report,'installers':entries},'a'*40)
-            image.write_bytes(b'changed image')
-            with self.assertRaisesRegex(ValueError,'changed'):delivery.upload_plan(root,report,'a'*40)
 
     def fixture(self,root):
         (root/'dist').mkdir();(root/'SOURCE-MANIFEST.json').write_bytes(b'reviewed source fixture')

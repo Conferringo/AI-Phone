@@ -74,13 +74,13 @@ class LinuxClientFactoryTests(unittest.TestCase):
                 factory.factory_context(root,root/'context','linux-host')
             run.assert_not_called()
 
-    def test_compiled_client_requires_both_complete_unchanged_linux_installers(self):
+    def test_compiled_client_requires_the_complete_unchanged_linux_deb(self):
         full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);(root/'config').mkdir();(root/'dist').mkdir()
             (root/'config/release-policy.json').write_text('{"version":"fixture"}')
             artifacts=[]
-            for extension in ('deb','AppImage'):
+            for extension in ('deb',):
                 artifact=root/f'dist/AI-Phone-fixture-linux-amd64.{extension}';artifact.write_bytes(extension.encode())
                 metadata={'complete_device_bundle':True,'sha256':digest(artifact),'prebuilt_components':full}
                 artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps(metadata));artifacts.append(artifact)
@@ -92,7 +92,7 @@ class LinuxClientFactoryTests(unittest.TestCase):
                     original=artifact.read_bytes();artifact.write_bytes(b'changed installer')
                     with self.assertRaisesRegex(ValueError,'changed'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
                     artifact.write_bytes(original)
-                metadata=artifacts[1].with_suffix('.AppImage.manifest.json');value=json.loads(metadata.read_text());value['complete_device_bundle']=False;metadata.write_text(json.dumps(value))
+                metadata=artifacts[0].with_suffix('.deb.manifest.json');value=json.loads(metadata.read_text());value['complete_device_bundle']=False;metadata.write_text(json.dumps(value))
                 with self.assertRaisesRegex(ValueError,'incomplete'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
 
     @unittest.skipUnless(os.name=='posix','Complete Linux factory uses its POSIX Bun entry')
@@ -195,15 +195,15 @@ class LinuxClientFactoryTests(unittest.TestCase):
 
 
 class LinuxSingleDeliveryTests(unittest.TestCase):
-    def test_either_oversized_installer_rejects_complete_delivery_before_any_volume_handoff(self):
+    def test_oversized_deb_rejects_complete_delivery_before_any_volume_handoff(self):
         from client_delivery import ASSET_LIMIT
         from contextlib import ExitStack
         full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
-        for oversized in ('deb','AppImage'):
+        for oversized in ('deb',):
             with self.subTest(oversized=oversized),tempfile.TemporaryDirectory() as folder:
                 root=Path(folder);(root/'config').mkdir();(root/'dist').mkdir()
                 (root/'config/release-policy.json').write_text('{"version":"fixture"}')
-                for extension in ('deb','AppImage'):
+                for extension in ('deb',):
                     artifact=root/'dist'/f'AI-Phone-fixture-linux-amd64.{extension}'
                     with artifact.open('wb') as output:output.truncate(ASSET_LIMIT if extension==oversized else 7)
                     artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps({'complete_device_bundle':True,'sha256':'a'*64,'prebuilt_components':full}))

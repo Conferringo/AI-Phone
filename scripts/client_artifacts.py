@@ -66,17 +66,6 @@ def inspect_linux_program(base,architecture):
         raise ValueError('Unexpected Linux executable architecture')
 
 
-def inspect_appimage(path,architecture,root=ROOT):
-    # These are locally built artifacts. Extraction executes only the image's
-    # native extraction mode, without FUSE, a display, or launching the client.
-    with tempfile.TemporaryDirectory(prefix='ai-phone-appimage-') as temporary:
-        subprocess.run([str(path.resolve()),'--appimage-extract'],cwd=temporary,check=True,stdout=subprocess.DEVNULL)
-        base=Path(temporary)/'squashfs-root'
-        files=unpacked_files(base)
-        inspect_linux_program(base,architecture)
-        return {'architecture':architecture,'files':inspect_payload(files,root)}
-
-
 def inspect_deb(path, root=ROOT):
     with tempfile.TemporaryDirectory(prefix='ai-phone-deb-') as temp:
         subprocess.run(['dpkg-deb', '-x', str(path), temp], check=True)

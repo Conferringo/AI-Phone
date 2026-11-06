@@ -16,7 +16,7 @@ Installation flow: **device resources → model → workbench**. A complete pack
 |---|---|---|
 | macOS Apple Silicon | Desktop application with local device runtime | Full package compiled; release qualification |
 | Windows x64 | Desktop application with local device runtime | Host integration in progress |
-| Linux x64 | Desktop application with local device runtime | Full package compiled; release qualification |
+| Linux x64 | DEB and signed APT repository | DEB compiled; APT channel unpublished |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 

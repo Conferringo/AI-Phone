@@ -183,7 +183,7 @@ def compile_client(root,android,images,tools,ocr):
     from prepare_client_host import payload_components
     checked_delivery(payload_components(root))
     version=json.loads((root/'config/release-policy.json').read_text())['version'];artifacts=[]
-    for extension in ('deb','AppImage'):
+    for extension in ('deb',):
         artifact=root/'dist'/f'AI-Phone-{version}-linux-amd64.{extension}'
         receipt=json.loads(artifact.with_suffix(artifact.suffix+'.manifest.json').read_text())
         if not receipt['complete_device_bundle'] or receipt['sha256']!=digest(artifact):raise ValueError('Compiled Linux client is incomplete or changed')
