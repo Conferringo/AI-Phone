@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 9420,
-      "sha256": "ebac88fc281387e8b536b33b59f6ed138aa6d80e147946893189192f3dd9f141"
+      "size": 9356,
+      "sha256": "d6df229d9b94de473fb40ffb89eec17f5c90f921728564b062224fd0adfd3e80"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -125,13 +125,13 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 91284,
-      "sha256": "bdff7e04a8a97103aad08340f424d9a648ab6c847a4aed122333f5494a79f55c"
+      "size": 91414,
+      "sha256": "8b038b40a859574467cfe0ee810b3a9858d3f70e286d81a479bed3e5042729d0"
     },
     {
       "path": "Cargo.toml",
-      "size": 352,
-      "sha256": "0ced656a48a057e57f7573d861665757ae570927e6464f29d2130c58fee56c4e"
+      "size": 376,
+      "sha256": "7f20e84c4229f53592515089227bc14db465c23d50fb250cb117a23a30ec1f7c"
     },
     {
       "path": "DISCLAIMER.md",
@@ -3249,6 +3249,26 @@
       "sha256": "5e04321e213db8643fe8cce69a0733e759e61174043ce6774644e95b7ff0893d"
     },
     {
+      "path": "crates/release-tools/Cargo.toml",
+      "size": 325,
+      "sha256": "5a622d4ad669372304ee27666234773e0f2ca04eb7aa9b8690c8fd3d6455a1fe"
+    },
+    {
+      "path": "crates/release-tools/src/apt.rs",
+      "size": 7615,
+      "sha256": "60487209fdf8eca686425c322cd7bdd8c8f15325c79fbbf76ee29600b21780f4"
+    },
+    {
+      "path": "crates/release-tools/src/main.rs",
+      "size": 514,
+      "sha256": "ca1af14ffef14621f56edd6d0be9cb78bb97c735b603df6f33b7fe98f55b6b53"
+    },
+    {
+      "path": "crates/release-tools/tests/apt_repository.rs",
+      "size": 11771,
+      "sha256": "377413e69a88de970a4e8b2a535070810241f682333095fd5c23d1debc21013d"
+    },
+    {
       "path": "crates/vision/Cargo.toml",
       "size": 568,
       "sha256": "e186f6cfdd7ed53297ebde4b5abbbc79022811e0aebed55bdd1f815168609a94"
@@ -3280,8 +3300,8 @@
     },
     {
       "path": "docs/public/apt-repository.md",
-      "size": 4465,
-      "sha256": "bbcff539c07ff76d952dd2b3d60c790d75867c74c9b59ddecb83261694a419d7"
+      "size": 5091,
+      "sha256": "51dbecd8f530b7adcb11c9ba1711702ad4bb573724838d5a7295503cfae926c2"
     },
     {
       "path": "docs/public/architecture.en.md",
@@ -3880,8 +3900,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6227,
-      "sha256": "ee3079f16275a3f9a1e6c14901ceaf2c06f4b8bae0ab927480696e8138961f36"
+      "size": 6970,
+      "sha256": "7c62b4e3966c9be48656cbb58fb5dac591854e709767aa20e58fbf6c05ed25f4"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4362,11 +4382,6 @@
       "path": "scripts/app-assets.test.ts",
       "size": 3176,
       "sha256": "aa71857c427f628b53224abc16cd91d9cb491f53477f8f1f224b2cf77621569a"
-    },
-    {
-      "path": "scripts/apt_repository.py",
-      "size": 3590,
-      "sha256": "3ec56771b174f25b9ceb941c457b70426d959c2cc7072d16aebca07ea0b09b39"
     },
     {
       "path": "scripts/artifact_io.py",
@@ -4880,8 +4895,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11855,
-      "sha256": "edc8a28816c2413d351ac4603ab940c8e6fb36b0119d0ab2f04732f2958dba3f"
+      "size": 11965,
+      "sha256": "b592905c5e605b15092bf1eebcdd0fc23068987fbadc82c3cf021a0aa1dda39d"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5219,11 +5234,6 @@
       "sha256": "c0a16a677a5f1566bcc4e101a7399aba3abfd894b24136215b4f5b29661bea98"
     },
     {
-      "path": "scripts/test_apt_repository.py",
-      "size": 5364,
-      "sha256": "56cd142ba0a0e5284c30017660d24edf6adc502bcb8c3cfeeb9b9eeaf169a78a"
-    },
-    {
       "path": "scripts/test_bootstrap_bun.py",
       "size": 3226,
       "sha256": "6ebcaf6f3f027e5f6b704dbf088d147a1e19c6788864fb2b8002f95939c0d1a5"
@@ -5410,8 +5420,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 16129,
-      "sha256": "41502bf2449e3866cddefac18f04c2c383a44e49a9532747936e123af9f9ac7f"
+      "size": 16263,
+      "sha256": "af5dd326744a7acaae9addeff70571ab270024d17e4ab9b4ff6ff3bcd3d27b9d"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
