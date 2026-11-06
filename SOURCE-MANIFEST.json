@@ -70,8 +70,8 @@
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
-      "size": 3745,
-      "sha256": "f655f0b571bf96251f97c376d931408d8764f1b459ba1962f0fea533e26adf66"
+      "size": 3759,
+      "sha256": "7209884ca2dad05fc8c01fb8dd5521c315ae202150d429ce2d2d87f20b085bbd"
     },
     {
       "path": ".github/workflows/managed-host.yml",
@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 9263,
-      "sha256": "1b91bfc476f5006644ee4a86cabc5a948a14083c21e5741db7985ea66f59ac73"
+      "size": 9420,
+      "sha256": "ebac88fc281387e8b536b33b59f6ed138aa6d80e147946893189192f3dd9f141"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -155,13 +155,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7223,
-      "sha256": "41175801932cf892fab195ddfad7d8ee2f19553467f907c0a57b063979da7218"
+      "size": 7200,
+      "sha256": "b488dddfa2e78f0902943c1c9799a4213140febf6f13d7175d548f8725a808f7"
     },
     {
       "path": "README.md",
-      "size": 12471,
-      "sha256": "08584324ca845fa56ff6cade328848fc38867a03de2cd419c73ef5cbb3e87420"
+      "size": 12448,
+      "sha256": "3b974d1df1edb119fd446be5e4c21a713f06b58dc382c2f7ad0d6facf3713b4b"
     },
     {
       "path": "SECURITY.md",
@@ -560,8 +560,8 @@
     },
     {
       "path": "apps/client/src-tauri/tauri.linux.conf.json",
-      "size": 322,
-      "sha256": "af6e45fbf091caf0f9b584a577c3233392cf873e1fdcf8c4463172a8850d898b"
+      "size": 238,
+      "sha256": "d4a0a6787371561fad0013dda7ad60be1c18dfabcea5f713dd107a14d3ea4e41"
     },
     {
       "path": "apps/client/src-tauri/tauri.windows.conf.json",
@@ -3239,6 +3239,11 @@
       "sha256": "4e2c68fdc9111ca913c32ac1655ff34e54e4b54bbac44c29754f69827ce2066e"
     },
     {
+      "path": "docs/public/apt-repository.md",
+      "size": 4797,
+      "sha256": "201fabe392201e604b8958351e5b657c1d7ec4a7046b39162fa957c2603cbc76"
+    },
+    {
       "path": "docs/public/architecture.en.md",
       "size": 8776,
       "sha256": "0cc5c34b519d03084a501abb36a31654a9e2dbfcda6606f2c949dc67e6df04b2"
@@ -3290,8 +3295,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 12875,
-      "sha256": "71ea6866a700858b3da4973981a9ad4c2a0fa3ef77d0622435be2e35c11af292"
+      "size": 12862,
+      "sha256": "e7ff984aed23a51c79b8b2a292c9a688baff01fdee02d5bdb2c3ab7ea32f42a0"
     },
     {
       "path": "docs/public/database-roles.md",
@@ -3720,8 +3725,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 7882,
-      "sha256": "e8de82d044bd39a4d4266c80a545a10844d5812f0f2536dd2ce135abcb4c1763"
+      "size": 6465,
+      "sha256": "4b3c53bf39372807349126a61419f83d6dbaac03be8f509a88cfc129a3b57314"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -3775,8 +3780,8 @@
     },
     {
       "path": "docs/public/preview-release.md",
-      "size": 3438,
-      "sha256": "5c60e3dfa7cfc288b20f361d4e72ba5b02e19d4e23df179e54c8ab9fb9a1aeb9"
+      "size": 3459,
+      "sha256": "d2827310fe75dd295ad528d98eaeb67002f9541904f212fcbef09d3583f99fd3"
     },
     {
       "path": "docs/public/protocol-boundaries.md",
@@ -3835,8 +3840,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6523,
-      "sha256": "a6e3dd76a635bc211fdb3922c991c57a08a38173801ac8ee36d3c18aba9d2c34"
+      "size": 6454,
+      "sha256": "6e4a7275ca55a03a96e15d4f4a49f6d6192266686eb642343f1997c29bbd8f8a"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4319,6 +4324,11 @@
       "sha256": "aa71857c427f628b53224abc16cd91d9cb491f53477f8f1f224b2cf77621569a"
     },
     {
+      "path": "scripts/apt_repository.py",
+      "size": 3779,
+      "sha256": "7812f7500c2201d50c4c6964db7426fc6a4bd323ef508c9223cde670a8c471be"
+    },
+    {
       "path": "scripts/artifact_io.py",
       "size": 245,
       "sha256": "14ce1baae364fc42a967e5487d35ca2f0d9842816eb60786f3a87d2a157d9d33"
@@ -4385,8 +4395,8 @@
     },
     {
       "path": "scripts/build_client.py",
-      "size": 14304,
-      "sha256": "21abe2296eaee2b4514c2c6cb5d580f1cb0b0cf693332692290303229e36d5d7"
+      "size": 12114,
+      "sha256": "fe131ada8e627c9774f6b8ede320516a4773fd9c36177f479eed9041c97344b6"
     },
     {
       "path": "scripts/build_container_images.py",
@@ -4480,13 +4490,13 @@
     },
     {
       "path": "scripts/client_artifacts.py",
-      "size": 6788,
-      "sha256": "5b5eb3de7d66aaacf175e8f27c921110ac0ea4caa24d371d9858f721e961ddc1"
+      "size": 6169,
+      "sha256": "c4e9f424e8bcf82988ca427ce15391f060cc024062de057a146b8328d012f160"
     },
     {
       "path": "scripts/client_delivery.py",
-      "size": 2567,
-      "sha256": "2ca0500056fa34782d45f8b195042d5f72d21a7533b9162a5b5ac8f326cb49ea"
+      "size": 2534,
+      "sha256": "7d0a98f64795d2a89ad3c496e1a4c3c16328b2e35f7d9778fc02794a666e075a"
     },
     {
       "path": "scripts/client_host.py",
@@ -4799,11 +4809,6 @@
       "sha256": "58ce566d3d3df32599d6f610f29156f695bc63be0f9bedf107e9f0856f674e8a"
     },
     {
-      "path": "scripts/linux-appimage-patchelf.sh",
-      "size": 329,
-      "sha256": "72cf2a635a4fbdb94b6631baa7dc55f672b3b782f1997fd5fd202907efc28d59"
-    },
-    {
       "path": "scripts/linux-host/Dockerfile",
       "size": 798,
       "sha256": "bd6f6af96dc170ceffc2bb997166a1b4e2f91c0eb79b1fc5c87e560f0c03cf2d"
@@ -4835,8 +4840,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11780,
-      "sha256": "1d00756428c4ab5344a98527c536eeb35e78c35da87007b90979deb76e659413"
+      "size": 11855,
+      "sha256": "edc8a28816c2413d351ac4603ab940c8e6fb36b0119d0ab2f04732f2958dba3f"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4960,8 +4965,8 @@
     },
     {
       "path": "scripts/package_delivery.py",
-      "size": 7604,
-      "sha256": "34915ef8e22f703192577a5fdf764aaad98f745d8049f92d94dcde0e685e95f4"
+      "size": 7971,
+      "sha256": "843aa2738a9e06fac32f14a22d31fcc51ee931f464d519702aef470380ece16f"
     },
     {
       "path": "scripts/phone-lab-start.sh",
@@ -5174,14 +5179,9 @@
       "sha256": "c0a16a677a5f1566bcc4e101a7399aba3abfd894b24136215b4f5b29661bea98"
     },
     {
-      "path": "scripts/test_appimage_artifacts.py",
-      "size": 4763,
-      "sha256": "e09cf1954deaf7ed3d0bbe8bd145d188f117fd9a60d003c32085c5d04142aba5"
-    },
-    {
-      "path": "scripts/test_appimage_runtime_integrity.py",
-      "size": 1771,
-      "sha256": "7a4499d1fb80421059a0abdabdc4dc3a82c8a0d03d624565f1d458c60be4969b"
+      "path": "scripts/test_apt_repository.py",
+      "size": 5806,
+      "sha256": "072f6b5473cc339249eabcf71239c53728adfbf9cb945a27ba2a0b26ca678e57"
     },
     {
       "path": "scripts/test_bootstrap_bun.py",
@@ -5210,8 +5210,8 @@
     },
     {
       "path": "scripts/test_candidate_retention.py",
-      "size": 7591,
-      "sha256": "8febe941da5829d5ae090e101242d530cb773bac55727a88ab47d387559f4efc"
+      "size": 7339,
+      "sha256": "43fbb916ebc999f9f9ccd8f27693859238900f8374ee00f76ac6aeecd72ca066"
     },
     {
       "path": "scripts/test_channel_browser.py",
@@ -5230,8 +5230,8 @@
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 5486,
-      "sha256": "19a46458bddd4adecfd9626c5f335753eb0623267fa95f1154ea41fafc5f86d6"
+      "size": 5439,
+      "sha256": "9f255685394a69b3d28a5bf8e01bd3aa02292110767666eb701f6c9bd0c53e91"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -5370,13 +5370,13 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 16031,
-      "sha256": "2561318d84358da12e69542a216e02c0b65d3bd1fb732c50aa85b85c7c3b0c15"
+      "size": 16129,
+      "sha256": "41502bf2449e3866cddefac18f04c2c383a44e49a9532747936e123af9f9ac7f"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
-      "size": 4759,
-      "sha256": "586f5bf893976017e745b8609a244b35c9b6a34092b25813b8e3640f86d48923"
+      "size": 2367,
+      "sha256": "abb8db5611ba3f5f1ce12444148c7c52551bdb41f9b5d8c7e561310fd77c5c09"
     },
     {
       "path": "scripts/test_linux_host_acceptance_cleanup.py",

@@ -45,7 +45,7 @@ HTTP clients reuse the existing bounded routing pools. REST configuration and de
 
 ## Microphone access
 
-Access is requested only when Copilot is enabled. The macOS bundle supplies a microphone purpose string; Android declares recording permission and uses the existing WebView permission flow. AI Phone requests audio, not camera or location. A browser needs a secure context: use localhost or a trusted HTTPS origin. A raw HTTP LAN address must not be assumed to support microphone capture. The application reports an unavailable microphone rather than silently switching to text.
+Access is requested only when Copilot is enabled. The macOS bundle supplies a microphone purpose string. Desktop microphone access follows the platform WebView permission flow. AI Phone requests audio, not camera or location. A browser needs a secure context: use localhost or a trusted HTTPS origin. A raw HTTP LAN address must not be assumed to support microphone capture. The application reports an unavailable microphone rather than silently switching to text.
 
 The native workbench has no additional arbitrary host-command capability for voice. Microphone input is not implicitly broadcast into either guest device. Sending voice messages, injecting audio into a guest microphone and placing calls are separate future device capabilities.
 

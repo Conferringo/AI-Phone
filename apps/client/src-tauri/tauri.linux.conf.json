@@ -1,13 +1,9 @@
 {
   "bundle": {
     "targets": [
-      "deb",
-      "appimage"
+      "deb"
     ],
     "linux": {
-      "appimage": {
-        "bundleMediaFramework": true
-      },
       "deb": {
         "depends": [
           "libc6 (>= 2.39)",

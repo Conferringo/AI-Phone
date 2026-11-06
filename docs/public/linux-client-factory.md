@@ -2,7 +2,7 @@
 
 The maintainer factory assembles the Linux x64 client from clean, pinned inputs. Users configure their devices and model in the installed client; they do not build containers or obtain Android SDK archives themselves.
 
-The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disposable Ubuntu 24.04 runner. It produces these resources before one native compilation generates Debian and AppImage packages:
+The [manual workflow](../../.github/workflows/linux-full-client.yml) uses a disposable Ubuntu 24.04 runner. It produces these resources before one native compilation generates a Debian package:
 
 - Standalone web, Rust services, channel/media services and their production dependencies.
 - Phone control applications and architecture-matched Clash applications.
@@ -21,13 +21,12 @@ Maintainers may reuse these exact native archives instead of rebuilding unchange
 
 Maintainers can enable `AI_PHONE_USE_FACTORY_ASSETS=1` as a repository variable for the hosted Linux/WSL/Windows factories. Each source revision owns its host/OCR asset IDs alongside the archive names, sizes and hashes in the dependency manifests; changing a package does not change another revision's inputs. The [input helper](../../scripts/native_factory_inputs.py) checks remote metadata and downloaded bytes before exporting the directory to later steps. Without this explicit cache selection, factories build the dependencies from source. The read-only integration token was rejected for this repository's unpublished cache; these archive-reading jobs request job-scoped `contents: write`, as the existing complete Linux factory already does. Other jobs retain their permissions. Checkout does not persist credentials, fork pull requests retain source builds, and no personal token or private user state is added to the repository. The cache stays unpublished; the existing redistribution-review flags and public-binary gates remain unchanged. [GitHub's asset API](https://docs.github.com/en/rest/releases/assets#get-a-release-asset) documents authenticated binary downloads and the [release API](https://docs.github.com/en/rest/releases/releases#list-releases) describes draft visibility.
 
-Each compiled package is unpacked and inspected against all nine required runtime components, source and licence files, and the native ELF architecture. AppImage inspection uses extraction mode without FUSE or starting the client. Its bundled graphics and media libraries have their own redistribution requirements. Each package has an independent source identity, artifact hash and component inventory in the factory receipt. `complete_device_bundle` describes inspected contents; it does not mean that installation, graphics, audio or virtualization has been accepted on every Linux host. Linux graphics/audio libraries and KVM access remain host prerequisites covered by the installer preflight.
+Each compiled package is unpacked and inspected against all nine required runtime components, source and licence files, and the native ELF architecture. Each package carries a source identity, component inventory and qualification receipt. Physical installation remains untested.
 
-The Android and container-image capsules use XZ preset9, with the existing128MiB decoder budget retained. This changes the build-time compression effort, not their system, image or file contents. AppImage's outer filesystem uses Zstandard level 19 with 1 MiB blocks. The build reuses Tauri's project-local AppImage tool and the original runtime prefix to repack the completed AppDir before inspection; no device/runtime files are removed. This adds maintainer packing work and does not add an initialization download. Its GUI libraries receive the normal AppImage relocation; the embedded host runtimes retain their verified bytes and original RPATHs through the [packaging adapter](../../scripts/linux-appimage-patchelf.sh). Post-packaging inspection requires those runtime bytes to match the sealed inputs.
+The Android and container-image capsules use XZ preset9, with the existing128MiB decoder budget retained. This changes the build-time compression effort, not their system, image or file contents.
 
-The [160f full build](https://github.com/Conferringo/AI-Phone/actions/runs/42078930074) assembled and inspected both formats, but its AppImage still exceeded 2 GiB with the previous 128 KiB packing blocks. That run failed and retained no installer. An offline ARM64 probe of the denser packing preserved all 260 fixture entries and launched the resulting runtime; it does not prove the size or installation of a complete x64 product. The next complete build must satisfy the unchanged single-file limit.
 
-The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, both inspected packages and their checksums are retained in an unpublished maintainer draft. Both must be below the single-file delivery limit; an oversized DEB or AppImage fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Physical installation is waived for previews on all desktop platforms and must be disclosed as untested; compilation and payload inspection are still required.
+The workflow retains a text qualification receipt. With `retain_complete_candidate` selected, the inspected DEB, its checksums and unsigned APT indexes are retained in an unpublished maintainer draft. It must be below the single-file delivery limit; an oversized DEB fails the complete factory instead of being qualified through an internal volume handoff. Actual complete-package size still needs a successful factory result. Installer publication remains subject to the [release policy](../../config/release-policy.json), redistribution review and corresponding-source requirements. Physical installation is waived for previews on all desktop platforms and must be disclosed as untested; compilation and payload inspection are still required.
 
 ## Local maintainer build
 
@@ -38,8 +37,10 @@ Use a fresh Linux x64 checkout with Docker Buildx with client/engine API 1.49 or
 python3 scripts/linux_client_factory.py
 ```
 
-The factory writes the inspected `.deb`, executable `.AppImage`, individual manifests and a combined JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
+The factory writes the inspected `.deb`, its manifest, unsigned APT indexes, and a combined JSON qualification receipt to `dist/`. These are build outputs, never an export of a user's installation.
 
 ## Availability
 
 The package factory and installed-device lifecycle have separate qualification. Download availability, supported hosts and signing status are maintained in [release status](release-status.md). Build receipts and temporary diagnostic artifacts are not distributed as product packages.
+
+The same DEB is indexed for signed APT installation and updates; see [APT repository](apt-repository.md). No second Linux binary is built.

@@ -182,15 +182,16 @@ def compile_client(root,android,images,tools,ocr):
          '--with-container-host','--with-js-services','--with-guest-apps','--android-runtime',android,'--images-runtime',images,'--installer-tools',tools,'--linux-ocr',ocr],root)
     from prepare_client_host import payload_components
     checked_delivery(payload_components(root))
-    version=json.loads((root/'config/release-policy.json').read_text())['version'];artifacts=[]
-    for extension in ('deb','AppImage'):
-        artifact=root/'dist'/f'AI-Phone-{version}-linux-amd64.{extension}'
-        receipt=json.loads(artifact.with_suffix(artifact.suffix+'.manifest.json').read_text())
-        if not receipt['complete_device_bundle'] or receipt['sha256']!=digest(artifact):raise ValueError('Compiled Linux client is incomplete or changed')
-        if not installer_metadata(artifact,'linux-amd64')['github_asset_eligible']:
-            raise ValueError('Complete Linux '+extension+' exceeds the single-file release limit')
-        artifacts.append({'file':artifact.name,'size':artifact.stat().st_size,'sha256':receipt['sha256'],'delivery':checked_delivery(receipt['prebuilt_components'])})
-    return artifacts
+    version=json.loads((root/'config/release-policy.json').read_text())['version']
+    artifact=root/'dist'/f'AI-Phone-{version}-linux-amd64.deb'
+    receipt=json.loads(artifact.with_suffix('.deb.manifest.json').read_text())
+    if not receipt['complete_device_bundle'] or receipt['sha256']!=digest(artifact):raise ValueError('Compiled Linux client is incomplete or changed')
+    if not installer_metadata(artifact,'linux-amd64')['github_asset_eligible']:
+        raise ValueError('Complete Linux DEB exceeds the single-file release limit')
+    inspected={'file':artifact.name,'size':artifact.stat().st_size,'sha256':receipt['sha256'],'delivery':checked_delivery(receipt['prebuilt_components'])}
+    from apt_repository import index
+    apt=index([artifact],root/'dist/apt')
+    return [inspected],[{**entry,'file':'apt/'+entry['file']} for entry in apt['metadata']]
 
 
 def build(root):
@@ -207,11 +208,11 @@ def build(root):
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,dict(os.environ))
     images,image_result=prepare_images(root,cache,source)
-    artifacts=compile_client(root,android,images,tools,ocr)
+    artifacts,apt_metadata=compile_client(root,android,images,tools,ocr)
     from package_delivery import prepare as prepare_delivery
     installers=[{'artifact':artifact,'package_delivery':prepare_delivery(root,artifact)} for artifact in artifacts]
     result={'format':2,'host':'linux-x64','source_commit':os.environ.get('GITHUB_SHA',''),'source_manifest_sha256':source,
-            'installers':installers,'tools':tool_result,'container_host':host,'android':phone_runtime,
+            'installers':installers,'apt_metadata':apt_metadata,'tools':tool_result,'container_host':host,'android':phone_runtime,
             'image_capsule_bytes':image_result['bytes'],'phone_apps_source_sha256':apps['phone']['source_sha256'],
             'physical_installation':'not-tested-maintainer-waiver','binary_publication':False}
     output=root/'dist/linux-full-factory-report.json';output.write_text(json.dumps(result,indent=2)+'\n');return result

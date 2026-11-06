@@ -4,8 +4,8 @@ from client_host_entry import COMPONENT_MANIFESTS
 
 ASSET_LIMIT=2*1024**3
 INSTALLER_FORMATS={'macos-arm64':{'dmg'},'windows-x64':{'exe'},
-                   'linux-x64':{'deb','appimage'},'linux-amd64':{'deb','appimage'},
-                   'linux-arm64':{'deb','appimage'}}
+                   'linux-x64':{'deb'},'linux-amd64':{'deb'},
+                   'linux-arm64':{'deb'}}
 
 
 def installer_metadata(path,host):

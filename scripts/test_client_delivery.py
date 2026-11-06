@@ -11,7 +11,7 @@ class ClientDeliveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
             for host,name,kind in [('macos-arm64','AI-Phone.dmg','dmg'),('windows-x64','AI-Phone.exe','exe'),
-                                   ('linux-amd64','AI-Phone.deb','deb'),('linux-amd64','AI-Phone.AppImage','appimage')]:
+                                   ('linux-amd64','AI-Phone.deb','deb')]:
                 with self.subTest(host=host,name=name):
                     path=root/name;path.write_bytes(b'inspected full runtime fixture')
                     value=installer_metadata(path,host)
