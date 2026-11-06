@@ -25,7 +25,7 @@ All input modes use `/audio/speech` with WAV output for replies. These are compa
 - A live connection failure pauses capture. Explicit retry retains the capture session and accepted chat receipts; unfinished transcript text returns to the editable composer. Unconfirmed audio is not replayed or represented as recognized speech.
 - The literal transcript and interpreted instruction remain separate. An explicit correction can link to the latest accepted instruction in the same capture session and conversation. Original messages and executed actions remain in history. Correction branches and foreign-session references are rejected in PostgreSQL.
 - The existing durable Outbox and protobuf chat API accept the instruction. Voice bypasses the additional typed-input quiet window; it does not create a second Agent loop or conversation store.
-- New speech stops obsolete playback, closes the synthesis socket and cancels its upstream response. Reply text is synthesized in sentence-sized pieces, with one playback owner. A speech-output failure leaves input available; provider failures are not automatically retried.
+- New speech stops obsolete playback, closes the synthesis socket and cancels its upstream response. Later text from that interrupted reply remains silent; a new reply can speak. Reply text is synthesized in sentence-sized pieces, with one playback owner. A speech-output failure leaves input available and preserves the sentence for explicit retry; provider failures are not automatically retried.
 - Turning Copilot off stops microphone tracks, audio processing, pending recognition and playback. Unsent recognized text is restored to the text composer. Unrecognized buffered audio is discarded; already accepted Agent work continues.
 
 ## Ownership and persistence
@@ -73,4 +73,4 @@ Automatic audio-session replay/resume, native speech-to-speech, guest voice mess
 
 实时转写协议只提供原话增量，不承诺语义改写旧指令；新说的纠正进入原连续会话。连接按设备、Agent、配置版本复用，入口校验一次，不逐音频帧查询数据库或新增模型反思。断线后显式重试保持采集session及已接受回执，未确认的文字回到可编辑草稿，不重放未知音频。当前本机/客户端入口有转发资格化，旧明文HTTP局域网脚本不支持WebSocket升级，不能当作已验收语音入口。
 
-切换设备不会把说到一半的内容发给另一设备，下一句跟随当前设备。新语音立即停止旧播放并关闭合成连接、取消上游响应；合成失败不会堵塞输入。服务和密钥由用户配置，不自带或自动购买。宿主麦克风不会自动传给手机或电脑客体；语音消息、设备内音频注入及电话能力仍是后续扩展。浏览器需本机地址或可信 HTTPS；普通局域网 HTTP 不保证麦克风可用。
+切换设备不会把说到一半的内容发给另一设备，下一句跟随当前设备。新语音立即停止旧播放并关闭合成连接、取消上游响应；同一旧回复的迟到文字保持静音，新回复可以朗读。合成失败不会堵塞输入，保留原句供显式重试。服务和密钥由用户配置，不自带或自动购买。宿主麦克风不会自动传给手机或电脑客体；语音消息、设备内音频注入及电话能力仍是后续扩展。浏览器需本机地址或可信 HTTPS；普通局域网 HTTP 不保证麦克风可用。

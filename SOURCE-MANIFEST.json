@@ -2005,8 +2005,8 @@
     },
     {
       "path": "apps/web/src/lib/copilot-output.ts",
-      "size": 3411,
-      "sha256": "ad83dd3ceffd286718a3dfbe462579de8e97d7272cdb940cf6d3349c289b778f"
+      "size": 3524,
+      "sha256": "86c2b0f0b215924015248ac6bc0a2d6032c65ded5f488c98a7a9203abba161f5"
     },
     {
       "path": "apps/web/src/lib/copilot-playback.ts",
@@ -3510,8 +3510,8 @@
     },
     {
       "path": "docs/public/copilot-voice.md",
-      "size": 12652,
-      "sha256": "1751bc4f1e97b9a0b0e2193f065bbaa17fd98f240f510e0cc23ac634105ac5ef"
+      "size": 12875,
+      "sha256": "71ea6866a700858b3da4973981a9ad4c2a0fa3ef77d0622435be2e35c11af292"
     },
     {
       "path": "docs/public/database-roles.md",
@@ -5290,8 +5290,8 @@
     },
     {
       "path": "scripts/copilot-output.test.ts",
-      "size": 2603,
-      "sha256": "8370971133d4f4bcaa8f5b4db6b1892ffca0a3228d056f2b20127305271d32b5"
+      "size": 3881,
+      "sha256": "0395563439e2d7cc02efbb2c298a624421ed1e3b788a19f2cbd8a4e82a48ac20"
     },
     {
       "path": "scripts/copilot-playback.test.ts",
@@ -5460,8 +5460,8 @@
     },
     {
       "path": "scripts/fixtures/copilot-session.ts",
-      "size": 9301,
-      "sha256": "bbdead897946a32b7cb7a85c3b45a57114a1f1c0fc2e80213c4622e96f136643"
+      "size": 10067,
+      "sha256": "a370574b43416e1a927c124c381d315022a51cf3f781b89112137526126b6f76"
     },
     {
       "path": "scripts/fixtures/copilot-speech.ts",
