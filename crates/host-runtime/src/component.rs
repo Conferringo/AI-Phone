@@ -72,6 +72,12 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
         "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
+        #[cfg(unix)]
+        "--runtime-environment" => Some(crate::runtime_environment::run(&arguments[1..])),
+        #[cfg(unix)]
+        "--runtime-environment-contract" => {
+            Some(contract(arguments, crate::runtime_environment::CONTRACT))
+        }
         "--wsl-backend-initializer-contract" => Some(contract(
             arguments,
             crate::wsl::BACKEND_INITIALIZER_CONTRACT,

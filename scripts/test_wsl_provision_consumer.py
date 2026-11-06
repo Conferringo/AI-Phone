@@ -26,6 +26,18 @@ def digest(path):
 class SealedControlConsumerTests(unittest.TestCase):
     def fixture(self, root):
         value=runtime_fixture.JavaScriptRuntimeTests().fixture(root)
+        from test_native_services import NativeServiceTests
+        from test_release import native_profile_program
+        from prebuilt_services import binary_path, RUNTIME_ENVIRONMENT_CONTRACT
+        services=NativeServiceTests().component()
+        services[binary_path('assistant')]=Path(native_profile_program()).read_bytes()
+        manifest=json.loads(services['runtime/services/manifest.json'])
+        manifest['runtime_environment']=RUNTIME_ENVIRONMENT_CONTRACT
+        for row in manifest['files']:
+            row.update(size=len(services[row['path']]),sha256=hashlib.sha256(services[row['path']]).hexdigest())
+        services['runtime/services/manifest.json']=json.dumps(manifest).encode()
+        for name,data in services.items():
+            path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data);path.chmod(0o755 if '/bin/' in name else 0o644)
         for name in ('control.ts','config.ts','native-apps.ts','app-assets.ts'):
             path=root/'apps/device-network'/name;path.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(SOURCE/'apps/device-network'/name,path)

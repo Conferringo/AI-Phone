@@ -229,7 +229,11 @@ impl<E: Execute> Backend<'_, E> {
             serde_json::from_slice(&bytes).map_err(|_| Error::Invalid("image_manifest"))?;
         self.env.extend(selected);
         phase("environment");
-        self.env.extend(profile_environment(self.root)?);
+        self.env
+            .extend(crate::runtime_environment::profile_environment(
+                self.root,
+                Path::new("/root"),
+            )?);
         for name in ["assistant", "phone-runner", "channels"] {
             token(self.root, name)?;
         }
@@ -356,80 +360,6 @@ fn token(root: &Path, section: &str) -> Result<()> {
         .collect::<String>();
     filesystem::publish_private(&folder, "token", value.as_bytes(), true)
 }
-fn profile_environment(root: &Path) -> Result<BTreeMap<String, String>> {
-    let value: Value =
-        serde_json::from_slice(&fs::read(root.join("data/deployment/profile.json"))?)
-            .map_err(|_| Error::Invalid("host_profile"))?;
-    let mut env = BTreeMap::from([
-        ("AI_PHONE_PROJECT_ROOT".into(), text(root)?),
-        (
-            "AI_PHONE_DATA_ROOT".into(),
-            text(&root.join("data").canonicalize()?)?,
-        ),
-        ("AI_PHONE_ANDROID_ABI".into(), "x86_64".into()),
-        ("AI_PHONE_CLASH_DESKTOP_DIR".into(), "linux-amd64".into()),
-        ("AI_PHONE_LOCAL_ENTRY".into(), "1".into()),
-    ]);
-    for (field, key) in [
-        ("sdk_root", "AI_PHONE_SDK_ROOT"),
-        ("locale", "AI_PHONE_DEFAULT_LOCALE"),
-        ("java_home", "JAVA_HOME"),
-        ("java_home", "AI_PHONE_JAVA_HOME"),
-        ("host_proxy", "AI_PHONE_HOST_PROXY"),
-        ("container_proxy", "AI_PHONE_CONTAINER_PROXY"),
-    ] {
-        env.insert(
-            key.into(),
-            value[field]
-                .as_str()
-                .ok_or(Error::Invalid("host_profile"))?
-                .into(),
-        );
-    }
-    env.insert(
-        "AI_PHONE_EMULATOR_PROXY".into(),
-        value
-            .get("emulator_proxy")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .into(),
-    );
-    for (key, folder) in [
-        ("ANDROID_USER_HOME", "user"),
-        ("ANDROID_EMULATOR_HOME", "user"),
-        ("ANDROID_AVD_HOME", "avd"),
-    ] {
-        env.insert(key.into(), text(&root.join("data/android").join(folder))?);
-    }
-    for (section, field, key) in [
-        ("phone", "cpus", "AI_PHONE_PHONE_CPUS"),
-        ("phone", "memory_mb", "AI_PHONE_PHONE_MEMORY"),
-        ("phone", "storage_gb", "AI_PHONE_PHONE_STORAGE"),
-        ("desktop", "cpus", "AI_PHONE_DESKTOP_CPUS"),
-        ("desktop", "memory_mb", "AI_PHONE_DESKTOP_MEMORY"),
-    ] {
-        let number = value[section][field]
-            .as_u64()
-            .ok_or(Error::Invalid("host_profile"))?;
-        env.insert(
-            key.into(),
-            format!(
-                "{number}{}",
-                if key == "AI_PHONE_DESKTOP_MEMORY" {
-                    "m"
-                } else {
-                    ""
-                }
-            ),
-        );
-    }
-    let apk = root.join("runtime/guest-apps/clash-x86_64.apk");
-    if apk.is_file() {
-        env.insert("AI_PHONE_CLASH_ANDROID_APK".into(), text(&apk)?);
-    }
-    Ok(env)
-}
-
 pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
     if !arguments.is_empty() {
         return Err(Error::Invalid("wsl_initializer_arguments"));

@@ -216,6 +216,29 @@ fn selection(root: &Path, user: &Path) -> Result<Option<Selection>> {
     Ok(Some(value))
 }
 
+pub(crate) fn environment(root: &Path, user: &Path) -> Result<BTreeMap<String, String>> {
+    let mut environment = BTreeMap::new();
+    if let Some(value) = selection(root, user)? {
+        environment.insert(
+            "AI_PHONE_MANAGED_BIN".into(),
+            value
+                .home
+                .join("bin")
+                .to_str()
+                .ok_or(Error::Invalid("managed_engine_path"))?
+                .into(),
+        );
+        environment.insert(
+            "LIMA_HOME".into(),
+            value
+                .state
+                .to_str()
+                .ok_or(Error::Invalid("managed_engine_path"))?
+                .into(),
+        );
+    }
+    Ok(environment)
+}
 fn save(
     root: &Path,
     user: &Path,
@@ -269,14 +292,7 @@ pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
             Value::Null
         }
         (Some("selection"), []) => json!(selection(root, user)?),
-        (Some("environment"), []) => {
-            let mut environment = BTreeMap::new();
-            if let Some(value) = selection(root, user)? {
-                environment.insert("AI_PHONE_MANAGED_BIN", value.home.join("bin"));
-                environment.insert("LIMA_HOME", value.state);
-            }
-            json!(environment)
-        }
+        (Some("environment"), []) => json!(environment(root, user)?),
         (Some("start"), []) => {
             if let Some(value) = selection(root, user)? {
                 // Engine logs belong on stderr; stdout remains a single native receipt.

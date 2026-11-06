@@ -8,6 +8,11 @@ pub(crate) const CONTRACT: &str = "ai-phone-host-profile-v1";
 const LOCALES: [&str; 10] = [
     "zh-CN", "en", "zh-TW", "ja", "ko", "de", "fr", "es", "ru", "ar",
 ];
+pub(crate) fn checked_launch_path(value: Option<&str>) -> Result<&str> {
+    value
+        .filter(|path| !path.trim().is_empty() && !path.chars().any(char::is_control))
+        .ok_or(Error::Invalid("host_profile_launch_path"))
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -109,12 +114,7 @@ fn validate(value: &Value, template: &str) -> Result<()> {
         return Err(Error::Invalid("host_profile"));
     }
     if let Some(path) = value.get("launch_path") {
-        let valid = path
-            .as_str()
-            .is_some_and(|path| !path.trim().is_empty() && !path.chars().any(char::is_control));
-        if !valid {
-            return Err(Error::Invalid("host_profile_launch_path"));
-        }
+        checked_launch_path(path.as_str())?;
     }
     Ok(())
 }
@@ -207,9 +207,7 @@ pub(crate) fn prepare_request(
     {
         return Err(Error::Invalid("host_profile"));
     }
-    if launch_path.trim().is_empty() || launch_path.chars().any(char::is_control) {
-        return Err(Error::Invalid("host_profile_launch_path"));
-    }
+    checked_launch_path(Some(launch_path))?;
     let value = json!({"schema_version":1,"local_entry":true,"locale":request.locale,
         "launch_path":launch_path,
         "sdk_root":sdk,"java_home":java,

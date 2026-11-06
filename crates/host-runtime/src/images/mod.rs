@@ -16,6 +16,14 @@ use std::{
 use tokio::sync::watch;
 
 pub(crate) const CONTRACT: &str = "ai-phone-image-activation-v1";
+pub(crate) fn environment(root: &Path) -> Result<BTreeMap<String, String>> {
+    let bytes = match std::fs::read(root.join("data/deployment/image-runtime.json")) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(BTreeMap::new()),
+        Err(error) => return Err(error.into()),
+    };
+    Ok(Manifest::parse(&bytes)?.environment())
+}
 pub(super) struct Prepared {
     file: File,
     manifest: Manifest,

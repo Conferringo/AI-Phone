@@ -59,8 +59,9 @@ class InstallerToolTests(unittest.TestCase):
     def test_service_path_prefers_verified_tools_over_host_and_project_executables(self):
         import os
         from runtime_config import runtime_env
-        with tempfile.TemporaryDirectory() as folder,patch('installer_tools.host_key',return_value='macos-arm64'):
-            root=Path(folder);archives,pins=self.fixture(root);target=root/'component';self._build(archives,target,pins=pins,host='macos-arm64');select(root,target)
+        from test_release import native_profile_program
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.runtime_environment_command',return_value=[native_profile_program()]):
+            root=Path(folder);archives,pins=self.fixture(root);target=root/'component';self._build(archives,target,pins=pins);select(root,target)
             with patch.dict(os.environ,{'PATH':'/untrusted/host','AI_PHONE_MANAGED_BIN':'/owned/docker-wrapper'}):env=runtime_env(root)
             self.assertEqual(env['PATH'].split(os.pathsep)[:4],['/owned/docker-wrapper',str(target.resolve()/'python/bin'),str(target.resolve()/'node/bin'),str(root/'.tools/bin')])
 

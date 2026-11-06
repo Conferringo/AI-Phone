@@ -54,11 +54,11 @@ class LaunchPathTests(unittest.TestCase):
             self.addCleanup(guard.stop)
         def native(argv,**kwargs):
             self.assertEqual(argv[0],str(program))
-            self.assertIn(argv[1],('--prepare-host-profile','--write-host-profile','--validate-host-profile'))
+            self.assertIn(argv[1],('--prepare-host-profile','--write-host-profile','--validate-host-profile','--runtime-environment'))
             if argv[1]!='--validate-host-profile':self.assertEqual(Path(argv[2]),self.root)
             with patch('subprocess.Popen',native_popen):
                 return native_run(list(map(str,argv)),**kwargs)
-        for guard in (patch('subprocess.run',side_effect=native),patch('prebuilt_services.profile_command',return_value=[str(program)])):
+        for guard in (patch('subprocess.run',side_effect=native),patch('prebuilt_services.profile_command',return_value=[str(program)]),patch('prebuilt_services.runtime_environment_command',return_value=[str(program)])):
             guard.start();self.addCleanup(guard.stop)
 
     def prepare(self, request=None):
@@ -160,11 +160,17 @@ class LaunchPathTests(unittest.TestCase):
 
     def test_private_tool_and_engine_prefix_order_is_preserved(self):
         self.prepare()
-        tool_paths = [str(self.home / 'bundled-python/bin'), str(self.home / 'bundled-node/bin')]
+        from test_installer_tools import InstallerToolTests
+        from installer_tools import select
+        tools = InstallerToolTests()
+        fixture = self.home / 'tool-fixture'; fixture.mkdir()
+        archives, pins = tools.fixture(fixture)
+        component = self.home / 'component'
+        tools._build(archives, component, pins=pins)
+        selected = select(self.root, component)
+        tool_paths = [str(Path(selected['AI_PHONE_'+role.upper()]).parent) for role in ('python','node')]
         engine = str(self.home / 'engine/bin')
-        def tools(_root, base):
-            return {'PATH': os.pathsep.join([*tool_paths, base]), 'AI_PHONE_PYTHON': str(self.home / 'bundled-python/bin/python')}
-        with patch('installer_tools.selected_environment', side_effect=tools), patch('managed_engine.environment', return_value={'AI_PHONE_MANAGED_BIN': engine}):
+        with patch.dict(os.environ,{'AI_PHONE_MANAGED_BIN':engine}):
             first = runtime_config.runtime_env(self.root)
             os.environ['PATH'] = self.path_b
             self.assertEqual(runtime_config.runtime_env(self.root)['PATH'], first['PATH'])
