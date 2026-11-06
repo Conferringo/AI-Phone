@@ -5330,8 +5330,8 @@
     },
     {
       "path": "scripts/runtime_config.py",
-      "size": 527,
-      "sha256": "b5e037f82c0f94c814d814b4ede8d4b1cf1b45f6fc86dcc988b6db36ea068f37"
+      "size": 668,
+      "sha256": "999fff1f580df9f78ce30f09be70d097f3cf74818f7840a5fdbd9bd5ee62945e"
     },
     {
       "path": "scripts/runtime_verification.py",
@@ -5840,8 +5840,8 @@
     },
     {
       "path": "scripts/test_wsl_provision_consumer.py",
-      "size": 5513,
-      "sha256": "7713f383a4c775c3d920ae2f1642f817eeb40fd2e46680a0fb941c557633b15e"
+      "size": 5599,
+      "sha256": "4cb66e056f7ccc19f262bb1c7ce9c3700e8092c5d61d3b3ccba304e75355dd19"
     },
     {
       "path": "scripts/test_wsl_resources.py",

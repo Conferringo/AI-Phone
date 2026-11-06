@@ -43,6 +43,7 @@ class SealedControlConsumerTests(unittest.TestCase):
             shutil.copyfile(SOURCE/'apps/device-network'/name,path)
         launcher=root/'scripts/prebuilt_js.py';launcher.parent.mkdir(exist_ok=True)
         shutil.copyfile(HERE/'prebuilt_js.py',launcher)
+        shutil.copyfile(HERE/'runtime_config.py',launcher.parent/'runtime_config.py')
         binary=root/'runtime/bin/bun';binary.unlink();os.link(BUN,binary)
         control=root/prebuilt_js.PREFIX/'apps/device-network/control.js'
         control.parent.mkdir(parents=True,exist_ok=True)
