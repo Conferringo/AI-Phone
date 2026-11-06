@@ -155,7 +155,7 @@ class DiagnosticTests(unittest.TestCase):
         import linux_services
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            with patch.object(linux_services, 'process_start') as identity:
+            with patch.object(linux_services, 'supervisor_command',side_effect=ValueError('Native owner unavailable')):
                 self.assertFalse(diag.owned_process(root, system='Linux')['verified'])
                 self.assertFalse((root/'data').exists())
                 data = root/'data/services'
@@ -164,7 +164,7 @@ class DiagnosticTests(unittest.TestCase):
                 secret.write_text('{}')
                 (data/'emulator.json').symlink_to(secret)
                 self.assertFalse(diag.owned_process(root, system='Linux')['verified'])
-                identity.assert_not_called()
+                self.assertEqual(secret.read_text(),'{}')
 
     def test_regular_reads_reject_fifo_and_over_budget_without_mutating_files(self):
         with tempfile.TemporaryDirectory() as folder:

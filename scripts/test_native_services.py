@@ -36,7 +36,8 @@ class NativeServiceTests(unittest.TestCase):
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
-                         'service_supervision':'ai-phone-linux-supervision-v1', 'phone_input_setup':'ai-phone-input-setup-v2'}}
+                         'service_supervision':'ai-phone-linux-supervision-v2', 'phone_input_setup':'ai-phone-input-setup-v2',
+                         'database_prepare':'ai-phone-database-prepare-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -190,6 +191,7 @@ class NativeServiceTests(unittest.TestCase):
         files = {binary_path(role): ('fixture-' + role).encode() for role in ROLES}
         files[FIXTURE] = b'fixture image data'
         manifest = {'format': 1, 'host': host_key(), 'versions': {'assistant': '0.1.0', 'runner': '0.1.0'},
+                    'database_prepare':'ai-phone-database-prepare-v1',
                     'files': [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'mode': 0o644 if name == FIXTURE else 0o755}
                               for name, data in files.items()]}
         files['runtime/services/manifest.json'] = json.dumps(manifest).encode()
@@ -237,6 +239,11 @@ class NativeServiceTests(unittest.TestCase):
                 path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
                 path.chmod(0o755 if name.startswith('runtime/services/bin/') else 0o644)
             self.assertEqual(service_command(root, 'assistant'), [str(root.resolve() / binary_path('assistant'))])
+            path=root/'runtime/services/manifest.json';current=path.read_bytes()
+            old=json.loads(current);old.pop('database_prepare');path.write_text(json.dumps(old))
+            with self.assertRaisesRegex(ValueError,'database preparation is missing'):launch_spec(root,'assistant')
+            path.write_bytes(current)
+            self.assertTrue(launch_spec(root,'assistant')['prebuilt'])
             launch = launch_spec(root, 'runner')
             self.assertTrue(launch['prebuilt'])
             self.assertEqual(launch['environment']['AI_PHONE_OCR'], str(root.resolve() / binary_path('vision')))
@@ -373,6 +380,9 @@ class NativeLauncherTests(unittest.TestCase):
                 self.assertEqual(config['ProgramArguments'], [str(root / binary_path(role))])
                 if role == 'runner':self.assertEqual(config['EnvironmentVariables']['AI_PHONE_OCR'], str(root / binary_path('vision')))
                 self.assertIn('launchctl', (root / 'launch.log').read_text())
+                if role=='assistant':
+                    self.assertIn('service:--prepare-database',(root/'launch.log').read_text())
+                    self.assertNotIn('database prepare',(root/'launch.log').read_text())
 
 
 @unittest.skipUnless(os.name == 'posix', 'POSIX native service installation policy')
@@ -407,6 +417,9 @@ class NativeHostToolsTests(unittest.TestCase):
             self.assertEqual(len(builds),1)
             self.assertLess(events.index(builds[0]),events.index(['start','emulator']))
             self.assertEqual((data/'existing-chat').read_bytes(),b'preserve fixture history')
+            native=[str(root/'target/debug/ai-phone-assistant'),'--prepare-database']
+            self.assertIn(native,events)
+            self.assertFalse(any('database.py' in argument for event in events for argument in event))
 
     def test_linux_native_dependencies_keep_ocr_without_requiring_a_compiler(self):
         from linux_host import system_packages,HostPrerequisite

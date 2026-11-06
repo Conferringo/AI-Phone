@@ -54,11 +54,13 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 
 [Architecture](docs/public/architecture.en.md) · [Documentation index](docs/public/index.md) · [Conversation steering](docs/public/conversation-steering.md) · [Capabilities and data](docs/public/capabilities-and-data.md)
 
+The final first-party runtime and build/release tools target Rust, alongside the existing Next.js frontend. Legacy Python installation/recovery orchestration and Python CI/build tooling remain in the current source and must be retired before final distribution. The project is not Python-free yet.
+
 Models/APIs, connections and memory belong to Agents; Skills, knowledge and work files are shared. Code is separate from user state. Environment secrets, guest disks, accounts, chats, attachments and private evidence are excluded from the repository. Updates require versioned artifacts, backups, migrations and rollback rather than a direct `git pull` into user state.
 
 ## Roadmap
 
-1. Clean-host installation, interrupted-install recovery, resource migration and signed updates.
+1. Complete the Rust runtime/build-tool migration, integrated installation, recovery and signed updates.
 2. Native platform input/audio/touch, language and accessibility acceptance; Windows/Linux host providers.
 3. Smaller UI/execution ownership boundaries; long-running tasks and host sleep/reboot recovery.
 4. Model discovery/capability probes, specialized app Skills and Skill upgrade/rollback.
@@ -122,11 +124,13 @@ QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[�
 
 [架构](docs/public/architecture.zh-CN.md) · [文档索引](docs/public/index.md) · [连续对话机制](docs/public/conversation-steering.md) · [数据与使用边界](docs/public/capabilities-and-data.md)
 
+最终自研运行链及构建、发行工具统一迁至 Rust，前端保留 Next.js。当前源码仍有 Python 安装、恢复编排和 CI/构建工具，必须完成替换退役后才能满足最终发行目标；目前不能称零 Python。
+
 模型/API、渠道与记忆归属 Agent；Skill、知识库和工作文件共享。代码与用户状态分离，`.env`、设备盘、账号、聊天、附件和私有证据不进入仓库。更新采用版本化制品、备份、迁移和回滚，不能对用户运行目录直接 `git pull` 代替升级。
 
 ## 后续开发
 
-1. 社区安装反馈、安装中断恢复、资源迁移和签名更新；未实测平台不标为通过。
+1. 完成 Rust 运行链与构建工具迁移、一体化安装、恢复和签名更新；未实测平台不标为通过。
 2. 桌面平台输入、声音、触屏、语言及可访问性验收；Windows/Linux 宿主管理。
 3. 继续收敛大型UI/执行模块的职责，补齐长时任务、宿主休眠/重启恢复。
 4. 模型发现与能力检测、更多应用特化、Skill升级/回退。

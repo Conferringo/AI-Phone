@@ -72,10 +72,10 @@ jobs:
           test "$RUNNER_ENVIRONMENT" = github-hosted
           test "$RUNNER_OS" = Linux
           test "$PWD" = "$GITHUB_WORKSPACE"
-          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v1
+          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v2
           du -sh target
           rm -rf -- target/debug/build target/debug/deps target/debug/incremental target/debug/.fingerprint
-          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v1
+          test "$(target/debug/host-resources --service-supervision-contract)" = ai-phone-linux-supervision-v2
           df -h .
           # Keep KVM supplementary access and restore the primary GID required by uidmap.
           export AI_PHONE_CI_PRIMARY_GROUP="$(id -gn)"

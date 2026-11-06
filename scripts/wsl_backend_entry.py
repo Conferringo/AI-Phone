@@ -114,7 +114,7 @@ def start_backend(root,run,observer=None):
     observe(observer,'database_prepare')
     assistant=launch_spec(root,'assistant')
     if not unit_state(root,'assistant'):
-        run([sys.executable,root/'scripts/database.py','prepare'])
+        run([*assistant['argv'],'--prepare-database'])
         run([*assistant['argv'],'--migrate'])
     observe(observer,'services_start')
     runner=launch_spec(root,'runner')

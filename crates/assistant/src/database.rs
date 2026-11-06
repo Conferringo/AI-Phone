@@ -1,17 +1,19 @@
 //! Separate DML runtime credentials from the DDL migration login.
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{
     PgPool, Row,
     postgres::{PgConnectOptions, PgPoolOptions},
 };
 use std::{os::unix::fs::PermissionsExt, path::Path, time::Duration};
 
-#[derive(Deserialize)]
+pub mod bootstrap;
+
+#[derive(Deserialize, Serialize)]
 struct Login {
     username: String,
     password: String,
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 struct Credentials {
     schema_version: u32,
     database: String,
@@ -23,7 +25,7 @@ pub async fn connect(root: &Path, migration: bool) -> Result<PgPool, Box<dyn std
     let path = root.join("data/database/credentials.json");
     if !path.is_file() {
         return Err(
-            "Database role configuration missing; run scripts/database.py prepare before starting"
+            "Database role configuration missing; run assistant --prepare-database before starting"
                 .into(),
         );
     }

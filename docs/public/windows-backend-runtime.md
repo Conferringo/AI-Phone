@@ -27,6 +27,7 @@ lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
 Backend startup now includes the qualified Rust phone Runner before the assistant.
+Linux/WSL service control and state inspection use the Rust v2 controller; the existing initializer imports retain only a transitional Python adapter. The initializer, image/configuration orchestration and factory tools still require their own Rust migration.
 Its authenticated, read-only cursor endpoint is qualified without requiring a
 connected phone. Restart retains the existing service supervisor; shutdown stops
 the Runner before the owned engine. Endpoint availability is not phone readiness.

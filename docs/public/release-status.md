@@ -6,18 +6,20 @@ Updated 2026-11-06. Source code and technical documentation are available. **Com
 
 | Target | Available implementation | Remaining delivery requirements |
 | --- | --- | --- |
-| macOS Apple Silicon | Inspected and retained complete single-file App/DMG factory output | Fresh default-size dual-device installation, upgrades, signing/notarization and complete product acceptance |
-| Windows x64 | Inspected and retained complete single-file EXE; qualified backend startup/restart | WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade, complete first run and source/licence review |
-| Linux x64 | Inspected and retained complete single-file DEB + APT outputs | Binary publication, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
+| macOS Apple Silicon | Inspected and retained complete single-file DMG candidate | Current-source bundle, integrated lifecycle, upgrades, signing/notarization and product acceptance; physical installation untested |
+| Windows x64 | Inspected and retained complete single-file EXE candidate; backend startup/restart qualified | Offline WebView2, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade and source/licence review |
+| Linux x64 | Inspected and retained complete single-file DEB candidate; signed APT pipeline under qualification | Binary/channel publication, installed-client lifecycle and applicable source/licence review; physical installation untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
-The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/42107153487) succeeded from `e5b9abd7` with all nine runtime groups in one 1,970,218,877-byte DMG. The complete [Linux factory](https://github.com/Conferringo/AI-Phone/actions/runs/42097421886) succeeded from `de79a091` with a 2,098,866,082-byte DEB, each containing all nine resource groups. Both are single installer files below the asset limit; retained asset sizes and digests match their producer receipts.
+Retained single-file candidate receipts: [Mac](https://github.com/Conferringo/AI-Phone/actions/runs/42107153487) `e5b9abd7`, 1,970,218,877-byte DMG; [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42097421886) `de79a091`, 2,098,866,082-byte DEB; [Windows](https://github.com/Conferringo/AI-Phone/actions/runs/42123340112) `6bd5a816`, 2,111,641,048-byte EXE. Contents and retained asset identities were inspected for those source revisions. They are unpublished maintainer candidates, not current-source downloads or installation certificates. Windows guest boot and physical installation were not executed.
 
-The complete [Windows factory](https://github.com/Conferringo/AI-Phone/actions/runs/42123340112) succeeded from `6bd5a816`. It qualified Linux backend startup/restart, assembled and unpacked a 2,111,641,048-byte EXE with both Android and WSL resources, passed 21 native client tests, and retained the installer and its metadata in an unpublished draft. Dependency precompilation ran concurrently with backend qualification; the native job reused those outputs and retained its original 60-minute limit. This resolves the previous cold-compilation timeout and upload failure for that source revision.
+## Rust migration
 
-These artifacts belong to their stated source revisions. They are unpublished maintainer candidates, not public downloads or installation certificates. Windows guest boot and physical installation were not executed. Package inspection does not close source/licence obligations.
+The final first-party runtime, installation/recovery, build, test and release tools must be Python-free; the Next.js frontend remains. Explicit database role preparation now runs in Rust/SQLx and is covered by isolated PostgreSQL tests with an empty PATH. Other host orchestration, recovery and build/CI paths still use Python, and channel/media JavaScript services also await their Rust migration. The current project does not yet meet this final architecture requirement.
+
+Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
 
 ## Capability limits
 
@@ -37,9 +39,11 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 
 ## 中文
 
-源码与技术文档已公开，**完整产品安装包尚未发布**。macOS Apple Silicon 的e5b完整工厂已留存1970218877字节单文件DMG；Linux x64 的de79完整工厂已留存2098866082字节DEB，均含九类资源并低于2GiB，实际资产大小和摘要与生产回执匹配。
+源码与技术文档已公开，**完整产品安装包尚未发布**。三桌面平台保留各自来源的完整单文件候选，见上表及构建回执；旧分卷安装器草稿已退役。Linux只提供DEB及复用该DEB的签名APT渠道，公开源尚未发布。Android客户端与AppImage已取消，桌面内的真实虚拟安卓手机仍保留。
 
-Windows的6bd完整工厂已成功：后端启动/重启、单EXE组装与解包检查、21项原生测试和最终留存均通过，EXE为2111641048字节，包含Android与WSL完整资源。依赖预编译与后端并行，安装器复用编译产物，原60分钟上限保持。此前冷编译超时和上传失败已在这一来源版本通过，但WHPX/网络、缺失系统功能/内核、后端升级、Android客体启动和实机首次就绪仍待验收。
+最终自研运行链、安装/恢复与构建、测试、发行工具必须清除Python，前端保留Next.js。数据库角色初始化已迁到Rust/SQLx，并以空PATH执行隔离数据库验证；其余宿主编排、恢复和构建/CI仍有Python，渠道/媒体JavaScript服务也待迁Rust。当前不满足最终纯Rust目标，不能据此发布最终安装包。
+
+Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

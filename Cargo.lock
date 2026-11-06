@@ -44,6 +44,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "futures-util",
+ "getrandom 0.4.3",
  "prost",
  "reqwest",
  "serde",
@@ -99,6 +100,16 @@ dependencies = [
  "tokio",
  "windows-registry",
  "xz2",
+]
+
+[[package]]
+name = "ai-phone-release-tools"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde_json",
+ "sha2",
+ "tempfile",
 ]
 
 [[package]]

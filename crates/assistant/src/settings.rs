@@ -1,9 +1,8 @@
+use crate::private_file::atomic_private;
 use crate::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{
-    collections::BTreeMap, fs, io::Write, path::Path, sync::Mutex as SyncMutex, time::Instant,
-};
+use std::{collections::BTreeMap, fs, path::Path, sync::Mutex as SyncMutex, time::Instant};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
@@ -119,25 +118,6 @@ pub struct SettingsStore {
     dir: PathBuf,
     state: SyncMutex<State>,
     model_clients: SyncMutex<BTreeMap<String, reqwest::Client>>,
-}
-fn atomic_private(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let temp = path.with_extension(format!("{}.tmp", Uuid::new_v4()));
-    let result = (|| {
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .open(&temp)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-        fs::rename(&temp, path)?;
-        fs::File::open(path.parent().expect("private directory"))?.sync_all()
-    })();
-    if result.is_err() {
-        let _ = fs::remove_file(temp);
-    }
-    result.map_err(|_| "配置无法保存，请检查存储空间与权限".into())
 }
 impl SettingsStore {
     pub(crate) fn http_client(&self, proxy_url: &str) -> Result<reqwest::Client, String> {

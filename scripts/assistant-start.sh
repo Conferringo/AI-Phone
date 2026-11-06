@@ -14,7 +14,7 @@ environment={**os.environ,**runtime}
 subprocess.run(['docker','compose','-f','compose.yaml','-f','compose.dev.yaml','up','-d','--wait','postgres','ocr'],cwd=root,env=environment,check=True)
 if not spec['prebuilt']:
  subprocess.run(['cargo','build','-p','ai-phone-assistant','--locked'],cwd=root,env={**environment,'CARGO_BUILD_JOBS':'2'},check=True)
-subprocess.run([sys.executable,str(root/'scripts/database.py'),'prepare'],cwd=root,env=environment,check=True)
+subprocess.run([*spec['argv'],'--prepare-database'],cwd=root,env=environment,check=True)
 subprocess.run([*spec['argv'],'--migrate'],cwd=root,env=environment,check=True)
 folder=root/'data/assistant';folder.mkdir(mode=0o700,parents=True,exist_ok=True);folder.chmod(0o700)
 (root/'data/attachments').mkdir(mode=0o700,parents=True,exist_ok=True)

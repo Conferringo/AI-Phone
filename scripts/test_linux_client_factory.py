@@ -84,10 +84,12 @@ class LinuxClientFactoryTests(unittest.TestCase):
                 artifact=root/f'dist/AI-Phone-fixture-linux-amd64.{extension}';artifact.write_bytes(extension.encode())
                 metadata={'complete_device_bundle':True,'sha256':digest(artifact),'prebuilt_components':full}
                 artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps(metadata));artifacts.append(artifact)
-            with patch.object(factory,'run') as run,patch.object(factory,'run_checks'),patch('prepare_client_host.payload_components',return_value=full),patch('apt_repository.index',return_value={'metadata':[]}) as index:
+            with patch.object(factory,'run') as run,patch.object(factory,'run_checks'),patch('prepare_client_host.payload_components',return_value=full):
+                run.return_value.stdout='{"metadata":[]}'
                 value,apt=factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
-                index.assert_called_once_with(artifacts,root/'dist/apt');self.assertEqual(apt,[]);self.assertIsInstance(value,list);self.assertEqual({row['file'] for row in value},{path.name for path in artifacts})
-                self.assertTrue(all(row['delivery']['complete_device_bundle'] for row in value));self.assertEqual(run.call_count,1)
+                run.assert_called_with(['cargo','run','--quiet','--locked','-p','ai-phone-release-tools','--','apt','index',artifacts[0],'--output',root/'dist/apt'],root,capture_output=True,text=True)
+                self.assertEqual(apt,[]);self.assertIsInstance(value,list);self.assertEqual({row['file'] for row in value},{path.name for path in artifacts})
+                self.assertTrue(all(row['delivery']['complete_device_bundle'] for row in value));self.assertEqual(run.call_count,2)
                 for artifact in artifacts:
                     original=artifact.read_bytes();artifact.write_bytes(b'changed installer')
                     with self.assertRaisesRegex(ValueError,'changed'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')

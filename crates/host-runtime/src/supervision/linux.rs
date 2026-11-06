@@ -23,7 +23,9 @@ use tokio::{
     signal::unix::{SignalKind, signal},
 };
 
-#[derive(Deserialize)]
+pub(super) mod control;
+
+#[derive(Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct Spec {
     command: Vec<String>,

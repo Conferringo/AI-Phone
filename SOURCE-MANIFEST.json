@@ -76,12 +76,12 @@
     {
       "path": ".github/workflows/managed-host.yml",
       "size": 4695,
-      "sha256": "7f66b6ce10dfd582aa4a943b213d33f8b210ad65845c4bceda4fb225cf6927fd"
+      "sha256": "c293ab9aa3e8ece259c0bb8ea3f8c0c992b18a51fc47b479c975cf7318aabbab"
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 9420,
-      "sha256": "ebac88fc281387e8b536b33b59f6ed138aa6d80e147946893189192f3dd9f141"
+      "size": 9356,
+      "sha256": "d6df229d9b94de473fb40ffb89eec17f5c90f921728564b062224fd0adfd3e80"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -125,13 +125,13 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 91264,
-      "sha256": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c"
+      "size": 91414,
+      "sha256": "8b038b40a859574467cfe0ee810b3a9858d3f70e286d81a479bed3e5042729d0"
     },
     {
       "path": "Cargo.toml",
-      "size": 352,
-      "sha256": "0ced656a48a057e57f7573d861665757ae570927e6464f29d2130c58fee56c4e"
+      "size": 376,
+      "sha256": "7f20e84c4229f53592515089227bc14db465c23d50fb250cb117a23a30ec1f7c"
     },
     {
       "path": "DISCLAIMER.md",
@@ -155,13 +155,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7200,
-      "sha256": "b488dddfa2e78f0902943c1c9799a4213140febf6f13d7175d548f8725a808f7"
+      "size": 7507,
+      "sha256": "cd923d8365359e7fe35f19c7379b4531f55ecd49012c5a610842504974d4fc2b"
     },
     {
       "path": "README.md",
-      "size": 12448,
-      "sha256": "3b974d1df1edb119fd446be5e4c21a713f06b58dc382c2f7ad0d6facf3713b4b"
+      "size": 13017,
+      "sha256": "d8b5f3ed4cd0777cc99f8d8b8ce7049e128d765458658c8e0e6562c6de8d6495"
     },
     {
       "path": "SECURITY.md",
@@ -2155,8 +2155,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1181,
-      "sha256": "721e7028e92f5d8dd2b0ed7499879c377810e3e3cd2b611ef679f384b32e2e80"
+      "size": 1202,
+      "sha256": "ca8c4d6f2cf91e9c6cc4a76a465c9fcc4c7387b9e73d26090f7adaa647064987"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -2399,9 +2399,24 @@
       "sha256": "25642afdf52b0248e51ba4e205432fa295875aae2d00da9a1590942a26b7b1c0"
     },
     {
+      "path": "crates/assistant/src/database/bootstrap.rs",
+      "size": 6960,
+      "sha256": "93cd28827c4a6674569543c78ff954ea242dac467416622e0b08123c05c506ba"
+    },
+    {
+      "path": "crates/assistant/src/database/grants.sql",
+      "size": 1905,
+      "sha256": "61e85cac4a247f088f881044218ad1bf51510bebd876dcfe3de982f6c2babb0b"
+    },
+    {
+      "path": "crates/assistant/src/database/roles.sql",
+      "size": 1185,
+      "sha256": "477a47b904a3a900d458c7da34a516f89f7b3d72d97a73ef2075d9dea9f9d4fb"
+    },
+    {
       "path": "crates/assistant/src/database.rs",
-      "size": 4354,
-      "sha256": "452b1cb2d60a48990fa4869f9f80931813a316bdbd08bf90727a70e913a70b4f"
+      "size": 4410,
+      "sha256": "28af50df58a2badb4bdcc9d98ffe1a0d604bdc32d34bc6abfc15bff8ba861f2a"
     },
     {
       "path": "crates/assistant/src/desktop/grounding.rs",
@@ -2515,8 +2530,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 11525,
-      "sha256": "cb4f084c092dd0abc0fc8a53336c7438cd50f7f3681e5e18b7905eb4bfa3d6fd"
+      "size": 12122,
+      "sha256": "807a4520973b30b02cd9d6d55b2635601be66acf26779143289ecd13f1b7fda7"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -2564,6 +2579,11 @@
       "sha256": "38cabccac1215b749b90a04d2d657087d1e8e49cfd8a56b832d629656f8f7069"
     },
     {
+      "path": "crates/assistant/src/private_file.rs",
+      "size": 826,
+      "sha256": "99868da1736b1d5d293545f2a6c82858e03f5920c44d315caf89f6b9c47335ed"
+    },
+    {
       "path": "crates/assistant/src/proactive.rs",
       "size": 71815,
       "sha256": "e80bb208f04d1020a590b625c856221fc45a8fec989f718b918f89e9d6042644"
@@ -2590,8 +2610,8 @@
     },
     {
       "path": "crates/assistant/src/settings.rs",
-      "size": 41676,
-      "sha256": "599c85088cb235b0142da748eedaa5159c7334e8636682ffdc420f96535f0f5d"
+      "size": 41003,
+      "sha256": "5db41dec08f15103bd829dd685926cec16e62b0bb8bfa46813b042a9d0bf70c4"
     },
     {
       "path": "crates/assistant/src/setup.rs",
@@ -2690,8 +2710,8 @@
     },
     {
       "path": "crates/assistant/tests/device_setup_cli.rs",
-      "size": 3796,
-      "sha256": "9702a6e19232886e994d19ac1f634ec7638911487b84cc2f0c895d229da3b617"
+      "size": 4641,
+      "sha256": "d2d4a68bebda8f3e1e999a2c92fa933e0ab031f3d4b107c2be0a5075aecf13ea"
     },
     {
       "path": "crates/guest-runtime/Cargo.toml",
@@ -2840,8 +2860,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 867,
-      "sha256": "7eed99f50ac43594164e7afde64e77dc709e8633fad64f49ac787dfdbac30515"
+      "size": 974,
+      "sha256": "da4ade151ba6745bf83864aa6ca39eefe64b6c9b34df136feaa74e3fca97c769"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -2975,8 +2995,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3392,
-      "sha256": "6ae9c35acfc8d2ee7ad4912d623412d3d861840d7d146087b1f176553da10de9"
+      "size": 3570,
+      "sha256": "5902b974a7796fa1450b3186a57b46a82bfe104b8e97a5282224b1e168fae9ee"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3079,14 +3099,24 @@
       "sha256": "11c2e7b1859854c275ff2a0ce4379ea4d3ad461c37befe9d68c94a1fdbd34f53"
     },
     {
+      "path": "crates/host-runtime/src/supervision/linux/control/state.rs",
+      "size": 8417,
+      "sha256": "d969147939613721b8cc6d3ccfeaae3021f6f5d2b4a4a5c1351f6c9fb469a68d"
+    },
+    {
+      "path": "crates/host-runtime/src/supervision/linux/control.rs",
+      "size": 12587,
+      "sha256": "579e2314cc745ea6327f4c239c258ca80072fd03e7af3a7d5ae6f3d617654f3e"
+    },
+    {
       "path": "crates/host-runtime/src/supervision/linux.rs",
-      "size": 8348,
-      "sha256": "26fee0afd281bd1ab85f9a6bfd549c89c29320aca0a291667fdaa91ee998e001"
+      "size": 8395,
+      "sha256": "10130bf495226fa800e4c63ba0c210a230d5c0f4cea92a0ad76e28743f8f3cc5"
     },
     {
       "path": "crates/host-runtime/src/supervision/mod.rs",
-      "size": 483,
-      "sha256": "3c6e8fd96d5e56d84f448e739bb301fa6c430cf7ff899273e61cfda81c103abf"
+      "size": 790,
+      "sha256": "9c95b3b3c643766510c6b6d3855c3ea68514ce4e346b3944dc79c929850ea4ee"
     },
     {
       "path": "crates/host-runtime/src/tests.rs",
@@ -3149,6 +3179,11 @@
       "sha256": "14fe0ab42a6691ea37ee428445e3cf5742d2be2d022ef51311abb7ea6740d25b"
     },
     {
+      "path": "crates/host-runtime/tests/fixtures/service_worker.rs",
+      "size": 1609,
+      "sha256": "6fda6e60defe6efff666b58321c484e7edb136446c066fa81210e20e245bf3b3"
+    },
+    {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
       "size": 2347,
       "sha256": "d61dc8c268ae6f13e6016183261b26f70977d36f5733365ebab7d8aebe0ab081"
@@ -3157,6 +3192,11 @@
       "path": "crates/host-runtime/tests/peer_owner_pipe.rs",
       "size": 4710,
       "sha256": "600e6e2f8e0cf25255a070ab55d7969a6c40766c19385ea3f2ffc1a5a5d7279a"
+    },
+    {
+      "path": "crates/host-runtime/tests/service_control_cli.rs",
+      "size": 17382,
+      "sha256": "4ccd57915712e4343f6aab0864d3fa992f446892b6417e56d2519b227f0f2646"
     },
     {
       "path": "crates/host-runtime/tests/supervisor_contract.rs",
@@ -3209,6 +3249,26 @@
       "sha256": "5e04321e213db8643fe8cce69a0733e759e61174043ce6774644e95b7ff0893d"
     },
     {
+      "path": "crates/release-tools/Cargo.toml",
+      "size": 325,
+      "sha256": "5a622d4ad669372304ee27666234773e0f2ca04eb7aa9b8690c8fd3d6455a1fe"
+    },
+    {
+      "path": "crates/release-tools/src/apt.rs",
+      "size": 7615,
+      "sha256": "60487209fdf8eca686425c322cd7bdd8c8f15325c79fbbf76ee29600b21780f4"
+    },
+    {
+      "path": "crates/release-tools/src/main.rs",
+      "size": 514,
+      "sha256": "ca1af14ffef14621f56edd6d0be9cb78bb97c735b603df6f33b7fe98f55b6b53"
+    },
+    {
+      "path": "crates/release-tools/tests/apt_repository.rs",
+      "size": 11771,
+      "sha256": "377413e69a88de970a4e8b2a535070810241f682333095fd5c23d1debc21013d"
+    },
+    {
       "path": "crates/vision/Cargo.toml",
       "size": 568,
       "sha256": "e186f6cfdd7ed53297ebde4b5abbbc79022811e0aebed55bdd1f815168609a94"
@@ -3240,8 +3300,8 @@
     },
     {
       "path": "docs/public/apt-repository.md",
-      "size": 4797,
-      "sha256": "201fabe392201e604b8958351e5b657c1d7ec4a7046b39162fa957c2603cbc76"
+      "size": 5091,
+      "sha256": "51dbecd8f530b7adcb11c9ba1711702ad4bb573724838d5a7295503cfae926c2"
     },
     {
       "path": "docs/public/architecture.en.md",
@@ -3300,8 +3360,8 @@
     },
     {
       "path": "docs/public/database-roles.md",
-      "size": 2319,
-      "sha256": "33d6db3cd8266e0e2f6d685de5f86b65d7865da5d6c02556c243b9793e5e442b"
+      "size": 3033,
+      "sha256": "f298832feccc2162b64533e9ea78064c3f971a19ffb8fa36d3a93742100897c5"
     },
     {
       "path": "docs/public/dependency-licenses.json",
@@ -3415,8 +3475,8 @@
     },
     {
       "path": "docs/public/engineering/service-supervision.md",
-      "size": 2920,
-      "sha256": "8567c329e68420491677a24fbe9ba468986786b3456f558a087f8dc5c8fe36c4"
+      "size": 3979,
+      "sha256": "0817fdb78042914d26a6232c19894a4a480b2572c28bd76155b0e12cb5f17889"
     },
     {
       "path": "docs/public/engineering/windows-android-runtime.md",
@@ -3840,8 +3900,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 6454,
-      "sha256": "6e4a7275ca55a03a96e15d4f4a49f6d6192266686eb642343f1997c29bbd8f8a"
+      "size": 6970,
+      "sha256": "7c62b4e3966c9be48656cbb58fb5dac591854e709767aa20e58fbf6c05ed25f4"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -3880,8 +3940,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 12985,
-      "sha256": "d07c7f5b4d39f1c97d53cc667b64a15a56bb1a3075ae64a14e34e6c3b662954d"
+      "size": 13245,
+      "sha256": "748d886c558d4cdaf2ed0fa4d1f3c309a52a97c8cbf9366b0f110fadd788c68d"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -4324,19 +4384,14 @@
       "sha256": "aa71857c427f628b53224abc16cd91d9cb491f53477f8f1f224b2cf77621569a"
     },
     {
-      "path": "scripts/apt_repository.py",
-      "size": 3779,
-      "sha256": "7812f7500c2201d50c4c6964db7426fc6a4bd323ef508c9223cde670a8c471be"
-    },
-    {
       "path": "scripts/artifact_io.py",
       "size": 245,
       "sha256": "14ce1baae364fc42a967e5487d35ca2f0d9842816eb60786f3a87d2a157d9d33"
     },
     {
       "path": "scripts/assistant-start.sh",
-      "size": 2219,
-      "sha256": "9a970d891b587d43e6ac07a73701cc6dda28192fb447c94b08682baaadaed7c2"
+      "size": 2197,
+      "sha256": "8a77654997896de44dd04b61842a630033efd6b431874a44fd9e56f6e8fc5340"
     },
     {
       "path": "scripts/audio-playback.test.ts",
@@ -4405,8 +4460,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 7220,
-      "sha256": "de5e17ddb4c426ddf850c1ff13c51964434175eea7200400ffc533ace8f2e93e"
+      "size": 7379,
+      "sha256": "c7c52df0f7005645a73f595afa01d8fbe4b23e7a467300e7fae4b27123923329"
     },
     {
       "path": "scripts/bun",
@@ -4565,8 +4620,8 @@
     },
     {
       "path": "scripts/database.py",
-      "size": 10957,
-      "sha256": "453fe2efb6bb3f65c1810d01cbe98ffc39681f18c0da4e2195268f551c21ffce"
+      "size": 8688,
+      "sha256": "d583b1ff28418c65b83939186dabe4fe73addb926b407562554f2a930376b0d3"
     },
     {
       "path": "scripts/dependency_inventory.py",
@@ -4840,8 +4895,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11855,
-      "sha256": "edc8a28816c2413d351ac4603ab940c8e6fb36b0119d0ab2f04732f2958dba3f"
+      "size": 11965,
+      "sha256": "b592905c5e605b15092bf1eebcdd0fc23068987fbadc82c3cf021a0aa1dda39d"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -4855,8 +4910,8 @@
     },
     {
       "path": "scripts/linux_host.py",
-      "size": 8632,
-      "sha256": "93d9b16a6ea7bbbea18ff406e4e6a9e0c14018ecd8bad887e56e014a8028de9d"
+      "size": 8618,
+      "sha256": "05595de1a7f3b1350dd9d08b2e3cc4df33fd02f3f3900ffa7929245401d7a76e"
     },
     {
       "path": "scripts/linux_host_acceptance.py",
@@ -4880,8 +4935,8 @@
     },
     {
       "path": "scripts/linux_services.py",
-      "size": 7052,
-      "sha256": "6d899e63145271b335f7a7da79e5c0beb1e3ec8c7bf539e66da86796a551f109"
+      "size": 1294,
+      "sha256": "19b5f7939f29dea9be51f70d46bef4cd40f232cb3a575a16eb61b259b21e553d"
     },
     {
       "path": "scripts/locale.test.ts",
@@ -5030,8 +5085,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 8728,
-      "sha256": "d0025367bd2c2de7b0b8708d49ddaafab321a1d368f6420064bbbcb9bd21f222"
+      "size": 9249,
+      "sha256": "00af26625815dd6dd3ccddfcfdc2ad5abba58f0f9850e70d98c84c4ee2e97e3d"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5145,8 +5200,8 @@
     },
     {
       "path": "scripts/test_android_boot.py",
-      "size": 15996,
-      "sha256": "f72bad3f04868d55087e64f3d72c87a16c896b397cb530e9e65bbc77662a7048"
+      "size": 16053,
+      "sha256": "e587b63b6be966db66b10a26a416044cee0bf15995fdbf70a5f047caf579028d"
     },
     {
       "path": "scripts/test_android_compression_profiles.py",
@@ -5177,11 +5232,6 @@
       "path": "scripts/test_android_windows_runtime.py",
       "size": 6338,
       "sha256": "c0a16a677a5f1566bcc4e101a7399aba3abfd894b24136215b4f5b29661bea98"
-    },
-    {
-      "path": "scripts/test_apt_repository.py",
-      "size": 5806,
-      "sha256": "072f6b5473cc339249eabcf71239c53728adfbf9cb945a27ba2a0b26ca678e57"
     },
     {
       "path": "scripts/test_bootstrap_bun.py",
@@ -5265,8 +5315,8 @@
     },
     {
       "path": "scripts/test_database.py",
-      "size": 7020,
-      "sha256": "2fa96fb383710cea4377548ef76e3b81b758958f4cebc1a3249d0b9a57172ce5"
+      "size": 7468,
+      "sha256": "085c43de5f087286a8a3c762633a51226cc35f9beb380252a42824ad4136e85e"
     },
     {
       "path": "scripts/test_dependency_audit.py",
@@ -5355,8 +5405,8 @@
     },
     {
       "path": "scripts/test_launch_path_profile.py",
-      "size": 11011,
-      "sha256": "4d6cc9c583c74c2038ee937a9a6064aad4b5601e5308eb06793d8d2c2a8a9cde"
+      "size": 9774,
+      "sha256": "f86fc725b808fd89bd37196f7596605d1cb1aee8185982b81bc8fd9dbf9d5fd6"
     },
     {
       "path": "scripts/test_lima_native.py",
@@ -5370,8 +5420,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 16129,
-      "sha256": "41502bf2449e3866cddefac18f04c2c383a44e49a9532747936e123af9f9ac7f"
+      "size": 16263,
+      "sha256": "af5dd326744a7acaae9addeff70571ab270024d17e4ab9b4ff6ff3bcd3d27b9d"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
@@ -5399,14 +5449,9 @@
       "sha256": "c42e4c5963fff990959c13103d572dcb76acb4c3d5bcd68172e47d5763d60ebf"
     },
     {
-      "path": "scripts/test_linux_resume_spec.py",
-      "size": 11709,
-      "sha256": "ddcd1c50153250200672e637fceee7f68c448c3e335638f715ee945c8d5eaf78"
-    },
-    {
       "path": "scripts/test_linux_services.py",
-      "size": 20020,
-      "sha256": "a2a5e63b199a80578ff10664de19127100ee27f3e18033b970274a9341d814e4"
+      "size": 4960,
+      "sha256": "45a078f51412657f9d92410c0652a9b3562913cb554ec741341a5575bb4d6465"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -5465,8 +5510,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 42484,
-      "sha256": "438a9224f06a411f6bc2b3f74d1191ffbf9dccaca2932dc1acc77df395186fdc"
+      "size": 43487,
+      "sha256": "731db9241bdc0cd6c8087032338f903031fef6d9248cfcaf268c8c1d4bdcf2c6"
     },
     {
       "path": "scripts/test_notification_probe.py",
@@ -5600,8 +5645,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 9962,
-      "sha256": "838dd9cefc5a621daee1062234a83900bce1ef2ee31c9ce91aa31de3bbc44979"
+      "size": 10340,
+      "sha256": "38c5e3fe595877428477ea02c1904a1a67db3d75b66d5409a1f67e33e542b7ae"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
@@ -5685,8 +5730,8 @@
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7916,
-      "sha256": "5700a78ac7a6f35775c94afbc033f2310cefd01270fb38809f726caccb8cc901"
+      "size": 7904,
+      "sha256": "f54de56add7f773aab04f827e75cddceb07ac56743004907b69016c5ec780637"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
