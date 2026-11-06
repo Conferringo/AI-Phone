@@ -5845,13 +5845,13 @@
     },
     {
       "path": "skills/builtin/calc/SKILL.md",
-      "size": 1872,
-      "sha256": "837fa65204fc742a12ae0a900be0d8ee4c518debcde38dc8bf941f64261c8ce7"
+      "size": 2566,
+      "sha256": "be2dea6f49e026eadde1690eec6620a7915010654501a6cad0bb962c0eb17783"
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 6986,
-      "sha256": "0cfdd71f141afb83b8797b51ea6c71151acc95a0c7fb374e6f518c811bd79414"
+      "size": 7428,
+      "sha256": "75d2cc507e6a595a5e49fabfc1606448a6d4ed18f27bd454176d839290105db2"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
