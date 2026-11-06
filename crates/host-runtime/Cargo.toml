@@ -6,6 +6,12 @@ rust-version = "1.95"
 license = "Apache-2.0"
 publish = false
 
+[[bin]]
+name = "service-test-worker"
+path = "tests/fixtures/service_worker.rs"
+test = false
+bench = false
+
 [dependencies]
 ai-phone-adb = { path = "../adb-client" }
 ai-phone-api = { path = "../api" }

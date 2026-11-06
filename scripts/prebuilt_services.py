@@ -9,7 +9,7 @@ from host_platform import host_key
 from release_package import SECRET
 
 DEVICE_SETUP_CONTRACT = 'ai-phone-device-setup-v2'
-SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v1'
+SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v2'
 PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v2'
 DATABASE_PREPARE_CONTRACT = 'ai-phone-database-prepare-v1'
 ROLES = ('assistant', 'runner', 'vision')

@@ -11,6 +11,7 @@ enum Service {
     GuestAddress,
     PeerStatus,
     Input,
+    Control,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -25,6 +26,7 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::GuestAddress => runtime.block_on(crate::device_bridge::guest::address(arguments)),
         Service::PeerStatus => runtime.block_on(crate::device_bridge::guest::status(arguments)),
         Service::Input => runtime.block_on(crate::android::input::run(arguments)),
+        Service::Control => runtime.block_on(crate::supervision::control(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -55,6 +57,7 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
             Some(contract(arguments, crate::android::session::CONTRACT))
         }
         "--supervise" => Some(start(Service::Supervisor, &arguments[1..])),
+        "--service-control" => Some(start(Service::Control, &arguments[1..])),
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),
         _ => None,

@@ -36,7 +36,7 @@ class NativeServiceTests(unittest.TestCase):
             records[role]={'path':path.relative_to(root).as_posix(),'size':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
-                         'service_supervision':'ai-phone-linux-supervision-v1', 'phone_input_setup':'ai-phone-input-setup-v2',
+                         'service_supervision':'ai-phone-linux-supervision-v2', 'phone_input_setup':'ai-phone-input-setup-v2',
                          'database_prepare':'ai-phone-database-prepare-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value

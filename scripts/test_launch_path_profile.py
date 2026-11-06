@@ -1,6 +1,5 @@
 """Real profile/configuration/PATH contracts; process and network operations denied."""
-from contextlib import ExitStack, redirect_stdout, redirect_stderr
-import hashlib
+from contextlib import ExitStack, redirect_stdout
 import io
 import json
 import os
@@ -168,32 +167,20 @@ class LaunchPathTests(unittest.TestCase):
         os.environ['PATH'] = self.path_b
         self.assertEqual(runtime_config.runtime_env(self.root)['PATH'], first)
 
-    @unittest.skipUnless(os.name == 'posix', 'Existing Linux service fingerprint contract')
-    def test_same_profile_resumes_but_real_profile_changes_are_still_rejected(self):
+    def test_same_profile_keeps_launch_environment_and_real_profile_changes_update_it(self):
         value = self.prepare()
         first = runtime_config.runtime_env(self.root)
         os.environ['PATH'] = self.path_b
         second = runtime_config.runtime_env(self.root)
-        folder = self.root / 'data/services'
-        folder.mkdir()
-        (folder / 'emulator.lock').touch(mode=0o600)
-        command = ['sh', str(self.root / 'scripts/android-emulator.sh')]
-        spec = {'command': command, 'environment': first}
-        (folder / 'emulator.spec.json').write_text(json.dumps(spec, indent=2))
-        receipt = {'format': 1, 'pid': 42, 'start_ticks': 'verified-fixture', 'root': str(self.root),
-                   'spec_sha256': hashlib.sha256(json.dumps(spec, sort_keys=True).encode()).hexdigest()}
-        with patch('linux_services.fcntl.flock', side_effect=BlockingIOError), patch('linux_services.unit_state', return_value=receipt), patch('linux_services.atomic_json', side_effect=AssertionError('Resume must not overwrite the current spec')):
-            self.assertFalse(linux_services.start_unit(self.root, 'emulator', command, second))
-            value['phone']['memory_mb'] = 4096
-            self.configure(value)
-            changed = runtime_config.runtime_env(self.root)
-            with redirect_stderr(io.StringIO()), self.assertRaisesRegex(ValueError, 'different service configuration'):
-                linux_services.start_unit(self.root, 'emulator', command, changed)
-            value['phone']['memory_mb'] = 2048
-            value['launch_path'] = str(self.home / 'explicitly changed owner/bin')
-            self.configure(value)
-            with redirect_stderr(io.StringIO()), self.assertRaisesRegex(ValueError, 'different service configuration'):
-                linux_services.start_unit(self.root, 'emulator', command, runtime_config.runtime_env(self.root))
+        self.assertEqual(first,second)
+        value['phone']['memory_mb'] = 4096
+        self.configure(value)
+        changed = runtime_config.runtime_env(self.root)
+        self.assertNotEqual(changed['AI_PHONE_PHONE_MEMORY'],first['AI_PHONE_PHONE_MEMORY'])
+        value['phone']['memory_mb'] = 2048
+        value['launch_path'] = str(self.home / 'explicitly changed owner/bin')
+        self.configure(value)
+        self.assertNotEqual(runtime_config.runtime_env(self.root)['PATH'],first['PATH'])
         self.assertEqual(self.env_file.read_bytes(), self.env_bytes)
 
 

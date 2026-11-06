@@ -76,7 +76,7 @@
     {
       "path": ".github/workflows/managed-host.yml",
       "size": 4695,
-      "sha256": "7f66b6ce10dfd582aa4a943b213d33f8b210ad65845c4bceda4fb225cf6927fd"
+      "sha256": "c293ab9aa3e8ece259c0bb8ea3f8c0c992b18a51fc47b479c975cf7318aabbab"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -2860,8 +2860,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 867,
-      "sha256": "7eed99f50ac43594164e7afde64e77dc709e8633fad64f49ac787dfdbac30515"
+      "size": 974,
+      "sha256": "da4ade151ba6745bf83864aa6ca39eefe64b6c9b34df136feaa74e3fca97c769"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -2995,8 +2995,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3392,
-      "sha256": "6ae9c35acfc8d2ee7ad4912d623412d3d861840d7d146087b1f176553da10de9"
+      "size": 3570,
+      "sha256": "5902b974a7796fa1450b3186a57b46a82bfe104b8e97a5282224b1e168fae9ee"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3099,14 +3099,24 @@
       "sha256": "11c2e7b1859854c275ff2a0ce4379ea4d3ad461c37befe9d68c94a1fdbd34f53"
     },
     {
+      "path": "crates/host-runtime/src/supervision/linux/control/state.rs",
+      "size": 8417,
+      "sha256": "d969147939613721b8cc6d3ccfeaae3021f6f5d2b4a4a5c1351f6c9fb469a68d"
+    },
+    {
+      "path": "crates/host-runtime/src/supervision/linux/control.rs",
+      "size": 12587,
+      "sha256": "579e2314cc745ea6327f4c239c258ca80072fd03e7af3a7d5ae6f3d617654f3e"
+    },
+    {
       "path": "crates/host-runtime/src/supervision/linux.rs",
-      "size": 8348,
-      "sha256": "26fee0afd281bd1ab85f9a6bfd549c89c29320aca0a291667fdaa91ee998e001"
+      "size": 8395,
+      "sha256": "10130bf495226fa800e4c63ba0c210a230d5c0f4cea92a0ad76e28743f8f3cc5"
     },
     {
       "path": "crates/host-runtime/src/supervision/mod.rs",
-      "size": 483,
-      "sha256": "3c6e8fd96d5e56d84f448e739bb301fa6c430cf7ff899273e61cfda81c103abf"
+      "size": 790,
+      "sha256": "9c95b3b3c643766510c6b6d3855c3ea68514ce4e346b3944dc79c929850ea4ee"
     },
     {
       "path": "crates/host-runtime/src/tests.rs",
@@ -3169,6 +3179,11 @@
       "sha256": "14fe0ab42a6691ea37ee428445e3cf5742d2be2d022ef51311abb7ea6740d25b"
     },
     {
+      "path": "crates/host-runtime/tests/fixtures/service_worker.rs",
+      "size": 1609,
+      "sha256": "6fda6e60defe6efff666b58321c484e7edb136446c066fa81210e20e245bf3b3"
+    },
+    {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
       "size": 2347,
       "sha256": "d61dc8c268ae6f13e6016183261b26f70977d36f5733365ebab7d8aebe0ab081"
@@ -3177,6 +3192,11 @@
       "path": "crates/host-runtime/tests/peer_owner_pipe.rs",
       "size": 4710,
       "sha256": "600e6e2f8e0cf25255a070ab55d7969a6c40766c19385ea3f2ffc1a5a5d7279a"
+    },
+    {
+      "path": "crates/host-runtime/tests/service_control_cli.rs",
+      "size": 17382,
+      "sha256": "4ccd57915712e4343f6aab0864d3fa992f446892b6417e56d2519b227f0f2646"
     },
     {
       "path": "crates/host-runtime/tests/supervisor_contract.rs",
@@ -3435,8 +3455,8 @@
     },
     {
       "path": "docs/public/engineering/service-supervision.md",
-      "size": 2920,
-      "sha256": "8567c329e68420491677a24fbe9ba468986786b3456f558a087f8dc5c8fe36c4"
+      "size": 3979,
+      "sha256": "0817fdb78042914d26a6232c19894a4a480b2572c28bd76155b0e12cb5f17889"
     },
     {
       "path": "docs/public/engineering/windows-android-runtime.md",
@@ -3900,8 +3920,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 12985,
-      "sha256": "d07c7f5b4d39f1c97d53cc667b64a15a56bb1a3075ae64a14e34e6c3b662954d"
+      "size": 13245,
+      "sha256": "748d886c558d4cdaf2ed0fa4d1f3c309a52a97c8cbf9366b0f110fadd788c68d"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -4900,8 +4920,8 @@
     },
     {
       "path": "scripts/linux_services.py",
-      "size": 7052,
-      "sha256": "6d899e63145271b335f7a7da79e5c0beb1e3ec8c7bf539e66da86796a551f109"
+      "size": 1294,
+      "sha256": "19b5f7939f29dea9be51f70d46bef4cd40f232cb3a575a16eb61b259b21e553d"
     },
     {
       "path": "scripts/locale.test.ts",
@@ -5051,7 +5071,7 @@
     {
       "path": "scripts/prebuilt_services.py",
       "size": 9249,
-      "sha256": "8144f187b58f1f69bde4a4f9e15634689e9deae5466a7cd1337a3948ee92d696"
+      "sha256": "00af26625815dd6dd3ccddfcfdc2ad5abba58f0f9850e70d98c84c4ee2e97e3d"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5165,8 +5185,8 @@
     },
     {
       "path": "scripts/test_android_boot.py",
-      "size": 15996,
-      "sha256": "f72bad3f04868d55087e64f3d72c87a16c896b397cb530e9e65bbc77662a7048"
+      "size": 16053,
+      "sha256": "e587b63b6be966db66b10a26a416044cee0bf15995fdbf70a5f047caf579028d"
     },
     {
       "path": "scripts/test_android_compression_profiles.py",
@@ -5375,8 +5395,8 @@
     },
     {
       "path": "scripts/test_launch_path_profile.py",
-      "size": 11011,
-      "sha256": "4d6cc9c583c74c2038ee937a9a6064aad4b5601e5308eb06793d8d2c2a8a9cde"
+      "size": 9774,
+      "sha256": "f86fc725b808fd89bd37196f7596605d1cb1aee8185982b81bc8fd9dbf9d5fd6"
     },
     {
       "path": "scripts/test_lima_native.py",
@@ -5419,14 +5439,9 @@
       "sha256": "c42e4c5963fff990959c13103d572dcb76acb4c3d5bcd68172e47d5763d60ebf"
     },
     {
-      "path": "scripts/test_linux_resume_spec.py",
-      "size": 11709,
-      "sha256": "ddcd1c50153250200672e637fceee7f68c448c3e335638f715ee945c8d5eaf78"
-    },
-    {
       "path": "scripts/test_linux_services.py",
-      "size": 20020,
-      "sha256": "a2a5e63b199a80578ff10664de19127100ee27f3e18033b970274a9341d814e4"
+      "size": 4960,
+      "sha256": "45a078f51412657f9d92410c0652a9b3562913cb554ec741341a5575bb4d6465"
     },
     {
       "path": "scripts/test_macos_client_factory.py",
@@ -5486,7 +5501,7 @@
     {
       "path": "scripts/test_native_services.py",
       "size": 43487,
-      "sha256": "6f12c13adb628fedcdb0c5c23a0f35883ec3d9413ee91684e727ff45cfc85ba5"
+      "sha256": "731db9241bdc0cd6c8087032338f903031fef6d9248cfcaf268c8c1d4bdcf2c6"
     },
     {
       "path": "scripts/test_notification_probe.py",
