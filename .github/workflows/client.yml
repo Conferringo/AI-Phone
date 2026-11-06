@@ -362,7 +362,16 @@ jobs:
         shell: bash
         run: python3 scripts/required_tests.py test_candidate_retention test_retention_shell
       - name: Native tests
+        if: runner.os != 'Windows'
         run: cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked --release
+      - name: Native Windows tests with the installer compiler profile
+        if: runner.os == 'Windows'
+        env:
+          PYTHONPATH: scripts
+        run: |
+          python scripts/required_tests.py test_native_client_cargo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "from build_client import windows_cargo; windows_cargo('test')"
       - name: Verify vendored upstream patch and packaging guards
         run: |
           python -m unittest discover -s scripts -p test_native_backports.py
