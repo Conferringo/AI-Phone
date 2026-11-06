@@ -3080,13 +3080,13 @@
     },
     {
       "path": "crates/host-runtime/src/supervision/linux.rs",
-      "size": 8359,
-      "sha256": "82ac957a212657b005c675f8b3d75c3f1de95bc61cd70fb8ded2b46f7f17e150"
+      "size": 8348,
+      "sha256": "26fee0afd281bd1ab85f9a6bfd549c89c29320aca0a291667fdaa91ee998e001"
     },
     {
       "path": "crates/host-runtime/src/supervision/mod.rs",
-      "size": 545,
-      "sha256": "bac7d5de81376d46cf39f4d57b2dc67784d0787fc26d067f1f57a50478aefad8"
+      "size": 483,
+      "sha256": "3c6e8fd96d5e56d84f448e739bb301fa6c430cf7ff899273e61cfda81c103abf"
     },
     {
       "path": "crates/host-runtime/src/tests.rs",

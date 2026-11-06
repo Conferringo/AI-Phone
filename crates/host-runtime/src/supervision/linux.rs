@@ -201,7 +201,7 @@ impl Drop for Published {
     }
 }
 
-pub(crate) async fn stop_child(child: &mut Child) -> Result<()> {
+async fn stop_child(child: &mut Child) -> Result<()> {
     let pid = child.id().and_then(|pid| Pid::from_raw(pid as i32));
     if let Some(pid) = pid {
         signal_group(pid, Signal::TERM)?;
