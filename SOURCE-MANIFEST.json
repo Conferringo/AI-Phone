@@ -5390,8 +5390,8 @@
     },
     {
       "path": "scripts/test_install_language.py",
-      "size": 2737,
-      "sha256": "93ea6ff1625cf9c05ac94b9a5172e3624adccf386922748757db6cae831949f4"
+      "size": 2965,
+      "sha256": "ec14a36db0de085883ce1e0812584ce95584c3928fa583e792ce3a967c7712fe"
     },
     {
       "path": "scripts/test_install_state.py",
