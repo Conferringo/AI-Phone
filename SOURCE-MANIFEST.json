@@ -515,8 +515,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/process.rs",
-      "size": 4864,
-      "sha256": "ec79bf5470f6d982675db5619f93a2ad2377cc21ceb6bcc0c0f379e55e67c1b6"
+      "size": 4621,
+      "sha256": "aa92d3a738f16143465b1e923c56389fb1e3274c20810b4c383528e5cc1535db"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/resources.rs",
@@ -525,8 +525,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 25848,
-      "sha256": "139146d473e9a9c4c68884bad02b9a4d214fe82c1a7767b5bc832e55d7294624"
+      "size": 25844,
+      "sha256": "f78346e45a4bc6cebf05865994a452ee187ffcd1d76dd504ec47b520a176a4e2"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -3155,8 +3155,8 @@
     },
     {
       "path": "crates/host-runtime/src/profile.rs",
-      "size": 12023,
-      "sha256": "8f5bd01387c0d9cf50cb1c67f40e39abbb838b30a947fb639371e306555d76e0"
+      "size": 12047,
+      "sha256": "330736189d10a3676774dfd43048834afb078e48e0a33163abcdfeab79af04c5"
     },
     {
       "path": "crates/host-runtime/src/runtime_environment.rs",

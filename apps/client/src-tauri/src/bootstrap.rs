@@ -1,10 +1,12 @@
 //! Native local deployment lifecycle. Remote workbenches never receive this authority.
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
+use std::process::Command;
 use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
-    process::{ChildStdin, Command},
+    process::ChildStdin,
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
@@ -15,10 +17,10 @@ use tauri::Manager;
 mod checkpoint;
 #[cfg(any(windows, test))]
 mod native_phone;
-#[cfg(any(unix, test))]
+#[cfg(unix)]
 mod process;
 mod resources;
-#[cfg(any(unix, test))]
+#[cfg(unix)]
 use process::execute;
 use resources::{available_bytes, hash};
 
@@ -195,7 +197,7 @@ impl ManagerState {
         self.check_cancelled()?;
         self.set(folder, "ready", "ready", "")
     }
-    #[cfg(any(unix, test))]
+    #[cfg(unix)]
     fn process_error(&self) -> String {
         self.progress
             .lock()

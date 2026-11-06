@@ -35,6 +35,7 @@ pub(crate) struct Request {
     desktop: Desktop,
 }
 
+#[cfg(unix)]
 pub(crate) fn phone_resources(
     root: &Path,
     template: &str,
@@ -306,7 +307,7 @@ pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod resume_resources_tests {
     use super::*;
     fn request(cpus: u32, memory: u32) -> Request {
