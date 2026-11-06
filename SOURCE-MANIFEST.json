@@ -4800,8 +4800,8 @@
     },
     {
       "path": "scripts/fixtures/background-conversations.ts",
-      "size": 18894,
-      "sha256": "f80f44487dc035fdd1c4297d7a3f89803857f743abe26c8b6c94c239762417cf"
+      "size": 18900,
+      "sha256": "711bc6d7a442bd744f2b8ea62ed00ae255f86664d17a71a2e238c07ad5c54851"
     },
     {
       "path": "scripts/fixtures/chat-history-watch.ts",
