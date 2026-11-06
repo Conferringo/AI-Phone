@@ -39,12 +39,17 @@ class AptRepositoryTests(unittest.TestCase):
                 control.write_text(f'Package: aiphone-apt-fixture\nVersion: {version}\nArchitecture: {architecture}\nMaintainer: AI Phone fixture\nDescription: Isolated package\n')
                 payload=package/'usr/share/aiphone-apt-fixture/version';payload.parent.mkdir(parents=True);payload.write_text(version)
                 deb=root/f'aiphone-apt-fixture_{version}_{architecture}.deb';run('dpkg-deb','--build','--root-owner-group',package,deb)
-                repository=repos/version
+                repository=repos/'signed'
                 if version=='1.0':result=build([deb],repository,base,key,home)
                 else:
+                    self.assertTrue((repository/'InRelease').is_file())
+                    note=repository/'maintainer-note';note.write_text('keep')
                     tool=Path(__file__).with_name('apt_repository.py')
                     result=json.loads(run(sys.executable,tool,'index',deb,'--output',repository).stdout)
-                    self.assertFalse((repository/'InRelease').exists())
+                    self.assertEqual({row['file'] for row in result['metadata']},{'Packages','Packages.gz','Release'})
+                    for retired in ('InRelease','Release.gpg','ai-phone-archive-key.asc','ai-phone.sources'):
+                        self.assertFalse((repository/retired).exists())
+                    self.assertEqual(note.read_text(),'keep')
                     run(sys.executable,tool,'sign','--output',repository,'--base-url',base,'--key',key,'--gnupg-home',home)
                 self.assertEqual(result['packages'],[deb.name])
                 # This is the same DEB, not a repackaged APT binary.

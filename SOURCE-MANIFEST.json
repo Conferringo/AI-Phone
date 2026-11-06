@@ -3240,8 +3240,8 @@
     },
     {
       "path": "docs/public/apt-repository.md",
-      "size": 4465,
-      "sha256": "bbcff539c07ff76d952dd2b3d60c790d75867c74c9b59ddecb83261694a419d7"
+      "size": 4797,
+      "sha256": "201fabe392201e604b8958351e5b657c1d7ec4a7046b39162fa957c2603cbc76"
     },
     {
       "path": "docs/public/architecture.en.md",
@@ -4325,8 +4325,8 @@
     },
     {
       "path": "scripts/apt_repository.py",
-      "size": 3590,
-      "sha256": "3ec56771b174f25b9ceb941c457b70426d959c2cc7072d16aebca07ea0b09b39"
+      "size": 3779,
+      "sha256": "7812f7500c2201d50c4c6964db7426fc6a4bd323ef508c9223cde670a8c471be"
     },
     {
       "path": "scripts/artifact_io.py",
@@ -5180,8 +5180,8 @@
     },
     {
       "path": "scripts/test_apt_repository.py",
-      "size": 5364,
-      "sha256": "56cd142ba0a0e5284c30017660d24edf6adc502bcb8c3cfeeb9b9eeaf169a78a"
+      "size": 5806,
+      "sha256": "072f6b5473cc339249eabcf71239c53728adfbf9cb945a27ba2a0b26ca678e57"
     },
     {
       "path": "scripts/test_bootstrap_bun.py",

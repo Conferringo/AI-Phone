@@ -10,18 +10,20 @@ import tempfile
 
 def index(packages, output):
     packages=[Path(path).resolve() for path in packages]
-    output=Path(output).resolve();output.mkdir(parents=True)
+    output=Path(output).resolve();output.mkdir(parents=True,exist_ok=True)
     archive=['apt-ftparchive','--md5=no','--sha1=no','--sha512=no']
     # Index the original bytes without copying or repacking the full installers.
     with tempfile.TemporaryDirectory(prefix='aiphone-apt-') as temporary:
         stage=Path(temporary)
         for package in packages:(stage/package.name).symlink_to(package)
         index=subprocess.check_output([*archive,'packages','.'],cwd=stage)
+    for name in ('InRelease','Release.gpg','ai-phone-archive-key.asc','ai-phone.sources'):
+        (output/name).unlink(missing_ok=True)
     (output/'Packages').write_bytes(index)
     (output/'Packages.gz').write_bytes(gzip.compress(index,mtime=0))
     release=subprocess.check_output([*archive,'-o','APT::FTPArchive::Release::Origin=AI Phone','-o','APT::FTPArchive::Release::Label=AI Phone','release','.'],cwd=output)
     (output/'Release').write_bytes(release)
-    return {'packages':[path.name for path in packages],'metadata':records(sorted(output.iterdir()))}
+    return {'packages':[path.name for path in packages],'metadata':records([output/name for name in ('Packages','Packages.gz','Release')])}
 
 
 def records(paths):
