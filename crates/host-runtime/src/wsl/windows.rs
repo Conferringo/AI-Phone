@@ -55,12 +55,8 @@ impl Initializer for Native<'_> {
             "--cd",
             "/",
             "--exec",
-            "/opt/aiphone/tools/python/bin/python3",
-            "-I",
-            "-B",
-            "/opt/aiphone/bootstrap/wsl_backend_entry.py",
-            "--initialize",
-            "/dev/stdin",
+            "/usr/local/libexec/aiphone-bootstrap",
+            "--initialize-wsl-backend",
         ]);
         super::initialize::run(command, request, self.cancelled)
     }

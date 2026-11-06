@@ -14,6 +14,8 @@ enum Service {
     Control,
     #[cfg(unix)]
     Images,
+    #[cfg(unix)]
+    WslBackend,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -31,6 +33,8 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Control => runtime.block_on(crate::supervision::control(arguments)),
         #[cfg(unix)]
         Service::Images => runtime.block_on(crate::images::run(arguments)),
+        #[cfg(unix)]
+        Service::WslBackend => runtime.block_on(crate::wsl::backend::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -68,6 +72,12 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
         "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
+        "--wsl-backend-initializer-contract" => Some(contract(
+            arguments,
+            crate::wsl::BACKEND_INITIALIZER_CONTRACT,
+        )),
+        #[cfg(unix)]
+        "--initialize-wsl-backend" => Some(start(Service::WslBackend, &arguments[1..])),
         #[cfg(unix)]
         "--activate-images" => Some(start(Service::Images, &arguments[1..])),
         #[cfg(unix)]

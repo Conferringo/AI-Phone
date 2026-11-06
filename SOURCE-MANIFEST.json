@@ -3030,8 +3030,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 4464,
-      "sha256": "521b796d759740a5dfb2f5af1843080fedcb1721f97606071fbc62535cca9a38"
+      "size": 4866,
+      "sha256": "58f5fdd344c8124b5e22e5693830676ae69f5cacec905d0aafcb2097a4112052"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3194,6 +3194,21 @@
       "sha256": "9431d489ed0e2c0c2bd66870950ddc22d09330e8a3f90e56809a5f2fd6299d5d"
     },
     {
+      "path": "crates/host-runtime/src/wsl/backend/process.rs",
+      "size": 3372,
+      "sha256": "1866dc1e8ed8a1e169ac966ee501deb0b43bd8b73579dc10ca9256b2a89aa3f1"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/backend/tests.rs",
+      "size": 10258,
+      "sha256": "4b42b8f30c448ec314a1d349408119d45142fedcc345cae7d43e953398ec83e1"
+    },
+    {
+      "path": "crates/host-runtime/src/wsl/backend.rs",
+      "size": 16489,
+      "sha256": "d2905be4671a79ae947954d25014bf240b71e6a02c4d30ae17e0c6b0a2f372b9"
+    },
+    {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
       "size": 12730,
       "sha256": "7e53e37b6f9f984e25d81abb843326ddfd4eaff9a63d845c99dba4e195bfb822"
@@ -3220,13 +3235,13 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/windows.rs",
-      "size": 7363,
-      "sha256": "511c8e3be50434b4af8dc52d4047bc30de4a93f08bcb49efc75e1a944b6f0690"
+      "size": 7253,
+      "sha256": "b98a6f21ace4cc64f47e2c7e5514053e3f619939c551cacc2584dd0c448e6a21"
     },
     {
       "path": "crates/host-runtime/src/wsl.rs",
-      "size": 7838,
-      "sha256": "ae187fd741d243ff64b06c833919af57be41a7289551b71534fc9c1880ce18f9"
+      "size": 7953,
+      "sha256": "27effc2edbcb86ba33d63469cb8255e60a26441daede7777bf9ecdc03fb55049"
     },
     {
       "path": "crates/host-runtime/tests/connection_owner.rs",
@@ -3297,6 +3312,11 @@
       "path": "crates/host-runtime/tests/supervisor_contract.rs",
       "size": 654,
       "sha256": "2d9807354016059377bbd12451280161b7491c4dcaf0ba58d8e2acff114e0c52"
+    },
+    {
+      "path": "crates/host-runtime/tests/wsl_initializer_cli.rs",
+      "size": 2888,
+      "sha256": "3bd3c4c9f69d20803c4d51494477e7bbf440826b0282ef15540edade6d10f20c"
     },
     {
       "path": "crates/phone-runner/Cargo.toml",
@@ -5830,8 +5850,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 14678,
-      "sha256": "b45ac5ae12665b7d6c6c5d79ee6dc597b2ea0258843fc4a9ebbb4530e73cd4a6"
+      "size": 14828,
+      "sha256": "4b2c3c68ebbbf5104bf783821bf2e1270df84736db893d69612f032d47a952b7"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
