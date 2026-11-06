@@ -80,8 +80,9 @@ function FilePane({id,title,deviceId,icon,open,revision,busy,clipboard,onClipboa
  const target={deviceId:deviceId||'',path},sources=entries.filter(e=>selected.has(e.path)).map(e=>({deviceId:deviceId||'',path:e.path})),all=entries.length>0&&selected.size===entries.length,partial=selected.size>0&&!all;
  const go=onPath;
  useEffect(()=>setAddress(path),[path]);
- useEffect(()=>{if(!open||deviceId===undefined)return;const controller=new AbortController();setLoading(true);setError('');setSelected(new Set());
-  fileRpc('list',FileLocationSchema,{deviceId,path},FileListingSchema,controller.signal).then(result=>{if(controller.signal.aborted)return;setEntries(result.entries);const canonical=result.location?.path||'/';if(canonical!==path)go(canonical);}).catch(e=>{if(!controller.signal.aborted){setEntries([]);setError(e instanceof Error?e.message:String(e));}}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+ useEffect(()=>setSelected(new Set()),[open,deviceId,path]);
+ useEffect(()=>{if(!open||deviceId===undefined)return;const controller=new AbortController();setLoading(true);setError('');
+  fileRpc('list',FileLocationSchema,{deviceId,path},FileListingSchema,controller.signal).then(result=>{if(controller.signal.aborted)return;setEntries(result.entries);const paths=new Set(result.entries.map(entry=>entry.path));setSelected(old=>new Set([...old].filter(value=>paths.has(value))));const canonical=result.location?.path||'/';if(canonical!==path)go(canonical);}).catch(e=>{if(!controller.signal.aborted){setEntries([]);setError(e instanceof Error?e.message:String(e));}}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
   return()=>controller.abort();
  // Path owner is either the workspace or this pane; requests are cancelled on navigation.
  },[open,deviceId,path,revision,reload]);

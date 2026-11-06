@@ -1745,8 +1745,8 @@
     },
     {
       "path": "apps/web/src/components/workspace-window.tsx",
-      "size": 15254,
-      "sha256": "31594897367ca47eacc949c418305924294711f627858cc33e336b61e3ebac95"
+      "size": 15419,
+      "sha256": "b9467db6efea1f4e5afd812ff1ddd9dfa9afba11f7473ac81a704891de67b7e5"
     },
     {
       "path": "apps/web/src/lib/assistant-server.ts",
