@@ -33,6 +33,8 @@ Service launchers verify installed native components before choosing their comma
 
 The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
 
+Image activation runs in Rust and keeps one open capsule through validation and import. Explicit OCI layouts retain their declared identities. Legacy Docker archives are streamed into an explicit OCI layout with content-addressed config/layer blobs and target names derived from the exact generated manifests. This avoids relying on a daemon-generated legacy manifest ID. The private `data/deployment/image-runtime.json` record retains the source archive metadata and records the selected targets; normalized selections carry `import_layout: "oci-v1"`. Old aliases, running containers and volumes are preserved. Factory/export tooling still awaits its Rust migration.
+
 User distributions require one complete installer file. The [delivery-volume format](engineering/package-delivery.md) remains available for maintainer transport; internal volumes do not satisfy the single-download requirement. Complete factories reject oversized installers.
 
 ## Component build and verification

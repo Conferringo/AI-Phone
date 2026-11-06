@@ -8,12 +8,26 @@ import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
-from container_images import checked_manifest,stage,activate,image_environment,inspect_archive
+from container_images import checked_manifest,stage,inspect_archive
 
 ROLES=('workspace','desktop','postgres','redis')
 
 
 class ContainerImageTests(unittest.TestCase):
+    def test_native_activation_adapter_uses_the_real_component_and_keeps_the_previous_record_on_failure(self):
+        import os,shutil
+        from container_images import activate,image_environment
+        from test_release import native_profile_program
+        program=Path(native_profile_program());engine=program.with_name('image-test-engine')
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);payload,manifest=self.fixture(root,oci=True)
+            (root/'expected.json').write_text(json.dumps(manifest));(root/'bin').mkdir();shutil.copy2(engine,root/'bin/docker')
+            with patch('prebuilt_services.image_activation_command',return_value=[str(program)]),patch.dict(os.environ,{'PATH':str(root/'bin'),'AI_PHONE_IMAGE_TEST_STATE':str(root)},clear=True):
+                selected=activate(root,payload);self.assertEqual(selected,image_environment(root))
+                record=root/'data/deployment/image-runtime.json';original=record.read_bytes();payload.write_bytes(b'broken')
+                with self.assertRaises(ValueError):activate(root,payload)
+                self.assertEqual(record.read_bytes(),original)
+
     def fixture(self, root, oci=False):
         configs={};docker_manifest=[];images={}
         for role in ROLES:
@@ -64,53 +78,6 @@ class ContainerImageTests(unittest.TestCase):
                     entry=tarfile.TarInfo(name);entry.size=len(body);archive.addfile(entry,io.BytesIO(body))
             stream.seek(0)
             with self.assertRaisesRegex(ValueError,'Unlisted OCI image'):inventory(stream)
-
-    def test_an_atomic_package_update_does_not_redirect_an_import(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,manifest=self.fixture(root);prepared=stage(capsule);ready={};loaded=[]
-            def docker(args,source=None):
-                if args[0]=='info':
-                    replacement=root/'replacement';replacement.write_bytes(b'untrusted replacement');replacement.replace(capsule)
-                    return 'arm64'
-                if args[:2]==['image','inspect']:return json.dumps([ready[args[2]]]) if args[2] in ready else None
-                if args[:2]==['image','load']:
-                    loaded.append(hashlib.file_digest(source,'sha256').hexdigest())
-                    for row in manifest['images'].values():ready[row['ref']]={'Id':row['config_digest'],'Architecture':'arm64','Os':'linux'}
-                    return ''
-                self.fail(args)
-            activate(root,prepared,docker)
-            self.assertEqual(loaded,[manifest['archive']['sha256']])
-
-    def test_an_inplace_package_change_is_stopped_before_import(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,_=self.fixture(root);prepared=stage(capsule);calls=[]
-            def docker(args,source=None):
-                calls.append(args)
-                if args[0]=='info':capsule.write_bytes(b'changed');return 'arm64'
-                if args[:2]==['image','inspect']:return None
-                self.fail('Changed capsule was imported')
-            with self.assertRaisesRegex(ValueError,'changed during'):activate(root,prepared,docker)
-            self.assertFalse((root/'data/deployment/image-runtime.json').exists())
-
-    def test_unknown_partial_import_is_observed_before_retrying(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,manifest=self.fixture(root);prepared=stage(capsule);ready={};attempts=[];observed=[]
-            def docker(args,source=None):
-                if args[0]=='info':return 'arm64'
-                if args[:2]==['image','inspect']:
-                    observed.append(args[2]);return json.dumps([ready[args[2]]]) if args[2] in ready else None
-                if args[:2]==['image','load']:
-                    attempts.append(list(observed));observed.clear()
-                    for row in list(manifest['images'].values())[:2 if len(attempts)==1 else 4]:ready[row['ref']]={'Id':row['config_digest'],'Architecture':'arm64','Os':'linux'}
-                    if len(attempts)==1:raise ValueError('Unknown import result')
-                    return ''
-                self.fail(args)
-            from container_images import RESERVE
-            with patch('container_images.shutil.disk_usage',return_value=type('Usage',(),{'free':RESERVE})()):
-                with self.assertRaisesRegex(ValueError,'Unknown'):activate(root,prepared,docker)
-                self.assertFalse((root/'data/deployment/image-runtime.json').exists())
-                activate(root,prepared,docker)
-            self.assertEqual(len(attempts),2);self.assertEqual(len(attempts[1]),4)
 
     def test_malformed_headers_paths_sizes_and_records_fail_closed(self):
         from container_images import archive_path,checked_image,checked_archive,outer_manifest,MAX_ARCHIVE
@@ -191,12 +158,8 @@ class ContainerImageTests(unittest.TestCase):
         for rows in ([],UntrustedRows(one='invalid'),TooManyRows([None]*5)):
             with patch('container_images.archive_metadata',return_value=({'manifest.json':rows},set())),self.assertRaisesRegex(ValueError,'inventory'):inventory(None)
 
-    def test_each_inspection_field_and_index_shape_is_validated(self):
-        from container_images import present,bind_indexes
-        with tempfile.TemporaryDirectory() as temp:
-            _,manifest=self.fixture(Path(temp));record=manifest['images']['desktop'];base={'Id':record['export_digest'],'Architecture':'arm64','Os':'linux'}
-            for rows in ([],{'unexpected':'object'},[{**base,'Architecture':'amd64'}],[{**base,'Os':'windows'}]):
-                with self.subTest(rows=rows),self.assertRaises(ValueError):present(record,'arm64',lambda _:json.dumps(rows))
+    def test_factory_index_shape_is_validated(self):
+        from container_images import bind_indexes
         with self.assertRaises(ValueError):bind_indexes({'schemaVersion':2,'manifests':None},{},{})
 
     def test_nested_metadata_limits_and_both_object_naming_formats(self):
@@ -243,36 +206,15 @@ class ContainerImageTests(unittest.TestCase):
             stream.seek(0)
             with self.assertRaisesRegex(ValueError,'entry budget' if flood else 'Legacy'):archive_metadata(stream)
 
-    def test_platform_indexes_need_a_verified_selected_manifest(self):
-        from container_images import present
-        with tempfile.TemporaryDirectory() as temp:
-            _,manifest=self.fixture(Path(temp));row=manifest['images']['desktop'];calls=[]
-            def docker(args):
-                calls.append(args)
-                if '--platform' in args:return json.dumps([{'Id':row['export_digest'],'Architecture':'arm64','Os':'linux'}])
-                return json.dumps([{'Id':'sha256:'+'f'*64,'Architecture':'arm64','Os':'linux','Descriptor':{'mediaType':'application/vnd.oci.image.index.v1+json'}}])
-            self.assertTrue(present(row,'arm64',docker));self.assertIn('--platform',calls[-1])
-            with self.assertRaisesRegex(ValueError,'verify'):present(row,'arm64',lambda args:None if '--platform' in args else docker(args))
-
-    def test_real_subprocess_transport_and_failed_publication_keep_owned_state(self):
+    def test_factory_real_subprocess_queries_keep_failures_visible(self):
         import os,shlex,sys
         from container_images import docker_command
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);binary=root/'docker';receipt=root/'received'
-            code="import sys,pathlib; arg=sys.argv[1:]; data=sys.stdin.buffer.read() if 'load' in arg else b''; pathlib.Path("+repr(str(receipt))+").write_bytes(data); print('arm64'); sys.exit(3 if 'fail' in arg else 0)"
+            root=Path(temp);binary=root/'docker'
+            code="import sys; print('arm64'); sys.exit(3 if 'fail' in sys.argv else 0)"
             binary.write_text('#!/bin/sh\nexec '+shlex.quote(sys.executable)+' -c '+shlex.quote(code)+' "$@"\n');binary.chmod(0o755)
             with patch.dict(os.environ,{'PATH':str(root)+os.pathsep+os.environ['PATH']}):
                 self.assertEqual(docker_command(['info']).strip(),'arm64');self.assertIsNone(docker_command(['fail']))
-                self.assertEqual(docker_command(['image','load'],io.BytesIO(b'owned image stream')),'');self.assertEqual(receipt.read_bytes(),b'owned image stream')
-                with self.assertRaises(ValueError):docker_command(['image','load','fail'],io.BytesIO(b'rejected'))
-                import subprocess
-                original=subprocess.Popen;children=[]
-                def child(*args,**kwargs):
-                    value=original(*args,**kwargs);children.append(value);return value
-                class BrokenInput:
-                    def read(self,_):raise OSError('fixture lost input')
-                with patch('container_images.subprocess.Popen',side_effect=child),self.assertRaisesRegex(OSError,'lost input'):docker_command(['image','load'],BrokenInput())
-                self.assertTrue(children[0].stdin.closed);self.assertIsNotNone(children[0].poll())
 
     def test_builder_emits_a_valid_capsule_through_a_real_export_process(self):
         import os,shlex,sys,subprocess
@@ -344,20 +286,6 @@ class ContainerImageTests(unittest.TestCase):
             self.assertEqual(records['desktop']['ref'],image_ref('desktop',primary))
             self.assertTrue(all(call.args[0][2]==image['Id'] for call in tag.call_args_list))
 
-    def test_low_space_and_failed_selection_never_replace_existing_state(self):
-        from container_images import RESERVE,atomic_selection
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,manifest=self.fixture(root);prepared=stage(capsule);old=root/'data/deployment';old.mkdir(parents=True);selected=old/'image-runtime.json';selected.write_text('previous selection')
-            def missing(args,source=None):
-                if args[0]=='info':return 'arm64'
-                if args[:2]==['image','inspect']:return None
-                self.fail('No import should start without disk reserve')
-            with patch('container_images.shutil.disk_usage',return_value=type('Usage',(),{'free':RESERVE-1})()):
-                with self.assertRaisesRegex(ValueError,'4 GiB'):activate(root,prepared,missing)
-            with patch('container_images.os.replace',side_effect=OSError('fixture write failure')):
-                with self.assertRaises(OSError):atomic_selection(root,manifest)
-            self.assertEqual(selected.read_text(),'previous selection');self.assertEqual(list(old.iterdir()),[selected])
-
     def test_archive_config_rejects_missing_layers_and_invalid_aliases(self):
         from container_images import config_entry
         identity='a'*64;path=identity+'.json';row={'Config':path,'Layers':['layer.tar'],'RepoTags':['owned']};objects={path:{'os':'linux','architecture':'arm64'}}
@@ -411,34 +339,6 @@ class ContainerImageTests(unittest.TestCase):
             for role in ROLES:
                 changed={**manifest['images'],role:{**manifest['images'][role],'ref':'ai-phone-desktop:20261028'}}
                 with self.assertRaises(ValueError):checked_manifest({**manifest,'images':changed})
-
-    def test_import_failure_does_not_publish_selection_and_resume_never_reloads(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,manifest=self.fixture(root);component=stage(capsule);calls=[];present={}
-            def docker(args,source=None):
-                calls.append(args)
-                if args==['info','--format','{{.Architecture}}']:return 'aarch64'
-                if args[:2]==['image','inspect']:return json.dumps([present[args[2]]]) if args[2] in present else None
-                if args[:2]==['image','load']:raise ValueError('fixture import failure')
-                raise AssertionError(args)
-            with self.assertRaisesRegex(ValueError,'import failure'):activate(root,component,docker)
-            self.assertFalse((root/'data/deployment/image-runtime.json').exists())
-            for image in manifest['images'].values():present[image['ref']]={'Id':image['source_digest'],'Architecture':'arm64','Os':'linux'}
-            calls.clear();activate(root,component,docker)
-            env=image_environment(root);self.assertEqual(env['AI_PHONE_DESKTOP_IMAGE'],manifest['images']['desktop']['ref']);self.assertEqual(env['AI_PHONE_IMAGE_PULL_POLICY'],'never')
-            self.assertNotIn('load',[arg[1] for arg in calls if len(arg)>1])
-            calls.clear();activate(root,component,docker);self.assertFalse(any(arg[:2]==['image','load'] for arg in calls))
-
-    def test_daemon_or_existing_reference_mismatch_stops_before_import(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);capsule,_=self.fixture(root);component=stage(capsule)
-            for arch in ['x86_64','unknown']:
-                with self.assertRaises(ValueError):activate(root,component,lambda args:arch if args[0]=='info' else self.fail('Unexpected Docker side effect'))
-            def mismatch(args,source=None):
-                if args[0]=='info':return 'arm64'
-                if args[:2]==['image','inspect']:return json.dumps([{'Id':'sha256:'+'0'*64,'Architecture':'arm64','Os':'linux'}])
-                self.fail('Must not overwrite a conflicting reference')
-            with self.assertRaisesRegex(ValueError,'conflict'):activate(root,component,mismatch)
 
 
 if __name__=='__main__':unittest.main()

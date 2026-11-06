@@ -8,14 +8,10 @@ from contextlib import contextmanager,nullcontext
 from dataclasses import dataclass
 import hashlib
 import json
-import lzma
-import os
 from pathlib import Path,PurePosixPath
 import re
-import shutil
 import subprocess
 import tarfile
-import tempfile
 from artifact_io import digest
 
 MANIFEST='IMAGES-MANIFEST.json'
@@ -93,28 +89,6 @@ class PreparedImages:
             file.seek(0)
             with tarfile.open(fileobj=file,mode='r:') as source:
                 with source.extractfile(self.manifest['archive']['path']) as body:yield body
-
-
-    @contextmanager
-    def import_archive(self,payload_file):
-        with self.archive(payload_file) as body:
-            if archive_codec(self.manifest)=='xz':
-                # The portable engine does not need an external xz executable.
-                with lzma.LZMAFile(body,mode='rb') as raw:yield BoundedImageArchive(raw)
-            else:yield body
-
-
-class BoundedImageArchive:
-    def __init__(self,source):
-        self.source=source;self.total=0
-
-    def read(self,size=-1):
-        remaining=MAX_RAW-self.total
-        limit=remaining+1 if size<0 else min(size,remaining+1)
-        data=self.source.read(limit);self.total+=len(data)
-        if self.total>MAX_RAW:raise ValueError('Raw image import exceeds budget')
-        return data
-
 
 
 
@@ -308,17 +282,9 @@ def image_pipe(child,pipe,*,close_first=False):
             raise BaseExceptionGroup('Image stream cleanup failed',([primary] if primary is not None else [])+failures)
 
 
-def docker_command(args, source=None):
-    if source is None:
-        result=subprocess.run(['docker',*args],capture_output=True,text=True,check=False)
-        return result.stdout if result.returncode==0 else None
-    with tempfile.TemporaryFile() as log:
-        child=subprocess.Popen(['docker',*args],stdin=subprocess.PIPE,stdout=log,stderr=log)
-        with image_pipe(child,child.stdin):
-            shutil.copyfileobj(source,child.stdin,1024**2);child.stdin.close()
-            if child.wait()!=0:
-                raise ValueError('Bundled image import did not complete; retry initialization')
-    return ''
+def docker_command(args):
+    result=subprocess.run(['docker',*args],capture_output=True,text=True,check=False)
+    return result.stdout if result.returncode==0 else None
 
 
 def daemon_architecture(docker):
@@ -329,55 +295,12 @@ def daemon_architecture(docker):
     return aliases[value.strip()]
 
 
-def present(record,architecture,docker):
-    result=docker(['image','inspect',record['ref']])
-    if result is None:return False
-    rows=json.loads(result)
-    if not isinstance(rows,list) or len(rows)!=1:
-        raise ValueError('Invalid Docker image response')
-    row=rows[0]
-    if row.get('Descriptor',{}).get('mediaType')=='application/vnd.oci.image.index.v1+json':
-        selected=docker(['image','inspect',record['ref'],'--platform','linux/'+architecture])
-        if selected is None:
-            raise ValueError('Cannot verify the selected image platform')
-        row=json.loads(selected)[0]
-    if row.get('Id') not in {record['export_digest'],record['config_digest']} or row.get('Architecture')!=architecture or row.get('Os')!='linux':
-        raise ValueError('Existing image reference conflict; no image was overwritten')
-    return True
-
-
-def atomic_selection(root, manifest):
-    folder=Path(root)/'data/deployment';folder.mkdir(parents=True,exist_ok=True,mode=0o700)
-    with tempfile.NamedTemporaryFile(mode='w',dir=folder,delete=False) as target:
-        path=Path(target.name);json.dump(manifest,target);target.flush();os.fsync(target.fileno())
-    try:
-        os.replace(path,folder/'image-runtime.json')
-        directory=os.open(folder,os.O_RDONLY)
-        try:os.fsync(directory)
-        finally:os.close(directory)
-    finally:path.unlink(missing_ok=True)
-
-
-def activate(root, prepared, docker=docker_command):
-    with prepared.payload.open('rb') as file:
-        before=os.fstat(file.fileno())
-        if hashlib.file_digest(file,'sha256').hexdigest()!=prepared.identity:
-            raise ValueError('Image capsule changed after validation')
-        manifest=prepared.manifest;arch=daemon_architecture(docker)
-        if arch!=manifest['architecture']:
-            raise ValueError('Docker engine architecture differs from bundled images')
-        ready=[present(row,arch,docker) for row in manifest['images'].values()]
-        if not all(ready):
-            if shutil.disk_usage(root).free<RESERVE:
-                raise ValueError('Keep 4 GiB free before importing images')
-            after=os.fstat(file.fileno())
-            if (before.st_size,before.st_mtime_ns)!=(after.st_size,after.st_mtime_ns):
-                raise ValueError('Image capsule changed during initialization')
-            with prepared.import_archive(file) as source:docker(['image','load','--quiet'],source)
-        if not all(present(row,arch,docker) for row in manifest['images'].values()):
-            raise ValueError('Bundled images are not ready; initialization can be retried')
-    atomic_selection(root,manifest)
-    return image_environment(root)
+def activate(root, payload):
+    """Temporary installer adapter; Rust owns admission, streaming import and publication."""
+    from prebuilt_services import image_activation_command
+    result=subprocess.run([*image_activation_command(root),'--activate-images',str(root),str(payload)],cwd=root,capture_output=True,text=True)
+    if result.returncode:raise ValueError(result.stderr.strip())
+    return json.loads(result.stdout)
 
 
 def image_environment(root):

@@ -59,10 +59,10 @@ class ReleaseTests(unittest.TestCase):
     def test_bundled_image_checkpoints_never_build_or_pull_missing_images(self):
         import release
         from install_state import InstallState
-        from container_images import atomic_selection
         from test_container_images import ContainerImageTests
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);_,manifest=ContainerImageTests().fixture(root);atomic_selection(root,manifest)
+            root=Path(folder);_,manifest=ContainerImageTests().fixture(root)
+            record=root/'data/deployment/image-runtime.json';record.parent.mkdir(parents=True);record.write_text(json.dumps(manifest))
             selected=runtime_env(root)
             self.assertEqual(selected['AI_PHONE_POSTGRES_IMAGE'],manifest['images']['postgres']['ref'])
             with InstallState(root) as state,patch('release.run') as run:

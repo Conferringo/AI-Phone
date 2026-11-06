@@ -305,9 +305,9 @@ def install(root, home, request, mise, emit, android_sdk=None, image_runtime=Non
     container_engine(root,home,config,emit)
     verify_container_ownership(root)
     if image_runtime is not None:
-        from container_images import stage, activate
+        from container_images import activate
         emit('container-host')
-        os.environ.update(activate(root,stage(image_runtime)))
+        os.environ.update(activate(root,image_runtime))
     import release
     release.install(root=root,observer=lambda phase,state:emit(phase,state),license_action=lambda manager,env,packages:sdk_licenses(manager,env,emit,packages),launch_client=False,minimum_free_gb=config['minimum_resume_free_gb'])
     emit('devices')

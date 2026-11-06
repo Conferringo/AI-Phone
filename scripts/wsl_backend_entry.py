@@ -94,7 +94,7 @@ def start_engine(root,run,observer=None):
 
 def start_backend(root,run,observer=None):
     from client_host import verify_container_ownership
-    from container_images import stage,activate
+    from container_images import activate
     from linux_host import private_token,start_web_service
     from linux_services import start_unit,unit_state
     from prebuilt_services import launch_spec
@@ -104,7 +104,7 @@ def start_backend(root,run,observer=None):
     observe(observer,'container_ownership')
     existing=verify_container_ownership(root)
     observe(observer,'images')
-    os.environ.update(activate(root,stage(BUNDLE/'images.payload')))
+    os.environ.update(activate(root,BUNDLE/'images.payload'))
     observe(observer,'environment')
     os.environ.update(runtime_env(root))
     private_token(root,'assistant');private_token(root,'phone-runner');private_token(root,'channels')

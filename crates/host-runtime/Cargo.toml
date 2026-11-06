@@ -12,6 +12,12 @@ path = "tests/fixtures/service_worker.rs"
 test = false
 bench = false
 
+[[bin]]
+name = "image-test-engine"
+path = "tests/fixtures/image_engine.rs"
+test = false
+bench = false
+
 [dependencies]
 ai-phone-adb = { path = "../adb-client" }
 ai-phone-api = { path = "../api" }

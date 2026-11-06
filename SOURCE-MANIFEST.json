@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 9356,
-      "sha256": "d6df229d9b94de473fb40ffb89eec17f5c90f921728564b062224fd0adfd3e80"
+      "size": 9380,
+      "sha256": "6b3ac7a2d5f5ef66fd21cce3f75be14915c604b50c758593fd74418d724fff95"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -100,8 +100,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 3365,
-      "sha256": "1fb93e3892e1c062c76396baaf4cf30678a8df337b47d0069eecc947d4a4b3cc"
+      "size": 3466,
+      "sha256": "bcc9ad39b91c782d23cd1108c1c285c14e8195031db4636b8d6e81911f29f945"
     },
     {
       "path": ".gitignore",
@@ -2890,8 +2890,13 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 969,
-      "sha256": "8cf12547ee99afb790ebc6160b71f6f3ba1cdcf0826e158cef7a6bd707da1f96"
+      "size": 1072,
+      "sha256": "3af81478997120caa8d79d57d303f0023bcdb9cba1b916f1f4c7136c96746405"
+    },
+    {
+      "path": "crates/host-runtime/examples/qualify_image_import.rs",
+      "size": 6070,
+      "sha256": "56bcacb087e2dd815e39895deb6d569fa5d945cfff959bc67b9004a8cd6060a6"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -3025,8 +3030,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 4125,
-      "sha256": "8e4f17aa861b3e1fb066a3e5f13849579a9dc4dc96296780cc1fbd9bea9faec4"
+      "size": 4464,
+      "sha256": "521b796d759740a5dfb2f5af1843080fedcb1721f97606071fbc62535cca9a38"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3089,9 +3094,34 @@
       "sha256": "b6baaffd7732c884262747e49d36cd502b0b3ac915b1c80f9c64907369f2de74"
     },
     {
+      "path": "crates/host-runtime/src/images/engine.rs",
+      "size": 7132,
+      "sha256": "4e5a322f9a9d7bfcc432fe31ccab8bb41cc133b86b23afc4ebcc8a8f6be82af1"
+    },
+    {
+      "path": "crates/host-runtime/src/images/inventory.rs",
+      "size": 13316,
+      "sha256": "4c799002b9d034cbb683adcf68a57d8d41af55193133d4bcfae8d0f299184616"
+    },
+    {
+      "path": "crates/host-runtime/src/images/manifest.rs",
+      "size": 6760,
+      "sha256": "ab92b1c7dd5f3a619f510e3253e3559ae8c699d1aa4475d0ea2d79c588ddf2da"
+    },
+    {
+      "path": "crates/host-runtime/src/images/mod.rs",
+      "size": 6457,
+      "sha256": "70044a5990fa9ba593c3eff2c40bce74fbbb2f4305483c319d2478d566b28f60"
+    },
+    {
+      "path": "crates/host-runtime/src/images/normalize.rs",
+      "size": 4131,
+      "sha256": "5725128b1ecc57e62a527f89b7c852d5282867d9eabfaef9f661ff8e9709c10f"
+    },
+    {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2888,
-      "sha256": "ca26461bd11f7cf3bead40b54e015c863835744d62feba9f51b75ce92836ec40"
+      "size": 2913,
+      "sha256": "1ddd905146d36bb3d12e4c3b61636d05f0069b12a97a75231246fb3a09d57e2e"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -3209,6 +3239,16 @@
       "sha256": "979914491558f383816de03c3101b4df3a8c34410a2db18a0036da6278f8db2b"
     },
     {
+      "path": "crates/host-runtime/tests/fixtures/image_capsule.rs",
+      "size": 5840,
+      "sha256": "f8364ab64b9ed54730a34aaa5123edfd8283e9033f46aa3d6ebe326d1490fd5f"
+    },
+    {
+      "path": "crates/host-runtime/tests/fixtures/image_engine.rs",
+      "size": 6737,
+      "sha256": "c8d20880351e1fc6bca964e364c7033f65bac2bbacf2eda77b884cd8cf955049"
+    },
+    {
       "path": "crates/host-runtime/tests/fixtures/link_peer.rs",
       "size": 2635,
       "sha256": "ed1c50ebaba82fac3594c4446c4e04fd42687acf352a6beb4366b2fbed5593bd"
@@ -3227,6 +3267,11 @@
       "path": "crates/host-runtime/tests/host_profile_cli.rs",
       "size": 12211,
       "sha256": "9e00237bb8b4a6b39d209218bf88405b2595b5f8fd23904359e372fa508efba5"
+    },
+    {
+      "path": "crates/host-runtime/tests/image_activation_cli.rs",
+      "size": 18275,
+      "sha256": "0d191836d0ca6a1e789d35f9b5756ddbbed06b305fe78ad4156e82040b6541a2"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -3955,13 +4000,13 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 7732,
-      "sha256": "d43feba622da9b502b792057ba390b406e1759aa5357d8a4e167df379a21e4fe"
+      "size": 8082,
+      "sha256": "e8f9247c9ae12673541a1cc9ab5e88ae91b0d98cd1a1fcdc2dac7307a19837c5"
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 9797,
-      "sha256": "8af4ddc37772e5ca6825ab7fe3bcd5adb1a971098146c2b09a4a45db8b4c8dec"
+      "size": 10466,
+      "sha256": "5d9ac52aa686342c7c61cb551e8a89ce53a8ae109c6c8e804559d3888f91055e"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4515,8 +4560,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 7673,
-      "sha256": "f20d11e5c5ae556bfde0678e7e16bf042d1c2b3ed2e098c686e96d658eeb653a"
+      "size": 7832,
+      "sha256": "eff093f4d856eccf027822166c69bb8baa4d502ec4f883501e334d80032f8f8b"
     },
     {
       "path": "scripts/bun",
@@ -4610,8 +4655,8 @@
     },
     {
       "path": "scripts/client_host.py",
-      "size": 17844,
-      "sha256": "3adccd67f94aff7c58ba4404efb494ae8c986122aabcd778aa0c21e606ec43b8"
+      "size": 17830,
+      "sha256": "936092b760d672a29b89d34a2ebe64c9258135abf303cd7099bddf6f17da4dff"
     },
     {
       "path": "scripts/client_host_entry.py",
@@ -4630,8 +4675,8 @@
     },
     {
       "path": "scripts/container_images.py",
-      "size": 16363,
-      "sha256": "8d56137d8e6b303b2245993d3164b4ec30251993162d3546da814b464251dd35"
+      "size": 12876,
+      "sha256": "7fca913ab3a8f27fca6a3523e1d44a2b89bfee77f9623aebaea0eb6aba05210d"
     },
     {
       "path": "scripts/copilot-audio.test.ts",
@@ -5140,8 +5185,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 10823,
-      "sha256": "8cebe00163224c892e939d3d5db7a46563d3c43da4e5b22c6b2191eb4f003c59"
+      "size": 11242,
+      "sha256": "b11e33976470113e1f4981e1803cd2c25e1521a11ee9e6c7a057772f35875f38"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5360,8 +5405,8 @@
     },
     {
       "path": "scripts/test_container_images.py",
-      "size": 32638,
-      "sha256": "b4927e3630434af7380f13661f78e6dcd03eb27c2c7c59faed896295fc66acfd"
+      "size": 24897,
+      "sha256": "137ccfaa5c189b3d288446d51d727c66edd2710cb37612896286f9a77667d5e0"
     },
     {
       "path": "scripts/test_container_ownership.py",
@@ -5424,14 +5469,9 @@
       "sha256": "cb91ec253c5298e09e6c61b89e18821b4fa322bf9ecf9c3cef386222a78378b5"
     },
     {
-      "path": "scripts/test_image_import_stream.py",
-      "size": 4088,
-      "sha256": "0b0837fea98190e3fd73f13ed816f41af7081be6f1d0a5d2b038cd2edb0ac6c8"
-    },
-    {
       "path": "scripts/test_image_pipe_cleanup.py",
-      "size": 6013,
-      "sha256": "2ce5d0a4b06fd2ef963e3b333d25904b5197d02040f83e2007a598803bd2a977"
+      "size": 3333,
+      "sha256": "66b33421de24434beabfe4ddd1f209859eacd9afde2d92dd424656162f22e14c"
     },
     {
       "path": "scripts/test_install_language.py",
@@ -5565,8 +5605,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 46901,
-      "sha256": "6cfae7b5913794d59aaff14b17a80bf604abd4eed4e64d7584ed31290b53b7ba"
+      "size": 48135,
+      "sha256": "fc3cef3d226c937d8ec3def4ca93c08790164c93e2fc8d9024a6a54a6ab3fd42"
     },
     {
       "path": "scripts/test_notification_probe.py",
@@ -5625,8 +5665,8 @@
     },
     {
       "path": "scripts/test_release.py",
-      "size": 22086,
-      "sha256": "d9b9aa18a351b1bb7ab19712d5ef69f6a85bc93c43de8e021ecc18e243cab68f"
+      "size": 22135,
+      "sha256": "572d088acd408886b99eef25291291738fe94d293cfebbffd01d415c32cb11c9"
     },
     {
       "path": "scripts/test_release_portability.py",
@@ -5700,8 +5740,8 @@
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 10340,
-      "sha256": "38c5e3fe595877428477ea02c1904a1a67db3d75b66d5409a1f67e33e542b7ae"
+      "size": 11286,
+      "sha256": "c6618e4f159e9e9135793bfcea26ff6b520d8cc9cfd8b32154d21cb83aa4bd89"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
@@ -5785,8 +5825,8 @@
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7904,
-      "sha256": "f54de56add7f773aab04f827e75cddceb07ac56743004907b69016c5ec780637"
+      "size": 7891,
+      "sha256": "f953700979fdb1a2991cd4a2a5f8cd8592102084a986867f54a038cb3abf81cb"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
