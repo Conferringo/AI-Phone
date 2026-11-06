@@ -13,6 +13,7 @@ SERVICE_SUPERVISION_CONTRACT = 'ai-phone-linux-supervision-v2'
 PHONE_INPUT_SETUP_CONTRACT = 'ai-phone-input-setup-v2'
 DATABASE_PREPARE_CONTRACT = 'ai-phone-database-prepare-v1'
 HOST_PROFILE_CONTRACT = 'ai-phone-host-profile-v1'
+MANAGED_ENGINE_CONTRACT = 'ai-phone-managed-engine-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -41,6 +42,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Native database preparation capability was not qualified')
     if receipt['checks'].get('host_profile') != HOST_PROFILE_CONTRACT:
         raise ValueError('Native host profile capability was not qualified')
+    if receipt['checks'].get('managed_engine') != MANAGED_ENGINE_CONTRACT:
+        raise ValueError('Native managed engine capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -58,7 +61,8 @@ def prepare_services(root, *, linux_ocr=None):
                 'compiler': receipt['compiler'], 'versions': {role: receipt['checks'][role]['version'] for role in ('assistant', 'runner')},
                 'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT,
                 'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT,
-                'database_prepare': DATABASE_PREPARE_CONTRACT, 'host_profile': HOST_PROFILE_CONTRACT}
+                'database_prepare': DATABASE_PREPARE_CONTRACT, 'host_profile': HOST_PROFILE_CONTRACT,
+                'managed_engine': MANAGED_ENGINE_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -194,18 +198,26 @@ def input_setup_command(root):
 
 
 def profile_command(root):
+    return host_component_command(root,'host_profile','--host-profile-contract',HOST_PROFILE_CONTRACT)
+
+
+def managed_engine_command(root):
+    return host_component_command(root,'managed_engine','--managed-engine-contract',MANAGED_ENGINE_CONTRACT)
+
+
+def host_component_command(root,field,flag,contract):
     root=Path(root).resolve()
     if (root/'runtime/services').exists() or (root/'runtime/services').is_symlink():
         manifest=load_manifest(root)
-        if manifest.get('host_profile')!=HOST_PROFILE_CONTRACT:
-            raise ValueError('Native host profile capability is missing; rebuild the complete client')
+        if manifest.get(field)!=contract:
+            raise ValueError('Native '+field.replace('_',' ')+' capability is missing; rebuild the complete client')
         return [str(root/binary_path('assistant'))]
     from build_native_services import contract_receipt
     binary=root/SOURCE_SUPERVISOR
     if not binary.exists():
         import subprocess
         subprocess.run(['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked','--target-dir',str(root/'target')],cwd=root,check=True)
-    contract_receipt(binary,'--host-profile-contract',HOST_PROFILE_CONTRACT)
+    contract_receipt(binary,flag,contract)
     return [str(binary)]
 
 

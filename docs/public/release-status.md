@@ -21,7 +21,7 @@ The final first-party runtime, installation/recovery, build, test and release to
 
 Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
 
-First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Native component qualification and real-process data-preservation tests cover that boundary. Host orchestration, runtime environment/image activation, recovery and portable-tool retirement remain incomplete.
+First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Native component qualification and real-process data-preservation tests cover these boundaries. Full host orchestration, runtime environment/image activation, recovery and portable-tool retirement remain incomplete.
 
 ## Capability limits
 

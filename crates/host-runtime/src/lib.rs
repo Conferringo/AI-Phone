@@ -8,6 +8,8 @@ mod control;
 pub mod device_bridge;
 mod filesystem;
 mod links;
+#[cfg(unix)]
+mod managed_engine;
 mod manifest;
 pub mod native_ipc;
 pub mod package;

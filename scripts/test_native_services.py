@@ -37,7 +37,7 @@ class NativeServiceTests(unittest.TestCase):
         value={'format':1,'host':host_key(),'source_sha256':source_fingerprint(root),'compiler':'fixture compiler','artifacts':records,
                'checks':{**{role:{'version':'0.1.0'} for role in ('assistant','runner')}, 'device_setup':'ai-phone-device-setup-v2',
                          'service_supervision':'ai-phone-linux-supervision-v2', 'phone_input_setup':'ai-phone-input-setup-v2',
-                         'database_prepare':'ai-phone-database-prepare-v1','host_profile':'ai-phone-host-profile-v1'}}
+                         'database_prepare':'ai-phone-database-prepare-v1','host_profile':'ai-phone-host-profile-v1','managed_engine':'ai-phone-managed-engine-v1'}}
         (target/'native-service-build.json').write_text(json.dumps(value))
         return value
 
@@ -109,6 +109,19 @@ class NativeServiceTests(unittest.TestCase):
             execute.assert_not_called()
             manifest.return_value={'host_profile':HOST_PROFILE_CONTRACT}
             self.assertEqual(profile_command(root),[str(root/binary_path('assistant'))])
+
+    def test_managed_engine_admission_qualifies_the_selected_native_program(self):
+        from prebuilt_services import managed_engine_command, MANAGED_ENGINE_CONTRACT, SOURCE_SUPERVISOR
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.load_manifest',return_value={}) as manifest,patch('subprocess.run') as execute:
+            root=Path(folder).resolve();(root/'runtime/services').mkdir(parents=True)
+            with self.assertRaisesRegex(ValueError,'managed engine capability is missing'):managed_engine_command(root)
+            execute.assert_not_called();manifest.return_value={'managed_engine':MANAGED_ENGINE_CONTRACT}
+            self.assertEqual(managed_engine_command(root),[str(root/binary_path('assistant'))])
+        with tempfile.TemporaryDirectory() as folder,patch('build_native_services.contract_receipt') as qualify,patch('subprocess.run') as build:
+            root=Path(folder).resolve();binary=root/SOURCE_SUPERVISOR
+            self.assertEqual(managed_engine_command(root),[str(binary)])
+            build.assert_called_once_with(['cargo','build','-p','ai-phone-host-runtime','--bin','host-resources','--locked','--target-dir',str(root/'target')],cwd=root,check=True)
+            qualify.assert_called_once_with(binary,'--managed-engine-contract',MANAGED_ENGINE_CONTRACT)
 
     def test_source_profile_builds_and_qualifies_one_native_helper(self):
         from prebuilt_services import profile_command, HOST_PROFILE_CONTRACT, SOURCE_SUPERVISOR

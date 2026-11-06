@@ -2860,8 +2860,8 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 984,
-      "sha256": "b406a42cabb12c237b1fc1a9730d6ca70e3d27ef66ad644f9a79696643fb27a5"
+      "size": 969,
+      "sha256": "8cf12547ee99afb790ebc6160b71f6f3ba1cdcf0826e158cef7a6bd707da1f96"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -2995,8 +2995,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 3903,
-      "sha256": "ced37f68966373718178125c202680bc61a13960fc586d0b4d3d1fe0a783e163"
+      "size": 4125,
+      "sha256": "8e4f17aa861b3e1fb066a3e5f13849579a9dc4dc96296780cc1fbd9bea9faec4"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3060,13 +3060,18 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 2855,
-      "sha256": "405b26ede979ec84ea02a5f4cee0a41fd779143c107343d335a61f608b4c3293"
+      "size": 2888,
+      "sha256": "ca26461bd11f7cf3bead40b54e015c863835744d62feba9f51b75ce92836ec40"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
       "size": 5315,
       "sha256": "55aa84bf962eff422bc87b28adabccc49cd810a587f0ac3dcb79b794428ec2ec"
+    },
+    {
+      "path": "crates/host-runtime/src/managed_engine.rs",
+      "size": 9690,
+      "sha256": "87fc72bda12b02f0d9c1cd00844a71ab9f4a8e661dded7201474d4253bb5b885"
     },
     {
       "path": "crates/host-runtime/src/manifest.rs",
@@ -3197,6 +3202,11 @@
       "path": "crates/host-runtime/tests/legacy_format1.rs",
       "size": 2347,
       "sha256": "d61dc8c268ae6f13e6016183261b26f70977d36f5733365ebab7d8aebe0ab081"
+    },
+    {
+      "path": "crates/host-runtime/tests/managed_engine_cli.rs",
+      "size": 10206,
+      "sha256": "2583559e5ecdba978e0d1342f3a8c50c9ffaef9c90c29c8a1a1efd2629a81b55"
     },
     {
       "path": "crates/host-runtime/tests/peer_owner_pipe.rs",
@@ -3910,8 +3920,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 7562,
-      "sha256": "5aa3376909cf82ab68064e60fd95c16dd8b0e1d18e768a396e28c62f499916ee"
+      "size": 7732,
+      "sha256": "d43feba622da9b502b792057ba390b406e1759aa5357d8a4e167df379a21e4fe"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4470,8 +4480,8 @@
     },
     {
       "path": "scripts/build_native_services.py",
-      "size": 7522,
-      "sha256": "c6c38e6cadd0302c584f98410db29e1830ebd60e119b0914de8f48dbaf221b1d"
+      "size": 7673,
+      "sha256": "f20d11e5c5ae556bfde0678e7e16bf042d1c2b3ed2e098c686e96d658eeb653a"
     },
     {
       "path": "scripts/bun",
@@ -4990,8 +5000,8 @@
     },
     {
       "path": "scripts/managed_engine.py",
-      "size": 6310,
-      "sha256": "3de2000123dac042e8d622a68e003ed08bdb64aaa441a9bae7bdaa4ab43301dd"
+      "size": 1277,
+      "sha256": "bfa099127f58b2d63b2d56335fdbca2d61ece49d590a90506321e4f67f9d3d21"
     },
     {
       "path": "scripts/media-relay.test.ts",
@@ -5095,8 +5105,8 @@
     },
     {
       "path": "scripts/prebuilt_services.py",
-      "size": 10293,
-      "sha256": "9d7acf08ce94bd6e1424f23c4baa8833263c98bb79efb55b6941f00fdf6bc825"
+      "size": 10823,
+      "sha256": "8cebe00163224c892e939d3d5db7a46563d3c43da4e5b22c6b2191eb4f003c59"
     },
     {
       "path": "scripts/prebuilt_web.py",
@@ -5295,8 +5305,8 @@
     },
     {
       "path": "scripts/test_client_host.py",
-      "size": 14575,
-      "sha256": "675f5487c99d8b019a6ec7f165e00f02a5c6b0f41c50a44b3ef383a4d7e853f0"
+      "size": 14840,
+      "sha256": "52b7e590172d76e5dcc1b7567b47e69020612f75a27f09ab57e7020f98ea365e"
     },
     {
       "path": "scripts/test_client_payload.py",
@@ -5485,8 +5495,8 @@
     },
     {
       "path": "scripts/test_managed_engine.py",
-      "size": 8822,
-      "sha256": "35deca65c55af8084ce282633034eb139d3ed235dd689f5e7ac667c7955bde69"
+      "size": 2455,
+      "sha256": "b7587b422f44f886b9219bcea3d24b858f9917ea298fbc56ebae7a751394da6a"
     },
     {
       "path": "scripts/test_native_backports.py",
@@ -5520,8 +5530,8 @@
     },
     {
       "path": "scripts/test_native_services.py",
-      "size": 45528,
-      "sha256": "7fb7785f123dad71871f01408d1b1e8ae7392c3d24c4e7a03a176cdbdd2bfa1b"
+      "size": 46901,
+      "sha256": "6cfae7b5913794d59aaff14b17a80bf604abd4eed4e64d7584ed31290b53b7ba"
     },
     {
       "path": "scripts/test_notification_probe.py",

@@ -64,6 +64,10 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
         "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
+        #[cfg(unix)]
+        "--managed-engine" => Some(crate::managed_engine::run(&arguments[1..])),
+        #[cfg(unix)]
+        "--managed-engine-contract" => Some(contract(arguments, crate::managed_engine::CONTRACT)),
         _ => None,
     }
 }

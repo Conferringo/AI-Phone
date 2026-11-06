@@ -38,13 +38,16 @@ class NativeHostTests(unittest.TestCase):
 
     def test_first_engine_creation_does_not_query_a_missing_instance(self):
         from client_host import activate_container_engine
+        from test_release import native_profile_program
         import os
+        native_run=subprocess.run;program=native_profile_program()
         with tempfile.TemporaryDirectory(dir='/tmp',prefix='ae-') as temporary:
             base=Path(temporary);home=base/'install';root=home/'releases'/'version';root.mkdir(parents=True);data=home/'user/data';data.mkdir(parents=True);(root/'data').symlink_to(data,target_is_directory=True)
             command=home/'limactl';command.write_text('#!/bin/sh\nexit 0\n');command.chmod(0o755)
             def query(args,**kwargs):
+                if args[0]==program:return native_run(args,**kwargs)
                 return subprocess.CompletedProcess(args,1 if 'ai-phone' in args else 0,stdout='',stderr='unmatched instances')
-            with patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute,patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
+            with patch('prebuilt_services.managed_engine_command',return_value=[program]),patch('managed_engine.Path.home',return_value=base),patch.dict(os.environ,{'PATH':'/usr/bin:/bin'},clear=True),patch('client_host.subprocess.run',side_effect=query),patch('client_host.execute') as execute,patch('linux_kvm_snapshot.snapshot',return_value={'platform':'unsupported'}):
                 activate_container_engine(root,home,command,{'fixture':True})
                 self.assertIn('--name=ai-phone',execute.call_args_list[0].args[0])
 
