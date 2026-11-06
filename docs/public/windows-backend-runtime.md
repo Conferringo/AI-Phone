@@ -27,7 +27,7 @@ lazy: an unavailable phone returns a device error while desktop media can start.
 The Windows host remains responsible for native Android acceleration and control.
 
 Backend startup now includes the qualified Rust phone Runner before the assistant.
-Linux/WSL service control and state inspection use the Rust v2 controller; the existing initializer imports retain only a transitional Python adapter. The initializer, image/configuration orchestration and factory tools still require their own Rust migration.
+Linux/WSL service control and state inspection use the Rust v2 controller. The sealed WSL initializer now owns source/profile preparation, engine startup, container ownership, image activation, database preparation and service startup in Rust. The former Python runtime initializer is removed; factory verification and the qualification driver remain Python pending their separate migration.
 Its authenticated, read-only cursor endpoint is qualified without requiring a
 connected phone. Restart retains the existing service supervisor; shutdown stops
 the Runner before the owned engine. Endpoint availability is not phone readiness.
@@ -36,11 +36,18 @@ Source expansion uses the shared Rust resource publisher. The factory extracts
 the source-bound native component, verifies its staging capability and includes
 the exact source digest in the rootfs inventory. Both verification and first-run
 initialization use that component to check, stage or resume the source tree and
-its persistent data links. The legacy Python entry consumes the native receipt;
-it no longer publishes WSL source trees itself. Configuration, engine/image
-activation and service-start orchestration still require Python, so this is a
-partial runtime migration in newly built root filesystems. Registered guests keep
+its persistent data links. The qualification driver invokes the same native
+initializer as the Windows client; it consumes fixed phase markers and does not
+stage or hash the source a second time. Registered guests keep
 their installed bootstrap; in-place backend upgrades remain separate work.
+
+## Native initialization contract
+
+`aiphone-bootstrap --initialize-wsl-backend` reads an at-most-8-KiB configuration object from stdin: locale, phone CPU/RAM/storage, and desktop CPU/RAM. Configuration is parsed into the host-profile type before creating installation state. Existing resource profiles, passwords, tokens and chats are preserved on resume.
+
+The installation lives at `/var/lib/aiphone/installation`; its engine socket is `unix:///run/aiphone/docker.sock`. A single installation lease serializes writers. Engine readiness retains the 30-second deadline. The initializer refuses foreign containers and quarantined restores, imports sealed images without builds/pulls, and starts the existing owned desktop by exact ID only when stopped. First desktop creation and phone pairing remain owned by device provisioning.
+
+The final acknowledgement contains `backend_started: true`, with `phone_ready`, `complete_device_bundle` and `windows_boot_verified` all false. Backend startup cannot certify a complete device pair or a physical Windows installation. Complete EXE assembly and Windows first boot still require their own qualification; passing isolated process and Linux ARM64 tests does not establish that result.
 
 The [Rust phone/backend bridge](engineering/device-bridge.md) supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. Newly built root filesystems include `/opt/aiphone/native-phone-bridge`, the SDK root already used by the backend profile. The maintainer downloads platform-tools using the existing Android factory pin; assembly then verifies and copies the offline resource, including its version, file digests and notices. The rootfs factory executes the packaged Linux ADB version command without network access. Archive admission requires ADB and the media schema and permits only that schema under the `emulator` directory, never an emulator executable.
 

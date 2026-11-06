@@ -3155,8 +3155,8 @@
     },
     {
       "path": "crates/host-runtime/src/profile.rs",
-      "size": 8620,
-      "sha256": "538a37ac2405421f95190ca495000adbb22cbc86376ae2fb9b431d2217a82171"
+      "size": 9163,
+      "sha256": "e382431ff99e02eddc3b309d5e72a29bc5757899f52fca946a568f4a4cc728fa"
     },
     {
       "path": "crates/host-runtime/src/source_cli.rs",
@@ -3200,13 +3200,13 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/backend/tests.rs",
-      "size": 10258,
-      "sha256": "4b42b8f30c448ec314a1d349408119d45142fedcc345cae7d43e953398ec83e1"
+      "size": 22033,
+      "sha256": "14563d1b5b8467f782bcfa70fcf0c00ff96721395db20464f50deea67c0280e5"
     },
     {
       "path": "crates/host-runtime/src/wsl/backend.rs",
-      "size": 16489,
-      "sha256": "d2905be4671a79ae947954d25014bf240b71e6a02c4d30ae17e0c6b0a2f372b9"
+      "size": 17110,
+      "sha256": "f9faeba5818e9d65492383acd8825d364649eb7f76d8c8a3dff3140f38dbbb12"
     },
     {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
@@ -3285,8 +3285,8 @@
     },
     {
       "path": "crates/host-runtime/tests/image_activation_cli.rs",
-      "size": 18275,
-      "sha256": "0d191836d0ca6a1e789d35f9b5756ddbbed06b305fe78ad4156e82040b6541a2"
+      "size": 20234,
+      "sha256": "0523f9f6030c9c608c9aeb80a81ab5e7c739a2740c5de8d1dfb7b13455d42252"
     },
     {
       "path": "crates/host-runtime/tests/legacy_format1.rs",
@@ -3620,8 +3620,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 7387,
-      "sha256": "35ee828fd4f4a898851255e54ce4fd9e40b253a0a22ef487907dceb20102593d"
+      "size": 7419,
+      "sha256": "f7a29e238047494ef65d7363e2a03ca7c1a82dcb155efdc20c4bbc87e2fff47b"
     },
     {
       "path": "docs/public/languages.md",
@@ -4020,8 +4020,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 8082,
-      "sha256": "e8f9247c9ae12673541a1cc9ab5e88ae91b0d98cd1a1fcdc2dac7307a19837c5"
+      "size": 8740,
+      "sha256": "a97696ec22715b06efa4bc39f377bcf6ff6c16e98aca2ffbf9c9a0610537d31b"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4060,8 +4060,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 13245,
-      "sha256": "748d886c558d4cdaf2ed0fa4d1f3c309a52a97c8cbf9366b0f110fadd788c68d"
+      "size": 14508,
+      "sha256": "c75eb624c2630d21b4de43e74994f5e494d59a93cd7d9a13baf8a23a274fa556"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -5755,13 +5755,13 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 23541,
-      "sha256": "394ee876d671a389b5e394516895f563050c219edc464d314c1b110cf34e813a"
+      "size": 19813,
+      "sha256": "4977bcca69f9ac0bcad257f8118dc48c234ce492f24a5cd1ea360064601787d3"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
-      "size": 11286,
-      "sha256": "c6618e4f159e9e9135793bfcea26ff6b520d8cc9cfd8b32154d21cb83aa4bd89"
+      "size": 2351,
+      "sha256": "ceca65eb972de8a599fc26ea94a1b04c5b774bfb5547fa95f8efde07cc406cb7"
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
@@ -5770,8 +5770,8 @@
     },
     {
       "path": "scripts/test_wsl_initialize_diagnostics.py",
-      "size": 19513,
-      "sha256": "fdd49ee43c36d6dec73030c7c5404428a414f7655440ecb6311bffb515e650c9"
+      "size": 18633,
+      "sha256": "c9d224a3310c286a8619095349edb9ecf2b51a2a81667bc1be6002d0db3c8532"
     },
     {
       "path": "scripts/test_wsl_inventory.py",
@@ -5785,8 +5785,8 @@
     },
     {
       "path": "scripts/test_wsl_provision_consumer.py",
-      "size": 11062,
-      "sha256": "bcc4cf20363a07f3f55c57f0a8763def50a28fb902f7dd422ea3de17f1a8fb80"
+      "size": 4620,
+      "sha256": "1b69844c4793c5fdc16cc01e216aacb98222ab5aa4cf61f52fb4d27f39a74a17"
     },
     {
       "path": "scripts/test_wsl_resources.py",
@@ -5795,8 +5795,8 @@
     },
     {
       "path": "scripts/test_wsl_runtime.py",
-      "size": 21160,
-      "sha256": "f8e6222e990856ae65c25fd8817e4977067dcaf8d0810ce35268321e94d38744"
+      "size": 21380,
+      "sha256": "7803776a572e3e9fdaf3fb3a77dd451d26e221464d418dffcec5a77cee74b836"
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
@@ -5845,8 +5845,8 @@
     },
     {
       "path": "scripts/wsl_backend_entry.py",
-      "size": 7891,
-      "sha256": "f953700979fdb1a2991cd4a2a5f8cd8592102084a986867f54a038cb3abf81cb"
+      "size": 2112,
+      "sha256": "0d5c7e648972fb16494b4ec05496e404a49ae823e63e0829c9b63a67f00e6168"
     },
     {
       "path": "scripts/wsl_backend_factory.py",
@@ -5890,8 +5890,8 @@
     },
     {
       "path": "scripts/wsl_runtime_worker.py",
-      "size": 5746,
-      "sha256": "39812dc32526285aeb7d645b54c7cdb8bd28eae8e2e2c196b2caa7e5d8dd0574"
+      "size": 6938,
+      "sha256": "508298e1558f6e5b9346c8fb603179ed0be330c0d712fcaa71b605b4e4cef745"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",
@@ -5905,13 +5905,13 @@
     },
     {
       "path": "skills/builtin/calc/SKILL.md",
-      "size": 1872,
-      "sha256": "837fa65204fc742a12ae0a900be0d8ee4c518debcde38dc8bf941f64261c8ce7"
+      "size": 2566,
+      "sha256": "be2dea6f49e026eadde1690eec6620a7915010654501a6cad0bb962c0eb17783"
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 6986,
-      "sha256": "0cfdd71f141afb83b8797b51ea6c71151acc95a0c7fb374e6f518c811bd79414"
+      "size": 7428,
+      "sha256": "75d2cc507e6a595a5e49fabfc1606448a6d4ed18f27bd454176d839290105db2"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",

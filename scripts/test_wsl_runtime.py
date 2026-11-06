@@ -208,13 +208,16 @@ class RuntimeHealthContractTests(unittest.TestCase):
 class QualificationInputsTests(unittest.TestCase):
     def test_actual_source_image_and_rootfs_bytes_are_checked_before_import(self):
         from test_wsl_backend import WslSourceTests,rootfs
-        from test_wsl_backend_review import WslOwnershipChainTests
+        import subprocess
+        from test_release import native_profile_program
         from wsl_backend import publish_capsule
         from artifact_io import digest
         from wsl_runtime_fixture import checked_inputs
         with tempfile.TemporaryDirectory() as folder,patch('wsl_runtime_fixture.shutil.disk_usage') as usage:
             root=Path(folder);usage.return_value.free=20*1024**3
-            source=WslSourceTests().payload(root);WslOwnershipChainTests().image_payload(root)
+            source=WslSourceTests().payload(root)
+            producer=Path(native_profile_program()).with_name('image-test-engine'+('.exe' if os.name=='nt' else ''))
+            subprocess.run([str(producer),'--fixture-capsule',str(root),'amd64','wsl-inputs','gzip'],capture_output=True,check=True)
             images=root/'images.payload';body=root/'rootfs.tar.gz';rootfs(body)
             publish_capsule(body,root/'wsl-backend.payload',{'source_sha256':digest(source),'images_sha256':digest(images)})
             proof=checked_inputs(root,source,images)

@@ -24,7 +24,7 @@ struct Desktop {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Request {
+pub(crate) struct Request {
     locale: String,
     phone: Phone,
     desktop: Desktop,
@@ -156,12 +156,37 @@ pub(crate) fn prepare(
     launch_path: &str,
     java: &str,
 ) -> Result<()> {
+    prepare_request(
+        root,
+        sdk,
+        template,
+        parse_request(bytes)?,
+        launch_path,
+        java,
+    )
+}
+
+pub(crate) fn parse_request(bytes: &[u8]) -> Result<Request> {
+    if bytes.len() > 8192 {
+        return Err(Error::Invalid("host_profile_request"));
+    }
     let request: Request =
         serde_json::from_slice(bytes).map_err(|_| Error::Invalid("host_profile_request"))?;
-    if !LOCALES.contains(&request.locale.as_str())
-        || !resources(&request.phone, &request.desktop)
-        || !matches!(template, "android35-arm64" | "android35-x86_64")
-    {
+    if !LOCALES.contains(&request.locale.as_str()) || !resources(&request.phone, &request.desktop) {
+        return Err(Error::Invalid("host_profile_request"));
+    }
+    Ok(request)
+}
+
+pub(crate) fn prepare_request(
+    root: &Path,
+    sdk: &Path,
+    template: &str,
+    request: Request,
+    launch_path: &str,
+    java: &str,
+) -> Result<()> {
+    if !matches!(template, "android35-arm64" | "android35-x86_64") {
         return Err(Error::Invalid("host_profile_request"));
     }
     let destination = root.join("data/deployment/profile.json");

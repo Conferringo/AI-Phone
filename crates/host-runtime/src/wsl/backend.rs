@@ -41,13 +41,18 @@ fn text(path: &Path) -> Result<String> {
         .map(str::to_owned)
         .ok_or(Error::Invalid("wsl_initializer_path"))
 }
-fn environment(home: &Path) -> Result<BTreeMap<String, String>> {
-    let mut env: BTreeMap<_, _> = std::env::vars()
+fn environment(
+    home: &Path,
+    run: &Path,
+    inherited: impl IntoIterator<Item = (String, String)>,
+) -> Result<BTreeMap<String, String>> {
+    let mut env: BTreeMap<_, _> = inherited
+        .into_iter()
         .filter(|(key, _)| !FOREIGN_ENGINE.contains(&key.as_str()))
         .collect();
     env.insert(
         "DOCKER_HOST".into(),
-        "unix:///run/aiphone/docker.sock".into(),
+        format!("unix://{}", text(&run.join("docker.sock"))?),
     );
     env.insert(
         "DOCKER_CONFIG".into(),
@@ -160,22 +165,27 @@ impl<E: Execute> Backend<'_, E> {
         }
         Ok(found)
     }
-    async fn start_engine(&mut self) -> Result<()> {
+    async fn start_engine(&mut self, home: &Path, run: &Path) -> Result<()> {
         phase("engine_supervisor");
-        filesystem::directory(Path::new("/run/aiphone"), true)?;
+        filesystem::directory(run, true)?;
         self.unit(
             "wsl-engine",
             "start",
             [
                 "/usr/local/bin/dockerd",
                 "--host",
-                "unix:///run/aiphone/docker.sock",
+                &self.env["DOCKER_HOST"],
                 "--data-root",
-                "/var/lib/aiphone/docker",
+                &text(
+                    &home
+                        .parent()
+                        .ok_or(Error::Invalid("wsl_initializer_path"))?
+                        .join("docker"),
+                )?,
                 "--exec-root",
-                "/run/aiphone/engine",
+                &text(&run.join("engine"))?,
                 "--pidfile",
-                "/run/aiphone/dockerd.pid",
+                &text(&run.join("dockerd.pid"))?,
             ]
             .map(str::to_owned)
             .into(),
@@ -183,7 +193,10 @@ impl<E: Execute> Backend<'_, E> {
         )
         .await?;
         phase("engine_ready");
-        let until = Instant::now() + Duration::from_secs(30);
+        self.wait_engine(Instant::now() + Duration::from_secs(30))
+            .await
+    }
+    async fn wait_engine(&mut self, until: Instant) -> Result<()> {
         loop {
             let output = self
                 .execute
@@ -426,7 +439,6 @@ pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
     }
     let mut request = Vec::new();
     std::io::stdin().take(8193).read_to_end(&mut request)?;
-    super::InitializeRequest::from_json(request.clone())?;
     let (send, stop) = watch::channel(false);
     let signal = tokio::spawn(async move {
         let result = crate::component::interrupt().await;
@@ -438,8 +450,10 @@ pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
     let result = initialize(
         Path::new("/opt/aiphone/bundle"),
         Path::new("/var/lib/aiphone/installation"),
+        Path::new("/run/aiphone"),
         &request,
         Process(stop),
+        &|path| Ok(fs2::available_space(path)?),
     )
     .await;
     signal.abort();
@@ -454,16 +468,20 @@ pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
 async fn initialize<E: Execute>(
     bundle: &Path,
     home: &Path,
+    run: &Path,
     request: &[u8],
     execute: E,
+    available: &dyn Fn(&Path) -> Result<u64>,
 ) -> Result<()> {
+    let request = profile::parse_request(request)
+        .map_err(|_| Error::Invalid("wsl_initialization_request"))?;
     phase("preflight");
     let parent = home
         .parent()
         .ok_or(Error::Invalid("wsl_initializer_path"))?;
     filesystem::directory(parent, true)?;
     let _lock = filesystem::lease(&parent.join("initialize.lock"))?.ok_or(Error::Busy)?;
-    if fs2::available_space(parent)? < 4 * 1024 * 1024 * 1024 {
+    if available(parent)? < 4 * 1024 * 1024 * 1024 {
         return Err(Error::LowSpace);
     }
     let id = fs::read_to_string(bundle.join("source.sha256"))?;
@@ -475,7 +493,7 @@ async fn initialize<E: Execute>(
     let mut backend = Backend {
         root: parent,
         program: program.as_os_str(),
-        env: environment(home)?,
+        env: environment(home, run, std::env::vars())?,
         execute,
     };
     phase("source");
@@ -502,7 +520,7 @@ async fn initialize<E: Execute>(
         return Err(Error::Invalid("foreign_installation"));
     }
     phase("profile");
-    profile::prepare(
+    profile::prepare_request(
         &root,
         Path::new("/opt/aiphone/native-phone-bridge"),
         "android35-x86_64",
@@ -510,7 +528,7 @@ async fn initialize<E: Execute>(
         PATH,
         "",
     )?;
-    backend.start_engine().await?;
+    backend.start_engine(home, run).await?;
     backend.start(&bundle.join("images.payload")).await
 }
 

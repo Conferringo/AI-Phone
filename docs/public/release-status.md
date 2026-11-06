@@ -25,6 +25,8 @@ First-run profile creation, explicit configuration edits, schema/preset validati
 
 ## Capability limits
 
+The sealed WSL first-run initializer is now Rust, including its source/profile, engine, image, database and service sequence. Its former Python runtime orchestration has been removed, and the qualification driver calls the same native command. Factory verification, the qualification driver and portable Python used by other consumers remain; full first boot and newly assembled installers are not certified by the local component tests.
+
 - Real Android/Linux execution, input and persisted state exist in the development runtime. Component startup does not establish a complete first-time client installation.
 - [Models and connections](model-and-channel-setup.md) include provider presets and protocol adapters. Support remains dependent on the configured model's capabilities and the application account; a preset is not certification of every provider or delivery path.
 - [Copilot](copilot-voice.md) connects browser PCM capture, Rust/protobuf REST and persistent live-transcription adapters, durable recognized-text submission and streamed, interruptible WAV playback. Real microphone/provider quality, echo, end-to-end latency and guest microphone routing remain unverified. PCM16 output starts before synthesis completes; native speech-to-speech and guest calls remain unfinished.
@@ -47,7 +49,7 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 
 Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
 
-首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验，不能据此声称完整安装通过。宿主编排、恢复及构建/发行工具的Python退役仍未完成。
+首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验。密封WSL的源码/配置、引擎、镜像、数据库和服务初始化已串联到Rust，旧Python运行编排已删除，验收驱动调用同一原生命令。本地组件检查不代表完整首启或新安装包通过；工厂/验收工具、其他运行消费者、恢复及构建/发行工具的Python退役仍未完成。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

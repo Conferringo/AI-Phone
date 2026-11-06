@@ -164,14 +164,56 @@ class ErrorAndSchemaTests(NoHostProcesses):
             with self.assertRaises(ValueError):fixture.worker_result(changed,'a'*32,1)
 
 
+class NativeWorkerTests(NoHostProcesses):
+    def test_worker_runs_the_native_initializer_and_does_not_restage_source(self):
+        import io
+        from unittest.mock import MagicMock
+        self.assertFalse(hasattr(entry,'initialize'),'Python runtime orchestration must retire')
+        with tempfile.TemporaryDirectory() as temporary,patch.dict(os.environ,dict(os.environ)):
+            root=Path(temporary);bundle=root/'bundle';bundle.mkdir();(bundle/'source.sha256').write_text('a'*64)
+            child=MagicMock();child.__enter__.return_value=child;child.poll.return_value=0;child.wait.return_value=0
+            child.stdout=io.BytesIO(json.dumps({'backend_started':True,'phone_ready':False,'complete_device_bundle':False,'windows_boot_verified':False}).encode())
+            child.stderr=io.BytesIO(b'AI_PHONE_INITIALIZE source\nAI_PHONE_INITIALIZE engine_supervisor\nAI_PHONE_INITIALIZE services_start\n')
+            with patch.object(entry,'BUNDLE',bundle),patch.object(entry,'INSTALLATION',root/'installation'),patch.object(worker,'STATE',root),patch.object(worker.subprocess,'Popen',return_value=child) as launch,patch.object(entry,'staged',side_effect=AssertionError('source must not be rehashed')),patch.object(diag,'engine_cursor',return_value=False):
+                value=receipt();self.assertEqual(worker.initialize(value),root/'installation/releases'/('a'*64));self.assertEqual(value['initialization']['step'],'complete')
+                self.assertEqual(launch.call_args.args[0],[str(entry.BOOTSTRAP),'--initialize-wsl-backend']);self.assertNotIn('python',' '.join(launch.call_args.args[0]))
+                child.stdin.write.assert_called_once();child.stdin.close.assert_called_once();child.terminate.assert_not_called()
+
+
+    def test_native_failure_and_false_readiness_never_complete_qualification(self):
+        import io
+        from unittest.mock import MagicMock
+        for code,payload,error in [(17,{},subprocess.CalledProcessError),(0,{},ValueError),(0,{'backend_started':True,'phone_ready':True,'complete_device_bundle':False,'windows_boot_verified':False},ValueError)]:
+            with tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary);bundle=root/'bundle';bundle.mkdir();(bundle/'source.sha256').write_text('a'*64)
+                child=MagicMock();child.__enter__.return_value=child;child.poll.return_value=code;child.wait.return_value=code
+                child.stdout=io.BytesIO(json.dumps(payload).encode());child.stderr=io.BytesIO(b'AI_PHONE_INITIALIZE images\n')
+                with patch.object(entry,'BUNDLE',bundle),patch.object(worker,'STATE',root),patch.object(worker.subprocess,'Popen',return_value=child):
+                    value=receipt()
+                    with self.assertRaises(error):worker.initialize(value)
+                    self.assertEqual(value['initialization']['step'],'images');self.assertNotEqual(value['initialization']['error'],'none');self.assertFalse(any(value['checks'].values()))
+
+    def test_qualification_callback_failure_reaps_only_its_native_child(self):
+        import io
+        from unittest.mock import MagicMock
+        failure=RuntimeError('qualification callback failed')
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);(root/'source.sha256').write_text('a'*64);request=root/'request';request.write_bytes(b'{}')
+            child=MagicMock();child.__enter__.return_value=child;child.poll.return_value=None;child.wait.return_value=0;child.stderr=io.BytesIO(b'AI_PHONE_INITIALIZE profile\n')
+            with patch.object(entry,'BUNDLE',root),patch.object(worker.subprocess,'Popen',return_value=child):
+                def fail(*_):raise failure
+                with self.assertRaises(RuntimeError) as caught:worker.native_initialize(request,fail)
+                self.assertIs(caught.exception,failure);child.terminate.assert_called_once();child.wait.assert_called_once_with(timeout=20)
+
+
 class WorkerFailureTests(NoHostProcesses):
     def test_engine_diagnostic_failure_preserves_the_exact_original_exception(self):
         for collector_error in (PermissionError('secret'),RuntimeError('secret')):
             failure=subprocess.CalledProcessError(17,['secret-command'],stderr='secret-password')
             def fail(_request,observer):
-                entry.observe(observer,'engine_supervisor',Path('/owned-fixture'))
-                entry.observe(observer,'engine_ready',Path('/owned-fixture'));raise failure
-            with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(entry,'initialize',side_effect=fail),patch.object(diag,'engine_cursor',return_value=None),patch.object(diag,'engine_report',side_effect=collector_error):
+                observer('engine_supervisor',Path('/owned-fixture'))
+                observer('engine_ready',Path('/owned-fixture'));raise failure
+            with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(worker,'native_initialize',side_effect=fail),patch.object(diag,'engine_cursor',return_value=None),patch.object(diag,'engine_report',side_effect=collector_error):
                 value=receipt()
                 with self.assertRaises(subprocess.CalledProcessError) as caught:worker.initialize(value)
                 self.assertIs(caught.exception,failure);self.assertEqual(value['initialization']['returncode'],17)
@@ -182,10 +224,10 @@ class WorkerFailureTests(NoHostProcesses):
         for failing in (True,False):
             failure=RuntimeError('private unknown failure')
             def initialize(_request,observer):
-                entry.observe(observer,'images')
+                observer('images',Path('/owned-fixture'))
                 if failing:raise failure
-                return {'phone_ready':False,'windows_boot_verified':False}
-            with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(entry,'initialize',side_effect=initialize),patch.object(entry,'staged',return_value=Path(temporary)),patch.object(diag,'engine_report') as report,patch.object(diag,'engine_cursor') as cursor:
+                return Path(temporary)
+            with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(worker,'native_initialize',side_effect=initialize),patch.object(diag,'engine_report') as report,patch.object(diag,'engine_cursor') as cursor:
                 value=receipt()
                 if failing:
                     with self.assertRaises(RuntimeError) as caught:worker.initialize(value)
@@ -195,74 +237,14 @@ class WorkerFailureTests(NoHostProcesses):
                 report.assert_not_called();cursor.assert_not_called()
 
     def test_failed_worker_keeps_checks_frame_flags_cleanup_contract_and_no_marker(self):
-        def fail(_request,observer):entry.observe(observer,'tools');raise ValueError('secret-token /private')
-        with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(worker,'fixture_identity',return_value='a'*32),patch.object(worker,'nested_cgroups'),patch.object(entry,'initialize',side_effect=fail),patch.object(worker,'shutdown') as stop:
+        def fail(_request,observer):observer('profile',Path('/owned-fixture'));raise ValueError('secret-token /private')
+        with tempfile.TemporaryDirectory() as temporary,patch.object(worker,'STATE',Path(temporary)),patch.object(worker,'fixture_identity',return_value='a'*32),patch.object(worker,'nested_cgroups'),patch.object(worker,'native_initialize',side_effect=fail),patch.object(worker,'shutdown') as stop:
             self.assertEqual(worker.main(),1)
             value=json.loads((Path(temporary)/'qualification-result.json').read_text())
-            fixture.worker_result(value,'a'*32,1);self.assertEqual(value['initialization']['step'],'tools')
+            fixture.worker_result(value,'a'*32,1);self.assertEqual(value['initialization']['step'],'profile')
             self.assertFalse(any(value['checks'].values()));self.assertEqual(value['frame'],{})
             self.assertFalse(value['windows_boot_verified']);self.assertFalse(value['phone_ready']);stop.assert_called_once_with(None)
             self.assertFalse((Path(temporary)/'qualification-marker.json').exists());self.assertNotIn('secret',json.dumps(value))
-
-
-class InitializeOrderingTests(NoHostProcesses):
-    def run_initialize(self,root,fail_at=None,observer=None):
-        failure=RuntimeError('private injected failure');effects=[];actual_path=Path
-        def call(name,value=None):
-            effects.append(name)
-            if fail_at==name:raise failure
-            return value
-        def unit(_root,name,*_):return call('engine_supervisor' if name=='wsl-engine' else 'services_start')
-        def command(argv,**_):
-            step='engine_ready' if argv==['docker','info'] else 'database_start' if 'compose' in argv else 'database_prepare'
-            call(step);return subprocess.CompletedProcess(argv,0)
-        with ExitStack() as stack:
-            stack.enter_context(patch.dict(os.environ,dict(os.environ)))
-            stack.enter_context(patch.object(entry,'INSTALLATION',root/'installation'))
-            stack.enter_context(patch.object(entry,'Path',side_effect=lambda value:Mock() if str(value)=='/run/aiphone' else actual_path(value)))
-            stack.enter_context(patch.object(entry,'require_linux',side_effect=lambda:call('preflight')))
-            stack.enter_context(patch.object(entry.shutil,'disk_usage',return_value=SimpleNamespace(free=8*1024**3)))
-            stack.enter_context(patch.object(entry,'staged',side_effect=lambda _:call('source',root)))
-            stack.enter_context(patch('installer_tools.select',side_effect=lambda *_:call('tools',{})))
-            stack.enter_context(patch('client_host.prepare_profile',side_effect=lambda *_:call('profile')))
-            stack.enter_context(patch('client_host.verify_container_ownership',side_effect=lambda *_:call('container_ownership',{})))
-            stack.enter_context(patch('container_images.stage',return_value=None))
-            stack.enter_context(patch('container_images.activate',side_effect=lambda *_:call('images',{})))
-            stack.enter_context(patch('runtime_config.runtime_env',side_effect=lambda *_:call('environment',{})))
-            stack.enter_context(patch('linux_host.private_token'))
-            stack.enter_context(patch('linux_host.start_web_service',side_effect=lambda _r,_e,_run,start:start('web',['web'])))
-            stack.enter_context(patch('linux_services.start_unit',side_effect=unit))
-            stack.enter_context(patch('linux_services.unit_state',return_value=None))
-            stack.enter_context(patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}))
-            stack.enter_context(patch('prebuilt_js.launch_spec',side_effect=lambda _r,name:{'argv':[name],'environment':{}}))
-            stack.enter_context(patch.object(entry.subprocess,'run',side_effect=command))
-            request=root/'request.json';request.write_text(json.dumps({'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2048}}))
-            try:result=entry.initialize(request,observer=observer)
-            except RuntimeError as error:
-                self.assertIs(error,failure);return effects,error
-            return effects,result
-
-    def test_twelve_substeps_precede_failures_without_continuing_later_operations(self):
-        steps=['preflight','source','tools','profile','engine_supervisor','engine_ready','container_ownership','images','environment','database_start','database_prepare','services_start']
-        for step in steps:
-            with self.subTest(step=step),tempfile.TemporaryDirectory() as temporary:
-                observed=[];effects,result=self.run_initialize(Path(temporary),step,lambda name,_root:observed.append(name))
-                self.assertIsInstance(result,RuntimeError);self.assertEqual(observed[-1],step);self.assertEqual(effects[-1],step)
-                self.assertEqual(observed,steps[:steps.index(step)+1])
-
-    def test_no_observer_and_broken_observer_have_identical_production_effects(self):
-        def broken(*_):raise RuntimeError('private observer failure')
-        results=[]
-        for observer in (None,broken):
-            with tempfile.TemporaryDirectory() as temporary:results.append(self.run_initialize(Path(temporary),observer=observer))
-        self.assertEqual(results[0],results[1]);self.assertTrue(results[0][1]['backend_started'])
-        self.assertFalse(results[0][1]['phone_ready']);self.assertFalse(results[0][1]['windows_boot_verified'])
-
-    def test_thirty_second_engine_deadline_is_unchanged(self):
-        run=Mock(return_value=SimpleNamespace(returncode=1))
-        with patch.object(entry.time,'monotonic',side_effect=[0,0,31]),patch.object(entry.time,'sleep') as sleep:
-            with self.assertRaisesRegex(ValueError,'did not become ready'):entry.wait_engine(run)
-        sleep.assert_called_once_with(.25);run.assert_called_once()
 
 
 if __name__=='__main__':unittest.main()

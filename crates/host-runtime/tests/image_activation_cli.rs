@@ -74,6 +74,57 @@ fn native_import_streams_each_codec_and_resumes_without_loading_again_or_replaci
     }
 }
 #[test]
+fn native_wsl_image_import_uses_the_selected_socket_and_preserves_graph_and_chat() {
+    let temp = tempfile::tempdir().unwrap();
+    let home = temp.path();
+    let (payload, manifest, _) = capsule::create_layered(home, false, "amd64", "wsl-socket", false);
+    fs::create_dir(home.join("bin")).unwrap();
+    fs::copy(
+        env!("CARGO_BIN_EXE_image-test-engine"),
+        home.join("bin/docker"),
+    )
+    .unwrap();
+    fs::create_dir(home.join("data")).unwrap();
+    fs::write(home.join("data/chat"), b"keep-chat").unwrap();
+    let socket = "unix:///run/aiphone/docker.sock";
+    let output = Command::new(env!("CARGO_BIN_EXE_host-resources"))
+        .arg("--activate-images")
+        .arg(home)
+        .arg(&payload)
+        .env_clear()
+        .env("PATH", home.join("bin"))
+        .env("DOCKER_HOST", socket)
+        .env("AI_PHONE_IMAGE_TEST_SOCKET", socket)
+        .env("AI_PHONE_IMAGE_TEST_STATE", home)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(fs::read(home.join("socket-verified")).unwrap(), b"yes");
+    assert_eq!(fs::read(home.join("data/chat")).unwrap(), b"keep-chat");
+    let record: Value =
+        serde_json::from_slice(&fs::read(home.join("data/deployment/image-runtime.json")).unwrap())
+            .unwrap();
+    assert_eq!(record["archive"], manifest["archive"]);
+    assert_eq!(record["import_layout"], "oci-v1");
+    let environment: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(environment["AI_PHONE_IMAGE_PULL_POLICY"], "never");
+    for role in capsule::ROLES {
+        assert_eq!(
+            record["images"][role]["config_digest"],
+            manifest["images"][role]["config_digest"]
+        );
+        assert_eq!(
+            environment[format!("AI_PHONE_{}_IMAGE", role.to_uppercase())],
+            record["images"][role]["ref"]
+        );
+    }
+}
+
+#[test]
 fn invalid_capsule_fails_before_contacting_the_engine() {
     let temp = tempfile::tempdir().unwrap();
     let home = temp.path();
