@@ -189,8 +189,7 @@ def compile_client(root,android,images,tools,ocr):
     if not installer_metadata(artifact,'linux-amd64')['github_asset_eligible']:
         raise ValueError('Complete Linux DEB exceeds the single-file release limit')
     inspected={'file':artifact.name,'size':artifact.stat().st_size,'sha256':receipt['sha256'],'delivery':checked_delivery(receipt['prebuilt_components'])}
-    from apt_repository import index
-    apt=index([artifact],root/'dist/apt')
+    apt=json.loads(run(['cargo','run','--quiet','--locked','-p','ai-phone-release-tools','--','apt','index',artifact,'--output',root/'dist/apt'],root,capture_output=True,text=True).stdout)
     return [inspected],[{**entry,'file':'apt/'+entry['file']} for entry in apt['metadata']]
 
 

@@ -7,7 +7,7 @@ Linux has one binary package: DEB. Direct download and APT install the same byte
 On a Debian-based maintainer host, install `apt-utils`, `dpkg-dev` and `gnupg`. The signing key stays in the maintainer's private GnuPG home. It is not committed, bundled or uploaded to GitHub. Use an unlocked signing key or the maintainer's existing GPG agent.
 
 ```sh
-python3 scripts/apt_repository.py build dist/AI-Phone-*-linux-amd64.deb \
+cargo run --locked --release -p ai-phone-release-tools -- apt build dist/AI-Phone-*-linux-amd64.deb \
   --output dist/apt \
   --base-url "$APT_CHANNEL_URL" \
   --key "$APT_SIGNING_FINGERPRINT" \
@@ -19,7 +19,7 @@ python3 scripts/apt_repository.py build dist/AI-Phone-*-linux-amd64.deb \
 The complete Linux factory automatically creates the unsigned index in `dist/apt` and includes its file identities in the unpublished candidate receipt. The existing retainer uploads those exact index files alongside the DEB. Download that candidate's metadata directory, then sign it locally without rebuilding or downloading the full installer:
 
 ```sh
-python3 scripts/apt_repository.py sign --output dist/apt \
+cargo run --locked --release -p ai-phone-release-tools -- apt sign --output dist/apt \
   --base-url "$APT_CHANNEL_URL" \
   --key "$APT_SIGNING_FINGERPRINT" \
   --gnupg-home "$APT_SIGNING_HOME"
@@ -46,10 +46,10 @@ The DEB's actual `Package` field is authoritative if the package name changes. L
 
 ## Verification
 
-`python3 scripts/required_tests.py test_apt_repository` runs the real APT client against a loopback HTTP repository. It installs and upgrades a small fixture package into an isolated root, preserves a user-file sentinel, and rejects altered package bytes and signatures. It runs without root privileges and without using the host's APT sources or package database. This is repository/tool verification, not physical installation acceptance of a complete AI Phone client.
+`cargo test --locked -p ai-phone-release-tools --test apt_repository` runs the real APT client against a loopback HTTP repository. It installs and upgrades a small fixture package into an isolated root, preserves a user-file sentinel, and rejects altered package bytes and signatures. Run it as a regular user; it does not use the host's APT sources or package database. This test also runs in the required Source workflow's normal workspace tests after installing the native APT tools. Neither the tool nor its test harness uses Python. This is repository/tool verification, not physical installation acceptance of a complete AI Phone client.
 
 ## 中文
 
-Linux 只构建 DEB；下载安装与 APT 使用同一个包。维护者用本地私钥生成签名索引及内嵌公钥的 `.sources` 文件，不上传私钥。软件源地址和公钥保持稳定后，用户可通过 APT 安装及升级。公开软件源尚未发布，完整组件、源码、隐私与许可门槛保持。
+Linux 只构建 DEB；下载安装与 APT 使用同一个包。Rust维护工具和Rust真实APT测试已取代原Python实现；维护者用本地私钥生成签名索引及内嵌公钥的 `.sources` 文件，不上传私钥。软件源地址和公钥保持稳定后，用户可通过 APT 安装及升级。公开软件源尚未发布，完整组件、源码、隐私与许可门槛保持。
 
 真实非 root 隔离回归已覆盖签名校验、安装、升级、用户文件保留以及篡改拒绝；这不代表完整桌面安装包已通过实机验收。
