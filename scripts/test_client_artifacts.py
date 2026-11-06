@@ -1,12 +1,10 @@
 import json
 import gzip
 from pathlib import Path
-import struct
 import tempfile
 import unittest
 from unittest.mock import patch
-import zipfile
-from client_artifacts import inspect_apk, inspect_payload, record
+from client_artifacts import inspect_payload, record
 from release_package import SECRET
 
 
@@ -57,19 +55,6 @@ class ClientPayloadTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Stale legal'):
                 inspect_payload({**files,'assets/host/source.payload':gzip.decompress(payload.read_bytes())},root)
 
-    def test_apk_requires_real_arm64_elf(self):
-        with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp);files=self.fixture(root);data=bytearray(64)
-            data[:5]=b'\x7fELF\x02';struct.pack_into('<H',data,18,183)
-            files['lib/arm64-v8a/libclient.so']=bytes(data)
-            apk=root/'test.apk'
-            for valid in [True,False]:
-                if not valid:files['lib/arm64-v8a/libclient.so']=b'wrong architecture'
-                with zipfile.ZipFile(apk,'w') as z:
-                    for name,content in files.items():z.writestr(name,content)
-                if valid:self.assertEqual(len(inspect_apk(apk,root)),2)
-                else:
-                    with self.assertRaises(ValueError):inspect_apk(apk,root)
 
 
 if __name__=='__main__':unittest.main()

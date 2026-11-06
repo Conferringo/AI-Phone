@@ -17,7 +17,6 @@ Installation flow: **device resources → model → workbench**. A complete pack
 | macOS Apple Silicon | Desktop application with local device runtime | Full package compiled; release qualification |
 | Windows x64 | Desktop application with local device runtime | Host integration in progress |
 | Linux x64 | Desktop application with local device runtime | Full package compiled; release qualification |
-| Android ARM64 | Root/KVM application with local device runtime | Privileged runtime integration in progress |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
@@ -75,7 +74,7 @@ Original code uses [Apache-2.0](LICENSE). Dependencies, SDKs, guest applications
 
 See [CONTRIBUTING](CONTRIBUTING.md) for development. Business APIs use protobuf; tests must be isolated and user state or live credentials must never be uploaded.
 
-Platform build and runtime evidence is documented in the compatibility matrix. Physical installation tests are waived for previews on all four platforms and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
+Platform build and runtime evidence is documented in the compatibility matrix. Physical installation tests are waived for previews on all desktop platforms and remain unverified. Report problems through [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose); never attach credentials, private chats or device data.
 
 ---
 

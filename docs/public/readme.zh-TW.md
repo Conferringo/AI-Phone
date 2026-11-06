@@ -6,7 +6,7 @@
 
 完整安裝包尚未提供下載。安裝流程為：裝置資源 → 模型 → 工作台。完整套件包含 Android/Linux 基礎系統、模擬器及預先建置服務，由客戶端完成環境設定，不需要使用者尋找映像或編譯後端。
 
-建置目標包括 macOS Apple Silicon、Windows x64、Linux x64/ARM64 與 Android ARM64。Android 宿主需要 root 與 KVM；各平台套件可用性與實測範圍見發行狀態。
+建置目標為 macOS Apple Silicon、Windows x64 與 Linux。套件提供狀態與實測範圍見發行狀態。
 
 ## 功能與情境
 

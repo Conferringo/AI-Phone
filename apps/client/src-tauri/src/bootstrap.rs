@@ -127,7 +127,6 @@ fn capability_from_resources(
             "macos" => "HVF / Virtualization.framework",
             "windows" => "WHPX / WSL2",
             "linux" => "KVM",
-            "android" => "privileged AVF / KVM; TCG experimental",
             _ => "unsupported",
         }
         .into(),
@@ -252,40 +251,32 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
 }
 
 fn checks(path: &Path) -> Vec<Check> {
-    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
+    let ram = resources::total_memory_bytes() / 1024_u64.pow(3);
+    let disk = available_bytes(path) / 1024_u64.pow(3);
+    let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
+    let disk_required = policy[if path.join("user/data/deployment/profile.json").is_file()
+        || checkpoint::admitted(path)
     {
-        let ram = resources::total_memory_bytes() / 1024_u64.pow(3);
-        let disk = available_bytes(path) / 1024_u64.pow(3);
-        let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
-        let disk_required = policy[if path.join("user/data/deployment/profile.json").is_file()
-            || checkpoint::admitted(path)
-        {
-            "minimum_resume_free_gb"
-        } else {
-            "minimum_free_gb"
-        }]
-        .as_u64()
-        .unwrap();
-        vec![
-            Check {
-                name: "memory".into(),
-                passed: ram >= policy["minimum_ram_gb"].as_u64().unwrap(),
-                value: ram,
-                required: policy["minimum_ram_gb"].as_u64().unwrap(),
-            },
-            Check {
-                name: "storage".into(),
-                passed: disk >= disk_required,
-                value: disk,
-                required: disk_required,
-            },
-        ]
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    {
-        let _ = path;
-        Vec::new()
-    }
+        "minimum_resume_free_gb"
+    } else {
+        "minimum_free_gb"
+    }]
+    .as_u64()
+    .unwrap();
+    vec![
+        Check {
+            name: "memory".into(),
+            passed: ram >= policy["minimum_ram_gb"].as_u64().unwrap(),
+            value: ram,
+            required: policy["minimum_ram_gb"].as_u64().unwrap(),
+        },
+        Check {
+            name: "storage".into(),
+            passed: disk >= disk_required,
+            value: disk,
+            required: disk_required,
+        },
+    ]
 }
 
 pub fn snapshot(app: &tauri::AppHandle) -> Result<Snapshot, String> {
@@ -720,7 +711,6 @@ mod tests {
             ("macos", "x86_64"),
             ("windows", "x86_64"),
             ("linux", "aarch64"),
-            ("android", "aarch64"),
         ] {
             assert!(!capability_from_resources(os, arch, &Default::default()).implemented);
         }
@@ -734,11 +724,7 @@ mod tests {
         assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);
         resources.insert("android.payload".into(), "b".repeat(64));
         assert!(capability_from_resources("windows", "x86_64", &resources).implemented);
-        for (os, arch) in [
-            ("windows", "aarch64"),
-            ("linux", "aarch64"),
-            ("android", "aarch64"),
-        ] {
+        for (os, arch) in [("windows", "aarch64"), ("linux", "aarch64")] {
             assert!(!capability_from_resources(os, arch, &resources).implemented);
         }
         resources.remove("wsl/manifest.json");
@@ -838,7 +824,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
     fn retry_budget_is_not_the_initial_download_reserve() {
         let folder = std::env::temp_dir().join(format!("ai-phone-space-{}", std::process::id()));
         fs::create_dir(&folder).unwrap();

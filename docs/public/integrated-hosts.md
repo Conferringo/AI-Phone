@@ -9,9 +9,8 @@ The [release-status platform table](release-status.md#platform-qualification) ow
 - **macOS Apple Silicon:** native ARM64 Android Emulator and an app-owned Lima/VZ container host. Intel Macs are outside the supported target.
 - **Windows x64:** the intended host combines native Android Emulator/WHPX with a WSL2 Linux backend. Windows must own distro initialization, phone/backend bridging and service recovery; those boundaries cannot be inferred from a Linux component build.
 - **Linux:** the x64 source path uses Android Emulator/KVM and an existing Docker engine or app-owned Lima/QEMU host. ARM64 needs architecture-matched components.
-- **Android ARM64:** the independent-host target requires root and exposed KVM. A normal unrooted APK is outside this scope; restricted AVF APIs do not provide arbitrary dual-guest hosting.
 
-Physical installation tests are waived for previews on all four platforms and remain unverified; component completeness, build evidence and redistribution review are still required.
+Physical installation tests are waived for previews on Windows, Apple Silicon macOS and Linux and remain unverified; component completeness, build evidence and redistribution review are still required.
 The default guest templates are Android 15 and Debian 13/Openbox. Guest CPU, memory and initial phone storage are configurable. Existing device storage is never silently resized by changing a creation preset. The Linux desktop shares its container host kernel; a separate-kernel Fedora desktop is a future adapter.
 
 ## Installation and recovery contract
@@ -40,7 +39,7 @@ Component execution, package inspection and complete installation are separate c
 
 # 一体化宿主运行时
 
-目标是下载安装客户端后，直接配置手机、电脑和模型，不要求用户手动部署服务。安装包供应、已有组件和各平台待验收项统一见[发行状态](release-status.md)；源码引导和连接客户端是独立的开发/远程使用路径。macOS 仅支持 M 系列芯片；Windows 目标组合原生 Android/WHPX 与 WSL2 后端；Linux 使用匹配架构的 Android/KVM 与容器宿主；Android 独立宿主要求 root 和开放 KVM。
+目标是下载安装客户端后，直接配置手机、电脑和模型，不要求用户手动部署服务。安装包供应、已有组件和各平台待验收项统一见[发行状态](release-status.md)；源码引导和连接客户端是独立的开发/远程使用路径。macOS 仅支持 M 系列芯片；Windows 目标组合原生 Android/WHPX 与 WSL2 后端；Linux 使用匹配架构的 Android/KVM 与容器宿主。
 
 完整包应自带系统镜像、模拟器、服务与私有工具，不让普通用户安装SDK、编译器或Docker。能容器化的依赖放入本项目容器，原生虚拟化/输入/视觉程序放在应用自己的目录，不修改用户全局开发环境。完整macOS包优先自己的Lima/VZ引擎，不改全局Docker context；代码版本、持久user目录和短路径容器状态分别归属同一安装，重开恢复原环境。
 

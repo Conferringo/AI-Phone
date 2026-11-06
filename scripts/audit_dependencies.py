@@ -8,7 +8,7 @@ from native_backports import verified_backports
 from dependency_report import sanitized_report, report_lines, write_report
 
 ROOT = Path(__file__).resolve().parent.parent
-TARGETS = ('aarch64-apple-darwin', 'aarch64-unknown-linux-gnu', 'x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc', 'aarch64-linux-android')
+TARGETS = ('aarch64-apple-darwin', 'aarch64-unknown-linux-gnu', 'x86_64-unknown-linux-gnu', 'x86_64-pc-windows-msvc')
 
 
 def findings(report, reachable):

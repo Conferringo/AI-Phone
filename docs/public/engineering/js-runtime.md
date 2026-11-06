@@ -24,7 +24,7 @@ python3 scripts/prepare_client_host.py --with-web-runtime --with-js-services
 python3 scripts/build_client.py --platform macos --with-web-runtime --with-service-runtime --with-js-services
 ```
 
-Build each dependency component on its matching host. Desktop CI builds this component on macOS ARM64, Windows x64 and Linux x64/ARM64; a configured CI step is not evidence that a particular run passed. Windows process ownership, ordinary-user aliases/ACLs and complete independent hosting still require their own acceptance. Android root/KVM requires a separate host adapter.
+Build each dependency component on its matching host. Desktop CI builds this component on macOS ARM64, Windows x64 and Linux x64/ARM64; a configured CI step is not evidence that a particular run passed. Windows process ownership, ordinary-user aliases/ACLs and complete independent hosting still require their own acceptance.
 
 ## Availability
 

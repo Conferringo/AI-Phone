@@ -10,7 +10,6 @@ Updated 2026-11-06. Source code and technical documentation are available. **Com
 | Windows x64 | Inspected and retained complete single-file EXE; qualified backend startup/restart | WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade, complete first run and source/licence review |
 | Linux x64 | Inspected and retained complete single-file DEB/AppImage outputs | Binary publication, installed-client lifecycle and applicable source/licence review; physical installation remains untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
-| Android ARM64 root/KVM | Native client; [Rust root-host installation and Linux-guest worker](engineering/android-root-host.md) | APK/runtime integration, reviewed resources, real KVM qualification and complete GUI/dual-guest initialization |
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
@@ -18,7 +17,7 @@ The complete [Mac factory](https://github.com/Conferringo/AI-Phone/actions/runs/
 
 The complete [Windows factory](https://github.com/Conferringo/AI-Phone/actions/runs/42123340112) succeeded from `6bd5a816`. It qualified Linux backend startup/restart, assembled and unpacked a 2,111,641,048-byte EXE with both Android and WSL resources, passed 21 native client tests, and retained the installer and its metadata in an unpublished draft. Dependency precompilation ran concurrently with backend qualification; the native job reused those outputs and retained its original 60-minute limit. This resolves the previous cold-compilation timeout and upload failure for that source revision.
 
-These artifacts belong to their stated source revisions. They are unpublished maintainer candidates, not public downloads or installation certificates. Windows guest boot and physical installation were not executed. Package inspection does not close source/licence obligations or qualify complete independent Android hosting.
+These artifacts belong to their stated source revisions. They are unpublished maintainer candidates, not public downloads or installation certificates. Windows guest boot and physical installation were not executed. Package inspection does not close source/licence obligations.
 
 ## Capability limits
 
@@ -32,7 +31,7 @@ These artifacts belong to their stated source revisions. They are unpublished ma
 
 `config/release-policy.json` owns publication gates. Binary publication remains disabled and `self_contained_device_bundle` remains false. Packages must satisfy full contents, source/privacy checks, third-party notices and applicable corresponding-source requirements before publication.
 
-Physical installation is waived for previews on all four platforms and remains unverified. Compilation and component checks do not replace that result or qualify incomplete packages.
+Physical installation is waived for previews on Windows, Apple Silicon macOS and Linux and remains unverified. Compilation and component checks do not replace that result or qualify incomplete packages.
 
 [Compatibility](compatibility.md) · [Distribution requirements](preview-release.md) · [Android component review](engineering/android-distribution.md) · [Architecture](architecture.en.md) · [Contributing](../../CONTRIBUTING.md) · [Backup and recovery](backup-restore.en.md)
 
@@ -42,8 +41,8 @@ Physical installation is waived for previews on all four platforms and remains u
 
 Windows的6bd完整工厂已成功：后端启动/重启、单EXE组装与解包检查、21项原生测试和最终留存均通过，EXE为2111641048字节，包含Android与WSL完整资源。依赖预编译与后端并行，安装器复用编译产物，原60分钟上限保持。此前冷编译超时和上传失败已在这一来源版本通过，但WHPX/网络、缺失系统功能/内核、后端升级、Android客体启动和实机首次就绪仍待验收。
 
-这些是各自来源提交的未公开候选，不混用后续源码的资格。root/KVM Android已有Rust安装和Linux客体执行单元，隔离测试覆盖即时重启、取消清理及恢复；仍缺APK接入、完整资源、真实KVM、GUI系统和双客体初始化。Linux ARM64亦未完成独立宿主。
+这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 
-发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。四平台预览客户端的实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。
+发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。桌面预览客户端的实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。

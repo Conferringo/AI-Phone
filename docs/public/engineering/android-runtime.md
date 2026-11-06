@@ -34,7 +34,7 @@ The build passes one generated resource map to Tauri; artifact inspection uses t
 
 Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
 
-Android-host ARM64 resources are distinct from macOS ARM64 emulator binaries. Factory artifacts remain subject to their own SDK terms, open-source notices and corresponding-source requirements. See [Android SDK terms](https://developer.android.com/studio/terms) and the [AOSP licensing overview](https://source.android.com/docs/setup/contribute/licenses).
+Factory artifacts remain subject to their own SDK terms, open-source notices and corresponding-source requirements. See [Android SDK terms](https://developer.android.com/studio/terms) and the [AOSP licensing overview](https://source.android.com/docs/setup/contribute/licenses).
 
 ---
 
@@ -42,6 +42,6 @@ Android-host ARM64 resources are distinct from macOS ARM64 emulator binaries. Fa
 
 Android 镜像与模拟器采用独立组件，随原生客户端资源传入。安装器校验宿主、ABI、清单、大小、权限和摘要后激活；设备数据仍保存在用户目录。现有完整设备不覆盖，不完整状态会停止并保留。离线设备创建不调用 Java、SDK Manager 或 AVD Manager。其余服务、Linux 镜像和各平台完整运行环境尚未全部离线封装。
 
-Android 宿主与模拟器程序必须匹配，不能将 macOS ARM64 模拟器用于 Android 宿主。当前平台供应、默认资源要求和首次安装范围统一见[发行状态](../release-status.md)。
+模拟器必须与桌面宿主的系统和架构匹配。当前平台供应、默认资源要求和首次安装范围统一见[发行状态](../release-status.md)。
 
 该开发组件仍需逐项完成再分发声明和对应源码审查，未作为正式安装包公开。运行验证不代表全平台或完整产品通过。

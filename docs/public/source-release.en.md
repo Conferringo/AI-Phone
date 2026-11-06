@@ -17,7 +17,7 @@ The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinn
 
 The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Configure models and device bindings in Configuration → Agent. No developer credentials or accounts are supplied. Repeated startup restores missing services while retaining existing state.
 
-See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md) and [backup/recovery](backup-restore.en.md). Physical installation tests are waived for previews on all four platforms and remain unverified; matching compilation and component checks are still required.
+See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md) and [backup/recovery](backup-restore.en.md). Physical installation tests are waived for previews on all desktop platforms and remain unverified; matching compilation and component checks are still required.
 
 ## Source and user data
 
@@ -34,4 +34,4 @@ Export requires a new destination and produces a source manifest and local revie
 
 Source CI checks protobuf, TypeScript, Rust, isolated UI/adapters, archive/installation contracts and a production web build. Prebuilt component verification stages and executes actual packaged files. Disposable PostgreSQL fixtures exercise migrations, role restrictions, backup/restore and worker recovery; restart tests run sequentially. CI does not use real devices, account credentials or paid model calls.
 
-Native CI builds macOS ARM64, Windows x64, Linux x64/ARM64 and Android ARM64 clients on matching workers. A passing client build establishes compilation and inspected contents, not complete two-device hosting. Runtime formats and ownership are described in [runtime components](engineering/index.md); current availability is maintained in [release status](release-status.md) and [compatibility](compatibility.md).
+Native CI builds macOS ARM64, Windows x64 and Linux desktop clients, and verifies virtual-phone control applications on matching workers. A passing client build establishes compilation and inspected contents, not complete two-device hosting. Runtime formats and ownership are described in [runtime components](engineering/index.md); current availability is maintained in [release status](release-status.md) and [compatibility](compatibility.md).

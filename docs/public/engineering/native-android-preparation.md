@@ -4,7 +4,7 @@ The Rust host runtime can admit an offline Android component and create one writ
 
 ## Ownership and compatibility
 
-The installer holds the existing installation lock for resource and device preparation. The component retains the factory's `ANDROID-MANIFEST.json` and content-addressed `components/android/<sha256>/sdk` layout. Supported component identities are macOS ARM64, Linux x64 and Windows x64 with their matching API 35 guest ABI. This does not qualify Linux ARM64 or Android as independent hosts.
+The installer holds the existing installation lock for resource and device preparation. The component retains the factory's `ANDROID-MANIFEST.json` and content-addressed `components/android/<sha256>/sdk` layout. Supported component identities are macOS ARM64, Linux x64 and Windows x64 with their matching API 35 guest ABI. This does not qualify Linux ARM64 as an independent host.
 
 The shared Rust archive reader handles source and Android capsules with separate fixed budgets. Source limits are unchanged. Android admission checks the compiled payload digest, compressed stream and tar completion, the exact inventory, every file digest and executable metadata, matching host/image and Windows filename collisions. SDK symlinks and Windows junctions are rejected. The component's existing `review-pending` metadata is preserved; validation does not grant redistribution permission.
 

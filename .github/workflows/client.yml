@@ -395,46 +395,20 @@ jobs:
           compression-level: 0
 
   android-arm64:
+    # Phone-control helpers run inside the virtual Android guest.
     if: github.event_name != 'workflow_dispatch' || !(inputs.complete_macos_factory || inputs.complete_windows_factory)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      CARGO_BUILD_JOBS: '2'
-      CARGO_INCREMENTAL: '0'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: '22'
-      - name: Toolchain
+      - name: Android guest application toolchain
         shell: bash
         run: |
-          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
-          export JAVA_HOME="$JAVA_HOME_17_X64"
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
           export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
-          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
           echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
-          rustup default 1.96.0
-          rustup target add aarch64-linux-android
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.0.12077973'
-          python scripts/bootstrap_bun.py --dependencies
-      - name: Build and verify phone control applications
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Build and verify virtual-phone control applications
         run: python3 scripts/prebuilt_phone.py --build
-      - name: Release APK and unpacked payload inspection
-        run: python3 scripts/build_client.py --platform android --with-phone-apps
-      - name: Retain development artifact only on explicit request
-        if: github.event_name == 'workflow_dispatch' && inputs.development_artifacts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: client-android-arm64
-          path: |
-            dist/AI-Phone-*-android-arm64.apk
-            dist/AI-Phone-*-android-arm64.apk.sha256
-            dist/AI-Phone-*-android-arm64.apk.manifest.json
-          if-no-files-found: error
-          retention-days: 7
-          compression-level: 0
-      # Signing identities remain private. Release publication is a separate reviewed action.

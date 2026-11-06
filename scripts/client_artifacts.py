@@ -7,8 +7,6 @@ import shutil
 import struct
 import subprocess
 import tempfile
-import tomllib
-import zipfile
 import os
 from release_package import SECRET
 
@@ -20,12 +18,8 @@ def notice_manifest(root=ROOT):
     missing=inventory.get('native_client_missing_notice_files')
     if missing!=[]:
         raise ValueError('Native dependency notice evidence is incomplete')
-    android=json.loads((root/'config/android-dependency-notices.json').read_text())
-    if not android['packages']:
-        raise ValueError('Android dependency notices are empty')
-    texts={name:hashlib.sha256((root/'docs/public'/name).read_bytes()).hexdigest()
-           for name in ['native-client-licenses.txt','android-client-licenses.txt']}
-    return {'rust_missing_files':missing,'android_runtime_modules':len(android['packages']),'texts':texts}
+    name='native-client-licenses.txt'
+    return {'rust_missing_files':missing,'texts':{name:hashlib.sha256((root/'docs/public'/name).read_bytes()).hexdigest()}}
 
 
 def inspect_payload(files, root=ROOT):
@@ -51,24 +45,6 @@ def inspect_payload(files, root=ROOT):
     return result
 
 
-def inspect_apk(path, root=ROOT):
-    with zipfile.ZipFile(path) as archive:
-        names = archive.namelist()
-        if len(names) != len(set(names)): raise ValueError('Duplicate APK entries')
-        files = {name: archive.read(name) for name in names if not name.endswith('/')}
-    libraries = [name for name in files if name.endswith('.so')]
-    if not libraries or any(not name.startswith('lib/arm64-v8a/') for name in libraries):
-        raise ValueError('Unexpected Android architecture')
-    manifest = root/'apps/client/src-tauri/Cargo.toml'
-    if manifest.exists():
-        expected = 'lib/arm64-v8a/lib'+tomllib.loads(manifest.read_text())['lib']['name']+'.so'
-        if expected not in libraries or any('libai_phone_' in name and name != expected for name in libraries):
-            raise ValueError('Stale or missing Android native library')
-    for name in libraries:
-        data = files[name]
-        if data[:5] != b'\x7fELF\x02' or struct.unpack_from('<H', data, 18)[0] != 183:
-            raise ValueError('Invalid ARM64 Android library')
-    return inspect_payload(files, root)
 
 
 def unpacked_files(base):

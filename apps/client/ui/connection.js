@@ -24,7 +24,7 @@ function render(){
  $('host-error').textContent=hostError?label(errors[hostError]||'failed'):'';$('host-error').hidden=!hostError;
  if(!snapshot){showPanel();return;}
  const {host,checks,progress}=snapshot,active=['running','license'].includes(progress.state),shown=!!progress.state;
- $('host-name').textContent=`${{macos:'macOS',windows:'Windows',linux:'Linux',android:'Android'}[host.platform]||host.platform}${host.platform==='macos'&&host.arch==='aarch64'?' · Apple Silicon':''}`;
+ $('host-name').textContent=`${{macos:'macOS',windows:'Windows',linux:'Linux'}[host.platform]||host.platform}${host.platform==='macos'&&host.arch==='aarch64'?' · Apple Silicon':''}`;
  $('host-state').textContent='';
  $('checks').replaceChildren(...checks.map(check=>{const node=document.createElement('span');node.className=check.passed?'passed':'failed';node.textContent=`${label(check.name==='memory'?'memoryCheck':'storageCheck')} ${check.value} GB${check.passed?'':` / ${check.required} GB`}`;return node;}));
  if(!host.implemented){$('host-error').textContent=label('hostPending');$('host-error').hidden=false;}

@@ -22,7 +22,7 @@ Reusable methods may be saved when the Agent actually discovers them. There is n
 
 Disposable database tests cover paused-owner coexistence, owner preemption, notification isolation, concurrent enable/schedule, stopping, device binding checks and install settings. A real worker test verifies that resource yielding preserves context, pending work, plans and retry counters without executing a pending action. Unit tests cover restart, long sleeps, elapsed time and step boundaries.
 
-A model may still make poor choices or encounter inaccessible applications. Actual device operation and account-level delivery are separate acceptance checks. Platform restrictions are reported rather than treated as successful actions. Physical fresh-host installation and four-platform standalone hosts are not certified by these runtime tests.
+A model may still make poor choices or encounter inaccessible applications. Actual device operation and account-level delivery are separate acceptance checks. Platform restrictions are reported rather than treated as successful actions. Physical fresh-host installation and desktop standalone hosts are not certified by these runtime tests.
 
 ---
 
