@@ -125,7 +125,7 @@ def perform(receipt,nonce,phase):
 
 def main():
     from wsl_runtime_fixture import CHECKS
-    from wsl_initialize_diagnostics import initial
+    from wsl_initialize_diagnostics import initial,runtime_failure
     nonce=fixture_identity();STATE.mkdir(mode=0o700,exist_ok=True)
     marker=STATE/'qualification-marker.json';phase=next_phase(marker,nonce)
     receipt={'format':1,'nonce':nonce,'phase':phase,'status':'failed','stage':'guard','checks':{name:False for name in sorted(CHECKS)},'frame':{},'windows_boot_verified':False,'phone_ready':False,'initialization':initial()}
@@ -136,9 +136,10 @@ def main():
         from database import atomic_json
         atomic_json(marker,{'nonce':nonce,'phase':phase})
         receipt['status']='passed';checkpoint(receipt,'stopped')
-    except Exception:
+    except Exception as error:
         # Private service logs remain inside the fixture. The public receipt has
         # fixed stage/check fields and never serializes exceptions, tokens or env.
+        receipt['failure']=runtime_failure(error)
         checkpoint(receipt,receipt['stage'])
         return 1
     return 0

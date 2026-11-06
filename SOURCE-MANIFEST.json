@@ -5799,6 +5799,11 @@
       "sha256": "7803776a572e3e9fdaf3fb3a77dd451d26e221464d418dffcec5a77cee74b836"
     },
     {
+      "path": "scripts/test_wsl_runtime_failure.py",
+      "size": 2979,
+      "sha256": "7038ef086ebddbef882db9bf02c554275dc38812c9bb85fb2e3ddfc5db0b6917"
+    },
+    {
       "path": "scripts/test_wsl_source_staging.py",
       "size": 7989,
       "sha256": "b2ee41adc5bbd7152816a5b63f4f35812eea13b798e499f3a1a9823d92a45293"
@@ -5865,8 +5870,8 @@
     },
     {
       "path": "scripts/wsl_initialize_diagnostics.py",
-      "size": 8631,
-      "sha256": "28a8fa9be6a14d6a051f2199d3eeb2970ea364506c96f39029eb8df1fe2c07ab"
+      "size": 10085,
+      "sha256": "ee902b08d847afaef7ea96c8fb92ac58ef5e4f029d975894178877e9519f9088"
     },
     {
       "path": "scripts/wsl_phone_tools.py",
@@ -5880,8 +5885,8 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9745,
-      "sha256": "f86441392b6f06fc151ac6294bead0e75708540e15ee2b7643f4bd15bb54c446"
+      "size": 9977,
+      "sha256": "5aaca138a711a97af1cbd31285b689c571984d798196d3bb1133ad95a3baa0f2"
     },
     {
       "path": "scripts/wsl_runtime_probes.py",
@@ -5890,8 +5895,8 @@
     },
     {
       "path": "scripts/wsl_runtime_worker.py",
-      "size": 6938,
-      "sha256": "508298e1558f6e5b9346c8fb603179ed0be330c0d712fcaa71b605b4e4cef745"
+      "size": 7013,
+      "sha256": "44b23885c79b7adc116aa00383c52af54f914598f21b8be8a09cdece690a50d0"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",
