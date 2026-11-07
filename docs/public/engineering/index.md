@@ -25,6 +25,7 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 - [Portable installer tools](installer-tools.md)
 - [Phone control applications](phone-apps.md)
 - [Guest networking applications](guest-apps.md)
+- [Device network observation](network-observation.md)
 - [Linked-device browser](channel-browser.md)
 
 ## Persistent installation

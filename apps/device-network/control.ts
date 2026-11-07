@@ -55,36 +55,18 @@ export async function install(){
  }
  return {installed:true,version:pins.version};
 }
-async function controller(t:Target,path:string){
- const token=readFileSync(folder(t)+'/token','utf8');
- if(t.kind==='phone'){
-  await adb('forward','tcp:17868','tcp:19090');
-  const response=await fetch('http://127.0.0.1:17868'+path,{headers:{authorization:'Bearer '+token},proxy:null,signal:AbortSignal.timeout(2500)} as any);
-  if(!response.ok)throw Error('核心未返回状态');return response.json();
- }
- const script="import json,urllib.request; c=json.load(open('/etc/ai-phone-network/config.json')); r=urllib.request.Request('http://127.0.0.1:19090'+input(),headers={'Authorization':'Bearer '+c['secret']}); print(urllib.request.build_opener(urllib.request.ProxyHandler({})).open(r,timeout=2).read().decode())";
- return JSON.parse(await run([docker,'exec','-i','ai-phone-desktop','python3','-c',script],path+'\n',5));
+async function observe(t:Target,operation:string){
+ const program=process.env.AI_PHONE_NATIVE_HOST_PROGRAM;
+ if(!program)throw Error("原生设备管理程序未配置");
+ const child=Bun.spawn([program,"--observe-device-network",root,t.kind,t.deviceId,operation],{cwd:root,stdin:'ignore',stdout:'pipe',stderr:'pipe',timeout:65000,env:process.env});
+ const [text,error,code]=await Promise.all([new Response(child.stdout).text(),new Response(child.stderr).text(),child.exited]);
+ if(code!==0)throw Error(error.includes('device_network_metadata')?'设备网络配置损坏，请从备份恢复':'设备网络命令失败，请检查设备状态与核心配置');
+ if(text.length>2*1024*1024)throw Error('设备网络响应过大');
+ return JSON.parse(text);
 }
-async function processes(t:Target){
- const dir=t.kind==='phone'?remote:desktopFolder;
- try{const result=await shell(t,`for f in supervisor core; do if [ -r ${dir}/$f.pid ]; then p=$(cat ${dir}/$f.pid); case "$p" in ''|*[!0-9]*) continue;; esac; if [ -r /proc/$p/cmdline ] && tr '\\000' ' ' </proc/$p/cmdline | grep -q '${dir}'; then echo running; exit 0; fi; fi; done; echo stopped`);return result==='running'?'running':result==='stopped'?'stopped':'unknown';}catch{return 'unknown';}
-}
-async function health(t:Target){
- try{const [version,config]=await Promise.all([controller(t,'/version'),controller(t,'/configs')]);const link=await shell(t,'ip link show aiphone0 >/dev/null 2>&1 && echo active');return {running:true,confirmed:true,version:version.version||'',tun:config.tun?.enable===true&&link==='active'};}catch{const actual=await processes(t);return {running:actual==='running',confirmed:actual==='stopped',version:'',tun:false};}
-}
-export async function state(value:any){
- const t=target(value),source=json(folder(t)+'/source.json'),job=json(folder(t)+'/job.json'),checks=json(folder(t)+'/checks.json');
- if(existsSync(folder(t)+'/app-managed.json')){
-  // The GUI owns its settings and lifecycle; never diagnose it using the retired controller.
-  let running=false,tunActive=false,confirmed=false;
-  try{const output=await shell(t,t.kind==='phone'?"pidof com.github.metacubex.clash.meta:background >/dev/null && echo app; ip link show tun0 >/dev/null 2>&1 && echo tun; true":"pgrep -x mihomo >/dev/null && echo app; ip link show Mihomo >/dev/null 2>&1 && echo tun; true");running=output.split('\n').includes('app');tunActive=output.split('\n').includes('tun');confirmed=true;}catch{}
-  return {deviceId:t.deviceId,managedBy:'application',revision:source.revision||0,enabled:running,hasSubscription:!!source.subscriptionUrl,status:!confirmed?'unknown':running?(tunActive?'running':'application'):'off',error:confirmed?'':'设备状态暂未确认',coreVersion:'',tunActive,nodeCount:source.nodeCount||0,checkedAtMs:checks.at||0,checks:checks.items||[]};
- }
- const h=await health(t);
- const committed=job.requestId&&source.requestId===job.requestId;let alive=false;try{if(Number.isSafeInteger(job.pid)&&job.pid>0){process.kill(job.pid,0);alive=true;}}catch{}
- const interrupted=job.status==='applying'&&!committed&&!alive;
- return {deviceId:t.deviceId,revision:source.revision||0,enabled:!!source.enabled,hasSubscription:!!source.subscriptionUrl,status:interrupted?'interrupted':job.status==='applying'&&!committed?'applying':!h.confirmed?'unknown':h.running?(h.tun?'running':'degraded'):(source.enabled?'failed':'off'),error:interrupted?'网络应用中断，请检查设备状态后重试':(!committed?job.error:'')||(!h.confirmed?'设备网络状态暂未确认，请稍后重试':!h.running&&source.enabled?'设备内 Clash 未运行':h.running&&!h.tun?'TUN 未生效':''),coreVersion:h.version,tunActive:h.tun,nodeCount:source.nodeCount||0,checkedAtMs:checks.at||0,checks:checks.revision===source.revision?checks.items||[]:[]};
-}
+async function processes(t:Target){return observe(t,"processes");}
+async function health(t:Target){return observe(t,"health");}
+export async function state(value:any){return observe(target(value),"state");}
 async function stop(t:Target){
  const dir=t.kind==='phone'?remote:desktopFolder;
  await shell(t,`rm -f ${dir}/enabled; if [ -f ${dir}/supervisor.pid ]; then p=$(cat ${dir}/supervisor.pid); case "$p" in ''|*[!0-9]*) exit 1;; esac; if [ -r /proc/$p/cmdline ] && tr '\\000' ' ' </proc/$p/cmdline | grep -q '${dir}'; then kill -TERM "$p"; fi; fi`);
@@ -101,27 +83,7 @@ async function start(t:Target){
  throw Error('Clash TUN 启动失败');
 }
 export async function resume(value:any){const t=target(value);if(existsSync(folder(t)+'/app-managed.json'))return {managedBy:'application'};const source=json(folder(t)+'/source.json');if(source.enabled){if(t.kind==='phone'&&(await adb('shell','id -u'))!=='0'){await adb('root');for(let i=0;i<15;i++){try{if(await adb('shell','id -u')==='0')break;}catch{}await Bun.sleep(500);}}const h=await health(t);if(h.confirmed&&!h.running)await start(t);}return state(t);}
-export async function probe(value:any){
- const t=target(value),source=json(folder(t)+'/source.json');const items=[];const download=json(root+'/config/mihomo-release.json').verification_download;
- for(const [name,url] of [['国内 HTTPS','https://www.baidu.com/'],['境外 HTTPS','https://example.com/'],['下载','https://raw.githubusercontent.com/MetaCubeX/mihomo/v1.19.33/LICENSE']]){
-  const start=Date.now();try{
-   let detail='';
-   if(t.kind==='phone'){
-    // UID 2000 follows the same TUN route as apps. Root is reserved for the core.
-    const path='/data/local/tmp/aiphone-netprobe-'+randomBytes(8).toString('hex');
-    const command=`umask 077; curl --noproxy '*' -fsSL --max-time 15 '${url}' -o '${path}' && { wc -c < '${path}'; sha256sum '${path}'; }; status=$?; rm -f '${path}'; exit $status`;
-    const quoted="'"+command.replaceAll("'","'\\''")+"'";
-    const output=await adb('shell','su 2000 sh -c '+quoted);
-    const [count,checksum]=output.split(/\s+/),bytes=Number(count);if(!Number.isSafeInteger(bytes)||bytes<30||name==='下载'&&(checksum!==download?.sha256||bytes!==download?.size_bytes))throw Error('response');detail=bytes+' bytes';
-   }else{
-    const script="import urllib.request,hashlib,json; u=input(); b=urllib.request.build_opener(urllib.request.ProxyHandler({})).open(u,timeout=15).read(1024*1024); open('/etc/ai-phone-network/probe-download','wb').write(b); print(json.dumps({'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}))";
-    const result=JSON.parse(await run([docker,'exec','-i','ai-phone-desktop','python3','-c',script],url+'\n'));if(result.bytes<30||name==='下载'&&(result.sha256!==download?.sha256||result.bytes!==download?.size_bytes))throw Error('response');detail=result.bytes+' bytes';
-   }
-   items.push({name,passed:true,detail,durationMs:Date.now()-start});
-  }catch{items.push({name,passed:false,detail:'设备内直连请求失败；未使用宿主代理',durationMs:Date.now()-start});}
- }
- atomic(folder(t)+'/checks.json',{revision:source.revision,at:Date.now(),items});return state(t);
-}
+export async function probe(value:any){return observe(target(value),"probe");}
 export async function apply(value:any){
  const t=target(value),dir=folder(t);await prepare(t);chmodSync(dir,0o700);
  if(existsSync(dir+'/app-managed.json'))throw Error('请在设备内的 Clash 应用中管理网络');
@@ -173,7 +135,7 @@ export async function execute(value:any){
   try{await stop(t);}catch(e){unlinkSync(marker);throw e;}
   return {managedBy:'application'};
  }
- if(value.operation==='credential'){const t=target(value),s=json(folder(t)+'/source.json');return {subscriptionUrl:s.subscriptionUrl||'',revision:s.revision||0};}
+ if(value.operation==='credential')return observe(target(value),'credential');
  throw Error('未知网络操作');
 }
 if(import.meta.main){try{const input=JSON.parse(await Bun.stdin.text());console.log(JSON.stringify(await execute(input)));}catch(e){console.log(JSON.stringify({error:e instanceof Error?e.message:'设备网络失败'}));process.exitCode=1;}}

@@ -54,7 +54,7 @@ jobs:
             fi
           done
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
+          sudo apt-get install --no-install-recommends -y curl apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
       - name: Installer and archive tests
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
