@@ -4675,7 +4675,7 @@ mod loop_persistence_tests {
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(Vec::new()),
-            workspace_init: Mutex::new(()),
+            workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
             network_mutation: Mutex::new(()),
         };
@@ -4857,7 +4857,7 @@ mod process_recovery_tests {
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
-            workspace_init: Mutex::new(()),
+            workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
             network_mutation: Mutex::new(()),
         });

@@ -55,6 +55,7 @@ mod tool_catalog;
 mod voice_input;
 mod workbench;
 mod worker;
+mod workspace_runtime;
 
 const MEDIA: &str = "application/x-protobuf";
 struct App {
@@ -67,7 +68,7 @@ struct App {
     remote: reqwest::Client,
     active: Mutex<std::collections::HashMap<Uuid, CancellationToken>>,
     login_attempts: Mutex<Vec<std::time::Instant>>,
-    workspace_init: Mutex<()>,
+    workspace_init: Mutex<Option<String>>,
     location_mutation: Mutex<()>,
     network_mutation: Mutex<()>,
 }
@@ -147,6 +148,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(debug_assertions)]
+    if arguments.len() == 2 && arguments[0] == "--qualify-workspace-runtime" {
+        workspace_runtime::qualify(
+            arguments[1]
+                .to_str()
+                .ok_or("workspace image is not UTF-8")?,
+        )
+        .await?;
+        return Ok(());
+    }
     #[cfg(debug_assertions)]
     if arguments.as_slice() == [std::ffi::OsStr::new("--qualify-file-manager-devices")] {
         files::qualify_devices().await;
@@ -292,7 +303,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
             .build()?,
         active: Mutex::new(Default::default()),
         login_attempts: Mutex::new(Vec::new()),
-        workspace_init: Mutex::new(()),
+        workspace_init: Mutex::new(None),
         location_mutation: Mutex::new(()),
         network_mutation: Mutex::new(()),
     });

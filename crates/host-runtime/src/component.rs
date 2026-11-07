@@ -18,6 +18,8 @@ enum Service {
     WslBackend,
     #[cfg(unix)]
     UnixHost,
+    #[cfg(unix)]
+    Browser,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -39,6 +41,8 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::WslBackend => runtime.block_on(crate::wsl::backend::run(arguments)),
         #[cfg(unix)]
         Service::UnixHost => runtime.block_on(crate::unix_initializer::run(arguments)),
+        #[cfg(unix)]
+        Service::Browser => runtime.block_on(crate::channel_browser::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -79,6 +83,8 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
         #[cfg(unix)]
         "--runtime-environment" => Some(crate::runtime_environment::run(&arguments[1..])),
+        #[cfg(unix)]
+        "--channel-browser" => Some(start(Service::Browser, &arguments[1..])),
         #[cfg(unix)]
         "--runtime-environment-contract" => {
             Some(contract(arguments, crate::runtime_environment::CONTRACT))

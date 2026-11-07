@@ -12,11 +12,8 @@ use sha2::{Digest, Sha256};
 use sqlx::Row;
 use std::{
     collections::HashMap,
-    os::unix::fs::MetadataExt,
     path::{Path as FilePath, PathBuf},
-    process::Stdio,
 };
-use tokio::{io::AsyncReadExt, process::Command};
 
 fn workspace(app: &App) -> PathBuf {
     app.root.join("data/workspaces/admin")
@@ -72,142 +69,26 @@ async fn safe_path(base: &FilePath, path: &str, write: bool) -> Result<PathBuf, 
     }
     Ok(resolved)
 }
-async fn drain(
-    mut reader: impl tokio::io::AsyncRead + Unpin,
-    bytes: &mut Vec<u8>,
-    limit: usize,
-) -> std::io::Result<()> {
-    let mut chunk = [0u8; 8192];
-    loop {
-        let size = reader.read(&mut chunk).await?;
-        if size == 0 {
-            return Ok(());
-        }
-        let keep = size.min(limit.saturating_sub(bytes.len()));
-        bytes.extend_from_slice(&chunk[..keep]);
+fn runtime<'a>(app: &'a App, image: &'a str) -> crate::workspace_runtime::Runtime<'a> {
+    crate::workspace_runtime::Runtime {
+        container: "ai-phone-tools",
+        image,
+        directory: workspace(app),
+        skills: app.root.join("data/runtime-skills"),
     }
-}
-async fn command(args: &[String], limit: u64, seconds: u64) -> Result<(bool, String), String> {
-    let mut child = Command::new("docker")
-        .args(args)
-        .kill_on_drop(true)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|_| "Docker尚未运行".to_string())?;
-    let out = child.stdout.take().unwrap();
-    let err = child.stderr.take().unwrap();
-    let (mut a, mut b) = (Vec::new(), Vec::new());
-    let (_, _, status) = tokio::time::timeout(Duration::from_secs(seconds), async {
-        tokio::try_join!(
-            drain(out, &mut a, limit as usize),
-            drain(err, &mut b, limit as usize),
-            child.wait()
-        )
-    })
-    .await
-    .map_err(|_| "工作指令超时，请先检查结果，勿直接重放".to_string())?
-    .map_err(|e| e.to_string())?;
-    a.extend_from_slice(&b);
-    a.truncate(limit as usize);
-    Ok((status.success(), String::from_utf8_lossy(&a).into_owned()))
 }
 async fn ensure_workspace(app: &App) -> Result<(), String> {
-    let _lock = app.workspace_init.lock().await;
+    let mut ready = app.workspace_init.lock().await;
     skill_resources::reconcile(&app.db, &app.root).await?;
-    let dir = workspace(app);
-    tokio::fs::create_dir_all(dir.join(".home"))
+    let image = workspace_image();
+    let runtime = runtime(app, &image);
+    tokio::fs::create_dir_all(runtime.directory.join(".home"))
         .await
         .map_err(|e| e.to_string())?;
-    tokio::fs::create_dir_all(app.root.join("data/runtime-skills"))
+    tokio::fs::create_dir_all(&runtime.skills)
         .await
         .map_err(|e| e.to_string())?;
-    let (found, state) = command(
-        &[
-            "inspect".into(),
-            "--format".into(),
-            "{{.State.Running}}".into(),
-            "ai-phone-tools".into(),
-        ],
-        4096,
-        10,
-    )
-    .await?;
-    if found {
-        if state.trim() != "true" {
-            let (ok, output) =
-                command(&["start".into(), "ai-phone-tools".into()], 4096, 15).await?;
-            if !ok {
-                return Err(output);
-            }
-        }
-        return Ok(());
-    }
-    let owner = std::fs::metadata(&dir).map_err(|e| e.to_string())?;
-    let workspace_image = workspace_image();
-    let args: Vec<String> = vec![
-        "run",
-        "--pull=never",
-        "-d",
-        "--name",
-        "ai-phone-tools",
-        "--label",
-        "dev.aiphone.managed=true",
-        "--user",
-        &format!("{}:{}", owner.uid(), owner.gid()),
-        "--cap-drop=ALL",
-        "--security-opt=no-new-privileges",
-        "--pids-limit=256",
-        "--memory=2g",
-        "--cpus=2",
-        "--mount",
-        &format!("type=bind,src={},dst=/workspace", dir.display()),
-        "--mount",
-        &format!(
-            "type=bind,src={},dst=/skills,readonly",
-            app.root.join("data/runtime-skills").display()
-        ),
-        "--env",
-        "HOME=/workspace/.home",
-        "--env",
-        &format!(
-            "http_proxy={}",
-            std::env::var("AI_PHONE_CONTAINER_PROXY").unwrap_or_default()
-        ),
-        "--env",
-        &format!(
-            "https_proxy={}",
-            std::env::var("AI_PHONE_CONTAINER_PROXY").unwrap_or_default()
-        ),
-        "--env",
-        &format!(
-            "HTTPS_PROXY={}",
-            std::env::var("AI_PHONE_CONTAINER_PROXY").unwrap_or_default()
-        ),
-        "--env",
-        &format!(
-            "HTTP_PROXY={}",
-            std::env::var("AI_PHONE_CONTAINER_PROXY").unwrap_or_default()
-        ),
-        "--env",
-        "NO_PROXY=localhost,127.0.0.1",
-        "--env",
-        "PIP_USER=1",
-        "--env",
-        "PYTHONUNBUFFERED=1",
-        &workspace_image,
-    ]
-    .iter()
-    .map(|s| s.to_string())
-    .collect();
-    let (ok, output) = command(&args, 4096, 20).await?;
-    if !ok {
-        return Err(format!(
-            "工作环境尚未就绪：{}",
-            output.chars().take(200).collect::<String>()
-        ));
-    }
-    Ok(())
+    runtime.prepare(&mut ready).await
 }
 async fn download(app: &App, url: &str, limit: usize) -> Result<Vec<u8>, String> {
     let parsed = reqwest::Url::parse(url).map_err(|_| "网址无效")?;
@@ -1180,42 +1061,8 @@ pub async fn invoke(
                 return Err("工作指令为空或过长".into());
             }
             ensure_workspace(app).await?;
-            let job = Uuid::now_v7().to_string();
-            let wrapper = r#"import os,sys,subprocess,signal,pathlib
-folder=pathlib.Path('/workspace/.jobs'); folder.mkdir(exist_ok=True)
-pidfile=folder/(sys.argv[1]+'.pid'); canceled=folder/(sys.argv[1]+'.cancel')
-if canceled.exists(): sys.exit(130)
-p=subprocess.Popen(['/bin/sh','-lc',sys.argv[2]],start_new_session=True)
-pidfile.write_text(str(p.pid))
-try:
- if canceled.exists(): os.killpg(p.pid,signal.SIGKILL)
- try: code=p.wait(timeout=90)
- except subprocess.TimeoutExpired: os.killpg(p.pid,signal.SIGKILL); p.wait(); code=124
-finally:
- try: os.killpg(p.pid,signal.SIGKILL)
- except ProcessLookupError: pass
- pidfile.unlink(missing_ok=True); canceled.unlink(missing_ok=True)
-sys.exit(code)
-"#;
-            let args = vec![
-                "exec".into(),
-                "-w".into(),
-                "/workspace".into(),
-                "ai-phone-tools".into(),
-                "python".into(),
-                "-c".into(),
-                wrapper.into(),
-                job.clone(),
-                script,
-            ];
-            let (ok, output) = tokio::select! {
-                result = command(&args, 65536, 100) => result?,
-                _ = cancel.cancelled() => {
-                    let kill = "import pathlib,os,signal,sys; p=pathlib.Path('/workspace/.jobs'); p.mkdir(exist_ok=True); (p/(sys.argv[1]+'.cancel')).touch(); f=p/(sys.argv[1]+'.pid'); pid=int(f.read_text()) if f.exists() else 0; os.killpg(pid,signal.SIGKILL) if pid else None";
-                    let _ = command(&["exec".into(), "ai-phone-tools".into(), "python".into(), "-c".into(), kill.into(), job], 4096, 10).await;
-                    return Err("canceled".into());
-                }
-            };
+            let image = workspace_image();
+            let (ok, output) = runtime(app, &image).execute(&script, cancel).await?;
             Ok(json!({"success":ok,"output":output,"environment":"isolated workspace"}))
         }
         _ => Err("未知工作工具".into()),

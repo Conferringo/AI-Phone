@@ -251,7 +251,7 @@ mod database_tests {
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
             login_attempts: Mutex::new(vec![]),
-            workspace_init: Mutex::new(()),
+            workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
             network_mutation: Mutex::new(()),
         });

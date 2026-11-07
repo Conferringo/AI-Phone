@@ -25,7 +25,9 @@ First-run profile creation, explicit configuration edits, schema/preset validati
 
 The read-only runtime environment policy is now native, including selected tool components, saved launch PATH, SDK/Java, guest resources, proxies and installed image/app metadata. It replaces the former Python policy and WSL's duplicate profile mapping. Client tool preparation shares that native tool implementation; the existing portable-tool and installer callers have not all been retired. This source change does not qualify new complete installers.
 
-The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. JavaScript network/channel/media services and other Python callers remain migration work. Local compilation and controller tests are not a completed cold install or a newly released package. WSL qualification currently reaches running services but fails during desktop provisioning; the underlying cause remains unconfirmed.
+The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. Isolated Linux/WSL assembly, startup and restart qualification now passes for the integrated native initializer. This does not qualify newly assembled complete installers or physical installation. JavaScript network/channel/media services and other Python callers remain migration work.
+
+The linked-device browser process, pipe transport and container lifecycle now run in Rust. The workspace task owner also uses the native guest worker for execution, deadlines and cancellation; its existing tools container is upgraded in place. Real Chromium and disposable Docker checks cover these paths. Third-party guest task tools remain distinct from the first-party runtime, and other build, recovery and maintenance consumers still need migration.
 
 ## Capability limits
 
@@ -57,7 +59,9 @@ Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调�
 
 只读运行环境策略也已迁Rust，包含工具组件、保存的PATH、SDK/Java、客体资源/代理及镜像/应用元数据，旧Python策略与WSL重复配置映射已替换；客户端工具准备复用同一原生实现。其余portable工具与安装调用尚未全部退役，此源码改动不等于新完整安装包验收。
 
-macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。JavaScript网络/渠道/媒体服务与其他Python调用仍待迁移。本地编译/控制器测试不等于完整冷安装或新包发布。WSL当前实际验收到服务运行，但桌面创建失败，底层原因仍未确认。
+macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。整合原生初始化版本已通过隔离Linux/WSL组装、启动和恢复资格检查，仍不等于当前源码完整安装包或实机安装通过。JavaScript网络/渠道/媒体服务与其他Python调用仍待迁移。
+
+关联设备浏览器的进程、管道和容器生命周期已迁Rust；工作区执行、期限和取消也由原生客体任务组件负责，已有工具容器就地更新。真实Chromium与隔离Docker已覆盖这些路径。客体第三方任务工具与本体实现分别记录；其余构建、恢复和维护消费者仍须迁移。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

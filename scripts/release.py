@@ -220,13 +220,12 @@ def install_source_components(state, root, env):
 
 def install_messaging_browser(state,root,env):
     from install_state import fingerprint
-    from prebuilt_js import BROWSER_SOURCES
     # A complete bundle uses the already imported desktop image on every architecture.
     if not env.get('AI_PHONE_DESKTOP_IMAGE') and platform.system() == 'Linux' and platform.machine().lower() in ('aarch64', 'arm64') and not env.get('AI_PHONE_WHATSAPP_CHROMIUM'):
         print('WhatsApp browser not prepared: this architecture needs a matched bundled runtime')
         return
-    sources=['apps/channels/install-browser.ts','apps/channels/whatsapp-browser.ts','apps/channels/whatsapp-runtime.ts','bun.lock',*BROWSER_SOURCES]
-    state.phase('messaging-browser',fingerprint(root,sources,{'image':env.get('AI_PHONE_DESKTOP_IMAGE',''),'python':env.get('AI_PHONE_PYTHON','')}),
+    sources=['apps/channels/install-browser.ts','apps/channels/whatsapp-browser.ts','apps/channels/whatsapp-runtime.ts','bun.lock','crates/host-runtime','Cargo.lock']
+    state.phase('messaging-browser',fingerprint(root,sources,{'image':env.get('AI_PHONE_DESKTOP_IMAGE',''),'native':env.get('AI_PHONE_NATIVE_HOST_PROGRAM','')}),
                 lambda:messaging_browser(root,env,True),lambda:messaging_browser(root,env))
 
 
@@ -240,9 +239,9 @@ def install_guest_images(state, root, env):
             state.phase(role+'-image',fingerprint(root,[],{'image':reference}),lambda:None,lambda:image_id(reference))
         return
     proxy = env['AI_PHONE_CONTAINER_PROXY']
-    state.phase('workspace-image', fingerprint(root, ['infra/workspace']),
+    state.phase('workspace-image', fingerprint(root, ['infra/workspace', 'crates/guest-runtime', 'crates/api', 'packages/protocol/proto', 'Cargo.toml', 'Cargo.lock', '.dockerignore']),
                 lambda: run(['docker', 'build', '--build-arg', 'HTTP_PROXY='+proxy, '--build-arg', 'HTTPS_PROXY='+proxy,
-                             '-t', 'ai-phone-workspace:20261103', '-f', 'infra/workspace/Dockerfile', 'infra/workspace'], env=env, root=root),
+                             '-t', 'ai-phone-workspace:20261103', '-f', 'infra/workspace/Dockerfile', '.'], env=env, root=root),
                 lambda: image_id('ai-phone-workspace:20261103'))
     state.phase('desktop-image', fingerprint(root, ['infra/desktop', 'crates/guest-runtime', 'Cargo.toml', 'Cargo.lock', '.dockerignore', 'compose.desktop.yaml', 'config/clash-apps.json'],
                                            {'workspace_image': image_id('ai-phone-workspace:20261103')}),

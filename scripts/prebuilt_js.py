@@ -23,7 +23,6 @@ RESERVE = 4 * 1024**3
 ENTRIES = {'media': 'apps/device-stream/server.ts', 'channels': 'apps/channels/server.ts',
            'native-apps': 'apps/device-network/native-apps.ts', 'device-network': 'apps/device-network/control.ts', 'messaging-browser': 'apps/channels/install-browser.ts',
            'backend-qualification': 'scripts/wsl-desktop-qualification.ts'}
-BROWSER_SOURCES=tuple('scripts/'+name+'.py' for name in ('channel_browser','browser_engine','browser_lease','browser_pipe','installer_lock','private_files','windows_private'))
 
 
 def entries():
@@ -33,7 +32,7 @@ def entries():
 def source_inputs(root):
     root = Path(root)
     exact = {'package.json', 'bun.lock', 'config/bun-runtime.json', 'config/js-runtime-vendor.json', 'scripts/js_dependencies.py', 'scripts/js_vendor.py', 'scripts/prebuilt_js.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json',
-             *BROWSER_SOURCES,*ENTRIES.values()}
+             *ENTRIES.values()}
     prefixes = ('apps/channels/', 'apps/device-stream/', 'apps/device-network/', 'packages/protocol/')
     for name, data, mode in select_files(root):
         if name in exact or name.startswith(prefixes) and not name.endswith('.test.ts'):

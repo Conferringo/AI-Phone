@@ -58,11 +58,11 @@ class JavaScriptRuntimeTests(unittest.TestCase):
             self.assertEqual(source_fingerprint(frozen),source_fingerprint(root));original=(frozen/'apps/channels/server.ts').read_text();(root/'apps/channels/server.ts').write_text('changed during build')
             self.assertEqual((frozen/'apps/channels/server.ts').read_text(),original);self.assertNotEqual(source_fingerprint(frozen),source_fingerprint(root))
 
-    def test_browser_helper_changes_invalidate_the_compiled_consumer(self):
+    def test_browser_adapter_changes_invalidate_the_compiled_consumer(self):
         from prebuilt_js import snapshot_sources,source_fingerprint
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary).resolve();self.fixture(root);helper=root/'scripts/channel_browser.py';helper.write_text('original browser contract')
-            frozen=root/'frozen';snapshot_sources(root,frozen);self.assertEqual((frozen/'scripts/channel_browser.py').read_text(),'original browser contract')
+            root=Path(temporary).resolve();self.fixture(root);helper=root/'apps/channels/whatsapp-runtime.ts';helper.write_text('original browser contract')
+            frozen=root/'frozen';snapshot_sources(root,frozen);self.assertEqual((frozen/'apps/channels/whatsapp-runtime.ts').read_text(),'original browser contract')
             self.assertEqual(source_fingerprint(root),source_fingerprint(frozen));helper.write_text('changed browser contract')
             self.assertNotEqual(source_fingerprint(root),source_fingerprint(frozen))
 

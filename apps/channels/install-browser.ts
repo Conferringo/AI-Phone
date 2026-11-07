@@ -9,7 +9,7 @@ import {promisify} from 'node:util';
 const root=process.env.AI_PHONE_PROJECT_ROOT||resolve(import.meta.dir,'../..'),cache=resolve(root,'.tools/whatsapp-browser');
 const selected=browserSelection(root,'bootstrap-check',process.env,()=> '');
 if(selected.mode==='container'){
- const result=await promisify(execFile)(selected.python,[selected.helper,'--check'],{env:process.env,timeout:25000,maxBuffer:16384,encoding:'utf8',windowsHide:true});
+ const result=await promisify(execFile)(selected.executable,['--channel-browser','--check'],{env:{...process.env,AI_PHONE_PROJECT_ROOT:root},timeout:25000,maxBuffer:16384,encoding:'utf8',windowsHide:true});
  const checked=JSON.parse(result.stdout);
  if(checked.available!==true||typeof checked.version!=='string'||!checked.version.startsWith('Chromium '))throw Error('Bundled WhatsApp browser verification failed');
  console.log('WhatsApp browser component ready');
