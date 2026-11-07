@@ -1,5 +1,5 @@
 //! One read-only environment policy for source hosts, installed hosts and WSL.
-use crate::{Error, Result, images, installer_tools, managed_engine};
+use crate::{Error, Result, images, managed_engine};
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -247,14 +247,7 @@ pub(crate) fn profile_environment(root: &Path, user: &Path) -> Result<Environmen
 pub(crate) fn resolve(root: &Path, user: &Path) -> Result<Environment> {
     let profile = Profile::load(root)?;
     let base = profile.base_path(root)?;
-    let host = match (std::env::consts::OS, std::env::consts::ARCH) {
-        ("macos", "aarch64") => "macos-arm64",
-        ("linux", "x86_64") => "linux-x64",
-        ("linux", "aarch64") => "linux-arm64",
-        _ => return Err(Error::Invalid("runtime_environment_host")),
-    };
-    let mut env = installer_tools::selected_environment(root, host, &base)
-        .map_err(|_| Error::Invalid("installer_tools_selection"))?;
+    let mut env = Environment::new();
     let managed = managed_engine::environment(root, user)?;
     let prefix = managed
         .get("AI_PHONE_MANAGED_BIN")

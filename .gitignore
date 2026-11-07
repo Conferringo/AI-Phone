@@ -8,8 +8,6 @@ out/
 target/
 dist/
 apps/client/src-tauri/gen/
-__pycache__/
-*.pyc
 data/
 .DS_Store
 *.log
@@ -34,8 +32,6 @@ backups/
 # Local reports, OS metadata and installer/signing outputs.
 coverage/
 .metrics/
-.pytest_cache/
-.venv/
 .AppleDouble/
 __MACOSX/
 ._*
@@ -81,7 +77,5 @@ GEMINI.md
 /apps/android-bridge/
 /apps/web/src/app/lab/
 /scripts/verify-*.ts
-/scripts/verify-*.py
-/scripts/cleanup-retired-projects.py
 
 .playwright-cli/

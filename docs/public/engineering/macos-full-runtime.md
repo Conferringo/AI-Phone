@@ -25,21 +25,21 @@ The complete factory requires an Apple Silicon build machine, an ARM64 Linux Doc
 
 ```sh
 ./scripts/bootstrap.sh
-python3 scripts/macos_client_factory.py --compiler-sdk "$ANDROID_HOME"
+./scripts/bun scripts/macos-client-factory.ts --compiler-sdk "$ANDROID_HOME"
 ```
 
-The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all eight runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
+The factory collects the pinned ARM Android baseline, prepares a fresh matching emulator/ADB profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all seven runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
 
-The `Native client checks` workflow provides the manual `complete_macos_factory` mode. A disposable native ARM64 Linux builder creates the four-role image capsule; an Apple Silicon builder admits that source-bound capsule and assembles the complete DMG without an emulated build engine. The handoff uses an unpublished temporary draft, an exact two-asset inventory and a metadata digest passed between jobs. The Mac job checks source identity, payload bytes, architecture and image inventory before use, then retires only its matching temporary draft. Component transport is a maintainer operation; the installed application contains those resources and does not ask end users to acquire them. The original 6500-second Mac assembly deadline remains in effect.
+The `Native client checks` workflow provides the manual `complete_macos_factory` mode. A disposable native ARM64 Linux builder creates the four-role image capsule; an Apple Silicon builder admits that source-bound capsule and assembles the complete DMG without an emulated build engine. The handoff uses an unpublished temporary draft, an exact two-asset inventory and a metadata digest passed between jobs. The Mac job checks source identity, payload bytes, architecture and image inventory before use, then retires only its matching temporary draft. Component transport is a maintainer operation; the installed application contains those resources and does not ask end users to acquire them.
 
-Qualification receipts are retained. With the explicit `retain_complete_candidate` option, successful complete assembly also stores one source-matched DMG in an unpublished draft. The complete factory rejects a DMG at or above the single-asset limit; maintainer [delivery volumes](package-delivery.md) do not qualify as a user installer. Public binary release remains a separate resource/source review. The software-engine entry remains available to maintainers who assemble images directly on a dedicated Mac; it owns and cleans only its fresh QEMU/TCG environment. Physical installation is waived for previews and remains untested.
+Qualification receipts are retained. With the explicit `retain_complete_candidate` option, successful complete assembly also stores one source-matched DMG in an unpublished draft. The complete factory rejects a DMG at or above the single-asset limit; maintainer [delivery volumes](package-delivery.md) do not qualify as a user installer. Public binary release remains a separate resource/source review. Physical installation is waived for previews and remains untested.
 
 Use a reviewed source checkout and architecture-matched factory resources. The distribution command is:
 
 ```sh
-python3 scripts/build_client.py --platform macos \
+./scripts/bun scripts/build-client.ts --platform macos \
   --with-web-runtime --with-service-runtime --with-phone-apps \
-  --with-container-host --with-js-services --with-guest-apps \
+  --with-container-host  --with-guest-apps \
   --android-runtime /factory/android.payload \
   --images-runtime /factory/images.payload
 ```

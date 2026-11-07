@@ -219,14 +219,24 @@ pub(super) fn create(
     control: &Control<'_>,
 ) -> Result<(PathBuf, bool)> {
     let home = layout(installation, control)?;
-    let state = creation_state(&home)?;
+    create_at(&home, sdk, abi, resources, control)
+}
+pub(super) fn create_at(
+    home: &Path,
+    sdk: &Path,
+    abi: &str,
+    resources: Resources,
+    control: &Control<'_>,
+) -> Result<(PathBuf, bool)> {
+    filesystem::directory(home, true)?;
+    let state = creation_state(home)?;
     if state == Creation::Ready {
-        verify_existing(&home, sdk, abi)?;
-        return Ok((home, true));
+        verify_existing(home, sdk, abi)?;
+        return Ok((home.to_path_buf(), true));
     }
-    let resources = intent(&home, sdk, resources)?;
-    finish_creation(&home, sdk, abi, &resources, &state, control)?;
-    Ok((home, state != Creation::New))
+    let resources = intent(home, sdk, resources)?;
+    finish_creation(home, sdk, abi, &resources, &state, control)?;
+    Ok((home.to_path_buf(), state != Creation::New))
 }
 fn finish_creation(
     home: &Path,

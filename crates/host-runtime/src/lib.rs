@@ -3,8 +3,6 @@
 pub mod android;
 mod archive;
 mod capsule;
-#[cfg(unix)]
-mod channel_browser;
 pub mod component;
 mod control;
 pub mod device_bridge;
@@ -14,7 +12,6 @@ pub mod guest_app_resources;
 mod guest_apps;
 #[cfg(unix)]
 mod images;
-pub mod installer_tools;
 mod links;
 #[cfg(unix)]
 mod managed_engine;
@@ -28,6 +25,8 @@ mod profile;
 #[cfg(unix)]
 mod runtime_environment;
 mod source_cli;
+#[cfg(unix)]
+mod source_services;
 mod staging;
 pub mod supervision;
 #[cfg(unix)]

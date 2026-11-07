@@ -26,6 +26,7 @@ tonic-prost = "=0.14.9"
 image = { version = "=0.25.10", default-features = false, features = ["jpeg", "png"] }
 futures-util = "0.3"
 rustix = { version = "1", features = ["process"] }
+if-addrs = "=0.15.0"
 
 [build-dependencies]
 tonic-prost-build = "=0.14.9"

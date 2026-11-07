@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import {simplifyStroke} from "./route-stroke";
+import { simplifyStroke } from "./route-stroke";
 import type { GeoPoint } from "@ai-phone/protocol/ai_phone/v1/location_pb";
 export type Point = Pick<GeoPoint, "latitude" | "longitude" | "accuracyM">;
 export type MapState = {
@@ -56,7 +56,9 @@ function routeLayers(
   nodes: L.LayerGroup,
   get: () => MapState,
 ) {
-  line.setLatLngs(state.route.map((p) => [p.latitude, p.longitude]));
+  line.setLatLngs(
+    state.route.map<[number, number]>((p) => [p.latitude, p.longitude]),
+  );
   nodes.clearLayers();
   state.route.forEach((p, index) => {
     L.circleMarker([p.latitude, p.longitude], {
@@ -99,7 +101,7 @@ export function createLocationMap(root: HTMLElement, get: () => MapState) {
     line = L.polyline([], { color: "#587c73", weight: 3 }).addTo(map),
     nodes = L.layerGroup().addTo(map);
   const key = (event: KeyboardEvent) => keyboard(event, map, get);
-  let stroke: {id: number; points: L.Point[]; moved: boolean} | null = null;
+  let stroke: { id: number; points: L.Point[]; moved: boolean } | null = null;
   let suppressClick = false;
   const repaint = () => routeLayers(get(), line, nodes, get);
   const sync = () => {
@@ -109,42 +111,85 @@ export function createLocationMap(root: HTMLElement, get: () => MapState) {
     else map.dragging.enable();
     if (state.interactive && !state.editing) pin.dragging?.enable();
     else pin.dragging?.disable();
-    if ((!state.editing || !state.interactive) && stroke) {stroke=null; repaint();}
+    if ((!state.editing || !state.interactive) && stroke) {
+      stroke = null;
+      repaint();
+    }
   };
   const down = (event: PointerEvent) => {
-    if (!get().editing || !get().interactive || event.button !== 0 || stroke) return;
-    if (event.target instanceof Element && event.target.closest('.leaflet-control,.leaflet-marker-icon,.leaflet-interactive')) return;
+    if (!get().editing || !get().interactive || event.button !== 0 || stroke)
+      return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest(
+        ".leaflet-control,.leaflet-marker-icon,.leaflet-interactive",
+      )
+    )
+      return;
     suppressClick = false;
-    stroke = {id:event.pointerId, points:[map.mouseEventToContainerPoint(event)], moved:false};
+    stroke = {
+      id: event.pointerId,
+      points: [map.mouseEventToContainerPoint(event)],
+      moved: false,
+    };
     root.setPointerCapture(event.pointerId);
     event.preventDefault();
   };
   const move = (event: PointerEvent) => {
     if (!stroke || stroke.id !== event.pointerId) return;
     const next = map.mouseEventToContainerPoint(event);
-    if (next.distanceTo(stroke.points[stroke.points.length-1]) < 3) return;
+    if (next.distanceTo(stroke.points[stroke.points.length - 1]) < 3) return;
     stroke.moved = true;
     stroke.points.push(next);
     // Keep long strokes bounded without imposing a fixed route length in metres.
-    if (stroke.points.length > 2000) stroke.points = simplifyStroke(stroke.points, 600);
-    line.setLatLngs([...get().route.map(p=>L.latLng(p.latitude,p.longitude)),...stroke.points.map(p=>map.containerPointToLatLng(p))]);
+    if (stroke.points.length > 2000)
+      stroke.points = simplifyStroke(stroke.points, 600);
+    line.setLatLngs([
+      ...get().route.map((p) => L.latLng(p.latitude, p.longitude)),
+      ...stroke.points.map((p) => map.containerPointToLatLng(p)),
+    ]);
   };
   const end = (event: PointerEvent) => {
     if (!stroke || stroke.id !== event.pointerId) return;
-    const drawn = stroke; stroke = null;
-    if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-    if (event.type === 'pointercancel' || !get().interactive || !get().editing) {suppressClick=true; repaint(); return;}
+    const drawn = stroke;
+    stroke = null;
+    if (root.hasPointerCapture(event.pointerId))
+      root.releasePointerCapture(event.pointerId);
+    if (
+      event.type === "pointercancel" ||
+      !get().interactive ||
+      !get().editing
+    ) {
+      suppressClick = true;
+      repaint();
+      return;
+    }
     if (!drawn.moved) return; // Leaflet click still adds an individual waypoint.
     suppressClick = true;
-    const all = [...get().route.map(p=>map.latLngToContainerPoint([p.latitude,p.longitude])),...drawn.points];
-    get().onRoute(simplifyStroke(all).map(p=>coordinates(map.containerPointToLatLng(p))));
+    const all = [
+      ...get().route.map((p) =>
+        map.latLngToContainerPoint([p.latitude, p.longitude]),
+      ),
+      ...drawn.points,
+    ];
+    get().onRoute(
+      simplifyStroke(all).map((p) =>
+        coordinates(map.containerPointToLatLng(p)),
+      ),
+    );
   };
-  map.on("click", (event) => {if(suppressClick){suppressClick=false;return;} select(get(), event.latlng);});
+  map.on("click", (event) => {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    select(get(), event.latlng);
+  });
   root.addEventListener("keydown", key);
-  root.addEventListener('pointerdown', down);
-  root.addEventListener('pointermove', move);
-  root.addEventListener('pointerup', end);
-  root.addEventListener('pointercancel', end);
+  root.addEventListener("pointerdown", down);
+  root.addEventListener("pointermove", move);
+  root.addEventListener("pointerup", end);
+  root.addEventListener("pointercancel", end);
   sync();
   const resize = new ResizeObserver(() =>
     map.invalidateSize({ animate: false }),
@@ -158,10 +203,10 @@ export function createLocationMap(root: HTMLElement, get: () => MapState) {
     destroy: () => {
       resize.disconnect();
       root.removeEventListener("keydown", key);
-      root.removeEventListener('pointerdown', down);
-      root.removeEventListener('pointermove', move);
-      root.removeEventListener('pointerup', end);
-      root.removeEventListener('pointercancel', end);
+      root.removeEventListener("pointerdown", down);
+      root.removeEventListener("pointermove", move);
+      root.removeEventListener("pointerup", end);
+      root.removeEventListener("pointercancel", end);
       map.remove();
     },
   };

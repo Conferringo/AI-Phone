@@ -20,7 +20,7 @@ The Agent uses `device_file_list` and `device_file_manage` with the same impleme
 
 ## Verification scope
 
-macOS development validation covers real Android and Linux guest roots, nested directories, Chinese filenames, binary round trips, collision refusal, rename/delete, authenticated protobuf operations and retained chats. Run isolated file tests with `cargo test -p ai-phone-assistant files::tests`. Run the explicit development-only real-device qualification with `cargo run -p ai-phone-assistant -- --qualify-file-manager-devices`; this command is excluded from release builds. Even `--all-features` unit tests do not contact installed devices. Windows and Linux host installation are not claimed as tested by this change.
+macOS development validation covers real Android and Linux guest roots, nested directories, Chinese filenames, binary round trips, collision refusal, rename/delete, authenticated protobuf operations and retained chats. Run isolated file tests with `cargo test -p ai-phone-assistant files::tests`. Run the explicit development-only real-device qualification with `cargo run -p ai-phone-assistant -- --qualify-file-manager-devices`; this command is excluded from release builds. Even `--all-features` unit tests do not contact installed devices. Windows host installation are not claimed as tested by this change.
 
 ---
 
@@ -32,4 +32,4 @@ macOS development validation covers real Android and Linux guest roots, nested d
 
 新上传附件、设备取回的文件和 Harness 产物使用同一工作区。聊天原始附件与可编辑的工作副本分开保留。工作区 `/` 不代表宿主机根目录；手机和电脑则可以浏览各自根目录。列表显示名称、大小和修改时间。
 
-接口与 Agent 共用 Rust 实现，普通业务请求使用 protobuf，上传和下载流式传输，不经过模型或整文件重复校验。支持目录递归复制；符号链接可进入目录，特殊文件和符号链接复制会明确报错；暂不提供目录打包下载。实测范围为当前 macOS 宿主与真实 Android/Linux 客体，不代表 Windows/Linux 宿主安装已验收。
+接口与 Agent 共用 Rust 实现，普通业务请求使用 protobuf，上传和下载流式传输，不经过模型或整文件重复校验。支持目录递归复制；符号链接可进入目录，特殊文件和符号链接复制会明确报错；暂不提供目录打包下载。实测范围为当前 macOS 宿主与真实 Android/Linux 客体，不代表 Windows 宿主安装已验收。

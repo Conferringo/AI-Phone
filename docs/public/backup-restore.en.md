@@ -2,6 +2,8 @@
 
 [简体中文](backup-restore.zh-CN.md) · macOS ARM64 source preview.
 
+The current migration routes these commands to the Rust `assistant --state-backup` implementation. Current-source compilation and recovery validation are pending; historical checks do not qualify this implementation.
+
 Run `./ai-phone backup --output data/backups/my-backup.backup` from the installation. The tool verifies service ownership, quiesces this installation's services and guests, dumps PostgreSQL, exports the Linux root filesystem and archives private user state, then resumes the original services. Failure also attempts to resume them and reports restart failures.
 
 The recommended `.backup` directory envelope avoids a second full-size copy during sealing. Optional `.tar` envelopes require extra temporary disk space. Keep the entire envelope and its SHA256 sidecar.
@@ -22,6 +24,6 @@ The recovered instance stays offline and quarantined. Pending tasks are paused; 
 
 This is a maintenance workflow, not an automatic failover/update wizard. Source/user links, Linux import, device bindings, network setup and shutdown of the original instance require verification before activation. Removing the quarantine marker alone is not an installation test. Clean physical-host installation, power-loss testing, signed updates and automatic migration rollback remain separate release gates.
 
-`./ai-phone recover-desktop --destination /private/AIPhone-recovered --desktop-container aiphone-recovery-check` imports and starts an offline Linux verification container with no host ports and only restored mounts. It checks expanded space before import and reserves 4 GiB free. It never replaces the original desktop.
+`./ai-phone recover-desktop --destination /private/AIPhone-recovered --desktop-container aiphone-recovery-check` imports and starts an offline Linux verification container with no host ports and only restored mounts. It never replaces the original desktop.
 
 The current instance was restored into an empty isolated DB/directory: 33 tables, 300 messages and 3,019 state files verified. The restored Android disk booted with root, a real screenshot, WeChat and Clash retained, with radio/Wi-Fi isolated from first boot. The exported Linux rootfs booted its GUI and retained 10 verified work files. Test copies were then cleaned up. This is same-host recovery evidence, not a clean physical-host installation.

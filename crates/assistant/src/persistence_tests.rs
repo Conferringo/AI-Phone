@@ -12,7 +12,7 @@ mod skill_persistence_tests;
 
 async fn database_case(test: impl for<'a> FnOnce(&'a App) -> BoxFuture<'a, ()>) {
     let url = std::env::var("AI_PHONE_TEST_PERSISTENCE_DATABASE_URL")
-        .expect("explicit persistence fixture URL; run scripts/ci_integration.py");
+        .expect("explicit persistence fixture URL; run scripts/ci-integration.ts");
     let options = PgConnectOptions::from_str(&url).unwrap();
     assert_eq!(
         options.get_username(),
@@ -255,32 +255,22 @@ async fn transfer_devices(app: &App) {
     std::fs::create_dir_all(app.root.join("data/desktop/home/Files")).unwrap();
     std::fs::create_dir_all(app.root.join("scripts")).unwrap();
     let adb = app.root.join("scripts/android-adb");
-    std::fs::write(&adb, r#"#!/usr/bin/env python3
-import hashlib, pathlib, shlex, shutil, sys, time
-root=pathlib.Path(__file__).resolve().parent.parent
-args=sys.argv[1:]
-def guest(path): return root/'guest'/path.lstrip('/')
-if args[0]=='push':
-    path=guest(args[2]);path.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(args[1],path)
-elif args[0]=='exec-out':
-    (root/'copy-started').write_text('started');time.sleep(0.35);sys.stdout.buffer.write(b'fixture document')
-elif args[0]=='shell':
-    cmd=shlex.split(args[1])
-    if cmd[0]=='readlink': print(cmd[-1])
-    elif cmd[0]=='stat': print(len(b'fixture document'))
-    elif cmd[0]=='mkdir': guest(cmd[-1]).mkdir(parents=True,exist_ok=True)
-    elif cmd[0]=='sha256sum': print(hashlib.sha256(guest(cmd[-1]).read_bytes()).hexdigest())
-    elif cmd[0]=='test':
-        source,target=guest(cmd[-2]),guest(cmd[-1])
-        if target.exists():sys.exit(1)
-        shutil.move(source,target)
-        with (root/'published').open('a') as f:f.write('publish\n')
-        if (root/'slow-publication').exists():time.sleep(0.35)
-        if (root/'fail-after-publish').exists():sys.exit(3)
-    elif cmd[0]=='am': pass
-    else: raise RuntimeError('Unexpected fixture shell request')
-else: raise RuntimeError('Unexpected fixture transport request')
-"#).unwrap();
+    let bun = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../scripts/bun");
+    let script = app.root.join("scripts/android-adb.ts");
+    std::fs::write(
+        &script,
+        include_str!("../../../scripts/fixtures/mock-adb-transfer.ts"),
+    )
+    .unwrap();
+    std::fs::write(
+        &adb,
+        format!(
+            "#!/bin/sh\nexec '{}' '{}' \"$@\"\n",
+            bun.display().to_string().replace('\'', "'\\''"),
+            script.display().to_string().replace('\'', "'\\''")
+        ),
+    )
+    .unwrap();
     std::fs::set_permissions(&adb, std::fs::Permissions::from_mode(0o700)).unwrap();
 }
 

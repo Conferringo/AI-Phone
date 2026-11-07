@@ -2,10 +2,11 @@
 set -eu
 . "$(dirname -- "$0")/android-env.sh"
 if [ ! -e "$AI_PHONE_PROJECT_ROOT/runtime/services" ] && [ ! -L "$AI_PHONE_PROJECT_ROOT/runtime/services" ]; then
-  # Maintainer source installs prepare their helper. Complete clients use the
-  # qualified bundled assistant and never require Cargo or a compiler.
-  (cd "$AI_PHONE_PROJECT_ROOT" && CARGO_BUILD_JOBS=2 cargo build -p ai-phone-host-runtime --bin host-resources --locked)
+  "$AI_PHONE_PROJECT_ROOT/scripts/bun" "$AI_PHONE_PROJECT_ROOT/scripts/artifacts.ts" phone --build
+  apk="$AI_PHONE_PROJECT_ROOT/.tools/phone-apps/input.apk"
+  probe="$AI_PHONE_PROJECT_ROOT/.tools/phone-apps/notification-access.jar"
+else
+  apk="$AI_PHONE_PROJECT_ROOT/runtime/phone-apps/input.apk"
+  probe="$AI_PHONE_PROJECT_ROOT/runtime/phone-apps/notification-access.jar"
 fi
-python3 "$AI_PHONE_PROJECT_ROOT/scripts/android_input.py" \
-  --adb "$ANDROID_HOME/platform-tools/adb" \
-  --serial "${AI_PHONE_SERIAL:-emulator-5564}" --root "$AI_PHONE_PROJECT_ROOT"
+exec "$AI_PHONE_PROJECT_ROOT/scripts/android-maintenance" input "$apk" "$probe"

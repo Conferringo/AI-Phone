@@ -34,6 +34,18 @@
       "selected_license": "MIT"
     },
     {
+      "package": "buffa-descriptor@0.9.2",
+      "repository": "https://github.com/anthropics/buffa",
+      "commit": "1f5d80e2c8d31c147742d8ec826a3219c4fcd4a7",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/e26ae9475108d3b1-buffa-LICENSE",
+          "sha256": "e26ae9475108d3b118fe27915d36e8c5ab72732a8bbba24787eb4f45492c3300",
+          "url": "https://raw.githubusercontent.com/anthropics/buffa/1f5d80e2c8d31c147742d8ec826a3219c4fcd4a7/LICENSE"
+        }
+      ]
+    },
+    {
       "package": "cesu8@1.1.0",
       "repository": "https://github.com/emk/cesu8-rs",
       "files": [
@@ -83,6 +95,23 @@
       "selected_license": "MIT"
     },
     {
+      "package": "crc-catalog@2.5.0",
+      "repository": "https://github.com/akhilles/crc-catalog.git",
+      "commit": "ed4ad631f22b05055c21a3a4127eb7cf6d75bb62",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/d3cdb764b98283ee-crc-catalog-Apache-2.0.txt",
+          "sha256": "d3cdb764b98283ee7c3a3cea8d374e2a2957322374378d1f3263f4d512741fc3",
+          "url": "https://raw.githubusercontent.com/akhilles/crc-catalog/ed4ad631f22b05055c21a3a4127eb7cf6d75bb62/LICENSES/Apache-2.0.txt"
+        },
+        {
+          "file": "docs/public/licenses/native/5ef8fcfb6cccec8f-crc-catalog-MIT.txt",
+          "sha256": "5ef8fcfb6cccec8fcae043c834099a60c8b7406408db576e026d2b7e67dc5cf5",
+          "url": "https://raw.githubusercontent.com/akhilles/crc-catalog/ed4ad631f22b05055c21a3a4127eb7cf6d75bb62/LICENSES/MIT.txt"
+        }
+      ]
+    },
+    {
       "package": "dispatch2@0.3.1",
       "repository": "https://github.com/madsmtm/objc2",
       "files": [
@@ -102,6 +131,18 @@
       "selected_license": "MIT"
     },
     {
+      "package": "dlopen2_derive@0.4.3",
+      "repository": "https://github.com/OpenByteDev/dlopen2",
+      "commit": "cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/39fa265207450e77-LICENSE",
+          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2",
+          "url": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE"
+        }
+      ]
+    },
+    {
       "package": "dlopen2@0.8.2",
       "repository": "https://github.com/OpenByteDev/dlopen2",
       "commit": "cc80e4a0a90d499b677fdf7743699b4b3a43a989",
@@ -114,14 +155,15 @@
       ]
     },
     {
-      "package": "dlopen2_derive@0.4.3",
-      "repository": "https://github.com/OpenByteDev/dlopen2",
-      "commit": "cc80e4a0a90d499b677fdf7743699b4b3a43a989",
+      "package": "image@0.25.10",
+      "repository": "https://github.com/image-rs/image",
+      "commit": "76e57184f22772dad1138e96954e57945406b15e",
       "files": [
         {
-          "file": "docs/public/licenses/native/39fa265207450e77-LICENSE",
-          "sha256": "39fa265207450e77c62e90c5594a06c085b655d8374c7ced4bf7894b6bd95dd2",
-          "url": "https://raw.githubusercontent.com/OpenByteDev/dlopen2/cc80e4a0a90d499b677fdf7743699b4b3a43a989/LICENSE"
+          "file": "docs/public/licenses/native/bbb3f8dd47d61eea-image-INLINE-MIT-NOTICES.txt",
+          "sha256": "bbb3f8dd47d61eea754b34833f2ee9f324caf781d04d9566e003597b335e907a",
+          "url": "https://crates.io/api/v1/crates/image/0.25.10/download",
+          "kind": "embedded-source-notice"
         }
       ]
     },
@@ -155,6 +197,37 @@
       "commit": "eafd1e3682a1247f595410266091e9684021cb6f",
       "upstream_repository": "https://github.com/tauri-apps/libappindicator-rs",
       "selected_license": "MIT"
+    },
+    {
+      "package": "lzma-sys@0.1.20",
+      "repository": "https://github.com/alexcrichton/xz2-rs",
+      "commit": "f68a0980b0a478a54b3f069c643867853dac4ed9",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/dc626520dcd53a22-lzma-sys-COPYING.LGPLv2.1",
+          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
+          "kind": "embedded-source-notice"
+        },
+        {
+          "file": "docs/public/licenses/native/bcb02973ef6e87ea-lzma-sys-COPYING",
+          "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c",
+          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
+          "kind": "embedded-source-notice"
+        },
+        {
+          "file": "docs/public/licenses/native/8177f97513213526-lzma-sys-COPYING.GPLv2",
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
+          "kind": "embedded-source-notice"
+        },
+        {
+          "file": "docs/public/licenses/native/8ceb4b9ee5adedde-lzma-sys-COPYING.GPLv3",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
+          "kind": "embedded-source-notice"
+        }
+      ]
     },
     {
       "package": "ndk-sys@0.6.0+11769913",
@@ -514,328 +587,6 @@
       "selected_license": "MIT"
     },
     {
-      "package": "r-efi@5.3.0",
-      "repository": "https://github.com/r-efi/r-efi",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/ff92bed461f50338-r-efi-AUTHORS",
-          "sha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
-          "url": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/AUTHORS"
-        },
-        {
-          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
-          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
-          "kind": "linked-license-text"
-        }
-      ],
-      "commit": "97b55bed1c2c91dcbf787674849f05337ff80b33",
-      "selected_license": "MIT"
-    },
-    {
-      "package": "r-efi@6.0.0",
-      "repository": "https://github.com/r-efi/r-efi",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/d027e91dbc9cdbb2-r-efi-AUTHORS",
-          "sha256": "d027e91dbc9cdbb2f1190068e498bd6b61cff022b6a032b191021ba658d96111",
-          "url": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/AUTHORS"
-        },
-        {
-          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
-          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
-          "kind": "linked-license-text"
-        }
-      ],
-      "commit": "7e1b0322d31d625f81a5656096330934f9cd835d",
-      "selected_license": "MIT"
-    },
-    {
-      "package": "selectors@0.36.1",
-      "repository": "https://github.com/servo/stylo",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/d54c6e13e9e952da-selectors-lib.rs.txt",
-          "sha256": "d54c6e13e9e952dac17d209171df8657e3cae93beaddace4906150cdec8d02e9",
-          "url": "https://raw.githubusercontent.com/servo/stylo/635e1a19d02960588a00e189bd4bd5bdb150ec3d/selectors/lib.rs"
-        },
-        {
-          "file": "docs/public/licenses/native/66a3107d5ad6a058-MPL-2.0.txt",
-          "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
-          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MPL-2.0.txt",
-          "kind": "linked-license-text"
-        }
-      ],
-      "commit": "635e1a19d02960588a00e189bd4bd5bdb150ec3d",
-      "selected_license": "MPL-2.0",
-      "corresponding_source": {
-        "url": "https://crates.io/api/v1/crates/selectors/0.36.1/download",
-        "sha256": "c5d9c0c92a92d33f08817311cf3f2c29a3538a8240e94a6a3c622ce652d7e00c"
-      }
-    },
-    {
-      "package": "unic-char-property@0.9.0",
-      "repository": "https://github.com/open-i18n/rust-unic/",
-      "commit": "5878605364af97a3358368a6eaef02104af2e016",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
-        },
-        {
-          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
-        }
-      ]
-    },
-    {
-      "package": "unic-char-range@0.9.0",
-      "repository": "https://github.com/open-i18n/rust-unic/",
-      "commit": "5878605364af97a3358368a6eaef02104af2e016",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
-        },
-        {
-          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
-        }
-      ]
-    },
-    {
-      "package": "unic-common@0.9.0",
-      "repository": "https://github.com/open-i18n/rust-unic/",
-      "commit": "5878605364af97a3358368a6eaef02104af2e016",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
-        },
-        {
-          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
-        }
-      ]
-    },
-    {
-      "package": "unic-ucd-ident@0.9.0",
-      "repository": "https://github.com/open-i18n/rust-unic/",
-      "commit": "8a6ce83063d90b91ae2ce59eddb803edd393fca9",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-MIT"
-        },
-        {
-          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-APACHE"
-        }
-      ]
-    },
-    {
-      "package": "unic-ucd-version@0.9.0",
-      "repository": "https://github.com/open-i18n/rust-unic/",
-      "commit": "5878605364af97a3358368a6eaef02104af2e016",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
-        },
-        {
-          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
-          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
-        }
-      ]
-    },
-    {
-      "package": "webview2-com-macros@0.8.1",
-      "repository": "https://github.com/wravery/webview2-rs",
-      "commit": "dffa41a8a46d3f5565eefbff2de57d38d399f158",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
-          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
-          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE"
-        }
-      ]
-    },
-    {
-      "package": "webview2-com-sys@0.38.2",
-      "repository": "https://github.com/wravery/webview2-rs",
-      "commit": "b74dc5e2b394044bea5191052868ce7a106c202c",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
-          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
-          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE"
-        }
-      ]
-    },
-    {
-      "package": "webview2-com@0.38.2",
-      "repository": "https://github.com/wravery/webview2-rs",
-      "commit": "b74dc5e2b394044bea5191052868ce7a106c202c",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
-          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
-          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE"
-        }
-      ]
-    },
-    {
-      "package": "winapi-i686-pc-windows-gnu@0.4.0",
-      "repository": "https://github.com/retep998/winapi-rs",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/9652222664ffc7e2-winapi-i686-pc-windows-gnu-Cargo.toml.txt",
-          "sha256": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7",
-          "url": "https://crates.io/api/v1/crates/winapi-i686-pc-windows-gnu/0.4.0/download",
-          "archive_member": "winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml",
-          "kind": "published-archive-grant"
-        },
-        {
-          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
-          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
-          "kind": "linked-license-text"
-        }
-      ],
-      "archive_sha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
-      "grant_files": [
-        {
-          "file": "Cargo.toml",
-          "sha256": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7"
-        }
-      ],
-      "selected_license": "MIT"
-    },
-    {
-      "package": "winapi-x86_64-pc-windows-gnu@0.4.0",
-      "repository": "https://github.com/retep998/winapi-rs",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/a88605a11db5def9-winapi-x86_64-pc-windows-gnu-Cargo.toml.txt",
-          "sha256": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c",
-          "url": "https://crates.io/api/v1/crates/winapi-x86_64-pc-windows-gnu/0.4.0/download",
-          "archive_member": "winapi-x86_64-pc-windows-gnu-0.4.0/Cargo.toml",
-          "kind": "published-archive-grant"
-        },
-        {
-          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
-          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
-          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
-          "kind": "linked-license-text"
-        }
-      ],
-      "archive_sha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
-      "grant_files": [
-        {
-          "file": "Cargo.toml",
-          "sha256": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c"
-        }
-      ],
-      "selected_license": "MIT"
-    },
-    {
-      "package": "image@0.25.10",
-      "repository": "https://github.com/image-rs/image",
-      "commit": "76e57184f22772dad1138e96954e57945406b15e",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/bbb3f8dd47d61eea-image-INLINE-MIT-NOTICES.txt",
-          "sha256": "bbb3f8dd47d61eea754b34833f2ee9f324caf781d04d9566e003597b335e907a",
-          "url": "https://crates.io/api/v1/crates/image/0.25.10/download",
-          "kind": "embedded-source-notice"
-        }
-      ]
-    },
-    {
-      "package": "lzma-sys@0.1.20",
-      "repository": "https://github.com/alexcrichton/xz2-rs",
-      "commit": "f68a0980b0a478a54b3f069c643867853dac4ed9",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/dc626520dcd53a22-lzma-sys-COPYING.LGPLv2.1",
-          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
-          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
-          "kind": "embedded-source-notice"
-        },
-        {
-          "file": "docs/public/licenses/native/bcb02973ef6e87ea-lzma-sys-COPYING",
-          "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c",
-          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
-          "kind": "embedded-source-notice"
-        },
-        {
-          "file": "docs/public/licenses/native/8177f97513213526-lzma-sys-COPYING.GPLv2",
-          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
-          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
-          "kind": "embedded-source-notice"
-        },
-        {
-          "file": "docs/public/licenses/native/8ceb4b9ee5adedde-lzma-sys-COPYING.GPLv3",
-          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
-          "url": "https://crates.io/api/v1/crates/lzma-sys/0.1.20/download",
-          "kind": "embedded-source-notice"
-        }
-      ]
-    },
-    {
-      "package": "x11rb-protocol@0.13.2",
-      "repository": "https://github.com/psychon/x11rb",
-      "commit": "1b73245acc5dce4c4987c80dd7589e7b60af3532",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/c5ffbfeaa501071c-x11rb-protocol-COPYING",
-          "sha256": "c5ffbfeaa501071ceeb97b7de2c0d703fdaa35de01c0fb6cbac1c28453a3e9fd",
-          "url": "https://raw.githubusercontent.com/psychon/x11rb/1b73245acc5dce4c4987c80dd7589e7b60af3532/xcb-proto-1.17.0/COPYING",
-          "kind": "embedded-source-notice"
-        }
-      ]
-    },
-    {
-      "package": "crc-catalog@2.5.0",
-      "repository": "https://github.com/akhilles/crc-catalog.git",
-      "commit": "ed4ad631f22b05055c21a3a4127eb7cf6d75bb62",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/d3cdb764b98283ee-crc-catalog-Apache-2.0.txt",
-          "sha256": "d3cdb764b98283ee7c3a3cea8d374e2a2957322374378d1f3263f4d512741fc3",
-          "url": "https://raw.githubusercontent.com/akhilles/crc-catalog/ed4ad631f22b05055c21a3a4127eb7cf6d75bb62/LICENSES/Apache-2.0.txt"
-        },
-        {
-          "file": "docs/public/licenses/native/5ef8fcfb6cccec8f-crc-catalog-MIT.txt",
-          "sha256": "5ef8fcfb6cccec8fcae043c834099a60c8b7406408db576e026d2b7e67dc5cf5",
-          "url": "https://raw.githubusercontent.com/akhilles/crc-catalog/ed4ad631f22b05055c21a3a4127eb7cf6d75bb62/LICENSES/MIT.txt"
-        }
-      ]
-    },
-    {
-      "package": "protoc-bin-vendored@3.3.0",
-      "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
-      "commit": "d7cc7356ead5b0efd14c415103406b2221a3f8fb",
-      "files": [
-        {
-          "file": "docs/public/licenses/native/97647e63047ef75a-protoc-LICENSE.txt",
-          "sha256": "97647e63047ef75a82ee2928b335df94f45c87e08777dc033393c73294f3a57a",
-          "url": "https://raw.githubusercontent.com/stepancheg/rust-protoc-bin-vendored/d7cc7356ead5b0efd14c415103406b2221a3f8fb/LICENSE.txt"
-        }
-      ]
-    },
-    {
       "package": "protoc-bin-vendored-linux-aarch_64@3.3.0",
       "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
       "commit": "d7cc7356ead5b0efd14c415103406b2221a3f8fb",
@@ -932,6 +683,200 @@
       ]
     },
     {
+      "package": "protoc-bin-vendored@3.3.0",
+      "repository": "https://github.com/stepancheg/rust-protoc-bin-vendored/",
+      "commit": "d7cc7356ead5b0efd14c415103406b2221a3f8fb",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/97647e63047ef75a-protoc-LICENSE.txt",
+          "sha256": "97647e63047ef75a82ee2928b335df94f45c87e08777dc033393c73294f3a57a",
+          "url": "https://raw.githubusercontent.com/stepancheg/rust-protoc-bin-vendored/d7cc7356ead5b0efd14c415103406b2221a3f8fb/LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "package": "r-efi@5.3.0",
+      "repository": "https://github.com/r-efi/r-efi",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/ff92bed461f50338-r-efi-AUTHORS",
+          "sha256": "ff92bed461f50338dd703a9ba9aee496a425957873df1d91192776e4bdf5dda7",
+          "url": "https://raw.githubusercontent.com/r-efi/r-efi/97b55bed1c2c91dcbf787674849f05337ff80b33/AUTHORS"
+        },
+        {
+          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
+          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
+          "kind": "linked-license-text"
+        }
+      ],
+      "commit": "97b55bed1c2c91dcbf787674849f05337ff80b33",
+      "selected_license": "MIT"
+    },
+    {
+      "package": "r-efi@6.0.0",
+      "repository": "https://github.com/r-efi/r-efi",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/d027e91dbc9cdbb2-r-efi-AUTHORS",
+          "sha256": "d027e91dbc9cdbb2f1190068e498bd6b61cff022b6a032b191021ba658d96111",
+          "url": "https://raw.githubusercontent.com/r-efi/r-efi/7e1b0322d31d625f81a5656096330934f9cd835d/AUTHORS"
+        },
+        {
+          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
+          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
+          "kind": "linked-license-text"
+        }
+      ],
+      "commit": "7e1b0322d31d625f81a5656096330934f9cd835d",
+      "selected_license": "MIT"
+    },
+    {
+      "package": "rsqlite-vfs@0.2.0",
+      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
+      "commit": "3d8318430bacd7d6a1aafdf5b5e54fb0fee8d451",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/e1c1975c3474cce3-sqlite-wasm-rs-LICENSE",
+          "sha256": "e1c1975c3474cce31722836f101a40ffaf1cc784e4d2f38ce3e77b9712934e78",
+          "url": "https://raw.githubusercontent.com/Spxg/sqlite-wasm-rs/3d8318430bacd7d6a1aafdf5b5e54fb0fee8d451/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "selectors@0.36.1",
+      "repository": "https://github.com/servo/stylo",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/d54c6e13e9e952da-selectors-lib.rs.txt",
+          "sha256": "d54c6e13e9e952dac17d209171df8657e3cae93beaddace4906150cdec8d02e9",
+          "url": "https://raw.githubusercontent.com/servo/stylo/635e1a19d02960588a00e189bd4bd5bdb150ec3d/selectors/lib.rs"
+        },
+        {
+          "file": "docs/public/licenses/native/66a3107d5ad6a058-MPL-2.0.txt",
+          "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
+          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MPL-2.0.txt",
+          "kind": "linked-license-text"
+        }
+      ],
+      "commit": "635e1a19d02960588a00e189bd4bd5bdb150ec3d",
+      "selected_license": "MPL-2.0",
+      "corresponding_source": {
+        "url": "https://crates.io/api/v1/crates/selectors/0.36.1/download",
+        "sha256": "c5d9c0c92a92d33f08817311cf3f2c29a3538a8240e94a6a3c622ce652d7e00c"
+      }
+    },
+    {
+      "package": "tonic-prost-build@0.14.9",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "commit": "4c0f455c264fe2ec9f9ab5d0cc7fd2824d5daf70",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/5c686e0f7978412b-grpc-rust-LICENSE",
+          "sha256": "5c686e0f7978412b49187ae0e9f77e9b52eea9d8d2e6c0de8694b35817d873b1",
+          "url": "https://raw.githubusercontent.com/grpc/grpc-rust/4c0f455c264fe2ec9f9ab5d0cc7fd2824d5daf70/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "tonic-prost@0.14.9",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "commit": "4c0f455c264fe2ec9f9ab5d0cc7fd2824d5daf70",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/5c686e0f7978412b-grpc-rust-LICENSE",
+          "sha256": "5c686e0f7978412b49187ae0e9f77e9b52eea9d8d2e6c0de8694b35817d873b1",
+          "url": "https://raw.githubusercontent.com/grpc/grpc-rust/4c0f455c264fe2ec9f9ab5d0cc7fd2824d5daf70/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "unic-char-property@0.9.0",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "commit": "5878605364af97a3358368a6eaef02104af2e016",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
+        },
+        {
+          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
+        }
+      ]
+    },
+    {
+      "package": "unic-char-range@0.9.0",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "commit": "5878605364af97a3358368a6eaef02104af2e016",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
+        },
+        {
+          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
+        }
+      ]
+    },
+    {
+      "package": "unic-common@0.9.0",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "commit": "5878605364af97a3358368a6eaef02104af2e016",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
+        },
+        {
+          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
+        }
+      ]
+    },
+    {
+      "package": "unic-ucd-ident@0.9.0",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "commit": "8a6ce83063d90b91ae2ce59eddb803edd393fca9",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-MIT"
+        },
+        {
+          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/8a6ce83063d90b91ae2ce59eddb803edd393fca9/LICENSE-APACHE"
+        }
+      ]
+    },
+    {
+      "package": "unic-ucd-version@0.9.0",
+      "repository": "https://github.com/open-i18n/rust-unic/",
+      "commit": "5878605364af97a3358368a6eaef02104af2e016",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/23f18e03dc49df91-LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-MIT"
+        },
+        {
+          "file": "docs/public/licenses/native/a60eea8175145316-LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+          "url": "https://raw.githubusercontent.com/open-i18n/rust-unic/5878605364af97a3358368a6eaef02104af2e016/LICENSE-APACHE"
+        }
+      ]
+    },
+    {
       "package": "valuable@0.1.1",
       "repository": "https://github.com/tokio-rs/valuable",
       "commit": "9efc29b6e58cef28f6566a47aa7e142a55fead77",
@@ -940,6 +885,90 @@
           "file": "docs/public/licenses/native/ed60d479b8fd1f64-valuable-LICENSE",
           "sha256": "ed60d479b8fd1f64e9cbc3de449a16a53ac1b3d1b6aeb9bf9d190a8e93061b44",
           "url": "https://raw.githubusercontent.com/tokio-rs/valuable/9efc29b6e58cef28f6566a47aa7e142a55fead77/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore-appstate@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore-binary@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore-derive@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore-libsignal@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore-noise@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "wacore@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "waproto@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
         }
       ]
     },
@@ -962,6 +991,121 @@
           "file": "docs/public/licenses/native/508a77d2e7b51d98-wasite-LICENSE_MIT.txt",
           "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
           "url": "https://raw.githubusercontent.com/ardaku/wasite/0c72934ad329ab4670eb017581640c2d6eceb289/LICENSE_MIT.txt"
+        }
+      ]
+    },
+    {
+      "package": "webview2-com-macros@0.8.1",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "commit": "dffa41a8a46d3f5565eefbff2de57d38d399f158",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/dffa41a8a46d3f5565eefbff2de57d38d399f158/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "webview2-com-sys@0.38.2",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "commit": "b74dc5e2b394044bea5191052868ce7a106c202c",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "webview2-com@0.38.2",
+      "repository": "https://github.com/wravery/webview2-rs",
+      "commit": "b74dc5e2b394044bea5191052868ce7a106c202c",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/0dcf41516e608bbc-LICENSE",
+          "sha256": "0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73",
+          "url": "https://raw.githubusercontent.com/wravery/webview2-rs/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "whatsapp-rust-sqlite-storage@0.7.0",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "commit": "f8165f282008935732e0b26d6f5cca5038ecd222",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/6613c7e94b361fdd-whatsapp-rust-LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23",
+          "url": "https://raw.githubusercontent.com/jlucaso1/whatsapp-rust/f8165f282008935732e0b26d6f5cca5038ecd222/LICENSE"
+        }
+      ]
+    },
+    {
+      "package": "winapi-i686-pc-windows-gnu@0.4.0",
+      "repository": "https://github.com/retep998/winapi-rs",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/9652222664ffc7e2-winapi-i686-pc-windows-gnu-Cargo.toml.txt",
+          "sha256": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7",
+          "url": "https://crates.io/api/v1/crates/winapi-i686-pc-windows-gnu/0.4.0/download",
+          "archive_member": "winapi-i686-pc-windows-gnu-0.4.0/Cargo.toml",
+          "kind": "published-archive-grant"
+        },
+        {
+          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
+          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
+          "kind": "linked-license-text"
+        }
+      ],
+      "archive_sha256": "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+      "grant_files": [
+        {
+          "file": "Cargo.toml",
+          "sha256": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7"
+        }
+      ],
+      "selected_license": "MIT"
+    },
+    {
+      "package": "winapi-x86_64-pc-windows-gnu@0.4.0",
+      "repository": "https://github.com/retep998/winapi-rs",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/a88605a11db5def9-winapi-x86_64-pc-windows-gnu-Cargo.toml.txt",
+          "sha256": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c",
+          "url": "https://crates.io/api/v1/crates/winapi-x86_64-pc-windows-gnu/0.4.0/download",
+          "archive_member": "winapi-x86_64-pc-windows-gnu-0.4.0/Cargo.toml",
+          "kind": "published-archive-grant"
+        },
+        {
+          "file": "docs/public/licenses/native/b05785f9f18e6716-MIT.txt",
+          "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+          "url": "https://raw.githubusercontent.com/spdx/license-list-data/d46e94e2c78ceede1cfc63cfa0396472d2798d4c/text/MIT.txt",
+          "kind": "linked-license-text"
+        }
+      ],
+      "archive_sha256": "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f",
+      "grant_files": [
+        {
+          "file": "Cargo.toml",
+          "sha256": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c"
+        }
+      ],
+      "selected_license": "MIT"
+    },
+    {
+      "package": "x11rb-protocol@0.13.2",
+      "repository": "https://github.com/psychon/x11rb",
+      "commit": "1b73245acc5dce4c4987c80dd7589e7b60af3532",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/c5ffbfeaa501071c-x11rb-protocol-COPYING",
+          "sha256": "c5ffbfeaa501071ceeb97b7de2c0d703fdaa35de01c0fb6cbac1c28453a3e9fd",
+          "url": "https://raw.githubusercontent.com/psychon/x11rb/1b73245acc5dce4c4987c80dd7589e7b60af3532/xcb-proto-1.17.0/COPYING",
+          "kind": "embedded-source-notice"
         }
       ]
     }

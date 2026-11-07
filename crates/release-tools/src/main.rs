@@ -1,21 +1,26 @@
 mod android_package;
-#[cfg(target_os = "linux")]
-mod apt;
 mod capsule;
-#[cfg(target_os = "linux")]
-mod source_sdk;
 #[cfg(unix)]
 mod wsl_qualification;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn execute(arguments: Vec<std::ffi::OsString>) -> Result<Option<serde_json::Value>> {
-    #[cfg(target_os = "linux")]
     if arguments
         .first()
-        .is_some_and(|value| value == "source-sdk-build")
+        .is_some_and(|value| value == "decode-capsule")
     {
-        source_sdk::run(&arguments[1..])?;
+        use std::io::{self, Read};
+        let [_, codec] = arguments.as_slice() else {
+            return Err("decode-capsule requires gzip or xz".into());
+        };
+        let input = io::stdin().lock();
+        let mut decoded: Box<dyn Read> = match codec.to_str() {
+            Some("gzip") => Box::new(flate2::read::GzDecoder::new(input)),
+            Some("xz") => Box::new(xz2::read::XzDecoder::new(input)),
+            _ => return Err("Unsupported capsule codec".into()),
+        };
+        io::copy(&mut decoded, &mut io::stdout().lock())?;
         return Ok(None);
     }
     if arguments
@@ -55,13 +60,7 @@ fn execute(arguments: Vec<std::ffi::OsString>) -> Result<Option<serde_json::Valu
             .block_on(wsl_qualification::run())
             .map(Some);
     }
-    #[cfg(target_os = "linux")]
-    return apt::run(arguments.into_iter()).map(Some);
-    #[cfg(not(target_os = "linux"))]
-    {
-        let _ = arguments;
-        Err("APT release tooling requires Linux".into())
-    }
+    Err("Unknown release tool command".into())
 }
 
 fn main() {

@@ -16,9 +16,9 @@ The source capsule contains `runtime/guest-apps/manifest.json` and the selected 
 
 Environment discovery selects `AI_PHONE_CLASH_ANDROID_APK` from the configured guest ABI. This path performs metadata checks without hashing the archives on every ADB command. Installation verifies the selected APK bytes against the source pin. A present but invalid component, missing selection or corrupt file fails explicitly; it never downloads a replacement. Source development without the component retains its separate pinned acquisition path.
 
-`scripts/prebuilt_guest_apps.py --build --tools SDK/build-tools/35.0.0` is a maintainer operation after the two official APKs have been acquired into `.tools/clash-apps/android`. It checks size/hash, SDK signature output, package/version, native ABI and bounded unpacked privacy inspection, then atomically publishes `.tools/guest-apps`. It does not acquire subscriptions or install into an existing user phone. The maintained SDK inspection has macOS evidence; native Windows maintainer-tool execution is not yet qualified.
+`./scripts/bun scripts/artifacts.ts guest` is a maintainer operation after the two official APKs have been acquired into `.tools/clash-apps/android`. It checks size/hash, SDK signature output, package/version, native ABI and bounded unpacked privacy inspection, then atomically publishes `.tools/guest-apps`. It does not acquire subscriptions or install into an existing user phone. The maintained SDK inspection has macOS evidence; native Windows maintainer-tool execution is not yet qualified.
 
-Use `--with-guest-apps` with `scripts/prepare_client_host.py` or `scripts/build_client.py` to include the verified component. Client initialization consumes the selected APK without Java, an SDK compiler or an APK download. This is one component of the [complete bundle](../runtime-bundles.md), not proof that every platform's full installer is ready.
+Use `--with-guest-apps` with `scripts/prepare-client.ts` or `scripts/build-client.ts` to include the verified component. Client initialization consumes the selected APK without Java, an SDK compiler or an APK download. This is one component of the [complete bundle](../runtime-bundles.md), not proof that every platform's full installer is ready.
 
 ## Upstream and distribution review
 

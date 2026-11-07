@@ -6,7 +6,7 @@
 
 Vollständige Installationspakete stehen noch nicht zum Download bereit. Die Einrichtung folgt dem Ablauf Geräteressourcen → Modell → Arbeitsbereich. Ein vollständiges Paket enthält Android/Linux-Basissysteme, Emulator und vorkompilierte Dienste. Der Client richtet die Umgebung ein; Benutzer müssen keine Images suchen oder Backend-Dienste kompilieren.
 
-Build-Ziele sind macOS Apple Silicon, Windows x64 und Linux. Paketverfügbarkeit und tatsächlich geprüfte Plattformen stehen im Veröffentlichungsstatus.
+Build-Ziele sind macOS Apple Silicon und Windows x64. Paketverfügbarkeit und tatsächlich geprüfte Plattformen stehen im Veröffentlichungsstatus.
 
 ## Funktionen und Szenarien
 

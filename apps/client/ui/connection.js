@@ -6,9 +6,7 @@ let savedLanguage='';try{savedLanguage=localStorage.getItem('connection-language
 let locale=connectionLocale(savedLanguage||navigator.language),mode='local',edited=false,busy=false,lastError='',hostError='',snapshot=null,disposed=false,loadedResources=false,currentView='',transition=null;
 const resources={phone:{cpus:2,memory_mb:2048,storage_gb:16},desktop:{cpus:2,memory_mb:2560}},pickers=[];
 const errorKeys=['Cannot reach the server. Start your deployment, then retry.','Invalid server address','Use an HTTP(S) server address without credentials or a path','This preview connects only to localhost or a private LAN address','Connection already in progress'];
-const errors={host_resources:'hostResources',host_backend_pending:'hostPending',installation_cancelled:'cancelled',command_line_tools:'commandLineTools',invalid_payload:'invalidPayload',download_failed:'downloadFailed',download_checksum:'invalidPayload',installation_interrupted:'interrupted',invalid_install_checkpoint:'invalidCheckpoint',checkpoint_write_failed:'checkpointFailed',foreign_installation:'foreignInstallation',linux_distribution:'linuxDistribution',linux_authorization:'linuxAuthorization',virtualization_unavailable:'virtualizationUnavailable'};
-for(const code of ['invalid_installer_tools','installer_tools_changed','installer_tools_host','installer_tools_inventory','installer_tools_permissions','installer_tools_directory'])errors[code]='invalidPayload';
-errors.installer_tools_space='hostResources';errors.installer_tools_cleanup='checkpointFailed';
+const errors={host_resources:'hostResources',host_backend_pending:'hostPending',installation_cancelled:'cancelled',command_line_tools:'commandLineTools',invalid_payload:'invalidPayload',download_failed:'downloadFailed',download_checksum:'invalidPayload',installation_interrupted:'interrupted',invalid_install_checkpoint:'invalidCheckpoint',checkpoint_write_failed:'checkpointFailed',foreign_installation:'foreignInstallation'};
 errors.wsl_initialization_unknown='interrupted';
 function label(key){return setupLabels[locale][key]||setupLabels.en[key]||key;}
 function showPanel(){
@@ -24,7 +22,7 @@ function render(){
  $('host-error').textContent=hostError?label(errors[hostError]||'failed'):'';$('host-error').hidden=!hostError;
  if(!snapshot){showPanel();return;}
  const {host,checks,progress}=snapshot,active=['running','license'].includes(progress.state),shown=!!progress.state;
- $('host-name').textContent=`${{macos:'macOS',windows:'Windows',linux:'Linux'}[host.platform]||host.platform}${host.platform==='macos'&&host.arch==='aarch64'?' · Apple Silicon':''}`;
+ $('host-name').textContent=`${{macos:'macOS',windows:'Windows'}[host.platform]||host.platform}${host.platform==='macos'&&host.arch==='aarch64'?' · Apple Silicon':''}`;
  $('host-state').textContent='';
  $('checks').replaceChildren(...checks.map(check=>{const node=document.createElement('span');node.className=check.passed?'passed':'failed';node.textContent=`${label(check.name==='memory'?'memoryCheck':'storageCheck')} ${check.value} GB${check.passed?'':` / ${check.required} GB`}`;return node;}));
  if(!host.implemented){$('host-error').textContent=label('hostPending');$('host-error').hidden=false;}

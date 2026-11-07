@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "ed41d3c0b988edce59bc65705a5830669e2ef292fdcb749184ea2381b609851a",
-    "bun.lock": "e8f3c7a9017cf91e0fd5160eb0b02dd70e0ddb86e483d272c0e6df81349c7de1",
-    "apps/client/src-tauri/Cargo.lock": "4735c5454571b3c134bd21d11725ff49bd4c46797d6ca45795a2dcab1c9198de"
+    "Cargo.lock": "6034cd0ca739da793aad1f8807e7b2cd8ad7f0097807d8334583a0591d3c7644",
+    "bun.lock": "9db44d70c2ed4e4622dc2f28584cbd2667c2cbbc65c89245d09ff48b48d28fe0",
+    "apps/client/src-tauri/Cargo.lock": "4300d590f65332603262ee6254bdad18c35afa967f49ab3201ae843bead6931b"
   },
   "rust": [
     {
@@ -30,6 +30,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "aes",
+      "version": "0.9.4",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/block-ciphers",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "25f77efa393854f7c15eaf6a2589a2071db2d7337642742763adb12bdecf0445"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -719,6 +738,44 @@
       ]
     },
     {
+      "name": "block-buffer",
+      "version": "0.12.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "98181e7249d0c01737645ec982499ce99a0f07eb8f7d625b8840d799d10dbc01"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "block-padding",
+      "version": "0.4.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "98181e7249d0c01737645ec982499ce99a0f07eb8f7d625b8840d799d10dbc01"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "block2",
       "version": "0.6.2",
       "license": "MIT",
@@ -741,6 +798,44 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "bon",
+      "version": "3.10.3",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/elastio/bon",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "8f8dbb74f833dc8a2619fd1e86be60b06791c706e1be9e1b559ae715bbbc4551"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "bon-macros",
+      "version": "3.10.3",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/elastio/bon",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "8f8dbb74f833dc8a2619fd1e86be60b06791c706e1be9e1b559ae715bbbc4551"
         }
       ],
       "workspaces": [
@@ -798,6 +893,61 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "buffa",
+      "version": "0.9.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/anthropics/buffa",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "e26ae9475108d3b118fe27915d36e8c5ab72732a8bbba24787eb4f45492c3300"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "buffa-build",
+      "version": "0.9.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/anthropics/buffa",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "e26ae9475108d3b118fe27915d36e8c5ab72732a8bbba24787eb4f45492c3300"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "buffa-codegen",
+      "version": "0.9.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/anthropics/buffa",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "e26ae9475108d3b118fe27915d36e8c5ab72732a8bbba24787eb4f45492c3300"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "buffa-descriptor",
+      "version": "0.9.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/anthropics/buffa",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -949,25 +1099,6 @@
       ]
     },
     {
-      "name": "cargo-platform",
-      "version": "0.1.9",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/rust-lang/cargo",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "8ada45cd9f843acf64e4722ae262c622a2b3b3007c7310ef36ac1061a30f6adb"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
       "name": "cargo_metadata",
       "version": "0.19.2",
       "license": "MIT",
@@ -995,6 +1126,59 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "cargo-platform",
+      "version": "0.1.9",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-lang/cargo",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "8ada45cd9f843acf64e4722ae262c622a2b3b3007c7310ef36ac1061a30f6adb"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "castaway",
+      "version": "0.2.4",
+      "license": "MIT",
+      "repository": "https://github.com/sagebind/castaway",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "f98e09091d5ae02b2f2ec1ead4f7f28c4c44d1cb98b078739ba67091637e170c"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "cbc",
+      "version": "0.2.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/block-modes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "63af4bea227c94d021e99427f6ca3a4b8efddadcca93ab6130f708cf6138cf68"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1048,6 +1232,26 @@
       ]
     },
     {
+      "name": "cfg_aliases",
+      "version": "0.2.2",
+      "license": "MIT",
+      "repository": "https://github.com/katharostech/cfg_aliases",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "31b94860253d8ec7b4529f51901044d3b459d6292d996504a36b1bae3a36a812"
+        },
+        {
+          "file": "NOTICES.md",
+          "sha256": "1e2b7ade3fb228130408b9990cae6a7618eb314c75aa0b164bfe485d9d9756ee"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "cfg-expr",
       "version": "0.15.8",
       "license": "MIT OR Apache-2.0",
@@ -1087,26 +1291,6 @@
       ]
     },
     {
-      "name": "cfg_aliases",
-      "version": "0.2.2",
-      "license": "MIT",
-      "repository": "https://github.com/katharostech/cfg_aliases",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "31b94860253d8ec7b4529f51901044d3b459d6292d996504a36b1bae3a36a812"
-        },
-        {
-          "file": "NOTICES.md",
-          "sha256": "1e2b7ade3fb228130408b9990cae6a7618eb314c75aa0b164bfe485d9d9756ee"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
       "name": "chacha20",
       "version": "0.10.2",
       "license": "MIT OR Apache-2.0",
@@ -1138,7 +1322,46 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "cipher",
+      "version": "0.5.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/traits",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "950d712c518a02fcb7cff96950aee304a1cc5283361712c980ea21e8d6d669a5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "cmov",
+      "version": "0.5.4",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "70c9d40f1f9545c3f133b8a67206e89da850f6468eed072281bb3701514114a9"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1154,6 +1377,21 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "compact_str",
+      "version": "0.10.0",
+      "license": "MIT",
+      "repository": "https://github.com/ParkMyCar/compact_str",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "0d52feec79589df30138dad3800323fe5686b764b73347330a2dfef8ac83efe8"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1211,6 +1449,25 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "core_detect",
+      "version": "1.0.0",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/thomcc/core_detect",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "8569ebf6bf52937b961d9c9c934d8400a2bb6b09651a9afacbb3fc18fe5c09b1"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1294,18 +1551,18 @@
       ]
     },
     {
-      "name": "core_detect",
-      "version": "1.0.0",
-      "license": "MIT/Apache-2.0",
-      "repository": "https://github.com/thomcc/core_detect",
+      "name": "cpubits",
+      "version": "0.1.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/utils",
       "notices": [
         {
           "file": "LICENSE-APACHE",
-          "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb"
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
         },
         {
           "file": "LICENSE-MIT",
-          "sha256": "8569ebf6bf52937b961d9c9c934d8400a2bb6b09651a9afacbb3fc18fe5c09b1"
+          "sha256": "003736bc98408b53511b9cc8ff5d1af3bf0a8f17d53841cc39d8ab1b96a195b0"
         }
       ],
       "workspaces": [
@@ -1484,6 +1741,25 @@
       ]
     },
     {
+      "name": "crypto-common",
+      "version": "0.2.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/traits",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "d2e7ec5355c96eeade56b09187ceb48a6a30299da3ce7531a66d3d11405ab963"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "cssparser",
       "version": "0.36.0",
       "license": "MPL-2.0",
@@ -1552,6 +1828,93 @@
       ]
     },
     {
+      "name": "ctr",
+      "version": "0.10.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/block-modes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "63af4bea227c94d021e99427f6ca3a4b8efddadcca93ab6130f708cf6138cf68"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "ctutils",
+      "version": "0.4.8",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "91585c36e4fb9ab4ca0d3dfac5d66d3c0c62cc51f640a0e1196542daf2267eae"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "curve25519-dalek",
+      "version": "5.0.0",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/curve25519-dalek",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "403c53069750101aeb9df7e15f127056ceaf7e4e92d0b919a1f4c084afd5f1d4"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "curve25519-dalek-derive",
+      "version": "0.1.1",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/dalek-cryptography/curve25519-dalek",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "darling",
+      "version": "0.21.3",
+      "license": "MIT",
+      "repository": "https://github.com/TedDriggs/darling",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "darling",
       "version": "0.24.1",
       "license": "MIT",
@@ -1563,7 +1926,23 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "darling_core",
+      "version": "0.21.3",
+      "license": "MIT",
+      "repository": "https://github.com/TedDriggs/darling",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1578,7 +1957,23 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "darling_macro",
+      "version": "0.21.3",
+      "license": "MIT",
+      "repository": "https://github.com/TedDriggs/darling",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1593,6 +1988,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -1722,6 +2118,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -1756,6 +2153,82 @@
       ]
     },
     {
+      "name": "diesel",
+      "version": "2.3.14",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "diesel_derives",
+      "version": "2.3.10",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel/",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "diesel_migrations",
+      "version": "2.3.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "diesel_table_macro_syntax",
+      "version": "0.3.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel/",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "digest",
       "version": "0.10.7",
       "license": "MIT OR Apache-2.0",
@@ -1773,6 +2246,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "digest",
+      "version": "0.11.3",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/traits",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "af59cea35d7f5e2777a713b8d155d65efa2c339eb43f3c14e868c6ac8506edad"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1894,6 +2386,25 @@
       ]
     },
     {
+      "name": "downcast-rs",
+      "version": "2.0.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/marcianx/downcast-rs",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "dpi",
       "version": "0.1.2",
       "license": "Apache-2.0 AND MIT",
@@ -1910,6 +2421,25 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "dsl_auto_type",
+      "version": "0.2.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": null,
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -2039,21 +2569,6 @@
       ]
     },
     {
-      "name": "embed-resource",
-      "version": "3.0.12",
-      "license": "MIT",
-      "repository": "https://github.com/nabijaczleweli/rust-embed-resource",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "1abdbbd4e3f95e56c79d4a8af190254c23ddb14db34aadadfafef9c3af041113"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
       "name": "embed_plist",
       "version": "1.2.2",
       "license": "MIT OR Apache-2.0",
@@ -2066,6 +2581,21 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "daacc37f680c7dd0a758ac99a109f2f57d9f21d3683df9e9245055922842a695"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "embed-resource",
+      "version": "3.0.12",
+      "license": "MIT",
+      "repository": "https://github.com/nabijaczleweli/rust-embed-resource",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "1abdbbd4e3f95e56c79d4a8af190254c23ddb14db34aadadfafef9c3af041113"
         }
       ],
       "workspaces": [
@@ -2309,6 +2839,33 @@
       ]
     },
     {
+      "name": "fiat-crypto",
+      "version": "0.3.0",
+      "license": "MIT OR Apache-2.0 OR BSD-1-Clause",
+      "repository": "https://github.com/mit-plv/fiat-crypto",
+      "notices": [
+        {
+          "file": "COPYRIGHT",
+          "sha256": "6c935d087a2992d0f092665400a2fa99c98db58d96fbe29368f8f48182bed9aa"
+        },
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "9eacbcb81be660840c714a560a9d65ba07913db98dd4baf969f78dd499fdd60f"
+        },
+        {
+          "file": "LICENSE-BSD-1",
+          "sha256": "0c1240e29b4a2c528bcc3ccc38a98b1dba5e3e6b465da910208935f082e2ced6"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "0034712d5e97a4f5b900a160a5c19d582b740d8e0638b4e44fd07e7b492dcd13"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "field-offset",
       "version": "0.3.6",
       "license": "MIT OR Apache-2.0",
@@ -2442,6 +2999,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -2571,6 +3129,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "futures",
+      "version": "0.3.34",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-lang/futures-rs",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "6652c868f35dfe5e8ef636810a4e576b9d663f3a17fb0f5613ad73583e1b88fd"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -2984,6 +3561,25 @@
       ]
     },
     {
+      "name": "ghash",
+      "version": "0.6.0",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/universal-hashes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "b8c6939380a400f53e11923d50fcc4dd2fa1ba8339fd9d04cda38a0251b6c9b0"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "gio",
       "version": "0.18.4",
       "license": "MIT",
@@ -3155,6 +3751,21 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "h2",
+      "version": "0.4.20",
+      "license": "MIT",
+      "repository": "https://github.com/hyperium/h2",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "b21623012e6c453d944b0342c515b631cfcbf30704c2621b291526b69c10724d"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -3333,8 +3944,46 @@
       ]
     },
     {
+      "name": "hkdf",
+      "version": "0.13.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/KDFs/",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "59013a5c8d3a19c26a457579105915a5d51bb0c09d579f8cdedf12e4203c3018"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "d288f9c9b4590446ec18c22ead8f8b5a12a3d4025b68f62dc9015063eb9cca69"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "hmac",
       "version": "0.12.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/MACs",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "hmac",
+      "version": "0.13.0",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/RustCrypto/MACs",
       "notices": [
@@ -3481,6 +4130,25 @@
       ]
     },
     {
+      "name": "hybrid-array",
+      "version": "0.4.15",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/hybrid-array",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "70c9d40f1f9545c3f133b8a67206e89da850f6468eed072281bb3701514114a9"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "hyper",
       "version": "1.12.0",
       "license": "MIT",
@@ -3518,6 +4186,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "hyper-timeout",
+      "version": "0.5.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/hjr3/hyper-timeout",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "cc87cc2020d8b17220b5a4e500d7952b0601c7903ee36cfd00eb8ed6ffdcd0f5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -3713,6 +4400,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -3754,6 +4442,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "if-addrs",
+      "version": "0.15.0",
+      "license": "MIT OR BSD-3-Clause",
+      "repository": "https://github.com/messense/if-addrs",
+      "notices": [
+        {
+          "file": "LICENSE-BSD",
+          "sha256": "588713c78138d7d6985b87275724f7047949a71a007b16b352d7745499976f7f"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "3990ddb78a5a2cfd64a5ffe5cebc3306f3298f6880c644afdf15043ef7d702d9"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -3827,6 +4534,25 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "inout",
+      "version": "0.2.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "a07fcacc3c60de4dc0fab10ac9d6aaba7379974e28451c99da7f7df09c25b28c"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -4371,6 +5097,25 @@
       ]
     },
     {
+      "name": "lock_api",
+      "version": "0.5.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/Amanieu/parking_lot",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "log",
       "version": "0.4.34",
       "license": "MIT OR Apache-2.0",
@@ -4492,6 +5237,21 @@
       ]
     },
     {
+      "name": "md5",
+      "version": "0.8.1",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/stainless-steel/md5",
+      "notices": [
+        {
+          "file": "LICENSE.md",
+          "sha256": "2096783a9b939ae2a3a4789d9696740cec1a72ac04ccf8a7972d436fd0e7b240"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "memchr",
       "version": "2.8.3",
       "license": "Unlicense OR MIT",
@@ -4525,6 +5285,44 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "migrations_internals",
+      "version": "2.3.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "migrations_macros",
+      "version": "2.3.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/diesel-rs/diesel",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -4770,6 +5568,52 @@
       ]
     },
     {
+      "name": "num_enum",
+      "version": "0.7.6",
+      "license": "BSD-3-Clause OR MIT OR Apache-2.0",
+      "repository": "https://github.com/illicitonion/num_enum",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-BSD",
+          "sha256": "0be96d891d00e0ae0df75d7f3289b12871c000a1f5ac744f3b570768d4bb277c"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "num_enum_derive",
+      "version": "0.7.6",
+      "license": "BSD-3-Clause OR MIT OR Apache-2.0",
+      "repository": "https://github.com/illicitonion/num_enum",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-BSD",
+          "sha256": "0be96d891d00e0ae0df75d7f3289b12871c000a1f5ac744f3b570768d4bb277c"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "num-bigint-dig",
       "version": "0.8.6",
       "license": "MIT/Apache-2.0",
@@ -4804,6 +5648,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -4862,52 +5707,6 @@
       ],
       "workspaces": [
         "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "num_enum",
-      "version": "0.7.6",
-      "license": "BSD-3-Clause OR MIT OR Apache-2.0",
-      "repository": "https://github.com/illicitonion/num_enum",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
-        },
-        {
-          "file": "LICENSE-BSD",
-          "sha256": "0be96d891d00e0ae0df75d7f3289b12871c000a1f5ac744f3b570768d4bb277c"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "num_enum_derive",
-      "version": "0.7.6",
-      "license": "BSD-3-Clause OR MIT OR Apache-2.0",
-      "repository": "https://github.com/illicitonion/num_enum",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
-        },
-        {
-          "file": "LICENSE-BSD",
-          "sha256": "0be96d891d00e0ae0df75d7f3289b12871c000a1f5ac744f3b570768d4bb277c"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -5213,6 +6012,44 @@
       ]
     },
     {
+      "name": "parking_lot",
+      "version": "0.13.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/Amanieu/parking_lot",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "parking_lot_core",
+      "version": "0.10.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/Amanieu/parking_lot",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "parking_lot_core",
       "version": "0.9.12",
       "license": "MIT OR Apache-2.0",
@@ -5383,6 +6220,44 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "pin-project",
+      "version": "1.1.13",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/taiki-e/pin-project",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "pin-project-internal",
+      "version": "1.1.13",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/taiki-e/pin-project",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -5575,6 +6450,25 @@
       ]
     },
     {
+      "name": "polyval",
+      "version": "0.7.3",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/universal-hashes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "b8c6939380a400f53e11923d50fcc4dd2fa1ba8339fd9d04cda38a0251b6c9b0"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "portable-atomic",
       "version": "1.15.0",
       "license": "Apache-2.0 OR MIT",
@@ -5590,6 +6484,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -5644,6 +6539,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -5699,6 +6595,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "prettyplease",
+      "version": "0.3.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/dtolnay/prettyplease",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -5981,6 +6896,36 @@
       ]
     },
     {
+      "name": "pulldown-cmark",
+      "version": "0.13.6",
+      "license": "MIT",
+      "repository": "https://github.com/raphlinus/pulldown-cmark",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "c4f10f55904bdb9f27d3fbf94c354926d6cfe8b982276e556238c258941b243b"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "pulldown-cmark-to-cmark",
+      "version": "22.0.3",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/Byron/pulldown-cmark-to-cmark",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "22bc135e5c4294e66bd84892b18aadeab6f1ec4f49de04236cc63c93d5d316cf"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "pxfm",
       "version": "0.1.30",
       "license": "BSD-3-Clause OR Apache-2.0",
@@ -5993,6 +6938,25 @@
         {
           "file": "LICENSE.md",
           "sha256": "2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "qrcode",
+      "version": "0.14.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/kennytm/qrcode-rust",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "LICENSE-MIT.txt",
+          "sha256": "7f865e72ab3644ea5887aa1f352aa435b36d139c35a964f47091e7dc02722e9a"
         }
       ],
       "workspaces": [
@@ -6114,6 +7078,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "r2d2",
+      "version": "0.8.10",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/sfackler/r2d2",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "e3fdaa2fdee203f530ea1b386472a83f7efdbc8d662f3f4feebc1d9acfc5c2b2"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -6595,23 +7578,13 @@
       ]
     },
     {
-      "name": "rustc-hash",
-      "version": "2.1.3",
-      "license": "Apache-2.0 OR MIT",
-      "repository": "https://github.com/rust-lang/rustc-hash",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652"
-        }
-      ],
+      "name": "rsqlite-vfs",
+      "version": "0.2.0",
+      "license": "MIT",
+      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
+      "notices": [],
       "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
+        "Cargo.toml"
       ]
     },
     {
@@ -6630,6 +7603,27 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "rustc-hash",
+      "version": "2.1.3",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/rust-lang/rustc-hash",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -6807,6 +7801,25 @@
       ]
     },
     {
+      "name": "scheduled-thread-pool",
+      "version": "0.2.8",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/sfackler/scheduled-thread-pool",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "b6d30c35fafab576a27221d46aeba09f92fe2b221ef1fbe76a0139ed3e6d73f0"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "schemars",
       "version": "0.8.22",
       "license": "MIT",
@@ -6912,6 +7925,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -6932,25 +7946,6 @@
       ],
       "workspaces": [
         "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "serde-untagged",
-      "version": "0.1.9",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/dtolnay/serde-untagged",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -7111,6 +8106,25 @@
       ]
     },
     {
+      "name": "serde_spanned",
+      "version": "1.1.3",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/toml-rs/toml",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "serde_urlencoded",
       "version": "0.7.1",
       "license": "MIT/Apache-2.0",
@@ -7162,6 +8176,44 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "serde-big-array",
+      "version": "0.5.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/est31/serde-big-array",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "5e8bb0726d139ddfaa7dec0b9c65183825ba02b77b1a2016af9ce9839db8511d"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "42f47aca13ea949271e5fc396966e95509a3380d51dcada709aa605b901f23d2"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "serde-untagged",
+      "version": "0.1.9",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/dtolnay/serde-untagged",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
         }
       ],
       "workspaces": [
@@ -7245,6 +8297,25 @@
       ]
     },
     {
+      "name": "sha1",
+      "version": "0.11.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/hashes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "sha2",
       "version": "0.10.9",
       "license": "MIT OR Apache-2.0",
@@ -7262,6 +8333,25 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "sha2",
+      "version": "0.11.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/hashes",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -7418,6 +8508,21 @@
       ]
     },
     {
+      "name": "smoothutf8",
+      "version": "0.2.3",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/iainmcgin/smooth-utf8",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "d26019450146540a2533be03cc37a481c15cde78510be722604720de86e105a4"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "socket2",
       "version": "0.6.5",
       "license": "MIT OR Apache-2.0",
@@ -7514,6 +8619,21 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "c995204cc6bad2ed67dd41f7d89bb9f1a9d48e0edd745732b30640d7912089a4"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "sqlite-wasm-rs",
+      "version": "0.6.2",
+      "license": "MIT",
+      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "e1c1975c3474cce31722836f101a40ffaf1cc784e4d2f38ce3e77b9712934e78"
         }
       ],
       "workspaces": [
@@ -7761,6 +8881,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8267,6 +9388,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8286,6 +9408,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8305,6 +9428,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8481,6 +9605,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8538,6 +9663,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8674,6 +9800,56 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "tonic",
+      "version": "0.14.9",
+      "license": "MIT",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "5c686e0f7978412b49187ae0e9f77e9b52eea9d8d2e6c0de8694b35817d873b1"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "tonic-build",
+      "version": "0.14.9",
+      "license": "MIT",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "5c686e0f7978412b49187ae0e9f77e9b52eea9d8d2e6c0de8694b35817d873b1"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "tonic-prost",
+      "version": "0.14.9",
+      "license": "MIT",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "tonic-prost-build",
+      "version": "0.14.9",
+      "license": "MIT",
+      "repository": "https://github.com/grpc/grpc-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -9093,6 +10269,25 @@
       ]
     },
     {
+      "name": "universal-hash",
+      "version": "0.6.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/traits",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "efa52eb70a774b62c50cf50f5e57e2625c29d375d09b91132f4f020e47b9944e"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "untrusted",
       "version": "0.9.0",
       "license": "ISC",
@@ -9207,21 +10402,6 @@
       ]
     },
     {
-      "name": "version-compare",
-      "version": "0.2.1",
-      "license": "MIT",
-      "repository": "https://gitlab.com/timvisee/version-compare",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "cedfcc7ace1639adb054bd4a19b6f8585ccb2429a60b4bf51bfeb0601058c22c"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
       "name": "version_check",
       "version": "0.9.5",
       "license": "MIT/Apache-2.0",
@@ -9238,6 +10418,21 @@
       ],
       "workspaces": [
         "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "version-compare",
+      "version": "0.2.1",
+      "license": "MIT",
+      "repository": "https://gitlab.com/timvisee/version-compare",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "cedfcc7ace1639adb054bd4a19b6f8585ccb2429a60b4bf51bfeb0601058c22c"
+        }
+      ],
+      "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -9269,6 +10464,66 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore-appstate",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore-binary",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore-derive",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore-libsignal",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "wacore-noise",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -9304,6 +10559,16 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "waproto",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -9503,6 +10768,25 @@
       ]
     },
     {
+      "name": "web_atoms",
+      "version": "0.2.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/servo/html5ever",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "web-sys",
       "version": "0.3.106",
       "license": "MIT OR Apache-2.0",
@@ -9539,25 +10823,6 @@
       ],
       "workspaces": [
         "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "web_atoms",
-      "version": "0.2.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/servo/html5ever",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3"
-        }
-      ],
-      "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -9650,6 +10915,31 @@
       "notices": [],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "whatsapp-rust",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "6613c7e94b361fdd87fbfe7f03e0344f926066f51f37936ec09a55dd4328dc23"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "whatsapp-rust-sqlite-storage",
+      "version": "0.7.0",
+      "license": "MIT",
+      "repository": "https://github.com/jlucaso1/whatsapp-rust",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -9775,6 +11065,432 @@
         }
       ],
       "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_aarch64_msvc",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnu",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.42.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.48.5",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/microsoft/windows-rs",
+      "notices": [
+        {
+          "file": "license-apache-2.0",
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "file": "license-mit",
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -10300,432 +12016,6 @@
       ]
     },
     {
-      "name": "windows_aarch64_gnullvm",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_aarch64_gnullvm",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_aarch64_gnullvm",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_aarch64_msvc",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_aarch64_msvc",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_aarch64_msvc",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_gnu",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_gnu",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_gnu",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_gnullvm",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_msvc",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_msvc",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_i686_msvc",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnu",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnu",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnu",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnullvm",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnullvm",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_gnullvm",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_msvc",
-      "version": "0.42.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_msvc",
-      "version": "0.48.5",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "windows_x86_64_msvc",
-      "version": "0.52.6",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/microsoft/windows-rs",
-      "notices": [
-        {
-          "file": "license-apache-2.0",
-          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
-        },
-        {
-          "file": "license-mit",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml",
-        "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
       "name": "winnow",
       "version": "0.5.40",
       "license": "MIT",
@@ -10752,6 +12042,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -10918,6 +12209,21 @@
       ]
     },
     {
+      "name": "x25519-dalek",
+      "version": "3.0.0",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "bebc725b8cb1ba1ed1798cb505cf31bf9bce4cbe942baf358b642666ba8186bd"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "xz2",
       "version": "0.1.7",
       "license": "MIT/Apache-2.0",
@@ -10985,36 +12291,6 @@
       ]
     },
     {
-      "name": "zbus-lockstep",
-      "version": "0.5.2",
-      "license": "MIT",
-      "repository": "https://github.com/luukvanderduim/zbus-lockstep",
-      "notices": [
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "zbus-lockstep-macros",
-      "version": "0.5.2",
-      "license": "MIT",
-      "repository": "https://github.com/luukvanderduim/zbus-lockstep",
-      "notices": [
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "zbus_macros",
       "version": "5.19.0",
       "license": "MIT",
@@ -11053,6 +12329,36 @@
         {
           "file": "LICENSE",
           "sha256": "260e4ff3fc493695880c90774283eb1e3d018f898fabe655bbd52dd2cbd2fcad"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "zbus-lockstep",
+      "version": "0.5.2",
+      "license": "MIT",
+      "repository": "https://github.com/luukvanderduim/zbus-lockstep",
+      "notices": [
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "zbus-lockstep-macros",
+      "version": "0.5.2",
+      "license": "MIT",
+      "repository": "https://github.com/luukvanderduim/zbus-lockstep",
+      "notices": [
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
         }
       ],
       "workspaces": [
@@ -11441,30 +12747,6 @@
       ]
     },
     {
-      "name": "@grpc/grpc-js",
-      "version": "1.14.6",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e03ba41d7fab20700769fe4118bab50d800cb74f990353a05d2f5fff1c228363"
-        }
-      ]
-    },
-    {
-      "name": "@grpc/proto-loader",
-      "version": "0.8.1",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/grpc/grpc-node.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
-        }
-      ]
-    },
-    {
       "name": "@img/colour",
       "version": "1.1.0",
       "license": "MIT",
@@ -11494,18 +12776,6 @@
       "license": "LGPL-3.0-or-later",
       "repository": "git+https://github.com/lovell/sharp-libvips.git",
       "notices": []
-    },
-    {
-      "name": "@isaacs/nonrecursive-glob-match",
-      "version": "1.0.3",
-      "license": "BlueOak-1.0.0",
-      "repository": null,
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
-        }
-      ]
     },
     {
       "name": "@jridgewell/gen-mapping",
@@ -11568,30 +12838,6 @@
       ]
     },
     {
-      "name": "@js-sdsl/ordered-map",
-      "version": "4.4.2",
-      "license": "MIT",
-      "repository": "https://github.com/js-sdsl/js-sdsl.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "787684b2059945f845f404340e20c4c8e3f325f4ab7aaeaf8e985f38c8d84658"
-        }
-      ]
-    },
-    {
-      "name": "@larksuiteoapi/node-sdk",
-      "version": "1.76.0",
-      "license": "MIT",
-      "repository": "https://github.com/larksuite/node-sdk.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "f9bfd5e309b1523a2dd3937b44f516e6018605eb05b35336485b0a34cbd9f373"
-        }
-      ]
-    },
-    {
       "name": "@next/env",
       "version": "16.4.3",
       "license": "MIT",
@@ -11603,121 +12849,6 @@
       "version": "16.4.3",
       "license": "MIT",
       "repository": "https://github.com/vercel/next.js",
-      "notices": []
-    },
-    {
-      "name": "@protobufjs/aspromise",
-      "version": "1.1.2",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/base64",
-      "version": "1.1.2",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/codegen",
-      "version": "2.0.5",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/eventemitter",
-      "version": "1.1.1",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/fetch",
-      "version": "1.1.1",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/float",
-      "version": "1.0.2",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/path",
-      "version": "1.1.2",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/pool",
-      "version": "1.1.0",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/dcodeIO/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@protobufjs/utf8",
-      "version": "1.1.2",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/protobufjs/protobuf.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a67b34a24a5daddcce46aea68c5004e4442bbfb63690329fa607bf4de4269794"
-        }
-      ]
-    },
-    {
-      "name": "@puppeteer/browsers",
-      "version": "3.2.6",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/puppeteer/puppeteer/tree/main/packages/browsers",
       "notices": []
     },
     {
@@ -12524,18 +13655,6 @@
       "notices": []
     },
     {
-      "name": "@tencent-connect/qqbot-nodejs",
-      "version": "1.0.5",
-      "license": "MIT",
-      "repository": "git+https://github.com/tencent-connect/qqbot-nodejs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "45426ad9507fe1b922121f5af6a4669096e721980b4426609a4384da410f5114"
-        }
-      ]
-    },
-    {
       "name": "@types/bun",
       "version": "1.4.4",
       "license": "MIT",
@@ -12656,18 +13775,6 @@
       ]
     },
     {
-      "name": "@types/qrcode",
-      "version": "1.5.6",
-      "license": "MIT",
-      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
-        }
-      ]
-    },
-    {
       "name": "@types/react",
       "version": "19.3.0",
       "license": "MIT",
@@ -12716,14 +13823,18 @@
       ]
     },
     {
-      "name": "@types/ws",
-      "version": "8.18.2",
-      "license": "MIT",
-      "repository": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "name": "@typescript/typescript-darwin-arm64",
+      "version": "7.0.2",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/microsoft/TypeScript.git",
       "notices": [
         {
           "file": "LICENSE",
-          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47"
+        },
+        {
+          "file": "NOTICE.txt",
+          "sha256": "f5c708b59114507b8b27b48181b6883d106bbca0c1634bbee45b5e344237b66b"
         }
       ]
     },
@@ -12752,116 +13863,6 @@
       ]
     },
     {
-      "name": "@wecom/aibot-node-sdk",
-      "version": "1.0.7",
-      "license": "MIT",
-      "repository": "https://github.com/WecomTeam/aibot-node-sdk.git",
-      "notices": []
-    },
-    {
-      "name": "abort-controller",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/mysticatea/abort-controller.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "dbbf03317f0101fed5643cd87ca80fb769e358fa4f428445bf2315deeb23a154"
-        }
-      ]
-    },
-    {
-      "name": "agent-base",
-      "version": "6.0.2",
-      "license": "MIT",
-      "repository": "git://github.com/TooTallNate/node-agent-base.git",
-      "notices": []
-    },
-    {
-      "name": "agent-base",
-      "version": "9.0.0",
-      "license": "MIT",
-      "repository": "https://github.com/TooTallNate/proxy-agents.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8d8c55319c7729d57be811c747452636688d54f19701ee0752b6b15ad3771d9a"
-        }
-      ]
-    },
-    {
-      "name": "ansi-regex",
-      "version": "5.0.1",
-      "license": "MIT",
-      "repository": "chalk/ansi-regex",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "ansi-regex",
-      "version": "6.5.0",
-      "license": "MIT",
-      "repository": "chalk/ansi-regex",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "ansi-styles",
-      "version": "4.3.0",
-      "license": "MIT",
-      "repository": "chalk/ansi-styles",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "ansi-styles",
-      "version": "6.2.3",
-      "license": "MIT",
-      "repository": "chalk/ansi-styles",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "archiver",
-      "version": "7.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/archiverjs/node-archiver.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "9e23899170d96e708b24a2afce11e96d169c8cebf1bd24ac60b675a400cb1cf1"
-        }
-      ]
-    },
-    {
-      "name": "archiver-utils",
-      "version": "5.0.2",
-      "license": "MIT",
-      "repository": "https://github.com/archiverjs/archiver-utils.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "9fe335fb097fbff0b7f709ee14a77b1d1cf739d3400cd0b0e19118946772ea56"
-        }
-      ]
-    },
-    {
       "name": "aria-hidden",
       "version": "1.2.6",
       "license": "MIT",
@@ -12870,66 +13871,6 @@
         {
           "file": "LICENSE",
           "sha256": "30f0cfddf483d1128e3610205020f2041a6c5e837aa999e0aa82e5576187d4a9"
-        }
-      ]
-    },
-    {
-      "name": "async",
-      "version": "0.2.10",
-      "license": "MIT",
-      "repository": "https://github.com/caolan/async.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "b04b9e208e566fa898c7429e4dd5b45ba3ba2f7391e5c009cf63c53d580fa9b4"
-        }
-      ]
-    },
-    {
-      "name": "async",
-      "version": "3.2.6",
-      "license": "MIT",
-      "repository": "https://github.com/caolan/async.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "d9fed24f132985934fca621c4dc1dfb53e03377a24d0568d424383d7eaa9c0ac"
-        }
-      ]
-    },
-    {
-      "name": "asynckit",
-      "version": "0.4.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/alexindigo/asynckit.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "1953150d5d4b10c7542cee6f6e0c613b2682545233f069d75cfff1936386ce10"
-        }
-      ]
-    },
-    {
-      "name": "axios",
-      "version": "1.20.0",
-      "license": "MIT",
-      "repository": "https://github.com/axios/axios.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "82761059eaedacb3356803aea8a170d8298609f91b14fc32ee1bfb40d690183c"
-        }
-      ]
-    },
-    {
-      "name": "b4a",
-      "version": "1.9.0",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/b4a.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
         }
       ]
     },
@@ -12946,94 +13887,6 @@
       ]
     },
     {
-      "name": "balanced-match",
-      "version": "4.0.4",
-      "license": "MIT",
-      "repository": "git://github.com/juliangruber/balanced-match.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "d408f38ffa3355c5faec517153295338892eb0f1ea43f57874bb23c6075979b5"
-        }
-      ]
-    },
-    {
-      "name": "bare-events",
-      "version": "2.9.2",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/bare-events.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "bare-fs",
-      "version": "4.8.4",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/bare-fs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "bare-path",
-      "version": "3.1.2",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/bare-path.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        },
-        {
-          "file": "NOTICE",
-          "sha256": "fd4098360de4b9fb2e003ac7c852e8c86f264a1d6e27c47128e8c8075c81249b"
-        }
-      ]
-    },
-    {
-      "name": "bare-stream",
-      "version": "2.13.4",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/bare-stream.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "bare-url",
-      "version": "2.5.5",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/bare-url.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "base64-js",
-      "version": "1.5.1",
-      "license": "MIT",
-      "repository": "git://github.com/beatgammit/base64-js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5b37224c080cdcc97c871ada971c224e9926370fe74f11b539aa1cf9f3b1aca1"
-        }
-      ]
-    },
-    {
       "name": "baseline-browser-mapping",
       "version": "2.11.33",
       "license": "Apache-2.0",
@@ -13046,95 +13899,11 @@
       ]
     },
     {
-      "name": "bluebird",
-      "version": "3.7.2",
-      "license": "MIT",
-      "repository": "git://github.com/petkaantonov/bluebird.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "87092fe7ffd1e92eba5d1dd39b73a73fdb4fdd4df3474beacc3d9f6b08ece82c"
-        }
-      ]
-    },
-    {
-      "name": "brace-expansion",
-      "version": "5.0.12",
-      "license": "MIT",
-      "repository": "git+https://github.com/juliangruber/brace-expansion.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "9c63a23124d68cd30cd316a94a1a0bca34f032786df6df69fc4b5f136bac8d2e"
-        }
-      ]
-    },
-    {
-      "name": "buffer",
-      "version": "6.0.3",
-      "license": "MIT",
-      "repository": "git://github.com/feross/buffer.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "06bafa45fdad2579ba0e43b0c9b2c6290287c99c4203c300254a462b38a307f6"
-        }
-      ]
-    },
-    {
-      "name": "buffer-crc32",
-      "version": "1.0.0",
-      "license": "MIT",
-      "repository": "git://github.com/brianloveswords/buffer-crc32.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "ddc9158fa20e427bc12fa8e1e6d07c642ed4d2c618607df768b30ae2986b3b7c"
-        }
-      ]
-    },
-    {
       "name": "bun-types",
       "version": "1.4.4",
       "license": "MIT",
       "repository": "https://github.com/oven-sh/bun",
       "notices": []
-    },
-    {
-      "name": "call-bind-apply-helpers",
-      "version": "1.0.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/call-bind-apply-helpers.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "call-bound",
-      "version": "1.0.4",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/call-bound.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "camelcase",
-      "version": "5.3.1",
-      "license": "MIT",
-      "repository": "sindresorhus/camelcase",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
     },
     {
       "name": "caniuse-lite",
@@ -13209,18 +13978,6 @@
       ]
     },
     {
-      "name": "chromium-bidi",
-      "version": "157.0.8090-0",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/GoogleChromeLabs/chromium-bidi.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
       "name": "class-variance-authority",
       "version": "0.7.1",
       "license": "Apache-2.0",
@@ -13236,44 +13993,7 @@
       "name": "client-only",
       "version": "0.0.1",
       "license": "MIT",
-      "repository": null,
       "notices": []
-    },
-    {
-      "name": "cliui",
-      "version": "6.0.0",
-      "license": "ISC",
-      "repository": "http://github.com/yargs/cliui.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
-        }
-      ]
-    },
-    {
-      "name": "cliui",
-      "version": "8.0.1",
-      "license": "ISC",
-      "repository": "yargs/cliui",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
-        }
-      ]
-    },
-    {
-      "name": "cliui",
-      "version": "9.0.1",
-      "license": "ISC",
-      "repository": "yargs/cliui",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "2dc0465729366c3a7890dfa9e972a1ba7048a26c02116fb8b419a6a1ac110149"
-        }
-      ]
     },
     {
       "name": "clsx",
@@ -13288,42 +14008,6 @@
       ]
     },
     {
-      "name": "color-convert",
-      "version": "2.0.1",
-      "license": "MIT",
-      "repository": "Qix-/color-convert",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "693866fc419c6f61c8570438ec00659d156ec2b4d4a4d04091711f5f11a365d4"
-        }
-      ]
-    },
-    {
-      "name": "color-name",
-      "version": "1.1.4",
-      "license": "MIT",
-      "repository": "git@github.com:colorjs/color-name.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c064f7a3e353bc1bc977f3c897941c75ef763f44f41677e0a15370ca0853d6e2"
-        }
-      ]
-    },
-    {
-      "name": "combined-stream",
-      "version": "1.0.8",
-      "license": "MIT",
-      "repository": "git://github.com/felixge/node-combined-stream.git",
-      "notices": [
-        {
-          "file": "License",
-          "sha256": "47eb8ca82c798246774946d1be0f9aa08f025fa8325ced0947aeeb4c05fe5547"
-        }
-      ]
-    },
-    {
       "name": "comma-separated-tokens",
       "version": "2.0.3",
       "license": "MIT",
@@ -13332,54 +14016,6 @@
         {
           "file": "license",
           "sha256": "ca4662cb5d1b738fbe5350c0d5485ba11773b4b7208974082ae6e129a52d631d"
-        }
-      ]
-    },
-    {
-      "name": "compress-commons",
-      "version": "6.0.2",
-      "license": "MIT",
-      "repository": "https://github.com/archiverjs/node-compress-commons.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "79bad9f51738814f83251ae89460326b2ff2ea19ff5f71ab8f7636b2e17bb231"
-        }
-      ]
-    },
-    {
-      "name": "core-util-is",
-      "version": "1.0.3",
-      "license": "MIT",
-      "repository": "git://github.com/isaacs/core-util-is",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "33b734d60042d0fe0c92dd1fc1e874193a1c899ec3e276a2eb935d2d0bf5b710"
-        }
-      ]
-    },
-    {
-      "name": "crc-32",
-      "version": "1.2.2",
-      "license": "Apache-2.0",
-      "repository": "git://github.com/SheetJS/js-crc32.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c542ba7851b5d39a5face477e47a27cb7c00a9759e321b66824e79718bffe1ac"
-        }
-      ]
-    },
-    {
-      "name": "crc32-stream",
-      "version": "6.0.0",
-      "license": "MIT",
-      "repository": "https://github.com/archiverjs/node-crc32-stream.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "79bad9f51738814f83251ae89460326b2ff2ea19ff5f71ab8f7636b2e17bb231"
         }
       ]
     },
@@ -13408,18 +14044,6 @@
       ]
     },
     {
-      "name": "decamelize",
-      "version": "1.2.0",
-      "license": "MIT",
-      "repository": "sindresorhus/decamelize",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "6fb9754611c20f6649f68805e8c990e83261f29316e29de9e6cedae607b8634c"
-        }
-      ]
-    },
-    {
       "name": "decode-named-character-reference",
       "version": "1.3.0",
       "license": "MIT",
@@ -13428,18 +14052,6 @@
         {
           "file": "license",
           "sha256": "dd1081884a92952802f4803110a6bb543acea9a814c786d58605b4c1219b5ebb"
-        }
-      ]
-    },
-    {
-      "name": "delayed-stream",
-      "version": "1.0.0",
-      "license": "MIT",
-      "repository": "git://github.com/felixge/node-delayed-stream.git",
-      "notices": [
-        {
-          "file": "License",
-          "sha256": "47eb8ca82c798246774946d1be0f9aa08f025fa8325ced0947aeeb4c05fe5547"
         }
       ]
     },
@@ -13492,78 +14104,6 @@
       ]
     },
     {
-      "name": "devtools-protocol",
-      "version": "0.0.1704951",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/ChromeDevTools/devtools-protocol",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "7a209dd1b94cabdb5ea9c6f9164b9546ffa5daaa671e7767d49510db055f5c51"
-        }
-      ]
-    },
-    {
-      "name": "dijkstrajs",
-      "version": "1.0.3",
-      "license": "MIT",
-      "repository": "git://github.com/tcort/dijkstrajs",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "c46324e45a005413535a6fb7a97e9eacd3cc6bf30335b7d5c10b8ee3af9e60c2"
-        }
-      ]
-    },
-    {
-      "name": "dunder-proto",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/es-shims/dunder-proto.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2b770a704c15de238c3f622b01b0044ddd60b49ee30608ea6991ebf19db7a7a1"
-        }
-      ]
-    },
-    {
-      "name": "duplexer2",
-      "version": "0.1.4",
-      "license": "BSD-3-Clause",
-      "repository": "deoxxa/duplexer2",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "252a200ba7a38686f7954ec4cb09b3ad7788fa099eb724de167d7ab16b1244b9"
-        }
-      ]
-    },
-    {
-      "name": "emoji-regex",
-      "version": "10.6.0",
-      "license": "MIT",
-      "repository": "https://github.com/mathiasbynens/emoji-regex.git",
-      "notices": [
-        {
-          "file": "LICENSE-MIT.txt",
-          "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a"
-        }
-      ]
-    },
-    {
-      "name": "emoji-regex",
-      "version": "8.0.0",
-      "license": "MIT",
-      "repository": "https://github.com/mathiasbynens/emoji-regex.git",
-      "notices": [
-        {
-          "file": "LICENSE-MIT.txt",
-          "sha256": "483acb265f182907d1caf6cff9c16c96f31325ed23792832cc5d8b12d5f88c8a"
-        }
-      ]
-    },
-    {
       "name": "enhanced-resolve",
       "version": "5.26.0",
       "license": "MIT",
@@ -13572,66 +14112,6 @@
         {
           "file": "LICENSE",
           "sha256": "9068a8782d2fb4c6e432cfa25334efa56f722822180570802bf86e71b6003b1e"
-        }
-      ]
-    },
-    {
-      "name": "es-define-property",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/es-define-property.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "es-errors",
-      "version": "1.3.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/es-errors.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "es-object-atoms",
-      "version": "1.1.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/es-object-atoms.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "es-set-tostringtag",
-      "version": "2.1.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/es-shims/es-set-tostringtag.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "1a3aeb1f1398bd697d57c3c585faadf59d825aca6e3162cd7eeb72ff76eb2466"
-        }
-      ]
-    },
-    {
-      "name": "escalade",
-      "version": "3.2.0",
-      "license": "MIT",
-      "repository": "lukeed/escalade",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "9a9edad7baae52622bddf3c15b2ef8a33d2c89f2d25408ad13e8a7481c6b0c97"
         }
       ]
     },
@@ -13660,54 +14140,6 @@
       ]
     },
     {
-      "name": "event-target-shim",
-      "version": "5.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/mysticatea/event-target-shim.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "97d87142793695cd73243de7258694abe85b3b6060fca7f247b0a2afa8219678"
-        }
-      ]
-    },
-    {
-      "name": "eventemitter3",
-      "version": "5.0.4",
-      "license": "MIT",
-      "repository": "git://github.com/primus/eventemitter3.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "3aecc12b1cb28832b5f65ab64291de96568c3f236a74d646281b4491f7bcadbf"
-        }
-      ]
-    },
-    {
-      "name": "events",
-      "version": "3.3.0",
-      "license": "MIT",
-      "repository": "git://github.com/Gozala/events.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "631987b7616a325a5b97566c232418481ddf7dbb5ecadefb991e791876cc2599"
-        }
-      ]
-    },
-    {
-      "name": "events-universal",
-      "version": "1.0.1",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/events-universal.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
       "name": "extend",
       "version": "3.0.2",
       "license": "MIT",
@@ -13720,126 +14152,6 @@
       ]
     },
     {
-      "name": "fast-fifo",
-      "version": "1.3.2",
-      "license": "MIT",
-      "repository": "https://github.com/mafintosh/fast-fifo.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "41a2aa55a9ebad3df900cf37fded512714a127f4300ef54b978f834a11ec4d48"
-        }
-      ]
-    },
-    {
-      "name": "find-up",
-      "version": "4.1.0",
-      "license": "MIT",
-      "repository": "sindresorhus/find-up",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "fluent-ffmpeg",
-      "version": "2.1.3",
-      "license": "MIT",
-      "repository": "git://github.com/fluent-ffmpeg/node-fluent-ffmpeg.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "1c3854d65bd657271ab7ee776370adc178a988bcb19c8bf6269dfc358f38c0d4"
-        }
-      ]
-    },
-    {
-      "name": "follow-redirects",
-      "version": "1.16.2",
-      "license": "MIT",
-      "repository": "git+ssh://git@github.com/follow-redirects/follow-redirects.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "bfa8a54bb952ccda79f0f1889721d108f5b605babbb2b8a3705ffb52f4132eb7"
-        }
-      ]
-    },
-    {
-      "name": "form-data",
-      "version": "4.0.6",
-      "license": "MIT",
-      "repository": "git://github.com/form-data/form-data.git",
-      "notices": [
-        {
-          "file": "License",
-          "sha256": "e5b780d4f38d1d3328e3e53186c4e62d3fa149ea6f2bacd5de5ad0c30ac85343"
-        }
-      ]
-    },
-    {
-      "name": "fs-extra",
-      "version": "11.3.4",
-      "license": "MIT",
-      "repository": "git+https://github.com/jprichardson/node-fs-extra.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c6a7de1428955aa5a692f4d3a3d3ede658d959616944713337cda296736442e1"
-        }
-      ]
-    },
-    {
-      "name": "function-bind",
-      "version": "1.1.2",
-      "license": "MIT",
-      "repository": "https://github.com/Raynos/function-bind.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "773e131a7684726005a7e4688a80b4620033bc08499bc1404dd1a1eb3bca725e"
-        }
-      ]
-    },
-    {
-      "name": "get-caller-file",
-      "version": "2.0.5",
-      "license": "ISC",
-      "repository": "git+https://github.com/stefanpenner/get-caller-file.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "902dbb4154679fb2b8d7c33878183f45b268d01eae5e5033dddaa8852d45f213"
-        }
-      ]
-    },
-    {
-      "name": "get-east-asian-width",
-      "version": "1.7.0",
-      "license": "MIT",
-      "repository": "sindresorhus/get-east-asian-width",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "get-intrinsic",
-      "version": "1.3.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/get-intrinsic.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "39c5ec504cf6bd5cd782a7c695828e09189df79f5d94840e4f08feb97b9fd416"
-        }
-      ]
-    },
-    {
       "name": "get-nonce",
       "version": "1.0.1",
       "license": "MIT",
@@ -13848,42 +14160,6 @@
         {
           "file": "LICENSE",
           "sha256": "acf3b087b348d2f2e731b9d4131af185aad694c1204ce14a46909483fd42da05"
-        }
-      ]
-    },
-    {
-      "name": "get-proto",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/get-proto.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "be46ce1e3b0479af9ce82d22b465a6d7d2ff084fca0aaf3d54172da2b5eb5781"
-        }
-      ]
-    },
-    {
-      "name": "glob",
-      "version": "14.0.3",
-      "license": "BlueOak-1.0.0",
-      "repository": "git@github.com:isaacs/node-glob.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "a49c9ba464796f65b59fca3f1e6ca40912df1e859f575383223f7ec6c5baae09"
-        }
-      ]
-    },
-    {
-      "name": "gopd",
-      "version": "1.2.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/gopd.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "d90bf0a089da4cf43d644ed240a0b3825dcdb705e64e38371d56995a4cc9e4c5"
         }
       ]
     },
@@ -13905,42 +14181,6 @@
       "license": "Standard 'no charge' license: https://gsap.com/standard-license.",
       "repository": "git+https://github.com/greensock/GSAP.git",
       "notices": []
-    },
-    {
-      "name": "has-symbols",
-      "version": "1.1.0",
-      "license": "MIT",
-      "repository": "git://github.com/inspect-js/has-symbols.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "206c1adcf206dc0031b11232f5b054ec5f1662407ab1ca415247921cab2068ab"
-        }
-      ]
-    },
-    {
-      "name": "has-tostringtag",
-      "version": "1.0.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/inspect-js/has-tostringtag.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e2560e002e13281578c75c850061d9255c33d16d732939e8c2db64c2506642fa"
-        }
-      ]
-    },
-    {
-      "name": "hasown",
-      "version": "2.0.4",
-      "license": "MIT",
-      "repository": "git+https://github.com/inspect-js/hasOwn.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "bf9b0d665be2a689851eea667ca9f42066ea1d903b38349c51e6a44b2577680a"
-        }
-      ]
     },
     {
       "name": "hast-util-to-jsx-runtime",
@@ -13975,49 +14215,6 @@
         {
           "file": "license",
           "sha256": "e18cf5173e928f808f0cd208097fee8fbec9d28fc0255213938e4c559e29ff58"
-        }
-      ]
-    },
-    {
-      "name": "https-proxy-agent",
-      "version": "5.0.1",
-      "license": "MIT",
-      "repository": "git://github.com/TooTallNate/node-https-proxy-agent.git",
-      "notices": []
-    },
-    {
-      "name": "https-proxy-agent",
-      "version": "9.1.0",
-      "license": "MIT",
-      "repository": "https://github.com/TooTallNate/proxy-agents.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8d8c55319c7729d57be811c747452636688d54f19701ee0752b6b15ad3771d9a"
-        }
-      ]
-    },
-    {
-      "name": "ieee754",
-      "version": "1.2.1",
-      "license": "BSD-3-Clause",
-      "repository": "git://github.com/feross/ieee754.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "18d45466ba3253deae04667e267a91ea8de8548f18c1125264d1c9db28194cc1"
-        }
-      ]
-    },
-    {
-      "name": "inherits",
-      "version": "2.0.4",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/inherits",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5ffe28e7ade7d8f10d85d5337a73fd793dac5c462fb9a28fbf8c5046c7fbca3b"
         }
       ]
     },
@@ -14070,18 +14267,6 @@
       ]
     },
     {
-      "name": "is-fullwidth-code-point",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "sindresorhus/is-fullwidth-code-point",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
       "name": "is-hexadecimal",
       "version": "2.0.1",
       "license": "MIT",
@@ -14106,37 +14291,6 @@
       ]
     },
     {
-      "name": "is-stream",
-      "version": "2.0.1",
-      "license": "MIT",
-      "repository": "sindresorhus/is-stream",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "isarray",
-      "version": "1.0.0",
-      "license": "MIT",
-      "repository": "git://github.com/juliangruber/isarray.git",
-      "notices": []
-    },
-    {
-      "name": "isexe",
-      "version": "2.0.0",
-      "license": "ISC",
-      "repository": "git+https://github.com/isaacs/isexe.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b"
-        }
-      ]
-    },
-    {
       "name": "jiti",
       "version": "2.7.0",
       "license": "MIT",
@@ -14145,30 +14299,6 @@
         {
           "file": "LICENSE",
           "sha256": "46231df5a7733c3f52f11b71f3df61813007745b62b09031acfb45fb42d75082"
-        }
-      ]
-    },
-    {
-      "name": "jsonfile",
-      "version": "6.2.1",
-      "license": "MIT",
-      "repository": "git@github.com:jprichardson/node-jsonfile.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a9801fb52ba22ef808682a094da8a7a480584b7ed0dfd0d888ab543616335031"
-        }
-      ]
-    },
-    {
-      "name": "lazystream",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/jpommerening/node-lazystream.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e7f5d28405c9fe6580db684634bace66953055b436d7fbb6f860d0c800c44a9f"
         }
       ]
     },
@@ -14209,102 +14339,6 @@
       ]
     },
     {
-      "name": "lilconfig",
-      "version": "3.1.4",
-      "license": "MIT",
-      "repository": "https://github.com/antonk52/lilconfig",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "d70f9e316930b4333b6f51af5f0d0cb7ded6a4a2641549aa088027aaff91e950"
-        }
-      ]
-    },
-    {
-      "name": "locate-path",
-      "version": "5.0.0",
-      "license": "MIT",
-      "repository": "sindresorhus/locate-path",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "lodash",
-      "version": "4.18.1",
-      "license": "MIT",
-      "repository": "lodash/lodash",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "f71e8ed126b46346494aad5486874cd8f0aafe95092ed67d2e3cb6110f939abc"
-        }
-      ]
-    },
-    {
-      "name": "lodash.camelcase",
-      "version": "4.3.0",
-      "license": "MIT",
-      "repository": "lodash/lodash",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272"
-        }
-      ]
-    },
-    {
-      "name": "lodash.identity",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "lodash/lodash",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "2b61a34ef17beffb1e555efa8b46110d25398d47f2e88b2cacc46f8bd382c639"
-        }
-      ]
-    },
-    {
-      "name": "lodash.merge",
-      "version": "4.6.2",
-      "license": "MIT",
-      "repository": "lodash/lodash",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "f71e8ed126b46346494aad5486874cd8f0aafe95092ed67d2e3cb6110f939abc"
-        }
-      ]
-    },
-    {
-      "name": "lodash.pickby",
-      "version": "4.6.0",
-      "license": "MIT",
-      "repository": "lodash/lodash",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "ffd8b33b354585f4ce119f19c53728281e48a97b074491eb6bf6d5c5ff305272"
-        }
-      ]
-    },
-    {
-      "name": "long",
-      "version": "5.3.2",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/dcodeIO/long.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
-        }
-      ]
-    },
-    {
       "name": "longest-streak",
       "version": "3.1.0",
       "license": "MIT",
@@ -14313,18 +14347,6 @@
         {
           "file": "license",
           "sha256": "9f084fac69d8cf1e6ce983ba5a3499c7695ed74a26ec625c38f0fd19fddd5e10"
-        }
-      ]
-    },
-    {
-      "name": "lru-cache",
-      "version": "11.5.3",
-      "license": "BlueOak-1.0.0",
-      "repository": "git+ssh://git@github.com/isaacs/node-lru-cache.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
         }
       ]
     },
@@ -14361,18 +14383,6 @@
         {
           "file": "license",
           "sha256": "dd1081884a92952802f4803110a6bb543acea9a814c786d58605b4c1219b5ebb"
-        }
-      ]
-    },
-    {
-      "name": "math-intrinsics",
-      "version": "1.1.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/es-shims/math-intrinsics.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2b770a704c15de238c3f622b01b0044ddd60b49ee30608ea6991ebf19db7a7a1"
         }
       ]
     },
@@ -14905,90 +14915,6 @@
       ]
     },
     {
-      "name": "mime",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "https://github.com/broofa/mime",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8f2658c03422c408b2b2ce4d151decc3b1a6fd3d86e5ca9433777bccdcdf75a2"
-        }
-      ]
-    },
-    {
-      "name": "mime-db",
-      "version": "1.52.0",
-      "license": "MIT",
-      "repository": "jshttp/mime-db",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "cc1dfd4dafa27271e8212cd3b274eeb3f262e40a6fdab36ddc3f9696f706f58b"
-        }
-      ]
-    },
-    {
-      "name": "mime-types",
-      "version": "2.1.35",
-      "license": "MIT",
-      "repository": "jshttp/mime-types",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "71f83c4c0621102a56d9853812777b85751bce7e9726f686f5b056c1f8a4b0e6"
-        }
-      ]
-    },
-    {
-      "name": "minimatch",
-      "version": "11.0.3",
-      "license": "BlueOak-1.0.0",
-      "repository": "git@github.com:isaacs/minimatch",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "2c7c5d22ed5a8ee968c64757710979afcd77438c48b4a265b94e615babd8a901"
-        }
-      ]
-    },
-    {
-      "name": "minipass",
-      "version": "7.1.3",
-      "license": "BlueOak-1.0.0",
-      "repository": "https://github.com/isaacs/minipass",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
-        }
-      ]
-    },
-    {
-      "name": "mitt",
-      "version": "3.0.1",
-      "license": "MIT",
-      "repository": "developit/mitt",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "1cab22f196264195a4caec8ca5630170fdde76ee8f43346e47021d087332d3b0"
-        }
-      ]
-    },
-    {
-      "name": "modern-tar",
-      "version": "0.8.6",
-      "license": "MIT",
-      "repository": "git+https://github.com/ayuhito/modern-tar.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "dbcbef54fa7e111b69b12a9787051f31f5378b40711b6c57c5a82d99dc8a9e0d"
-        }
-      ]
-    },
-    {
       "name": "ms",
       "version": "2.1.3",
       "license": "MIT",
@@ -15025,102 +14951,6 @@
       ]
     },
     {
-      "name": "node-fetch",
-      "version": "2.7.0",
-      "license": "MIT",
-      "repository": "https://github.com/bitinn/node-fetch.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "84eaa985e1ef71b8c630e8aba73404c219ff425c6fdb45c62e998b58d4fbdc8e"
-        }
-      ]
-    },
-    {
-      "name": "node-int64",
-      "version": "0.4.0",
-      "license": "MIT",
-      "repository": "https://github.com/broofa/node-int64",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8f85aab053e268546014761da47630a09886626afbd0d8d440cb2c69611bb8d3"
-        }
-      ]
-    },
-    {
-      "name": "node-webpmux",
-      "version": "3.2.1",
-      "license": "LGPL-3.0-or-later",
-      "repository": "git+https://github.com/ApeironTsuka/node-webpmux.git",
-      "notices": [
-        {
-          "file": "COPYING.LESSER",
-          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
-        }
-      ]
-    },
-    {
-      "name": "normalize-path",
-      "version": "3.0.0",
-      "license": "MIT",
-      "repository": "jonschlinkert/normalize-path",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e70ff771504ba41f2be55de812a017ff46433d7a250c862e38fc419159e44500"
-        }
-      ]
-    },
-    {
-      "name": "object-inspect",
-      "version": "1.13.4",
-      "license": "MIT",
-      "repository": "git://github.com/inspect-js/object-inspect.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "bd40cc437e28a3ad7bef2ad34e6b72e757b182e67bda1acadbab4ef0476f8232"
-        }
-      ]
-    },
-    {
-      "name": "p-limit",
-      "version": "2.3.0",
-      "license": "MIT",
-      "repository": "sindresorhus/p-limit",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "p-locate",
-      "version": "4.1.0",
-      "license": "MIT",
-      "repository": "sindresorhus/p-locate",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "p-try",
-      "version": "2.2.0",
-      "license": "MIT",
-      "repository": "sindresorhus/p-try",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
       "name": "parse-entities",
       "version": "4.0.2",
       "license": "MIT",
@@ -15129,30 +14959,6 @@
         {
           "file": "license",
           "sha256": "5d0698266086f217bb11ea0499d33453e401fe479fb9126ad04e625e63d3557b"
-        }
-      ]
-    },
-    {
-      "name": "path-exists",
-      "version": "4.0.0",
-      "license": "MIT",
-      "repository": "sindresorhus/path-exists",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "path-scurry",
-      "version": "3.0.0",
-      "license": "BlueOak-1.0.0",
-      "repository": "git+https://github.com/isaacs/path-scurry",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
         }
       ]
     },
@@ -15169,18 +14975,6 @@
       ]
     },
     {
-      "name": "pngjs",
-      "version": "5.0.0",
-      "license": "MIT",
-      "repository": "git://github.com/lukeapage/pngjs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "176b07a18c0bb3836aaeb61088fd0bf11a38f66e6f15e3fbda85faa225250d6e"
-        }
-      ]
-    },
-    {
       "name": "postcss",
       "version": "8.5.23",
       "license": "MIT",
@@ -15193,30 +14987,6 @@
       ]
     },
     {
-      "name": "process",
-      "version": "0.11.10",
-      "license": "MIT",
-      "repository": "git://github.com/shtylman/node-process.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "59a400d04c5078579acc27ddd6452c1bdf763f9506e01364700935fbb1a7c91b"
-        }
-      ]
-    },
-    {
-      "name": "process-nextick-args",
-      "version": "2.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/calvinmetcalf/process-nextick-args.git",
-      "notices": [
-        {
-          "file": "license.md",
-          "sha256": "ecdccbcf39024f624ded480c01c0b25458e1eca8f26ecf040933865ce56d9a4f"
-        }
-      ]
-    },
-    {
       "name": "property-information",
       "version": "7.2.0",
       "license": "MIT",
@@ -15225,75 +14995,6 @@
         {
           "file": "license",
           "sha256": "5d0698266086f217bb11ea0499d33453e401fe479fb9126ad04e625e63d3557b"
-        }
-      ]
-    },
-    {
-      "name": "protobufjs",
-      "version": "7.6.6",
-      "license": "BSD-3-Clause",
-      "repository": "protobufjs/protobuf.js",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "49d6a1c9a623784c61c6cb70f773f3457faceb1914a13c8560a9823b7631950c"
-        }
-      ]
-    },
-    {
-      "name": "proxy-agent-negotiate",
-      "version": "1.1.0",
-      "license": "MIT",
-      "repository": "https://github.com/TooTallNate/proxy-agents.git",
-      "notices": []
-    },
-    {
-      "name": "proxy-from-env",
-      "version": "2.1.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/Rob--W/proxy-from-env.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "f55828df4b8752c48e765a806465b76a103e3cb363379c569b15a1df2ba2d79e"
-        }
-      ]
-    },
-    {
-      "name": "puppeteer",
-      "version": "25.16.0",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/puppeteer/puppeteer/tree/main/packages/puppeteer",
-      "notices": []
-    },
-    {
-      "name": "puppeteer-core",
-      "version": "25.16.0",
-      "license": "Apache-2.0",
-      "repository": "https://github.com/puppeteer/puppeteer/tree/main/packages/puppeteer-core",
-      "notices": []
-    },
-    {
-      "name": "qrcode",
-      "version": "1.5.4",
-      "license": "MIT",
-      "repository": "git://github.com/soldair/node-qrcode.git",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "8df47c6ad9ac2c41eb9b2a72def9908959da0ede8dadd56c7b249c1bdb0c5ce6"
-        }
-      ]
-    },
-    {
-      "name": "qs",
-      "version": "6.16.1",
-      "license": "BSD-3-Clause",
-      "repository": "https://github.com/ljharb/qs.git",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "e7dc37bf662d7f786efcb46c545615e70c1daf458a38385521c63cf6607cdfe1"
         }
       ]
     },
@@ -15377,42 +15078,6 @@
       ]
     },
     {
-      "name": "readable-stream",
-      "version": "2.3.8",
-      "license": "MIT",
-      "repository": "git://github.com/nodejs/readable-stream",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "ec62dc96da0099b87f4511736c87309335527fb7031639493e06c95728dc8c54"
-        }
-      ]
-    },
-    {
-      "name": "readable-stream",
-      "version": "4.8.0",
-      "license": "MIT",
-      "repository": "https://github.com/nodejs/readable-stream",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "ec62dc96da0099b87f4511736c87309335527fb7031639493e06c95728dc8c54"
-        }
-      ]
-    },
-    {
-      "name": "readdir-glob",
-      "version": "1.1.3",
-      "license": "Apache-2.0",
-      "repository": "git://github.com/Yqnn/node-readdir-glob.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8cd23e2d76d2791765f7dd1025a9df99d81db91da9e2701f283987a1c0435aa3"
-        }
-      ]
-    },
-    {
       "name": "remark-gfm",
       "version": "4.0.1",
       "license": "MIT",
@@ -15461,54 +15126,6 @@
       ]
     },
     {
-      "name": "require-directory",
-      "version": "2.1.1",
-      "license": "MIT",
-      "repository": "git://github.com/troygoode/node-require-directory.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "a92e52eb1fa7cd746e3827bf01d3a3589bbc8e1e51348b1da042aad165525ad1"
-        }
-      ]
-    },
-    {
-      "name": "require-main-filename",
-      "version": "2.0.0",
-      "license": "ISC",
-      "repository": "git+ssh://git@github.com/yargs/require-main-filename.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
-        }
-      ]
-    },
-    {
-      "name": "safe-buffer",
-      "version": "5.1.2",
-      "license": "MIT",
-      "repository": "git://github.com/feross/safe-buffer.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c7cc929b57080f4b9d0c6cf57669f0463fc5b39906344dfc8d3bc43426b30eac"
-        }
-      ]
-    },
-    {
-      "name": "safe-buffer",
-      "version": "5.2.1",
-      "license": "MIT",
-      "repository": "git://github.com/feross/safe-buffer.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c7cc929b57080f4b9d0c6cf57669f0463fc5b39906344dfc8d3bc43426b30eac"
-        }
-      ]
-    },
-    {
       "name": "scheduler",
       "version": "0.28.0",
       "license": "MIT",
@@ -15533,18 +15150,6 @@
       ]
     },
     {
-      "name": "set-blocking",
-      "version": "2.0.0",
-      "license": "ISC",
-      "repository": "git+https://github.com/yargs/set-blocking.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
-        }
-      ]
-    },
-    {
       "name": "sharp",
       "version": "0.35.5",
       "license": "Apache-2.0",
@@ -15553,54 +15158,6 @@
         {
           "file": "LICENSE",
           "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
-        }
-      ]
-    },
-    {
-      "name": "side-channel",
-      "version": "1.1.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/side-channel.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "cfc3f455254c0af0655cc3ff46a41ed644b67599f6043346169d285bf2b3cf3b"
-        }
-      ]
-    },
-    {
-      "name": "side-channel-list",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/side-channel-list.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "side-channel-map",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/side-channel-map.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "5e325595b4ea8cfec3802f545b1def5d7b73e4a5b8e9ba63e32a320f67732292"
-        }
-      ]
-    },
-    {
-      "name": "side-channel-weakmap",
-      "version": "1.0.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/ljharb/side-channel-weakmap.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "cfc3f455254c0af0655cc3ff46a41ed644b67599f6043346169d285bf2b3cf3b"
         }
       ]
     },
@@ -15629,78 +15186,6 @@
       ]
     },
     {
-      "name": "streamx",
-      "version": "2.28.1",
-      "license": "MIT",
-      "repository": "https://github.com/mafintosh/streamx.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "41a2aa55a9ebad3df900cf37fded512714a127f4300ef54b978f834a11ec4d48"
-        }
-      ]
-    },
-    {
-      "name": "string-width",
-      "version": "4.2.3",
-      "license": "MIT",
-      "repository": "sindresorhus/string-width",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "string-width",
-      "version": "7.2.0",
-      "license": "MIT",
-      "repository": "sindresorhus/string-width",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "string-width",
-      "version": "8.3.0",
-      "license": "MIT",
-      "repository": "sindresorhus/string-width",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "string_decoder",
-      "version": "1.1.1",
-      "license": "MIT",
-      "repository": "git://github.com/nodejs/string_decoder.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "11f2aafb37d06b3ee5bdaf06e9811141d0da05263c316f3d627f45c20d43261b"
-        }
-      ]
-    },
-    {
-      "name": "string_decoder",
-      "version": "1.3.0",
-      "license": "MIT",
-      "repository": "git://github.com/nodejs/string_decoder.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "11f2aafb37d06b3ee5bdaf06e9811141d0da05263c316f3d627f45c20d43261b"
-        }
-      ]
-    },
-    {
       "name": "stringify-entities",
       "version": "4.0.4",
       "license": "MIT",
@@ -15709,30 +15194,6 @@
         {
           "file": "license",
           "sha256": "9f084fac69d8cf1e6ce983ba5a3499c7695ed74a26ec625c38f0fd19fddd5e10"
-        }
-      ]
-    },
-    {
-      "name": "strip-ansi",
-      "version": "6.0.1",
-      "license": "MIT",
-      "repository": "chalk/strip-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "strip-ansi",
-      "version": "7.2.0",
-      "license": "MIT",
-      "repository": "chalk/strip-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
         }
       ]
     },
@@ -15809,49 +15270,6 @@
       ]
     },
     {
-      "name": "tar-stream",
-      "version": "3.2.2",
-      "license": "MIT",
-      "repository": "git+https://github.com/mafintosh/tar-stream.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "3fe8d55a98dbf260eace67c00cf9bc53edb46234e840098a0b93df3096b97fb6"
-        }
-      ]
-    },
-    {
-      "name": "teex",
-      "version": "1.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/mafintosh/teex.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "69b1ce578ad0aa97ce5302c7cb8d507c2fbe5a670712b02f0b4a2b95cae3184a"
-        }
-      ]
-    },
-    {
-      "name": "text-decoder",
-      "version": "1.2.7",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/holepunchto/text-decoder.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "tr46",
-      "version": "0.0.3",
-      "license": "MIT",
-      "repository": "git+https://github.com/Sebmaster/tr46.js.git",
-      "notices": []
-    },
-    {
       "name": "trim-lines",
       "version": "3.0.1",
       "license": "MIT",
@@ -15892,18 +15310,6 @@
       ]
     },
     {
-      "name": "typed-query-selector",
-      "version": "2.12.3",
-      "license": "MIT",
-      "repository": "g-plane/typed-query-selector",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e5a82d3d14a3b0fffb34243e6cc465d7b5c9e1ca2ef047ee5842ef50f9999e7e"
-        }
-      ]
-    },
-    {
       "name": "typescript",
       "version": "5.4.5",
       "license": "Apache-2.0",
@@ -15917,13 +15323,17 @@
     },
     {
       "name": "typescript",
-      "version": "5.9.3",
+      "version": "7.0.2",
       "license": "Apache-2.0",
       "repository": "https://github.com/microsoft/TypeScript.git",
       "notices": [
         {
-          "file": "LICENSE.txt",
+          "file": "LICENSE",
           "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47"
+        },
+        {
+          "file": "NOTICE.txt",
+          "sha256": "f5c708b59114507b8b27b48181b6883d106bbca0c1634bbee45b5e344237b66b"
         }
       ]
     },
@@ -16012,30 +15422,6 @@
       ]
     },
     {
-      "name": "universalify",
-      "version": "2.0.1",
-      "license": "MIT",
-      "repository": "git+https://github.com/RyanZim/universalify.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "3fda5977c0904e226190b4e21d64340c1731e2142d6fe5f3dee0090a216b8b63"
-        }
-      ]
-    },
-    {
-      "name": "unzipper",
-      "version": "0.12.3",
-      "license": "MIT",
-      "repository": "https://github.com/ZJONSSON/node-unzipper.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "b9e9abeaf8b92573dc28915d4948dbce30d55b30c688d109898b35e6105c4215"
-        }
-      ]
-    },
-    {
       "name": "use-callback-ref",
       "version": "1.3.3",
       "license": "MIT",
@@ -16060,18 +15446,6 @@
       ]
     },
     {
-      "name": "util-deprecate",
-      "version": "1.0.2",
-      "license": "MIT",
-      "repository": "git://github.com/TooTallNate/util-deprecate.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "0154425673db15cdfa80ecba2c9b1f1a867f7197a006764712849bfc3a93cbb7"
-        }
-      ]
-    },
-    {
       "name": "vfile",
       "version": "6.0.3",
       "license": "MIT",
@@ -16092,246 +15466,6 @@
         {
           "file": "license",
           "sha256": "dd1081884a92952802f4803110a6bb543acea9a814c786d58605b4c1219b5ebb"
-        }
-      ]
-    },
-    {
-      "name": "webdriver-bidi-protocol",
-      "version": "1.0.1",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/GoogleChromeLabs/webdriver-bidi-protocol.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "b08840544230421823a071f4dace39a58be90a54537f36c4b283c93d93d70cc6"
-        }
-      ]
-    },
-    {
-      "name": "webidl-conversions",
-      "version": "3.0.1",
-      "license": "BSD-2-Clause",
-      "repository": "jsdom/webidl-conversions",
-      "notices": [
-        {
-          "file": "LICENSE.md",
-          "sha256": "a889cc4dbee2ae172c179856b25d75b0b7a5a136e1b97109b9b590b2ff1a879c"
-        }
-      ]
-    },
-    {
-      "name": "whatsapp-web.js",
-      "version": "1.34.7",
-      "license": "Apache-2.0",
-      "repository": "git+https://github.com/wwebjs/whatsapp-web.js.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "c392588658e638d0d415b7552cd987f18994bf6acfc58a2bd4b7a39107dae4dc"
-        }
-      ]
-    },
-    {
-      "name": "whatwg-url",
-      "version": "5.0.0",
-      "license": "MIT",
-      "repository": "jsdom/whatwg-url",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "6b7a1792144374d84dc5ed3655b8bbe2754d06f4f1f64a9fb8b9de2d6f448b85"
-        }
-      ]
-    },
-    {
-      "name": "which",
-      "version": "1.3.1",
-      "license": "ISC",
-      "repository": "git://github.com/isaacs/node-which.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "4ec3d4c66cd87f5c8d8ad911b10f99bf27cb00cdfcff82621956e379186b016b"
-        }
-      ]
-    },
-    {
-      "name": "which-module",
-      "version": "2.0.1",
-      "license": "ISC",
-      "repository": "git+https://github.com/nexdrew/which-module.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "852bf81203aa93aa89afc9f881ebb035322dc7334aaceff435c557634c94a815"
-        }
-      ]
-    },
-    {
-      "name": "wrap-ansi",
-      "version": "6.2.0",
-      "license": "MIT",
-      "repository": "chalk/wrap-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0"
-        }
-      ]
-    },
-    {
-      "name": "wrap-ansi",
-      "version": "7.0.0",
-      "license": "MIT",
-      "repository": "chalk/wrap-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "wrap-ansi",
-      "version": "9.0.2",
-      "license": "MIT",
-      "repository": "chalk/wrap-ansi",
-      "notices": [
-        {
-          "file": "license",
-          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
-        }
-      ]
-    },
-    {
-      "name": "ws",
-      "version": "8.22.0",
-      "license": "MIT",
-      "repository": "git+https://github.com/websockets/ws.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2b29dcfe0d6471f7e8c92c5fb38c9f93edee10330937055440192f1832b1ecef"
-        }
-      ]
-    },
-    {
-      "name": "y18n",
-      "version": "4.0.3",
-      "license": "ISC",
-      "repository": "git@github.com:yargs/y18n.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469"
-        }
-      ]
-    },
-    {
-      "name": "y18n",
-      "version": "5.0.8",
-      "license": "ISC",
-      "repository": "yargs/y18n",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2034cce3b6fafcddd642c4175e01d3ddfc332a53b9f20fdc46b1466dc89ac469"
-        }
-      ]
-    },
-    {
-      "name": "yargs",
-      "version": "15.4.1",
-      "license": "MIT",
-      "repository": "https://github.com/yargs/yargs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4"
-        }
-      ]
-    },
-    {
-      "name": "yargs",
-      "version": "17.7.3",
-      "license": "MIT",
-      "repository": "https://github.com/yargs/yargs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4"
-        }
-      ]
-    },
-    {
-      "name": "yargs",
-      "version": "18.2.0",
-      "license": "MIT",
-      "repository": "https://github.com/yargs/yargs.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "2f1a503bfab84b3ba7393627308b3274501e459e3b5185bbb56bbf16cb1602d4"
-        }
-      ]
-    },
-    {
-      "name": "yargs-parser",
-      "version": "18.1.3",
-      "license": "ISC",
-      "repository": "https://github.com/yargs/yargs-parser.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
-        }
-      ]
-    },
-    {
-      "name": "yargs-parser",
-      "version": "21.1.1",
-      "license": "ISC",
-      "repository": "https://github.com/yargs/yargs-parser.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
-        }
-      ]
-    },
-    {
-      "name": "yargs-parser",
-      "version": "22.0.0",
-      "license": "ISC",
-      "repository": "https://github.com/yargs/yargs-parser.git",
-      "notices": [
-        {
-          "file": "LICENSE.txt",
-          "sha256": "365496ca1f56da40b23c9815fc40fa9005847b2f8f8fd1c1a4929ef25ec8cd1d"
-        }
-      ]
-    },
-    {
-      "name": "zip-stream",
-      "version": "6.0.1",
-      "license": "MIT",
-      "repository": "https://github.com/archiverjs/node-zip-stream.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "79bad9f51738814f83251ae89460326b2ff2ea19ff5f71ab8f7636b2e17bb231"
-        }
-      ]
-    },
-    {
-      "name": "zod",
-      "version": "4.6.7",
-      "license": "MIT",
-      "repository": "git+https://github.com/colinhacks/zod.git",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
         }
       ]
     },

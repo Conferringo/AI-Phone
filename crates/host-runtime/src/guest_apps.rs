@@ -9,11 +9,7 @@ use std::{
 };
 
 const PACKAGE: &str = "com.github.metacubex.clash.meta";
-const SOURCE: [&str; 3] = [
-    "config/clash-apps.json",
-    "scripts/prebuilt_guest_apps.py",
-    "scripts/apk_review.py",
-];
+const SOURCE: [&str; 2] = ["config/clash-apps.json", "scripts/tooling/phone-apps.ts"];
 fn invalid() -> Error {
     Error::Invalid("guest_application_component")
 }

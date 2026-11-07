@@ -6,8 +6,8 @@ The optional `phone-apps` runtime component carries AI Phone's Unicode input/not
 
 ```sh
 . ./scripts/android-env.sh
-python3 scripts/prebuilt_phone.py --build
-python3 scripts/build_client.py --platform macos \
+./scripts/bun scripts/artifacts.ts phone --build
+./scripts/bun scripts/build-client.ts --platform macos \
   --with-web-runtime --with-service-runtime --with-phone-apps \
   --android-runtime /path/to/android.payload
 ```
@@ -22,7 +22,7 @@ The Android runtime and phone APKs are separate requirements: Java can be omitte
 
 ## Input and notification readiness
 
-The Rust host runtime owns the serial-bound input setup lock, installation intent and permission observations. Its private length-prefixed protobuf command is `--setup-phone-input`; bundled service manifests must qualify `ai-phone-input-setup-v2` before dispatch. The existing Python entry remains a compatibility launcher, with no ADB policy or recovery state of its own. Source contributors build the dedicated native helper; complete clients use the bundled assistant.
+The Rust host runtime owns the serial-bound input setup lock, installation intent and permission observations. Its private length-prefixed protobuf command is `--setup-phone-input`; bundled service manifests must qualify `ai-phone-input-setup-v2` before dispatch. Source contributors build the dedicated native helper; complete clients use the bundled assistant.
 
 An installed input package alone is insufficient. Setup verifies user 0, registered and selected Unicode input, hardware-keyboard input, notification access and the attention accessibility service. It repairs missing required capabilities while retaining unrelated input methods and accessibility services. Read-only observation never grants permissions or changes the selected keyboard. Notification access is queried through Android's notification service; a lagging secure-settings mirror is not proof of authorization. Probe transfers are content-checked and omitted when the device already has matching bytes.
 
@@ -40,7 +40,7 @@ Current platform support, installer availability and distribution requirements a
 
 手机控制组件包含 Unicode 输入/通知服务与无抽屉桌面的预构建 APK。构建阶段使用 Java 和 Android 工具，用户初始化时校验并安装随包 APK，不现场编译。独立开发签名保存在忽略的构建目录，不复用现有手机上的私有签名文件；完整生产签名与升级审查仍待完成。
 
-输入初始化的锁、安装意图、输入法与通知授权核验由 Rust 负责，原 Python 入口仅保留兼容启动。已安装输入应用也要核验必要能力，补齐时保留其他输入法和无障碍服务；只读核验不会改设置。通知权限以系统通知服务的实际返回为准，相同探针不重复传输。旧安装意图继续兼容，结果未知先观察，不直接重装。这一就绪结果不代表 Agent 已收到真实通知或整机初始化已完成。
+输入初始化的锁、安装意图、输入法与通知授权核验由 Rust 负责。已安装输入应用也要核验必要能力，补齐时保留其他输入法和无障碍服务；只读核验不会改设置。通知权限以系统通知服务的实际返回为准，相同探针不重复传输。旧安装意图继续兼容，结果未知先观察，不直接重装。这一就绪结果不代表 Agent 已收到真实通知或整机初始化已完成。
 
 完整离线初始化还可在同一串行锁内安装随包桌面及对应 ABI 的 Clash，安装意图使用 protobuf。现有应用和桌面选择保留，新桌面选中后须核验；未知安装结果不重放。仅在创建新安装意图时读取 APK 摘要，恢复已有应用不重复读取整个 APK。其他平台的旧源码开发入口仍有迁移工作。
 

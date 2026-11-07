@@ -19,11 +19,11 @@ publication gates still apply to internal volumes and their complete contents.
 
 ```sh
 cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
-  split installer.deb installer.deb.volumes INSTALLER_SHA256
+  split installer.exe installer.exe.volumes INSTALLER_SHA256
 cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
-  verify installer.deb.volumes/installer.deb.volumes.json MANIFEST_SHA256
+  verify installer.exe.volumes/installer.exe.volumes.json MANIFEST_SHA256
 cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
-  restore installer.deb.volumes/installer.deb.volumes.json downloads MANIFEST_SHA256
+  restore installer.exe.volumes/installer.exe.volumes.json downloads MANIFEST_SHA256
 ```
 
 These are maintainer commands. Users are not asked to retrieve or reconstruct

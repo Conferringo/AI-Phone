@@ -1,165 +1,52 @@
 # Windows backend runtime
 
-The Windows backend factory assembles an offline Linux root filesystem for an
-application-owned WSL2 distribution. It contains prebuilt services and a desktop
-environment; end users do not compile a backend or prepare its container images.
-Windows distribution import, reboot recovery and the native Android bridge are
-separate integration boundaries and are not enabled by this component alone.
+The factory assembles an offline Linux root filesystem for an application-owned WSL2 distribution. End users do not compile the backend or prepare container images. Native Windows Android/WHPX and WSL integration require separate qualification.
 
-## Contents and ownership
+## Contents
 
-| Resource | Owner and contract |
-| --- | --- |
-| Ubuntu root filesystem | Immutable base digest, original notices and a bounded archive inventory |
-| Rust initializer, Bun web/services, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
-| Docker Engine and Compose | Pinned Alpine dependency closure in an isolated musl prefix; private Unix socket and client state |
-| Database, cache, workspace and desktop images | Four-role sealed image capsule; no build or pull during initialization |
-| Guest phone tools | Pinned Linux x64 platform-tools, upstream notices and a vendored AOSP media schema; no nested emulator or system image |
-| User state | Created under `/var/lib/aiphone` at runtime; excluded from the distributed rootfs |
+| Resource | Contract |
+|---|---|
+| Ubuntu base | Immutable base digest and retained distribution notices |
+| Rust services | Assistant with channels, phone runner/media, OCR and native initializer |
+| Web | Next.js standalone resources and matched Bun executable |
+| Docker and Compose | Pinned Alpine package closure in an isolated musl prefix |
+| Container images | Sealed workspace, desktop, PostgreSQL and Redis images |
+| Phone bridge | Linux x64 ADB, upstream notices and the emulator media schema |
+| User state | Created under `/var/lib/aiphone`; excluded from the distributed rootfs |
 
-WSL source admission requires prebuilt Web and JavaScript services, both launched with Bun. The factory uses pinned Python tools for build-time normalization and verification, then removes `/opt/aiphone/tools` and `/opt/aiphone/bootstrap` before exporting the flattened root filesystem. These build tools and the qualification worker are not shipped in newly assembled root filesystems. Existing Python-only and Python/Node capsules remain readable with their recorded inventory; registered distributions are not rewritten. The Linux desktop's development tools are separate and unchanged.
+The WSL factory is TypeScript build tooling. It extracts the source-bound Rust bootstrap and assembles the clean image directly. It does not export an existing user container. Phone applications and guest Clash APKs are optional paired component groups; complete Windows assembly requires both groups.
 
-The backend does not import the host's Docker context or Lima state. It owns
-`unix:///run/aiphone/docker.sock` and its CLI configuration. Android SDK parsing is
-lazy: an unavailable phone returns a device error while desktop media can start.
-The Windows host remains responsible for native Android acceleration and control.
+The outer capsule contains `rootfs.tar.gz` and `WSL-BACKEND-MANIFEST.json`. Its manifest binds the compressed body, uncompressed inventory, required native entries, source/image identities and base license files. Rootfs inspection streams decompression and hashing together. Prepared native resources contain `rootfs.tar.gz` and `manifest.json`.
 
-Backend startup now includes the qualified Rust phone Runner before the assistant.
-Linux/WSL service control and state inspection use the Rust v2 controller. The sealed WSL initializer now owns source/profile preparation, engine startup, container ownership, image activation, database preparation and service startup in Rust. The former Python runtime initializer is removed; factory verification and the qualification driver remain Python pending their separate migration.
-Its authenticated, read-only cursor endpoint is qualified without requiring a
-connected phone. Restart retains the existing service supervisor; shutdown stops
-the Runner before the owned engine. Endpoint availability is not phone readiness.
+## Native initialization
 
-Source expansion uses the shared Rust resource publisher. The factory extracts
-the source-bound native component, verifies its staging capability and includes
-the exact source digest in the rootfs inventory. Both verification and first-run
-initialization use that component to check, stage or resume the source tree and
-its persistent data links. The qualification driver invokes the same native
-initializer as the Windows client; it consumes fixed phase markers and does not
-stage or hash the source a second time. Registered guests keep
-their installed bootstrap; in-place backend upgrades remain separate work.
+`aiphone-bootstrap --initialize-wsl-backend` reads configuration from stdin: locale, phone CPU/RAM/storage and desktop CPU/RAM. The configuration remains bounded to 8 KiB and uses the shared host-profile policy. Resume preserves profiles, passwords, tokens, devices and chats.
 
-## Native initialization contract
+The installation is `/var/lib/aiphone/installation`; the owned engine socket is `unix:///run/aiphone/docker.sock`. Source staging, engine and image activation, database role preparation, migrations and service startup are Rust operations. Initialization imports bundled images without pulling or building them. It does not import a host Docker context or expose Windows drive mounts.
 
-`aiphone-bootstrap --initialize-wsl-backend` reads an at-most-8-KiB configuration object from stdin: locale, phone CPU/RAM/storage, and desktop CPU/RAM. Configuration is parsed into the host-profile type before creating installation state. Existing resource profiles, passwords, tokens and chats are preserved on resume.
+`backend_started: true` confirms the backend only. `phone_ready`, `complete_device_bundle` and `windows_boot_verified` remain false in that acknowledgement. The Windows native client subsequently boots or resumes Android and establishes the paired ADB/media connection. Device provisioning installs input/notification resources, creates or recovers the desktop, observes frames and emits `NativeWslDevicesReady` over protobuf. Only that receipt completes device setup.
 
-The installation lives at `/var/lib/aiphone/installation`; its engine socket is `unix:///run/aiphone/docker.sock`. A single installation lease serializes writers. Engine readiness retains the 30-second deadline. The initializer refuses foreign containers and quarantined restores, imports sealed images without builds/pulls, and starts the existing owned desktop by exact ID only when stopped. First desktop creation and phone pairing remain owned by device provisioning.
+Interrupted actions retain their installation/provisioning records. Recovery observes unknown outcomes rather than recreating a device or blindly repeating an action. Registered distributions retain their installed bootstrap; in-place backend upgrades are a separate lifecycle.
 
-The final acknowledgement contains `backend_started: true`, with `phone_ready`, `complete_device_bundle` and `windows_boot_verified` all false. Backend startup cannot certify a complete device pair or a physical Windows installation. Complete EXE assembly and Windows first boot still require their own qualification; passing isolated process and Linux ARM64 tests does not establish that result.
+## Maintainer factory
 
-The [Rust phone/backend bridge](engineering/device-bridge.md) supplies paired ADB and emulator-gRPC transport. Its startup receipt is separate from phone readiness. Newly built root filesystems include `/opt/aiphone/native-phone-bridge`, the SDK root already used by the backend profile. The maintainer downloads platform-tools using the existing Android factory pin; assembly then verifies and copies the offline resource, including its version, file digests and notices. The rootfs factory executes the packaged Linux ADB version command without network access. Archive admission requires ADB and the media schema and permits only that schema under the `emulator` directory, never an emulator executable.
+```sh
+./scripts/bootstrap.sh
+./scripts/bun scripts/wsl-backend-qualification.ts --with-device-apps
+```
 
-The source-provenance record identifies the exact vendored AOSP schema; it is not claimed byte-identical to every SDK release. Maintainer checks exercise the existing discovery/media consumer against an actual Android. The [native phone lifecycle](engineering/device-bridge.md#native-lifecycle-and-automatic-pairing) now starts and holds the paired guest after backend initialization. This resource slice alone does not provision the phone or establish complete readiness. Capsules without the phone-bridge resources must be rebuilt for that inventory. Existing registered guests are preserved; an in-place upgrade is not supplied by this resource factory.
+Use an explicitly disposable GitHub-hosted Linux x64 workspace with `AI_PHONE_DISPOSABLE_QUALIFICATION=1`. The optional phone applications require Android 35 build tools and Java 17. The factory builds the same sealed source and images used by the backend, then imports the resulting rootfs into an owned, isolated container.
 
-## Native client resources
+The existing Rust `release-tools wsl-qualify` worker runs as PID 1. It invokes the actual native initializer and verifies services, database roles, Redis, real desktop frames/media, work-file persistence and a database marker. Two phases reuse the same owned volume and verify restart persistence. The outer TypeScript driver records the worker receipts and removes only its labelled container, image and volume. Private logs, root filesystems and device/account data are not public evidence.
 
-Maintainer builds accept `--wsl-runtime /factory/backend.payload` for Windows. The resource preparer validates the sealed capsule and materializes its exact `rootfs.tar.gz` and manifest under the client's `host/wsl` directory. A compiled manifest digest binds that group to the executable. Artifact inspection rejects changed or additional group members. Source-only builds omit the group; end users do not run this preparation step.
+These checks establish Linux backend behavior; they do not establish native Windows WSL/WHPX/firewall or physical installation behavior. The current migration candidate still awaits consolidated validation and rebuilt complete installers. See [release status](release-status.md).
 
-The Rust client passes the installed resource directly to the application-owned WSL lifecycle. When an Android component is also present, [native Android preparation](engineering/native-android-preparation.md) validates it and creates or recovers the phone configuration under the same installation lock. The first WSL import checks its image digest and capacity; a registered distribution resumes from its owned disk without another base-image copy or import. The initializer sends the bounded first-run request through stdin to the bundled backend entry. A successful terminal acknowledgement marks only the backend initialized. The native phone worker then checks the peer capability, boots or observes the same phone and holds its host/guest bridge independently of the UI. Interrupted execution remains unknown until observed; it does not reimport or erase the guest. Complete device provisioning and installed Windows qualification remain pending, so the complete-install checkpoint and independent Windows deployment stay disabled.
+WSL registration follows [Microsoft's import interface](https://learn.microsoft.com/en-us/windows/wsl/basic-commands#import-a-distribution) and [distribution VHD location](https://learn.microsoft.com/en-us/windows/wsl/disk-space#how-to-locate-the-vhdx-file-and-disk-path-for-your-linux-distribution).
 
-## Native registration
+## 中文
 
-The Rust host runtime owns rootfs admission, WSL2 registration and registration
-recovery. It verifies the base-image digest once before a new import and records
-the application-owned directory before invoking `wsl.exe`. Registry reads use
-native Windows APIs through Microsoft's `windows-registry` crate. Recovery binds
-the distribution name, WSL version and actual registered directory to the saved
-owner record.
+Windows 客户端包含干净的 WSL 后端根文件系统，内置 Rust 服务、网页、Docker/Compose、数据库及桌面镜像、ADB 与媒体协议。工厂使用 TypeScript，实际初始化、控制、渠道和媒体由 Rust 负责。
 
-| Saved state | Recovery |
-| --- | --- |
-| Prepared | Verify the base image before the first import |
-| Importing | Observe the registered directory; an absent or uncertain result is not replayed |
-| Registered | Reuse the existing guest without reimporting or rereading its base image |
+运行数据留在 `/var/lib/aiphone`，系统包不包含账号、聊天或设备盘。客户端先初始化 WSL，再启动原生 Android 并建立配对；后端启动回执与双设备就绪回执分开，不能相互替代。
 
-The registration stage preserves existing guest disks and rejects a changed base
-image or a foreign registration. It does not unregister distributions, change the
-default distribution, modify global WSL settings or shut down other environments.
-Native command cancellation waits for the owned process and its bounded output
-readers; an interrupted OS operation remains subject to registration recovery.
-
-`wsl-host import <rootfs> <installation> <sha256> <expanded-bytes>` is the native
-installer component interface, not an end-user deployment procedure. Its result
-keeps `backend_initialized=false` and `phone_ready=false`. The separate
-`start-bundle` component initializes the existing backend through stdin and accepts
-only a successful bounded terminal acknowledgement. It retains `phone_ready=false`.
-The native client then starts or observes its detached phone worker and requests
-final device activation for that exact bridge identity. The source-bound Rust
-assistant requires the `ai-phone-device-setup-v2` capability before accepting the
-private `--setup-wsl-devices` command. It observes the live pair, configures the
-offline phone applications/input, verifies both notification channels through the
-Runner, and creates or recovers the desktop using the existing durable API request.
-It verifies the desktop frame and live pair again before emitting a bounded
-`NativeWslDevicesReady` protobuf receipt. Only that receipt can complete the client
-checkpoint. An interrupted or timed-out guest operation remains unknown; recovery
-observes its installation/provisioning records instead of recreating devices.
-
-This activation path is wired in code, not qualified as a complete Windows
-installation. Real Windows WSL/WHPX/firewall behavior, fresh device installation,
-remaining Python/Bun migration and in-place upgrades of registered guests still
-need qualification. Registration flags and distribution publication gates remain
-separate from the final runtime receipt.
-The Windows CI job compiles this component and exercises its registry adapter;
-those checks do not establish a real WSL/WHPX guest installation.
-
-The command boundary follows [Microsoft's WSL import interface](https://learn.microsoft.com/en-us/windows/wsl/basic-commands#import-a-distribution).
-Registration directory identity follows the [documented VHD location lookup](https://learn.microsoft.com/en-us/windows/wsl/disk-space#how-to-locate-the-vhdx-file-and-disk-path-for-your-linux-distribution).
-
-## Factory and qualification
-
-The backend factory can also embed the two phone application groups with
-`python3 scripts/wsl_backend_qualification.py --with-device-apps`. This maintainer
-path compiles the input method, launcher and notification probe, then collects
-the pinned Clash APKs using the existing application producers. It requires
-Android 35 compiler tools and Java 17 on the disposable build host. Admission
-accepts either the three backend components or those components with both phone
-application groups; partial groups and a nested container host are rejected.
-The additional resources do not establish native phone, transport or complete
-Windows first-run readiness. Both qualification modes now include the guest phone tools; only the optional mode carries the two phone application groups.
-
-[`wsl-backend.yml`](../../.github/workflows/wsl-backend.yml) runs on each pull
-request and can also be dispatched explicitly. The disposable Linux factory
-builds the precompiled components, assembles and
-inspects the rootfs, then boots that same filesystem in an owned test container.
-The outer maintainer fixture builds `release-tools wsl-qualify` and copies that
-Rust worker into the owned container before starting it. No host bind mount or
-Docker socket is exposed. The worker uses typed protobuf requests and decodes
-actual PNG/JPEG frames locally; no guest Python or JavaScript qualification entry
-is required. The outer factory and evidence validator still contain Python and
-remain migration work; this change does not establish a fully Rust build system.
-The nested-engine test uses a random identity and volume, with no host source,
-Docker socket or device mounts.
-
-Qualification starts the bundled engine, PostgreSQL, Redis, assistant, web,
-channels, media and desktop. It registers a test desktop through protobuf,
-checks an authenticated web media frame, then starts the same isolated state a
-second time to verify a work file and database marker. Normal completion requires
-all checks and owned-resource cleanup to succeed. The workflow retains only a
-JSON receipt; images, logs, credentials and guest data are not uploaded.
-
-The component records `windows_boot_verified=false`, `phone_ready=false` and
-`complete_device_bundle=false`. Linux qualification is not a Windows WSL/WHPX
-installation result. The Windows independent-host policy remains disabled until
-that integration has its own evidence. Binary redistribution is reviewed through
-the [release requirements](preview-release.md) and [third-party notices](../../THIRD_PARTY_NOTICES.md).
-
-Contributor setup and automated checks are described in [Contributing](../../CONTRIBUTING.md).
-
-## Windows 后端
-
-该组件为应用专属 WSL2 环境生成离线 Linux 根文件系统，包含预编译后端、工具和四类
-容器镜像。用户数据在初始化时单独创建，不进入发行镜像。Docker 使用独立 socket 与
-配置，电脑媒体服务不依赖手机 SDK 已经就绪。
-
-预编译 WSL 的 Web 与服务使用 Bun。工厂仅在构建时使用固定 Python 工具完成规范化与验证，
-验证后删除工具与脚本目录，再导出完整根文件系统。Rust 验收 worker 只复制进自有测试
-容器，不随客户端分发；它直接请求 protobuf API 并解码实际 PNG/JPEG。已有两种旧工具
-清单保持可读，已注册系统不重写，Linux 电脑内部的开发工具保持。
-
-专用 Linux 工厂会实际检查后端、认证网页画面，以及两次启动间的工作文件和数据库
-保留；结果只保存为 JSON 回执。该验证不等同于 Windows 安装通过。Rust 已接通专属 WSL 注册与客体后端初始化，
-通过标准输入传递配置并核对有界终态回执；中断后保留未知结果与原设备盘，不重复导入。
-源码展开、配置、镜像激活与服务编排已接入 Rust；外层工厂、维护 fixture 和回执验证仍有
-Python，不能称纯 Rust 完成。剩余迁移、系统重启恢复、WHPX、原生 Android 桥与
-真实双设备就绪仍未通过，Windows 独立部署保持关闭，完整发行状态见
-[发行范围](release-status.md)。
+现有启动、重启和持久化验收由隔离容器内的 Rust worker 执行，外层驱动管理所属资源与回执。当前迁移候选尚未集中验证；Windows 实机、WHPX/防火墙、完整首启及升级资格分别记录。

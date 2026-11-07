@@ -21,28 +21,28 @@ jobs:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
       CARGO_HTTP_MULTIPLEXING: 'false'
-      PYTHONDONTWRITEBYTECODE: '1'
-      PYTHONPATH: scripts
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: '3.12'
+      - name: Fixed Bun tooling
+        shell: bash
+        run: ./scripts/bootstrap.sh
       - name: Precompile the native client while the Linux backend builds
         shell: pwsh
         run: |
           rustup default 1.96.0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python scripts/required_tests.py test_native_client_cargo
+          cargo build --locked -p ai-phone-release-tools --bin release-tools
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -c "from build_client import windows_cargo; windows_cargo('build')"
+          ./.tools/bin/bun.exe scripts/prepare-client.ts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.tools/bin/bun.exe -e "import {windowsCargo} from './scripts/tooling/client-build.ts'; windowsCargo('build')"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Preserve compiled dependencies and source timestamps
         shell: pwsh
         run: |
-          $cargoRoot = python -c "from build_client import native_environment; print(native_environment()['CARGO_HOME'])"
+          $cargoRoot = ./.tools/bin/bun.exe -e "import {nativeEnvironment} from './scripts/tooling/client-build.ts'; console.log(nativeEnvironment().CARGO_HOME)"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           tar -czf "$env:RUNNER_TEMP/windows-native-dependencies.tar.gz" -C apps/client/src-tauri target -C $cargoRoot registry
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -66,7 +66,6 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
-      PYTHONDONTWRITEBYTECODE: '1'
       NEXT_TELEMETRY_DISABLED: '1'
       AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
     steps:
@@ -78,7 +77,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           AI_PHONE_USE_FACTORY_ASSETS: ${{ vars.AI_PHONE_USE_FACTORY_ASSETS }}
-        run: python3 scripts/native_factory_inputs.py
+        run: |
+          ./scripts/bootstrap.sh
+          ./scripts/bun scripts/native-factory-inputs.ts
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
@@ -87,7 +88,7 @@ jobs:
           set -euo pipefail
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip python3-pil tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates unzip tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
@@ -104,26 +105,16 @@ jobs:
           set-host: true
           daemon-config: |
             {"features":{"containerd-snapshotter":true}}
-      - name: Full Windows resource and handoff contracts
-        run: PYTHONPATH=scripts python3 -m unittest test_windows_client_factory test_client_delivery test_wsl_resources test_wsl_backend
       - name: Assemble and qualify clean backend startup and restart
         env:
           AI_PHONE_DISPOSABLE_QUALIFICATION: '1'
-        run: python3 scripts/wsl_backend_qualification.py --with-device-apps
+        run: ./scripts/bun scripts/wsl-backend-qualification.ts --with-device-apps
       - name: Seal source-bound backend handoff
         id: identity
         run: |
           set -euo pipefail
-          python3 scripts/windows_client_factory.py stage-backend --report dist/wsl-backend-qualification.json --backend .tools/wsl-backend-qualification/assembled/wsl-backend.payload
-          python3 - <<'PYCODE'
-          import os
-          from pathlib import Path
-          import sys
-          sys.path.insert(0, 'scripts')
-          from artifact_io import digest
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-              output.write('sha256='+digest(Path('dist/windows-backend/windows-backend.json'))+'\n')
-          PYCODE
+          ./scripts/bun scripts/windows-client-factory.ts stage-backend --report dist/wsl-backend-qualification.json --backend .tools/wsl-backend-qualification/assembled/wsl-backend.payload
+          ./scripts/bun -e 'import {appendFileSync} from "node:fs"; import {digest} from "./scripts/tooling/process.ts"; appendFileSync(process.env.GITHUB_OUTPUT!, "sha256="+await digest("dist/windows-backend/windows-backend.json")+"\n")'
       - name: Transfer only sealed backend bytes to the native Windows builder
         id: handoff
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -154,7 +145,6 @@ jobs:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
       CARGO_HTTP_MULTIPLEXING: 'false'
-      PYTHONDONTWRITEBYTECODE: '1'
       AI_PHONE_BACKEND_IDENTITY: ${{ needs.backend.outputs.identity }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -163,17 +153,15 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: '3.12'
+      - name: Fixed Bun tooling
+        shell: bash
+        run: ./scripts/bootstrap.sh
       - name: Native build and inspection tools
         shell: pwsh
         run: |
           rustup default 1.96.0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           "C:\Program Files\7-Zip" >> $env:GITHUB_PATH
-          python scripts/bootstrap_bun.py --dependencies
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Acquire the producing job's exact unpublished backend
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -188,31 +176,20 @@ jobs:
           merge-multiple: true
       - name: Restore the matching compiler inputs before installer assembly
         shell: pwsh
-        env:
-          PYTHONPATH: scripts
         run: |
-          $cargoRoot = python -c "from build_client import native_environment; print(native_environment()['CARGO_HOME'])"
+          $cargoRoot = ./.tools/bin/bun.exe -e "import {nativeEnvironment} from './scripts/tooling/client-build.ts'; console.log(nativeEnvironment().CARGO_HOME)"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           New-Item -ItemType Directory -Force $cargoRoot | Out-Null
           tar -xzf dist/windows-native-dependencies/windows-native-dependencies.tar.gz -C apps/client/src-tauri target
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           tar -xzf dist/windows-native-dependencies/windows-native-dependencies.tar.gz -C $cargoRoot registry
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Required Windows filesystem contracts without skips
-        shell: pwsh
-        run: |
-          python scripts/required_tests.py test_android_windows_runtime.WindowsAndroidRuntimeTests.test_sdk_component_junction_never_imports_an_outside_tree test_private_files.PrivateFileTests.test_native_windows_acl_rejects_an_extra_world_read_grant
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Required Windows candidate retention without skips
-        shell: bash
-        run: python3 scripts/required_tests.py test_candidate_retention test_retention_shell
       - name: Assemble native Android and Linux into one inspected EXE
         shell: pwsh
         run: |
-          python scripts/windows_client_factory.py build --backend dist/windows-backend --identity $env:AI_PHONE_BACKEND_IDENTITY
+          ./.tools/bin/bun.exe scripts/windows-client-factory.ts build --backend dist/windows-backend --identity $env:AI_PHONE_BACKEND_IDENTITY
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $env:PYTHONPATH = 'scripts'
-          python -c "from build_client import windows_cargo; windows_cargo('test')"
+          ./.tools/bin/bun.exe -e "import {windowsCargo} from './scripts/tooling/client-build.ts'; windowsCargo('test')"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Retain complete-build text receipt
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

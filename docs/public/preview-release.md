@@ -14,7 +14,7 @@ Never build a distribution from a live user's guest disk or database. Model keys
 
 Google SDK download archives are not automatically redistribution-cleared. SDK terms distinguish the SDK grant from components governed by open-source licences; each shipped image/emulator/component needs its own reviewed source and terms. The project may need source-built AOSP/emulator artifacts. Original Apache-2.0 code does not relicense third-party binaries.
 
-Required end-user delivery is one complete DMG for macOS Apple Silicon, one EXE for Windows, and one complete Linux DEB with signed APT repository metadata. System images, emulators and services belong inside those installers. APT installs the DEB; it is not a separate package format.
+Required end-user delivery is one complete DMG for macOS Apple Silicon, one EXE for Windows. System images, emulators and services belong inside those installers.
 
 GitHub requires each release asset to be under 2 GiB. Complete installers must meet that limit before publication. Verified volumes are internal build transport only. An optional ZIP download envelope may contain one complete installer, but cannot substitute for its runtime contents or require users to assemble parts. The complete payload must exist and be checked before publishing any installer.
 
@@ -28,6 +28,6 @@ Sources: [Android SDK terms, §§3.4–3.5](https://developer.android.com/studio
 
 禁止把当前用户的设备盘、数据库、账号、聊天、联系人、订阅或密钥打进镜像。版本代码、基础镜像与用户数据分离；更新不能覆盖现有用户内容。
 
-发行目标：macOS Apple Silicon交付一个完整DMG，Windows交付一个完整EXE，Linux提供DEB与APT软件源。系统镜像、模拟器和运行服务内置；APT直接安装DEB，不是另一种包格式。GitHub单附件必须小于2GiB，分卷仅用于内部构建传输。可选ZIP中也只放一个完整安装包，不让用户拼接部件或另找依赖。
+发行目标：macOS Apple Silicon交付一个完整DMG，Windows交付一个完整EXE。系统镜像、模拟器和运行服务内置。GitHub单附件必须小于2GiB，分卷仅用于内部构建传输。可选ZIP中也只放一个完整安装包，不让用户拼接部件或另找依赖。
 
 镜像、模拟器和所有第三方组件需要逐项来源与再分发依据，必要时从 AOSP/模拟器源码构建，并提供对应源码与声明。项目的 Apache-2.0 许可证不改变第三方二进制的授权条件。

@@ -16,7 +16,6 @@ Installation flow: **device resources → model → workbench**. A complete pack
 |---|---|---|
 | macOS Apple Silicon | Desktop application with local device runtime | Full package compiled; release qualification |
 | Windows x64 | Desktop application with local device runtime | Host integration in progress |
-| Linux x64 | DEB and signed APT repository | DEB compiled; APT channel unpublished |
 
 [Release requirements](docs/public/preview-release.md) · [Current status](docs/public/release-status.md) · [Issues](https://github.com/Conferringo/AI-Phone/issues/new/choose)
 
@@ -45,7 +44,7 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 | Layer | Implementation | Directory |
 |---|---|---|
 | Workbench | Next.js App Router/Turbopack, React, Tailwind, shadcn/Radix | `apps/web` |
-| Native client | Tauri 2, client-managed macOS/Linux setup and local workbench | `apps/client` |
+| Native client | Tauri 2, client-managed macOS/Windows setup and local workbench | `apps/client` |
 | Agent/device services | Rust, Axum, Tokio | `crates` |
 | Protocol/state | protobuf, PostgreSQL/SQLx; Redis reserved for optional caching | `packages/protocol`, `compose.yaml` |
 | Runtime/images | Native ARM64 Android Emulator, Docker Compose Linux | `infra`, `scripts` |
@@ -54,14 +53,14 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 
 [Architecture](docs/public/architecture.en.md) · [Documentation index](docs/public/index.md) · [Conversation steering](docs/public/conversation-steering.md) · [Capabilities and data](docs/public/capabilities-and-data.md)
 
-The final first-party runtime and build/release tools target Rust, alongside the existing Next.js frontend. Legacy Python installation/recovery orchestration and Python CI/build tooling remain in the current source and must be retired before final distribution. The project is not Python-free yet.
+The first-party backend, device control, media, channels and installation/recovery use Rust. Next.js/TypeScript supplies the interface; Bun runs frontend/build tooling. The current migration candidate awaits consolidated validation and rebuilt complete installers.
 
 Models/APIs, connections and memory belong to Agents; Skills, knowledge and work files are shared. Code is separate from user state. Environment secrets, guest disks, accounts, chats, attachments and private evidence are excluded from the repository. Updates require versioned artifacts, backups, migrations and rollback rather than a direct `git pull` into user state.
 
 ## Roadmap
 
 1. Complete the Rust runtime/build-tool migration, integrated installation, recovery and signed updates.
-2. Native platform input/audio/touch, language and accessibility acceptance; Windows/Linux host providers.
+2. Native platform input/audio/touch, language and accessibility acceptance; Windows host integration.
 3. Smaller UI/execution ownership boundaries; long-running tasks and host sleep/reboot recovery.
 4. Model discovery/capability probes, specialized app Skills and Skill upgrade/rollback.
 5. Speech input/output, interruptible realtime voice, a call sandbox, then user-configured real telephony.

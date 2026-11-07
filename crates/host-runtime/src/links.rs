@@ -140,14 +140,7 @@ fn checked_component_parents(root: &Path, parent: &Path) -> Result<()> {
 }
 
 pub(crate) fn runtime(root: &Path, components: &[String], create: bool) -> Result<()> {
-    for (role, metadata, prefix) in [
-        ("web", "runtime/manifest.json", "runtime/web"),
-        (
-            "js-services",
-            "runtime/js-services/manifest.json",
-            "runtime/js-services",
-        ),
-    ] {
+    for (role, metadata, prefix) in [("web", "runtime/manifest.json", "runtime/web")] {
         if components.iter().any(|name| name == role) {
             component(root, metadata, prefix, create)?;
         }

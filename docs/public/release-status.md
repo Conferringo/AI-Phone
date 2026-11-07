@@ -1,86 +1,34 @@
 # Release status
 
-Updated 2026-11-07. Source code and technical documentation are available. **Complete product installers are not published.** This page is the current reference for platform availability and known product limits.
+Updated 2026-11-08. Source code and technical documentation are public. **Current-source complete product installers are not published.**
 
-## Platform qualification
+## Distribution targets
 
-| Target | Available implementation | Remaining delivery requirements |
-| --- | --- | --- |
-| macOS Apple Silicon | Inspected and retained complete single-file DMG candidate | Current-source bundle, integrated lifecycle, upgrades, signing/notarization and product acceptance; physical installation untested |
-| Windows x64 | Inspected and retained single-file EXE candidate with offline WebView2; backend startup/restart qualified | Current-source bundle, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade and source/licence review; physical installation and Windows guest boot untested |
-| Linux x64 | Inspected and retained complete single-file DEB candidate; signed APT pipeline under qualification | Binary/channel publication, installed-client lifecycle and applicable source/licence review; physical installation untested |
-| Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
+| Host | Installer | Remaining work |
+|---|---|---|
+| macOS Apple Silicon | One DMG with local devices and services | Complete migration, consolidated validation, rebuild, notices/corresponding-source review; signing and notarization |
+| Windows x64 | One EXE with native Android, WSL backend and offline WebView2 | Complete migration, consolidated validation, rebuild, notices/corresponding-source review; Windows boot and platform qualification |
 
-The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
+Both clients provide an Android phone and a Linux desktop. Device/model configuration happens inside the client. Guest disks, accounts, conversations, files and credentials remain separate from versioned application resources. Installation never packages a live user's device or database.
 
-Retained [Mac](https://github.com/Conferringo/AI-Phone/actions/runs/42324346884) and [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42324349334) candidates use source `ff69779b0ff7`: a 1,973,282,210-byte DMG and a 2,099,264,964-byte DEB with unsigned APT metadata. A newer [Windows build](https://github.com/Conferringo/AI-Phone/actions/runs/42342551061), source `a034466c3b82`, produced a 2,092,733,018-byte EXE. Its inspected payload includes the 214,927,568-byte offline WebView2 installer, Android resources and the WSL root filesystem, with no `host/entry.py`. It supersedes the retained historical Windows candidate that required a WebView2 download.
+Physical installation is waived for previews on the two distribution targets and remains untested. A waiver is not a passed check. Historical draft installers do not qualify the current source.
 
-Each retained asset digest matches its package manifest and checksum. They are unpublished maintainer candidates, not current-source downloads or installation certificates. Windows guest boot and physical installation were not executed; signing and applicable source/licence review are incomplete. A successful assembly does not establish that all missing Windows OS features are supplied offline.
+## Migration and acceptance
 
-## Rust migration
+Rust owns the core Agent/device services and native host initialization, process supervision, device/media control and notification integration. The current migration candidate adds native Telegram, WeCom, Feishu, QQ and WhatsApp adapters and the LAN relay; their current-source compilation and delivery validation are pending. The old channel JavaScript package and browser bootstrap are removed from that candidate. Existing live installations have not been silently replaced.
 
-Current source removes the unused `host/entry.py` resource. Complete macOS/Linux factories no longer acquire or stage host Python/Node tools; their Rust initializer uses the bundled resources directly. Partial contributor builds, existing saved tool selections and WSL factory verification still have real tool consumers and remain intact. The retained `ff69779` installers above have not been rebuilt from this cleanup and still include their previous tool resources.
+The candidate uses Rust for first-party runtime, installation and recovery; build/CI tooling uses TypeScript. Consolidated validation, dependency inventories and complete installer rebuilds are still pending. The live development installation has not been replaced.
 
-The final first-party runtime, installation/recovery, build, test and release tools must be Python-free; the Next.js frontend remains. Explicit database role preparation now runs in Rust/SQLx and is covered by isolated PostgreSQL tests with an empty PATH. Other host orchestration, recovery and build/CI paths still use Python, and channel/media JavaScript services also await their Rust migration. The current project does not yet meet this final architecture requirement.
+Real phone/desktop observation and control have prior development-runtime evidence. They do not qualify the latest uncompiled candidate. Copilot's real microphone/provider quality, guest microphone routing and end-to-end voice latency remain unverified. Real incoming-message → desktop office work → source-chat delivery and all specialized application workflows still need complete acceptance. Model/channel presets are not certification of every service or account.
 
-Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
+The publication gates in `config/release-policy.json` remain unsatisfied. Complete runtime contents, source/privacy review, third-party notices and applicable corresponding source are required. No incomplete installer is presented as a finished product.
 
-First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Offline image admission, streaming import and activation records now use the native runtime. Legacy archives are normalized to explicit OCI targets while retaining source archive provenance and leaving old aliases untouched. Real Docker import/resume checks cover gzip, XZ and OCI; they do not constitute complete client installation. Full host orchestration, recovery and portable-tool retirement remain incomplete.
-
-The read-only runtime environment policy is now native, including selected tool components, saved launch PATH, SDK/Java, guest resources, proxies and installed image/app metadata. It replaces the former Python policy and WSL's duplicate profile mapping. Client tool preparation shares that native tool implementation; the existing portable-tool and installer callers have not all been retired. This source change does not qualify new complete installers.
-
-The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. Isolated Linux/WSL assembly, startup and restart qualification now passes for the integrated native initializer. This does not qualify newly assembled complete installers or physical installation. Legacy-core start, stop, resume and application handoff now also belong to Rust; assistant recovery calls the controller directly without Bun. Guest-app resource selection, verification and streaming acquisition now run in Rust; the source installer calls the native resource command directly. Its JavaScript acquisition policy has been removed. Subscription/YAML import, configuration application, legacy phone installation, channel/media services and other Python callers remain migration work.
-
-The linked-device browser process, pipe transport and container lifecycle now run in Rust. The workspace task owner also uses the native guest worker for execution, deadlines and cancellation; its existing tools container is upgraded in place. Real Chromium and disposable Docker checks cover these paths. Third-party guest task tools remain distinct from the first-party runtime, and other build, recovery and maintenance consumers still need migration.
-
-## Capability limits
-
-The sealed WSL first-run initializer is now Rust, including its source/profile, engine, image, database and service sequence. Its former Python runtime orchestration has been removed, and the qualification driver calls the same native command. Factory verification, the qualification driver and portable Python used by other consumers remain; full first boot and newly assembled installers are not certified by the local component tests.
-
-- Real Android/Linux execution, input and persisted state exist in the development runtime. Component startup does not establish a complete first-time client installation.
-- [Models and connections](model-and-channel-setup.md) include provider presets and protocol adapters. Support remains dependent on the configured model's capabilities and the application account; a preset is not certification of every provider or delivery path.
-- [Copilot](copilot-voice.md) connects browser PCM capture, Rust/protobuf REST and persistent live-transcription adapters, durable recognized-text submission and streamed, interruptible WAV playback. Real microphone/provider quality, echo, end-to-end latency and guest microphone routing remain unverified. PCM16 output starts before synthesis completes; native speech-to-speech and guest calls remain unfinished.
-- [Application guides](engineering/app-guides.md) bind qualified read-only Xiaohongshu and Writer methods to real observations. This does not qualify every social/work scenario or complete autonomous learning.
-- Authenticated update discovery, complete activation/rollback and the full platform/language/media matrix remain in development. User data is kept separately from versioned program resources.
-
-## Distribution requirements
-
-`config/release-policy.json` owns publication gates. Binary publication remains disabled and `self_contained_device_bundle` remains false. Packages must satisfy full contents, source/privacy checks, third-party notices and applicable corresponding-source requirements before publication.
-
-Physical installation is waived for previews on Windows, Apple Silicon macOS and Linux and remains unverified. Compilation and component checks do not replace that result or qualify incomplete packages.
-
-[Compatibility](compatibility.md) · [Distribution requirements](preview-release.md) · [Android component review](engineering/android-distribution.md) · [Architecture](architecture.en.md) · [Contributing](../../CONTRIBUTING.md) · [Backup and recovery](backup-restore.en.md)
+[Distribution requirements](preview-release.md) · [Compatibility](compatibility.md) · [Android redistribution](engineering/android-distribution.md) · [Architecture](architecture.en.md) · [Backup and recovery](backup-restore.en.md)
 
 ## 中文
 
-源码与技术文档已公开，**完整产品安装包尚未发布**。三桌面平台保留各自来源的完整单文件候选，见上表及构建回执；旧分卷安装器草稿已退役。Linux只提供DEB及复用该DEB的签名APT渠道，公开源尚未发布。Android客户端与AppImage已取消，桌面内的真实虚拟安卓手机仍保留。
+发行平台仅为 **Apple Silicon macOS（DMG）和 Windows x64（EXE）**。每个完整安装包内置 Android 手机、Linux 电脑及运行服务，用户在客户端配置设备和模型后使用。现有设备、账号、聊天和文件独立保存。
 
-Mac和Linux候选仍为ff69779源码，DMG为1973282210字节、DEB为2099264964字节。Windows的新a034466c3b82候选EXE为2092733018字节，已包含214927568字节的离线WebView2安装器、Android资源和WSL根文件系统，不再携带host/entry.py。资产摘要与清单、校验文件一致，均尚未公开。Windows客体启动、实机安装未测，签名、对应源码与许可仍待收口；不以组装成功宣称所有Windows系统功能均可离线启用。APT元数据尚未签名。
+**当前源码的完整安装包尚未发行。** 候选中的运行、安装、恢复与渠道使用 Rust，构建和 CI 工具使用 TypeScript。集中验证、依赖清单及完整安装包重建仍待完成，现有运行实例没有被替换。
 
-当前源码已移除原生客户端不再执行的host/entry.py；完整Mac/Linux工厂不再获取或组装宿主Python/Node，初始化直接由Rust处理随包资源。源码部分构建、已有持久工具选择及WSL工厂校验仍有真实消费者，保持可用。上述候选尚未按此清理重新组装，不能称最终纯Rust安装包。
-
-最终自研运行链、安装/恢复与构建、测试、发行工具必须清除Python，前端保留Next.js。数据库角色初始化已迁到Rust/SQLx，并以空PATH执行隔离数据库验证；其余宿主编排、恢复和构建/CI仍有Python，渠道/媒体JavaScript服务也待迁Rust。当前不满足最终纯Rust目标，不能据此发布最终安装包。
-
-Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
-
-首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验。密封WSL的源码/配置、引擎、镜像、数据库和服务初始化已串联到Rust，旧Python运行编排已删除，验收驱动调用同一原生命令。本地组件检查不代表完整首启或新安装包通过；工厂/验收工具、其他运行消费者、恢复及构建/发行工具的Python退役仍未完成。
-
-只读运行环境策略也已迁Rust，包含工具组件、保存的PATH、SDK/Java、客体资源/代理及镜像/应用元数据，旧Python策略与WSL重复配置映射已替换；客户端工具准备复用同一原生实现。其余portable工具与安装调用尚未全部退役，此源码改动不等于新完整安装包验收。
-
-macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。整合原生初始化版本已通过隔离Linux/WSL组装、启动和恢复资格检查，仍不等于当前源码完整安装包或实机安装通过。旧核心启停、恢复及交接也已迁Rust，assistant恢复直接调用，不再启动Bun。客体应用资源的选择、验证和流式获取也已迁Rust，源码安装器直接调用原生命令，原JavaScript资源策略已删除。订阅/YAML导入、配置应用、旧手机安装路径、渠道/媒体及其他Python调用仍待迁移。
-
-关联设备浏览器的进程、管道和容器生命周期已迁Rust；工作区执行、期限和取消也由原生客体任务组件负责，已有工具容器就地更新。真实Chromium与隔离Docker已覆盖这些路径。客体第三方任务工具与本体实现分别记录；其余构建、恢复和维护消费者仍须迁移。
-
-这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
-
-Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
-
-发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。桌面预览客户端的实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。
-
-## Native media and retired runtime paths — 2026-11-07
-
-Phone/desktop frames, PCM streaming, gRPC gestures and confirmed cursor records now run in the Rust phone runner. The existing local installation has activated this media service without recreating devices or changing accounts/chat data. The old Bun media application, network configuration application and second-phone provisioning implementation are removed. Their retired APIs/UI and JS build entries are removed as well. Historical device disks and database records remain.
-
-The source Android environment wrapper now obtains its shell environment directly from the native component; Clash APK installation uses the native resource command. Messaging channels/browser setup and Python build/recovery/maintenance consumers still remain. This is not yet the final Python-free release, and retained historical installers have not acquired these changes.
-
-手机/电脑画面、PCM 音频、gRPC 手势与已确认光标已迁入 Rust runner，并在现有本机激活；未重建设备或改动账号聊天。旧 Bun 媒体、网络配置和第二部手机创建链路及对应入口已退役，历史盘和数据库记录保留。Android 环境与 Clash 安装调用原生组件。渠道/浏览器初始化及 Python 构建、恢复、维护调用尚未全部退役，不能称最终纯 Rust 发行。
+实机安装按两个发行平台豁免并记录为未测；历史草稿包不能替代当前版本验收。Copilot 实际语音质量、通知触发办公后回原会话交付及各类 App 特化仍未完成全部实测。发行门槛与第三方许可保持真实状态，不把计划或局部成功记为整体完成。

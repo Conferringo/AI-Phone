@@ -1,5 +1,7 @@
 # Native Android preparation
 
+Maintainer commands `scripts/android-maintenance create|ready|input|cleanup|profile` use the Rust host runtime. Creation shares the native AVD journal; readiness shares root/frame observation. Cleanup removes only optional user-0 applications after input and browser readiness. Display profiles preserve the OS/ABI and save original properties under private user data before modification.
+
 The Rust host runtime can admit an offline Android component and create one writable device configuration. The Windows native bootstrap calls this path when both the Android and WSL resource groups are bundled. Native startup, pairing and final device activation are wired separately; complete Windows distribution still requires qualification of acceleration, service discovery and fresh installation.
 
 ## Ownership and compatibility
@@ -31,10 +33,10 @@ The small protobuf creation journal covers the two-file publication boundary. It
 
 The receipt describes an SDK and device configuration. It contains no boot, root, frame, provisioning or complete-host success flag. Creating the actual 16–32 GiB data partition needs additional free capacity when the emulator first starts. First-run UI capacity checks and launch-time readiness remain distinct from resource preparation.
 
-The macOS/Linux legacy installer retains its existing Python consumers. The native worker now owns SDK startup and optional WSL pairing; the client initializes its owned backend before asking that worker to boot or resume the phone. Paired transport evidence is separate from application/notification provisioning and complete two-device readiness. Windows WHPX/firewall and installed-host recovery still require qualification. See [device transport](device-bridge.md) and [release status](../release-status.md) for those boundaries.
+The native worker now owns SDK startup and optional WSL pairing; the client initializes its owned backend before asking that worker to boot or resume the phone. Paired transport evidence is separate from application/notification provisioning and complete two-device readiness. Windows WHPX/firewall and installed-host recovery still require qualification. See [device transport](device-bridge.md) and [release status](../release-status.md) for those boundaries.
 
 ## 中文
 
 Rust 宿主组件已接通离线 Android 资源校验、展开与单台手机配置创建；Windows 原生初始化在同时携带 Android、WSL 资源时调用同一路径。系统镜像与可写设备盘分开存放，重复初始化保留原配置、账号和数据盘，不自动扩容或更换镜像。
 
-目录、记录两处发布之间使用小型 protobuf 创建日志，取消后继续原资源意图；没有日志的未知半成品保持不动。配置创建、开机/root/画面、后端配对与完整部署使用不同回执。原生工作进程已接配对生命周期，但 Windows 加速/防火墙、完整设备初始化与实机恢复仍未验收；原 macOS/Linux Python 安装消费者也仍待迁移。
+目录、记录两处发布之间使用小型 protobuf 创建日志，取消后继续原资源意图；没有日志的未知半成品保持不动。配置创建、开机/root/画面、后端配对与完整部署使用不同回执。原生工作进程已接配对生命周期，但 Windows 加速/防火墙、完整设备初始化与实机恢复仍未验收。

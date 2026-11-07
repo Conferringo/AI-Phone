@@ -8,12 +8,11 @@ pub(crate) const MAX_FILES: usize = 20_000;
 pub(crate) const MAX_FILE: u64 = 200 * 1024 * 1024;
 pub(crate) const MAX_TOTAL: u64 = 1024 * 1024 * 1024;
 pub(crate) const MAX_MANIFEST: u64 = 4 * 1024 * 1024;
-pub(crate) const COMPONENTS: [(&str, &str); 6] = [
+pub(crate) const COMPONENTS: [(&str, &str); 5] = [
     ("web", "runtime/manifest.json"),
     ("native-services", "runtime/services/manifest.json"),
     ("phone-apps", "runtime/phone-apps/manifest.json"),
     ("container-host", "runtime/container-host/manifest.json"),
-    ("js-services", "runtime/js-services/manifest.json"),
     ("guest-apps", "runtime/guest-apps/manifest.json"),
 ];
 
@@ -95,7 +94,6 @@ fn runtime_name(value: &str, enabled: bool) -> bool {
                     | "services"
                     | "phone-apps"
                     | "container-host"
-                    | "js-services"
                     | "guest-apps"
             )
         )

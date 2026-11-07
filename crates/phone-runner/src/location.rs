@@ -104,27 +104,24 @@ mod tests {
         let folder =
             std::env::temp_dir().join(format!("aiphone-gps-recovery-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&folder).unwrap();
-        let source = r#"#!/usr/bin/env python3
-import os,sys
-from pathlib import Path
-root=Path(os.environ['LOCATION_FIXTURE']);args=sys.argv[1:]
-if Path(sys.argv[0]).name=='appops':
- if args[0]=='get': print('Uid mode: MOCK_LOCATION: '+(root/'appop').read_text())
- else:(root/'appop').write_text(args[-1])
-elif args[1]=='is-location-enabled':print((root/'enabled').read_text())
-elif args[1]=='set-location-enabled':(root/'enabled').write_text(args[2])
-else:
- operation,provider=args[2:4];p=root/('provider-'+provider)
- if operation=='add-test-provider':
-  if provider=='network' and (root/'fail-network').exists():(root/'fail-network').unlink();sys.exit(42)
-  p.touch()
- elif operation=='remove-test-provider':p.unlink(missing_ok=True)
- elif not p.exists():sys.exit(43)
- elif operation=='set-test-provider-location':(root/'fix').write_text(args[5])
-"#;
+        let bun = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../scripts/bun");
         for name in ["cmd", "appops"] {
             let path = folder.join(name);
-            fs::write(&path, source).unwrap();
+            let script = folder.join(format!("{name}.ts"));
+            fs::write(
+                &script,
+                include_str!("../../../scripts/fixtures/mock-location.ts"),
+            )
+            .unwrap();
+            fs::write(
+                &path,
+                format!(
+                    "#!/bin/sh\nexec '{}' '{}' \"$@\"\n",
+                    bun.display().to_string().replace('\'', "'\\''"),
+                    script.display().to_string().replace('\'', "'\\''")
+                ),
+            )
+            .unwrap();
             fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
         }
         fs::write(folder.join("enabled"), "false").unwrap();

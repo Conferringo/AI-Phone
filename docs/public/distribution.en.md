@@ -8,10 +8,8 @@ The product is an application that deploys its own devices and services. Users c
 |---|---|---|
 | macOS ARM64 | Existing native Android/Linux operation, client setup and native bundles | Complete clean offline payload, first run and update activation |
 | Windows x64 | Native client builds; each revision also checks relocated web resources | Device/backend supervision, paths, permissions, OCR and virtualization |
-| Linux x64 | Native builds and managed KVM/systemd installation code | Complete payload and first-run acceptance |
-| Linux ARM64 | Native client and prebuilt web builds | Reviewed matching Android runtime and complete host integration |
 
-Physical installation is waived for previews on Windows, Apple Silicon macOS and Linux; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
+Physical installation is waived for previews on Windows and Apple Silicon macOS; untested behavior remains unverified. This does not waive complete contents, compilation or redistribution checks. Signing/notarization and signed updates remain open. No client defaults to a developer's server, credentials or network subscription.
 
 ## Implemented storage boundaries
 
@@ -29,9 +27,9 @@ host/
     data/                     guests, account/model/channel state, files
 ```
 
-`scripts/client_host_entry.py` validates and stages this hash-addressed layout. Existing bytes, aliases and persistent links are checked on retry; occupied or changed code is rejected. It does not replace existing user state. The prebuilt [web component](runtime-bundles.md) contains Next standalone and pinned Bun; the remaining full-runtime components are still required.
+`crates/host-runtime/src/source_cli.rs` validates and stages this hash-addressed layout. Existing bytes, aliases and persistent links are checked on retry; occupied or changed code is rejected. It does not replace existing user state. The prebuilt [web component](runtime-bundles.md) contains Next standalone and pinned Bun; the remaining full-runtime components are still required.
 
-The contributor CLI's `scripts/release_stage.py` is a separate, version-addressed layout: `app/releases/<version>`, an initial `current` pointer and persistent `user`. Later stages do not activate a running version. Its layout is not silently converted to native setup's layout. The existing development checkout also stays in place; installing a client does not migrate its guests automatically.
+The contributor staging command uses the same native, content-addressed source stager. Installing a client does not migrate a development checkout or its guests automatically.
 
 PostgreSQL uses a Docker named volume. **Copying `user` alone is not a complete backup.** Backup/recovery covers the database, Android state, desktop rootfs/home and private files. Recovery goes to an empty target and stays quarantined until explicit validation/activation. Built-in Skills belong to the code version; user Skills, learned experience, memory, knowledge, attachments and disabled-Skill preferences must survive updates. Device resizing and system replacement are separate operations from application updates.
 

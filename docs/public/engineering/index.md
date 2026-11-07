@@ -11,22 +11,17 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 - [Android distribution review](android-distribution.md)
 - [Windows Android runtime](windows-android-runtime.md)
 - [Windows WSL backend](../windows-backend-runtime.md)
-- [Linux client factory](../linux-client-factory.md)
-- [Linux development bootstrap](../managed-linux.md)
 
 ## Services and applications
 
 - [Linux desktop and service images](linux-image-runtime.md)
-- [Offline JavaScript services](js-runtime.md)
 - [Native service supervision](service-supervision.md)
 - [Workspace execution](workspace-runtime.md)
 - [Evidence-backed application experience](app-learning.md)
 - [Offline Linux OCR](linux-offline-ocr.md)
-- [Portable installer tools](installer-tools.md)
 - [Phone control applications](phone-apps.md)
 - [Guest networking applications](guest-apps.md)
 - [Device network observation](network-observation.md)
-- [Linked-device browser](channel-browser.md)
 
 ## Persistent installation
 

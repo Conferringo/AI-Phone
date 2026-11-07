@@ -9,7 +9,6 @@ fn quote(value: &str) -> String {
 }
 
 fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u64) -> Result<Value> {
-    let mac = std::env::consts::OS == "macos";
     let arch = policy["arch"]
         .as_str()
         .ok_or(Error::Invalid("container_host_policy"))?;
@@ -18,10 +17,10 @@ fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u64) -> Res
         .ok_or(Error::Invalid("container_host_policy"))?;
     let packages = quote(&text(&folder.join("packages"))?);
     Ok(json!({
-        "minimumLimaVersion":"2.2.1", "vmType":if mac{"vz"}else{"qemu"}, "arch":arch,
+        "minimumLimaVersion":"2.2.1", "vmType":"vz", "arch":arch,
         "cpus":4, "memory":format!("{}GiB", (memory_mb+2048).div_ceil(1024).max(4)), "disk":"64GiB",
         "images":[{"location":folder.join("image.iso"),"arch":arch,"digest":format!("sha256:{image}")}],
-        "mountType":if mac{"virtiofs"}else{"9p"}, "mounts":[{"location":home,"writable":true}],
+        "mountType":"virtiofs", "mounts":[{"location":home,"writable":true}],
         "containerd":{"system":false,"user":false}, "propagateProxyEnv":false,
         "ssh":{"loadDotSSHPubKeys":false,"forwardAgent":false},
         "env":{"HTTP_PROXY":"","HTTPS_PROXY":"","ALL_PROXY":"","http_proxy":"","https_proxy":"","all_proxy":""},
@@ -63,20 +62,11 @@ pub(super) async fn start<E: Execute>(
 ) -> Result<()> {
     let root = backend.root;
     let folder = root.join("runtime/container-host");
-    let host = if std::env::consts::OS == "macos" {
-        "macos-arm64"
-    } else {
-        "linux-x64"
-    };
     let policies: Value =
         serde_json::from_slice(&fs::read(root.join("config/container-host-runtime.json"))?)
             .map_err(|_| Error::Invalid("container_host_policy"))?;
-    let policy = &policies["hosts"][host];
-    let command = folder.join(if host == "macos-arm64" {
-        "lima/bin/limactl"
-    } else {
-        "bin/limactl"
-    });
+    let policy = &policies["hosts"]["macos-arm64"];
+    let command = folder.join("lima/bin/limactl");
     let state = managed_engine::state_directory(root, home, user)?;
     managed_engine::claim_state(&root.join("data").canonicalize()?, &state)?;
     backend.env.insert("LIMA_HOME".into(), text(&state)?);

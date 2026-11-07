@@ -58,10 +58,7 @@ standalone download was 214,927,568 bytes when inspected on 2026-11-07. A new fu
 build must prove the combined installer stays below the single-file limit; the
 configuration and a small compression benchmark cannot prove that.
 
-These are build-machine operations. Python/Node build tools are not an instruction
-for an end user to install development environments. The Linux backend initializer
-is Rust; remaining Python maintenance adapters and first-party Bun services still
-await migration. This change does not establish the final Python-free architecture.
+These are maintainer build operations using TypeScript and Cargo. Runtime initialization, device control, channels and media use Rust. The current migration candidate awaits consolidated qualification and a complete installer rebuild.
 
 ## Installed lifecycle
 
@@ -99,4 +96,4 @@ Windows工厂将原生Android系统/模拟器与独立WSL Linux后端组装进�
 携带Android与WSL两类资源后才能进入Windows设备配置，真实配对、输入、通知和电脑
 最终回执成功后才写完成检查点；旧检查点不等于设备正在运行。完整工厂结果、许可、
 正式发布、Windows实机/WSL2/WHPX/防火墙仍分别验收。缺失系统功能的自动启用、离线
-WSL内核、已注册后端升级与余下Python/Bun编排的Rust迁移尚未全部完成。
+WSL内核与已注册后端升级尚未全部完成；当前迁移候选还需集中验证及完整安装包重建。

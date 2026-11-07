@@ -35,17 +35,13 @@ jobs:
           git diff --exit-code -- packages/protocol/src/gen
       - name: Source privacy and licence metadata
         run: |
-          python3 scripts/check_source.py --repository --manifest
-          python3 -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
+          ./scripts/bun scripts/source.ts check --repository --manifest
+          ./scripts/bun -e "import {noticeManifest} from './scripts/tooling/client-build'; noticeManifest()"
       - name: protobuf, TypeScript and Rust
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
         run: |
           cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
-          ./scripts/bun test ./apps/channels ./scripts/*.test.ts
-      - name: Pinned emulator producer contracts
-        working-directory: scripts/emulator-source-build
-        run: python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
       - name: Native packaging and interaction tools
         run: |
           for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
@@ -54,11 +50,7 @@ jobs:
             fi
           done
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y curl apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
-      - name: Installer and archive tests
-        run: |
-          python3 -m unittest discover -s scripts -p 'test_*.py'
-          python3 scripts/required_tests.py test_linux_services
+          sudo apt-get install --no-install-recommends -y curl apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg
       - name: Rust tests
         run: |
           cargo fmt --all --check
@@ -76,113 +68,33 @@ jobs:
           cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
           docker build --tag "$fixture_image" --file scripts/fixtures/native-workspace.Dockerfile "$fixture_context"
           cargo run --locked -p ai-phone-assistant --bin ai-phone-assistant -- --qualify-workspace-runtime "$fixture_image"
-      - name: Native audio onset and cleanup
-        run: |
-          fixture_image="ai-phone-audio-ci:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          fixture_context=$(mktemp -d "$RUNNER_TEMP/aiphone-audio.XXXXXX")
-          cleanup() {
-            rm -rf -- "$fixture_context"
-            docker image rm "$fixture_image" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-          cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
-          docker build --tag "$fixture_image" --file scripts/fixtures/native-audio.Dockerfile "$fixture_context"
-          AI_PHONE_TEST_DESKTOP_MEDIA=1 AI_PHONE_TEST_DESKTOP_IMAGE="$fixture_image" \
-            python3 scripts/required_tests.py test_desktop_media
-      - name: Native guest interaction
-        run: |
-          test ! -e /home/ai
-          test ! -e /tmp/.X0-lock
-          git fetch --no-tags --depth=1 origin cccef152c552a860710b4c76bdc9262e01728eab
-          git show cccef152c552a860710b4c76bdc9262e01728eab:infra/desktop/bridge.py > "$RUNNER_TEMP/legacy-desktop-bridge.py"
-          printf '%s  %s\n' 6d06c4759b7dae2686c4af1f91d09419e9ddc42911409792c87fb2be4eeaddc1 "$RUNNER_TEMP/legacy-desktop-bridge.py" | sha256sum --check --status
-          nonce=$(cat /proc/sys/kernel/random/uuid)
-          sudo install -d -o "$(id -u)" -g "$(id -g)" /home/ai /home/ai/Files
-          printf '%s' "$nonce" > /home/ai/.aiphone-qualification-owner
-          export DISPLAY=:0 LANG=C.UTF-8 AI_PHONE_GUEST_QUALIFICATION="$nonce"
-          cleanup() {
-            if [ "$(cat /home/ai/.aiphone-qualification-owner 2>/dev/null)" = "$nonce" ]; then
-              rm -rf /home/ai/Files/qualification-"$nonce"
-              rm /home/ai/.aiphone-qualification-owner
-            fi
-          }
-          trap cleanup EXIT
-          # xvfb-run waits for the server's ready signal and owns its cleanup.
-          # Starting the WM after an exhausted display poll left a live server
-          # without a WM; last-client resets then erased the RGB oracle.
-          xvfb-run --server-num=0 --server-args="-screen 0 1280x800x24 -nolisten tcp -ac" bash -euo pipefail <<'X11_QUALIFICATION'
-          wm=""
-          cleanup_wm() {
-            if [ -n "$wm" ]; then kill "$wm" 2>/dev/null || true; wait "$wm" 2>/dev/null || true; fi
-          }
-          trap cleanup_wm EXIT
-          openbox & wm=$!
-          wm_ready=false
-          for n in $(seq 1 100); do
-            kill -0 "$wm" 2>/dev/null || { echo 'Owned window manager exited before readiness' >&2; exit 1; }
-            if xprop -root _NET_SUPPORTING_WM_CHECK | grep -q 'window id'; then wm_ready=true; break; fi
-            sleep .05
-          done
-          "$wm_ready" || { echo 'Owned window manager did not become ready' >&2; exit 1; }
-          cargo test -p ai-phone-guest-runtime --test x11_paint --locked -- --ignored --test-threads=1 --nocapture > "$RUNNER_TEMP/x11-paint.log"
-          cat "$RUNNER_TEMP/x11-paint.log"
-          grep -q 'test result: ok. 2 passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/x11-paint.log"
-          ./scripts/bun .github/scripts/guest-control-qualification.ts \
-            "$PWD/target/debug/desktop-bridge" "$RUNNER_TEMP/legacy-desktop-bridge.py" \
-            "$RUNNER_TEMP/guest-control-qualification.json"
-          cat "$RUNNER_TEMP/guest-control-qualification.json"
-          X11_QUALIFICATION
       - name: Production web build
         run: |
-          python3 -c "from pathlib import Path; p=Path('data/assistant/token'); p.parent.mkdir(parents=True,exist_ok=True); p.open('x').write('build-only-private-path-sentinel')"
+          ./scripts/bun -e 'import {mkdirSync,writeFileSync} from "node:fs"; mkdirSync("data/assistant",{recursive:true}); writeFileSync("data/assistant/token","build-only-private-path-sentinel",{flag:"wx",mode:0o600})'
           ./scripts/bun run build
-      - name: Source-bound offline JS services
-        run: python3 scripts/prebuilt_js.py --build
       - name: Prebuilt native services and OCR
         run: |
           sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
           echo "AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract" >> "$GITHUB_ENV"
-          AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract python3 scripts/build_native_services.py
+          AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract ./scripts/bun scripts/artifacts.ts native
       - name: Disposable native-runtime database
         run: |
           docker run -d --name aiphone-native-ci --label dev.aiphone.test=native-runtime --memory 256m -p 127.0.0.1:55512:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-native-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
-          python3 - <<'PY'
-          import subprocess, time
-          for _ in range(40):
-              if subprocess.run(['docker','exec','aiphone-native-ci','pg_isready','-U','ai_phone','-d','ai_phone'],capture_output=True).returncode == 0:
-                  break
-              time.sleep(.5)
-          else:
-              raise SystemExit('Native-runtime database did not become ready')
-          PY
+          ./scripts/bun -e 'import {waitDatabase} from "./scripts/tooling/native-check.ts"; await waitDatabase("aiphone-native-ci")'
       - name: Isolated payload, cold start and prebuilt database roles
-        run: python3 scripts/prepare_client_host.py --with-web-runtime --with-service-runtime --verify-web-runtime --verify-service-runtime --pg-container aiphone-native-ci --pg-port 55512
+        run: ./scripts/bun scripts/prepare-client.ts --with-web-runtime --with-service-runtime --verify-web-runtime --verify-service-runtime --pg-container aiphone-native-ci --pg-port 55512
       - name: Remove native-runtime fixture
         if: always()
         run: |
-          python3 - <<'PY'
-          import subprocess
-          from sys import path
-          path.insert(0, 'scripts')
-          from check_native_services import require_test_database
-          name='aiphone-native-ci'
-          if subprocess.run(['docker','inspect',name],capture_output=True).returncode == 0:
-              require_test_database(name,55512)
-              subprocess.run(['docker','rm','-fv',name],check=True)
-          PY
+          ./scripts/bun -e 'import {spawnSync} from "node:child_process"; import {requireNativeDatabase} from "./scripts/tooling/native-check.ts"; import {run} from "./scripts/tooling/process.ts"; const name="aiphone-native-ci"; if(spawnSync("docker",["inspect",name],{stdio:"ignore"}).status===0){ requireNativeDatabase(name,55512); run(["docker","rm","-fv",name]); }'
       - name: Remove build-only privacy sentinel
         if: always()
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path=Path('data/assistant/token')
-          if path.is_file() and path.read_text()=='build-only-private-path-sentinel':
-              path.unlink()
-          PY
+          ./scripts/bun -e 'import {existsSync,readFileSync,unlinkSync} from "node:fs"; const path="data/assistant/token"; if(existsSync(path)&&readFileSync(path,"utf8")==="build-only-private-path-sentinel")unlinkSync(path)'
       - name: Isolated PostgreSQL integration
         run: |
           docker run -d --name aiphone-ci-pg --label dev.aiphone.test=permissions --memory 512m -p 127.0.0.1:55500:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
-          python3 scripts/ci_integration.py --container aiphone-ci-pg --port 55500
+          ./scripts/bun scripts/ci-integration.ts --container aiphone-ci-pg --port 55500
       - name: Remove disposable PostgreSQL
         if: always()
         run: docker rm -fv aiphone-ci-pg 2>/dev/null || true

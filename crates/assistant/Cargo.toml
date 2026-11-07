@@ -2,8 +2,7 @@
 name = "ai-phone-assistant"
 version = "0.1.0"
 edition.workspace = true
-# OS file locking uses the standard library API stabilized in Rust 1.89.
-rust-version = "1.89"
+rust-version.workspace = true
 publish.workspace = true
 license.workspace = true
 
@@ -14,21 +13,34 @@ ai-phone-adb = { path = "../adb-client" }
 
 ai-phone-host-runtime = { path = "../host-runtime" }
 tempfile = "3"
+tar = { version = "=0.4.46", default-features = false }
+flate2 = "=1.1.10"
+time = { version = "=0.3.55", features = ["formatting"] }
 axum = { version = "=0.8.9", features = ["multipart", "ws"] }
 tokio-tungstenite = { version = "=0.29.0", default-features = false, features = ["handshake"] }
 prost = "=0.14.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "time", "sync", "fs", "process", "io-util"] }
-tokio-util = { version = "0.7", features = ["io"] }
+tokio-util = { version = "0.7", features = ["io", "rt"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "=0.22.1"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "multipart"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "multipart", "socks"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "postgres", "uuid", "json", "migrate", "macros"] }
 uuid = { version = "1", features = ["v4", "v7", "serde"] }
 futures-util = "0.3"
 getrandom = "=0.4.3"
 sha2 = "0.10"
 argon2 = "0.5"
+ring = "=0.17.14"
+md-5 = "=0.10.6"
+whatsapp-rust = { version = "=0.7.0", default-features = false, features = ["tokio-native"] }
+whatsapp-rust-sqlite-storage = { version = "=0.7.0", default-features = false }
+libsqlite3-sys = { version = "=0.30.1", features = ["bundled"] }
+async-trait = "=0.1.92"
+async-channel = "=2.5.0"
+anyhow = "=1.0.104"
+qrcode = { version = "=0.14.1", default-features = false, features = ["image"] }
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg"] }
 
 [lints]
 workspace = true

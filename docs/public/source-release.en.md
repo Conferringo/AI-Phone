@@ -8,7 +8,7 @@ Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest a
 
 ## Prerequisites and startup
 
-The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinned Bun, Rust 1.96.0, Python 3.11+, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve at least 35 GiB for a new full deployment; the default phone storage is 16 GB.
+The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinned Bun, Rust 1.96.0, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve at least 35 GiB for a new full deployment; the default phone storage is 16 GB.
 
 ```sh
 ./ai-phone doctor
@@ -24,8 +24,8 @@ See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [a
 Versioned code is separate from device disks, accounts, conversations, attachments and keys. Source export uses an allowlist with privacy and licence checks. Development and validation requirements are maintained in [Contributing](../../CONTRIBUTING.md). Local environment files, private Skills, screenshots and evidence must stay outside public commits.
 
 ```sh
-python3 scripts/check_source.py
-python3 scripts/source_export.py --destination /path/to/new-review-directory --git
+./scripts/bun scripts/source.ts check
+./scripts/bun scripts/source.ts export /path/to/new-review-directory --git
 ```
 
 Export requires a new destination and produces a source manifest and local review repository without a remote. Review the exported diff against the public checkout before committing. Ongoing contributions preserve public history. Do not update a running user's state with a direct Git checkout; use versioned artifacts, backup, migration and recovery.

@@ -25,11 +25,11 @@ Use a clean source export and a dedicated builder engine. Build the workspace an
 Review the built images and digest-pinned PostgreSQL/Redis defaults in `compose.yaml`. Record their references in a local JSON object with keys `workspace`, `desktop`, `postgres`, `redis`, then run:
 
 ```sh
-python3 scripts/build_container_images.py \
+./scripts/bun scripts/container-images.ts \
   --sources /path/to/reviewed-images.json \
   --output /path/to/images.payload
 
-python3 scripts/build_client.py --platform macos \
+./scripts/bun scripts/build-client.ts --platform macos \
   --with-web-runtime --with-service-runtime \
   --android-runtime /path/to/android.payload \
   --images-runtime /path/to/images.payload

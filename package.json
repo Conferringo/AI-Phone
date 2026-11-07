@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "bun run --cwd apps/web dev",
     "build": "bun run --cwd apps/web build",
-    "typecheck": "bun run --cwd apps/web typecheck && apps/web/node_modules/.bin/tsc -p apps/channels/tsconfig.json",
+    "typecheck": "bun run --cwd apps/web typecheck && tsc -p scripts/tsconfig.json",
     "proto:check": "buf lint && buf build",
     "proto:generate": "buf generate",
     "smoke:protocol": "bun scripts/smoke-protocol.ts",
@@ -19,11 +19,12 @@
   "devDependencies": {
     "@bufbuild/protobuf": "2.16.0",
     "@bufbuild/buf": "1.75.0",
-    "@bufbuild/protoc-gen-es": "2.16.0"
+    "@bufbuild/protoc-gen-es": "2.16.0",
+    "typescript": "7.0.2",
+    "@types/bun": "1.4.4"
   },
   "license": "Apache-2.0",
   "overrides": {
-    "puppeteer": "25.16.0",
     "glob": "14.0.3",
     "minimatch": "11.0.3"
   }

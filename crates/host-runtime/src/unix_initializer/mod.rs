@@ -86,7 +86,6 @@ async fn initialize(
         .canonicalize()?;
     let template = match (std::env::consts::OS, std::env::consts::ARCH) {
         ("macos", "aarch64") => "android35-arm64",
-        ("linux", "x86_64") => "android35-x86_64",
         _ => return Err(Error::Invalid("unix_host_platform")),
     };
     progress("source", "running", "")?;
@@ -213,8 +212,8 @@ async fn initialize(
             "lan",
             "start",
             vec![
-                text(&root.join("runtime/bin/bun"))?,
-                text(&root.join("scripts/lan-server.mjs"))?,
+                text(&root.join("runtime/services/bin/runner"))?,
+                "--lan".into(),
             ],
             &[],
         )

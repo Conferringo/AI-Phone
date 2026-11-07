@@ -28,11 +28,11 @@ Images from tool results are preserved as evidence in a following user content m
 
 | Channel | Adapter | Pairing / content | Verification |
 | --- | --- | --- | --- |
-| QQ | Official bot SDK / WebSocket | Private pairing; text + outgoing screenshot | SDK/interface/isolation tested; real bot credentials pending |
-| WeCom 企业微信 | Official AI bot SDK / outbound connection | Same Agent-level pairing | Real-account certification pending |
-| Feishu 飞书 | Official SDK / long connection | Same Agent-level pairing | Real-account certification pending |
-| Telegram | Official Bot API / outbound long polling | Bot Token only; private `/pair`; text + outgoing PNG | New isolated adapter tests; real token round-trip pending |
-| WhatsApp | Unofficial local linked-device Web adapter; project Chromium | QR login + private `/pair`; text + outgoing PNG; local sessions/reconnect | Real Web QR generated twice, including upgraded browser driver; no account linked or messages sent. Real-account round-trip pending |
+| QQ | Native Rust gateway WebSocket | Private pairing; text + outgoing screenshot | Compiled; real bot credentials and message round-trip pending |
+| WeCom 企业微信 | Native Rust outbound WebSocket | Same Agent-level pairing | Compiled; real-account certification pending |
+| Feishu 飞书 | Native Rust protobuf WebSocket | Same Agent-level pairing | Compiled; real-account certification pending |
+| Telegram | Native Rust Bot API / long polling | Bot Token only; private `/pair`; text + outgoing PNG | Compiled; real token round-trip pending |
+| WhatsApp | Unofficial native Rust linked-device adapter | QR login + private `/pair`; text + outgoing PNG; local session store | Compiled; QR, account pairing, reconnect and real delivery on this adapter remain pending |
 | Discord/Slack/others | Planned | Same capability/owner-delivery contract intended | No buttons or compatibility claims yet |
 
 Telegram checks the bot identity, refuses an existing Webhook, persists queued events before advancing the polling offset and never auto-replays unknown sends. Long-polling authentication/conflict errors are surfaced. It does not delete another application's Webhook. Incoming images/files are not implemented; outgoing text is bounded to the platform limit. Official reference: [Bot API getUpdates](https://core.telegram.org/bots/api#getupdates).

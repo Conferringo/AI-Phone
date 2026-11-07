@@ -7,7 +7,7 @@ export function voiceSocket(){const url=new URL('/api/voice/stream',location.hre
 /** One bounded, persistent transcription connection; accepted chat has a separate owner. */
 export class CopilotStream {
   private socket:WebSocket;
-  private queue:Uint8Array[]=[];
+  private queue:Uint8Array<ArrayBuffer>[]=[];
   private bytes=0;
   private opened=false;
   private stopped=false;
@@ -44,7 +44,7 @@ export class CopilotStream {
     this.opened=true;for(const bytes of this.queue)this.write(bytes);this.queue=[];this.bytes=0;this.resolve();
   }
   ready(){return this.prepared;}
-  private write(bytes:Uint8Array){
+  private write(bytes:Uint8Array<ArrayBuffer>){
     if(this.socket.bufferedAmount+bytes.length>256*1024)throw Error('实时语音发送积压，录音已暂停');
     this.socket.send(bytes);
   }

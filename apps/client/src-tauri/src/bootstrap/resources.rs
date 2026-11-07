@@ -87,24 +87,7 @@ pub(super) fn total_memory_bytes() -> u64 {
         .unwrap_or(0)
 }
 
-#[cfg(target_os = "linux")]
-pub(super) fn total_memory_bytes() -> u64 {
-    std::fs::read_to_string("/proc/meminfo")
-        .ok()
-        .and_then(|text| {
-            text.lines()
-                .find(|line| line.starts_with("MemTotal:"))
-                .and_then(|line| line.split_whitespace().nth(1))
-                .and_then(|value| value.parse::<u64>().ok())
-        })
-        .and_then(|value| value.checked_mul(1024))
-        .unwrap_or(0)
-}
-
-#[cfg(all(
-    test,
-    any(target_os = "macos", target_os = "linux", target_os = "windows")
-))]
+#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
 mod tests {
     use super::*;
 

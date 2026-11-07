@@ -7,7 +7,7 @@
     "long_running_recovery": false,
     "database_runtime_role": true,
     "clean_host_install": false,
-    "backup_restore": true,
+    "backup_restore": false,
     "self_contained_device_bundle": false,
     "single_file_installers_verified": false
   },
@@ -34,7 +34,7 @@
     "physical_installation": {
       "date": "2026-11-05",
       "scope": "desktop-complete-client-previews",
-      "decision": "Physical installation tests are waived by the maintainer for previews on Windows, Apple Silicon macOS and Linux. Target compilation, payload inspection, complete runtime contents and applicable redistribution review remain required. Untested runtime behavior must be disclosed; the waiver is not a passed installation check."
+      "decision": "Physical installation tests are waived by the maintainer for previews on Windows and Apple Silicon macOS. Target compilation, payload inspection, complete runtime contents and applicable redistribution review remain required. Untested runtime behavior must be disclosed; the waiver is not a passed installation check."
     }
   },
   "distribution": {
@@ -46,8 +46,7 @@
       "prebuilt-services",
       "client",
       "third-party-notices",
-      "corresponding-source",
-      "whatsapp-browser"
+      "corresponding-source"
     ],
     "user_prepares_images": false,
     "user_compiles_services": false,

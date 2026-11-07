@@ -6,6 +6,7 @@ enum Service {
     Bridge,
     Supervisor,
     Android,
+    AndroidMaintenance,
     PhonePeer,
     Source,
     GuestAddress,
@@ -20,11 +21,11 @@ enum Service {
     #[cfg(unix)]
     UnixHost,
     #[cfg(unix)]
-    Browser,
-    #[cfg(unix)]
     NetworkObservation,
     #[cfg(unix)]
     NetworkControl,
+    #[cfg(unix)]
+    SourceServices,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -34,6 +35,9 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Bridge => runtime.block_on(crate::device_bridge::run(arguments)),
         Service::Supervisor => runtime.block_on(crate::supervision::run(arguments)),
         Service::Android => runtime.block_on(crate::android::session::run(arguments)),
+        Service::AndroidMaintenance => {
+            runtime.block_on(crate::android::maintenance::run(arguments))
+        }
         Service::PhonePeer => runtime.block_on(crate::device_bridge::run_peer(arguments)),
         Service::Source => runtime.block_on(crate::source_cli::run(arguments)),
         Service::GuestAddress => runtime.block_on(crate::device_bridge::guest::address(arguments)),
@@ -48,11 +52,11 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         #[cfg(unix)]
         Service::UnixHost => runtime.block_on(crate::unix_initializer::run(arguments)),
         #[cfg(unix)]
-        Service::Browser => runtime.block_on(crate::channel_browser::run(arguments)),
-        #[cfg(unix)]
         Service::NetworkObservation => runtime.block_on(crate::network_observation::run(arguments)),
         #[cfg(unix)]
         Service::NetworkControl => runtime.block_on(crate::network_observation::control(arguments)),
+        #[cfg(unix)]
+        Service::SourceServices => runtime.block_on(crate::source_services::run(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -79,11 +83,14 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--prepare-android" => Some(crate::android::cli::run(&arguments[1..])),
         "--prepare-android-contract" => Some(contract(arguments, crate::android::cli::CONTRACT)),
         "--android-session" => Some(start(Service::Android, &arguments[1..])),
+        "--android-maintenance" => Some(start(Service::AndroidMaintenance, &arguments[1..])),
         "--android-session-contract" => {
             Some(contract(arguments, crate::android::session::CONTRACT))
         }
         "--supervise" => Some(start(Service::Supervisor, &arguments[1..])),
         "--service-control" => Some(start(Service::Control, &arguments[1..])),
+        #[cfg(unix)]
+        "--source-services" => Some(start(Service::SourceServices, &arguments[1..])),
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),
         "--prepare-host-profile" => Some(crate::profile::run(&arguments[1..])),
@@ -101,8 +108,6 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),
         #[cfg(unix)]
         "--runtime-environment" => Some(crate::runtime_environment::run(&arguments[1..])),
-        #[cfg(unix)]
-        "--channel-browser" => Some(start(Service::Browser, &arguments[1..])),
         #[cfg(unix)]
         "--runtime-environment-contract" => {
             Some(contract(arguments, crate::runtime_environment::CONTRACT))

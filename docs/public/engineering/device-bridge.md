@@ -52,7 +52,7 @@ successful action. Cancellation drops the connection; the Runner retains its
 action ledger, control epoch and unknown-result handling. No command is retried
 by the client. The native SDK still owns the host ADB server, and remaining
 media/setup paths still require their documented SDK tools; this change does
-not finish Windows first-run integration or the Python/Bun migration.
+not finish Windows first-run integration.
 
 ## Qualification and remaining integration
 
@@ -60,7 +60,7 @@ The component has actual two-route transfer, half-close, invalid-credential, fra
 
 The WSL factory supplies the Linux x64 ADB tools and AOSP emulator schema at the backend's configured SDK root. The native lifecycle now calls the automatic pairing path. Maintainer checks paired, observed, disconnected and resumed the current Rust owner and Linux peer twice against an actual Android; the existing media consumer also returned valid PNGs. Wrong pair observations and observations after shutdown were rejected, with owned work and pair identity retained. These are Mac/Linux component results, not an installed Windows client acceptance.
 
-Windows WHPX/WSL integration, complete phone/desktop provisioning and first-run readiness still need qualification. The complete-install checkpoint and Windows independent-host capability remain disabled. The backend retains documented Python/Bun runtime migration work; no new business runtime is introduced by this Rust pairing unit.
+Windows WHPX/WSL integration, complete phone/desktop provisioning and first-run readiness still need qualification. The complete-install checkpoint and Windows independent-host capability remain disabled. The current native migration candidate still requires consolidated qualification.
 
 ## 中文
 

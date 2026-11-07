@@ -28,14 +28,7 @@ tokio = { version = "1", features = ["time"] }
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "=0.61.2", features = ["Win32_Storage_FileSystem", "Win32_System_SystemInformation"] }
 
-[target.'cfg(target_os = "linux")'.dev-dependencies]
-glib = "=0.18.5"
-
 [profile.release]
 strip = true
 lto = "thin"
 codegen-units = 1
-
-# Exact upstream fix for RUSTSEC-2024-0429, tracked in config/native-backports.json.
-[patch.crates-io]
-glib = { path = "vendor/glib" }

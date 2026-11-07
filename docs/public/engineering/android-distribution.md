@@ -18,9 +18,7 @@ One upstream CSV row labels libselinux `CC-PDDC OR UNKNOWN`. The linked upstream
 
 ## Source identity
 
-The existing [source producer](../../../scripts/emulator-source-build/README.md) pins the official **35.3.8 / build 12560773** source manifest. That is a different build from **37.2.13 / 16740729**. Neither its pinned QEMU commit nor a successful new build of those sources can retroactively qualify the stock 37.2.13 archives.
-
-A complete [Linux source build](https://github.com/Conferringo/AI-Phone/actions/runs/42346183474) now succeeds from project commit `1556eca5c875` and pinned QEMU `d1bfd6eb0ea9f697dc4cc1d258887c8b4220b155`. It retained a 304,324,177-byte SDK archive, SHA-256 `da4080e30b30991f171a3297a019b60d63b30aa888386a63a529a1e1019ba3dd`. The receipt records zero initial SDK copy bytes using the native OverlayFS workspace, with 5,562,712,064 bytes remaining after the build. API 35 root boot is explicitly **not executed**, source dependency closure remains **unverified**, and redistribution is **review-pending**. This is an unpublished source-built component candidate, not a replacement of an existing device or stock package.
+A source build of a different emulator version does not qualify the stock archives. Each distributed component needs an immutable source/build binding, required notices and applicable corresponding source. The binding for the current stock emulator remains unresolved.
 
 The official `emu-master-dev` and `emu-main-dev` branches describe different moving source selections. Their current files, a nearby release tag, or a successful HTTP response containing an Artifact Viewer page do not prove which sources produced build 16740729. The immutable release-build binding is still unresolved. If a new source-built component replaces a stock artifact, it needs a new explicit identity and its own runtime checks; existing user devices are preserved.
 

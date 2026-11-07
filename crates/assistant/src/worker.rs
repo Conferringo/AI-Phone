@@ -4825,10 +4825,10 @@ async fn run_agent(app: &App, run: Uuid) -> Result<String, String> {
 mod process_recovery_tests {
     use super::*;
 
-    /// Test-only process entry: the Python driver kills/restarts this real worker.
+    /// Process entry for the isolated worker recovery driver.
     /// It starts no phone, desktop, channel or notification services.
     #[tokio::test]
-    #[ignore = "child process of scripts/verify_task_recovery.py; disposable DB and loopback model only"]
+    #[ignore = "child process of scripts/ci-integration.ts; disposable DB and loopback model only"]
     async fn worker_child() {
         assert_eq!(std::env::var("AI_PHONE_RECOVERY_CHILD").as_deref(), Ok("1"));
         let root = PathBuf::from(std::env::var("AI_PHONE_PROJECT_ROOT").unwrap());

@@ -21,7 +21,9 @@ mod anthropic_messages;
 mod app_learning;
 mod application_identity;
 mod auth;
+mod backup;
 mod builtin_guides;
+mod channels;
 mod chat_completions;
 mod completion_audit;
 mod database;
@@ -148,6 +150,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::error::Error>> {
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--state-backup")
+    {
+        println!("{}", backup::run(&arguments[1..])?);
+        return Ok(());
+    }
+    if arguments.as_slice() == [std::ffi::OsString::from("--channels")] {
+        let root = PathBuf::from(
+            std::env::var_os("AI_PHONE_PROJECT_ROOT").ok_or("channel_root_required")?,
+        );
+        return channels::run(&root)
+            .await
+            .map_err(|error| error as Box<dyn std::error::Error>);
+    }
     #[cfg(debug_assertions)]
     if arguments.len() == 2 && arguments[0] == "--qualify-workspace-runtime" {
         workspace_runtime::qualify(

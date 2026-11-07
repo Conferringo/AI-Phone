@@ -36,9 +36,9 @@ An optional proxy is under **Advanced**. Empty uses the host's configured defaul
 
 **Rescan** removes that session locally and starts a new identity/owner pairing. **Unbind** attempts remote logout and removes the local profile. If remote confirmation is unknown, the interface reports it; check WhatsApp's Linked devices and remove the old session there. Network reconnect keeps the same local profile; shutdown waits for browser cleanup.
 
-Developer/source bootstrap prepares a project Chromium component automatically. Existing source checkouts can run `./scripts/bun apps/channels/install-browser.ts`; `--verify` is offline. A reviewed absolute executable can be supplied through `AI_PHONE_WHATSAPP_CHROMIUM`. Linux ARM source bootstrap currently needs an architecture-matched external/bundled runtime. **Complete product distributions must bundle this component and its notices**, just like guest images/emulators. Downloading a developer Chromium is not a completed offline product installer.
+The native channel service uses the Rust WhatsApp linked-device protocol and keeps its session store in private application data. It does not require a separate browser. Current-source compilation and account delivery qualification remain pending.
 
-Real WhatsApp Web generated a valid QR twice in disposable sessions, including the pinned Puppeteer 25.16.0 override replacing an advisory-affected older dependency chain. No account was scanned and no real message was sent in this verification. Account pairing, restart/reconnect and actual text/image delivery still need account-level acceptance. QQ, WeCom, Feishu and Telegram retain their existing adapters; [the matrix](compatibility.md) distinguishes code evidence from real-account tests.
+Channels run inside the Rust assistant process. WhatsApp uses a native linked-device adapter and local session storage; it does not require a host browser. This adapter has compiled, while QR login, account pairing, reconnect and actual text/image delivery still need acceptance. QQ, WeCom, Feishu and Telegram also use native Rust adapters; [the matrix](compatibility.md) distinguishes compilation from real-account verification.
 
 ## Primary references
 

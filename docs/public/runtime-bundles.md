@@ -1,10 +1,10 @@
 # Runtime bundles
 
-AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon](engineering/macos-full-runtime.md) and [Linux x64](linux-client-factory.md) build guides define the eight resource groups required by a complete distribution. Published installers and platform qualification are listed in [release status](release-status.md).
+AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon](engineering/macos-full-runtime.md) and [Windows](windows-client-factory.md) build guides define the seven resource groups required by a complete distribution. Published installers and platform qualification are listed in [release status](release-status.md).
 
 ## Package format
 
-`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive and an integrity record. The client runs its native Rust initializer; it no longer carries or launches `host/entry.py`. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `js-services`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
+`scripts/prepare-client.ts` creates a deterministic `source.payload` archive and an integrity record. The client runs its native Rust initializer. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
 
 | Component | Contents | Launch requirement |
 |---|---|---|
@@ -12,7 +12,6 @@ AI Phone separates versioned application code, clean device baselines and persis
 | Native services | Release Rust assistant and phone runner, matched Rust PNG/OCR helper and generated fixture | Host, hashes, inventory and executable permissions must match; CPU Tesseract runs in the managed OCR service or the verified [Linux offline closure](engineering/linux-offline-ocr.md) |
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages; Linux also includes QEMU/SSH/firmware | Matching host runtime, ownership and persisted selection must match; [host component contract](container-host-runtime.md) |
-| JavaScript services | Messaging channels and browser setup with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
 | Guest applications | Pinned Clash Meta APK matching the guest ABI; existing dual-ABI components remain readable | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | Android runtime | Matched emulator, platform tools and clean Android factory image | Host/guest ABI, complete file inventory and archive integrity must match; redistribution qualification is separate |
 | Container images | Clean Linux desktop/workspace, PostgreSQL and Redis images, including desktop browser and Clash Party | Role, architecture, image identities and capsule integrity must match before import |
@@ -22,36 +21,34 @@ Each component manifest records file sizes, SHA-256 hashes and permissions. Nati
 
 ## Installation and startup
 
-The complete macOS/Linux factories do not acquire or include host Python/Node tools. The native Rust initializer stages the bundled source, Android and image resources directly. [Portable tools](engineering/installer-tools.md) remain in maintainer/source workflows and the WSL factory verification image; their retirement is separate from the native client resource cut. Existing saved tool selections remain readable. Guest task tools are independent of first-party runtime code.
+The native Rust initializer stages bundled source, Android and image resources directly. WSL assembly uses the same native initializer, without a separate interpreter environment. Guest task tools are independent of first-party runtime code.
 
 The bundled [phone control applications](engineering/phone-apps.md) provide input, notification and launcher integration without first-run APK compilation. Supplying an Android runtime without these applications is rejected before device creation. Source contributor installations retain the compiler-based path.
 
 The staging entry validates bounded archive headers and inventory before writing an immutable release directory. Duplicate entries, malformed paths, private paths, escaping aliases, unlisted files, changed bytes and occupied destinations are rejected. The version's `data` and `.env` link to the persistent `user` directory; staging a new version does not activate it or replace existing devices, credentials or conversations.
 
-Service launchers verify installed native components before choosing their command. A present but invalid component fails explicitly. macOS and Linux use the prebuilt Rust binaries when supplied, and the runner receives the matching OCR path. Source-only installations retain contributor build commands. The bundled [JavaScript service component](engineering/js-runtime.md) supplies messaging channels and browser setup without first-run package installation. Browser and desktop applications are supplied by the included desktop image; Android applications and the emulator/image have their own component inventories. Complete platform behavior and publication are qualified separately from file presence.
+Service launchers verify installed native components before choosing their command. A present but invalid component fails explicitly. macOS and Linux use the prebuilt Rust binaries when supplied, and the runner receives the matching OCR path. Source-only installations retain contributor build commands. Messaging channels are included in the Rust assistant binary. Browser and desktop applications are supplied by the included desktop image; Android applications and the emulator/image have their own component inventories. Complete platform behavior and publication are qualified separately from file presence.
 
-The [linked-device browser runtime](engineering/channel-browser.md) shares one production selection policy across installation, binding and startup. New bundled accounts use the included image browser; existing host profiles retain their original runtime. Image import precedes browser verification. Complete bundle assembly and redistribution requirements remain part of the release gates.
 
-Image activation runs in Rust and keeps one open capsule through validation and import. Explicit OCI layouts retain their declared identities. Legacy Docker archives are streamed into an explicit OCI layout with content-addressed config/layer blobs and target names derived from the exact generated manifests. This avoids relying on a daemon-generated legacy manifest ID. The private `data/deployment/image-runtime.json` record retains the source archive metadata and records the selected targets; normalized selections carry `import_layout: "oci-v1"`. Old aliases, running containers and volumes are preserved. Factory/export tooling still awaits its Rust migration.
+Image activation runs in Rust and keeps one open capsule through validation and import. Explicit OCI layouts retain their declared identities. Legacy Docker archives are streamed into an explicit OCI layout with content-addressed config/layer blobs and target names derived from the exact generated manifests. This avoids relying on a daemon-generated legacy manifest ID. The private `data/deployment/image-runtime.json` record retains the source archive metadata and records the selected targets; normalized selections carry `import_layout: "oci-v1"`. Old aliases, running containers and volumes are preserved. Factory/export tooling uses TypeScript and the native Rust encoder.
 
 User distributions require one complete installer file. The [delivery-volume format](engineering/package-delivery.md) remains available for maintainer transport; internal volumes do not satisfy the single-download requirement. Complete factories reject oversized installers.
 
 ## Component build and verification
 
-These commands are for maintainers building components. Native OCR qualification requires a prepared backend. For a build-only host Tesseract, set `AI_PHONE_TEST_TESSERACT` to its executable and `AI_PHONE_TEST_TESSDATA` to the directory produced by `scripts/prepare_ocr_models.py`. The pinned English and Simplified Chinese models work without Tesseract configuration files because the Rust helper selects TSV output directly. These qualification variables do not configure the installed client's OCR service.
+These commands are for maintainers building components. Native OCR qualification requires a prepared backend. For a build-only host Tesseract, set `AI_PHONE_TEST_TESSERACT` to its executable and `AI_PHONE_TEST_TESSDATA` to the directory produced by `scripts/prepare-ocr-models.ts`. The pinned English and Simplified Chinese models work without Tesseract configuration files because the Rust helper selects TSV output directly. These qualification variables do not configure the installed client's OCR service.
 
 ```sh
 ./scripts/bootstrap.sh
 ./scripts/bun run build
-python3 scripts/build_native_services.py
-python3 scripts/prebuilt_js.py --build
-python3 scripts/prepare_client_host.py --with-web-runtime --with-service-runtime --with-js-services --verify-web-runtime --verify-service-runtime
-python3 scripts/build_client.py --platform macos --with-web-runtime --with-service-runtime --with-js-services
+./scripts/bun scripts/artifacts.ts native
+./scripts/bun scripts/prepare-client.ts --with-web-runtime --with-service-runtime  --verify-web-runtime --verify-service-runtime
+./scripts/bun scripts/build-client.ts --platform macos --with-web-runtime --with-service-runtime
 ```
 
-For full distribution commands and factory-resource requirements, use the [Apple Silicon build guide](engineering/macos-full-runtime.md#build) or [Linux factory guide](linux-client-factory.md). The commands above exercise individual components.
+For full distribution commands and factory-resource requirements, use the [Apple Silicon build guide](engineering/macos-full-runtime.md#build) or [Windows factory guide](windows-client-factory.md). The commands above exercise individual components.
 
-Build on the matching host. Native services currently target macOS and Linux; Windows builds can carry the prebuilt web and JavaScript service components, while Windows uses its matched WSL backend. Cross-compiling a client does not produce matching host services.
+Build on the matching host. Native services currently target macOS and Linux; Windows carries native Android and its matched WSL backend, including web and Rust services. Cross-compiling a client does not produce matching host services.
 
 Verification stages the actual archive into an empty temporary installation. It launches the copied web runtime, checks `/phone`, JavaScript and PNG byte hashes, executes side-effect-free native version commands and recognizes a generated OCR image. An optional labelled, loopback-only disposable PostgreSQL fixture checks embedded migrations, the runtime role and DDL denial. No model credentials, user devices or production database are test inputs.
 

@@ -126,11 +126,11 @@ fn capability_from_resources(
         accelerator: match os {
             "macos" => "HVF / Virtualization.framework",
             "windows" => "WHPX / WSL2",
-            "linux" => "KVM",
             _ => "unsupported",
         }
         .into(),
-        implemented: policy["hosts"][&key].is_object() || native_windows,
+        implemented: (os == "macos" && arch == "aarch64" && policy["hosts"][&key].is_object())
+            || native_windows,
     }
 }
 
@@ -599,11 +599,11 @@ mod tests {
     #[test]
     fn arbitrary_os_images_and_unimplemented_hosts_are_not_claimed_available() {
         assert!(capability("macos", "aarch64").implemented);
-        assert!(capability("linux", "x86_64").implemented);
         for (os, arch) in [
             ("macos", "x86_64"),
             ("windows", "x86_64"),
             ("linux", "aarch64"),
+            ("linux", "x86_64"),
         ] {
             assert!(!capability_from_resources(os, arch, &Default::default()).implemented);
         }

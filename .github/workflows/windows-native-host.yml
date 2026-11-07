@@ -1,0 +1,52 @@
+name: Windows native host
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_HTTP_MULTIPLEXING: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Native Windows host ownership and registry adapter
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal --component clippy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup default 1.96.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --lib wsl:: --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --bin wsl-host --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --lib device_bridge:: --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --lib android:: --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test -p ai-phone-host-runtime --test device_bridge_cli --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo clippy -p ai-phone-host-runtime --all-targets --locked -- -D warnings
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build -p ai-phone-host-runtime --bin wsl-host --release --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $program = Get-Item target/release/wsl-host.exe
+          @{format=1; host='windows-x64'; source_commit=$env:GITHUB_SHA;
+            binary_sha256=(Get-FileHash $program.FullName -Algorithm SHA256).Hash.ToLower();
+            binary_bytes=$program.Length; native_registration_contracts_passed=$true;
+            windows_wsl_boot_verified=$false; complete_device_bundle=$false} |
+            ConvertTo-Json | Set-Content -Encoding utf8 dist/windows-native-host.json
+      - name: Retain text qualification receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: windows-native-host-receipt
+          path: |
+            dist/windows-native-host.json
+          if-no-files-found: error
+          retention-days: 14

@@ -12,6 +12,6 @@
 
 Rust客体手机peer通过私有protobuf标准输入接收配对凭据与模拟器令牌，管理现有媒体发现文件和本地桥监听；保留冲突文件，在连接收敛后移除发现信息。Linux ARM64进程已通过现有媒体客户端读到运行中的macOS Android root身份与真实截图。Windows自动配对、客体ADB/协议工具随包提供和完整客体配置仍须接通，完整宿主就绪标记保持关闭。
 
-构建入口：`./scripts/bootstrap.sh`、`cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked`、`python3 scripts/build_client.py`。打包会重新生成确定性的源码白名单资源并核验摘要，其他平台使用 `--platform windows|linux`。CI构建与解包检查不是实机安装验收。
+构建入口：`./scripts/bootstrap.sh`、`cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked`、`bun scripts/build-client.ts`。打包会重新生成确定性的源码白名单资源并核验摘要，其他平台使用 `--platform windows`。CI构建与解包检查不是实机安装验收。
 
-macOS要求14.4以上及Apple Silicon；Linux包针对Ubuntu24.04兼容环境；Windows需要WebView2。macOS/Windows未签名。详见[预览范围](preview-release.md)、[第三方声明](../../THIRD_PARTY_NOTICES.md)和[发行状态](release-status.md)。
+macOS要求14.4以上及Apple Silicon；Windows需要WebView2。macOS/Windows未签名。详见[预览范围](preview-release.md)、[第三方声明](../../THIRD_PARTY_NOTICES.md)和[发行状态](release-status.md)。

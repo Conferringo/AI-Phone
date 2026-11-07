@@ -6,11 +6,11 @@
 
 Check [release status](release-status.md) for installer availability and platform qualification before downloading. The intended product setup is to install the client, choose language and device resources, and configure a model; see the [integrated-host contract](integrated-hosts.md).
 
-The instructions below are a developer source path for macOS Apple Silicon. They require the tools listed below, download dependencies and compile services. They are not a complete bundled installation. Linux contributors should use the separate [managed Linux guide](managed-linux.md).
+The instructions below are a developer source path for macOS Apple Silicon. They require the tools listed below, download dependencies and compile services. They are not a complete bundled installation. Windows backend development is covered by the [WSL guide](windows-backend-runtime.md).
 
 ## Source alternative: prerequisites
 
-This source path uses macOS Apple Silicon, native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, Bun (project bootstrap), Rust 1.95+ (release builds pin 1.96.0), Python 3.11+, Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds. These prerequisites describe source development, not a passed clean-host installation.
+This source path uses macOS Apple Silicon, native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, Bun (project bootstrap), Rust 1.95+ (release builds pin 1.96.0), Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds. These prerequisites describe source development, not a passed clean-host installation.
 
 ## First run
 

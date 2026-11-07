@@ -21,9 +21,9 @@ The Rust guest phone peer receives pairing credentials and the emulator token th
 ```sh
 ./scripts/bootstrap.sh
 cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked
-python3 scripts/build_client.py --with-web-runtime
+bun scripts/build-client.ts --with-web-runtime
 ```
 
-The packaging command refreshes a deterministic allowlisted source payload, verifies its hashes and includes license/notice resources. Use `--platform windows|linux` for other clients on the appropriate build environment. The optional `--with-web-runtime` includes and cold-starts the matching prebuilt web component; other full-device components remain pending. See [runtime bundles](runtime-bundles.md). Source/native CI and expanded-payload inspection are build evidence, not physical installation acceptance.
+The packaging command refreshes a deterministic allowlisted source payload, verifies its hashes and includes license/notice resources. Use `--platform windows` for other clients on the appropriate build environment. The optional `--with-web-runtime` includes and cold-starts the matching prebuilt web component; other full-device components remain pending. See [runtime bundles](runtime-bundles.md). Source/native CI and expanded-payload inspection are build evidence, not physical installation acceptance.
 
-macOS requires 14.4+ and Apple Silicon. Linux packages target Ubuntu 24.04 compatible runtimes; Windows needs WebView2. macOS/Windows are unsigned. See [platform limits](preview-release.md), [third-party notices](../../THIRD_PARTY_NOTICES.md) and [release status](release-status.md).
+macOS requires 14.4+ and Apple Silicon. Windows needs WebView2. macOS/Windows are unsigned. See [platform limits](preview-release.md), [third-party notices](../../THIRD_PARTY_NOTICES.md) and [release status](release-status.md).

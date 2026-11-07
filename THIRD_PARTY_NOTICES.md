@@ -6,7 +6,7 @@ Original AI Phone code is licensed under **Apache-2.0**. Third-party software, d
 
 The public **source export** contains project source, lockfiles, attribution records and selected upstream licence texts. It excludes SDK archives, guest images, prebuilt runtime components and personal data.
 
-A **complete client bundle** includes the web application, native services, phone integration APKs, container host, JavaScript services, guest applications, Android runtime, container images and installer tools. Complete macOS and Linux inventories require all nine resource groups, including server binaries and Android/Linux baselines. Their contents and qualification are documented in [runtime bundles](docs/public/runtime-bundles.md) and [release status](docs/public/release-status.md). Those package contents have a broader attribution and corresponding-source scope than the source export.
+A **complete client bundle** includes the web application, native services, phone integration APKs, container host, guest applications, Android runtime, container images without a separate installer toolchain. Complete macOS inventories require all declared runtime groups, including server binaries and Android/Linux baselines. Their contents and qualification are documented in [runtime bundles](docs/public/runtime-bundles.md) and [release status](docs/public/release-status.md). Those package contents have a broader attribution and corresponding-source scope than the source export.
 
 Public binary distribution remains pending the [release requirements](docs/public/preview-release.md). A successful build, file hash or copied licence text does not establish redistribution permission. Component review flags remain authoritative until the exact shipped binaries, notices and applicable corresponding-source delivery are qualified.
 
@@ -60,11 +60,11 @@ The map uses Leaflet 1.9.4 under BSD-2-Clause. Its full [copyright and license](
 
 ## Local WhatsApp connection
 
-Puppeteer is pinned to 25.16.0 in the root dependency policy. The local linked-device integration and browser lifecycle are described in [the browser runtime guide](docs/public/engineering/channel-browser.md).
+WhatsApp uses the MIT-licensed `whatsapp-rust` 0.7.0 linked-device implementation. Its transitive dependencies and required notices must be included in the generated binary inventories.
 
 The optional local linked-device connection uses **whatsapp-web.js 1.34.7 (Apache-2.0)** and **qrcode 1.5.4 (MIT)**. Full upstream terms are retained in [whatsapp-web.js](docs/public/licenses/javascript/whatsapp-web.js/LICENSE) and [qrcode](docs/public/licenses/javascript/qrcode/license). Its legacy async 0.2.10 transitive dependency ships a [MIT grant](docs/public/licenses/javascript/async/LICENSE) without a package SPDX field. The dependency inventory records that missing metadata rather than inventing a declaration. WhatsApp and Meta do not sponsor this project; the Web protocol adapter is unofficial.
 
-Bundled installations use Chromium from the included Linux desktop image for fresh accounts. Existing host profiles and contributor overrides retain their original host browser. Complete binary distributions require the image’s full Chromium third-party notices, source obligations and provenance; binary publication awaits that review. No personal browser profile, linked-device state or QR payload belongs in a source export. See the [runtime policy](docs/public/engineering/channel-browser.md).
+The WhatsApp channel does not require a dedicated browser. Session databases, linked-device state and QR payloads remain private user data. Chromium inside the Linux desktop is a separate guest application and retains its own notices and source obligations.
 
 The locked archive dependencies use glob 14.0.3 and minimatch 11.0.3, covering [glob cancellation](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) and [minimatch pattern amplification](https://github.com/advisories/GHSA-g3hv-75wg-m249). The SDK archive directory/pattern integration is tested with Unicode, hidden files and ignore rules. Licence metadata and packaged upstream grants remain independent of the advisory result.
 
@@ -76,7 +76,7 @@ Windows factory source now embeds Microsoft's Evergreen WebView2 standalone inst
 
 ## Media and channel runtime component
 
-The bundled JavaScript service component retains locked production package files, including their upstream licence texts, and uses the pinned Bun runtime. Media capture uses Sharp and libvips at runtime. Full native library dependency notices and applicable corresponding-source delivery remain binary publication requirements. An exact registry-provenance record in `config/js-runtime-vendor.json` accounts for upstream build-path strings in one macOS libvips resource; it does not waive licence or credential checks. Chromium and guest Clash assets are separate resources. See the [component format and verification scope](docs/public/engineering/js-runtime.md).
+The frontend uses the pinned Bun runtime and preserves its locked production dependency notices. First-party messaging and media services are Rust. Guest Chromium and Clash applications retain their own redistribution requirements.
 
 ## Guest Clash application resources
 
@@ -84,7 +84,6 @@ The guest application component uses the official Clash Meta for Android v2.11.3
 
 ## Emulator source-producer test inputs
 
-Two small verbatim AOSP Emulator inputs at commit `d1bfd6eb0ea9f697dc4cc1d258887c8b4220b155` are included for producer contract tests. The Android Open Source Project copyright and Apache-2.0 header in `toolchains.py` are preserved. Exact source URLs, Git blob identities and SHA-256 digests are recorded in [fixture provenance](scripts/emulator-source-build/fixtures/provenance.json). This attribution does not qualify any SDK binary or dependency for redistribution.
 
 ## Native host and guest services
 

@@ -8,7 +8,7 @@
 
 ## 环境与启动
 
-本地已运行的源码宿主为 macOS Apple Silicon。需要 Node 22+、项目固定 Bun、Rust 1.96.0、Python 3.11+、Java 17、Android 命令行工具、Xcode 命令行工具与 Docker Desktop。完整新部署至少预留 35 GiB，默认手机存储为 16 GB。
+本地已运行的源码宿主为 macOS Apple Silicon。需要 Node 22+、项目固定 Bun、Rust 1.96.0、Java 17、Android 命令行工具、Xcode 命令行工具与 Docker Desktop。完整新部署至少预留 35 GiB，默认手机存储为 16 GB。
 
 ```sh
 ./ai-phone doctor
@@ -24,8 +24,8 @@ SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 
 版本化代码与设备盘、账号、聊天、附件、密钥分离。导出工具按白名单执行隐私和许可检查，开发与验证流程见[贡献指南](../../CONTRIBUTING.md)。本地环境文件、私人 Skill、实机截图及证据不能进入公开提交。
 
 ```sh
-python3 scripts/check_source.py
-python3 scripts/source_export.py --destination /path/to/new-review-directory --git
+./scripts/bun scripts/source.ts check
+./scripts/bun scripts/source.ts export /path/to/new-review-directory --git
 ```
 
 导出目标必须是新目录，产出源码清单和没有远端的本地审阅仓库。与公开 checkout 比较差异后提交，后续贡献保留公开历史。运行用户目录的升级使用版本化制品、备份、迁移和恢复流程，不直接用 Git 覆盖用户状态。
@@ -34,4 +34,4 @@ python3 scripts/source_export.py --destination /path/to/new-review-directory --g
 
 Source CI 执行 protobuf、TypeScript、Rust、隔离前端与适配器、归档和安装契约、生产网页构建。预构建验证展开并执行实际包内文件。临时 PostgreSQL 检查迁移、受限角色、备份恢复与 worker 故障；重启测试按顺序运行，不使用真实设备、账号或付费模型。
 
-Native CI 在匹配环境构建 macOS ARM64、Windows x64、Linux桌面客户端，并验证虚拟手机控制应用。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。运行组件及职责见[组件目录](engineering/index.md)，当前可用范围见[发行状态](release-status.md)与[兼容矩阵](compatibility.md)。
+Native CI 在匹配环境构建 macOS ARM64、Windows x64桌面客户端，并验证虚拟手机控制应用。通过表示编译及检查范围内的包内容通过，不代表完整双设备宿主验收。运行组件及职责见[组件目录](engineering/index.md)，当前可用范围见[发行状态](release-status.md)与[兼容矩阵](compatibility.md)。

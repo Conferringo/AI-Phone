@@ -132,7 +132,7 @@ impl<E: Execute> Backend<'_, E> {
             .await?;
         serde_json::from_slice(&bytes).map_err(|_| Error::Invalid("service_receipt"))
     }
-    async fn containers(&mut self) -> Result<BTreeMap<String, Container>> {
+    pub(crate) async fn containers(&mut self) -> Result<BTreeMap<String, Container>> {
         let mut found = BTreeMap::new();
         for name in NAMES {
             let filter = format!("name=^/{name}$");
@@ -275,7 +275,7 @@ impl<E: Execute> Backend<'_, E> {
             &[("AI_PHONE_OCR", ocr)],
         )
         .await?;
-        self.unit("assistant", "start", vec![assistant], &[])
+        self.unit("assistant", "start", vec![assistant.clone()], &[])
             .await?;
         let bun = text(&self.root.join("runtime/bin/bun"))?;
         self.unit(
@@ -291,15 +291,7 @@ impl<E: Execute> Backend<'_, E> {
         self.unit(
             "channels",
             "start",
-            vec![
-                bun.clone(),
-                "--no-install".into(),
-                text(
-                    &self
-                        .root
-                        .join("runtime/js-services/apps/channels/server.js"),
-                )?,
-            ],
+            vec![assistant, "--channels".into()],
             &[],
         )
         .await?;
@@ -328,7 +320,7 @@ fn identity(id: &str) -> bool {
             .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
 }
 #[derive(Deserialize)]
-struct Container {
+pub(crate) struct Container {
     id: String,
     running: bool,
     labels: BTreeMap<String, String>,
@@ -353,7 +345,7 @@ impl Container {
         Ok(())
     }
 }
-fn token(root: &Path, section: &str) -> Result<()> {
+pub(crate) fn token(root: &Path, section: &str) -> Result<()> {
     let folder = root.join("data").join(section);
     filesystem::directory(&folder, true)?;
     if folder.join("token").try_exists()? {

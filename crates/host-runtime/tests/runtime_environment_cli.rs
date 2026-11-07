@@ -166,34 +166,10 @@ fn data_alias_is_resolved_without_creating_guest_directories() {
 }
 
 #[test]
-fn selected_tool_bytes_and_engine_path_share_the_native_preparation_contract() {
-    use std::os::unix::fs::PermissionsExt;
+fn managed_engine_path_precedes_the_saved_launch_path() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().canonicalize().unwrap();
     profile(&root, json!({"launch_path":"/saved/tools"}));
-    let component = root.join("component");
-    fs::create_dir_all(component.join("python/bin")).unwrap();
-    let program = component.join("python/bin/python3");
-    fs::write(&program, b"fixture tool").unwrap();
-    fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
-    let host = if cfg!(target_os = "macos") {
-        "macos-arm64"
-    } else if cfg!(target_arch = "aarch64") {
-        "linux-arm64"
-    } else {
-        "linux-x64"
-    };
-    let manifest = json!({"format":1,"host":host,"tools":{"python":{"version":"3.13.18","executable":"python/bin/python3","source":{}}},"files":[{"path":"python/bin/python3","size":12,"mode":493,"sha256":format!("{:x}",Sha256::digest(b"fixture tool"))}]});
-    let bytes = serde_json::to_vec(&manifest).unwrap();
-    fs::write(component.join("manifest.json"), &bytes).unwrap();
-    fs::write(
-        root.join("data/deployment/tool-runtime.json"),
-        serde_json::to_vec(
-            &json!({"format":1,"path":component,"sha256":format!("{:x}",Sha256::digest(&bytes))}),
-        )
-        .unwrap(),
-    )
-    .unwrap();
     let env = value(
         Command::new(env!("CARGO_BIN_EXE_host-resources"))
             .args([
@@ -210,16 +186,11 @@ fn selected_tool_bytes_and_engine_path_share_the_native_preparation_contract() {
     assert_eq!(
         env["PATH"],
         format!(
-            "/owned/engine:{}/python/bin:{}/.tools/bin:/opt/homebrew/bin:/usr/local/bin:/saved/tools",
-            component.display(),
+            "/owned/engine:{}/.tools/bin:/opt/homebrew/bin:/usr/local/bin:/saved/tools",
             root.display()
         )
     );
-    assert_eq!(env["AI_PHONE_PYTHON"], program.to_str().unwrap());
-    fs::write(&program, b"changed tool").unwrap();
-    let result = invoke(&root, "/caller");
-    assert!(!result.status.success());
-    assert!(result.stdout.is_empty());
+    assert!(!root.join("data/deployment/tool-runtime.json").exists());
 }
 
 #[test]
@@ -228,11 +199,7 @@ fn guest_metadata_selects_both_abis_and_preserves_profile_without_reading_apk_pa
     let root = temp.path();
     let project = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut sources = vec![];
-    for name in [
-        "config/clash-apps.json",
-        "scripts/prebuilt_guest_apps.py",
-        "scripts/apk_review.py",
-    ] {
+    for name in ["config/clash-apps.json", "scripts/tooling/phone-apps.ts"] {
         let bytes = fs::read(project.join(name)).unwrap();
         let path = root.join(name);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -278,7 +245,11 @@ fn guest_metadata_selects_both_abis_and_preserves_profile_without_reading_apk_pa
             before
         );
     }
-    fs::write(root.join("scripts/apk_review.py"), b"changed source").unwrap();
+    fs::write(
+        root.join("scripts/tooling/phone-apps.ts"),
+        b"changed source",
+    )
+    .unwrap();
     let result = invoke(root, "/caller");
     assert!(!result.status.success());
     assert!(result.stdout.is_empty());

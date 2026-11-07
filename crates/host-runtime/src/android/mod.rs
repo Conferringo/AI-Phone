@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 pub mod cli;
 mod device;
 pub mod input;
+pub mod maintenance;
 mod manifest;
 mod resources;
 pub mod session;

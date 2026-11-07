@@ -6,7 +6,7 @@
 
 Los instaladores completos todavía no están disponibles. La configuración sigue el orden recursos de los dispositivos → modelo → espacio de trabajo. Un paquete completo contiene los sistemas Android/Linux, el emulador y los servicios precompilados. El cliente prepara el entorno; el usuario no tiene que buscar imágenes ni compilar un servidor.
 
-Los destinos de compilación son macOS Apple Silicon, Windows x64 y Linux. La disponibilidad de paquetes y el alcance de las pruebas figuran en el estado de publicación.
+Los destinos de compilación son macOS Apple Silicon y Windows x64. La disponibilidad de paquetes y el alcance de las pruebas figuran en el estado de publicación.
 
 ## Funciones y escenarios
 

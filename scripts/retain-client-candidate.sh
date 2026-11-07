@@ -6,28 +6,23 @@ test "$RUNNER_ENVIRONMENT" = github-hosted
 test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
 [[ "$GITHUB_RUN_ID" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ ]]
-command -v gh jq python3 > /dev/null
+command -v gh jq > /dev/null
 report="$1"
 case "${2:-client}" in
   client)
-    planner=scripts/package_delivery.py
+    planner=scripts/package-delivery.ts
     label='AI Phone complete candidate'
     description='Unpublished complete installer candidate for maintainer verification. Physical installation and redistribution review remain separate requirements.'
     ;;
-  source-emulator)
-    planner=scripts/source_emulator_candidate.py
-    label='AI Phone source-emulator candidate'
-    description='Unpublished source-emulator output for maintainer review. Redistribution, source closure and Android boot qualification remain unapproved.'
-    ;;
   factory-images)
-    planner=scripts/factory_image_candidate.py
+    planner=scripts/factory-image-candidate.ts
     label='AI Phone native factory images'
     description='Temporary unpublished ARM64 image handoff for complete native client assembly. No user state or publication approval is included.'
     ;;
   *) printf '%s\n' 'Unknown build candidate kind.' >&2; exit 1 ;;
 esac
 work="$(mktemp -d "$RUNNER_TEMP/build-candidate-XXXXXX")"
-nonce="$(python3 -c 'import sys,uuid; sys.stdout.write(uuid.uuid4().hex)')"
+nonce="$(./scripts/bun -e 'process.stdout.write(crypto.randomUUID().replaceAll("-",""))')"
 tag="candidate-${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}-$nonce"
 created=false
 release_id=""
@@ -47,8 +42,8 @@ cleanup() {
   exit "$status"
 }
 trap cleanup EXIT
-python3 scripts/check_source.py --repository
-python3 "$planner" plan "$report" > "$work/plan.json"
+./scripts/bun scripts/source.ts check --repository
+./scripts/bun "$planner" plan "$report" > "$work/plan.json"
 # A unique tag must be absent before this invocation can own its draft or cleanup.
 gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$work/existing.json"
 jq -be --arg tag "$tag" '[.[][] | select(.tag_name == $tag)] | length == 0' "$work/existing.json" > /dev/null
@@ -70,7 +65,7 @@ gh release upload "$tag" --repo "$GITHUB_REPOSITORY" "${paths[@]}"
 gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$work/remote.json"
 gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" > "$work/assets.json"
 jq -b --slurpfile pages "$work/assets.json" '.assets = ($pages[0] | add)' "$work/remote.json" > "$work/complete.json"
-python3 scripts/package_delivery.py verify-upload "$work/plan.json" --release "$work/complete.json"
+./scripts/bun scripts/package-delivery.ts verify-upload "$work/plan.json" --release "$work/complete.json"
 printf 'Unpublished candidate retained: %s\n' "$tag"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   printf 'candidate_tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"

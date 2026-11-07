@@ -17,15 +17,11 @@ Initialization uses the selected CPU, memory and storage presets to create an AV
 Factory inputs are recorded in [android-factory-images.json](../../../config/android-factory-images.json). Runtime construction is a maintainer operation; users of a complete distribution should not need this workflow.
 
 ```sh
-python3 scripts/android_runtime.py build \
-  --sdk /path/to/reviewed/sdk \
-  --image-archive /path/to/verified/factory.zip \
-  --image-sha256 <recorded-sha256> \
-  --output /path/to/android.payload
+./scripts/bun scripts/android-component.ts --work /path/to/new-android-component
 
-python3 scripts/build_client.py --platform macos \
+./scripts/bun scripts/build-client.ts --platform macos \
   --with-web-runtime --with-service-runtime --with-phone-apps \
-  --android-runtime /path/to/android.payload
+  --android-runtime /path/to/new-android-component/android.payload
 ```
 
 The build passes one generated resource map to Tauri; artifact inspection uses the same map. Resource hashing and expanded native-file inspection stream bytes instead of loading a system image into memory. Capsule preparation verifies the manifest and host; installation verifies every extracted body before activation. Source-only builds exclude this optional resource and discard a previously prepared capsule.
