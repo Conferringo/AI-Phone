@@ -3095,8 +3095,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/tests.rs",
-      "size": 14955,
-      "sha256": "b2d4d9e09fafec2b15e7a23c42d69a7fbb18461404ade9419384ce36bccb50cf"
+      "size": 15220,
+      "sha256": "cc7f37aa502b6556645e79f589af8918e9c9e255e628b7ff643fcbd15c2c19b2"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/transport.rs",
