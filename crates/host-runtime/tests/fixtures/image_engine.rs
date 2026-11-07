@@ -110,14 +110,13 @@ fn main() {
                                 tokio::signal::unix::SignalKind::terminate(),
                             )
                             .unwrap();
-                            fs::write(home.join("load.pid"), std::process::id().to_string())
-                                .unwrap();
+                            publish_pid(&home);
                             loop {
                                 signal.recv().await;
                             }
                         });
                 }
-                fs::write(home.join("load.pid"), std::process::id().to_string()).unwrap();
+                publish_pid(&home);
                 std::thread::sleep(std::time::Duration::from_secs(30));
             }
             if mode == "reject" {
@@ -165,4 +164,13 @@ fn main() {
         }
         _ => panic!("unexpected fixture command: {arguments:?}"),
     }
+}
+
+fn publish_pid(home: &std::path::Path) {
+    fs::write(
+        home.join("load.pid.pending"),
+        std::process::id().to_string(),
+    )
+    .unwrap();
+    fs::rename(home.join("load.pid.pending"), home.join("load.pid")).unwrap();
 }
