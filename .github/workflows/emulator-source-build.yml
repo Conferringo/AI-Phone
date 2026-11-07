@@ -2,8 +2,13 @@ name: Linux Emulator source build (manual, unapproved output)
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Build the locked sources or qualify the retained source SDK
+        type: choice
+        options: [build, qualify]
+        default: build
       confirm:
-        description: Run one isolated Linux source build; output remains unapproved
+        description: Run one isolated source build or SDK qualification; output remains unapproved
         type: boolean
         required: true
         default: false
@@ -18,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   linux-x64:
-    if: ${{ inputs.confirm }}
+    if: ${{ inputs.confirm && inputs.mode == 'build' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     permissions:
@@ -112,3 +117,61 @@ jobs:
           python3 scripts/source_emulator_candidate.py stage "$AI_PHONE_EMULATOR_SOURCE_WORK/attempt" > "$RUNNER_TEMP/source-candidate.json"
           report=$(jq -er .report "$RUNNER_TEMP/source-candidate.json")
           scripts/retain-client-candidate.sh "$report" source-emulator
+  qualify-source-sdk:
+    if: ${{ inputs.confirm && inputs.mode == 'qualify' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write # GitHub denies the unpublished SDK draft to a read-only integration.
+    env:
+      RUSTUP_TOOLCHAIN: 1.96.0
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare the disposable Linux qualification host
+        run: |
+          test '${{ runner.environment }}' = github-hosted
+          test "$RUNNER_OS" = Linux
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends unzip jq libgl1 libnss3 libx11-xcb1 libxcb-cursor0 libxkbcommon-x11-0 libpulse0 libasound2t64
+          test -c /dev/kvm
+          sudo usermod -aG kvm "$(id -un)"
+          source_boot_work=$(mktemp -d "$RUNNER_TEMP/source-sdk-boot-XXXXXX")
+          mkdir "$source_boot_work/archives"
+          printf 'SOURCE_BOOT_INPUTS=%s/archives\nSOURCE_BOOT_EVIDENCE=%s/evidence\nCARGO_TARGET_DIR=%s/target\n' "$source_boot_work" "$source_boot_work" "$source_boot_work" >> "$GITHUB_ENV"
+      - name: Test the native qualifier before acquiring large archives
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          cargo test --locked -p ai-phone-host-runtime --example qualify_source_emulator
+          cargo clippy --locked -p ai-phone-host-runtime --example qualify_source_emulator -- -D warnings
+          cargo build --locked -p ai-phone-host-runtime --example qualify_source_emulator
+      - name: Acquire the retained source SDK and matched pinned inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sdk_asset=$(jq -er .sdk.asset_id config/emulator-source-qualification.json)
+          gh api "repos/$GITHUB_REPOSITORY/releases/assets/$sdk_asset" -H 'Accept: application/octet-stream' > "$SOURCE_BOOT_INPUTS/source-sdk.zip"
+          tools_url=$(jq -er '.hosts["linux-x64"].archives["platform-tools"].url' config/android-factory.json)
+          image_url=$(jq -er '.images.x86_64.url' config/android-factory.json)
+          curl --fail --location --max-time 300 --output "$SOURCE_BOOT_INPUTS/platform-tools.zip" "$tools_url"
+          curl --fail --location --max-time 300 --output "$SOURCE_BOOT_INPUTS/system-image.zip" "$image_url"
+      - name: Boot, observe input, restart and retire the owned SDK processes
+        id: source_boot
+        env:
+          AI_PHONE_DISPOSABLE_QUALIFICATION: '1'
+        run: |
+          sg kvm -c 'exec "$CARGO_TARGET_DIR/debug/examples/qualify_source_emulator" "$GITHUB_WORKSPACE" "$SOURCE_BOOT_INPUTS" "$SOURCE_BOOT_EVIDENCE"'
+      - name: Retain only the fixed-field source SDK qualification receipt
+        if: ${{ always() && contains(fromJSON('["success","failure","cancelled"]'), steps.source_boot.outcome) }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: source-sdk-boot-result
+          path: ${{ env.SOURCE_BOOT_EVIDENCE }}/receipt.json
+          if-no-files-found: error
+          retention-days: 14
+      # No guest disks, private command logs, frames, accounts or credentials are uploaded.

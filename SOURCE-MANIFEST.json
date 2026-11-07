@@ -65,8 +65,8 @@
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
-      "size": 6399,
-      "sha256": "aeca4e83a575145a4fec6ac42fa94701af32c0f7f8e48d531e5e73639d00bd02"
+      "size": 9975,
+      "sha256": "de64a4fa3a6c4108b81f35c5a6b3f10e702f2f10a4ab93e4426df98713aff793"
     },
     {
       "path": ".github/workflows/linux-full-client.yml",
@@ -125,8 +125,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 92031,
-      "sha256": "b9b60ab8e7af6fc576c5bed3235cd9756e28e40d0beff3da3d068094bb520ccc"
+      "size": 92041,
+      "sha256": "a64836e0eb52b1c43409d8610bbb6b984a39010d7ad4433f02cd66e7b158ba3c"
     },
     {
       "path": "Cargo.toml",
@@ -2039,6 +2039,11 @@
       "sha256": "8f7dc28969c42773c563223ad498d92aebaa6341f2817bfcb8fcd2a47058ecae"
     },
     {
+      "path": "config/emulator-source-qualification.json",
+      "size": 336,
+      "sha256": "fefffcffa880d9ba606284a6506f4ed95cc692374402c2f75e1864fbf97fd0ff"
+    },
+    {
       "path": "config/host-bootstrap.json",
       "size": 2600,
       "sha256": "de117d28ed8e9ee2370592e017c9139beb53cb7ac06e6285544a19c5af842a89"
@@ -2885,13 +2890,23 @@
     },
     {
       "path": "crates/host-runtime/Cargo.toml",
-      "size": 1267,
-      "sha256": "5e68367d9aa639ee7dad17e1778f938e3f2ea8fd79242cef556ef557339e8803"
+      "size": 1366,
+      "sha256": "61fcd25e1196e126cc31f44129692ce32900ea36a073497353c2b495256e9094"
     },
     {
       "path": "crates/host-runtime/examples/qualify_image_import.rs",
       "size": 6070,
       "sha256": "56bcacb087e2dd815e39895deb6d569fa5d945cfff959bc67b9004a8cd6060a6"
+    },
+    {
+      "path": "crates/host-runtime/examples/qualify_source_emulator.rs",
+      "size": 636,
+      "sha256": "eddacd435ff282b814b68a50358fd161cfd4e4788cd7629db547d7754ce8d0b0"
+    },
+    {
+      "path": "crates/host-runtime/examples/source_emulator/mod.rs",
+      "size": 20571,
+      "sha256": "1493cf311c957188dbd5e9c2517cbc7ccc1adb10eb206430871a59b83b154dd3"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -4925,8 +4940,8 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 8039,
-      "sha256": "a79e5e2326f1e9a7d17a12ab1b532fff170c10af5539ed6d39a186b70cc42b61"
+      "size": 9574,
+      "sha256": "ab317578fe7463b49a148807ac8112fd9dd18f0da8110edb66154f9b654162cc"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",

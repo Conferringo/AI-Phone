@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "source_commit": "1556eca5c875d0fba6bccc2dfc2bd5fc36cc6131",
+  "source_run": 42346183474,
+  "build_id": "aiphone-source-d1bfd6eb0ea9-r1",
+  "sdk": {
+    "asset_id": 720071261,
+    "size_bytes": 304324177,
+    "sha256": "da4080e30b30991f171a3297a019b60d63b30aa888386a63a529a1e1019ba3dd",
+    "version": "35.3.8"
+  }
+}
