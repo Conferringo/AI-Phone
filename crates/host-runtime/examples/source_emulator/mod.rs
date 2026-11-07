@@ -326,14 +326,13 @@ fn checkpoint(root: &Path, receipt: &mut Value, stage: &str) -> Result<()> {
     eprintln!("SOURCE_SDK_QUALIFY {stage}");
     Ok(())
 }
-fn guard(confirmed: bool, architecture: &str) -> Result<()> {
+pub(super) fn guard(confirmed: bool, architecture: &str) -> Result<()> {
     if !confirmed || architecture != "x86_64" {
         return Err("requires explicit disposable Linux x64 qualification".into());
     }
     Ok(())
 }
-pub(super) async fn run(args: Vec<OsString>, confirmed: bool) -> Result<()> {
-    guard(confirmed, std::env::consts::ARCH)?;
+pub(super) async fn run(args: Vec<OsString>) -> Result<()> {
     let [project, inputs, evidence] = args.as_slice() else {
         return Err(
             "usage: qualify_source_emulator <project> <archives> <new evidence directory>".into(),
@@ -527,10 +526,11 @@ mod tests {
         assert!(guard(true, "x86_64").is_ok());
         let root = tempfile::tempdir().unwrap();
         fs::write(root.path().join("keep"), b"owned state").unwrap();
-        let error = run(
-            vec![root.path().into(), root.path().into(), root.path().into()],
-            true,
-        )
+        let error = run(vec![
+            root.path().into(),
+            root.path().into(),
+            root.path().into(),
+        ])
         .await
         .unwrap_err();
         assert_eq!(

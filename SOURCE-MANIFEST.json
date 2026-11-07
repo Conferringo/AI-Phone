@@ -2900,13 +2900,13 @@
     },
     {
       "path": "crates/host-runtime/examples/qualify_source_emulator.rs",
-      "size": 636,
-      "sha256": "eddacd435ff282b814b68a50358fd161cfd4e4788cd7629db547d7754ce8d0b0"
+      "size": 703,
+      "sha256": "301a4cca4b5b3b69475b9f8cdbb5e75c2ec116d53ff28ef89b42c2a92f2fbcb1"
     },
     {
       "path": "crates/host-runtime/examples/source_emulator/mod.rs",
-      "size": 20571,
-      "sha256": "1493cf311c957188dbd5e9c2517cbc7ccc1adb10eb206430871a59b83b154dd3"
+      "size": 20524,
+      "sha256": "fadb49739f51c9b8a3d68a60c48a8af8f9bd193fcda4efc660655d3a5fddea5e"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
