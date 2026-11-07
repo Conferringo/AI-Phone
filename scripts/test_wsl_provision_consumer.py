@@ -38,7 +38,7 @@ class SealedControlConsumerTests(unittest.TestCase):
         services['runtime/services/manifest.json']=json.dumps(manifest).encode()
         for name,data in services.items():
             path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data);path.chmod(0o755 if '/bin/' in name else 0o644)
-        for name in ('control.ts','config.ts','native-apps.ts','app-assets.ts'):
+        for name in ('control.ts','config.ts','native-apps.ts'):
             path=root/'apps/device-network'/name;path.parent.mkdir(parents=True,exist_ok=True)
             shutil.copyfile(SOURCE/'apps/device-network'/name,path)
         launcher=root/'scripts/prebuilt_js.py';launcher.parent.mkdir(exist_ok=True)

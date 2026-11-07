@@ -159,9 +159,9 @@ def image_id(tag):
 
 def native_apps(root, env, download=False):
     operation = 'download' if download else 'verify'
-    from prebuilt_js import launch_spec
-    result = subprocess.run(launch_spec(root, 'native-apps')['argv'],
-                            input=json.dumps({'operation': operation}), text=True, cwd=root, env=env, capture_output=True)
+    from prebuilt_services import guest_app_resources_command
+    result = subprocess.run([*guest_app_resources_command(root), '--guest-app-resources', str(root), operation],
+                            text=True, cwd=root, env=env, capture_output=True)
     if download and result.returncode:
         raise ValueError('Clash application download failed; check the installation network or AI_PHONE_BOOTSTRAP_PROXY')
     return result.returncode == 0
@@ -214,7 +214,7 @@ def install_source_components(state, root, env):
               *[str(p.relative_to(root)) for base in ('apps', 'packages') for p in (root/base).glob('*/package.json')]]
     prepare = (lambda: private_bun(root, create=True)) if available(root) else (lambda: run(['./scripts/bootstrap.sh'], env=env, root=root))
     state.phase('dependencies', fingerprint(root, inputs), prepare, lambda: bootstrap_valid(root))
-    state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'apps/device-network/native-apps.ts','apps/device-network/app-assets.ts']),
+    state.phase('native-apps', fingerprint(root, ['config/clash-apps.json', 'crates/host-runtime/src/guest_app_resources.rs', 'Cargo.toml', 'Cargo.lock']),
                 lambda: native_apps(root, env, True), lambda: native_apps(root, env))
 
 

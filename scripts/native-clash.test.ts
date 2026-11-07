@@ -8,7 +8,7 @@ test('native app downloads verify pins, reuse intact files and reject altered ca
  const root=mkdtempSync(join(tmpdir(),'aiphone-clash-')),bytes=Buffer.from('vendor fixture, no user state');let requests=0;
  const server=Bun.serve({hostname:'127.0.0.1',port:0,fetch(){requests++;return new Response(bytes);}});
  const pin={file:'fixture.deb',size_bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),url:`http://127.0.0.1:${server.port}/app`,version:'fixture'};
- const run=async()=>{const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_PROJECT_ROOT:root,AI_PHONE_BOOTSTRAP_PROXY:''},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});const output=JSON.parse(await new Response(proc.stdout).text());return {code:await proc.exited,output};};
+ const run=async()=>{const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_NATIVE_HOST_PROGRAM:join(process.env.CARGO_TARGET_DIR||resolve('target'),'debug',process.platform==='win32'?'host-resources.exe':'host-resources'),AI_PHONE_PROJECT_ROOT:root,AI_PHONE_BOOTSTRAP_PROXY:''},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});const output=JSON.parse(await new Response(proc.stdout).text());return {code:await proc.exited,output};};
  try{
   mkdirSync(join(root,'config'));writeFileSync(join(root,'config/clash-apps.json'),JSON.stringify({android:pin,linux:pin}));
   expect((await run()).code).toBe(0);expect(requests).toBe(2);
@@ -25,7 +25,7 @@ test('a changed response never becomes an installed app cache',async()=>{
  try{
   mkdirSync(join(root,'config'));const pin={file:'fixture.apk',size_bytes:9,sha256:'0'.repeat(64),url:`http://127.0.0.1:${server.port}/app`,version:'fixture'};
   writeFileSync(join(root,'config/clash-apps.json'),JSON.stringify({android:pin,linux:pin}));
-  const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_PROJECT_ROOT:root,AI_PHONE_BOOTSTRAP_PROXY:''},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});
+  const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_NATIVE_HOST_PROGRAM:join(process.env.CARGO_TARGET_DIR||resolve('target'),'debug',process.platform==='win32'?'host-resources.exe':'host-resources'),AI_PHONE_PROJECT_ROOT:root,AI_PHONE_BOOTSTRAP_PROXY:''},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});
   expect(await proc.exited).toBe(1);expect(existsSync(join(root,'.tools/clash-apps/android/fixture.apk'))).toBe(false);expect(existsSync(join(root,'.tools/clash-apps/linux/fixture.apk'))).toBe(false);
  }finally{server.stop(true);rmSync(root,{recursive:true,force:true});}
 });
@@ -35,7 +35,7 @@ test('bundled APKs use each guest ABI without HTTP or source caches; corruption 
  const server=Bun.serve({hostname:'127.0.0.1',port:0,fetch(){requests++;return new Response('must not download');}});
  const pin=(abi:string)=>{const bytes=Buffer.from('verified fixture '+abi);return {file:'vendor-'+abi+'.apk',size_bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),url:`http://127.0.0.1:${server.port}/app`,version:'fixture'};};
  const run=async(abi:string)=>{
-  const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_PROJECT_ROOT:root,AI_PHONE_ANDROID_ABI:abi,AI_PHONE_CLASH_ANDROID_APK:join(root,'runtime/guest-apps/clash-'+abi+'.apk'),AI_PHONE_IMAGE_PULL_POLICY:'never',AI_PHONE_DESKTOP_IMAGE:'ai-phone-bundle/desktop:sha-'+'a'.repeat(64)},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});
+  const proc=Bun.spawn([process.execPath,resolve('apps/device-network/native-apps.ts')],{env:{...process.env,AI_PHONE_NATIVE_HOST_PROGRAM:join(process.env.CARGO_TARGET_DIR||resolve('target'),'debug',process.platform==='win32'?'host-resources.exe':'host-resources'),AI_PHONE_PROJECT_ROOT:root,AI_PHONE_ANDROID_ABI:abi,AI_PHONE_CLASH_ANDROID_APK:join(root,'runtime/guest-apps/clash-'+abi+'.apk'),AI_PHONE_IMAGE_PULL_POLICY:'never',AI_PHONE_DESKTOP_IMAGE:'ai-phone-bundle/desktop:sha-'+'a'.repeat(64)},stdin:new TextEncoder().encode('{"operation":"download"}'),stdout:'pipe',stderr:'pipe'});
   const output=JSON.parse(await new Response(proc.stdout).text());return {code:await proc.exited,output};
  };
  try{

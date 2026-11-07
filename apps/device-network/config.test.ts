@@ -77,4 +77,20 @@ describe('private state and retry contract (no live devices)',()=>{
   writeFileSync(dir+'/config/mihomo-release.json',JSON.stringify({version:'test',geoip:{},assets:{'android-arm64':{binary_sha256:'0'.repeat(64)}}}));
   writeFileSync(dir+'/.tools/mihomo/android-arm64/mihomo','tampered');expect((await call({operation:'install'})).error).toContain('缓存核心校验失败');
  }));
+ test('native application resume and handoff preserve the existing marker and source without guest commands',()=>isolated(async(dir,call)=>{
+  const folder=dir+'/data/device-network/'+device;
+  const saved='{"revision":7,"enabled":true,"subscriptionUrl":"https://fixture.invalid/preserved"}';
+  writeFileSync(folder+'/source.json',saved);writeFileSync(folder+'/app-managed.json','existing-marker');
+  expect(await call({operation:'resume'})).toEqual({managedBy:'application'});
+  expect(await call({operation:'handoff'})).toEqual({managedBy:'application'});
+  expect(readFileSync(folder+'/source.json','utf8')).toBe(saved);
+  expect(readFileSync(folder+'/app-managed.json','utf8')).toBe('existing-marker');
+ }));
+ test('a failed native handoff removes its new marker and keeps the saved subscription',()=>isolated(async(dir,call)=>{
+  const folder=dir+'/data/device-network/'+device,saved='{"enabled":true,"subscriptionUrl":"https://fixture.invalid/preserved"}';
+  writeFileSync(folder+'/source.json',saved);
+  expect((await call({operation:'handoff'})).error).toContain('设备网络命令失败');
+  expect(()=>readFileSync(folder+'/app-managed.json')).toThrow();
+  expect(readFileSync(folder+'/source.json','utf8')).toBe(saved);
+ }));
 });

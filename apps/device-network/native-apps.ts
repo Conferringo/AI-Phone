@@ -1,11 +1,9 @@
 /** Verified guest applications. The CLI and tests use the same owned context. */
-import {randomBytes} from 'node:crypto';
-import {readFileSync,writeFileSync,mkdirSync,existsSync,renameSync,unlinkSync} from 'node:fs';
-import {resolve,dirname} from 'node:path';
-import {appAsset,defaultAppKinds,verifyAppAsset,verifyAppBytes,type AppKind,type AppPin} from './app-assets';
+import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+type AppKind='android'|'linux';
 
 type Environment=Record<string,string|undefined>;
-type DownloadPin=AppPin&{url:string};
 type Adb=(args:string[])=>Promise<string>;
 
 async function deviceCommand(root:string,args:string[]){
@@ -14,57 +12,45 @@ async function deviceCommand(root:string,args:string[]){
  if(await process.exited)throw Error('Android app installation command failed');
  return text;
 }
-async function responseReader(response:Response){
- if(!response.ok){await response.body?.cancel();throw Error('Clash app download failed');}
- if(!response.body)throw Error('Clash app response missing');
- return response.body.getReader();
-}
-
 export class NativeApps {
  private readonly root:string;
  private readonly env:Environment;
  private readonly adb:Adb;
  constructor(root:string,env:Environment=process.env,adb?:Adb){
   this.root=resolve(root);this.env={...env};this.adb=adb||((args)=>deviceCommand(this.root,args));
- }
- private pins(){
-  const config=JSON.parse(readFileSync(this.root+'/config/clash-apps.json','utf8'));
-  const x64=this.env.AI_PHONE_ANDROID_ABI==='x86_64';
-  return {...config,android:x64?config.alternatives['android-x86_64']:config.android,linux:x64?config.alternatives['linux-amd64']:config.linux};
- }
- verify(kinds:AppKind[]=defaultAppKinds(this.env)){
-  const metadata=this.pins();
-  for(const kind of kinds){
-   const pin=metadata[kind],{path}=appAsset(this.root,kind,pin,this.env);
-   if(!existsSync(path))throw Error('Clash application cache missing');
-   verifyAppAsset(path,pin);
+  if(existsSync(this.root+'/runtime/services')){
+   const manifest=JSON.parse(readFileSync(this.root+'/runtime/services/manifest.json','utf8'));
+   if(manifest.guest_app_resources!=='ai-phone-guest-app-resources-v1')throw Error('Native guest application capability missing; rebuild the complete client');
   }
-  return {verified:true};
  }
- async download(kinds:AppKind[]=defaultAppKinds(this.env)){
-  const metadata=this.pins();
-  await Promise.all(kinds.map(kind=>this.prepareApp(kind,metadata[kind])));
-  return {verified:true,versions:{android:metadata.android.version,linux:metadata.linux.version}};
+ private command(operation:string,kinds?:AppKind[]){
+  const program=this.env.AI_PHONE_NATIVE_HOST_PROGRAM;
+  if(!program)throw Error('Native guest application program missing');
+  return [program,'--guest-app-resources',this.root,operation,...(kinds||[])];
  }
- private async prepareApp(kind:AppKind,pin:DownloadPin){
-  const {path,bundled}=appAsset(this.root,kind,pin,this.env);
-  if(existsSync(path)){verifyAppAsset(path,pin);return;}
-  if(bundled)throw Error('Bundled Clash application missing');
-  const bytes=await this.downloadBytes(pin);
-  mkdirSync(dirname(path),{recursive:true});
-  const temp=path+'.'+randomBytes(8).toString('hex')+'.tmp';
-  try{writeFileSync(temp,bytes,{mode:0o644});renameSync(temp,path);}finally{if(existsSync(temp))unlinkSync(temp);}
+ private result(text:string,error:string,code:number){
+  if(code!==0){
+   const messages:Record<string,string>={guest_app_cache_missing:'Clash application cache missing',guest_app_integrity:'Clash application integrity failed',guest_app_size:'Clash app response exceeds pinned size',guest_app_download:'Clash app download failed',guest_app_proxy:'Clash app proxy invalid',guest_app_component:'Invalid guest application component',guest_app_abi:'Unsupported guest application ABI',guest_app_selection:'Bundled guest application selection missing or invalid',guest_app_bundled_missing:'Bundled Clash application missing'};
+   throw Error(messages[error.trim()]||'Clash application command failed');
+  }
+  return JSON.parse(text);
  }
- private async downloadBytes(pin:DownloadPin){
-  const response=await fetch(pin.url,{proxy:this.env.AI_PHONE_BOOTSTRAP_PROXY||null,signal:AbortSignal.timeout(180000)} as any);
-  const reader=await responseReader(response),parts:Uint8Array[]=[];let size=0;
-  try{while(true){const next=await reader.read();if(next.done)break;size+=next.value.length;if(size>pin.size_bytes||size>300*1024*1024)throw Error('Clash app response exceeds pinned size');parts.push(next.value);}}finally{await reader.cancel().catch(()=>{});}
-  const bytes=Buffer.concat(parts);verifyAppBytes(bytes,pin);return bytes;
+ verify(kinds?:AppKind[]){
+  const child=Bun.spawnSync(this.command('verify',kinds),{cwd:this.root,env:this.env,stdin:'ignore',stdout:'pipe',stderr:'pipe'});
+  return this.result(new TextDecoder().decode(child.stdout),new TextDecoder().decode(child.stderr),child.exitCode);
+ }
+ async download(kinds?:AppKind[]){
+  const owned=process.platform!=='win32';
+  const child=Bun.spawn([...this.command('download',kinds),...(owned?['--stdin-lease']:[])],{cwd:this.root,env:this.env,stdin:owned?'pipe':'ignore',stdout:'pipe',stderr:'pipe'});
+  try{
+   const [text,error,code]=await Promise.all([new Response(child.stdout).text(),new Response(child.stderr).text(),child.exited]);
+   return this.result(text,error,code);
+  }finally{if(owned)child.stdin!.end();}
  }
  async installPhone(){
-  const pin=this.pins().android;await this.download(['android']);
+  const resource=await this.download(['android']);
   // Preserve newer/user-managed installs and all existing application data.
-  if(!(await this.adb(['shell','pm path com.github.metacubex.clash.meta 2>/dev/null || true'])).trim())await this.adb(['install','-r',appAsset(this.root,'android',pin,this.env).path]);
+  if(!(await this.adb(['shell','pm path com.github.metacubex.clash.meta 2>/dev/null || true'])).trim())await this.adb(['install','-r',resource.paths.android]);
   const id=this.env.AI_PHONE_DEVICE_ID||'phone-local-01';if(!/^[a-zA-Z0-9-]{1,64}$/.test(id))throw Error('Invalid device ID');
   const dir=this.root+'/data/device-network/'+id;mkdirSync(dir,{recursive:true,mode:0o700});const old=existsSync(dir+'/source.json')?JSON.parse(readFileSync(dir+'/source.json','utf8')):{};
   if(!old.enabled){await this.adb(['shell','mkdir -p /data/local/ai-phone-network; chmod 700 /data/local/ai-phone-network; touch /data/local/ai-phone-network/app-managed']);if(!existsSync(dir+'/app-managed.json'))writeFileSync(dir+'/app-managed.json',JSON.stringify({application:'Clash Meta',at:Date.now()}),{mode:0o600});}

@@ -55,34 +55,29 @@ export async function install(){
  }
  return {installed:true,version:pins.version};
 }
-async function observe(t:Target,operation:string){
+async function observe(t:Target,operation:string,mutating=false){
  const program=process.env.AI_PHONE_NATIVE_HOST_PROGRAM;
  if(!program)throw Error("原生设备管理程序未配置");
- const child=Bun.spawn([program,"--observe-device-network",root,t.kind,t.deviceId,operation],{cwd:root,stdin:'ignore',stdout:'pipe',stderr:'pipe',timeout:65000,env:process.env});
+ const child=Bun.spawn([program,mutating?'--control-device-network':'--observe-device-network',root,t.kind,t.deviceId,operation,...(mutating?['--stdin-lease']:[])],{cwd:root,stdin:mutating?'pipe':'ignore',stdout:'pipe',stderr:'pipe',timeout:mutating?undefined:65000,env:process.env});
+ try{
  const [text,error,code]=await Promise.all([new Response(child.stdout).text(),new Response(child.stderr).text(),child.exited]);
- if(code!==0)throw Error(error.includes('device_network_metadata')?'设备网络配置损坏，请从备份恢复':'设备网络命令失败，请检查设备状态与核心配置');
+ if(code!==0){
+  const messages:Record<string,string>={device_network_metadata:'设备网络配置损坏，请从备份恢复',device_network_application_owned:'网络已交由设备内 Clash 应用管理',device_network_state_unknown:'设备状态尚未确认，未重复启动网络核心',device_network_stop_unconfirmed:'旧网络核心未完全退出',device_network_tun_unconfirmed:'Clash TUN 启动失败',device_network_timeout:'网络操作超时；请读取设备状态后再操作'};
+  const key=Object.keys(messages).find(key=>error.includes(key));
+  throw Error(key?messages[key]:'设备网络命令失败，请检查设备状态与核心配置');
+ }
  if(text.length>2*1024*1024)throw Error('设备网络响应过大');
  return JSON.parse(text);
+ }finally{if(mutating)child.stdin!.end();}
 }
-async function processes(t:Target){return observe(t,"processes");}
-async function health(t:Target){return observe(t,"health");}
 export async function state(value:any){return observe(target(value),"state");}
 async function stop(t:Target){
- const dir=t.kind==='phone'?remote:desktopFolder;
- await shell(t,`rm -f ${dir}/enabled; if [ -f ${dir}/supervisor.pid ]; then p=$(cat ${dir}/supervisor.pid); case "$p" in ''|*[!0-9]*) exit 1;; esac; if [ -r /proc/$p/cmdline ] && tr '\\000' ' ' </proc/$p/cmdline | grep -q '${dir}'; then kill -TERM "$p"; fi; fi`);
- for(let i=0;i<40;i++){if(await processes(t)==='stopped'){if(t.kind==='phone')await shell(t,'ip rule del priority 8995 uidrange 10000-99999 table 2022 2>/dev/null || true');else await shell(t,'ip rule del priority 8990 fwmark 9488 table main 2>/dev/null || true');return;}await Bun.sleep(150);}
- throw Error('旧网络核心未完全退出');
+ await observe(t,'stop',true);
 }
 async function start(t:Target){
- if(existsSync(folder(t)+'/app-managed.json'))throw Error('网络已交由设备内 Clash 应用管理');
- const dir=t.kind==='phone'?remote:desktopFolder,core=t.kind==='phone'?remote+'/mihomo':'/opt/ai-phone/network-core/mihomo';
- const current=await processes(t);if(current==='unknown')throw Error('设备状态尚未确认，未重复启动网络核心');
- const mark=t.kind==='desktop'?"ip rule show | grep -q 'fwmark 0x2510 lookup main' || ip rule add priority 8990 fwmark 9488 table main; ":"ip rule show | grep -q '8995:.*uidrange 10000-99999 lookup 2022' || ip rule add priority 8995 uidrange 10000-99999 table 2022; ";
- if(current==='stopped')await shell(t,`mkdir -p /dev/net; if [ ! -c /dev/net/tun ]; then mknod /dev/net/tun c 10 200; fi; chmod 600 /dev/net/tun; ${mark}touch ${dir}/enabled; chmod 600 ${dir}/config.json ${dir}/enabled; nohup sh ${dir}/supervisor.sh ${dir} ${core} >/dev/null 2>&1 </dev/null &`);
- for(let i=0;i<30;i++){const h=await health(t);if(h.running&&h.tun)return;await Bun.sleep(300);}
- throw Error('Clash TUN 启动失败');
+ await observe(t,'start',true);
 }
-export async function resume(value:any){const t=target(value);if(existsSync(folder(t)+'/app-managed.json'))return {managedBy:'application'};const source=json(folder(t)+'/source.json');if(source.enabled){if(t.kind==='phone'&&(await adb('shell','id -u'))!=='0'){await adb('root');for(let i=0;i<15;i++){try{if(await adb('shell','id -u')==='0')break;}catch{}await Bun.sleep(500);}}const h=await health(t);if(h.confirmed&&!h.running)await start(t);}return state(t);}
+export async function resume(value:any){return observe(target(value),'resume',true);}
 export async function probe(value:any){return observe(target(value),"probe");}
 export async function apply(value:any){
  const t=target(value),dir=folder(t);await prepare(t);chmodSync(dir,0o700);
@@ -128,13 +123,7 @@ export async function execute(value:any){
  if(value.operation==='apply')return apply(value);
  if(value.operation==='probe')return probe(value);
  if(value.operation==='resume')return resume(value);
- if(value.operation==='handoff'){
-  const t=target(value),marker=folder(t)+'/app-managed.json';
-  if(existsSync(marker))return {managedBy:'application'};
-  atomic(marker,{application:t.kind==='phone'?'Clash Meta':'Clash Party',at:Date.now()});
-  try{await stop(t);}catch(e){unlinkSync(marker);throw e;}
-  return {managedBy:'application'};
- }
+ if(value.operation==='handoff')return observe(target(value),'handoff',true);
  if(value.operation==='credential')return observe(target(value),'credential');
  throw Error('未知网络操作');
 }

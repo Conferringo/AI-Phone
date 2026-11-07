@@ -36,10 +36,12 @@ Dependency resources retain their upstream licences and notices. One exact offic
 
 The Android media bridge still needs the matching emulator protocol files and a running authenticated emulator, provided by the separate Android runtime. The compiled browser/app setup helpers do not contain Chromium or the Clash application assets. Those resources, full native dependency notices/source obligations, complete assembly, fresh initialization and per-platform independent hosting remain release gates. The source component does not make first-run downloads acceptable for a complete product.
 
+Legacy core start, stop, resume and application handoff now belong to Rust; assistant recovery calls that controller directly without starting Bun. Guest-app selection, verified cache reuse and streaming acquisition now run in Rust too; the source installer calls that native component directly. The remaining app entry delegates acquisition and retains its legacy phone-install path. Subscription/YAML import and configuration application still use JavaScript. See [network ownership](network-observation.md). Those real consumers remain migration work.
+
+Device activation uses the host-matched native assistant binary with `--setup-devices`. Its read-only `--device-setup-contract` capability is qualified by the native builder and bound into the verified native component manifest. The installer reports readiness after the installation phases succeed and verifies the phone's root identity and both devices' frames. The JS services listed above and the Python installation stages are separate runtime dependencies.
+
 ## 中文
 
 本组件让媒体、渠道和初始化助手使用随包 Bun 与锁定生产依赖，初始化不再安装 JavaScript 包。源码快照、宿主、文件摘要、内部别名与原生最低系统版本共同确定组件身份；损坏明确失败，不回退到源码编译。已有设备、账号和聊天不进入组件。
 
 媒体还需要匹配的 Android 协议资源和经过认证的设备。浏览器、客体应用、第三方声明与对应源码属于独立资源；当前安装包供应和各平台完整运行范围统一见[发行状态](../release-status.md)。
-
-Device activation uses the host-matched native assistant binary with `--setup-devices`. Its read-only `--device-setup-contract` capability is qualified by the native builder and bound into the verified native component manifest. The installer reports readiness after the installation phases succeed and verifies the phone's root identity and both devices' frames. The JS services listed above and the Python installation stages are separate runtime dependencies.

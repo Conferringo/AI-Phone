@@ -7,13 +7,15 @@ Updated 2026-11-07. Source code and technical documentation are available. **Com
 | Target | Available implementation | Remaining delivery requirements |
 | --- | --- | --- |
 | macOS Apple Silicon | Inspected and retained complete single-file DMG candidate | Current-source bundle, integrated lifecycle, upgrades, signing/notarization and product acceptance; physical installation untested |
-| Windows x64 | Inspected and retained complete single-file EXE candidate; backend startup/restart qualified | Offline WebView2, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade and source/licence review |
+| Windows x64 | Inspected and retained single-file EXE candidate with offline WebView2; backend startup/restart qualified | Current-source bundle, WSL2/WHPX/network qualification, missing OS features/kernel, backend upgrade and source/licence review; physical installation and Windows guest boot untested |
 | Linux x64 | Inspected and retained complete single-file DEB candidate; signed APT pipeline under qualification | Binary/channel publication, installed-client lifecycle and applicable source/licence review; physical installation untested |
 | Linux ARM64 | Native client build | Matched Android/runtime resources and a complete independent host |
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
-Retained single-file candidates now share source `ff69779b0ff7`: [Mac and Windows](https://github.com/Conferringo/AI-Phone/actions/runs/42324346884) produced a 1,973,282,210-byte DMG and a 2,111,739,124-byte EXE; [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42324349334) produced a 2,099,264,964-byte DEB and unsigned APT metadata. Each retained asset digest matches its package manifest and checksum. They are unpublished maintainer candidates, not current-source downloads or installation certificates. They predate the native bootstrap-resource cleanup below. Windows still uses a WebView2 download bootstrapper, so the successful device-bundle build does not prove fully offline client setup. Windows guest boot and physical installation were not executed.
+Retained [Mac](https://github.com/Conferringo/AI-Phone/actions/runs/42324346884) and [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42324349334) candidates use source `ff69779b0ff7`: a 1,973,282,210-byte DMG and a 2,099,264,964-byte DEB with unsigned APT metadata. A newer [Windows build](https://github.com/Conferringo/AI-Phone/actions/runs/42342551061), source `a034466c3b82`, produced a 2,092,733,018-byte EXE. Its inspected payload includes the 214,927,568-byte offline WebView2 installer, Android resources and the WSL root filesystem, with no `host/entry.py`. It supersedes the retained historical Windows candidate that required a WebView2 download.
+
+Each retained asset digest matches its package manifest and checksum. They are unpublished maintainer candidates, not current-source downloads or installation certificates. Windows guest boot and physical installation were not executed; signing and applicable source/licence review are incomplete. A successful assembly does not establish that all missing Windows OS features are supplied offline.
 
 ## Rust migration
 
@@ -27,7 +29,7 @@ First-run profile creation, explicit configuration edits, schema/preset validati
 
 The read-only runtime environment policy is now native, including selected tool components, saved launch PATH, SDK/Java, guest resources, proxies and installed image/app metadata. It replaces the former Python policy and WSL's duplicate profile mapping. Client tool preparation shares that native tool implementation; the existing portable-tool and installer callers have not all been retired. This source change does not qualify new complete installers.
 
-The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. Isolated Linux/WSL assembly, startup and restart qualification now passes for the integrated native initializer. This does not qualify newly assembled complete installers or physical installation. JavaScript network/channel/media services and other Python callers remain migration work.
+The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. Isolated Linux/WSL assembly, startup and restart qualification now passes for the integrated native initializer. This does not qualify newly assembled complete installers or physical installation. Legacy-core start, stop, resume and application handoff now also belong to Rust; assistant recovery calls the controller directly without Bun. Guest-app resource selection, verification and streaming acquisition now run in Rust; the source installer calls the native resource command directly. Its JavaScript acquisition policy has been removed. Subscription/YAML import, configuration application, legacy phone installation, channel/media services and other Python callers remain migration work.
 
 The linked-device browser process, pipe transport and container lifecycle now run in Rust. The workspace task owner also uses the native guest worker for execution, deadlines and cancellation; its existing tools container is upgraded in place. Real Chromium and disposable Docker checks cover these paths. Third-party guest task tools remain distinct from the first-party runtime, and other build, recovery and maintenance consumers still need migration.
 
@@ -53,7 +55,7 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 
 源码与技术文档已公开，**完整产品安装包尚未发布**。三桌面平台保留各自来源的完整单文件候选，见上表及构建回执；旧分卷安装器草稿已退役。Linux只提供DEB及复用该DEB的签名APT渠道，公开源尚未发布。Android客户端与AppImage已取消，桌面内的真实虚拟安卓手机仍保留。
 
-最新三候选已统一至ff69779源码，DMG为1973282210字节、EXE为2111739124字节、DEB为2099264964字节，均有实际成功构建、保留资产与一致摘要。它们尚未公开，且早于本轮资源精简；Windows仍需联网下载WebView2，不能把设备资源完整当作客户端完全离线初装通过。APT元数据尚未签名，实机安装保持未验证。
+Mac和Linux候选仍为ff69779源码，DMG为1973282210字节、DEB为2099264964字节。Windows的新a034466c3b82候选EXE为2092733018字节，已包含214927568字节的离线WebView2安装器、Android资源和WSL根文件系统，不再携带host/entry.py。资产摘要与清单、校验文件一致，均尚未公开。Windows客体启动、实机安装未测，签名、对应源码与许可仍待收口；不以组装成功宣称所有Windows系统功能均可离线启用。APT元数据尚未签名。
 
 当前源码已移除原生客户端不再执行的host/entry.py；完整Mac/Linux工厂不再获取或组装宿主Python/Node，初始化直接由Rust处理随包资源。源码部分构建、已有持久工具选择及WSL工厂校验仍有真实消费者，保持可用。上述候选尚未按此清理重新组装，不能称最终纯Rust安装包。
 
@@ -65,7 +67,7 @@ Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调�
 
 只读运行环境策略也已迁Rust，包含工具组件、保存的PATH、SDK/Java、客体资源/代理及镜像/应用元数据，旧Python策略与WSL重复配置映射已替换；客户端工具准备复用同一原生实现。其余portable工具与安装调用尚未全部退役，此源码改动不等于新完整安装包验收。
 
-macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。整合原生初始化版本已通过隔离Linux/WSL组装、启动和恢复资格检查，仍不等于当前源码完整安装包或实机安装通过。JavaScript网络/渠道/媒体服务与其他Python调用仍待迁移。
+macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。整合原生初始化版本已通过隔离Linux/WSL组装、启动和恢复资格检查，仍不等于当前源码完整安装包或实机安装通过。旧核心启停、恢复及交接也已迁Rust，assistant恢复直接调用，不再启动Bun。客体应用资源的选择、验证和流式获取也已迁Rust，源码安装器直接调用原生命令，原JavaScript资源策略已删除。订阅/YAML导入、配置应用、旧手机安装路径、渠道/媒体及其他Python调用仍待迁移。
 
 关联设备浏览器的进程、管道和容器生命周期已迁Rust；工作区执行、期限和取消也由原生客体任务组件负责，已有工具容器就地更新。真实Chromium与隔离Docker已覆盖这些路径。客体第三方任务工具与本体实现分别记录；其余构建、恢复和维护消费者仍须迁移。
 

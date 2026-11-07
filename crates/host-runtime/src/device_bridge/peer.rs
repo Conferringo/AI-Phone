@@ -261,13 +261,7 @@ pub async fn run(arguments: &[std::ffi::OsString]) -> Result<()> {
 }
 
 #[cfg(unix)]
-fn owner_input() -> Result<tokio::net::unix::pipe::Receiver> {
-    use std::os::fd::AsFd;
-    // A cancellable pipe avoids Tokio's blocking stdin worker keeping the
-    // process alive after SIGTERM while the native owner still holds stdin.
-    let input = std::io::stdin().as_fd().try_clone_to_owned()?;
-    Ok(tokio::net::unix::pipe::Receiver::from_owned_fd(input)?)
-}
+use crate::native_ipc::owner_input;
 #[cfg(not(unix))]
 fn owner_input() -> Result<tokio::io::Empty> {
     // Managed peers are Linux/Unix guests; the Windows side owns Connection.

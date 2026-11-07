@@ -93,6 +93,7 @@ dependencies = [
  "fs2",
  "getrandom 0.4.3",
  "prost",
+ "reqwest",
  "rustix",
  "serde",
  "serde_json",

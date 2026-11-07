@@ -1,8 +1,7 @@
-import {test,expect,spyOn} from 'bun:test';
-import * as fs from 'node:fs';
+import {test,expect} from 'bun:test';
 import {createHash} from 'node:crypto';
-import {mkdtempSync,mkdirSync,writeFileSync,rmSync,existsSync,readFileSync} from 'node:fs';
-import {join,dirname,isAbsolute} from 'node:path';
+import {mkdtempSync,mkdirSync,writeFileSync,rmSync,existsSync,readFileSync,readdirSync} from 'node:fs';
+import {join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {NativeApps} from '../apps/device-network/native-apps';
 
@@ -12,7 +11,7 @@ function fixture(bundled:boolean,url='http://127.0.0.1:1/unavailable',bytes=Buff
  mkdirSync(join(root,'config'));writeFileSync(join(root,'config/clash-apps.json'),JSON.stringify({android:pin,linux:pin,alternatives:{'android-x86_64':pin,'linux-amd64':pin}}));
  const path=join(root,'runtime/guest-apps/clash-arm64-v8a.apk');
  if(bundled){mkdirSync(join(root,'runtime/guest-apps'),{recursive:true});writeFileSync(path,bytes);}
- const env:Record<string,string>={AI_PHONE_ANDROID_ABI:'arm64-v8a',AI_PHONE_DEVICE_ID:'phone-fixture',AI_PHONE_BOOTSTRAP_PROXY:''};
+ const env:Record<string,string>={AI_PHONE_NATIVE_HOST_PROGRAM:join(process.env.CARGO_TARGET_DIR||resolve(import.meta.dir,'../target'),'debug',process.platform==='win32'?'host-resources.exe':'host-resources'),AI_PHONE_ANDROID_ABI:'arm64-v8a',AI_PHONE_DEVICE_ID:'phone-fixture',AI_PHONE_BOOTSTRAP_PROXY:''};
  if(bundled)Object.assign(env,{AI_PHONE_CLASH_ANDROID_APK:path,AI_PHONE_IMAGE_PULL_POLICY:'never',AI_PHONE_DESKTOP_IMAGE:'ai-phone-bundle/desktop:sha-'+'a'.repeat(64)});
  return {root,bytes,path,env};
 }
@@ -31,6 +30,16 @@ test('owned offline installation context verifies both ABIs without a download o
  }finally{rmSync(f.root,{recursive:true,force:true});}
 });
 
+test('an older installed component is rejected before passing a new flag to its assistant',()=>{
+ const f=fixture(true);
+ try{
+  mkdirSync(join(f.root,'runtime/services'));
+  writeFileSync(join(f.root,'runtime/services/manifest.json'),'{}');
+  expect(()=>new NativeApps(f.root,f.env)).toThrow('capability missing');
+  expect(existsSync(join(f.root,'.tools'))).toBe(false);
+ }finally{rmSync(f.root,{recursive:true,force:true});}
+});
+
 test('source acquisition publishes only verified bytes and preserves the same cache on reuse',async()=>{
  let calls=0;const bytes=Buffer.alloc(2048,7);
  const server=Bun.serve({hostname:'127.0.0.1',port:0,fetch(){calls++;return new Response(bytes);}});
@@ -38,11 +47,8 @@ test('source acquisition publishes only verified bytes and preserves the same ca
  try{
   const apps=new NativeApps(f.root,f.env);
   expect(()=>apps.verify(['android'])).toThrow('missing');
-  const writes:string[]=[],original=fs.writeFileSync;
-  const spy=spyOn(fs,'writeFileSync').mockImplementation((path,data,options)=>{writes.push(String(path));return original(path,data,options);});
-  try{await apps.download(['android']);await apps.download(['android']);}finally{spy.mockRestore();}
-  expect(writes.length).toBeGreaterThan(0);
-  expect(writes.every(path=>isAbsolute(path)&&dirname(path)===join(f.root,'.tools/clash-apps/android'))).toBe(true);
+  await apps.download(['android']);await apps.download(['android']);
+  expect(readdirSync(join(f.root,'.tools/clash-apps/android'))).toEqual(['vendor.apk']);
   expect(calls).toBe(1);expect(readFileSync(join(f.root,'.tools/clash-apps/android/vendor.apk'))).toEqual(bytes);
   expect(apps.verify(['android']).verified).toBe(true);
  }finally{server.stop(true);rmSync(f.root,{recursive:true,force:true});}

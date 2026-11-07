@@ -11,7 +11,7 @@ from host_platform import host_key
 from release_package import select_files
 from check_native_services import version_receipt, vision_receipt
 from client_host_entry import checked_record, verify_file
-from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT, SERVICE_SUPERVISION_CONTRACT, PHONE_INPUT_SETUP_CONTRACT, DATABASE_PREPARE_CONTRACT, HOST_PROFILE_CONTRACT, MANAGED_ENGINE_CONTRACT, IMAGE_ACTIVATION_CONTRACT, RUNTIME_ENVIRONMENT_CONTRACT
+from prebuilt_services import SOURCE_FIXTURE, DEVICE_SETUP_CONTRACT, SERVICE_SUPERVISION_CONTRACT, PHONE_INPUT_SETUP_CONTRACT, DATABASE_PREPARE_CONTRACT, HOST_PROFILE_CONTRACT, MANAGED_ENGINE_CONTRACT, IMAGE_ACTIVATION_CONTRACT, RUNTIME_ENVIRONMENT_CONTRACT, GUEST_APP_RESOURCES_CONTRACT
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner', 'vision':'vision'}
@@ -138,6 +138,7 @@ def build(root=ROOT):
     checks['managed_engine'] = contract_receipt(artifacts['assistant'], '--managed-engine-contract', MANAGED_ENGINE_CONTRACT)
     checks['image_activation'] = contract_receipt(artifacts['assistant'], '--image-activation-contract', IMAGE_ACTIVATION_CONTRACT)
     checks['runtime_environment'] = contract_receipt(artifacts['assistant'], '--runtime-environment-contract', RUNTIME_ENVIRONMENT_CONTRACT)
+    checks['guest_app_resources'] = contract_receipt(artifacts['assistant'], '--guest-app-resources-contract', GUEST_APP_RESOURCES_CONTRACT)
     checks['vision_version'] = checks.pop('vision')
     checks['vision'] = vision_receipt(artifacts['vision'], root / SOURCE_FIXTURE, qualification=True)
     if platform.system() == 'Darwin':

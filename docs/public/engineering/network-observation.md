@@ -27,12 +27,23 @@ Completed diagnostic records are published by rename. Probe files
 are temporary on Android; the desktop retains its existing diagnostic download.
 No probe sends a message or performs GUI work.
 
-Legacy subscription import and core mutation still use the existing JavaScript
-adapter. Its state and health helpers delegate to the same Rust implementation
-through an internal native command; they do not maintain a second read policy.
-Those remaining mutation/acquisition consumers must also migrate before the
-project can be described as fully Rust. Bundled third-party guest tools are a
-separate concern.
+The Rust controller also owns legacy-core start, stop, resume and handoff to the
+device application. Assistant recovery calls it directly. Existing import and
+rollback callers delegate those operations through the private native command;
+they no longer maintain another lifecycle policy. Unknown process state cannot
+authorize another launch, and application-managed resume does not restart the
+device or change its saved configuration. The existing 210-second operation
+deadline and guest startup/teardown polling budgets remain unchanged.
+
+The JavaScript adapter holds a parent-input lease during a native mutation.
+Closing that FIFO or Unix socket cancels the operation and releases its owned
+guest command. Cancellation does not certify that a preceding guest mutation was
+undone; callers must observe current state before another action. Subscription
+import, YAML conversion, configuration application and legacy phone installation
+still have JavaScript consumers. App-resource selection, integrity admission and
+streaming acquisition now belong to the native resource component. The remaining
+JavaScript paths must migrate before the project can
+be described as fully Rust. Bundled third-party guest tools are a separate concern.
 
 CLI contracts cover private-state preservation, application ownership, unknown
 results, legacy journals, probe publication and actual local HTTP/Curl transport.

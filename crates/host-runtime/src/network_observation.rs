@@ -1,6 +1,8 @@
-//! Read-side device networking. GUI applications and existing configuration retain ownership.
+//! Device network observations; lifecycle commands retain a separate mutation interface.
+mod lifecycle;
 use crate::{Error, Result};
 use ai_phone_adb::{Client, Limits};
+pub use lifecycle::{Controller, Operation, run as control};
 use serde_json::{Value, json};
 use std::{
     ffi::OsString,
@@ -88,6 +90,28 @@ async fn output(mut command: Command, input: Option<&[u8]>, seconds: u64) -> Res
     .await
     .map_err(|_| invalid("device_network_timeout"))?
 }
+fn adb() -> Result<Client> {
+    Client::new(15037, "emulator-5564".into()).map_err(|_| invalid("device_network_adb"))
+}
+async fn phone_shell(client: &Client, text: &str) -> Result<String> {
+    let value = client
+        .shell(
+            text,
+            Limits {
+                stdout: LIMIT,
+                stderr: 4096,
+            },
+            Duration::from_secs(20),
+        )
+        .await
+        .map_err(|_| invalid("device_network_adb"))?;
+    if value.code != 0 {
+        return Err(invalid("device_network_command"));
+    }
+    String::from_utf8(value.stdout)
+        .map(|v| v.trim().to_owned())
+        .map_err(|_| invalid("device_network_response"))
+}
 impl Observer {
     pub fn new(root: &Path, kind: &str, id: &str) -> Result<Self> {
         crate::network_paths::validate(kind, id)?;
@@ -114,24 +138,7 @@ impl Observer {
     }
     async fn shell(&self, text: &str) -> Result<String> {
         if self.phone {
-            let value = Client::new(15037, "emulator-5564".into())
-                .map_err(|_| invalid("device_network_adb"))?
-                .shell(
-                    text,
-                    Limits {
-                        stdout: LIMIT,
-                        stderr: 4096,
-                    },
-                    Duration::from_secs(20),
-                )
-                .await
-                .map_err(|_| invalid("device_network_adb"))?;
-            if value.code != 0 {
-                return Err(invalid("device_network_command"));
-            }
-            String::from_utf8(value.stdout)
-                .map(|v| v.trim().to_owned())
-                .map_err(|_| invalid("device_network_response"))
+            phone_shell(&adb()?, text).await
         } else {
             self.docker(
                 &["exec", "-i", "ai-phone-desktop", "sh", "-c", text],
