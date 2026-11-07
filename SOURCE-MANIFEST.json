@@ -3205,8 +3205,8 @@
     },
     {
       "path": "crates/host-runtime/tests/fixtures/image_engine.rs",
-      "size": 6737,
-      "sha256": "c8d20880351e1fc6bca964e364c7033f65bac2bbacf2eda77b884cd8cf955049"
+      "size": 6832,
+      "sha256": "85a3354f65a9e8e21f6ae24dfa282755dcdf79a280ac0f7e6eda745d11fd2710"
     },
     {
       "path": "crates/host-runtime/tests/fixtures/link_peer.rs",
