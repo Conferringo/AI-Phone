@@ -2,7 +2,7 @@
   "bundle": {
     "targets": ["nsis"],
     "windows": {
-      "webviewInstallMode": {"type": "downloadBootstrapper", "silent": false},
+      "webviewInstallMode": {"type": "offlineInstaller", "silent": true},
       "nsis": {"installMode": "currentUser", "languages": ["English", "SimpChinese"], "displayLanguageSelector": true}
     }
   }

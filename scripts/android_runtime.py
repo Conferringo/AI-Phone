@@ -3,13 +3,13 @@
 Development components remain private until their redistribution/source review is
 complete. This module never packages an AVD or reuses an existing guest data disk.
 """
-import lzma
 import hashlib
 import io
 import json
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import zipfile
@@ -183,7 +183,7 @@ def inventory_file(name, path):
 
 
 def tools_inventory(sdk, abi):
-    files=[];sources={}
+    sources={}
     for component in ('emulator','platform-tools'):
         if is_alias(sdk/component):raise ValueError('SDK runtime source contains a link')
         if not (sdk/component/'source.properties').is_file():
@@ -194,8 +194,13 @@ def tools_inventory(sdk, abi):
                 raise ValueError('SDK runtime source contains a link')
             if path.is_file():
                 name='sdk/'+path.relative_to(sdk).as_posix();checked_path(name,abi)
-                files.append(inventory_file(name,path));sources[name]=path
-    return files,sources
+                sources[name]=path
+    if host_key()=='windows-x64':
+        from build_native_services import release_tools
+        program=release_tools(Path(__file__).resolve().parent.parent)
+        selected=json.loads(subprocess.check_output([program,'windows-sdk-files'],input=json.dumps(list(sources)).encode()))
+        sources={name:sources[name] for name in selected}
+    return [inventory_file(name,path) for name,path in sources.items()],sources
 
 
 def image_inventory(source, abi):
@@ -228,13 +233,16 @@ def build(sdk, image_archive, output, expected_image_sha256, *, compression_pres
     if digest(image_archive)!=expected_image_sha256:
         raise ValueError('Factory image archive checksum mismatch')
     files,tools=tools_inventory(sdk,abi)
+    from build_native_services import release_tools
+    from build_capsule_codec import write_xz
+    encoder=release_tools(Path(__file__).resolve().parent.parent)
     with zipfile.ZipFile(image_archive) as image:
         image_files,images=image_inventory(image,abi);files+=image_files
         manifest=checked_manifest({'format':1,'host':host_key(),'api':35,'abi':abi,'redistribution':'review-pending','image_archive_sha256':expected_image_sha256,'files':files})
         output.parent.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='.android-build-',dir=output.parent) as temp:
             archive=Path(temp)/'android.payload'
-            with archive.open('wb') as raw,lzma.LZMAFile(raw,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=compression_preset) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
+            with archive.open('wb') as raw,write_xz(raw,encoder,'amd64' if abi=='x86_64' else 'arm64',compression_preset) as compressed,tarfile.open(fileobj=compressed,mode='w|') as target:
                 data=json.dumps(manifest,sort_keys=True).encode();header=tarfile.TarInfo(MANIFEST);header.size=len(data);target.addfile(header,io.BytesIO(data))
                 for row in files:
                     header=tarfile.TarInfo(row['path']);header.size=row['size'];header.mode=row['mode']

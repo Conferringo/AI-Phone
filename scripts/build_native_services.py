@@ -17,6 +17,13 @@ ROOT = Path(__file__).resolve().parent.parent
 PACKAGES = {'assistant': 'assistant', 'runner': 'phone-runner', 'vision':'vision'}
 
 
+def release_tools(root):
+    root=Path(root)
+    subprocess.run(['cargo','build','--locked','-p','ai-phone-release-tools','--bin','release-tools'],cwd=root,check=True)
+    target=Path(os.environ.get('CARGO_TARGET_DIR','target'))
+    return root/target/'debug'/('release-tools.exe' if os.name=='nt' else 'release-tools')
+
+
 def source_fingerprint(root):
     records = []
     for name, data, _ in select_files(root):

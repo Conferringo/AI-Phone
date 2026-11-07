@@ -59,7 +59,7 @@ class QualificationLifecycleTests(unittest.TestCase):
         first={'status':'passed','stage':'stopped'}
         second={'status':'failed','stage':'persistence'}
         def materialize(_work,_nonce,resources,_worker):resources['container']='c'*64;return 'c'*64
-        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'native_worker',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={'rootfs_sha256':'a'*64}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',side_effect=[first,second]) as run,patch.object(fixture,'cleanup',return_value={'container':True}) as clean:
+        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'release_tools',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={'rootfs_sha256':'a'*64}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',side_effect=[first,second]) as run,patch.object(fixture,'cleanup',return_value={'container':True}) as clean:
             with self.assertRaisesRegex(ValueError,'did not pass'):fixture.qualify_runtime(Path(folder),Path('source'),Path('images'))
             self.assertEqual([call.args[3] for call in run.call_args_list],[1,2])
             clean.assert_called_once()
@@ -70,7 +70,7 @@ class QualificationLifecycleTests(unittest.TestCase):
     def test_cleanup_failure_cannot_report_success(self):
         import wsl_runtime_fixture as fixture
         def materialize(_work,_nonce,resources,_worker):resources['container']='c'*64;return 'c'*64
-        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'native_worker',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',return_value={'status':'passed'}),patch.object(fixture,'cleanup',return_value={'container':False}):
+        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'release_tools',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',return_value={'status':'passed'}),patch.object(fixture,'cleanup',return_value={'container':False}):
             with self.assertRaisesRegex(ValueError,'cleanup'):fixture.qualify_runtime(Path(folder),Path('source'),Path('images'))
             result=json.loads((Path(folder)/'runtime-receipt.json').read_text())
             self.assertFalse(result['passed']);self.assertEqual(result['stage'],'cleanup')

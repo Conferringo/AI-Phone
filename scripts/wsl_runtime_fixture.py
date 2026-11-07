@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import uuid
 from artifact_io import digest
+from build_native_services import release_tools
 
 LABEL='dev.aiphone.qualification'
 CHECKS=frozenset(('assistant','web','channels','runner_endpoint','database_roles','redis','desktop_frame','work_file','database_marker','desktop_registered','desktop_media'))
@@ -142,13 +143,6 @@ def run_phase(work,container,nonce,phase,run=docker):
         return result
 
 
-def native_worker():
-    root=Path(__file__).resolve().parent.parent
-    subprocess.run(['cargo','build','--locked','-p','ai-phone-release-tools','--bin','release-tools'],cwd=root,check=True)
-    target=Path(os.environ.get('CARGO_TARGET_DIR','target'))
-    return root/target/'debug/release-tools'
-
-
 def materialize(work,nonce,resources,worker,run=docker):
     name=identity(nonce)
     image=run(['image','import','--change','LABEL '+LABEL+'='+nonce,work/'rootfs.tar.gz',name+':fixture'],timeout=600)
@@ -166,7 +160,7 @@ def materialize(work,nonce,resources,worker,run=docker):
 
 def qualify_runtime(work,source,images):
     require_disposable();work=Path(work)
-    inputs=checked_inputs(work,source,images);worker=native_worker();nonce=uuid.uuid4().hex;resources={}
+    inputs=checked_inputs(work,source,images);worker=release_tools(Path(__file__).resolve().parent.parent);nonce=uuid.uuid4().hex;resources={}
     receipt={'format':1,'inputs':inputs,'phases':[],'cleanup':{},'stage':'materialize','passed':False,'windows_boot_verified':False,'phone_ready':False}
     try:
         container=materialize(work,nonce,resources,worker)

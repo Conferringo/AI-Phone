@@ -85,7 +85,8 @@ def qualify(root,payload,home,built=None):
                  'USERPROFILE':str(profile),'LOCALAPPDATA':str(profile/'local'),'APPDATA':str(profile/'roaming')}
     versions={}
     for role,program,argument in [('emulator','emulator','-version'),('platform-tools','adb','version')]:
-        result=subprocess.run([sdk/role/(program+suffix),argument],cwd=profile,env=environment,capture_output=True,text=True,timeout=15,check=True)
+        command=[sdk/role/(program+suffix),*(['-no-window'] if role=='emulator' and host_key()=='windows-x64' else []),argument]
+        result=subprocess.run(command,cwd=profile,env=environment,capture_output=True,text=True,timeout=15,check=True)
         if pins[role]['version'] not in result.stdout:raise ValueError('Android runtime program version differs from its pin')
         versions[role]=result.stdout.splitlines()[:3]
     return {'host':manifest['host'],'abi':manifest['abi'],'files':len(manifest['files']),'programs':versions,'guest_boot':'not-executed'}

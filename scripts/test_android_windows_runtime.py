@@ -27,12 +27,22 @@ class WindowsAndroidRuntimeTests(unittest.TestCase):
                 source=root/(role+'.zip')
                 with zipfile.ZipFile(source,'w') as target:
                     target.writestr(role+'/'+program,b'fixture');target.writestr(role+'/source.properties','Pkg.Revision = 37.0.1\n')
+                    if role=='emulator':
+                        for name in ('qemu/windows-x86_64/qemu-system-x86_64-headless.exe','qemu/windows-x86_64/qemu-system-x86_64.exe','qemu/windows-x86_64/qemu-system-armel-headless.exe','lib64/qt/lib/Qt6WebEngineCoreAndroidEmu.dll','lib64/gles_swiftshader/libEGL.dll','NOTICE.txt'):
+                            target.writestr(role+'/'+name,b'fixture vendor resource')
                 pins[role]={'url':source.as_uri(),'sha256':digest(source),'size_bytes':source.stat().st_size,'version':'37.0.1','channel':'stable'}
             config={'format':1,'api':35,'license_id':'android-sdk-license','hosts':{'windows-x64':{'abi':'x86_64','archives':pins}},
                     'images':{'x86_64':{'url':image.as_uri(),'sha256':digest(image),'size_bytes':image.stat().st_size}}}
             (root/'config/android-factory.json').write_text(json.dumps(config));(root/'user-chat').write_text('keep')
             output,result=build(root,root/'work');self.assertEqual(result['host'],'windows-x64')
             sdk=stage(output,root/'install');self.assertEqual((sdk/'platform-tools/adb.exe').read_bytes(),b'fixture')
+            self.assertTrue((sdk/'emulator/qemu/windows-x86_64/qemu-system-x86_64-headless.exe').is_file())
+            self.assertTrue((sdk/'emulator/lib64/gles_swiftshader/libEGL.dll').is_file())
+            self.assertTrue((sdk/'emulator/NOTICE.txt').is_file())
+            self.assertFalse((sdk/'emulator/lib64/qt').exists())
+            self.assertFalse((sdk/'emulator/qemu/windows-x86_64/qemu-system-x86_64.exe').exists())
+            with zipfile.ZipFile(root/'emulator.zip') as vendor:
+                self.assertIn('emulator/lib64/qt/lib/Qt6WebEngineCoreAndroidEmu.dll',vendor.namelist())
             self.assertEqual((root/'user-chat').read_text(),'keep');self.assertEqual(list((root/'work').glob('.sdk-*')),[])
             with self.assertRaises(FileExistsError):build(root,root/'work')
             config['hosts']['windows-x64']['archives']['emulator']['channel']='preview'

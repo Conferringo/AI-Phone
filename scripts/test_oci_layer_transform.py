@@ -7,6 +7,7 @@ import http.client
 import importlib.util
 import io
 import json
+import lzma
 from pathlib import Path
 import socket
 import ssl
@@ -26,7 +27,6 @@ DENIED = ('socket.socket', 'socket.create_connection', 'socket.getaddrinfo',
           'subprocess.Popen', 'subprocess.run', 'subprocess.call',
           'subprocess.check_call', 'subprocess.check_output', 'os.system', 'os.popen')
 import oci_layer_transform as m
-from build_capsule_codec import write_xz
 
 GZIP = 'application/vnd.oci.image.layer.v1.tar+gzip'
 RAW = 'application/vnd.oci.image.layer.v1.tar'
@@ -184,10 +184,7 @@ def compress(value, codec='gzip', files=None):
     data = tar_bytes(value['files'] if files is None else files)
     if codec == 'gzip':
         return gzip.compress(data, mtime=0)
-    target = io.BytesIO()
-    with write_xz(target) as output:
-        output.write(data)
-    return target.getvalue()
+    return lzma.compress(data)
 
 
 def output_files(raw):

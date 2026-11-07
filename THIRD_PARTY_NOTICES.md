@@ -70,7 +70,9 @@ The locked archive dependencies use glob 14.0.3 and minimatch 11.0.3, covering [
 
 ## Web and installer runtimes
 
-Complete macOS/Linux bundles include Next.js standalone output and the pinned Bun executable. Installer tools add portable Python, with Node retained for source/partially prebuilt installations. Their runtime licences, third-party attribution and applicable source requirements are separate from the native Rust/WebView client graph. The JavaScript inventory identifies application packages; it does not by itself cover every native runtime or image dependency. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
+Complete macOS/Linux factory source includes Next.js standalone output and pinned Bun, with Rust host initialization. New WSL rootfs builds remove build-only installer tools after verification. Existing source/partially prebuilt installations still have portable Python/Node consumers; older retained candidates predate these cuts. Their runtime licences, attribution and source requirements remain separate from the Rust/WebView client graph. The JavaScript inventory alone does not cover native runtimes or image dependencies. See [runtime bundle boundaries](docs/public/runtime-bundles.md) and [installer tools](docs/public/engineering/installer-tools.md).
+
+Windows factory source now embeds Microsoft's Evergreen WebView2 standalone installer through Tauri's offline installer mode. Microsoft software remains subject to its own runtime terms and applicable notices, separate from this project's Apache-2.0 licence. Build inclusion does not establish redistribution clearance. See [Microsoft's distribution documentation](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/distribution) and the [Windows factory status](docs/public/windows-client-factory.md). Older retained candidates use an online bootstrapper.
 
 ## Media and channel runtime component
 

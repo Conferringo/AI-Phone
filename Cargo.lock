@@ -112,6 +112,7 @@ dependencies = [
  "ai-phone-api",
  "crc32fast",
  "flate2",
+ "fs2",
  "image",
  "prost",
  "reqwest",
@@ -122,6 +123,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "uuid",
+ "xz2",
 ]
 
 [[package]]

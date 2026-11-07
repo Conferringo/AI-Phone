@@ -7,7 +7,7 @@ import struct
 import unittest
 import zlib
 
-from build_capsule_codec import decoded, write_xz, MEMORY_LIMIT
+from build_capsule_codec import decoded, MEMORY_LIMIT
 
 
 class CapsuleCodecTests(unittest.TestCase):
@@ -23,15 +23,6 @@ class CapsuleCodecTests(unittest.TestCase):
                     self.assertEqual(raw.seek(0),0)
                     self.assertEqual(hashlib.file_digest(raw,'sha256').digest(),hashlib.sha256(body).digest())
                 self.assertFalse(source.closed)
-
-    def test_xz_writer_is_deterministic_and_uses_supported_dictionary(self):
-        results=[]
-        for _ in range(2):
-            destination=io.BytesIO()
-            with write_xz(destination) as output:output.write(b'capsule fixture'*200)
-            results.append(destination.getvalue())
-        self.assertEqual(results[0],results[1])
-        self.assertEqual(lzma.decompress(results[0],memlimit=MEMORY_LIMIT),b'capsule fixture'*200)
 
     def test_magic_metadata_and_raw_budgets_fail_closed(self):
         for data,expected in [(b'not compression',None),(gzip.compress(b'ok'),'xz'),(lzma.compress(b'ok'),'gzip')]:

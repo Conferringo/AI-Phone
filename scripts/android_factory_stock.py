@@ -10,7 +10,7 @@ from artifact_io import digest
 
 RESERVE=4*1024**3+32*1024**2
 ARM64=0x0100000c
-PRODUCERS=('android_component_factory','android_factory_stock','android_runtime','android_sdk_archive','artifact_io','client_host','client_host_entry','host_filesystem','host_platform')
+PRODUCERS=('android_component_factory','android_factory_stock','android_runtime','android_sdk_archive','artifact_io','client_host','client_host_entry','host_filesystem','host_platform','build_capsule_codec','build_native_services')
 
 
 def macos_policy(archives,image):
@@ -25,6 +25,8 @@ def macos_policy(archives,image):
 
 def stock_identity(pins):
     sources={name+'.py':digest(Path(importlib.import_module(name).__file__)) for name in PRODUCERS}
+    root=Path(__file__).resolve().parent.parent
+    sources.update({name:digest(root/name) for name in ('Cargo.toml','Cargo.lock','crates/release-tools/Cargo.toml','crates/release-tools/src/main.rs','crates/release-tools/src/capsule.rs','crates/release-tools/src/android_package.rs')})
     encoded=lambda value:hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return {'policy_sha256':encoded(pins),'producer_sha256':encoded(sources),'producer_files':sources,
             'archives':{role:pin['sha256'] for role,pin in pins.items()},'redistribution':'review-pending'}

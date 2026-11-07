@@ -55,7 +55,7 @@ def bound_records(records, actual, architecture):
     return bound
 
 
-def transformed_images(records, raw, architecture):
+def transformed_images(records, raw, architecture, encoder):
     folder=Path(raw.name).parent
     with (folder/'docker-export.tar.gz').open('w+b') as source:
         save_images([row['ref'] for row in records.values()],source,architecture)
@@ -64,7 +64,7 @@ def transformed_images(records, raw, architecture):
         records=bound_records(records,inventory_records(objects,members),architecture)
         oci='oci-layout' in members
         source.seek(0)
-        with write_xz(ArchiveWriter(raw,folder)) as target:
+        with write_xz(raw,encoder,architecture) as target:
             writer=RawArchiveWriter(target)
             if oci:
                 result=transform(source,writer,records)
@@ -115,10 +115,12 @@ def build(sources, output):
     output=Path(output);output.parent.mkdir(parents=True,exist_ok=True)
     if shutil.disk_usage(output.parent).free<RESERVE:raise ValueError('Keep 4 GiB free before exporting images')
     arch=daemon_architecture(docker_command);records=source_records(sources,arch)
+    from build_native_services import release_tools
+    encoder=release_tools(Path(__file__).resolve().parent.parent)
     with tempfile.TemporaryDirectory(prefix='.images-build-',dir=output.parent) as temp:
         archive=Path(temp)/'images.payload'
         with archive.open('w+b') as raw:
-            raw.write(b'\0'*512);records=transformed_images(records,raw,arch);size=raw.tell()-512
+            raw.write(b'\0'*512);records=transformed_images(records,raw,arch,encoder);size=raw.tell()-512
             if size>MAX_ARCHIVE:raise ValueError('Image capsule exceeds budget')
             raw.seek(0);raw.write(header(XZ_ARCHIVE,size));raw.seek(0,2);raw.write(b'\0'*(-size%512));raw.flush()
             manifest=finish_metadata(archive,records,arch,size);data=json.dumps(manifest,sort_keys=True).encode()
