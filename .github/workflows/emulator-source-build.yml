@@ -83,7 +83,7 @@ jobs:
         run: |
           rustup toolchain install 1.96.0 --profile minimal
           cargo build --locked -p ai-phone-release-tools --bin release-tools --example qualify_source_sdk
-          sudo -n env TMPDIR="$RUNNER_TEMP" "$CARGO_TARGET_DIR/debug/examples/qualify_source_sdk" "$CARGO_TARGET_DIR/debug/release-tools"
+          sudo -n env TMPDIR=/tmp "$CARGO_TARGET_DIR/debug/examples/qualify_source_sdk" "$CARGO_TARGET_DIR/debug/release-tools"
           printf 'AI_PHONE_SOURCE_RELEASE_TOOLS=%s/debug/release-tools\n' "$CARGO_TARGET_DIR" >> "$GITHUB_ENV"
       - name: Prepare native artifact retention before source synchronization
         if: ${{ inputs.retain_source_candidate }}
