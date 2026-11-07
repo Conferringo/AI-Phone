@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 use std::{
     ffi::OsString,
     fs::{self, File},
-    io::Read,
+    io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
     process::Stdio,
     time::Duration,
@@ -90,6 +90,7 @@ async fn command(program: &Path, args: &[&str]) -> Result<Vec<u8>> {
 struct Owned {
     child: Child,
     pid: rustix::process::Pid,
+    log: PathBuf,
     closed: bool,
 }
 impl Owned {
@@ -107,12 +108,23 @@ impl Owned {
         Ok(Self {
             child,
             pid,
+            log: log.into(),
             closed: false,
         })
     }
     fn alive(&mut self) -> Result<()> {
-        if self.child.try_wait()?.is_some() {
-            return Err("owned SDK process exited".into());
+        if let Some(status) = self.child.try_wait()? {
+            let mut file = File::open(&self.log)?;
+            file.seek(SeekFrom::Start(file.metadata()?.len().saturating_sub(4096)))?;
+            let mut tail = Vec::new();
+            file.take(4096).read_to_end(&mut tail)?;
+            let tail = String::from_utf8_lossy(&tail)
+                .replace(self.log.parent().unwrap().to_str().unwrap(), "<evidence>");
+            return Err(format!(
+                "owned SDK process {} exited {status}: {tail}",
+                self.log.file_name().unwrap().to_string_lossy()
+            )
+            .into());
         }
         Ok(())
     }
@@ -558,5 +570,33 @@ mod tests {
             assert!(Instant::now() < until);
             sleep(Duration::from_millis(5)).await;
         }
+    }
+    #[tokio::test]
+    async fn failed_child_reports_its_status_and_bounded_path_redacted_output() {
+        let root = tempfile::tempdir().unwrap();
+        let mut command = Command::new("/bin/sh");
+        command
+            .args(["-c", "printf '%s' \"$1\" >&2; exit 23", "fixture"])
+            .arg(format!(
+                "{}\nactual SDK failure in {}",
+                "x".repeat(10000),
+                root.path().display()
+            ));
+        let mut child = Owned::spawn(command, &root.path().join("emulator.log")).unwrap();
+        let error = tokio::time::timeout(Duration::from_secs(1), async {
+            loop {
+                if let Err(error) = child.alive() {
+                    break error.to_string();
+                }
+                sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(error.contains("23"));
+        assert!(error.contains("actual SDK failure in <evidence>"));
+        assert!(!error.contains(root.path().to_str().unwrap()));
+        assert!(error.len() < 4300);
+        child.stop().await.unwrap();
     }
 }
