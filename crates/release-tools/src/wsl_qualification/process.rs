@@ -253,13 +253,17 @@ async fn native_initialize(receipt: &mut Receipt, context: &Context) -> Result<(
 
 #[cfg(test)]
 mod tests {
+    use super::super::tests::script;
     use super::*;
-    use std::os::unix::fs::PermissionsExt;
 
     fn fixture(root: &Path, body: &str, progress: &str, code: u8) -> Context {
         let program = root.join("bootstrap");
-        fs::write(&program,format!("#!/bin/sh\nif [ \"$1\" = --service-control ]; then exit 23; fi\ncat > \"$0.request\"\nprintf '%s\\n' '{progress}' >&2\nprintf '%s' '{body}'\nexit {code}\n")).unwrap();
-        fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
+        script(
+            &program,
+            &format!(
+                "#!/bin/sh\nif [ \"$1\" = --service-control ]; then exit 23; fi\ncat > \"$0.request\"\nprintf '%s\\n' '{progress}' >&2\nprintf '%s' '{body}'\nexit {code}\n"
+            ),
+        );
         let mut context = Context::new(root.into(), "a".repeat(32), 1).unwrap();
         context.bootstrap = program;
         context
@@ -311,8 +315,10 @@ mod tests {
     async fn checkpoint_failure_reaps_the_owned_initializer() {
         let root = tempfile::tempdir().unwrap();
         let program = root.path().join("bootstrap");
-        fs::write(&program,"#!/bin/sh\necho $$ > \"$0.pid\"\ncat >/dev/null\necho 'AI_PHONE_INITIALIZE preflight' >&2\nexec sleep 30\n").unwrap();
-        fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
+        script(
+            &program,
+            "#!/bin/sh\necho $$ > \"$0.pid\"\ncat >/dev/null\necho 'AI_PHONE_INITIALIZE preflight' >&2\nexec sleep 30\n",
+        );
         let mut context = Context::new(root.path().into(), "a".repeat(32), 1).unwrap();
         context.bootstrap = program;
         let blocked = root.path().join("not-a-directory");

@@ -79,10 +79,15 @@ jobs:
           '
           build_parent="$(mktemp -d "$RUNNER_TEMP/emulator-source-XXXXXX")"
           printf 'AI_PHONE_EMULATOR_SOURCE_WORK=%s\n' "$build_parent" >> "$GITHUB_ENV"
+      - name: Prepare native SDK workspace and qualify source isolation
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          cargo build --locked -p ai-phone-release-tools --bin release-tools --example qualify_source_sdk
+          sudo -n env TMPDIR=/tmp "$CARGO_TARGET_DIR/debug/examples/qualify_source_sdk" "$CARGO_TARGET_DIR/debug/release-tools"
+          printf 'AI_PHONE_SOURCE_RELEASE_TOOLS=%s/debug/release-tools\n' "$CARGO_TARGET_DIR" >> "$GITHUB_ENV"
       - name: Prepare native artifact retention before source synchronization
         if: ${{ inputs.retain_source_candidate }}
         run: |
-          rustup toolchain install 1.96.0 --profile minimal
           cargo build --release --locked -p ai-phone-host-runtime --bin package-volumes
       - name: Qualify the owned headless display before source synchronization
         run: python3 -B scripts/emulator-source-build/qualify_display_session.py

@@ -305,8 +305,7 @@ class SdkWorkspaceTests(unittest.TestCase):
         self.assertEqual((self.work / "source-sdk/.knownPackages").read_bytes(), b"pinned metadata")
 
     def test_copy_failure_never_moves_the_original_sdk(self):
-        with patch.object(producer.platform,'system',return_value='Linux'), \
-             patch.object(producer,'copy_sdk_file',side_effect=OSError('fixture copy failure')):
+        with patch.object(producer.shutil,'copy2',side_effect=OSError('fixture copy failure')):
             with self.assertRaises(producer.shutil.Error):
                 with producer.isolated_sdk(self.checkout,self.work,'linux'):
                     self.fail('an incomplete copy cannot reach upstream')
@@ -314,39 +313,55 @@ class SdkWorkspaceTests(unittest.TestCase):
         self.assertFalse((self.work/'source-sdk').exists())
 
 
-class SparseSdkCopyTests(unittest.TestCase):
+class NativeSdkCopyTests(unittest.TestCase):
     def test_logical_bytes_metadata_and_independent_storage_are_preserved(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary);source=root/'source';destination=root/'copy'
+            root=Path(temporary);(root/'source').mkdir();source=root/'source/blob';destination=root/'copy/blob'
             payload=b'head'+bytes(2*1024**2+17)+b'tail'
             source.write_bytes(payload);source.chmod(0o640)
             os.utime(source,ns=(1700000000000000000,1700000001000000000))
-            producer.copy_sdk_file(source,destination)
+            producer.copy_sdk_tree(source.parent,destination.parent)
             self.assertEqual(destination.read_bytes(),payload)
             self.assertEqual(source.stat().st_mtime_ns,destination.stat().st_mtime_ns)
             self.assertEqual(source.stat().st_mode & 0o777,destination.stat().st_mode & 0o777)
             destination.chmod(0o600);destination.write_bytes(b'independent write')
             self.assertEqual(source.read_bytes(),payload)
 
-    @unittest.skipUnless(sys.platform.startswith('linux'),'Physical sparse allocation is qualified on Linux')
-    def test_zero_regions_use_sparse_blocks_and_preserve_the_final_length(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary);source=root/'source';destination=root/'copy'
-            payload=b'head'+bytes(16*1024**2+17)
-            source.write_bytes(payload)
-            producer.copy_sdk_file(source,destination)
-            self.assertEqual(destination.stat().st_size,len(payload))
-            self.assertEqual(producer.sha256(source),producer.sha256(destination))
-            self.assertLess(destination.stat().st_blocks*512,len(payload)//4)
-
     def test_empty_and_short_zero_files_keep_exact_lengths(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary)
+            root=Path(temporary);(root/'source').mkdir()
             for length in [0,1,1024**2-1,1024**2,1024**2+1]:
                 with self.subTest(length=length):
-                    source=root/('source-'+str(length));destination=root/('copy-'+str(length))
-                    source.write_bytes(bytes(length));producer.copy_sdk_file(source,destination)
+                    source=root/'source'/str(length);destination=root/'copy'/str(length)
+                    source.write_bytes(bytes(length))
+            producer.copy_sdk_tree(root/'source',root/'copy')
+            for length in [0,1,1024**2-1,1024**2,1024**2+1]:
+                with self.subTest(length=length):
+                    source=root/'source'/str(length);destination=root/'copy'/str(length)
                     self.assertEqual(destination.read_bytes(),source.read_bytes())
+
+
+class LinuxSdkInvocationTests(unittest.TestCase):
+    def test_the_original_command_runs_in_a_private_view_without_copying_the_sdk(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);checkout=root/'checkout';checkout.mkdir()
+            work=root/'work';lock=root/'lock';lock.write_bytes(b'lock')
+            compiler=['/owned/compiler','--qtwebengine','--target','linux_x86_64']
+            def build(command,**options):
+                self.assertEqual(command[:9],['sudo','-n','-E','unshare','--mount','--propagation','private','--','/owned/release-tools'])
+                self.assertEqual(command[9:14],['source-sdk-build',str(checkout/'prebuilts/android-emulator-build/system-images'),str(work),str(os.getuid()),str(os.getgid())])
+                self.assertEqual(command[14:],compiler)
+                self.assertEqual(options['env']['ANDROID_HOME'],str(checkout/'prebuilts/android-emulator-build/system-images/linux'))
+                (work/'dist').mkdir()
+                (work/'dist'/('sdk-repo-linux-emulator-'+producer.BUILD_ID+'.zip')).write_bytes(b'owned mock artifact')
+                return SimpleNamespace(returncode=0)
+            with patch.dict(producer.os.environ,{'AI_PHONE_SOURCE_RELEASE_TOOLS':'/owned/release-tools'}), \
+                 patch.object(producer,'isolated_sdk',side_effect=AssertionError('Linux must not copy the SDK')), \
+                 patch.object(producer.subprocess,'run',side_effect=build), \
+                 patch.object(producer,'project_inputs'):
+                result=producer.build_once(checkout,work,lock,compiler,{},'linux','linux')
+            self.assertEqual(result['build_status'],'built')
+            self.assertFalse((work/'sdk').exists())
 
 
 if __name__ == "__main__":

@@ -180,7 +180,7 @@ def isolated_environment(root):
             "TMPDIR": str(root / "tmp"), "PYTHONNOUSERSITE": "1", "PYTHONPYCACHEPREFIX": str(root / "pycache"),
             "CMAKE_BUILD_PARALLEL_LEVEL": "2"}
     # Keep existing identity and the CI process-cleanup owner; do not repurpose either.
-    for name in ("HOME", "RUNNER_TRACKING_ID"):
+    for name in ("HOME", "RUNNER_TRACKING_ID", "AI_PHONE_SOURCE_RELEASE_TOOLS"):
         if name in os.environ:
             environment[name] = os.environ[name]
     return environment
@@ -201,9 +201,12 @@ def host_requirements():
         raise BuildFailure("python_311_64bit_required")
     if Path.home().joinpath(".netrc").exists():
         raise BuildFailure("clean_builder_home_required")
-    for name in ("git", "gpg", "xvfb-run", "Xvfb", "xauth", "xset"):
+    for name in ("git", "gpg", "xvfb-run", "Xvfb", "xauth", "xset", "sudo", "unshare", "mount", "setpriv"):
         if shutil.which(name) is None:
             raise BuildFailure("required_tool_missing")
+    native=Path(os.environ.get('AI_PHONE_SOURCE_RELEASE_TOOLS',''))
+    if not native.is_absolute() or not native.is_file() or not os.access(native,os.X_OK):
+        raise BuildFailure('required_tool_missing')
 
 
 def admission(root):
@@ -455,7 +458,7 @@ def sdk_copy_diagnostics(root):
         if path.is_symlink() or path.stat().st_size>8192:return None
         value=json.loads(path.read_bytes())
     except (OSError,ValueError):return None
-    if not isinstance(value,dict) or value.get('backend') not in ('sparse','native'):return None
+    if not isinstance(value,dict) or value.get('backend') not in ('sparse','native','overlay'):return None
     fields=('files','logical_bytes','allocated_bytes')
     if any(type(value.get(key)) is not int or not 0<=value[key]<=2**48 for key in fields):return None
     return {'backend':value['backend'],**{key:value[key] for key in fields}}

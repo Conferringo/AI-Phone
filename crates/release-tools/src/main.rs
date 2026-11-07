@@ -2,12 +2,22 @@ mod android_package;
 #[cfg(target_os = "linux")]
 mod apt;
 mod capsule;
+#[cfg(target_os = "linux")]
+mod source_sdk;
 #[cfg(unix)]
 mod wsl_qualification;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn execute(arguments: Vec<std::ffi::OsString>) -> Result<Option<serde_json::Value>> {
+    #[cfg(target_os = "linux")]
+    if arguments
+        .first()
+        .is_some_and(|value| value == "source-sdk-build")
+    {
+        source_sdk::run(&arguments[1..])?;
+        return Ok(None);
+    }
     if arguments
         .first()
         .is_some_and(|value| value == "windows-sdk-files")

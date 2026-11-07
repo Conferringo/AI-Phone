@@ -50,18 +50,14 @@ async fn phone_peer_publishes_the_existing_discovery_contract_after_pairing() {
         );
     }
     let ports = [peer.receipt().adb_port, peer.receipt().emulator_port];
+    let streams =
+        connect_ports(ports.map(|port| (std::net::Ipv4Addr::LOCALHOST, port as u16).into())).await;
     let (peer_end, stop) = watch::channel(false);
     let peer_task = tokio::spawn(peer.serve(stop));
     stop_task(peer_end, peer_task).await;
     assert!(!advertisement.exists());
     assert!(root.path().join(".phone-peer.pb").exists());
-    for port in ports {
-        assert!(
-            TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, port as u16))
-                .await
-                .is_err()
-        );
-    }
+    assert_closed(streams).await;
     let mut resumed = value;
     resumed.grpc_token = "updated-private-token".into();
     let peer = peer::PhonePeer::bind(resumed).await.unwrap();
@@ -172,19 +168,15 @@ async fn phone_peer_cleanup_preserves_changed_files_and_closes_its_listeners() {
     let path = root.path().join("avd/running/pid_0.ini");
     std::fs::write(&path, b"manual replacement\n").unwrap();
     let ports = [peer.receipt().adb_port, peer.receipt().emulator_port];
+    let streams =
+        connect_ports(ports.map(|port| (std::net::Ipv4Addr::LOCALHOST, port as u16).into())).await;
     let (_stop, stop) = watch::channel(true);
     assert_eq!(
         peer.serve(stop).await.unwrap_err().code(),
         "phone_peer_cleanup_unknown"
     );
     assert_eq!(std::fs::read(&path).unwrap(), b"manual replacement\n");
-    for port in ports {
-        assert!(
-            TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, port as u16))
-                .await
-                .is_err()
-        );
-    }
+    assert_closed(streams).await;
     assert_eq!(
         peer::PhonePeer::bind(value.clone())
             .await
@@ -244,8 +236,26 @@ async fn stop_task(end: watch::Sender<bool>, task: tokio::task::JoinHandle<Resul
         .unwrap()
         .unwrap();
 }
+async fn connect_ports(ports: impl IntoIterator<Item = SocketAddr>) -> Vec<TcpStream> {
+    let mut streams = Vec::new();
+    for port in ports {
+        streams.push(TcpStream::connect(port).await.unwrap());
+    }
+    streams
+}
+async fn assert_closed(streams: impl IntoIterator<Item = TcpStream>) {
+    for mut stream in streams {
+        assert!(
+            tokio::time::timeout(Duration::from_secs(1), stream.read_u8())
+                .await
+                .unwrap()
+                .is_err(),
+            "all owned sockets must close before the owner returns"
+        );
+    }
+}
 #[tokio::test]
-async fn both_routes_preserve_large_streams_half_close_and_stop_without_late_connections() {
+async fn both_routes_preserve_large_streams_half_close_and_drain_on_stop() {
     let (host, targets) = host().await;
     let address = host.receipt.endpoint.parse().unwrap();
     let (end, stop) = watch::channel(false);
@@ -290,6 +300,7 @@ async fn both_routes_preserve_large_streams_half_close_and_stop_without_late_con
         assert_eq!(out[0], index as u8);
         assert_eq!(&out[1..], payload);
     }
+    let streams = connect_ports(ports.into_iter().chain([address])).await;
     end.send(true).unwrap();
     tokio::time::timeout(Duration::from_secs(2), async {
         host_task.await.unwrap().unwrap();
@@ -300,9 +311,7 @@ async fn both_routes_preserve_large_streams_half_close_and_stop_without_late_con
     for echo in echoes {
         echo.await.unwrap();
     }
-    for port in ports.into_iter().chain([address]) {
-        assert!(TcpStream::connect(port).await.is_err());
-    }
+    assert_closed(streams).await;
 }
 #[tokio::test]
 async fn wrong_key_identity_version_and_unknown_service_never_open_targets() {
@@ -360,13 +369,7 @@ async fn cancellation_reaps_partial_handshakes_and_active_raw_connections() {
     target.read_exact(&mut before).await.unwrap();
     assert_eq!(&before, b"active");
     stop_task(end, task).await;
-    for stream in [&mut raw, &mut target, &mut partial] {
-        let result = tokio::time::timeout(Duration::from_secs(1), stream.read_u8()).await;
-        assert!(
-            result.unwrap().is_err(),
-            "all sockets must close before the owner returns"
-        );
-    }
+    assert_closed([raw, target, partial]).await;
 }
 #[tokio::test]
 async fn guest_does_not_publish_when_paired_target_is_unavailable() {
