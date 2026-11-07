@@ -61,7 +61,7 @@ class WslResourceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);payload,_=self.capsule(root)
             native=root/'apps/client/src-tauri';native.mkdir(parents=True)
-            (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload','gen/host/entry.py':'host/entry.py'}}}))
+            (native/'tauri.conf.json').write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload'}}}))
             (root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture')
             selected=prepare_client(root,wsl_runtime=payload)
             self.assertIn('wsl/manifest.json',selected)

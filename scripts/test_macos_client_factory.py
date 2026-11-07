@@ -9,7 +9,7 @@ import macos_client_factory as mac
 import linux_client_factory as images
 
 COMPONENTS=['web','native-services','phone-apps','container-host','js-services',
-            'guest-apps','android-runtime','container-images','installer-tools']
+            'guest-apps','android-runtime','container-images']
 
 
 class MacClientFactoryTests(unittest.TestCase):
@@ -25,11 +25,11 @@ class MacClientFactoryTests(unittest.TestCase):
                     with self.subTest(size=size):
                         with artifact.open('wb') as output:output.truncate(size)
                         if size<ASSET_LIMIT:
-                            result=mac.compile_client(root,root/'android',root/'images',root/'tools',{})
+                            result=mac.compile_client(root,root/'android',root/'images',{})
                             self.assertEqual(result['size'],size)
                         else:
                             with self.assertRaisesRegex(ValueError,'single-file'):
-                                mac.compile_client(root,root/'android',root/'images',root/'tools',{})
+                                mac.compile_client(root,root/'android',root/'images',{})
 
     def test_native_image_handoff_builds_complete_client_without_an_emulated_engine(self):
         from contextlib import ExitStack
@@ -49,7 +49,6 @@ class MacClientFactoryTests(unittest.TestCase):
                 docker=stack.enter_context(patch.object(mac,'check_docker',side_effect=AssertionError('no engine')))
                 guest=stack.enter_context(patch.object(mac,'prepare_guest',side_effect=AssertionError('guest already in images')))
                 images=stack.enter_context(patch.object(mac,'prepare_images',side_effect=AssertionError('no image rebuild')))
-                stack.enter_context(patch.object(mac,'prepare_tools',return_value=(root/'tools',{})))
                 stack.enter_context(patch.object(mac,'prepare_host',return_value={}))
                 stack.enter_context(patch.object(mac,'prepare_android',return_value=(root/'android',{})))
                 stack.enter_context(patch.object(mac,'prepare_apps',return_value={'phone':{'source_sha256':'c'*64}}))
@@ -93,18 +92,19 @@ class MacClientFactoryTests(unittest.TestCase):
             env={'ANDROID_HOME':'fixture-sdk','JAVA_HOME':'fixture-java'}
             with patch.object(mac,'run') as run,patch.object(mac,'run_checks') as checks,patch('prepare_client_host.payload_components',return_value=COMPONENTS):
                 path.write_text(json.dumps(receipt))
-                value=mac.compile_client(root,root/'android',root/'images',root/'tools',env)
+                value=mac.compile_client(root,root/'android',root/'images',env)
                 self.assertTrue(value['delivery']['complete_device_bundle'])
                 checks.assert_called_once_with(root,env=env)
                 command=run.call_args.args[0]
-                for flag,name in [('--android-runtime','android'),('--images-runtime','images'),('--installer-tools','tools')]:
+                self.assertNotIn('--installer-tools',command)
+                for flag,name in [('--android-runtime','android'),('--images-runtime','images')]:
                     self.assertEqual(command[command.index(flag)+1],root/name)
                 for flag in ('--with-web-runtime','--with-service-runtime','--with-phone-apps','--with-container-host','--with-js-services','--with-guest-apps'):
                     self.assertIn(flag,command)
                 self.assertEqual(run.call_args.kwargs['env'],env)
                 for changed in ({**receipt,'complete_device_bundle':False},{**receipt,'prebuilt_components':COMPONENTS[:-1]},{**receipt,'sha256':'0'*64}):
                     path.write_text(json.dumps(changed))
-                    with self.assertRaises(ValueError):mac.compile_client(root,root/'android',root/'images',root/'tools',env)
+                    with self.assertRaises(ValueError):mac.compile_client(root,root/'android',root/'images',env)
 
     def test_arm_image_builder_uses_arm_platform_and_arm_clash_package(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -153,7 +153,7 @@ class MacClientFactoryTests(unittest.TestCase):
                 stack.enter_context(patch('check_source.check'))
                 mocked('compiler_environment',{'JAVA_HOME':'fixture'});mocked('check_docker',None)
                 mocked('build_guest',root/'guest')
-                mocked('prepare_tools',(root/'tools',{}));mocked('prepare_host',{})
+                mocked('prepare_host',{})
                 mocked('prepare_android',(root/'android',{}));mocked('prepare_apps',{'phone':{'source_sha256':'c'*64}})
                 prepare=mocked('prepare_images',(root/'images',{'bytes':123}));mocked('compile_client',{'delivery':mac.checked_delivery(COMPONENTS)})
                 handoff=stack.enter_context(patch('package_delivery.prepare',return_value={'format':'volumes','manifest':'fixture.volumes.json'}))
@@ -161,7 +161,7 @@ class MacClientFactoryTests(unittest.TestCase):
                 handoff.assert_called_once_with(root,result['artifact'])
                 self.assertEqual(result['package_delivery']['format'],'volumes')
                 prepare.assert_called_once_with(root,root/'.tools/complete-macos',expected,architecture='arm64',guest_runtime=root/'guest')
-                self.assertEqual(trace,['compiler_environment','check_docker','build_guest','prepare_tools','prepare_host','prepare_android','prepare_apps','prepare_images','compile_client'])
+                self.assertEqual(trace,['compiler_environment','check_docker','build_guest','prepare_host','prepare_android','prepare_apps','prepare_images','compile_client'])
                 self.assertEqual(result['source_manifest_sha256'],expected)
                 self.assertFalse(result['binary_publication'])
                 self.assertTrue((root/'dist/macos-full-factory-report.json').is_file())

@@ -19,8 +19,8 @@ def installer_metadata(path,host):
     return {'file':path.name,'format':kind,'size':size,'single_file':True,
             'user_assembly_required':False,'github_asset_eligible':size<ASSET_LIMIT}
 
-CORE_SIDECARS={'android-runtime','container-images','installer-tools'}
-SIDECARS=CORE_SIDECARS|{'wsl-backend'}
+CORE_SIDECARS={'android-runtime','container-images'}
+SIDECARS=CORE_SIDECARS|{'wsl-backend','installer-tools'}
 SERVICES={'web','native-services','js-services'}
 FULL_RUNTIME=set(COMPONENT_MANIFESTS)|CORE_SIDECARS
 HOST_RUNTIMES={'macos-arm64':FULL_RUNTIME,'linux-x64':FULL_RUNTIME,'linux-amd64':FULL_RUNTIME,

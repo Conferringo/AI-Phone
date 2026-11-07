@@ -172,11 +172,11 @@ def run_checks(root,**options):
     return run([Path(root)/'scripts/bun','run','check'],root,**options)
 
 
-def compile_client(root,android,images,tools,ocr):
+def compile_client(root,android,images,ocr):
     from client_delivery import installer_metadata
     run_checks(root)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','linux','--with-web-runtime','--with-service-runtime','--with-phone-apps',
-         '--with-container-host','--with-js-services','--with-guest-apps','--android-runtime',android,'--images-runtime',images,'--installer-tools',tools,'--linux-ocr',ocr],root)
+         '--with-container-host','--with-js-services','--with-guest-apps','--android-runtime',android,'--images-runtime',images,'--linux-ocr',ocr],root)
     from prepare_client_host import payload_components
     checked_delivery(payload_components(root))
     version=json.loads((root/'config/release-policy.json').read_text())['version']
@@ -199,16 +199,15 @@ def build(root):
     check(root);cache=root/'.tools/complete-linux'
     if cache.exists():raise ValueError('Use a fresh factory checkout; existing outputs were preserved')
     cache.mkdir(parents=True);source=digest(root/'SOURCE-MANIFEST.json')
-    tools,tool_result=prepare_tools(root,cache)
     ocr,host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,dict(os.environ))
     images,image_result=prepare_images(root,cache,source)
-    artifacts,apt_metadata=compile_client(root,android,images,tools,ocr)
+    artifacts,apt_metadata=compile_client(root,android,images,ocr)
     from package_delivery import prepare as prepare_delivery
     installers=[{'artifact':artifact,'package_delivery':prepare_delivery(root,artifact)} for artifact in artifacts]
     result={'format':2,'host':'linux-x64','source_commit':os.environ.get('GITHUB_SHA',''),'source_manifest_sha256':source,
-            'installers':installers,'apt_metadata':apt_metadata,'tools':tool_result,'container_host':host,'android':phone_runtime,
+            'installers':installers,'apt_metadata':apt_metadata,'container_host':host,'android':phone_runtime,
             'image_capsule_bytes':image_result['bytes'],'phone_apps_source_sha256':apps['phone']['source_sha256'],
             'physical_installation':'not-tested-maintainer-waiver','binary_publication':False}
     output=root/'dist/linux-full-factory-report.json';output.write_text(json.dumps(result,indent=2)+'\n');return result

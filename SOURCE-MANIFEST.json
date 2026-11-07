@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 21051,
-      "sha256": "4d1af8a5b5094711cfde87b1e47d47887b7623b4cc6d188ea4a4eb8e9e8d9959"
+      "size": 21028,
+      "sha256": "79ecee9f9fac8d63c1397011a851e5341026923fb43974c3876d257b30c7c600"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -525,8 +525,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 25844,
-      "sha256": "f78346e45a4bc6cebf05865994a452ee187ffcd1d76dd504ec47b520a176a4e2"
+      "size": 25820,
+      "sha256": "1f6d50dc681bdbcf84bebc2761d8be076f4fbe633e3f114c8d1f250a82d44ac9"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
@@ -540,8 +540,8 @@
     },
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
-      "size": 1771,
-      "sha256": "5fa34850fe5dc6bcd8459e14844999dc92b6089e241a0118c2d34c6075ad46b3"
+      "size": 1727,
+      "sha256": "3fbe928b590a0af3dcd8d830c496757a932685ee40abd40ddd3a49a971c70003"
     },
     {
       "path": "apps/client/src-tauri/tauri.linux.conf.json",
@@ -3640,8 +3640,8 @@
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
-      "size": 8035,
-      "sha256": "e9b49384f329a5b6b83473198a6da5a72ec8ff9c77dbd5f2bfcbebf95acb9f46"
+      "size": 7620,
+      "sha256": "3c29be8a829c0be7b4105569757dc0dca895ec6840b3757b7a6854c4f697cd8e"
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
@@ -3660,8 +3660,8 @@
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 6412,
-      "sha256": "36bbf8cf6088064c45d8f3ae052481573bff4b9d03feff1da5997773f440f478"
+      "size": 6315,
+      "sha256": "bd018429d8ab32a8aacae571ea9e5a8349a322b76a6f0aa267477917d06b8b41"
     },
     {
       "path": "docs/public/engineering/native-android-preparation.md",
@@ -3725,8 +3725,8 @@
     },
     {
       "path": "docs/public/integrated-hosts.md",
-      "size": 9754,
-      "sha256": "73e1b71bef6b1ec86cfd690123ce208e2d403c50473e688c74d6656c6c80037d"
+      "size": 10029,
+      "sha256": "a3d9e4b79b1af8fffbfdbd242fe72fa312d11cb0a0307cd3a3d8cf99e0307cd2"
     },
     {
       "path": "docs/public/languages.md",
@@ -4010,8 +4010,8 @@
     },
     {
       "path": "docs/public/linux-client-factory.md",
-      "size": 6465,
-      "sha256": "4b3c53bf39372807349126a61419f83d6dbaac03be8f509a88cfc129a3b57314"
+      "size": 6466,
+      "sha256": "594db6987d0ec807d0fbb131133453ed69d863643749ada056c69026082a4f11"
     },
     {
       "path": "docs/public/managed-linux.md",
@@ -4130,8 +4130,8 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 10466,
-      "sha256": "5d9ac52aa686342c7c61cb551e8a89ce53a8ae109c6c8e804559d3888f91055e"
+      "size": 10484,
+      "sha256": "c0197cb936777f5dd8e91663395bd7335cfb3c96d6639bda7fd4ed18802a842a"
     },
     {
       "path": "docs/public/simulated-location.md",
@@ -4756,7 +4756,7 @@
     {
       "path": "scripts/client_delivery.py",
       "size": 2534,
-      "sha256": "7d0a98f64795d2a89ad3c496e1a4c3c16328b2e35f7d9778fc02794a666e075a"
+      "sha256": "7f5a3f2df3748cc53106e93a2094d08ea26d79ce6f9ad0f7aee328d6e33dd984"
     },
     {
       "path": "scripts/client_host.py",
@@ -4770,8 +4770,8 @@
     },
     {
       "path": "scripts/client_resources.py",
-      "size": 4446,
-      "sha256": "1c63a18443b82000e74052e60ca25e3d31cbe1a3334a2c433ca36f887c21d9a2"
+      "size": 4435,
+      "sha256": "f27b86b7cb6657e28ecb1e132c39549f75b5450d28e7f56da92117251c6f5440"
     },
     {
       "path": "scripts/container_host_runtime.py",
@@ -5115,8 +5115,8 @@
     },
     {
       "path": "scripts/linux_client_factory.py",
-      "size": 11887,
-      "sha256": "dce25e1312e7172891f11719f2ada7c1ac7a43d500aeab7077710b5d55fc2b13"
+      "size": 11781,
+      "sha256": "14dca7232e840af929478de7c096de87694ab73bd24b6a548199bc490ea3ba35"
     },
     {
       "path": "scripts/linux_dependencies.py",
@@ -5170,8 +5170,8 @@
     },
     {
       "path": "scripts/macos_client_factory.py",
-      "size": 8264,
-      "sha256": "c6925c4ae0b3a40a8b0df4a5bfa2b0bff66c8a0409c43e3489f834d36d06af9c"
+      "size": 8144,
+      "sha256": "32ec627926606ccf52984b2523a59858170daf7fd51858eb037a290fb5a20fd3"
     },
     {
       "path": "scripts/macos_disk_image.py",
@@ -5315,8 +5315,8 @@
     },
     {
       "path": "scripts/prepare_client_host.py",
-      "size": 8470,
-      "sha256": "38c6cef093d447b75d7809962df3893ff6d06d129b676aa82291b7d2d35356ed"
+      "size": 8410,
+      "sha256": "8141d46c7744aec37e538bf85fdf9cb0e70f3c16b721c7a700e3a038438f3696"
     },
     {
       "path": "scripts/prepare_ocr_models.py",
@@ -5480,8 +5480,8 @@
     },
     {
       "path": "scripts/test_client_delivery.py",
-      "size": 5439,
-      "sha256": "9f255685394a69b3d28a5bf8e01bd3aa02292110767666eb701f6c9bd0c53e91"
+      "size": 5421,
+      "sha256": "187d82053f00b485264f1e3cb26491e870f19e6c11dc64259da0fd752f28ac9a"
     },
     {
       "path": "scripts/test_client_host.py",
@@ -5490,18 +5490,18 @@
     },
     {
       "path": "scripts/test_client_payload.py",
-      "size": 6081,
-      "sha256": "3ca00af7ed3be92bd98ed8081920fa3947f05d3a4e53199fdc1d5290679d56c1"
+      "size": 6218,
+      "sha256": "f6f39f9770f0c02c18e93014b4a47e918da9f1167cecbc2f97f0fd8b06bf3688"
     },
     {
       "path": "scripts/test_client_resources.py",
-      "size": 11707,
-      "sha256": "6e3d06c995ba29fe3400c876b9d17e14a83d9b77b0e0762034d92a7269754b9b"
+      "size": 11641,
+      "sha256": "11f2045fb0aa1534be01d62220a9a1fedcc38a918f611246ea6dd5fd49d15865"
     },
     {
       "path": "scripts/test_container_host_runtime.py",
-      "size": 16406,
-      "sha256": "d6adbf0a42cf71996922cc27a0fa261bae949767aee3cc979b56575c3646463d"
+      "size": 16370,
+      "sha256": "5f1dce1016e5f04615562fa2adaaa566775598941a302e0a4de094054c552883"
     },
     {
       "path": "scripts/test_container_images.py",
@@ -5615,8 +5615,8 @@
     },
     {
       "path": "scripts/test_linux_client_factory.py",
-      "size": 16263,
-      "sha256": "af5dd326744a7acaae9addeff70571ab270024d17e4ab9b4ff6ff3bcd3d27b9d"
+      "size": 16241,
+      "sha256": "3a00a264219624505923410a6848e434ab5f57853cfbc2071a8e4cd9d5329569"
     },
     {
       "path": "scripts/test_linux_client_packages.py",
@@ -5650,8 +5650,8 @@
     },
     {
       "path": "scripts/test_macos_client_factory.py",
-      "size": 12849,
-      "sha256": "02ad638361bc1c334d1dfd7fa9a748f1ece3f2bb71e27f8c0ba08e231d0a1c4c"
+      "size": 12651,
+      "sha256": "cf4810ffe9884f1fdd5ef6f66df1719ea483c948331c1ecb5dd02a1419a0c07b"
     },
     {
       "path": "scripts/test_macos_disk_image.py",
@@ -5870,8 +5870,8 @@
     },
     {
       "path": "scripts/test_wsl_resources.py",
-      "size": 5206,
-      "sha256": "ff16a5ca80634c38ac08960e8f3450e36a6550f62f77692ff1abf88e76ef7d36"
+      "size": 5170,
+      "sha256": "b9b19fccc5a6f245bc7c4887a6e4b93d0ae588567b0a3bff0adeb58311f7d07a"
     },
     {
       "path": "scripts/test_wsl_runtime.py",
