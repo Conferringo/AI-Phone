@@ -108,6 +108,19 @@ class BootstrapInputTests(OwnedFixture):
                 with self.assertRaisesRegex(bootstrap.BuildFailure, "clean_builder_home_required"):
                     bootstrap.host_requirements()
 
+    def test_native_workspace_tool_is_required_before_sync_and_forwarded_to_the_producer(self):
+        tool=self.root/'release-tools';tool.write_bytes(b'owned fixture');tool.chmod(0o755)
+        with patch.object(bootstrap.platform,'system',return_value='Linux'), \
+             patch.object(bootstrap.platform,'machine',return_value='x86_64'), \
+             patch.object(bootstrap.Path,'home',return_value=self.root), \
+             patch.object(bootstrap.shutil,'which',return_value='/owned/tool'):
+            with patch.dict(bootstrap.os.environ,{'AI_PHONE_SOURCE_RELEASE_TOOLS':''}):
+                with self.assertRaisesRegex(bootstrap.BuildFailure,'required_tool_missing'):
+                    bootstrap.host_requirements()
+            with patch.dict(bootstrap.os.environ,{'AI_PHONE_SOURCE_RELEASE_TOOLS':str(tool)}):
+                bootstrap.host_requirements()
+                self.assertEqual(bootstrap.isolated_environment(self.root)['AI_PHONE_SOURCE_RELEASE_TOOLS'],str(tool))
+
     def test_missing_gpg_is_not_a_permitted_signature_downgrade(self):
         with patch.object(bootstrap.platform, "system", return_value="Linux"), patch.object(bootstrap.platform, "machine", return_value="x86_64"):
             with patch.object(bootstrap.Path, "home", return_value=self.root):
@@ -585,6 +598,12 @@ class LifecycleTests(OwnedFixture):
             path.write_text(json.dumps({**expected,key:value}))
             self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
         path.write_text('[]');self.assertIsNone(bootstrap.sdk_copy_diagnostics(self.root))
+
+    def test_overlay_initial_copy_receipt_retains_the_zero_copy_strategy(self):
+        build=self.root/'build';build.mkdir()
+        expected={'backend':'overlay','files':0,'logical_bytes':0,'allocated_bytes':0}
+        (build/'sdk-copy.json').write_text(json.dumps(expected))
+        self.assertEqual(bootstrap.sdk_copy_diagnostics(self.root),expected)
 
     def test_post_build_stage_projects_only_fixed_values_and_an_observed_zero_exit(self):
         build=self.root/'build';build.mkdir();path=build/'build-result.json'
