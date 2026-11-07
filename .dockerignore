@@ -6,6 +6,7 @@
 !crates/**/*.rs
 !packages/protocol/proto/**/*.proto
 !infra/desktop/Dockerfile
+!infra/workspace/Dockerfile
 !infra/desktop/*.sh
 !infra/desktop/*.pa
 !infra/desktop/dunstrc

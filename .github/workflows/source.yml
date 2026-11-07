@@ -64,6 +64,18 @@ jobs:
           cargo fmt --all --check
           cargo test --workspace --all-features --locked
           cargo clippy --workspace --all-features --all-targets --locked -- -D warnings
+      - name: Native workspace lifecycle
+        run: |
+          fixture_image="ai-phone-workspace-ci:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fixture_context=$(mktemp -d "$RUNNER_TEMP/aiphone-workspace.XXXXXX")
+          cleanup() {
+            rm -rf -- "$fixture_context"
+            docker image rm "$fixture_image" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
+          docker build --tag "$fixture_image" --file scripts/fixtures/native-workspace.Dockerfile "$fixture_context"
+          cargo run --locked -p ai-phone-assistant --bin ai-phone-assistant -- --qualify-workspace-runtime "$fixture_image"
       - name: Native audio onset and cleanup
         run: |
           fixture_image="ai-phone-audio-ci:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

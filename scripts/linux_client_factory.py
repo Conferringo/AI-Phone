@@ -73,15 +73,12 @@ def build_image(root,role,reference,*,workspace=None,clash=None,architecture='am
     if role=='desktop':
         if not workspace or clash is None:raise ValueError('Desktop factory needs its workspace and Clash application')
         command+=['--build-arg','WORKSPACE_IMAGE='+workspace,'--build-context','clash_apps='+str(Path(clash).resolve())]
-        if guest_runtime is not None:
-            from macos_guest_runtime import verify
-            verify(root,guest_runtime,architecture)
-            command+=['--build-arg','GUEST_RUNTIME_SOURCE=guest_runtime','--build-context','guest_runtime='+str(Path(guest_runtime).resolve())]
-    context=Path(root)/'infra'/role
-    if role=='desktop':
-        command+=['--file',str(context/'Dockerfile')]
-        context=Path(root)
-    run([*command,context],root)
+    if guest_runtime is not None:
+        from macos_guest_runtime import verify
+        verify(root,guest_runtime,architecture)
+        command+=['--build-arg','GUEST_RUNTIME_SOURCE=guest_runtime','--build-context','guest_runtime='+str(Path(guest_runtime).resolve())]
+    command+=['--file',str(Path(root)/'infra'/role/'Dockerfile')]
+    run([*command,Path(root)],root)
     return reference
 
 
@@ -165,8 +162,8 @@ def prepare_images(root,cache,source,*,architecture='amd64',guest_runtime=None):
     pins=apps['linux'] if architecture=='arm64' else apps['alternatives']['linux-amd64']
     clash=cache/'clash';fetch(clash,pins['file'],pins)
     namespace=image_namespace(source,uuid.uuid4().hex[:12]);sources=database_images(root,architecture=architecture)
-    sources['workspace']=build_image(root,'workspace',namespace+'/workspace:build',architecture=architecture)
     options={'guest_runtime':guest_runtime} if guest_runtime is not None else {}
+    sources['workspace']=build_image(root,'workspace',namespace+'/workspace:build',architecture=architecture,**options)
     sources['desktop']=build_image(root,'desktop',namespace+'/desktop:build',workspace=sources['workspace'],clash=clash,architecture=architecture,**options)
     output=cache/'images.payload';return output,build(sources,output)
 

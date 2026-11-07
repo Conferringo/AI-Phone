@@ -95,12 +95,15 @@ class MacGuestRuntimeTests(unittest.TestCase):
                 folder=guest.build(root,work)
             self.assertEqual(guest.verify(root,folder,'arm64')['sha256'],digest(folder/guest.BINARY))
             self.assertEqual((folder/guest.BINARY).stat().st_mode&0o777,0o755)
-            with patch.object(images,'docker_image',return_value=None),patch.object(images,'run') as run:
-                images.build_image(root,'desktop','fixture-desktop',workspace='fixture-workspace',clash=root/'clash',architecture='arm64',guest_runtime=folder)
-            command=run.call_args.args[0]
-            self.assertIn('GUEST_RUNTIME_SOURCE=guest_runtime',command)
-            self.assertIn('guest_runtime='+str(folder.resolve()),command)
-            self.assertEqual(command[command.index('--platform')+1],'linux/arm64')
+            for role in ('workspace','desktop'):
+                with patch.object(images,'docker_image',return_value=None),patch.object(images,'run') as run:
+                    images.build_image(root,role,'fixture-'+role,workspace='fixture-workspace',clash=root/'clash',architecture='arm64',guest_runtime=folder)
+                command=run.call_args.args[0]
+                self.assertIn('GUEST_RUNTIME_SOURCE=guest_runtime',command)
+                self.assertIn('guest_runtime='+str(folder.resolve()),command)
+                self.assertEqual(command[command.index('--platform')+1],'linux/arm64')
+                self.assertEqual(command[-1],root)
+                self.assertEqual(command[command.index('--file')+1],str(root/'infra'/role/'Dockerfile'))
 
     def test_precompiled_component_is_verified_before_it_can_replace_compilation(self):
         with patch.dict(guest.os.environ,{'AI_PHONE_FACTORY_GUEST_RUNTIME':'fixture context'}),patch.object(guest,'verify',side_effect=ValueError('Guest component source mismatch')) as verify,patch.object(mac,'build_guest') as compile:

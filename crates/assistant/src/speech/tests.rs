@@ -73,7 +73,7 @@ async fn transport_rejections_preserve_authentication_status() {
         remote: reqwest::Client::new(),
         active: Mutex::new(Default::default()),
         login_attempts: Mutex::new(vec![]),
-        workspace_init: Mutex::new(()),
+        workspace_init: Mutex::new(None),
         location_mutation: Mutex::new(()),
         network_mutation: Mutex::new(()),
     });
