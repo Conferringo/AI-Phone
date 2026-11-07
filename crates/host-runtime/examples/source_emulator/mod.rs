@@ -186,6 +186,7 @@ impl Context {
         command
     }
     fn avd(&self) -> Result<()> {
+        fs::create_dir_all(self.sdk.join("platforms"))?;
         fs::create_dir_all(self.root.join("profile"))?;
         let folder = self.root.join("avd/source-sdk.avd");
         fs::create_dir_all(&folder)?;
@@ -530,6 +531,20 @@ mod tests {
         pin.sha256 = "0".repeat(64);
         assert!(admit(&path, &pin).is_err());
         assert_eq!(fs::read(path).unwrap(), b"source");
+    }
+    #[test]
+    fn avd_preparation_creates_the_source_sdks_required_runtime_layout() {
+        let root = tempfile::tempdir().unwrap();
+        let context = Context {
+            sdk: root.path().join("sdk"),
+            image: root.path().join("image/x86_64"),
+            root: root.path().into(),
+        };
+        context.avd().unwrap();
+        assert!(context.sdk.join("platforms").is_dir());
+        let config = fs::read_to_string(root.path().join("avd/source-sdk.avd/config.ini")).unwrap();
+        assert!(config.contains(&format!("image.sysdir.1={}/", context.image.display())));
+        assert!(config.contains("disk.dataPartition.size=16G"));
     }
     #[tokio::test]
     async fn existing_evidence_and_non_disposable_or_wrong_hosts_are_not_adopted() {
