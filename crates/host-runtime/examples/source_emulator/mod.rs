@@ -322,23 +322,33 @@ async fn frame(client: &Client, path: &Path) -> Result<(u32, u32)> {
     fs::write(path, bytes)?;
     Ok(size)
 }
+fn focused(value: &str, settings: bool) -> bool {
+    value.contains("Window{") && value.contains("com.android.settings") == settings
+}
 async fn focus(client: &Client, settings: bool) -> Result<()> {
     let until = Instant::now() + Duration::from_secs(5);
     loop {
         let value = shell(client, "dumpsys window | grep mCurrentFocus").await?;
-        if !value.is_empty() && value.contains("com.android.settings") == settings {
+        if focused(&value, settings) {
             return Ok(());
         }
         if Instant::now() >= until {
-            return Err("window focus did not change".into());
+            let setup = shell(
+                client,
+                "settings get global device_provisioned; settings get secure user_setup_complete",
+            )
+            .await;
+            return Err(format!("window focus did not change: expected_settings={settings}, actual={value:?}, setup={setup:?}").into());
         }
         sleep(Duration::from_millis(50)).await;
     }
 }
 async fn show_settings(client: &Client) -> Result<()> {
     shell(client, "input keyevent 224; wm dismiss-keyguard").await?;
-    shell(client, "am start -W -a android.settings.SETTINGS").await?;
-    focus(client, true).await
+    let started = shell(client, "am start -W -a android.settings.SETTINGS").await?;
+    focus(client, true)
+        .await
+        .map_err(|e| format!("{e}; activity start: {started}").into())
 }
 fn checkpoint(root: &Path, receipt: &mut Value, stage: &str) -> Result<()> {
     receipt["stage"] = stage.into();
@@ -515,6 +525,23 @@ mod tests {
         fake.extend([0, 0, 2, 208, 0, 0, 5, 160]);
         fake.resize(33, 0);
         assert!(pixels(&fake).is_err());
+    }
+    #[test]
+    fn null_focus_never_proves_that_a_key_reached_a_foreground_window() {
+        assert!(!focused("mCurrentFocus=null", false));
+        assert!(!focused("", false));
+        assert!(focused(
+            "mCurrentFocus=Window{a u0 com.android.settings/.Settings}",
+            true
+        ));
+        assert!(!focused(
+            "mCurrentFocus=Window{a u0 com.android.settings/.Settings}",
+            false
+        ));
+        assert!(focused(
+            "mCurrentFocus=Window{b u0 com.android.launcher3/.Launcher}",
+            false
+        ));
     }
     #[test]
     fn decoded_pixels_are_required_and_a_solid_or_truncated_frame_fails() {

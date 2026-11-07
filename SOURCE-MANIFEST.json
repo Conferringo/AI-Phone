@@ -2905,8 +2905,8 @@
     },
     {
       "path": "crates/host-runtime/examples/source_emulator/mod.rs",
-      "size": 23671,
-      "sha256": "b41430b800199419f430ed36eab3bd6a5826843d057698ddf06dad085c6d6148"
+      "size": 24688,
+      "sha256": "3efa99f861f221ed333a53e043f112a06cfeb181e5af9e6f10d7382348bfeb1f"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
@@ -4940,8 +4940,8 @@
     },
     {
       "path": "scripts/emulator-source-build/README.md",
-      "size": 10321,
-      "sha256": "4a980bbce46125805e4880bf11cd3c9319ad23ff2fd9dc5456f2c9765f91ada9"
+      "size": 10340,
+      "sha256": "fc0e157bf788eb930588593510a39abc1fa8f77d5e7e433c71c2cfcb1ffb1d4a"
     },
     {
       "path": "scripts/emulator-source-build/aosp_emulator_producer.py",
