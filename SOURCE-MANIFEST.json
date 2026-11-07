@@ -130,13 +130,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 7386,
-      "sha256": "e711dca7a085c8e2e61f8f0102c4034c3f8547fffcfece0af4b0bcee57f63dd4"
+      "size": 7417,
+      "sha256": "bae3c691b16dd9ca06e2cb6f99feaf52a2f8b42df21d00c68e8165cec99f293b"
     },
     {
       "path": "README.md",
-      "size": 12850,
-      "sha256": "983dc706db0c1768c18f5ea709601fbeea0fdd238e7e454ef645c885143ddc07"
+      "size": 12914,
+      "sha256": "47b3a8cb45a270c27d81c6379124e975b2ac53a946160d5b3b8d9cb2f539e63b"
     },
     {
       "path": "SECURITY.md",
@@ -2395,8 +2395,8 @@
     },
     {
       "path": "crates/host-runtime/src/supervision/macos.rs",
-      "size": 8771,
-      "sha256": "3cdbadf8ec0e4fdf53bbd9b85daeb91870c484397b10f395e54dd5ea27220dd0"
+      "size": 8935,
+      "sha256": "22e7cbad6ce3ba26872711f81e4898c850c2f60807cd266ab24782de53e917a8"
     },
     {
       "path": "crates/host-runtime/src/supervision/mod.rs",
@@ -3345,8 +3345,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 3703,
-      "sha256": "0f67f95ca810b36d6454405090076382efd58dc0551fddaf2a6769f0146ebfa9"
+      "size": 4054,
+      "sha256": "014af461cf08813f8761337947469cfbc386846cc4fe5e34ea1fae8a34426a1f"
     },
     {
       "path": "docs/public/runtime-bundles.md",

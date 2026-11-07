@@ -53,7 +53,7 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 
 [Architecture](docs/public/architecture.en.md) · [Documentation index](docs/public/index.md) · [Conversation steering](docs/public/conversation-steering.md) · [Capabilities and data](docs/public/capabilities-and-data.md)
 
-The first-party backend, device control, media, channels and installation/recovery use Rust. Next.js/TypeScript supplies the interface; Bun runs frontend/build tooling. The current migration candidate awaits consolidated validation and rebuilt complete installers.
+The first-party backend, device control, media, channels and installation/recovery use Rust. Next.js/TypeScript supplies the interface; Bun runs frontend/build tooling. Native service compilation, consolidated checks and the production web build pass; rebuilt complete installers remain pending.
 
 Models/APIs, connections and memory belong to Agents; Skills, knowledge and work files are shared. Code is separate from user state. Environment secrets, guest disks, accounts, chats, attachments and private evidence are excluded from the repository. Updates require versioned artifacts, backups, migrations and rollback rather than a direct `git pull` into user state.
 
@@ -123,7 +123,7 @@ QQ、飞书、企业微信、Telegram 及本地扫码 WhatsApp 适配范围见[�
 
 [架构](docs/public/architecture.zh-CN.md) · [文档索引](docs/public/index.md) · [连续对话机制](docs/public/conversation-steering.md) · [数据与使用边界](docs/public/capabilities-and-data.md)
 
-自研后端、设备控制、媒体、渠道及安装恢复采用 Rust；界面采用 Next.js/TypeScript，前端和构建工具使用 Bun。当前迁移候选尚待集中验证及完整安装包重建。
+自研后端、设备控制、媒体、渠道及安装恢复采用 Rust；界面采用 Next.js/TypeScript，前端和构建工具使用 Bun。原生服务编译、集中检查与前端生产构建已通过，完整安装包仍待重建。
 
 模型/API、渠道与记忆归属 Agent；Skill、知识库和工作文件共享。代码与用户状态分离，`.env`、设备盘、账号、聊天、附件和私有证据不进入仓库。更新采用版本化制品、备份、迁移和回滚，不能对用户运行目录直接 `git pull` 代替升级。
 

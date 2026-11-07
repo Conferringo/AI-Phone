@@ -162,6 +162,9 @@ pub(super) async fn run(arguments: &[OsString]) -> Result<()> {
                     std::ffi::OsStr::new(&format!("{}/{label}", domain())),
                 ])
                 .await?;
+                while status(&root, label).await?.is_some() {
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                }
             }
             Value::Null
         }

@@ -53,7 +53,7 @@ See the [compatibility matrix](docs/public/compatibility.md) for QQ, Feishu, WeC
 
 [Architecture](docs/public/architecture.en.md) · [Documentation index](docs/public/index.md) · [Conversation steering](docs/public/conversation-steering.md) · [Capabilities and data](docs/public/capabilities-and-data.md)
 
-The first-party backend, device control, media, channels and installation/recovery use Rust. Next.js/TypeScript supplies the interface; Bun runs frontend/build tooling. The current migration candidate awaits consolidated validation and rebuilt complete installers.
+The first-party backend, device control, media, channels and installation/recovery use Rust. Next.js/TypeScript supplies the interface; Bun runs frontend/build tooling. Native service compilation, consolidated checks and the production web build pass; rebuilt complete installers remain pending.
 
 Models/APIs, connections and memory belong to Agents; Skills, knowledge and work files are shared. Code is separate from user state. Environment secrets, guest disks, accounts, chats, attachments and private evidence are excluded from the repository. Updates require versioned artifacts, backups, migrations and rollback rather than a direct `git pull` into user state.
 
