@@ -5,9 +5,9 @@ import {join} from 'node:path';
 import {BrowserSession,browserSelection,sessionProfile} from './whatsapp-runtime';
 const image='ai-phone-bundle/desktop:sha-'+'a'.repeat(64);
 function fixture(){
- const root=mkdtempSync(join(tmpdir(),'aiphone-runtime-')),python=join(root,'python'),helper=join(root,'scripts/channel_browser.py');
- mkdirSync(join(root,'scripts'));writeFileSync(python,'fixture',{mode:0o755});writeFileSync(helper,'fixture');
- const env={AI_PHONE_PYTHON:python,AI_PHONE_DESKTOP_IMAGE:image};
+ const root=mkdtempSync(join(tmpdir(),'aiphone-runtime-')),native=join(root,'native-host');
+ writeFileSync(native,'fixture',{mode:0o755});
+ const env={AI_PHONE_NATIVE_HOST_PROGRAM:native,AI_PHONE_DESKTOP_IMAGE:image};
  return {root,env,close(){rmSync(root,{recursive:true,force:true})}};
 }
 test('bundled fresh accounts select the owned container without a host browser lookup',()=>{
@@ -15,7 +15,7 @@ test('bundled fresh accounts select the owned container without a host browser l
   const selected=browserSelection(f.root,'one',f.env,()=>{throw Error('host lookup')});
   expect(selected.mode).toBe('container');
   const runtime=new BrowserSession({root:f.root,sessionId:'one',proxyUrl:'',signal:new AbortController().signal},{env:f.env});
-  expect(runtime.options.puppeteer).toMatchObject({pipe:true,ignoreDefaultArgs:true,headless:true});expect(runtime.options.puppeteer?.args).toContain('--user-data-dir='+sessionProfile(f.root,'one'));
+  expect(runtime.options.puppeteer).toMatchObject({pipe:true,ignoreDefaultArgs:true,headless:true,executablePath:'/bin/sh'});expect(runtime.options.puppeteer?.args).toContain('--user-data-dir='+sessionProfile(f.root,'one'));expect(runtime.options.puppeteer?.args).toContain('--channel-browser');expect(runtime.options.puppeteer?.args).toContain(f.env.AI_PHONE_NATIVE_HOST_PROGRAM);
   expect(existsSync(join(f.root,'data'))).toBe(false);
  }finally{f.close()}
 });
@@ -30,12 +30,12 @@ test('legacy profiles retain their host browser while owned profiles cannot fall
 });
 test('invalid bundled components fail and loopback proxies are not silently bypassed',()=>{
  const f=fixture();try{
-  for(const env of [{...f.env,AI_PHONE_DESKTOP_IMAGE:'ai-phone-bundle/desktop:latest'},{...f.env,AI_PHONE_PYTHON:'relative'}])expect(()=>browserSelection(f.root,'one',env)).toThrow();
-  rmSync(join(f.root,'scripts/channel_browser.py'));expect(()=>browserSelection(f.root,'one',f.env)).toThrow();
-  writeFileSync(join(f.root,'scripts/channel_browser.py'),'fixture');
+  for(const env of [{...f.env,AI_PHONE_DESKTOP_IMAGE:'ai-phone-bundle/desktop:latest'},{...f.env,AI_PHONE_NATIVE_HOST_PROGRAM:'relative'}])expect(()=>browserSelection(f.root,'one',env)).toThrow();
+  rmSync(f.env.AI_PHONE_NATIVE_HOST_PROGRAM);expect(()=>browserSelection(f.root,'one',f.env)).toThrow();
+  writeFileSync(f.env.AI_PHONE_NATIVE_HOST_PROGRAM,'fixture',{mode:0o755});
   for(const proxyUrl of ['http://127.0.0.1:7897','http://localhost:7897','http://[::1]:7897','http://[::]:7897','http://0.0.0.0:7897'])expect(()=>new BrowserSession({root:f.root,sessionId:'one',proxyUrl,signal:new AbortController().signal},{env:f.env})).toThrow('回环');
-  expect(()=>browserSelection(f.root,'one',{...f.env,AI_PHONE_PYTHON:f.root})).toThrow();
-  if(process.platform!=='win32'){chmodSync(f.env.AI_PHONE_PYTHON,0o644);expect(()=>browserSelection(f.root,'one',f.env)).toThrow();}
+  expect(()=>browserSelection(f.root,'one',{...f.env,AI_PHONE_NATIVE_HOST_PROGRAM:f.root})).toThrow();
+  if(process.platform!=='win32'){chmodSync(f.env.AI_PHONE_NATIVE_HOST_PROGRAM,0o644);expect(()=>browserSelection(f.root,'one',f.env)).toThrow();}
  }finally{f.close()}
 });
 test('container close observes actual ownership before erase and never exposes proxy credentials in args',async()=>{
@@ -51,8 +51,8 @@ test('container close observes actual ownership before erase and never exposes p
 });
 test('explicit host overrides remain available, but cannot convert a container-owned profile',()=>{
  const f=fixture();try{
-  const env={...f.env,AI_PHONE_WHATSAPP_CHROMIUM:f.env.AI_PHONE_PYTHON};
-  expect(browserSelection(f.root,'one',env)).toEqual({mode:'host',executable:f.env.AI_PHONE_PYTHON});
+  const env={...f.env,AI_PHONE_WHATSAPP_CHROMIUM:f.env.AI_PHONE_NATIVE_HOST_PROGRAM};
+  expect(browserSelection(f.root,'one',env)).toEqual({mode:'host',executable:f.env.AI_PHONE_NATIVE_HOST_PROGRAM});
   const profile=sessionProfile(f.root,'one');mkdirSync(profile,{recursive:true});writeFileSync(join(profile,'.aiphone-runtime.json'),'{}');
   expect(browserSelection(f.root,'one',env).mode).toBe('container');
   for(const id of ['','../other','x'.repeat(129)])expect(()=>sessionProfile(f.root,id)).toThrow();

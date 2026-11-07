@@ -3,6 +3,8 @@
 pub mod android;
 mod archive;
 mod capsule;
+#[cfg(unix)]
+mod channel_browser;
 pub mod component;
 mod control;
 pub mod device_bridge;

@@ -37,7 +37,7 @@ fn number(value: &Value, key: &str, default: u64) -> Result<String> {
 }
 // These paths may not exist before first device creation. Resolve the existing
 // data alias without creating or adopting any guest directory.
-fn resolved(path: &Path) -> Result<PathBuf> {
+pub(crate) fn resolved(path: &Path) -> Result<PathBuf> {
     let mut prefix = path.to_path_buf();
     let mut remaining = vec![];
     loop {

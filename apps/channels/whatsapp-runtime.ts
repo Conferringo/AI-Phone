@@ -8,7 +8,7 @@ import {promisify} from 'node:util';
 import {whatsappBrowser,whatsappProxy} from './whatsapp-browser';
 
 type Environment=NodeJS.ProcessEnv;
-type Selection={mode:'host';executable:string}|{mode:'container';python:string;helper:string;image:string};
+type Selection={mode:'host';executable:string}|{mode:'container';executable:string};
 type Input={root:string;sessionId:string;proxyUrl:string;signal:AbortSignal};
 type CommandOptions={env:Environment;timeout:number;maxBuffer:number;encoding:'utf8';windowsHide:boolean};
 type Run=(file:string,args:string[],options:CommandOptions)=>Promise<{stdout:string}>;
@@ -34,12 +34,12 @@ export function browserSelection(root:string,sessionId:string,env:Environment=pr
  const kind=profileKind(sessionProfile(root,sessionId));
  const image=env.AI_PHONE_DESKTOP_IMAGE;
  if(kind!=='owned'&&(kind==='legacy'||env.AI_PHONE_WHATSAPP_CHROMIUM||!image))return {mode:'host',executable:hostBrowser()};
- return containerSelection(root,image,env.AI_PHONE_PYTHON);
+ return containerSelection(image,env.AI_PHONE_NATIVE_HOST_PROGRAM);
 }
-function containerSelection(root:string,image:string|undefined,python:string|undefined):Selection{
- if(!image||!/^ai-phone-bundle\/desktop:sha-[0-9a-f]{64}$/.test(image)||!python)throw new BrowserConfigurationError('WhatsApp随包浏览器组件未就绪');
- const helper=resolve(root,'scripts/channel_browser.py');file(python,true);file(helper);
- return {mode:'container',python,helper,image};
+function containerSelection(image:string|undefined,executable:string|undefined):Selection{
+ if(!image||!/^ai-phone-bundle\/desktop:sha-[0-9a-f]{64}$/.test(image)||!executable)throw new BrowserConfigurationError('WhatsApp随包浏览器组件未就绪');
+ file(executable,true);
+ return {mode:'container',executable};
 }
 function reachableProxy(value:string){
  if(!value)return;
@@ -53,7 +53,7 @@ class SessionAuth extends LocalAuth{
 function launchOptions(selected:Selection,profile:string,signal:AbortSignal,args:string[],env:Environment):ClientOptions['puppeteer']{
  const common={headless:true as const,args,signal,userDataDir:profile};
  if(selected.mode==='host')return {...common,executablePath:selected.executable};
- return {...common,executablePath:selected.python,ignoreDefaultArgs:true,pipe:true,args:[selected.helper,'--user-data-dir='+profile,...args],env};
+ return {...common,executablePath:'/bin/sh',ignoreDefaultArgs:true,pipe:true,args:['-c','exec 0<&3 1>&4 3<&- 4>&-; exec "$@"','--',selected.executable,'--channel-browser','--user-data-dir='+profile,...args],env};
 }
 
 /** One launch owns SDK auth, shutdown confirmation and explicit account erasure. */
@@ -94,7 +94,7 @@ export class BrowserSession{
  }
  private async manage(mode:'--stop'|'--erase'){
   const selected=this.selected;if(selected.mode!=='container')throw Error('Container browser required');
-  const result=await this.run(selected.python,[selected.helper,mode],{env:this.env,timeout:25000,maxBuffer:16384,encoding:'utf8',windowsHide:true});
+  const result=await this.run(selected.executable,['--channel-browser',mode],{env:this.env,timeout:25000,maxBuffer:16384,encoding:'utf8',windowsHide:true});
   const status=JSON.parse(result.stdout);
   if(status?.stopped!==true||mode==='--erase'&&status.erased!==true)throw Error('WhatsApp浏览器状态未确认，账号数据已保留');
  }

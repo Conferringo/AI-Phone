@@ -18,6 +18,12 @@ path = "tests/fixtures/image_engine.rs"
 test = false
 bench = false
 
+[[bin]]
+name = "browser-test-engine"
+path = "tests/fixtures/browser_engine.rs"
+test = false
+bench = false
+
 [dependencies]
 ai-phone-adb = { path = "../adb-client" }
 ai-phone-api = { path = "../api" }
