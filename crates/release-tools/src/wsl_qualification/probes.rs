@@ -956,7 +956,6 @@ mod tests {
     }
     #[tokio::test]
     async fn database_role_requires_the_actual_restricted_native_result() {
-        use std::os::unix::fs::PermissionsExt;
         let temp = tempfile::tempdir().unwrap();
         let program = temp.path().join("runtime/services/bin/assistant");
         fs::create_dir_all(program.parent().unwrap()).unwrap();
@@ -965,8 +964,7 @@ mod tests {
             r#"{"runtime":"ai_phone_runtime","privileged":false,"ddl":true}"#,
             r#"{"runtime":"postgres","privileged":false,"ddl":false}"#,
         ] {
-            fs::write(&program, format!("#!/bin/sh\nprintf '%s' '{body}'\n")).unwrap();
-            fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
+            super::super::tests::script(&program, &format!("#!/bin/sh\nprintf '%s' '{body}'\n"));
             let context = Context::new(temp.path().into(), "a".repeat(32), 1).unwrap();
             let mut receipt = Receipt::new(context.nonce.clone(), 1, temp.path());
             assert_eq!(
