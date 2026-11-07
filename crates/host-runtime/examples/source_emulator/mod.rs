@@ -288,13 +288,18 @@ async fn boot(client: &Client, adb: &mut Owned, emulator: &mut Owned) -> Result<
                 .await
                 .is_ok_and(|v| v == "1")
             {
-                let uid = shell(client, "id -u").await?;
+                let uid = shell(client, "id -u")
+                    .await
+                    .map_err(|e| format!("boot uid observation: {e}"))?;
                 if uid == "0" {
                     return Ok::<(), Box<dyn std::error::Error>>(());
                 }
                 if !root {
                     root = true;
-                    client.raw("root:", 4096, Duration::from_secs(10)).await?;
+                    client
+                        .raw("root:", 4096, Duration::from_secs(10))
+                        .await
+                        .map_err(|e| format!("root transition request: {e}"))?;
                 }
             }
             sleep(Duration::from_millis(200)).await;
@@ -437,7 +442,8 @@ pub(super) async fn run(args: Vec<OsString>) -> Result<()> {
             &client,
             "getprop ro.build.version.sdk; getprop ro.product.cpu.abi",
         )
-        .await?;
+        .await
+        .map_err(|e| format!("boot API/ABI observation: {e}"))?;
         if identity != "35\nx86_64" {
             return Err("guest API or ABI differs".into());
         }
