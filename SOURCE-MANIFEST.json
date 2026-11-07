@@ -3525,18 +3525,18 @@
     },
     {
       "path": "crates/release-tools/src/wsl_qualification/mod.rs",
-      "size": 11258,
-      "sha256": "ac2f5c6a6cbc24007131e2ce7a868d6f8e26d1e9b7d9a5dae2a73f2df7b430dd"
+      "size": 11866,
+      "sha256": "5ce313a1e6ce3b012336c9a218ed334f6aaebe9c426ba44b9d8c360ae0742b5c"
     },
     {
       "path": "crates/release-tools/src/wsl_qualification/probes.rs",
-      "size": 36313,
-      "sha256": "45f2784e09a93450079689e12497f8ed032d040b00edf2b5bf17fdb45875a528"
+      "size": 36189,
+      "sha256": "ccfb857a6930b94186c573e70b7c8311d058d6908b5987b5dcf19c4ea381ac73"
     },
     {
       "path": "crates/release-tools/src/wsl_qualification/process.rs",
-      "size": 13408,
-      "sha256": "87a90f9aed5dd2e0c148d6630a1728039b4c3854a830e04e9e557fd795db31e8"
+      "size": 13315,
+      "sha256": "d028fbf12dee00986ccf490af21294e2588a7fdfadd72a347c0947a1fb5c9a3b"
     },
     {
       "path": "crates/release-tools/tests/apt_repository.rs",

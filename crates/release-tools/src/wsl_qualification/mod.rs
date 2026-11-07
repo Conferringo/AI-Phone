@@ -300,6 +300,21 @@ pub async fn run() -> crate::Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    pub(super) fn script(program: &Path, content: &str) {
+        // The writer exits before exec. Parallel test forks cannot inherit a
+        // writable script descriptor and cause ETXTBSY in another test.
+        let status = std::process::Command::new("/bin/sh")
+            .args(["-c", "printf '%s' \"$2\" > \"$1\"", "fixture-writer"])
+            .arg(program)
+            .arg(content)
+            .status()
+            .unwrap();
+        assert!(status.success());
+        fs::set_permissions(program, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
     #[test]
     fn phase_marker_requires_the_same_owner_and_exact_first_phase() {
         let root = tempfile::tempdir().unwrap();
