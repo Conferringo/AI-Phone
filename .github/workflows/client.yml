@@ -24,7 +24,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: client-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ (inputs.complete_macos_factory || inputs.complete_windows_factory) && 'complete' || 'components' }}
+  group: client-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.complete_macos_factory && 'complete-macos' || inputs.complete_windows_factory && 'complete-windows' || 'components' }}
   cancel-in-progress: ${{ !(inputs.complete_macos_factory || inputs.complete_windows_factory) }}
 jobs:
   full-windows:
