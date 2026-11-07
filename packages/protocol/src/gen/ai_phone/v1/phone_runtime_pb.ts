@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/phone_runtime.proto.
  */
 export const file_ai_phone_v1_phone_runtime: GenFile = /*@__PURE__*/
-  fileDesc("Ch9haV9waG9uZS92MS9waG9uZV9ydW50aW1lLnByb3RvEgthaV9waG9uZS52MSIeCgpQaG9uZVNjb3BlEhAKCHBob25lX2lkGAEgASgJIoUCCgxEZXZpY2VDdXJzb3ISEQoJZGV2aWNlX2lkGAEgASgJEhEKCWFjdGlvbl9pZBgCIAEoCRIMCgRraW5kGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIVCg1zdGFydGVkX2F0X21zGAUgASgEEhMKC2R1cmF0aW9uX21zGAYgASgNEg0KBXdpZHRoGAcgASgNEg4KBmhlaWdodBgIIAEoDRImCgVwYXRocxgJIAMoCzIXLmFpX3Bob25lLnYxLkZpbmdlclBhdGgSDQoFYWN0b3IYCiABKAkSFwoPaW5wdXRfY29uZmlybWVkGAsgASgIEhYKDnJlcG9ydGVkX2F0X21zGAwgASgEIo8BCg1EZXZpY2VSZXF1ZXN0EhAKCHBob25lX2lkGAEgASgJEhAKCG93bmVyX2lkGAIgASgJEhcKD2luY2x1ZGVfdWlfdHJlZRgDIAEoCBIVCg1tZXRhZGF0YV9vbmx5GAQgASgIEhgKEGluY2x1ZGVfZWxlbWVudHMYBSABKAgSEAoIb2NyX21vZGUYBiABKAkiywIKEURldmljZU9ic2VydmF0aW9uEhAKCHBob25lX2lkGAEgASgJEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRILCgNwbmcYBCABKAwSDwoHdWlfdHJlZRgFIAEoCRIXCg9zY3JlZW5fc2VxdWVuY2UYBiABKAQSFQoNY29udHJvbF9lcG9jaBgHIAEoBBISCgpjb250cm9sbGVyGAggASgJEhUKDXJvb3RfaWRlbnRpdHkYCSABKAkSFgoOb2JzZXJ2YXRpb25faWQYCiABKAkSKwoIZWxlbWVudHMYCyADKAsyGS5haV9waG9uZS52MS5QaG9uZUVsZW1lbnQSFgoOZm9yZWdyb3VuZF9hcHAYDCABKAkSFgoOZ3JvdW5kaW5nX25vdGUYDSABKAkSFwoPc2Nyb2xsX2ZlZWRiYWNrGA4gASgJIkcKC1Bob25lQm91bmRzEgwKBGxlZnQYASABKA0SCwoDdG9wGAIgASgNEg0KBXJpZ2h0GAMgASgNEg4KBmJvdHRvbRgEIAEoDSLYAQoMUGhvbmVFbGVtZW50EgoKAmlkGAEgASgJEgwKBHRleHQYAiABKAkSEwoLcmVzb3VyY2VfaWQYAyABKAkSEgoKY2xhc3NfbmFtZRgEIAEoCRIoCgZib3VuZHMYBSABKAsyGC5haV9waG9uZS52MS5QaG9uZUJvdW5kcxIRCgljbGlja2FibGUYBiABKAgSEgoKc2Nyb2xsYWJsZRgHIAEoCBIQCghlZGl0YWJsZRgIIAEoCBIOCgZzb3VyY2UYCSABKAkSEgoKY29uZmlkZW5jZRgKIAEoAiI+ChBFbGVtZW50VGFwQWN0aW9uEhYKDm9ic2VydmF0aW9uX2lkGAEgASgJEhIKCmVsZW1lbnRfaWQYAiABKAkiewoTRWxlbWVudFNjcm9sbEFjdGlvbhIWCg5vYnNlcnZhdGlvbl9pZBgBIAEoCRISCgplbGVtZW50X2lkGAIgASgJEhEKCWRpcmVjdGlvbhgDIAEoCRIQCghkaXN0YW5jZRgEIAEoAhITCgtkdXJhdGlvbl9tcxgFIAEoDSIhCglUYXBBY3Rpb24SCQoBeBgBIAEoDRIJCgF5GAIgASgNIlIKC1N3aXBlQWN0aW9uEgoKAngxGAEgASgNEgoKAnkxGAIgASgNEgoKAngyGAMgASgNEgoKAnkyGAQgASgNEhMKC2R1cmF0aW9uX21zGAUgASgNIjwKD0xvbmdQcmVzc0FjdGlvbhIJCgF4GAEgASgNEgkKAXkYAiABKA0SEwoLZHVyYXRpb25fbXMYAyABKA0iUQoKRHJhZ0FjdGlvbhIKCgJ4MRgBIAEoDRIKCgJ5MRgCIAEoDRIKCgJ4MhgDIAEoDRIKCgJ5MhgEIAEoDRITCgtkdXJhdGlvbl9tcxgFIAEoDSIbCgtJbnB1dEFjdGlvbhIMCgR0ZXh0GAEgASgJIhgKCUtleUFjdGlvbhILCgNrZXkYASABKAkiHQoLU2hlbGxBY3Rpb24SDgoGc2NyaXB0GAEgASgJIjgKEU9yaWVudGF0aW9uQWN0aW9uEhEKCWF1dG9tYXRpYxgBIAEoCBIQCghyb3RhdGlvbhgCIAEoDSKIBgoTRGV2aWNlQWN0aW9uUmVxdWVzdBIQCghwaG9uZV9pZBgBIAEoCRIQCghvd25lcl9pZBgCIAEoCRIOCgZydW5faWQYAyABKAkSEQoJYWN0aW9uX2lkGAQgASgJEhUKDWNvbnRyb2xfZXBvY2gYBSABKAQSEgoKY29udHJvbGxlchgGIAEoCRIlCgN0YXAYByABKAsyFi5haV9waG9uZS52MS5UYXBBY3Rpb25IABIpCgVzd2lwZRgIIAEoCzIYLmFpX3Bob25lLnYxLlN3aXBlQWN0aW9uSAASKQoFaW5wdXQYCSABKAsyGC5haV9waG9uZS52MS5JbnB1dEFjdGlvbkgAEiUKA2tleRgKIAEoCzIWLmFpX3Bob25lLnYxLktleUFjdGlvbkgAEikKBXNoZWxsGAsgASgLMhguYWlfcGhvbmUudjEuU2hlbGxBY3Rpb25IABIyCgpsb25nX3ByZXNzGAwgASgLMhwuYWlfcGhvbmUudjEuTG9uZ1ByZXNzQWN0aW9uSAASJwoEZHJhZxgNIAEoCzIXLmFpX3Bob25lLnYxLkRyYWdBY3Rpb25IABI1CgtvcmllbnRhdGlvbhgOIAEoCzIeLmFpX3Bob25lLnYxLk9yaWVudGF0aW9uQWN0aW9uSAASNAoLdGFwX2VsZW1lbnQYDyABKAsyHS5haV9waG9uZS52MS5FbGVtZW50VGFwQWN0aW9uSAASOgoOc2Nyb2xsX2VsZW1lbnQYECABKAsyIC5haV9waG9uZS52MS5FbGVtZW50U2Nyb2xsQWN0aW9uSAASLQoHZ2VzdHVyZRgSIAEoCzIaLmFpX3Bob25lLnYxLkdlc3R1cmVBY3Rpb25IABIrCgZtb3Rpb24YEyABKAsyGS5haV9waG9uZS52MS5Nb3Rpb25BY3Rpb25IABIsCghsb2NhdGlvbhgUIAEoCzIYLmFpX3Bob25lLnYxLkxvY2F0aW9uRml4SAASFgoOb2JzZXJ2YXRpb25faWQYESABKAlCCAoGYWN0aW9uInQKFERldmljZUFjdGlvblJlc3BvbnNlEhEKCWFjdGlvbl9pZBgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEg4KBm91dHB1dBgDIAEoCRIQCghyZXBsYXllZBgEIAEoCBIWCg5yZXN1bHRfdW5rbm93bhgFIAEoCCJMChJUYWtlQ29udHJvbFJlcXVlc3QSEAoIcGhvbmVfaWQYASABKAkSEAoIb3duZXJfaWQYAiABKAkSEgoKY29udHJvbGxlchgDIAEoCSJLCgxDb250cm9sU3RhdGUSEAoIcGhvbmVfaWQYASABKAkSFQoNY29udHJvbF9lcG9jaBgCIAEoBBISCgpjb250cm9sbGVyGAMgASgJIpoBChFQaG9uZU5vdGlmaWNhdGlvbhIQCghldmVudF9pZBgBIAEoCRIYChBub3RpZmljYXRpb25fa2V5GAIgASgJEhQKDHBhY2thZ2VfbmFtZRgDIAEoCRIQCghhcHBfbmFtZRgEIAEoCRINCgV0aXRsZRgFIAEoCRIMCgR0ZXh0GAYgASgJEhQKDHBvc3RlZF9hdF9tcxgHIAEoBCKkAQoVUGhvbmVOb3RpZmljYXRpb25MaXN0EhEKCWNvbm5lY3RlZBgBIAEoCBIVCg1jaGVja2VkX2F0X21zGAIgASgEEjUKDW5vdGlmaWNhdGlvbnMYAyADKAsyHi5haV9waG9uZS52MS5QaG9uZU5vdGlmaWNhdGlvbhINCgVlcnJvchgEIAEoCRIbChNhdHRlbnRpb25fY29ubmVjdGVkGAUgASgIIqIBChVQaG9uZVByb3Zpc2lvblJlcXVlc3QSEQoJZGV2aWNlX2lkGAEgASgJEhIKCnJlcXVlc3RfaWQYAiABKAkSEwoLdGVtcGxhdGVfaWQYAyABKAkSDAoEY3B1cxgEIAEoDRIRCgltZW1vcnlfbWIYBSABKA0SEgoKc3RvcmFnZV9nYhgGIAEoDRIYChBpZGVudGl0eV9wcm9maWxlGAcgASgJIsQBChFQaG9uZVByb3Zpc2lvbkpvYhIKCgJpZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAkSDgoGc3RhdHVzGAMgASgJEg0KBXN0YWdlGAQgASgJEg0KBWVycm9yGAUgASgJEhMKC3RlbXBsYXRlX2lkGAYgASgJEgwKBGNwdXMYByABKA0SEQoJbWVtb3J5X21iGAggASgNEhIKCnN0b3JhZ2VfZ2IYCSABKA0SGAoQaWRlbnRpdHlfcHJvZmlsZRgKIAEoCSJDChNQaG9uZVByb3Zpc2lvblN0YXRlEiwKBGpvYnMYASADKAsyHi5haV9waG9uZS52MS5QaG9uZVByb3Zpc2lvbkpvYiIzCgxHZXN0dXJlUG9pbnQSCQoBeBgBIAEoDRIJCgF5GAIgASgNEg0KBWF0X21zGAMgASgNIksKCkZpbmdlclBhdGgSEgoKcG9pbnRlcl9pZBgBIAEoDRIpCgZwb2ludHMYAiADKAsyGS5haV9waG9uZS52MS5HZXN0dXJlUG9pbnQiXgoNR2VzdHVyZUFjdGlvbhImCgVwYXRocxgBIAMoCzIXLmFpX3Bob25lLnYxLkZpbmdlclBhdGgSEwoLZHVyYXRpb25fbXMYAiABKA0SEAoIcHJlc3N1cmUYAyABKAIiWgoMTW90aW9uQWN0aW9uEgwKBGtpbmQYASABKAkSEQoJYW1wbGl0dWRlGAIgASgCEhQKDGZyZXF1ZW5jeV9oehgDIAEoAhITCgtkdXJhdGlvbl9tcxgEIAEoDWIGcHJvdG8z", [file_ai_phone_v1_location]);
+  fileDesc("Ch9haV9waG9uZS92MS9waG9uZV9ydW50aW1lLnByb3RvEgthaV9waG9uZS52MSIeCgpQaG9uZVNjb3BlEhAKCHBob25lX2lkGAEgASgJIoUCCgxEZXZpY2VDdXJzb3ISEQoJZGV2aWNlX2lkGAEgASgJEhEKCWFjdGlvbl9pZBgCIAEoCRIMCgRraW5kGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIVCg1zdGFydGVkX2F0X21zGAUgASgEEhMKC2R1cmF0aW9uX21zGAYgASgNEg0KBXdpZHRoGAcgASgNEg4KBmhlaWdodBgIIAEoDRImCgVwYXRocxgJIAMoCzIXLmFpX3Bob25lLnYxLkZpbmdlclBhdGgSDQoFYWN0b3IYCiABKAkSFwoPaW5wdXRfY29uZmlybWVkGAsgASgIEhYKDnJlcG9ydGVkX2F0X21zGAwgASgEIo8BCg1EZXZpY2VSZXF1ZXN0EhAKCHBob25lX2lkGAEgASgJEhAKCG93bmVyX2lkGAIgASgJEhcKD2luY2x1ZGVfdWlfdHJlZRgDIAEoCBIVCg1tZXRhZGF0YV9vbmx5GAQgASgIEhgKEGluY2x1ZGVfZWxlbWVudHMYBSABKAgSEAoIb2NyX21vZGUYBiABKAkiywIKEURldmljZU9ic2VydmF0aW9uEhAKCHBob25lX2lkGAEgASgJEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRILCgNwbmcYBCABKAwSDwoHdWlfdHJlZRgFIAEoCRIXCg9zY3JlZW5fc2VxdWVuY2UYBiABKAQSFQoNY29udHJvbF9lcG9jaBgHIAEoBBISCgpjb250cm9sbGVyGAggASgJEhUKDXJvb3RfaWRlbnRpdHkYCSABKAkSFgoOb2JzZXJ2YXRpb25faWQYCiABKAkSKwoIZWxlbWVudHMYCyADKAsyGS5haV9waG9uZS52MS5QaG9uZUVsZW1lbnQSFgoOZm9yZWdyb3VuZF9hcHAYDCABKAkSFgoOZ3JvdW5kaW5nX25vdGUYDSABKAkSFwoPc2Nyb2xsX2ZlZWRiYWNrGA4gASgJIkcKC1Bob25lQm91bmRzEgwKBGxlZnQYASABKA0SCwoDdG9wGAIgASgNEg0KBXJpZ2h0GAMgASgNEg4KBmJvdHRvbRgEIAEoDSLYAQoMUGhvbmVFbGVtZW50EgoKAmlkGAEgASgJEgwKBHRleHQYAiABKAkSEwoLcmVzb3VyY2VfaWQYAyABKAkSEgoKY2xhc3NfbmFtZRgEIAEoCRIoCgZib3VuZHMYBSABKAsyGC5haV9waG9uZS52MS5QaG9uZUJvdW5kcxIRCgljbGlja2FibGUYBiABKAgSEgoKc2Nyb2xsYWJsZRgHIAEoCBIQCghlZGl0YWJsZRgIIAEoCBIOCgZzb3VyY2UYCSABKAkSEgoKY29uZmlkZW5jZRgKIAEoAiI+ChBFbGVtZW50VGFwQWN0aW9uEhYKDm9ic2VydmF0aW9uX2lkGAEgASgJEhIKCmVsZW1lbnRfaWQYAiABKAkiewoTRWxlbWVudFNjcm9sbEFjdGlvbhIWCg5vYnNlcnZhdGlvbl9pZBgBIAEoCRISCgplbGVtZW50X2lkGAIgASgJEhEKCWRpcmVjdGlvbhgDIAEoCRIQCghkaXN0YW5jZRgEIAEoAhITCgtkdXJhdGlvbl9tcxgFIAEoDSIhCglUYXBBY3Rpb24SCQoBeBgBIAEoDRIJCgF5GAIgASgNIlIKC1N3aXBlQWN0aW9uEgoKAngxGAEgASgNEgoKAnkxGAIgASgNEgoKAngyGAMgASgNEgoKAnkyGAQgASgNEhMKC2R1cmF0aW9uX21zGAUgASgNIjwKD0xvbmdQcmVzc0FjdGlvbhIJCgF4GAEgASgNEgkKAXkYAiABKA0SEwoLZHVyYXRpb25fbXMYAyABKA0iUQoKRHJhZ0FjdGlvbhIKCgJ4MRgBIAEoDRIKCgJ5MRgCIAEoDRIKCgJ4MhgDIAEoDRIKCgJ5MhgEIAEoDRITCgtkdXJhdGlvbl9tcxgFIAEoDSIbCgtJbnB1dEFjdGlvbhIMCgR0ZXh0GAEgASgJIhgKCUtleUFjdGlvbhILCgNrZXkYASABKAkiHQoLU2hlbGxBY3Rpb24SDgoGc2NyaXB0GAEgASgJIjgKEU9yaWVudGF0aW9uQWN0aW9uEhEKCWF1dG9tYXRpYxgBIAEoCBIQCghyb3RhdGlvbhgCIAEoDSKIBgoTRGV2aWNlQWN0aW9uUmVxdWVzdBIQCghwaG9uZV9pZBgBIAEoCRIQCghvd25lcl9pZBgCIAEoCRIOCgZydW5faWQYAyABKAkSEQoJYWN0aW9uX2lkGAQgASgJEhUKDWNvbnRyb2xfZXBvY2gYBSABKAQSEgoKY29udHJvbGxlchgGIAEoCRIlCgN0YXAYByABKAsyFi5haV9waG9uZS52MS5UYXBBY3Rpb25IABIpCgVzd2lwZRgIIAEoCzIYLmFpX3Bob25lLnYxLlN3aXBlQWN0aW9uSAASKQoFaW5wdXQYCSABKAsyGC5haV9waG9uZS52MS5JbnB1dEFjdGlvbkgAEiUKA2tleRgKIAEoCzIWLmFpX3Bob25lLnYxLktleUFjdGlvbkgAEikKBXNoZWxsGAsgASgLMhguYWlfcGhvbmUudjEuU2hlbGxBY3Rpb25IABIyCgpsb25nX3ByZXNzGAwgASgLMhwuYWlfcGhvbmUudjEuTG9uZ1ByZXNzQWN0aW9uSAASJwoEZHJhZxgNIAEoCzIXLmFpX3Bob25lLnYxLkRyYWdBY3Rpb25IABI1CgtvcmllbnRhdGlvbhgOIAEoCzIeLmFpX3Bob25lLnYxLk9yaWVudGF0aW9uQWN0aW9uSAASNAoLdGFwX2VsZW1lbnQYDyABKAsyHS5haV9waG9uZS52MS5FbGVtZW50VGFwQWN0aW9uSAASOgoOc2Nyb2xsX2VsZW1lbnQYECABKAsyIC5haV9waG9uZS52MS5FbGVtZW50U2Nyb2xsQWN0aW9uSAASLQoHZ2VzdHVyZRgSIAEoCzIaLmFpX3Bob25lLnYxLkdlc3R1cmVBY3Rpb25IABIrCgZtb3Rpb24YEyABKAsyGS5haV9waG9uZS52MS5Nb3Rpb25BY3Rpb25IABIsCghsb2NhdGlvbhgUIAEoCzIYLmFpX3Bob25lLnYxLkxvY2F0aW9uRml4SAASFgoOb2JzZXJ2YXRpb25faWQYESABKAlCCAoGYWN0aW9uInQKFERldmljZUFjdGlvblJlc3BvbnNlEhEKCWFjdGlvbl9pZBgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEg4KBm91dHB1dBgDIAEoCRIQCghyZXBsYXllZBgEIAEoCBIWCg5yZXN1bHRfdW5rbm93bhgFIAEoCCJMChJUYWtlQ29udHJvbFJlcXVlc3QSEAoIcGhvbmVfaWQYASABKAkSEAoIb3duZXJfaWQYAiABKAkSEgoKY29udHJvbGxlchgDIAEoCSJLCgxDb250cm9sU3RhdGUSEAoIcGhvbmVfaWQYASABKAkSFQoNY29udHJvbF9lcG9jaBgCIAEoBBISCgpjb250cm9sbGVyGAMgASgJIpoBChFQaG9uZU5vdGlmaWNhdGlvbhIQCghldmVudF9pZBgBIAEoCRIYChBub3RpZmljYXRpb25fa2V5GAIgASgJEhQKDHBhY2thZ2VfbmFtZRgDIAEoCRIQCghhcHBfbmFtZRgEIAEoCRINCgV0aXRsZRgFIAEoCRIMCgR0ZXh0GAYgASgJEhQKDHBvc3RlZF9hdF9tcxgHIAEoBCKkAQoVUGhvbmVOb3RpZmljYXRpb25MaXN0EhEKCWNvbm5lY3RlZBgBIAEoCBIVCg1jaGVja2VkX2F0X21zGAIgASgEEjUKDW5vdGlmaWNhdGlvbnMYAyADKAsyHi5haV9waG9uZS52MS5QaG9uZU5vdGlmaWNhdGlvbhINCgVlcnJvchgEIAEoCRIbChNhdHRlbnRpb25fY29ubmVjdGVkGAUgASgIIjMKDEdlc3R1cmVQb2ludBIJCgF4GAEgASgNEgkKAXkYAiABKA0SDQoFYXRfbXMYAyABKA0iSwoKRmluZ2VyUGF0aBISCgpwb2ludGVyX2lkGAEgASgNEikKBnBvaW50cxgCIAMoCzIZLmFpX3Bob25lLnYxLkdlc3R1cmVQb2ludCJeCg1HZXN0dXJlQWN0aW9uEiYKBXBhdGhzGAEgAygLMhcuYWlfcGhvbmUudjEuRmluZ2VyUGF0aBITCgtkdXJhdGlvbl9tcxgCIAEoDRIQCghwcmVzc3VyZRgDIAEoAiJaCgxNb3Rpb25BY3Rpb24SDAoEa2luZBgBIAEoCRIRCglhbXBsaXR1ZGUYAiABKAISFAoMZnJlcXVlbmN5X2h6GAMgASgCEhMKC2R1cmF0aW9uX21zGAQgASgNYgZwcm90bzM", [file_ai_phone_v1_location]);
 
 /**
  * Routing envelope: decode ONLY the common field; other request tags have different types.
@@ -896,132 +896,6 @@ export const PhoneNotificationListSchema: GenMessage<PhoneNotificationList> = /*
   messageDesc(file_ai_phone_v1_phone_runtime, 21);
 
 /**
- * @generated from message ai_phone.v1.PhoneProvisionRequest
- */
-export type PhoneProvisionRequest = Message<"ai_phone.v1.PhoneProvisionRequest"> & {
-  /**
-   * @generated from field: string device_id = 1;
-   */
-  deviceId: string;
-
-  /**
-   * @generated from field: string request_id = 2;
-   */
-  requestId: string;
-
-  /**
-   * @generated from field: string template_id = 3;
-   */
-  templateId: string;
-
-  /**
-   * @generated from field: uint32 cpus = 4;
-   */
-  cpus: number;
-
-  /**
-   * @generated from field: uint32 memory_mb = 5;
-   */
-  memoryMb: number;
-
-  /**
-   * @generated from field: uint32 storage_gb = 6;
-   */
-  storageGb: number;
-
-  /**
-   * @generated from field: string identity_profile = 7;
-   */
-  identityProfile: string;
-};
-
-/**
- * Describes the message ai_phone.v1.PhoneProvisionRequest.
- * Use `create(PhoneProvisionRequestSchema)` to create a new message.
- */
-export const PhoneProvisionRequestSchema: GenMessage<PhoneProvisionRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 22);
-
-/**
- * @generated from message ai_phone.v1.PhoneProvisionJob
- */
-export type PhoneProvisionJob = Message<"ai_phone.v1.PhoneProvisionJob"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string device_id = 2;
-   */
-  deviceId: string;
-
-  /**
-   * @generated from field: string status = 3;
-   */
-  status: string;
-
-  /**
-   * @generated from field: string stage = 4;
-   */
-  stage: string;
-
-  /**
-   * @generated from field: string error = 5;
-   */
-  error: string;
-
-  /**
-   * @generated from field: string template_id = 6;
-   */
-  templateId: string;
-
-  /**
-   * @generated from field: uint32 cpus = 7;
-   */
-  cpus: number;
-
-  /**
-   * @generated from field: uint32 memory_mb = 8;
-   */
-  memoryMb: number;
-
-  /**
-   * @generated from field: uint32 storage_gb = 9;
-   */
-  storageGb: number;
-
-  /**
-   * @generated from field: string identity_profile = 10;
-   */
-  identityProfile: string;
-};
-
-/**
- * Describes the message ai_phone.v1.PhoneProvisionJob.
- * Use `create(PhoneProvisionJobSchema)` to create a new message.
- */
-export const PhoneProvisionJobSchema: GenMessage<PhoneProvisionJob> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 23);
-
-/**
- * @generated from message ai_phone.v1.PhoneProvisionState
- */
-export type PhoneProvisionState = Message<"ai_phone.v1.PhoneProvisionState"> & {
-  /**
-   * @generated from field: repeated ai_phone.v1.PhoneProvisionJob jobs = 1;
-   */
-  jobs: PhoneProvisionJob[];
-};
-
-/**
- * Describes the message ai_phone.v1.PhoneProvisionState.
- * Use `create(PhoneProvisionStateSchema)` to create a new message.
- */
-export const PhoneProvisionStateSchema: GenMessage<PhoneProvisionState> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 24);
-
-/**
  * Coordinates refer to the latest displayed screenshot, not host CSS pixels.
  *
  * @generated from message ai_phone.v1.GesturePoint
@@ -1048,7 +922,7 @@ export type GesturePoint = Message<"ai_phone.v1.GesturePoint"> & {
  * Use `create(GesturePointSchema)` to create a new message.
  */
 export const GesturePointSchema: GenMessage<GesturePoint> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 25);
+  messageDesc(file_ai_phone_v1_phone_runtime, 22);
 
 /**
  * @generated from message ai_phone.v1.FingerPath
@@ -1070,7 +944,7 @@ export type FingerPath = Message<"ai_phone.v1.FingerPath"> & {
  * Use `create(FingerPathSchema)` to create a new message.
  */
 export const FingerPathSchema: GenMessage<FingerPath> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 26);
+  messageDesc(file_ai_phone_v1_phone_runtime, 23);
 
 /**
  * @generated from message ai_phone.v1.GestureAction
@@ -1097,7 +971,7 @@ export type GestureAction = Message<"ai_phone.v1.GestureAction"> & {
  * Use `create(GestureActionSchema)` to create a new message.
  */
 export const GestureActionSchema: GenMessage<GestureAction> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 27);
+  messageDesc(file_ai_phone_v1_phone_runtime, 24);
 
 /**
  * acceleration in m/s², oscillation in Hz; returns sensors to their prior state.
@@ -1131,5 +1005,5 @@ export type MotionAction = Message<"ai_phone.v1.MotionAction"> & {
  * Use `create(MotionActionSchema)` to create a new message.
  */
 export const MotionActionSchema: GenMessage<MotionAction> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_phone_runtime, 28);
+  messageDesc(file_ai_phone_v1_phone_runtime, 25);
 

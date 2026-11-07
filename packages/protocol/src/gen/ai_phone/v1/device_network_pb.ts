@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/device_network.proto.
  */
 export const file_ai_phone_v1_device_network: GenFile = /*@__PURE__*/
-  fileDesc("CiBhaV9waG9uZS92MS9kZXZpY2VfbmV0d29yay5wcm90bxILYWlfcGhvbmUudjEiKQoURGV2aWNlTmV0d29ya1JlcXVlc3QSEQoJZGV2aWNlX2lkGAEgASgJIlcKEkRldmljZU5ldHdvcmtDaGVjaxIMCgRuYW1lGAEgASgJEg4KBnBhc3NlZBgCIAEoCBIOCgZkZXRhaWwYAyABKAkSEwoLZHVyYXRpb25fbXMYBCABKAQiiQIKEkRldmljZU5ldHdvcmtTdGF0ZRIRCglkZXZpY2VfaWQYASABKAkSEAoIcmV2aXNpb24YAiABKAQSDwoHZW5hYmxlZBgDIAEoCBIYChBoYXNfc3Vic2NyaXB0aW9uGAQgASgIEg4KBnN0YXR1cxgFIAEoCRINCgVlcnJvchgGIAEoCRIUCgxjb3JlX3ZlcnNpb24YByABKAkSEgoKdHVuX2FjdGl2ZRgIIAEoCBISCgpub2RlX2NvdW50GAkgASgNEhUKDWNoZWNrZWRfYXRfbXMYCiABKAQSLwoGY2hlY2tzGAsgAygLMh8uYWlfcGhvbmUudjEuRGV2aWNlTmV0d29ya0NoZWNrIkUKF0RldmljZU5ldHdvcmtDcmVkZW50aWFsEhgKEHN1YnNjcmlwdGlvbl91cmwYASABKAkSEAoIcmV2aXNpb24YAiABKAQipwEKGERldmljZU5ldHdvcmtTYXZlUmVxdWVzdBIRCglkZXZpY2VfaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSDwoHZW5hYmxlZBgDIAEoCBIYChBzdWJzY3JpcHRpb25fdXJsGAQgASgJEh4KFnVzZV9zYXZlZF9zdWJzY3JpcHRpb24YBSABKAgSEgoKcmVxdWVzdF9pZBgGIAEoCWIGcHJvdG8z");
+  fileDesc("CiBhaV9waG9uZS92MS9kZXZpY2VfbmV0d29yay5wcm90bxILYWlfcGhvbmUudjEiKQoURGV2aWNlTmV0d29ya1JlcXVlc3QSEQoJZGV2aWNlX2lkGAEgASgJIlcKEkRldmljZU5ldHdvcmtDaGVjaxIMCgRuYW1lGAEgASgJEg4KBnBhc3NlZBgCIAEoCBIOCgZkZXRhaWwYAyABKAkSEwoLZHVyYXRpb25fbXMYBCABKAQiiQIKEkRldmljZU5ldHdvcmtTdGF0ZRIRCglkZXZpY2VfaWQYASABKAkSEAoIcmV2aXNpb24YAiABKAQSDwoHZW5hYmxlZBgDIAEoCBIYChBoYXNfc3Vic2NyaXB0aW9uGAQgASgIEg4KBnN0YXR1cxgFIAEoCRINCgVlcnJvchgGIAEoCRIUCgxjb3JlX3ZlcnNpb24YByABKAkSEgoKdHVuX2FjdGl2ZRgIIAEoCBISCgpub2RlX2NvdW50GAkgASgNEhUKDWNoZWNrZWRfYXRfbXMYCiABKAQSLwoGY2hlY2tzGAsgAygLMh8uYWlfcGhvbmUudjEuRGV2aWNlTmV0d29ya0NoZWNrIkUKF0RldmljZU5ldHdvcmtDcmVkZW50aWFsEhgKEHN1YnNjcmlwdGlvbl91cmwYASABKAkSEAoIcmV2aXNpb24YAiABKARiBnByb3RvMw");
 
 /**
  * @generated from message ai_phone.v1.DeviceNetworkRequest
@@ -151,46 +151,4 @@ export type DeviceNetworkCredential = Message<"ai_phone.v1.DeviceNetworkCredenti
  */
 export const DeviceNetworkCredentialSchema: GenMessage<DeviceNetworkCredential> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_device_network, 3);
-
-/**
- * @generated from message ai_phone.v1.DeviceNetworkSaveRequest
- */
-export type DeviceNetworkSaveRequest = Message<"ai_phone.v1.DeviceNetworkSaveRequest"> & {
-  /**
-   * @generated from field: string device_id = 1;
-   */
-  deviceId: string;
-
-  /**
-   * @generated from field: uint64 expected_revision = 2;
-   */
-  expectedRevision: bigint;
-
-  /**
-   * @generated from field: bool enabled = 3;
-   */
-  enabled: boolean;
-
-  /**
-   * @generated from field: string subscription_url = 4;
-   */
-  subscriptionUrl: string;
-
-  /**
-   * @generated from field: bool use_saved_subscription = 5;
-   */
-  useSavedSubscription: boolean;
-
-  /**
-   * @generated from field: string request_id = 6;
-   */
-  requestId: string;
-};
-
-/**
- * Describes the message ai_phone.v1.DeviceNetworkSaveRequest.
- * Use `create(DeviceNetworkSaveRequestSchema)` to create a new message.
- */
-export const DeviceNetworkSaveRequestSchema: GenMessage<DeviceNetworkSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_device_network, 4);
 

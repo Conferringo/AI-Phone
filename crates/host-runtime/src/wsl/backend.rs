@@ -288,23 +288,31 @@ impl<E: Execute> Backend<'_, E> {
             &[("HOSTNAME", "127.0.0.1".into()), ("PORT", "17860".into())],
         )
         .await?;
-        for (name, entry) in [("channels", "channels"), ("media", "device-stream")] {
-            self.unit(
-                name,
-                "start",
-                vec![
-                    bun.clone(),
-                    "--no-install".into(),
-                    text(
-                        &self
-                            .root
-                            .join(format!("runtime/js-services/apps/{entry}/server.js")),
-                    )?,
-                ],
-                &[],
-            )
-            .await?;
-        }
+        self.unit(
+            "channels",
+            "start",
+            vec![
+                bun.clone(),
+                "--no-install".into(),
+                text(
+                    &self
+                        .root
+                        .join("runtime/js-services/apps/channels/server.js"),
+                )?,
+            ],
+            &[],
+        )
+        .await?;
+        self.unit(
+            "media",
+            "start",
+            vec![
+                text(&self.root.join("runtime/services/bin/runner"))?,
+                "--media".into(),
+            ],
+            &[],
+        )
+        .await?;
         if let Some(desktop) = existing.get("ai-phone-desktop")
             && !desktop.running
         {

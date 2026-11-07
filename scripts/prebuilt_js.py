@@ -20,8 +20,8 @@ MAX_FILES = 12000
 MAX_BYTES = 256 * 1024**2
 MAX_SOURCE = 64 * 1024**2
 RESERVE = 4 * 1024**3
-ENTRIES = {'media': 'apps/device-stream/server.ts', 'channels': 'apps/channels/server.ts',
-           'native-apps': 'apps/device-network/native-apps.ts', 'device-network': 'apps/device-network/control.ts', 'messaging-browser': 'apps/channels/install-browser.ts'}
+ENTRIES = {'channels': 'apps/channels/server.ts',
+           'messaging-browser': 'apps/channels/install-browser.ts'}
 
 
 def entries():
@@ -32,7 +32,7 @@ def source_inputs(root):
     root = Path(root)
     exact = {'package.json', 'bun.lock', 'config/bun-runtime.json', 'config/js-runtime-vendor.json', 'scripts/js_dependencies.py', 'scripts/js_vendor.py', 'scripts/prebuilt_js.py', 'scripts/macos_target.py', 'apps/client/src-tauri/tauri.conf.json',
              *ENTRIES.values()}
-    prefixes = ('apps/channels/', 'apps/device-stream/', 'apps/device-network/', 'packages/protocol/')
+    prefixes = ('apps/channels/', 'packages/protocol/')
     for name, data, mode in select_files(root):
         if name in exact or name.startswith(prefixes) and not name.endswith('.test.ts'):
             yield name, data, mode
@@ -298,7 +298,7 @@ def build(root):
         source_identity = source_fingerprint(source)
         if compiler_version != bun_version(source):
             raise ValueError('Use the pinned Bun to build JS services')
-        graph = collect(root, ['apps/channels', 'apps/device-stream', 'apps/device-network'], source=source)
+        graph = collect(root, ['apps/channels'], source=source)
         version = package_data(source).get('devDependencies', {}).get('@bufbuild/protobuf')
         if not isinstance(version, str):
             raise ValueError('Installer protobuf runtime declaration is missing')

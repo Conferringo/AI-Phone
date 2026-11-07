@@ -1,66 +1,6 @@
 use crate::*;
-use serde_json::{Value, json};
-use tokio::{io::AsyncWriteExt, process::Command};
+use serde_json::Value;
 
-async fn invoke(app: &App, value: Value) -> Result<Value, String> {
-    let bundled = match std::fs::symlink_metadata(app.root.join("runtime/js-services")) {
-        Ok(_) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
-        Err(_) => return Err("网络运行组件无法读取".into()),
-    };
-    let program = app.root.join(if bundled {
-        "runtime/bin/bun"
-    } else {
-        ".tools/bin/bun"
-    });
-    let entry = app.root.join(if bundled {
-        "runtime/js-services/apps/device-network/control.js"
-    } else {
-        "apps/device-network/control.ts"
-    });
-    let mut command = Command::new(program);
-    if bundled {
-        command.arg("--no-install");
-    }
-    let mut child = command
-        .arg(entry)
-        .env("AI_PHONE_PROJECT_ROOT", &app.root)
-        .env(
-            "AI_PHONE_NATIVE_HOST_PROGRAM",
-            std::env::current_exe().map_err(|_| "原生设备管理程序不可用")?,
-        )
-        .current_dir(&app.root)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|_| "网络管理进程不可用")?;
-    child
-        .stdin
-        .take()
-        .ok_or("网络配置无法提交")?
-        .write_all(value.to_string().as_bytes())
-        .await
-        .map_err(|_| "网络配置无法提交")?;
-    let output = tokio::time::timeout(Duration::from_secs(210), child.wait_with_output())
-        .await
-        .map_err(|_| "网络操作超时；请读取设备状态后再操作")?
-        .map_err(|_| "网络进程未返回结果")?;
-    if output.stdout.len() > 2 * 1024 * 1024 {
-        return Err("网络状态响应过大".into());
-    }
-    let value: Value = serde_json::from_slice(&output.stdout).map_err(|_| "网络状态无法读取")?;
-    if let Some(error) = value["error"].as_str()
-        && !output.status.success()
-    {
-        return Err(error.chars().take(200).collect());
-    }
-    if !output.status.success() {
-        return Err("设备网络操作失败".into());
-    }
-    Ok(value)
-}
 async fn kind(app: &App, id: &str) -> Result<String, String> {
     sqlx::query_scalar("SELECT kind FROM devices WHERE id=$1 AND owner_id='local-user' AND runtime_state='managed'")
  .bind(id).fetch_optional(&app.db).await.map_err(|_|"设备注册表不可用")?.ok_or("设备尚未接入或已归档".into())
@@ -97,7 +37,9 @@ pub async fn prepare(app: &App, device: &str) -> Result<(), String> {
         .map_err(|error| error.to_string())
 }
 pub async fn install_apps(app: &App) -> Result<(), String> {
-    invoke(app, json!({"operation":"install-apps"})).await?;
+    ai_phone_host_runtime::guest_app_resources::prepare(&app.root)
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -124,24 +66,42 @@ pub async fn route(
     headers: HeaderMap,
     body: Result<Bytes, axum::extract::rejection::BytesRejection>,
 ) -> Response {
-    let result:Result<Response,String>=async{
-  if operation=="save"{
-   let input=match decode::<wire::DeviceNetworkSaveRequest>(&app,&headers,body){Ok(v)=>v,Err(e)=>return Ok(e.into())};
-   Uuid::parse_str(&input.request_id).map_err(|_|"网络请求编号无效")?;
-   let _gate=app.network_mutation.lock().await;let device_kind=kind(&app,&input.device_id).await?;
-   let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM runs r JOIN run_device_bindings b ON b.run_id=r.id WHERE b.device_id=$1 AND r.status IN ('queued','running'))")
-    .bind(&input.device_id).fetch_one(&app.db).await.map_err(|_|"无法检查运行任务")?;
-   if busy{return Ok(error(StatusCode::CONFLICT,"device_busy","设备任务正在运行，请结束后应用网络配置"));}
-   let value=invoke(&app,json!({"operation":"apply","deviceId":input.device_id,"kind":device_kind,"expectedRevision":input.expected_revision,"enabled":input.enabled,"subscriptionUrl":input.subscription_url,"useSavedSubscription":input.use_saved_subscription,"requestId":input.request_id})).await?;
-   return Ok(pb(StatusCode::OK,state(value)));
-  }
-  let input=match decode::<wire::DeviceNetworkRequest>(&app,&headers,body){Ok(v)=>v,Err(e)=>return Ok(e.into())};
-  if !["state","credential","probe"].contains(&operation.as_str()){return Ok(error(StatusCode::NOT_FOUND,"not_found","未知网络操作"));}
-  let device_kind=kind(&app,&input.device_id).await?;
-  let value=ai_phone_host_runtime::network_observation::Observer::new(&app.root,&device_kind,&input.device_id).map_err(|e|e.to_string())?.read(&operation).await.map_err(|e|if e.code()=="device_network_metadata"{"设备网络配置损坏，请从备份恢复".to_owned()}else{e.to_string()})?;
-  if operation=="credential"{return Ok(pb(StatusCode::OK,wire::DeviceNetworkCredential{subscription_url:value["subscriptionUrl"].as_str().unwrap_or("").into(),revision:value["revision"].as_u64().unwrap_or(0)}));}
-  Ok(pb(StatusCode::OK,state(value)))
- }.await;
+    let result: Result<Response, String> = async {
+        let input = match decode::<wire::DeviceNetworkRequest>(&app, &headers, body) {
+            Ok(v) => v,
+            Err(e) => return Ok(e.into()),
+        };
+        if !["state", "credential", "probe"].contains(&operation.as_str()) {
+            return Ok(error(StatusCode::NOT_FOUND, "not_found", "未知网络操作"));
+        }
+        let device_kind = kind(&app, &input.device_id).await?;
+        let value = ai_phone_host_runtime::network_observation::Observer::new(
+            &app.root,
+            &device_kind,
+            &input.device_id,
+        )
+        .map_err(|e| e.to_string())?
+        .read(&operation)
+        .await
+        .map_err(|e| {
+            if e.code() == "device_network_metadata" {
+                "设备网络配置损坏，请从备份恢复".to_owned()
+            } else {
+                e.to_string()
+            }
+        })?;
+        if operation == "credential" {
+            return Ok(pb(
+                StatusCode::OK,
+                wire::DeviceNetworkCredential {
+                    subscription_url: value["subscriptionUrl"].as_str().unwrap_or("").into(),
+                    revision: value["revision"].as_u64().unwrap_or(0),
+                },
+            ));
+        }
+        Ok(pb(StatusCode::OK, state(value)))
+    }
+    .await;
     match result {
         Ok(v) => v,
         Err(message) => error(StatusCode::BAD_REQUEST, "device_network_error", &message),

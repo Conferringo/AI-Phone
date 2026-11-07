@@ -76,3 +76,11 @@ macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口
 Copilot 已接通浏览器 PCM 收音、Rust/protobuf 语音适配、连续文字提交与可打断播放；真实麦克风及服务商质量、回声、端到端速度和客体麦克风路由仍未验收。模型与连接应用按协议、模型能力及账号分别支持；配置预设不代表全部路径均已验收。
 
 发行须满足完整组件、隐私、许可、对应源码及安装生命周期要求。桌面预览客户端的实机安装按当前范围豁免并记为未测，不能据此把缺少组件或尚未接通的宿主标为完成。版本代码与设备、账号、聊天及用户文件保持分离。
+
+## Native media and retired runtime paths — 2026-11-07
+
+Phone/desktop frames, PCM streaming, gRPC gestures and confirmed cursor records now run in the Rust phone runner. The existing local installation has activated this media service without recreating devices or changing accounts/chat data. The old Bun media application, network configuration application and second-phone provisioning implementation are removed. Their retired APIs/UI and JS build entries are removed as well. Historical device disks and database records remain.
+
+The source Android environment wrapper now obtains its shell environment directly from the native component; Clash APK installation uses the native resource command. Messaging channels/browser setup and Python build/recovery/maintenance consumers still remain. This is not yet the final Python-free release, and retained historical installers have not acquired these changes.
+
+手机/电脑画面、PCM 音频、gRPC 手势与已确认光标已迁入 Rust runner，并在现有本机激活；未重建设备或改动账号聊天。旧 Bun 媒体、网络配置和第二部手机创建链路及对应入口已退役，历史盘和数据库记录保留。Android 环境与 Clash 安装调用原生组件。渠道/浏览器初始化及 Python 构建、恢复、维护调用尚未全部退役，不能称最终纯 Rust 发行。

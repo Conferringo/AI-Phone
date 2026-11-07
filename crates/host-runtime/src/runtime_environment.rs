@@ -278,10 +278,18 @@ pub(crate) fn resolve(root: &Path, user: &Path) -> Result<Environment> {
     Ok(env)
 }
 pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
-    let [root, user] = arguments else {
-        return Err(Error::Invalid("runtime_environment_arguments"));
+    let (root, user, shell) = match arguments {
+        [root, user] => (root, user, false),
+        [root, user, format] if format == "shell" => (root, user, true),
+        _ => return Err(Error::Invalid("runtime_environment_arguments")),
     };
     let env = resolve(Path::new(root), Path::new(user))?;
-    println!("{}", serde_json::to_string(&env).map_err(|_| invalid())?);
+    if shell {
+        for (key, value) in env {
+            println!("export {key}='{}'", value.replace('\'', "'\\''"));
+        }
+    } else {
+        println!("{}", serde_json::to_string(&env).map_err(|_| invalid())?);
+    }
     Ok(())
 }

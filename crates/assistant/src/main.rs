@@ -310,7 +310,6 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     workbench::initialize(&app.db, &app.root).await?;
     app_learning::backfill(&app).await?;
     desktop::recover(app.clone()).await;
-    phone_system::recover(app.clone()).await;
     tokio::spawn(worker::work(app.clone()));
     tokio::spawn(proactive::work(app.clone()));
     tokio::spawn(location::work(app.clone()));
@@ -326,7 +325,6 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         )
         .route("/v1/desktop/{operation}", post(desktop::route))
         .route("/v1/files/{operation}", post(files::route))
-        .route("/v1/phone-system/{operation}", post(phone_system::route))
         .route("/v1/settings/{operation}", post(settings::route))
         .route("/v1/proactive/{operation}", post(proactive::route))
         .route("/v1/setup/{operation}", post(setup::route))

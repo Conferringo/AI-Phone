@@ -23,11 +23,3 @@ message DeviceNetworkState {
 }
 // Authenticated dedicated read; never expose subscription credentials in state.
 message DeviceNetworkCredential { string subscription_url = 1; uint64 revision = 2; }
-message DeviceNetworkSaveRequest {
-  string device_id = 1;
-  uint64 expected_revision = 2;
-  bool enabled = 3;
-  string subscription_url = 4;
-  bool use_saved_subscription = 5;
-  string request_id = 6;
-}

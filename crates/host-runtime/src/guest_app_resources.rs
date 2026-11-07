@@ -260,6 +260,76 @@ fn verify(path: &Path, pin: &Pin) -> Result<()> {
     }
     Ok(())
 }
+pub async fn prepare(root: &Path) -> Result<Value> {
+    let resources = Resources::new(root)?;
+    resources.download(&resources.default_kinds()).await
+}
+
+async fn install_phone(resources: &Resources) -> Result<Value> {
+    resources.download(&[Kind::Android]).await?;
+    let serial = resources
+        .env
+        .get("AI_PHONE_SERIAL")
+        .map(String::as_str)
+        .unwrap_or("emulator-5564");
+    let client =
+        ai_phone_adb::Client::new(15037, serial.into()).map_err(|_| invalid("guest_app_phone"))?;
+    let limits = ai_phone_adb::Limits {
+        stdout: 65536,
+        stderr: 4096,
+    };
+    let installed = client
+        .shell(
+            "pm path com.github.metacubex.clash.meta",
+            limits,
+            Duration::from_secs(10),
+        )
+        .await
+        .map_err(|_| invalid("guest_app_phone"))?;
+    if installed.stdout.is_empty() {
+        let sdk = resources
+            .env
+            .get("AI_PHONE_SDK_ROOT")
+            .ok_or_else(|| invalid("guest_app_phone"))?;
+        let status = tokio::process::Command::new(Path::new(sdk).join("platform-tools/adb"))
+            .args(["-P", "15037", "-s", serial, "install", "-r"])
+            .arg(resources.path(Kind::Android)?.0)
+            .stdout(std::process::Stdio::null())
+            .kill_on_drop(true)
+            .status()
+            .await?;
+        if !status.success() {
+            return Err(invalid("guest_app_phone"));
+        }
+    }
+    let directory = resources.root.join("data/device-network/phone-local-01");
+    let source = directory.join("source.json");
+    let enabled = if source.try_exists()? {
+        serde_json::from_slice::<Value>(&fs::read(source)?)
+            .map_err(|_| invalid("device_network_metadata"))?["enabled"]
+            .as_bool()
+            .unwrap_or(false)
+    } else {
+        false
+    };
+    if !enabled {
+        let output = client.shell("mkdir -p /data/local/ai-phone-network && chmod 700 /data/local/ai-phone-network && touch /data/local/ai-phone-network/app-managed", ai_phone_adb::Limits { stdout: 4096, stderr: 4096 }, Duration::from_secs(10)).await.map_err(|_| invalid("guest_app_phone"))?;
+        if output.code != 0 {
+            return Err(invalid("guest_app_phone"));
+        }
+        filesystem::directory(&directory, true)?;
+        if !directory.join("app-managed.json").try_exists()? {
+            filesystem::publish_private(
+                &directory,
+                "app-managed.json",
+                br#"{"application":"Clash Meta"}"#,
+                false,
+            )?;
+        }
+    }
+    Ok(json!({"installed":true,"package":"com.github.metacubex.clash.meta"}))
+}
+
 pub(crate) async fn run(args: &[OsString]) -> Result<()> {
     #[cfg(unix)]
     let (args, owned) = if args.last().is_some_and(|v| v == "--stdin-lease") {
@@ -291,6 +361,7 @@ pub(crate) async fn run(args: &[OsString]) -> Result<()> {
         match operation {
             "verify" => resources.verify(&kinds),
             "download" => resources.download(&kinds).await,
+            "phone-install" => install_phone(&resources).await,
             _ => Err(invalid("guest_app_operation")),
         }
     };

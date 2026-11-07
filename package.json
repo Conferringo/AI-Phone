@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "bun run --cwd apps/web dev",
     "build": "bun run --cwd apps/web build",
-    "typecheck": "bun run --cwd apps/web typecheck && apps/web/node_modules/.bin/tsc -p apps/channels/tsconfig.json && apps/web/node_modules/.bin/tsc -p apps/device-stream/tsconfig.json && apps/web/node_modules/.bin/tsc -p apps/device-network/tsconfig.json",
+    "typecheck": "bun run --cwd apps/web typecheck && apps/web/node_modules/.bin/tsc -p apps/channels/tsconfig.json",
     "proto:check": "buf lint && buf build",
     "proto:generate": "buf generate",
     "smoke:protocol": "bun scripts/smoke-protocol.ts",
