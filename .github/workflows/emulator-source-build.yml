@@ -146,7 +146,7 @@ jobs:
           printf 'SOURCE_BOOT_INPUTS=%s/archives\nSOURCE_BOOT_EVIDENCE=%s/evidence\nCARGO_TARGET_DIR=%s/target\n' "$source_boot_work" "$source_boot_work" "$source_boot_work" >> "$GITHUB_ENV"
       - name: Test the native qualifier before acquiring large archives
         run: |
-          rustup toolchain install 1.96.0 --profile minimal
+          rustup toolchain install 1.96.0 --profile minimal --component clippy
           cargo test --locked -p ai-phone-host-runtime --example qualify_source_emulator
           cargo clippy --locked -p ai-phone-host-runtime --example qualify_source_emulator -- -D warnings
           cargo build --locked -p ai-phone-host-runtime --example qualify_source_emulator
