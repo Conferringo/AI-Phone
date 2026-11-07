@@ -106,20 +106,13 @@ pub async fn recover(app: Shared) {
         if let Ok(_guard) = app.network_mutation.try_lock() {
             let devices=sqlx::query_as::<_,(String,String)>("SELECT id,kind FROM devices WHERE owner_id='local-user' AND runtime_state='managed' AND kind IN ('phone','desktop')").fetch_all(&app.db).await.unwrap_or_default();
             for (id, kind) in devices {
-                if matches!(
-                    ai_phone_host_runtime::network_observation::Observer::new(
-                        &app.root, &kind, &id
-                    )
-                    .and_then(|network| network.application_owned()),
-                    Ok(true)
+                if let Ok(network) = ai_phone_host_runtime::network_observation::Controller::new(
+                    &app.root, &kind, &id,
                 ) {
-                    continue;
+                    let _ = network
+                        .execute(ai_phone_host_runtime::network_observation::Operation::Resume)
+                        .await;
                 }
-                let _ = invoke(
-                    &app,
-                    json!({"operation":"resume","deviceId":id,"kind":kind}),
-                )
-                .await;
             }
         }
         tokio::time::sleep(Duration::from_secs(30)).await;

@@ -22,6 +22,8 @@ enum Service {
     Browser,
     #[cfg(unix)]
     NetworkObservation,
+    #[cfg(unix)]
+    NetworkControl,
 }
 fn start(service: Service, arguments: &[OsString]) -> Result<()> {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -47,6 +49,8 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::Browser => runtime.block_on(crate::channel_browser::run(arguments)),
         #[cfg(unix)]
         Service::NetworkObservation => runtime.block_on(crate::network_observation::run(arguments)),
+        #[cfg(unix)]
+        Service::NetworkControl => runtime.block_on(crate::network_observation::control(arguments)),
     }
 }
 fn contract(arguments: &[OsString], value: &str) -> Result<()> {
@@ -84,6 +88,8 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--prepare-device-network" => Some(crate::network_paths::run(&arguments[1..])),
         #[cfg(unix)]
         "--observe-device-network" => Some(start(Service::NetworkObservation, &arguments[1..])),
+        #[cfg(unix)]
+        "--control-device-network" => Some(start(Service::NetworkControl, &arguments[1..])),
         "--write-host-profile" => Some(crate::profile::write(&arguments[1..])),
         "--validate-host-profile" => Some(crate::profile::check(&arguments[1..])),
         "--host-profile-contract" => Some(contract(arguments, crate::profile::CONTRACT)),

@@ -4,7 +4,8 @@ use std::{
     fs,
     os::unix::fs::PermissionsExt,
     path::Path,
-    process::{Command, Output},
+    process::{Command, Output, Stdio},
+    time::{Duration, Instant},
 };
 const DEVICE: &str = "11111111-1111-4111-8111-111111111111";
 fn call(root: &Path, op: &str) -> Output {
@@ -45,6 +46,254 @@ fn parsed(output: Output) -> Value {
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).unwrap()
+}
+
+fn control(root: &Path, operation: &str) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_host-resources"))
+        .args([
+            "--control-device-network",
+            root.to_str().unwrap(),
+            "desktop",
+            DEVICE,
+            operation,
+        ])
+        .env("AI_PHONE_DOCKER", root.join("docker"))
+        .env("NETWORK_FIXTURE_LOG", root.join("commands"))
+        .output()
+        .unwrap()
+}
+fn lifecycle_engine(root: &Path) {
+    fs::write(
+        root.join("data/device-network")
+            .join(DEVICE)
+            .join("config.json"),
+        r#"{"secret":"fixture-private-core-secret"}"#,
+    )
+    .unwrap();
+    fs::write(root.join("docker"), r##"#!/bin/sh
+printf '%s\n' "$*" >> "$NETWORK_FIXTURE_LOG"
+base=${NETWORK_FIXTURE_LOG%/*}
+case "$*" in
+ *'rm -f /etc/ai-phone-network/enabled;'*)
+  test ! -e "$base/fail-stop" || exit 8
+  rm -f "$base/running";;
+ *'nohup sh /etc/ai-phone-network/supervisor.sh'*) touch "$base/running";;
+ *'for f in supervisor core;'*)
+  if test -e "$base/unknown"; then exit 8; fi
+  if test -e "$base/running"; then printf running; else printf stopped; fi;;
+ *'curl --config -'*)
+  config=$(cat)
+  test -e "$base/running" || exit 8
+  case "$config" in *'/version'*) printf '{"version":"native-fixture"}';; *) printf '{"tun":{"enable":true}}';; esac;;
+ *'ip link show aiphone0'*) test -e "$base/running" && printf active;;
+esac
+"##).unwrap();
+}
+
+#[test]
+fn network_lifecycle_application_resume_does_not_start_a_process_or_rewrite_saved_configuration() {
+    let root = fixture();
+    let dir = root.path().join("data/device-network").join(DEVICE);
+    fs::write(dir.join("app-managed.json"), b"existing marker").unwrap();
+    let saved = fs::read(dir.join("source.json")).unwrap();
+    assert_eq!(
+        parsed(control(root.path(), "resume")),
+        json!({"managedBy":"application"})
+    );
+    assert!(!root.path().join("commands").exists());
+    assert_eq!(fs::read(dir.join("source.json")).unwrap(), saved);
+    assert_eq!(
+        fs::read(dir.join("app-managed.json")).unwrap(),
+        b"existing marker"
+    );
+    let denied = control(root.path(), "start");
+    assert!(!denied.status.success());
+    assert!(String::from_utf8_lossy(&denied.stderr).contains("device_network_application_owned"));
+    assert!(!root.path().join("commands").exists());
+}
+
+#[test]
+fn network_lifecycle_starts_once_and_stops_only_after_process_exit() {
+    let root = fixture();
+    lifecycle_engine(root.path());
+    let dir = root.path().join("data/device-network").join(DEVICE);
+    let source = fs::read(dir.join("source.json")).unwrap();
+    assert_eq!(
+        parsed(control(root.path(), "start")),
+        json!({"started":true})
+    );
+    assert!(root.path().join("running").exists());
+    assert_eq!(
+        parsed(control(root.path(), "start")),
+        json!({"started":true})
+    );
+    let log = fs::read_to_string(root.path().join("commands")).unwrap();
+    assert_eq!(
+        log.lines().filter(|line| line.contains("nohup sh")).count(),
+        1
+    );
+    assert!(!log.contains("fixture-private-core-secret"));
+    assert_eq!(
+        parsed(control(root.path(), "stop")),
+        json!({"stopped":true})
+    );
+    assert!(!root.path().join("running").exists());
+    assert!(
+        fs::read_to_string(root.path().join("commands"))
+            .unwrap()
+            .contains("ip rule del priority 8990")
+    );
+    assert_eq!(fs::read(dir.join("source.json")).unwrap(), source);
+}
+
+#[test]
+fn network_lifecycle_unknown_processes_never_authorize_a_second_launch() {
+    let root = fixture();
+    lifecycle_engine(root.path());
+    fs::write(root.path().join("unknown"), b"unknown").unwrap();
+    let output = control(root.path(), "start");
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("device_network_state_unknown"));
+    assert!(!root.path().join("running").exists());
+    assert!(
+        !fs::read_to_string(root.path().join("commands"))
+            .unwrap()
+            .contains("nohup sh")
+    );
+}
+
+#[test]
+fn network_lifecycle_resume_recovers_a_stopped_core_and_preserves_an_already_running_one() {
+    let root = fixture();
+    lifecycle_engine(root.path());
+    let source = root
+        .path()
+        .join("data/device-network")
+        .join(DEVICE)
+        .join("source.json");
+    let saved = fs::read(&source).unwrap();
+    for _ in 0..2 {
+        let state = parsed(control(root.path(), "resume"));
+        assert_eq!(state["status"], "running");
+        assert_eq!(state["revision"], 7);
+    }
+    let log = fs::read_to_string(root.path().join("commands")).unwrap();
+    assert_eq!(
+        log.lines().filter(|line| line.contains("nohup sh")).count(),
+        1
+    );
+    assert_eq!(fs::read(source).unwrap(), saved);
+}
+
+#[test]
+fn network_lifecycle_handoff_stops_the_old_core_and_rolls_back_only_its_own_failed_marker() {
+    let root = fixture();
+    lifecycle_engine(root.path());
+    let dir = root.path().join("data/device-network").join(DEVICE);
+    let source = fs::read(dir.join("source.json")).unwrap();
+    fs::write(root.path().join("running"), b"running").unwrap();
+    fs::write(root.path().join("fail-stop"), b"fail").unwrap();
+    assert!(!control(root.path(), "handoff").status.success());
+    assert!(!dir.join("app-managed.json").exists());
+    assert!(root.path().join("running").exists());
+    fs::remove_file(root.path().join("fail-stop")).unwrap();
+    assert_eq!(
+        parsed(control(root.path(), "handoff")),
+        json!({"managedBy":"application"})
+    );
+    assert!(!root.path().join("running").exists());
+    let marker = fs::read(dir.join("app-managed.json")).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<Value>(&marker).unwrap()["application"],
+        "Clash Party"
+    );
+    assert_eq!(
+        parsed(control(root.path(), "handoff")),
+        json!({"managedBy":"application"})
+    );
+    assert_eq!(fs::read(dir.join("app-managed.json")).unwrap(), marker);
+    assert_eq!(fs::read(dir.join("source.json")).unwrap(), source);
+}
+
+#[test]
+fn network_lifecycle_parent_eof_cancels_and_reaps_its_native_guest_command() {
+    qualify_parent_eof(false);
+    qualify_parent_eof(true);
+}
+fn qualify_parent_eof(socket: bool) {
+    let root = fixture();
+    fs::write(
+        root.path().join("docker"),
+        r##"#!/bin/sh
+printf '%s' "$$" > "${NETWORK_FIXTURE_LOG%/*}/command.pid"
+exec sleep 60
+"##,
+    )
+    .unwrap();
+    let (input, owner) = if socket {
+        let (input, owner) = std::os::unix::net::UnixStream::pair().unwrap();
+        (Stdio::from(std::os::fd::OwnedFd::from(input)), Some(owner))
+    } else {
+        (Stdio::piped(), None)
+    };
+    let mut child = Command::new(env!("CARGO_BIN_EXE_host-resources"))
+        .args([
+            "--control-device-network",
+            root.path().to_str().unwrap(),
+            "desktop",
+            DEVICE,
+            "start",
+            "--stdin-lease",
+        ])
+        .env("AI_PHONE_DOCKER", root.path().join("docker"))
+        .env("NETWORK_FIXTURE_LOG", root.path().join("commands"))
+        .stdin(input)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while !root.path().join("command.pid").exists() {
+        assert!(
+            child.try_wait().unwrap().is_none(),
+            "native operation exited before its guest command"
+        );
+        if Instant::now() >= deadline {
+            child.kill().unwrap();
+            child.wait().unwrap();
+            panic!("guest command not started");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let pid = fs::read_to_string(root.path().join("command.pid"))
+        .unwrap()
+        .parse::<i32>()
+        .unwrap();
+    drop(child.stdin.take());
+    drop(owner);
+    while child.try_wait().unwrap().is_none() {
+        if Instant::now() >= deadline {
+            child.kill().unwrap();
+            child.wait().unwrap();
+            panic!("parent EOF did not cancel");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let output = child.wait_with_output().unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("installation_cancelled"));
+    assert!(
+        rustix::process::test_kill_process(rustix::process::Pid::from_raw(pid).unwrap()).is_err(),
+        "the guest command must be reaped before cancellation returns"
+    );
+    let source = fs::read(
+        root.path()
+            .join("data/device-network")
+            .join(DEVICE)
+            .join("source.json"),
+    )
+    .unwrap();
+    assert!(String::from_utf8_lossy(&source).contains("fixture.invalid/private"));
 }
 #[test]
 fn credentials_are_read_without_a_guest_process_or_private_metadata_writes() {

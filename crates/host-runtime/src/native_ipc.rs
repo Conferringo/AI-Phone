@@ -1,7 +1,49 @@
-//! Bounded length-prefixed protobuf for private native component pipes.
+//! Private component protobuf framing and cancellable parent input.
 use prost::Message;
 use std::io;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+#[cfg(unix)]
+pub(crate) fn owner_input() -> crate::Result<OwnerInput> {
+    use std::os::{
+        fd::{AsFd, OwnedFd},
+        unix::fs::FileTypeExt,
+    };
+    // Unlike blocking stdin, this lease releases immediately when its owner exits.
+    let file = std::fs::File::from(std::io::stdin().as_fd().try_clone_to_owned()?);
+    let kind = file.metadata()?.file_type();
+    let input: OwnedFd = file.into();
+    if kind.is_fifo() {
+        Ok(OwnerInput::Pipe(
+            tokio::net::unix::pipe::Receiver::from_owned_fd(input)?,
+        ))
+    } else if kind.is_socket() {
+        let stream = std::os::unix::net::UnixStream::from(input);
+        stream.set_nonblocking(true)?;
+        Ok(OwnerInput::Socket(tokio::net::UnixStream::from_std(
+            stream,
+        )?))
+    } else {
+        Err(crate::Error::Invalid("native_owner_input"))
+    }
+}
+#[cfg(unix)]
+pub(crate) enum OwnerInput {
+    Pipe(tokio::net::unix::pipe::Receiver),
+    Socket(tokio::net::UnixStream),
+}
+#[cfg(unix)]
+impl AsyncRead for OwnerInput {
+    fn poll_read(
+        self: std::pin::Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<io::Result<()>> {
+        match self.get_mut() {
+            Self::Pipe(input) => std::pin::Pin::new(input).poll_read(context, buffer),
+            Self::Socket(input) => std::pin::Pin::new(input).poll_read(context, buffer),
+        }
+    }
+}
 pub(crate) const LIMIT: usize = 512;
 pub(crate) fn invalid() -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, "device_bridge_frame")

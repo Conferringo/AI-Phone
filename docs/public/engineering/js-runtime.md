@@ -42,4 +42,6 @@ The Android media bridge still needs the matching emulator protocol files and a 
 
 媒体还需要匹配的 Android 协议资源和经过认证的设备。浏览器、客体应用、第三方声明与对应源码属于独立资源；当前安装包供应和各平台完整运行范围统一见[发行状态](../release-status.md)。
 
+Legacy core start, stop, resume and application handoff now belong to Rust; assistant recovery calls that controller directly without starting Bun. Subscription/YAML import, configuration application and guest-app acquisition still use their existing JavaScript paths. See [network ownership](network-observation.md). Those real consumers remain migration work.
+
 Device activation uses the host-matched native assistant binary with `--setup-devices`. Its read-only `--device-setup-contract` capability is qualified by the native builder and bound into the verified native component manifest. The installer reports readiness after the installation phases succeed and verifies the phone's root identity and both devices' frames. The JS services listed above and the Python installation stages are separate runtime dependencies.

@@ -1200,8 +1200,8 @@
     },
     {
       "path": "apps/device-network/config.test.ts",
-      "size": 7368,
-      "sha256": "96733eb37dc6e45daa3fc45198a2aa3a62d57b68ac34df8b9a4a9eb924546f8c"
+      "size": 8606,
+      "sha256": "de405c4e57ea486f7b2e60afa0b2e1cc5a20949645ea258d9fb2934e1df46c49"
     },
     {
       "path": "apps/device-network/config.ts",
@@ -1210,8 +1210,8 @@
     },
     {
       "path": "apps/device-network/control.ts",
-      "size": 12578,
-      "sha256": "0f9022850b9c00ec67218b19cea749eaa1880fa0293fd8cde47a72935da3ef7d"
+      "size": 10805,
+      "sha256": "23560fac2aa053cec2e9de56f144c0ce9034034f24c46cfacb1b426d4e703f92"
     },
     {
       "path": "apps/device-network/desktop-prepare.test.ts",
@@ -2455,8 +2455,8 @@
     },
     {
       "path": "crates/assistant/src/device_network.rs",
-      "size": 7348,
-      "sha256": "fd0fb05ac8b6562e820199ce6d336c9e04704952bf792e21a526ea12a7c81024"
+      "size": 7171,
+      "sha256": "e0ee56112665bbbe0c1a2bb48eeacb49b959b32dd06256fab21d0f336d4f30b6"
     },
     {
       "path": "crates/assistant/src/device_setup/mod.rs",
@@ -3045,8 +3045,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 6135,
-      "sha256": "ea5c282de09c95ae3e211324038e5e4e7d067a95a1b112bed168a170e1d08056"
+      "size": 6408,
+      "sha256": "3d5bc3f720f0f476546cb5996c741910e46d92ecde6ff2466643f778398d1688"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3085,8 +3085,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
-      "size": 14462,
-      "sha256": "1edca48d054f502e698448b95aed7dbbd5bc74829cecf5b32a561a80dda4b7c6"
+      "size": 14126,
+      "sha256": "a772e1125487aa5c453dc8d706114cef8784b234d96fae14f5502a25c7c5ba56"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/relay.rs",
@@ -3165,13 +3165,18 @@
     },
     {
       "path": "crates/host-runtime/src/native_ipc.rs",
-      "size": 1379,
-      "sha256": "35cc7ddffa115c753f7e1060a7bfcc4c1e116fc051fbdef024286839933fdcbd"
+      "size": 2816,
+      "sha256": "28aa00b8035235b6e84236802425a4e8437771282c45d129241ab2199097d7c5"
+    },
+    {
+      "path": "crates/host-runtime/src/network_observation/lifecycle.rs",
+      "size": 9621,
+      "sha256": "6cd470f5bc79bdfd094e3e364df5e47e0993ea20dbaafc9bbaa2013a261565a4"
     },
     {
       "path": "crates/host-runtime/src/network_observation.rs",
-      "size": 15784,
-      "sha256": "57a570b15f1375642f1bbc5f3a6cf287527a070469a8260b9e0ff5ead569edaf"
+      "size": 15859,
+      "sha256": "00ea3ba61dcfe38f6883ea1a2293a88411665f4b34d0f3a17fd26bb4a0dce158"
     },
     {
       "path": "crates/host-runtime/src/network_paths.rs",
@@ -3375,8 +3380,8 @@
     },
     {
       "path": "crates/host-runtime/tests/network_observation_cli.rs",
-      "size": 12452,
-      "sha256": "417438af46cc91a23e4661c99f0f8ced00b7e49b7939839a652242d2d6095d9c"
+      "size": 21244,
+      "sha256": "e5faf1e4d8c2d55cd0ccdf3df31a95ba5c1684477f4625c883eec1c3d092a1d5"
     },
     {
       "path": "crates/host-runtime/tests/network_paths_cli.rs",
@@ -3695,8 +3700,8 @@
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
-      "size": 5117,
-      "sha256": "19e0d0ca664c8d1e007341d1b65238e1cb801227e9fab488cd6782ce9338cacd"
+      "size": 5480,
+      "sha256": "de44837e7d4321048417dfaeeb435d8b708587ba06232aae30fd550cab6aafcd"
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
@@ -3720,8 +3725,8 @@
     },
     {
       "path": "docs/public/engineering/network-observation.md",
-      "size": 2608,
-      "sha256": "d29d27993cfb71fd2d4dd16dac5fcb8a34c7e37d052d6b2c3172c836080d8f1c"
+      "size": 3300,
+      "sha256": "7bcb25a11e42bdc00a3fdf63b996429b3ddc00492011b2f6fdfb67f60bbcc554"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
@@ -4175,8 +4180,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 13143,
-      "sha256": "ac1732438426bdf7d60557ce6a7bbea1d4507cd6f3d43dbed73a62af995d5d41"
+      "size": 13956,
+      "sha256": "afb8ea8c00bff7c7251fb0122e0d79cb4bbeadbd4aee60144677d354adb43740"
     },
     {
       "path": "docs/public/runtime-bundles.md",
