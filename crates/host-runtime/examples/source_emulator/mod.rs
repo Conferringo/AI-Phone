@@ -461,17 +461,21 @@ pub(super) async fn run(args: Vec<OsString>) -> Result<()> {
         shell(&client, "input keyevent 3").await?;
         focus(&client, false).await?;
         receipt["checks"]["key_input"] = true.into();
-        shell(
+        let written = shell(
             &client,
-            &format!("printf '%s' '{nonce}' > /data/local/tmp/aiphone-source-qualification"),
+            &format!("printf '%s' '{nonce}' > /data/local/tmp/aiphone-source-qualification && sync && cat /data/local/tmp/aiphone-source-qualification"),
         )
         .await?;
+        if written != nonce {
+            return Err(format!("guest marker write differs: {written:?}").into());
+        }
         checkpoint(root, &mut receipt, "restart")?;
         context.stop_emulator(emulator.take().unwrap()).await?;
         emulator = Some(context.emulator()?);
         boot(&client, adb.as_mut().unwrap(), emulator.as_mut().unwrap()).await?;
-        if shell(&client, "cat /data/local/tmp/aiphone-source-qualification").await? != nonce {
-            return Err("owned guest data changed across restart".into());
+        let restored = shell(&client, "cat /data/local/tmp/aiphone-source-qualification").await?;
+        if restored != nonce {
+            return Err(format!("owned guest data changed across restart: {restored:?}").into());
         }
         show_settings(&client).await?;
         frame(&client, &root.join("restarted-frame.png")).await?;
