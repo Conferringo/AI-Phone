@@ -335,6 +335,11 @@ async fn focus(client: &Client, settings: bool) -> Result<()> {
         sleep(Duration::from_millis(50)).await;
     }
 }
+async fn show_settings(client: &Client) -> Result<()> {
+    shell(client, "input keyevent 224; wm dismiss-keyguard").await?;
+    shell(client, "am start -W -a android.settings.SETTINGS").await?;
+    focus(client, true).await
+}
 fn checkpoint(root: &Path, receipt: &mut Value, stage: &str) -> Result<()> {
     receipt["stage"] = stage.into();
     fs::write(
@@ -448,12 +453,11 @@ pub(super) async fn run(args: Vec<OsString>) -> Result<()> {
             return Err("guest API or ABI differs".into());
         }
         receipt["checks"]["root_boot"] = true.into();
+        checkpoint(root, &mut receipt, "input")?;
+        show_settings(&client).await?;
         let (width, height) = frame(&client, &root.join("frame.png")).await?;
         receipt["frame"] = json!({"width":width,"height":height});
         receipt["checks"]["decoded_frame"] = true.into();
-        checkpoint(root, &mut receipt, "input")?;
-        shell(&client, "am start -W -a android.settings.SETTINGS").await?;
-        focus(&client, true).await?;
         shell(&client, "input keyevent 3").await?;
         focus(&client, false).await?;
         receipt["checks"]["key_input"] = true.into();
@@ -469,6 +473,7 @@ pub(super) async fn run(args: Vec<OsString>) -> Result<()> {
         if shell(&client, "cat /data/local/tmp/aiphone-source-qualification").await? != nonce {
             return Err("owned guest data changed across restart".into());
         }
+        show_settings(&client).await?;
         frame(&client, &root.join("restarted-frame.png")).await?;
         receipt["checks"]["restart_data"] = true.into();
         context.stop_emulator(emulator.take().unwrap()).await?;

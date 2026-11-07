@@ -2905,8 +2905,8 @@
     },
     {
       "path": "crates/host-runtime/examples/source_emulator/mod.rs",
-      "size": 23225,
-      "sha256": "d1273569b57c2fae8fa24ae1ebc5b2962a673bda37e79bc42dadf832b63a9c63"
+      "size": 23418,
+      "sha256": "c0c551b3d5178a2ec15cb004758908953fa12dfa9fad714530311aa87547763b"
     },
     {
       "path": "crates/host-runtime/src/android/cli.rs",
