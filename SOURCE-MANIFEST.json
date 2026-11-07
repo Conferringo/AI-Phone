@@ -2495,8 +2495,8 @@
     },
     {
       "path": "crates/assistant/src/files.rs",
-      "size": 33512,
-      "sha256": "69bb11325b53adb14b638cc58e3dbc4eb335fcab60feeb786a8d763be49f42ac"
+      "size": 35199,
+      "sha256": "d099aea3498fba3c45fe9eee7e7ba0e23594340dfb826559e440c5e5650aa559"
     },
     {
       "path": "crates/assistant/src/handoff_returns.rs",

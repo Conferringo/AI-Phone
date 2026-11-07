@@ -80,6 +80,15 @@ impl Store {
         }
         Ok(resolved)
     }
+    async fn entry(&self, value: &str) -> Result<PathBuf> {
+        let normalized = path(value)?;
+        let p = Path::new(&normalized);
+        let parent = p.parent().ok_or("无效路径")?;
+        Ok(self
+            .local(&parent.to_string_lossy())
+            .await?
+            .join(p.file_name().ok_or("无效路径")?))
+    }
     async fn shell(&self, command: &str) -> Result<Vec<u8>> {
         match self {
             Self::Phone(client) => {
@@ -200,9 +209,7 @@ impl Store {
         }
         match self {
             Self::Workspace(_) => {
-                let parent = Path::new(&p).parent().ok_or("无效路径")?.to_string_lossy();
-                let leaf = Path::new(&p).file_name().ok_or("无效路径")?;
-                let full = self.local(&parent).await?.join(leaf);
+                let full = self.entry(&p).await?;
                 let m = fs::symlink_metadata(&full).await.map_err(err)?;
                 if m.is_dir() {
                     fs::remove_dir_all(full).await.map_err(err)
@@ -241,15 +248,13 @@ impl Store {
         }
         match self {
             Self::Workspace(_) => {
-                let to = Path::new(target);
-                let full = self
-                    .local(&to.parent().ok_or("无效路径")?.to_string_lossy())
-                    .await?
-                    .join(to.file_name().ok_or("无效路径")?);
-                if fs::try_exists(&full).await.map_err(err)? {
-                    return Err("目标文件已存在".into());
+                let full = self.entry(target).await?;
+                match fs::symlink_metadata(&full).await {
+                    Ok(_) => return Err("目标文件已存在".into()),
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) => return Err(err(e)),
                 }
-                fs::rename(self.local(source).await?, full)
+                fs::rename(self.entry(source).await?, full)
                     .await
                     .map_err(err)
             }
@@ -267,11 +272,7 @@ impl Store {
     async fn copy_within(&self, source: &str, target: &str) -> Result<()> {
         match self {
             Self::Workspace(_) => {
-                let p = Path::new(target);
-                let to = self
-                    .local(&p.parent().ok_or("无效路径")?.to_string_lossy())
-                    .await?
-                    .join(p.file_name().ok_or("无效路径")?);
+                let to = self.entry(target).await?;
                 copy_local(&self.local(source).await?, &to).await
             }
             _ => {
@@ -329,11 +330,7 @@ impl Store {
         Box::pin(async move {
             match self {
                 Self::Workspace(_) => {
-                    let p = Path::new(target);
-                    let full = self
-                        .local(&p.parent().ok_or("无效路径")?.to_string_lossy())
-                        .await?
-                        .join(p.file_name().ok_or("无效路径")?);
+                    let full = self.entry(target).await?;
                     copy_local(source, &full).await
                 }
                 Self::Desktop => {
@@ -852,5 +849,56 @@ mod tests {
         assert!(name("..").is_err());
         assert!(name("a/b").is_err());
         assert!(path("a\0b").is_err());
+    }
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn workspace_rename_moves_the_selected_link_and_preserves_its_target() {
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("original"), b"keep original")
+            .await
+            .unwrap();
+        std::os::unix::fs::symlink("original", root.path().join("link")).unwrap();
+        let store = Store::Workspace(fs::canonicalize(root.path()).await.unwrap());
+        store.rename("/link", "/renamed").await.unwrap();
+        assert_eq!(
+            fs::read(root.path().join("original")).await.unwrap(),
+            b"keep original"
+        );
+        assert_eq!(
+            fs::read_link(root.path().join("renamed")).await.unwrap(),
+            Path::new("original")
+        );
+        assert!(
+            fs::symlink_metadata(root.path().join("link"))
+                .await
+                .is_err()
+        );
+        std::os::unix::fs::symlink("missing", root.path().join("dangling")).unwrap();
+        store.rename("/dangling", "/moved-dangling").await.unwrap();
+        assert_eq!(
+            fs::read_link(root.path().join("moved-dangling"))
+                .await
+                .unwrap(),
+            Path::new("missing")
+        );
+    }
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn workspace_rename_does_not_overwrite_a_dangling_destination() {
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("source"), b"keep source")
+            .await
+            .unwrap();
+        std::os::unix::fs::symlink("missing", root.path().join("occupied")).unwrap();
+        let store = Store::Workspace(fs::canonicalize(root.path()).await.unwrap());
+        assert!(store.rename("/source", "/occupied").await.is_err());
+        assert_eq!(
+            fs::read(root.path().join("source")).await.unwrap(),
+            b"keep source"
+        );
+        assert_eq!(
+            fs::read_link(root.path().join("occupied")).await.unwrap(),
+            Path::new("missing")
+        );
     }
 }
