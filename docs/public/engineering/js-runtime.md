@@ -1,12 +1,12 @@
 # Offline JavaScript service component
 
-This optional component supplies the media bridge, messaging channels and setup helpers without installing packages during initialization. It is a building block for the complete client, not a downloadable complete-device release. See [release status](../release-status.md).
+This optional component supplies messaging channels and their browser setup helper without installing packages during initialization. It is a building block for the complete client, not a downloadable complete-device release. See [release status](../release-status.md).
 
 ## Ownership and format
 
-`scripts/js_dependencies.py` resolves the installed, lockfile-controlled production graph for the three service applications. It keeps package versions, npm aliases, peer/optional declarations and host OS/CPU/libc selection. Workspace protocol files come from the frozen source snapshot. Package aliases retain the original resolution layout inside `runtime/js-services`; a flattened name-to-version map cannot represent all dependencies.
+`scripts/js_dependencies.py` resolves the installed, lockfile-controlled production graph for the messaging application. It keeps package versions, npm aliases, peer/optional declarations and host OS/CPU/libc selection. Workspace protocol files come from the frozen source snapshot. Package aliases retain the original resolution layout inside `runtime/js-services`; a flattened name-to-version map cannot represent all dependencies.
 
-`scripts/prebuilt_js.py` compiles five entry points with pinned Bun: `media`, `channels`, `native-apps`, `device-network`, and `messaging-browser`. Compilation uses a bounded snapshot of reviewed sources and external packages. Source changes before publication invalidate the result. Package files, contained aliases, host identity, Bun version, source fingerprint and native minimum OS are recorded in the component manifest. Limits are 12,000 files and 256 MiB. Building and private-tool preparation preserve the existing 4 GiB recovery reserve.
+`scripts/prebuilt_js.py` compiles two entry points with pinned Bun: `channels` and `messaging-browser`. Compilation uses a bounded snapshot of reviewed sources and external packages. Source changes before publication invalidate the result. Package files, contained aliases, host identity, Bun version, source fingerprint and native minimum OS are recorded in the component manifest. Limits are 12,000 files and 256 MiB. Building and private-tool preparation preserve the existing 4 GiB recovery reserve.
 
 The installer stages regular files before creating verified aliases. Reopening checks those aliases again. A present but corrupted component fails explicitly; source-only contributor installations retain their original path. Launch commands use the bundled Bun with `--no-install`. A private verified Bun copy also supports existing helpers whose imports use only built-in modules; unknown existing tools are preserved.
 
@@ -34,14 +34,14 @@ Current platform support, installer availability and distribution requirements a
 
 Dependency resources retain their upstream licences and notices. One exact official libvips binary contains public upstream build-directory strings. `config/js-runtime-vendor.json` pins its package/version/path, full resource hash, registry archive URL, archive SHA-512 integrity and SHA-256. Only those exact bytes bypass the developer-path test; credential scanning, including UTF-16 forms, always applies. The installed bytes were compared with the official archive. This provenance approval is not redistribution clearance.
 
-The Android media bridge still needs the matching emulator protocol files and a running authenticated emulator, provided by the separate Android runtime. The compiled browser/app setup helpers do not contain Chromium or the Clash application assets. Those resources, full native dependency notices/source obligations, complete assembly, fresh initialization and per-platform independent hosting remain release gates. The source component does not make first-run downloads acceptable for a complete product.
+The Android and desktop media bridge is Rust, integrated into the existing phone runner as `--media`. It uses the compiled emulator protocol and an authenticated running emulator. The compiled browser/app setup helpers do not contain Chromium or the Clash application assets. Those resources, full native dependency notices/source obligations, complete assembly, fresh initialization and per-platform independent hosting remain release gates. The source component does not make first-run downloads acceptable for a complete product.
 
-Legacy core start, stop, resume and application handoff now belong to Rust; assistant recovery calls that controller directly without starting Bun. Guest-app selection, verified cache reuse and streaming acquisition now run in Rust too; the source installer calls that native component directly. The remaining app entry delegates acquisition and retains its legacy phone-install path. Subscription/YAML import and configuration application still use JavaScript. See [network ownership](network-observation.md). Those real consumers remain migration work.
+Legacy core start, stop, resume and application handoff now belong to Rust; assistant recovery calls that controller directly without starting Bun. Guest-app selection, verified cache reuse and streaming acquisition now run in Rust too; the source installer calls that native component directly. Legacy phone installation also calls the native resource command directly. The retired subscription import/configuration endpoint and its JavaScript implementation have been removed. Configure Clash inside each device. See [network ownership](network-observation.md). Those real consumers remain migration work.
 
 Device activation uses the host-matched native assistant binary with `--setup-devices`. Its read-only `--device-setup-contract` capability is qualified by the native builder and bound into the verified native component manifest. The installer reports readiness after the installation phases succeed and verifies the phone's root identity and both devices' frames. The JS services listed above and the Python installation stages are separate runtime dependencies.
 
 ## 中文
 
-本组件让媒体、渠道和初始化助手使用随包 Bun 与锁定生产依赖，初始化不再安装 JavaScript 包。源码快照、宿主、文件摘要、内部别名与原生最低系统版本共同确定组件身份；损坏明确失败，不回退到源码编译。已有设备、账号和聊天不进入组件。
+本组件让渠道和浏览器初始化助手使用随包 Bun 与锁定生产依赖，初始化不再安装 JavaScript 包。源码快照、宿主、文件摘要、内部别名与原生最低系统版本共同确定组件身份；损坏明确失败，不回退到源码编译。已有设备、账号和聊天不进入组件。
 
-媒体还需要匹配的 Android 协议资源和经过认证的设备。浏览器、客体应用、第三方声明与对应源码属于独立资源；当前安装包供应和各平台完整运行范围统一见[发行状态](../release-status.md)。
+媒体已归入 Rust runner，使用编译后的 Android 协议和经过认证的设备。浏览器、客体应用、第三方声明与对应源码属于独立资源；当前安装包供应和各平台完整运行范围统一见[发行状态](../release-status.md)。

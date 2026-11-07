@@ -21,6 +21,16 @@ reqwest = { version = "0.12", default-features = false }
 uuid = { version = "1", features = ["v4"] }
 roxmltree = "=0.21.1"
 fs2 = "=0.4.3"
+tonic = { version = "=0.14.9", default-features = false, features = ["transport", "codegen"] }
+tonic-prost = "=0.14.9"
+image = { version = "=0.25.10", default-features = false, features = ["jpeg", "png"] }
+futures-util = "0.3"
+rustix = { version = "1", features = ["process"] }
+
+[build-dependencies]
+tonic-prost-build = "=0.14.9"
+prost-build = "=0.14.4"
+protoc-bin-vendored = "3"
 
 [lints]
 workspace = true

@@ -88,7 +88,12 @@ fn parent_eof_cancels_an_inflight_stream_and_removes_its_unpublished_file() {
             .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 22\r\n\r\npartial")
             .unwrap();
         sent.send(()).unwrap();
-        assert_eq!(stream.read(&mut bytes).unwrap(), 0);
+        let closed = stream.read(&mut bytes);
+        assert!(
+            matches!(&closed, Ok(0))
+                || matches!(&closed, Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset),
+            "cancelled acquisition must close its HTTP connection: {closed:?}"
+        );
     });
     let mut child = Command::new(env!("CARGO_BIN_EXE_host-resources"))
         .args([

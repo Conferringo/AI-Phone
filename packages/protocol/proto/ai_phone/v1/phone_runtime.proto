@@ -138,29 +138,6 @@ message PhoneNotificationList {
   bool attention_connected = 5;
 }
 
-message PhoneProvisionRequest {
-  string device_id = 1;
-  string request_id = 2;
-  string template_id = 3;
-  uint32 cpus = 4;
-  uint32 memory_mb = 5;
-  uint32 storage_gb = 6;
-  string identity_profile = 7;
-}
-message PhoneProvisionJob {
-  string id = 1;
-  string device_id = 2;
-  string status = 3;
-  string stage = 4;
-  string error = 5;
-  string template_id = 6;
-  uint32 cpus = 7;
-  uint32 memory_mb = 8;
-  uint32 storage_gb = 9;
-  string identity_profile = 10;
-}
-message PhoneProvisionState { repeated PhoneProvisionJob jobs = 1; }
-
 // Coordinates refer to the latest displayed screenshot, not host CSS pixels.
 message GesturePoint { uint32 x = 1; uint32 y = 2; uint32 at_ms = 3; }
 message FingerPath { uint32 pointer_id = 1; repeated GesturePoint points = 2; }

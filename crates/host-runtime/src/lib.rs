@@ -9,7 +9,7 @@ pub mod component;
 mod control;
 pub mod device_bridge;
 mod filesystem;
-mod guest_app_resources;
+pub mod guest_app_resources;
 #[cfg(unix)]
 mod guest_apps;
 #[cfg(unix)]

@@ -29,6 +29,7 @@ mod cursor;
 mod gestures;
 mod grounding;
 mod location;
+mod media;
 mod native_tree;
 
 const OWNER: &str = "local-user";
@@ -945,6 +946,18 @@ async fn action(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    match std::env::args().nth(1).as_deref() {
+        Some("--media") => {
+            return media::run()
+                .await
+                .map_err(|e| -> Box<dyn std::error::Error> { e });
+        }
+        Some("--media-contract") => {
+            println!("{}", media::CONTRACT);
+            return Ok(());
+        }
+        _ => {}
+    }
     if std::env::args().any(|arg| arg == "--version") {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         return Ok(());

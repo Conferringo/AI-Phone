@@ -8,7 +8,6 @@ import {RegistryRequestSchema,RegistryStateSchema,DeviceSaveRequestSchema,AgentC
 import {ModelDraftSchema,ModelCredentialSchema,ModelTestResultSchema} from '@ai-phone/protocol/ai_phone/v1/settings_pb';
 import {Check,ChevronDown,Eye,EyeOff,LoaderCircle,Monitor,Plus,RefreshCw,Smartphone,Sparkles} from 'lucide-react';
 import {FloatingWindow} from './floating-window';
-import {PhoneInstall} from './phone-install';
 import {DesktopInstall} from './desktop-install';
 import {AgentMemory} from './memory-window';
 import {AgentConnections} from './connections-dialog';
@@ -90,8 +89,6 @@ export function RegistryWindow({open,onClose,onNeedsSetup,onChange,activeDeviceI
         <label>{t("使用的 Agent")}<SelectField aria-label={t("默认 Agent")} value={form.defaultAgentId} onValueChange={value=>edit({defaultAgentId:value})} options={[{value:"",label:t("未分配")},...(state.agents.map(a=>({value:a.id,label:a.name})))]}/> </label>
         {form.kind==='desktop'&&!isNew&&<DesktopInstall key={id} deviceId={id} installed={device?.runtimeState==='managed'} onInstalled={()=>void load()}/>}
         {isNew&&form.kind==='desktop'&&<p className="registry-note">{t("保存设备后安装系统")}</p>}
-        {form.kind==='phone'&&!isNew&&<PhoneInstall key={id} deviceId={id} installed={device?.runtimeState==='managed'} onInstalled={()=>void load()}/>}
-        {isNew&&form.kind==='phone'&&<p className="registry-note">{t("保存设备后安装系统")}</p>}
        </>:<>
         <div className="registry-model-row"><label>{t("服务商")}<SelectField aria-label={t("服务商")} value={modelPreset(form.config)} onValueChange={value=>editConfig(presetDraft(value as ModelPreset))} options={modelPresets.map(p=>({value:p.id,label:p.id==='custom'?t("兼容服务"):p.label}))}/> </label><label>{t("模型")}<input aria-label={t("模型 ID")} required placeholder={t("填写模型 ID")} value={form.config.model} spellCheck={false} onChange={e=>editConfig({model:e.target.value})}/></label></div>
         <label>{t("API 地址")}<input aria-label={t("API 地址")} required type="url" value={form.config.baseUrl} spellCheck={false} autoCapitalize="none" onChange={e=>editConfig({baseUrl:e.target.value,useSavedKey:false,apiKey:''})}/></label>

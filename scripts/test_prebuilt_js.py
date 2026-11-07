@@ -102,9 +102,9 @@ class JavaScriptRuntimeTests(unittest.TestCase):
     def test_source_path_and_present_component_have_one_explicit_selection(self):
         from prebuilt_js import launch_spec
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary).resolve();self.assertFalse(launch_spec(root,'media')['prebuilt'])
-            self.fixture(root);spec=launch_spec(root,'media');self.assertTrue(spec['prebuilt']);self.assertEqual(spec['argv'][1:],["--no-install",str(root/'runtime/js-services/apps/device-stream/server.js')])
-            (root/'runtime/js-services/apps/device-stream/server.js').write_text('changed')
+            root=Path(temporary).resolve();self.assertFalse(launch_spec(root,'channels')['prebuilt'])
+            self.fixture(root);spec=launch_spec(root,'channels');self.assertTrue(spec['prebuilt']);self.assertEqual(spec['argv'][1:],["--no-install",str(root/'runtime/js-services/apps/channels/server.js')])
+            (root/'runtime/js-services/apps/channels/server.js').write_text('changed')
             with self.assertRaises(ValueError):launch_spec(root,'channels')
             with self.assertRaises(ValueError):launch_spec(root,'unknown')
 
@@ -114,7 +114,7 @@ class JavaScriptRuntimeTests(unittest.TestCase):
             root=Path(temporary).resolve();self.fixture(root);source=root/'apps/channels/server.ts';original=source.read_text();source.write_text('changed')
             with self.assertRaises(ValueError):launch_spec(root,'channels')
             source.write_text(original);extra=root/'runtime/js-services/unexpected';extra.write_text('unexpected')
-            with self.assertRaises(ValueError):launch_spec(root,'media')
+            with self.assertRaises(ValueError):launch_spec(root,'channels')
 
 
 
@@ -129,7 +129,7 @@ class JavaScriptBuildTests(unittest.TestCase):
             with self.subTest(mode=mode),tempfile.TemporaryDirectory() as temporary:
                 root=Path(temporary).resolve();self.fixture(root)
                 config=root/'apps/client/src-tauri/tauri.conf.json';config.parent.mkdir(parents=True);config.write_text('{"bundle":{"macOS":{"minimumSystemVersion":"14.4"}}}')
-                for name in ('apps/channels','apps/device-stream','apps/device-network'):(root/name/'package.json').write_text('{}')
+                for name in ('apps/channels',):(root/name/'package.json').write_text('{}')
                 (root/'package.json').write_text('{"devDependencies":{"@bufbuild/protobuf":"2"}}');package=root/'node_modules/@bufbuild/protobuf';package.mkdir(parents=True);(package/'package.json').write_text('{"name":"@bufbuild/protobuf","version":"2.0.0"}')
                 if mode=='missing-protobuf':shutil.rmtree(root/'node_modules')
                 def compile_fixture(source,work,bun):
@@ -146,7 +146,7 @@ class JavaScriptBuildTests(unittest.TestCase):
                 with patch('prebuilt_js.build_manifest',side_effect=manifest_fixture),patch('bootstrap_bun.bun_path',return_value=root/'runtime/bin/bun'),patch('prebuilt_js.subprocess.check_output',side_effect=version_probe),patch('prebuilt_js.bundle',side_effect=compile_fixture),patch('prebuilt_js.shutil.disk_usage',return_value=SimpleNamespace(free=RESERVE+MAX_BYTES+MAX_SOURCE)):
                     if mode=='success':
                         value=build(root)
-                        self.assertEqual(set(value['entries']), {'media', 'channels', 'native-apps', 'device-network', 'messaging-browser'})
+                        self.assertEqual(set(value['entries']), {'channels', 'messaging-browser'})
                         self.assertEqual(build(root),value)
                     else:
                         with self.assertRaises((ValueError,subprocess.CalledProcessError)):build(root)
@@ -159,7 +159,7 @@ class JavaScriptBuildTests(unittest.TestCase):
             root=Path(temporary).resolve();value=self.fixture(root);path=root/MANIFEST
             for changes in ({'format':True},{'host':'other'},{'bun_version':'other'},{'source_sha256':'other'},{'entries':{}},{'files':None},{'files':[]},{'files':[value['files'][0],value['files'][0]]}):
                 path.write_text(json.dumps({**value,**changes}))
-                with self.assertRaises(ValueError):launch_spec(root,'media')
+                with self.assertRaises(ValueError):launch_spec(root,'channels')
             path.write_text(json.dumps(value));entry=root/value['files'][0]['path'];entry.unlink()
             with self.assertRaises(ValueError):launch_spec(root,'channels')
 
@@ -233,7 +233,7 @@ class JavaScriptBuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary).resolve();self.fixture(root);name='bun.exe' if os.name=='nt' else 'bun';source=root/'runtime/bin'/name
             with patch('prebuilt_js.shutil.disk_usage',return_value=SimpleNamespace(free=RESERVE+source.stat().st_size)):binary=private_bun(root,create=True)
-            self.assertEqual(binary.name,name);self.assertEqual(launch_spec(root,'media')['argv'][0],str(source));self.assertEqual(binary.read_bytes(),source.read_bytes())
+            self.assertEqual(binary.name,name);self.assertEqual(launch_spec(root,'channels')['argv'][0],str(source));self.assertEqual(binary.read_bytes(),source.read_bytes())
             if os.name!='nt':
                 binary.chmod(0o644)
                 with self.assertRaises(ValueError):private_bun(root)

@@ -1,7 +1,13 @@
 #!/bin/sh
 # Source from project scripts; these variables apply only to this process tree.
 AI_PHONE_PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-eval "$(python3 "$AI_PHONE_PROJECT_ROOT/scripts/release.py" env)"
+if [ -x "$AI_PHONE_PROJECT_ROOT/runtime/services/bin/assistant" ]; then
+  native_host="$AI_PHONE_PROJECT_ROOT/runtime/services/bin/assistant"
+else
+  native_host="$AI_PHONE_PROJECT_ROOT/target/debug/host-resources"
+fi
+runtime_exports=$("$native_host" --runtime-environment "$AI_PHONE_PROJECT_ROOT" "$HOME" shell)
+eval "$runtime_exports"
 ANDROID_HOME=$AI_PHONE_SDK_ROOT
 JAVA_HOME=$AI_PHONE_JAVA_HOME
 ANDROID_USER_HOME="$AI_PHONE_DATA_ROOT/android/user"

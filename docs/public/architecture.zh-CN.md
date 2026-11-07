@@ -8,7 +8,7 @@
 | 助手 | Rust/Axum/Tokio | 持久任务循环、模型适配、调度、记忆、知识、权限与完成审计 |
 | 手机执行器 | Rust + ADB + Android桥接 | 当前观察、控件/OCR定位、输入/手势、epoch、动作去重 |
 | 电脑客体 | Rust + X11 + FFmpeg | 画面与输入、光标回执、音频监督、连接采集租约、持久通知及 Chromium 定位会话 |
-| 媒体 | Bun、Android gRPC、FFmpeg/X11 | JPEG帧流、PCM音频；原生触点/指针进入同一画面 |
+| 媒体 | Rust runner、Android gRPC、FFmpeg/X11 | JPEG帧流、PCM音频；原生触点/指针进入同一画面 |
 | Linux电脑 | Docker、Debian/Openbox、Xvfb、桌面桥 | computer use、办公软件、客体sudo与文件处理 |
 | 渠道 | Bun、官方SDK/Bot API及本地WhatsApp适配 | Agent级凭据、私聊配对、入站排队、送达状态 |
 | 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、模型版本与审计；Redis预留，尚未分发任务 |
