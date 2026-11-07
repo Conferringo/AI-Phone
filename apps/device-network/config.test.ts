@@ -44,33 +44,33 @@ describe('subscription isolation',()=>{
 });
 
 describe('private state and retry contract (no live devices)',()=>{
- const project=resolve(import.meta.dir,'../..');
+ const project=resolve(import.meta.dir,'../..'),device='11111111-1111-4111-8111-111111111111';
  const nativeProgram=resolve(process.env.CARGO_TARGET_DIR||project+'/target','debug',process.platform==='win32'?'host-resources.exe':'host-resources');
  async function isolated(work:(dir:string,call:(request:object)=>Promise<any>)=>Promise<void>){
-  const dir=mkdtempSync(tmpdir()+'/aiphone-network-test-');mkdirSync(dir+'/scripts');writeFileSync(dir+'/scripts/android-adb','#!/bin/sh\nexit 1\n',{mode:0o700});mkdirSync(dir+'/data/device-network/phone-local-01',{recursive:true});
+  const dir=mkdtempSync(tmpdir()+'/aiphone-network-test-');writeFileSync(dir+'/docker','#!/bin/sh\nexit 1\n',{mode:0o700});mkdirSync(dir+'/data/device-network/'+device,{recursive:true});
   const call=async(request:object)=>{
-   const child=Bun.spawn([process.execPath,project+'/apps/device-network/control.ts'],{cwd:dir,env:{...process.env,AI_PHONE_PROJECT_ROOT:dir,AI_PHONE_NATIVE_HOST_PROGRAM:nativeProgram},stdin:new TextEncoder().encode(JSON.stringify({deviceId:'phone-local-01',kind:'phone',...request})),stdout:'pipe',stderr:'pipe'});
+   const child=Bun.spawn([process.execPath,project+'/apps/device-network/control.ts'],{cwd:dir,env:{...process.env,AI_PHONE_PROJECT_ROOT:dir,AI_PHONE_NATIVE_HOST_PROGRAM:nativeProgram,AI_PHONE_DOCKER:dir+'/docker'},stdin:new TextEncoder().encode(JSON.stringify({deviceId:device,kind:'desktop',...request})),stdout:'pipe',stderr:'pipe'});
    const output=await new Response(child.stdout).text();await child.exited;return JSON.parse(output);
   };
   try{await work(dir,call);}finally{rmSync(dir,{recursive:true,force:true});}
  }
  test('state omits secrets; only explicit credential read returns the saved URL',()=>isolated(async(dir,call)=>{
-  writeFileSync(dir+'/data/device-network/phone-local-01/source.json',JSON.stringify({revision:4,enabled:false,subscriptionUrl:'https://example.com/private-subscription-token'}));
-  writeFileSync(dir+'/data/device-network/phone-local-01/token','private-controller-secret');
+  writeFileSync(dir+'/data/device-network/'+device+'/source.json',JSON.stringify({revision:4,enabled:false,subscriptionUrl:'https://example.com/private-subscription-token'}));
+  writeFileSync(dir+'/data/device-network/'+device+'/token','private-controller-secret');
   const state=await call({operation:'state'});expect(state.revision).toBe(4);expect(state.hasSubscription).toBe(true);expect(JSON.stringify(state)).not.toContain('private-');
   expect((await call({operation:'credential'})).subscriptionUrl).toContain('private-subscription-token');
  }));
  test('stale revisions and changed retry payloads fail before downloading or touching a device',()=>isolated(async(dir,call)=>{
   const request={operation:'apply',requestId:'test-request',expectedRevision:4,enabled:false,subscriptionUrl:'',useSavedSubscription:true};
   const fingerprint=createHash('sha256').update(JSON.stringify([4,false,'',true])).digest('hex');
-  writeFileSync(dir+'/data/device-network/phone-local-01/source.json',JSON.stringify({revision:5,enabled:false,requestId:request.requestId,requestFingerprint:fingerprint}));
+  writeFileSync(dir+'/data/device-network/'+device+'/source.json',JSON.stringify({revision:5,enabled:false,requestId:request.requestId,requestFingerprint:fingerprint}));
   expect((await call(request)).revision).toBe(5);
   expect((await call({...request,enabled:true})).error).toContain('不同配置');
   expect((await call({...request,requestId:'different-request'})).error).toContain('版本冲突');
-  expect(JSON.parse(readFileSync(dir+'/data/device-network/phone-local-01/source.json','utf8')).revision).toBe(5);
+  expect(JSON.parse(readFileSync(dir+'/data/device-network/'+device+'/source.json','utf8')).revision).toBe(5);
  }));
  test('corrupt private state fails closed, not an empty reset',()=>isolated(async(dir,call)=>{
-  writeFileSync(dir+'/data/device-network/phone-local-01/source.json','broken');expect((await call({operation:'credential'})).error).toContain('损坏');
+  writeFileSync(dir+'/data/device-network/'+device+'/source.json','broken');expect((await call({operation:'credential'})).error).toContain('损坏');
  }));
  test('tampered cached core is rejected before execution',()=>isolated(async(dir,call)=>{
   mkdirSync(dir+'/config');mkdirSync(dir+'/.tools/mihomo/android-arm64',{recursive:true});

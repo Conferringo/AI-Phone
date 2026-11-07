@@ -19,6 +19,8 @@ mod links;
 mod managed_engine;
 mod manifest;
 pub mod native_ipc;
+#[cfg(unix)]
+pub mod network_observation;
 pub mod network_paths;
 pub mod package;
 mod profile;

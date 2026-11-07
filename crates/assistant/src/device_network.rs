@@ -106,6 +106,15 @@ pub async fn recover(app: Shared) {
         if let Ok(_guard) = app.network_mutation.try_lock() {
             let devices=sqlx::query_as::<_,(String,String)>("SELECT id,kind FROM devices WHERE owner_id='local-user' AND runtime_state='managed' AND kind IN ('phone','desktop')").fetch_all(&app.db).await.unwrap_or_default();
             for (id, kind) in devices {
+                if matches!(
+                    ai_phone_host_runtime::network_observation::Observer::new(
+                        &app.root, &kind, &id
+                    )
+                    .and_then(|network| network.application_owned()),
+                    Ok(true)
+                ) {
+                    continue;
+                }
                 let _ = invoke(
                     &app,
                     json!({"operation":"resume","deviceId":id,"kind":kind}),
@@ -136,7 +145,7 @@ pub async fn route(
   let input=match decode::<wire::DeviceNetworkRequest>(&app,&headers,body){Ok(v)=>v,Err(e)=>return Ok(e.into())};
   if !["state","credential","probe"].contains(&operation.as_str()){return Ok(error(StatusCode::NOT_FOUND,"not_found","未知网络操作"));}
   let device_kind=kind(&app,&input.device_id).await?;
-  let value=invoke(&app,json!({"operation":operation,"deviceId":input.device_id,"kind":device_kind})).await?;
+  let value=ai_phone_host_runtime::network_observation::Observer::new(&app.root,&device_kind,&input.device_id).map_err(|e|e.to_string())?.read(&operation).await.map_err(|e|if e.code()=="device_network_metadata"{"设备网络配置损坏，请从备份恢复".to_owned()}else{e.to_string()})?;
   if operation=="credential"{return Ok(pb(StatusCode::OK,wire::DeviceNetworkCredential{subscription_url:value["subscriptionUrl"].as_str().unwrap_or("").into(),revision:value["revision"].as_u64().unwrap_or(0)}));}
   Ok(pb(StatusCode::OK,state(value)))
  }.await;

@@ -17,7 +17,7 @@ fn directory(path: &Path, mode: u32) -> Result<()> {
     Ok(())
 }
 
-pub fn prepare(root: &Path, kind: &str, id: &str) -> Result<()> {
+pub(crate) fn validate(kind: &str, id: &str) -> Result<()> {
     match kind {
         "phone" if id == "phone-local-01" => {}
         "desktop"
@@ -27,6 +27,10 @@ pub fn prepare(root: &Path, kind: &str, id: &str) -> Result<()> {
                 }) => {}
         _ => return Err(Error::Invalid("device_network_device")),
     }
+    Ok(())
+}
+pub fn prepare(root: &Path, kind: &str, id: &str) -> Result<()> {
+    validate(kind, id)?;
     let root = root.canonicalize()?;
     let parent = root.join("data/device-network");
     let folder = parent.join(id);

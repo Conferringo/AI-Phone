@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 21046,
-      "sha256": "19e2b42f4ea08f89a3dfe40a42f914ad8a836fe94b5bda7496b1e2fbb5ebd21f"
+      "size": 21051,
+      "sha256": "4d1af8a5b5094711cfde87b1e47d47887b7623b4cc6d188ea4a4eb8e9e8d9959"
     },
     {
       "path": ".github/workflows/emulator-source-build.yml",
@@ -80,8 +80,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 10102,
-      "sha256": "0f162e4d0359d161e6b842173607e37b39b0acef8822c80815151ce4c7fed718"
+      "size": 10107,
+      "sha256": "59a6dbfa4999604b4623a026a16480de1c1268f4cf774841e1e5a4373dd03271"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -1200,8 +1200,8 @@
     },
     {
       "path": "apps/device-network/config.test.ts",
-      "size": 7366,
-      "sha256": "4685c519598ddad676d6b5fd049917952a32f4dcfb087149fe8c80e332bb5a87"
+      "size": 7368,
+      "sha256": "96733eb37dc6e45daa3fc45198a2aa3a62d57b68ac34df8b9a4a9eb924546f8c"
     },
     {
       "path": "apps/device-network/config.ts",
@@ -1210,8 +1210,8 @@
     },
     {
       "path": "apps/device-network/control.ts",
-      "size": 17546,
-      "sha256": "866bee977e11ea582c82591090e136fdc1681ed371afc3c034299ad0fe40c1d8"
+      "size": 12578,
+      "sha256": "0f9022850b9c00ec67218b19cea749eaa1880fa0293fd8cde47a72935da3ef7d"
     },
     {
       "path": "apps/device-network/desktop-prepare.test.ts",
@@ -2455,8 +2455,8 @@
     },
     {
       "path": "crates/assistant/src/device_network.rs",
-      "size": 6822,
-      "sha256": "23da1e722aa127feffc1bcd1e96d2d1c90f07bc243477a46a6b71a17df24ece8"
+      "size": 7348,
+      "sha256": "fd0fb05ac8b6562e820199ce6d336c9e04704952bf792e21a526ea12a7c81024"
     },
     {
       "path": "crates/assistant/src/device_setup/mod.rs",
@@ -3045,8 +3045,8 @@
     },
     {
       "path": "crates/host-runtime/src/component.rs",
-      "size": 5854,
-      "sha256": "273dbe0083cf0c7036db1fd673dbb1c0b070dcf623f21584a6d9c3779bc7c5e0"
+      "size": 6135,
+      "sha256": "ea5c282de09c95ae3e211324038e5e4e7d067a95a1b112bed168a170e1d08056"
     },
     {
       "path": "crates/host-runtime/src/control.rs",
@@ -3145,8 +3145,8 @@
     },
     {
       "path": "crates/host-runtime/src/lib.rs",
-      "size": 3097,
-      "sha256": "7771a75d3dbc421982ff4ea52aaf4a6b42f4b16cfc0d8cd819e98a34a2fe9b24"
+      "size": 3139,
+      "sha256": "ec307758b043d695700c0413ae5b79b1de8229aa463204bf16eb502ef099a326"
     },
     {
       "path": "crates/host-runtime/src/links.rs",
@@ -3169,9 +3169,14 @@
       "sha256": "35cc7ddffa115c753f7e1060a7bfcc4c1e116fc051fbdef024286839933fdcbd"
     },
     {
+      "path": "crates/host-runtime/src/network_observation.rs",
+      "size": 15784,
+      "sha256": "57a570b15f1375642f1bbc5f3a6cf287527a070469a8260b9e0ff5ead569edaf"
+    },
+    {
       "path": "crates/host-runtime/src/network_paths.rs",
-      "size": 2163,
-      "sha256": "6f587039d5427cc7d3aec3cf31bafa57097daf1a4a6387421de43d1abd576745"
+      "size": 2262,
+      "sha256": "de6f1efb59122bb213fc099479094c2056786995a445809754a45b863a566439"
     },
     {
       "path": "crates/host-runtime/src/package/tests.rs",
@@ -3367,6 +3372,11 @@
       "path": "crates/host-runtime/tests/managed_engine_cli.rs",
       "size": 10206,
       "sha256": "2583559e5ecdba978e0d1342f3a8c50c9ffaef9c90c29c8a1a1efd2629a81b55"
+    },
+    {
+      "path": "crates/host-runtime/tests/network_observation_cli.rs",
+      "size": 12452,
+      "sha256": "417438af46cc91a23e4661c99f0f8ced00b7e49b7939839a652242d2d6095d9c"
     },
     {
       "path": "crates/host-runtime/tests/network_paths_cli.rs",
@@ -3625,8 +3635,8 @@
     },
     {
       "path": "docs/public/engineering/index.md",
-      "size": 1541,
-      "sha256": "01b93b24e70b6cfeec7d7cc1b268cb4a543672b825c007b2ba9ab7b333e4a039"
+      "size": 1596,
+      "sha256": "bf933b060e92c9047a3f325124089c6e11b29c4dbc90a6d2f9a18a8e4b08543a"
     },
     {
       "path": "docs/public/engineering/installer-tools.md",
@@ -3657,6 +3667,11 @@
       "path": "docs/public/engineering/native-android-preparation.md",
       "size": 5149,
       "sha256": "7b478e2f90a7b27f3b9dfc3c18c818088728dd7b3c8ab54bd29e274e12716fab"
+    },
+    {
+      "path": "docs/public/engineering/network-observation.md",
+      "size": 2608,
+      "sha256": "d29d27993cfb71fd2d4dd16dac5fcb8a34c7e37d052d6b2c3172c836080d8f1c"
     },
     {
       "path": "docs/public/engineering/package-delivery.md",
