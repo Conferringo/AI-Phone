@@ -3360,8 +3360,8 @@
     },
     {
       "path": "crates/host-runtime/tests/guest_app_resources_cli.rs",
-      "size": 11737,
-      "sha256": "81dcd0bc0cc947f21192a22e3d935afc78f005b95d69db8cc73774eea70126f2"
+      "size": 11975,
+      "sha256": "2bc1a498c56ab54c2c3219b8d85aeef0d381742feb5532eb33c71f99958f3a53"
     },
     {
       "path": "crates/host-runtime/tests/host_profile_cli.rs",
