@@ -54,7 +54,7 @@ def create_command(nonce,image):
     return ['create','--name',name,'--label',LABEL+'='+nonce,'--privileged','--network=none','--cgroupns=private',
             '--mount','type=volume,source='+name+',target=/var/lib/aiphone','--tmpfs','/run:rw,mode=755','--tmpfs','/tmp:rw,mode=1777',
             '--env','AI_PHONE_WSL_QUALIFICATION_NONCE='+nonce,'--env','container=docker',image,
-            '/opt/aiphone/tools/python/bin/python3','-I','-B','/opt/aiphone/bootstrap/wsl_runtime_worker.py']
+            '/usr/local/libexec/aiphone-qualification','wsl-qualify']
 
 
 def owned(kind,reference,nonce,run=docker):
@@ -142,7 +142,14 @@ def run_phase(work,container,nonce,phase,run=docker):
         return result
 
 
-def materialize(work,nonce,resources,run=docker):
+def native_worker():
+    root=Path(__file__).resolve().parent.parent
+    subprocess.run(['cargo','build','--locked','-p','ai-phone-release-tools','--bin','release-tools'],cwd=root,check=True)
+    target=Path(os.environ.get('CARGO_TARGET_DIR','target'))
+    return root/target/'debug/release-tools'
+
+
+def materialize(work,nonce,resources,worker,run=docker):
     name=identity(nonce)
     image=run(['image','import','--change','LABEL '+LABEL+'='+nonce,work/'rootfs.tar.gz',name+':fixture'],timeout=600)
     if re.fullmatch('sha256:[0-9a-f]{64}',image) is None:raise ValueError('Invalid imported fixture identity')
@@ -153,15 +160,16 @@ def materialize(work,nonce,resources,run=docker):
     container=run(create_command(nonce,image))
     if re.fullmatch('[0-9a-f]{64}',container) is None:raise ValueError('Invalid fixture container identity')
     resources['container']=container;owned('container',container,nonce,run)
+    run(['cp',worker,container+':/usr/local/libexec/aiphone-qualification'])
     return container
 
 
 def qualify_runtime(work,source,images):
     require_disposable();work=Path(work)
-    inputs=checked_inputs(work,source,images);nonce=uuid.uuid4().hex;resources={}
+    inputs=checked_inputs(work,source,images);worker=native_worker();nonce=uuid.uuid4().hex;resources={}
     receipt={'format':1,'inputs':inputs,'phases':[],'cleanup':{},'stage':'materialize','passed':False,'windows_boot_verified':False,'phone_ready':False}
     try:
-        container=materialize(work,nonce,resources)
+        container=materialize(work,nonce,resources,worker)
         for phase in (1,2):
             receipt['stage']='phase_'+str(phase)
             result=run_phase(work,container,nonce,phase);receipt['phases'].append(result)

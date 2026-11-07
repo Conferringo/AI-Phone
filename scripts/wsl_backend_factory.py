@@ -146,6 +146,7 @@ RUN /opt/aiphone/native-phone-bridge/platform-tools/adb version
 RUN staging_contract=$(/usr/bin/timeout 10 /usr/local/libexec/aiphone-bootstrap --source-staging-contract) && test "$staging_contract" = ai-phone-source-staging-v1
 RUN initializer_contract=$(/usr/bin/timeout 10 /usr/local/libexec/aiphone-bootstrap --wsl-backend-initializer-contract) && test "$initializer_contract" = ai-phone-wsl-initializer-v1
 RUN /opt/aiphone/tools/python/bin/python3 -I -B /opt/aiphone/bootstrap/wsl_backend_entry.py --verify
+RUN rm -rf /opt/aiphone/tools /opt/aiphone/bootstrap
 ENTRYPOINT ["/usr/local/libexec/aiphone-bootstrap", "--initialize-wsl-backend"]
 '''
 

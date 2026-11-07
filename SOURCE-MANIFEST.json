@@ -100,8 +100,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 3466,
-      "sha256": "bcc9ad39b91c782d23cd1108c1c285c14e8195031db4636b8d6e81911f29f945"
+      "size": 3601,
+      "sha256": "eab0f536682e5ca72d2ed2ab4e392aa192dd57ee1221c9274969594c600618f6"
     },
     {
       "path": ".gitignore",
@@ -125,8 +125,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 91452,
-      "sha256": "45356f118946734014b76b0b04f06fbdfffc05e500507b8f14996d4737dfe80a"
+      "size": 92003,
+      "sha256": "77cb86d051e938f16dd1b2cc8a4c9a08f31884fd0b1eba5b44fba1a2c5bc113d"
     },
     {
       "path": "Cargo.toml",
@@ -3460,8 +3460,8 @@
     },
     {
       "path": "crates/release-tools/Cargo.toml",
-      "size": 325,
-      "sha256": "5a622d4ad669372304ee27666234773e0f2ca04eb7aa9b8690c8fd3d6455a1fe"
+      "size": 838,
+      "sha256": "3b544bcefdf6541d2c635995ed5035d4fd514b1eaad9668253a8450403561f90"
     },
     {
       "path": "crates/release-tools/src/apt.rs",
@@ -3470,13 +3470,38 @@
     },
     {
       "path": "crates/release-tools/src/main.rs",
-      "size": 514,
-      "sha256": "ca1af14ffef14621f56edd6d0be9cb78bb97c735b603df6f33b7fe98f55b6b53"
+      "size": 1030,
+      "sha256": "e4c25fefa094dd39a1b5ab524e5b8a3d46fb508f198f06715e711509b2de18d0"
+    },
+    {
+      "path": "crates/release-tools/src/wsl_qualification/diagnostics.rs",
+      "size": 9259,
+      "sha256": "041600262bb4f28f866ae44e50e43f8c8cc8a0b4cb4120835d286d5e2b3b7146"
+    },
+    {
+      "path": "crates/release-tools/src/wsl_qualification/mod.rs",
+      "size": 11258,
+      "sha256": "ac2f5c6a6cbc24007131e2ce7a868d6f8e26d1e9b7d9a5dae2a73f2df7b430dd"
+    },
+    {
+      "path": "crates/release-tools/src/wsl_qualification/probes.rs",
+      "size": 36313,
+      "sha256": "45f2784e09a93450079689e12497f8ed032d040b00edf2b5bf17fdb45875a528"
+    },
+    {
+      "path": "crates/release-tools/src/wsl_qualification/process.rs",
+      "size": 13408,
+      "sha256": "87a90f9aed5dd2e0c148d6630a1728039b4c3854a830e04e9e557fd795db31e8"
     },
     {
       "path": "crates/release-tools/tests/apt_repository.rs",
       "size": 11771,
       "sha256": "377413e69a88de970a4e8b2a535070810241f682333095fd5c23d1debc21013d"
+    },
+    {
+      "path": "crates/release-tools/tests/wsl_qualification_cli.rs",
+      "size": 622,
+      "sha256": "3d024809d174c80af22ce2bd0f389898e132cce1ec2eb9683542b33ceffb3360"
     },
     {
       "path": "crates/vision/Cargo.toml",
@@ -3575,13 +3600,13 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 455430,
-      "sha256": "7f9cfbef569775a21fcaaed40447bd6fcf47fb6ea536777601d86e9c6419b9c1"
+      "size": 456819,
+      "sha256": "07b598a1238c6e739b3ed69166f8b94cc3c6e2ac3635843c139ecb858d95270c"
     },
     {
       "path": "docs/public/dependency-security.json",
       "size": 4651,
-      "sha256": "ad37982ee8e46cbf9e5d2331ce1e22a7dc6ba3ba8414dd115ac709be60a6bdcb"
+      "sha256": "b6dd3d38f0b01f07c34b4ab877dfdbf3a4ab8961f8bd0f5f6cfb98c3070c87e0"
     },
     {
       "path": "docs/public/distribution.en.md",
@@ -3645,8 +3670,8 @@
     },
     {
       "path": "docs/public/engineering/js-runtime.md",
-      "size": 5140,
-      "sha256": "e09a0aa0af5a5ea355bb9bd10b8503ad62e9b1fe76f3290088ebdb41bac4028c"
+      "size": 5117,
+      "sha256": "19e0d0ca664c8d1e007341d1b65238e1cb801227e9fab488cd6782ce9338cacd"
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
@@ -4045,13 +4070,13 @@
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
-      "size": 9600,
-      "sha256": "6f0f5bb331c1e2871b8fa72ecd5085919888b48efb7bb0d5fbf185c80d100aa2"
+      "size": 9647,
+      "sha256": "e85775622ca0d4f13b88fe3244362a2a25851d31c81f71f1658c45a08daaf1ee"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 4077670,
-      "sha256": "7ee0cb7a6311c90813391dcebe0e8bafbdac2160d35455ae486508a51490e7ac"
+      "size": 4104851,
+      "sha256": "ef90ce0009b8366e8f55a6fed394f91361becd930ffec151b79a5e7693def297"
     },
     {
       "path": "docs/public/network.md",
@@ -4165,8 +4190,8 @@
     },
     {
       "path": "docs/public/windows-backend-runtime.md",
-      "size": 14508,
-      "sha256": "c75eb624c2630d21b4de43e74994f5e494d59a93cd7d9a13baf8a23a274fa556"
+      "size": 14940,
+      "sha256": "74dc15a6acfcab3dcbf28179eff904820bbe9c46037a20a1e4f28dd95cd0d41f"
     },
     {
       "path": "docs/public/windows-client-factory.md",
@@ -5295,8 +5320,8 @@
     },
     {
       "path": "scripts/prebuilt_js.py",
-      "size": 14907,
-      "sha256": "04cac58a3efab72b2f75456afd288b96d02fbd811d7c7e77dad283f07441d2ea"
+      "size": 14831,
+      "sha256": "b755b9918cf6014cccfcff459405c95d38142697c76c019f6454c5ba5b59cede"
     },
     {
       "path": "scripts/prebuilt_phone.py",
@@ -5735,8 +5760,8 @@
     },
     {
       "path": "scripts/test_prebuilt_js.py",
-      "size": 22020,
-      "sha256": "82608c2b3f536156ecd9e8984fb0e0d8d2e10d2b1dbbcea21525953ebef98d5e"
+      "size": 22032,
+      "sha256": "b8a5aca1bbe401c433c7fddad1f453df1fc031e15d256788094f0f6ef548680a"
     },
     {
       "path": "scripts/test_prebuilt_phone.py",
@@ -5835,8 +5860,8 @@
     },
     {
       "path": "scripts/test_wsl_backend.py",
-      "size": 19813,
-      "sha256": "4977bcca69f9ac0bcad257f8118dc48c234ce492f24a5cd1ea360064601787d3"
+      "size": 20755,
+      "sha256": "568a0c2e8ab726a5525fa7af3138d262b7950448ba449ddc43027c27783b9e29"
     },
     {
       "path": "scripts/test_wsl_backend_review.py",
@@ -5845,18 +5870,18 @@
     },
     {
       "path": "scripts/test_wsl_database_start_diagnostics.py",
-      "size": 14802,
-      "sha256": "a8bf238c4cd064a7bbb612d6386ee835a684761638d664976415f84a864a1929"
+      "size": 14714,
+      "sha256": "9251cf8a901a0dfd9939afc3a457de81147592c99505c3b056063b755e829fe2"
     },
     {
       "path": "scripts/test_wsl_initialize_diagnostics.py",
-      "size": 18633,
-      "sha256": "c9d224a3310c286a8619095349edb9ecf2b51a2a81667bc1be6002d0db3c8532"
+      "size": 3525,
+      "sha256": "56cd37949b0985d5a2df9e91e08708399aeea0da67b83823696dc3bbfe9c9d2c"
     },
     {
       "path": "scripts/test_wsl_inventory.py",
-      "size": 11192,
-      "sha256": "8f47618b1d19e6db939b72fc8220e81bb0ea8883ac0e3d88412f9df5ff79d9bc"
+      "size": 11595,
+      "sha256": "a79893496a29471886aaa8618b3f9d15f0fae15c92ef8a4629393e891d1da783"
     },
     {
       "path": "scripts/test_wsl_phone_tools.py",
@@ -5875,13 +5900,8 @@
     },
     {
       "path": "scripts/test_wsl_runtime.py",
-      "size": 21380,
-      "sha256": "7803776a572e3e9fdaf3fb3a77dd451d26e221464d418dffcec5a77cee74b836"
-    },
-    {
-      "path": "scripts/test_wsl_runtime_failure.py",
-      "size": 2979,
-      "sha256": "7038ef086ebddbef882db9bf02c554275dc38812c9bb85fb2e3ddfc5db0b6917"
+      "size": 9480,
+      "sha256": "f7222231163a7633f14a6d62ad520a78f18e6689073fbb2858df9e961dde25e7"
     },
     {
       "path": "scripts/test_wsl_source_staging.py",
@@ -5914,19 +5934,9 @@
       "sha256": "ee3b25d593a7689189a6fbbb47e814ef0d360b0dd650ad5551ef4ab7e47e66bd"
     },
     {
-      "path": "scripts/wsl-desktop-qualification.test.ts",
-      "size": 8425,
-      "sha256": "531654025dec8c9978e146d81fc3293652a4847706e061fa3e3c7526c2b8aacc"
-    },
-    {
-      "path": "scripts/wsl-desktop-qualification.ts",
-      "size": 6183,
-      "sha256": "b661526722864bfcf841a4d7534bf10d964b92182c34661b4a6b8da836d1f875"
-    },
-    {
       "path": "scripts/wsl_backend.py",
-      "size": 9059,
-      "sha256": "b50ae43fbb205ede177a36df575a26ffee486f92494fde4744fab3081240ea3f"
+      "size": 9137,
+      "sha256": "79d4fdf55e604194ad2fc61e0924611ebdd825f48d8fd078861ce56d4bf3986c"
     },
     {
       "path": "scripts/wsl_backend_entry.py",
@@ -5935,8 +5945,8 @@
     },
     {
       "path": "scripts/wsl_backend_factory.py",
-      "size": 14828,
-      "sha256": "4b2c3c68ebbbf5104bf783821bf2e1270df84736db893d69612f032d47a952b7"
+      "size": 14881,
+      "sha256": "14c815d511ad67f066d326324f010dfc46dddb093a6a096423136466eef2fd28"
     },
     {
       "path": "scripts/wsl_backend_qualification.py",
@@ -5950,8 +5960,8 @@
     },
     {
       "path": "scripts/wsl_initialize_diagnostics.py",
-      "size": 10085,
-      "sha256": "ee902b08d847afaef7ea96c8fb92ac58ef5e4f029d975894178877e9519f9088"
+      "size": 6860,
+      "sha256": "ea02581e20903b308d10c26878982a95f921e060f63feb0df0ed039781332ba7"
     },
     {
       "path": "scripts/wsl_phone_tools.py",
@@ -5965,18 +5975,8 @@
     },
     {
       "path": "scripts/wsl_runtime_fixture.py",
-      "size": 9977,
-      "sha256": "5aaca138a711a97af1cbd31285b689c571984d798196d3bb1133ad95a3baa0f2"
-    },
-    {
-      "path": "scripts/wsl_runtime_probes.py",
-      "size": 8929,
-      "sha256": "3dd4ef8fe96d4ce4bfd737f316fea66bda57d7b26fa70d4c3913a245afb2d33c"
-    },
-    {
-      "path": "scripts/wsl_runtime_worker.py",
-      "size": 7013,
-      "sha256": "44b23885c79b7adc116aa00383c52af54f914598f21b8be8a09cdece690a50d0"
+      "size": 10351,
+      "sha256": "4aa79e43721bfa1ce6017f96f7719f365d50bbaa0a4c84037a43bb3738f20168"
     },
     {
       "path": "skills/builtin/autonomous-learning/SKILL.md",

@@ -20,14 +20,15 @@ PHONE_REQUIRED=frozenset(PHONE_ROOT+name for name in (
     PHONE_SCHEMA,PHONE_MANIFEST,'provenance.json','LICENSE'))
 REQUIRED=frozenset(('etc/os-release','etc/wsl.conf','opt/aiphone/bundle/source.payload',
     'opt/aiphone/bundle/images.payload','opt/aiphone/bundle/source.sha256',
-    'usr/local/libexec/aiphone-bootstrap','opt/aiphone/tools/python/bin/python3',
-    'opt/aiphone/bootstrap/wsl_backend_entry.py',
+    'usr/local/libexec/aiphone-bootstrap',
     'usr/local/bin/docker','usr/local/bin/dockerd')) | PHONE_REQUIRED
 NODE_ENTRY='opt/aiphone/tools/node/bin/node'
+LEGACY_PYTHON=frozenset(('opt/aiphone/tools/python/bin/python3','opt/aiphone/bootstrap/wsl_backend_entry.py'))
 
 
 def has_required_files(files):
-    return set(files)-{NODE_ENTRY}==REQUIRED
+    names=set(files)
+    return names==REQUIRED or names-{NODE_ENTRY}==REQUIRED|LEGACY_PYTHON
 
 
 def member_name(value):
@@ -85,7 +86,7 @@ def collect_inventory(source):
 
 def record_file(source,entry,name,files,licenses):
     if not entry.isfile():return
-    if name in REQUIRED or name==NODE_ENTRY:files[name]=hashlib.file_digest(source.extractfile(entry),'sha256').hexdigest()
+    if name in REQUIRED|LEGACY_PYTHON|{NODE_ENTRY}:files[name]=hashlib.file_digest(source.extractfile(entry),'sha256').hexdigest()
     if name.startswith('usr/share/doc/') and name.endswith('/copyright'):licenses.append(name)
 
 

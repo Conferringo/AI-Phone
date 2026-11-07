@@ -21,8 +21,7 @@ MAX_BYTES = 256 * 1024**2
 MAX_SOURCE = 64 * 1024**2
 RESERVE = 4 * 1024**3
 ENTRIES = {'media': 'apps/device-stream/server.ts', 'channels': 'apps/channels/server.ts',
-           'native-apps': 'apps/device-network/native-apps.ts', 'device-network': 'apps/device-network/control.ts', 'messaging-browser': 'apps/channels/install-browser.ts',
-           'backend-qualification': 'scripts/wsl-desktop-qualification.ts'}
+           'native-apps': 'apps/device-network/native-apps.ts', 'device-network': 'apps/device-network/control.ts', 'messaging-browser': 'apps/channels/install-browser.ts'}
 
 
 def entries():

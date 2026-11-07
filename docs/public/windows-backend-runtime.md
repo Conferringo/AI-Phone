@@ -11,15 +11,13 @@ separate integration boundaries and are not enabled by this component alone.
 | Resource | Owner and contract |
 | --- | --- |
 | Ubuntu root filesystem | Immutable base digest, original notices and a bounded archive inventory |
-| Installer Python, Bun web/services, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
+| Rust initializer, Bun web/services, native services and OCR | Host-matched component manifests; source and file digests verified before assembly |
 | Docker Engine and Compose | Pinned Alpine dependency closure in an isolated musl prefix; private Unix socket and client state |
 | Database, cache, workspace and desktop images | Four-role sealed image capsule; no build or pull during initialization |
 | Guest phone tools | Pinned Linux x64 platform-tools, upstream notices and a vendored AOSP media schema; no nested emulator or system image |
 | User state | Created under `/var/lib/aiphone` at runtime; excluded from the distributed rootfs |
 
-The factory stores the pinned Python executable and shared-library aliases as hard links inside the new rootfs, retaining their names, contents and component manifest. The required `python3` entry remains an independent regular file for rootfs admission. Existing registered distributions are not rewritten.
-
-WSL source admission requires prebuilt Web and JavaScript services, both launched with Bun. New root filesystems therefore select Python-only installer tools using the same component policy as the native client. The recorded tool manifest describes the selected files. Existing two-tool capsules remain readable and verify their recorded Node entry when present; Python remains required. The Linux desktop's development tools are separate and unchanged.
+WSL source admission requires prebuilt Web and JavaScript services, both launched with Bun. The factory uses pinned Python tools for build-time normalization and verification, then removes `/opt/aiphone/tools` and `/opt/aiphone/bootstrap` before exporting the flattened root filesystem. These build tools and the qualification worker are not shipped in newly assembled root filesystems. Existing Python-only and Python/Node capsules remain readable with their recorded inventory; registered distributions are not rewritten. The Linux desktop's development tools are separate and unchanged.
 
 The backend does not import the host's Docker context or Lima state. It owns
 `unix:///run/aiphone/docker.sock` and its CLI configuration. Android SDK parsing is
@@ -123,6 +121,12 @@ Windows first-run readiness. Both qualification modes now include the guest phon
 request and can also be dispatched explicitly. The disposable Linux factory
 builds the precompiled components, assembles and
 inspects the rootfs, then boots that same filesystem in an owned test container.
+The outer maintainer fixture builds `release-tools wsl-qualify` and copies that
+Rust worker into the owned container before starting it. No host bind mount or
+Docker socket is exposed. The worker uses typed protobuf requests and decodes
+actual PNG/JPEG frames locally; no guest Python or JavaScript qualification entry
+is required. The outer factory and evidence validator still contain Python and
+remain migration work; this change does not establish a fully Rust build system.
 The nested-engine test uses a random identity and volume, with no host source,
 Docker socket or device mounts.
 
@@ -147,14 +151,15 @@ Contributor setup and automated checks are described in [Contributing](../../CON
 容器镜像。用户数据在初始化时单独创建，不进入发行镜像。Docker 使用独立 socket 与
 配置，电脑媒体服务不依赖手机 SDK 已经就绪。
 
-预编译 WSL 的 Web 与服务使用 Bun，新根文件系统按同一组件策略只携带安装所需的
-Python；旧双工具包仍可读取并核对其已记录的 Node 文件。Python 和手机桥资源仍是
-必需项，已注册的系统不重写，Linux 电脑内部的开发工具保持。
+预编译 WSL 的 Web 与服务使用 Bun。工厂仅在构建时使用固定 Python 工具完成规范化与验证，
+验证后删除工具与脚本目录，再导出完整根文件系统。Rust 验收 worker 只复制进自有测试
+容器，不随客户端分发；它直接请求 protobuf API 并解码实际 PNG/JPEG。已有两种旧工具
+清单保持可读，已注册系统不重写，Linux 电脑内部的开发工具保持。
 
 专用 Linux 工厂会实际检查后端、认证网页画面，以及两次启动间的工作文件和数据库
 保留；结果只保存为 JSON 回执。该验证不等同于 Windows 安装通过。Rust 已接通专属 WSL 注册与客体后端初始化，
 通过标准输入传递配置并核对有界终态回执；中断后保留未知结果与原设备盘，不重复导入。
-源码展开、完整性核对、恢复和持久数据链接已复用 Rust 资源层；配置、镜像激活与服务
-编排仍用 Python，不能称纯 Rust 完成。剩余迁移、系统重启恢复、WHPX、原生 Android 桥与
+源码展开、配置、镜像激活与服务编排已接入 Rust；外层工厂、维护 fixture 和回执验证仍有
+Python，不能称纯 Rust 完成。剩余迁移、系统重启恢复、WHPX、原生 Android 桥与
 真实双设备就绪仍未通过，Windows 独立部署保持关闭，完整发行状态见
 [发行范围](release-status.md)。

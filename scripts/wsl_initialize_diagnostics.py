@@ -1,9 +1,6 @@
 """Closed WSL initialization evidence; no exception text, environment or raw logs."""
 import os
 import re
-import stat
-import subprocess
-from android_boot_diagnostics import owned_data, regular_reader
 
 STEPS=frozenset(('not_started','preflight','source','tools','profile','engine_supervisor',
     'engine_ready','container_ownership','images','environment','database_start',
@@ -61,35 +58,9 @@ def database_report(output):
     except Exception:return log_result('unavailable')
 
 
-def error_fields(error):
-    kinds=((BlockingIOError,'lock_busy'),(FileNotFoundError,'resource_missing'),
-           (PermissionError,'permission_denied'),(subprocess.TimeoutExpired,'subprocess_timeout'),
-           (subprocess.CalledProcessError,'command_failed'),(ValueError,'validation_failed'),
-           (OSError,'os_error'))
-    code=next((code for kind,code in kinds if isinstance(error,kind)),'unexpected')
-    number=error.returncode if isinstance(error,subprocess.CalledProcessError) else None
-    if type(number) is not int or not -(2**31)<=number<2**31 or number==0:number=None
-    return {'error':code,'returncode':number}
-
-
-PROBE_ERRORS=frozenset(('qualification_failed','qualification_identity','qualification_environment',
-    'qualification_marker_invalid','qualification_marker_owner','qualification_provision_identity',
-    'qualification_provision_failed','qualification_desktop_exists','qualification_agent_missing',
-    'qualification_desktop_unmanaged','qualification_observation','qualification_marker_exists'))
-
-
 def known_probe(value):
     return isinstance(value,str) and (value in PROBE_ERRORS or re.fullmatch(
         r'qualification_rpc_(?:registry/(?:state|device-save)|desktop/(?:provision|state|observe))_[1-5][0-9]{2}',value) is not None)
-
-
-def runtime_failure(error):
-    value={**error_fields(error),'probe':'unclassified'}
-    if isinstance(error,subprocess.CalledProcessError):
-        output=error.stderr
-        if isinstance(output,bytes):output=output.decode('utf-8',errors='replace')
-        if isinstance(output,str) and known_probe(output.strip()):value['probe']=output.strip()
-    return value
 
 
 def checked_runtime_failure(value):
@@ -97,43 +68,6 @@ def checked_runtime_failure(value):
         raise ValueError('Invalid runtime failure evidence')
     _checked_returncode(value['returncode'],value['error'])
     if value['probe']!='unclassified' and not known_probe(value['probe']):raise ValueError('Invalid runtime probe code')
-
-
-def engine_path(root):
-    folder=owned_data(root)/'services'
-    if folder.is_symlink():raise ValueError('Unowned service directory')
-    return folder/'wsl-engine.log'
-
-
-def engine_cursor(root):
-    """Metadata only before startup; never reads existing phase log contents."""
-    try:
-        info=engine_path(root).lstat()
-        if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid():return False
-        return info.st_dev,info.st_ino,info.st_size
-    except FileNotFoundError:return None
-    except (OSError,ValueError):return False
-
-
-def engine_report(root,before):
-    """Requires an observed owned supervisor; an unreadable log is not a new failure."""
-    try:
-        from linux_services import unit_state
-        if before is False or not unit_state(root,'wsl-engine'):return log_result('unverified')
-        with regular_reader(engine_path(root)) as stream:
-            info=os.fstat(stream.fileno())
-            if info.st_uid!=os.getuid():return log_result('unverified')
-            offset=0 if before is None else before[2]
-            if before is not None and ((info.st_dev,info.st_ino)!=before[:2] or info.st_size<offset):
-                return log_result('unverified')
-            size=info.st_size-offset
-            stream.seek(max(offset,info.st_size-LIMIT));body=stream.read(min(size,LIMIT))
-        lowered=body.lower()
-        return {'state':'observed' if body else 'empty','bytes_read':len(body),'truncated':size>LIMIT,
-                'flags':sorted(code for code,patterns in SIGNALS.items() if any(p in lowered for p in patterns))}
-    except Exception:
-        # Diagnostic failure must not mask or replace the original initialization error.
-        return log_result('unavailable')
 
 
 def checked(value,*,passed=False):

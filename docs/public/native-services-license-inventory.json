@@ -2,7 +2,7 @@
   "format": 1,
   "kind": "native-service-licenses",
   "scope": "Locked native service build graph, including target and build dependencies",
-  "lock_sha256": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c",
+  "lock_sha256": "77cb86d051e938f16dd1b2cc8a4c9a08f31884fd0b1eba5b44fba1a2c5bc113d",
   "packages": [
     "adler2@2.0.1",
     "aho-corasick@1.1.5",
@@ -361,6 +361,8 @@
     "zerovec@0.11.9",
     "zlib-rs@0.6.8",
     "zmij@1.0.23",
+    "zune-core@0.5.3",
+    "zune-jpeg@0.5.15",
     "zvariant@5.15.1",
     "zvariant_derive@5.15.1",
     "zvariant_utils@4.2.0"

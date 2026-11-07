@@ -10,8 +10,8 @@
   },
   "rust": {
     "server": {
-      "lock_sha256": "063d4df0d9495bc6d3359ad503c812c0345bcaa3c346bdb962326b61b804b56c",
-      "database_commit": "26fd2d43f7280a1fb925a3743ec463017afe7119",
+      "lock_sha256": "77cb86d051e938f16dd1b2cc8a4c9a08f31884fd0b1eba5b44fba1a2c5bc113d",
+      "database_commit": "309392b18f6b17022f82c701f300433126901068",
       "findings": [
         {
           "package": "rsa@0.9.10",
@@ -59,8 +59,8 @@
       ]
     },
     "client": {
-      "lock_sha256": "02a85825bdad7f2f6becdd71374bd4ddfe1d6d0ef0989a7d3c6e26749a4de1d6",
-      "database_commit": "26fd2d43f7280a1fb925a3743ec463017afe7119",
+      "lock_sha256": "4735c5454571b3c134bd21d11725ff49bd4c46797d6ca45795a2dcab1c9198de",
+      "database_commit": "309392b18f6b17022f82c701f300433126901068",
       "findings": [
         {
           "package": "proc-macro-error@1.0.4",
