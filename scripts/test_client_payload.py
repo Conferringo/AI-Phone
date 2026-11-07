@@ -29,6 +29,8 @@ class ClientPayloadTests(unittest.TestCase):
             root=Path(temp);(root/'scripts').mkdir();(root/'scripts/client_host_entry.py').write_text('fixture entry')
             digests=prepare(root)
             self.assertIn('source.payload',digests)
+            self.assertNotIn('entry.py',digests)
+            self.assertFalse((root/'apps/client/src-tauri/gen/host/entry.py').exists())
             archive=root/'apps/client/src-tauri/gen/host/source.payload'
             self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(),digests['source.payload'])
             with tarfile.open(archive,'r:*') as source:self.assertIn('scripts/client_host_entry.py',source.getnames())

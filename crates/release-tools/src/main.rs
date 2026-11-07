@@ -1,18 +1,63 @@
+mod android_package;
 #[cfg(target_os = "linux")]
 mod apt;
+mod capsule;
+#[cfg(unix)]
+mod wsl_qualification;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-fn execute() -> Result<serde_json::Value> {
+fn execute(arguments: Vec<std::ffi::OsString>) -> Result<Option<serde_json::Value>> {
+    if arguments
+        .first()
+        .is_some_and(|value| value == "windows-sdk-files")
+    {
+        if arguments.len() != 1 {
+            return Err("windows-sdk-files takes the file list through stdin".into());
+        }
+        let files = serde_json::from_reader(std::io::stdin().lock())?;
+        return Ok(Some(serde_json::to_value(android_package::select(files))?));
+    }
+    if arguments.first().is_some_and(|value| value == "encode-xz") {
+        if arguments.len() != 4 {
+            return Err("encode-xz requires architecture, preset and output directory".into());
+        }
+        capsule::encode(
+            &mut std::io::stdin().lock(),
+            std::io::stdout().lock(),
+            arguments[1].to_str().ok_or("Invalid image architecture")?,
+            arguments[2].to_str().ok_or("Invalid XZ preset")?.parse()?,
+            std::path::Path::new(&arguments[3]),
+        )?;
+        return Ok(None);
+    }
+    #[cfg(unix)]
+    if arguments
+        .first()
+        .is_some_and(|value| value == "wsl-qualify")
+    {
+        if arguments.len() != 1 {
+            return Err("qualification_arguments".into());
+        }
+        return tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?
+            .block_on(wsl_qualification::run())
+            .map(Some);
+    }
     #[cfg(target_os = "linux")]
-    return apt::run(std::env::args_os().skip(1));
+    return apt::run(arguments.into_iter()).map(Some);
     #[cfg(not(target_os = "linux"))]
-    Err("APT release tooling requires Linux".into())
+    {
+        let _ = arguments;
+        Err("APT release tooling requires Linux".into())
+    }
 }
 
 fn main() {
-    match execute() {
-        Ok(value) => println!("{value}"),
+    match execute(std::env::args_os().skip(1).collect()) {
+        Ok(Some(value)) => println!("{value}"),
+        Ok(None) => {}
         Err(error) => {
             eprintln!("{error}");
             std::process::exit(1);

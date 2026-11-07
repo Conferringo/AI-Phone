@@ -1,16 +1,15 @@
 # Runtime bundles
 
-AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon](engineering/macos-full-runtime.md) and [Linux x64](linux-client-factory.md) build guides define the nine resource groups required by a complete distribution. Published installers and platform qualification are listed in [release status](release-status.md).
+AI Phone separates versioned application code, clean device baselines and persistent user data. The [Apple Silicon](engineering/macos-full-runtime.md) and [Linux x64](linux-client-factory.md) build guides define the eight resource groups required by a complete distribution. Published installers and platform qualification are listed in [release status](release-status.md).
 
 ## Package format
 
-`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive, its standalone staging entry and an integrity record. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `js-services`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
+`scripts/prepare_client_host.py` creates a deterministic `source.payload` archive and an integrity record. The client runs its native Rust initializer; it no longer carries or launches `host/entry.py`. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `js-services`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
 
 | Component | Contents | Launch requirement |
 |---|---|---|
 | Web | Next.js standalone output, static/public assets, pinned host-matched Bun | Installed file hashes and contained dependency aliases must match |
 | Native services | Release Rust assistant and phone runner, matched Rust PNG/OCR helper and generated fixture | Host, hashes, inventory and executable permissions must match; CPU Tesseract runs in the managed OCR service or the verified [Linux offline closure](engineering/linux-offline-ocr.md) |
-| Installer tools | Portable Python; Node only for source/partially prebuilt installations | Compiled manifest digest, host, complete inventory and immutable activation must match |
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages; Linux also includes QEMU/SSH/firmware | Matching host runtime, ownership and persisted selection must match; [host component contract](container-host-runtime.md) |
 | JavaScript services | Media, channels and setup helpers with the locked host-matched production package graph | Source fingerprint, complete hashes, contained aliases and native targets must match; launch with package installation disabled |
@@ -23,7 +22,7 @@ Each component manifest records file sizes, SHA-256 hashes and permissions. Nati
 
 ## Installation and startup
 
-The bundled [portable installer tools](engineering/installer-tools.md) start the worker without a host interpreter. Native activation places verified tools in an immutable private component directory before source staging; service launchers retain those paths across restarts. Complete guest and service dependencies remain separate requirements.
+The complete macOS/Linux factories do not acquire or include host Python/Node tools. The native Rust initializer stages the bundled source, Android and image resources directly. [Portable tools](engineering/installer-tools.md) remain in maintainer/source workflows and the WSL factory verification image; their retirement is separate from the native client resource cut. Existing saved tool selections remain readable. Guest task tools are independent of first-party runtime code.
 
 The bundled [phone control applications](engineering/phone-apps.md) provide input, notification and launcher integration without first-run APK compilation. Supplying an Android runtime without these applications is rejected before device creation. Source contributor installations retain the compiler-based path.
 

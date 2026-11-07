@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 from client_delivery import delivery_metadata,installer_metadata
 
-FULL=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+FULL=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images']
 
 class ClientDeliveryTests(unittest.TestCase):
     def test_complete_installer_is_one_regular_file_for_each_desktop_format(self):

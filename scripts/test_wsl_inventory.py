@@ -150,6 +150,8 @@ class WslInventoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder)/'rootfs';rootfs_tree(root);factory.normalize_os_release(root)
             tools=root/'opt/aiphone/tools';python=tools/'python'
+            entry=root/'opt/aiphone/bootstrap/wsl_backend_entry.py';entry.parent.mkdir(parents=True);entry.write_bytes(b'fixture-entry')
+            executable=python/'bin/python3';executable.parent.mkdir(parents=True);executable.write_bytes(b'fixture-python')
             (tools/'manifest.json').write_text(json.dumps({'tools':{'python':{'version':'3.13.18'}}}))
             paths={'bin/python':b'python executable','bin/python3.13':b'python executable',
                    'lib/libpython3.13.so':b'python shared library','lib/libpython3.13.so.1.0':b'python shared library'}
@@ -166,20 +168,21 @@ class WslInventoryTests(unittest.TestCase):
             self.assertEqual(after['uncompressed_bytes'],before['uncompressed_bytes']-len(paths['bin/python'])-len(paths['lib/libpython3.13.so']))
             recipe=factory.dockerfile(factory.factory_plan(Path(__file__).parent.parent))
             self.assertLess(recipe.index('link_tool_aliases('),recipe.index('wsl_backend_entry.py --verify'))
+            self.assertLess(recipe.index('wsl_backend_entry.py --verify'),recipe.index('RUN rm -rf /opt/aiphone/tools /opt/aiphone/bootstrap'))
 
     def test_missing_diagnostic_has_only_fixed_required_paths_and_license_count(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder) / 'rootfs'
             rootfs_tree(root)
             factory.normalize_os_release(root)
-            (root / 'opt/aiphone/tools/python/bin/python3').unlink()
+            (root / 'usr/local/libexec/aiphone-bootstrap').unlink()
             (root / 'usr/share/doc/base-files/copyright').unlink()
             sensitive = root / 'opt/arbitrary-sensitive-filename'
             sensitive.write_text('fixture-sensitive-content')
             archive = Path(folder) / 'rootfs.tar.gz'
             archive_tree(root, archive)
             with self.assertRaises(ValueError) as raised: backend.inspect_rootfs(archive)
-            self.assertEqual(str(raised.exception), 'Incomplete WSL backend rootfs or license inventory: missing=opt/aiphone/tools/python/bin/python3; license_count=0')
+            self.assertEqual(str(raised.exception), 'Incomplete WSL backend rootfs or license inventory: missing=usr/local/libexec/aiphone-bootstrap; license_count=0')
             self.assertNotIn('sensitive', str(raised.exception))
 
 

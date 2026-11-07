@@ -257,7 +257,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/factory_image_candidate.py fetch "$AI_PHONE_IMAGE_HANDOFF_TAG" --release-id "$AI_PHONE_IMAGE_HANDOFF_RELEASE_ID" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY" --work "$RUNNER_TEMP/mac-native-images"
-      - name: Build all nine resources and the complete Mac client
+      - name: Build the complete Mac client
         run: python3 scripts/macos_factory_engine.py --compiler-sdk "$ANDROID_HOME" --image-candidate "$RUNNER_TEMP/mac-native-images" --image-metadata-sha256 "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
       - name: Retain text qualification receipts
         if: always() && hashFiles('dist/macos-factory-engine-report.json') != ''

@@ -33,6 +33,20 @@ def fixture(root, *, cpu=0x0100000c, image_abi='arm64-v8a'):
 
 
 class MacOSStockFactoryTests(unittest.TestCase):
+    def test_stock_identity_tracks_the_native_encoder_that_actually_produces_the_capsule(self):
+        import android_factory_stock as stock
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            script=root/'scripts/android_factory_stock.py';script.parent.mkdir();script.write_text('unchanged fixture Python producer')
+            for name in ('Cargo.toml','Cargo.lock','crates/release-tools/Cargo.toml','crates/release-tools/src/main.rs','crates/release-tools/src/capsule.rs','crates/release-tools/src/android_package.rs'):
+                path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('fixture native source')
+            with patch.object(stock,'__file__',str(root/'scripts/android_factory_stock.py')):
+                before=stock.stock_identity({})
+                (root/'crates/release-tools/src/capsule.rs').write_text('changed native encoder')
+                after=stock.stock_identity({})
+            self.assertNotEqual(before['producer_sha256'],after['producer_sha256'])
+            self.assertNotEqual(before['producer_files']['crates/release-tools/src/capsule.rs'],after['producer_files']['crates/release-tools/src/capsule.rs'])
+
     def setUp(self):
         for module in ('android_runtime','android_component_factory'):
             patcher=patch(module+'.host_key',return_value='macos-arm64');patcher.start();self.addCleanup(patcher.stop)

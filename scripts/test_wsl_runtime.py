@@ -53,53 +53,13 @@ class QualificationScopeTests(unittest.TestCase):
             self.assertEqual(runtime_capacity(Path('.'),1000,2000,3000),expected)
 
 
-class RuntimeProbesTests(unittest.TestCase):
-    def test_runner_probe_uses_its_own_token_and_a_read_only_scoped_request(self):
-        from wsl_runtime_probes import ready
-        with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder)
-            for role in ('assistant','phone-runner'):
-                path=root/'data'/role/'token';path.parent.mkdir(parents=True);path.write_text(role+'-fixture-token')
-            with patch('wsl_runtime_probes.wait_response') as observe:
-                checks=ready(root)
-            request=next(call.args for call in observe.call_args_list if call.args[1]=='runner_endpoint')
-            self.assertEqual(request[2],'http://127.0.0.1:17862/v1/cursor')
-            self.assertEqual(request[3],b'\x0a\x0ephone-local-01\x12\x0alocal-user')
-            self.assertEqual(request[5],'phone-runner-fixture-token')
-            self.assertTrue(checks['runner_endpoint']);self.assertNotIn('phone_ready',checks)
-
-    def test_shutdown_stops_the_runner_before_the_owned_engine(self):
-        from wsl_runtime_worker import shutdown
-        stopped=[]
-        with patch('linux_services.stop_unit',side_effect=lambda _,name:stopped.append(name)),patch('wsl_runtime_probes.execute'):
-            shutdown(Path('/fixture'))
-        self.assertIn('runner',stopped);self.assertLess(stopped.index('runner'),stopped.index('wsl-engine'))
-
-    def test_frame_probe_decodes_real_png_and_rejects_header_only(self):
-        import struct,zlib
-        from wsl_runtime_probes import frame_evidence
-        def chunk(kind,data):return struct.pack('!I',len(data))+kind+data+struct.pack('!I',zlib.crc32(kind+data))
-        raw=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('!IIBBBBB',2,1,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(b'\0\x01\x02\x03\x04\x05\x06'))+chunk(b'IEND',b'')
-        self.assertEqual(frame_evidence(raw)['width'],2)
-        with self.assertRaises(ValueError):frame_evidence(raw[:24])
-
-    def test_qualification_marker_never_adopts_other_fixture(self):
-        from wsl_runtime_worker import next_phase
-        with tempfile.TemporaryDirectory() as folder:
-            path=Path(folder)/'marker'
-            self.assertEqual(next_phase(path,'a'*32),1)
-            path.write_text(json.dumps({'nonce':'b'*32,'phase':1}))
-            with self.assertRaisesRegex(ValueError,'owner'):next_phase(path,'a'*32)
-            self.assertEqual(json.loads(path.read_text())['nonce'],'b'*32)
-
-
 class QualificationLifecycleTests(unittest.TestCase):
     def test_second_phase_failure_cleans_owned_resources_and_saves_partial_checks(self):
         import wsl_runtime_fixture as fixture
         first={'status':'passed','stage':'stopped'}
         second={'status':'failed','stage':'persistence'}
-        def materialize(_work,_nonce,resources):resources['container']='c'*64;return 'c'*64
-        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'checked_inputs',return_value={'rootfs_sha256':'a'*64}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',side_effect=[first,second]) as run,patch.object(fixture,'cleanup',return_value={'container':True}) as clean:
+        def materialize(_work,_nonce,resources,_worker):resources['container']='c'*64;return 'c'*64
+        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'release_tools',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={'rootfs_sha256':'a'*64}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',side_effect=[first,second]) as run,patch.object(fixture,'cleanup',return_value={'container':True}) as clean:
             with self.assertRaisesRegex(ValueError,'did not pass'):fixture.qualify_runtime(Path(folder),Path('source'),Path('images'))
             self.assertEqual([call.args[3] for call in run.call_args_list],[1,2])
             clean.assert_called_once()
@@ -109,8 +69,8 @@ class QualificationLifecycleTests(unittest.TestCase):
 
     def test_cleanup_failure_cannot_report_success(self):
         import wsl_runtime_fixture as fixture
-        def materialize(_work,_nonce,resources):resources['container']='c'*64;return 'c'*64
-        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'checked_inputs',return_value={}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',return_value={'status':'passed'}),patch.object(fixture,'cleanup',return_value={'container':False}):
+        def materialize(_work,_nonce,resources,_worker):resources['container']='c'*64;return 'c'*64
+        with tempfile.TemporaryDirectory() as folder,patch.object(fixture,'require_disposable'),patch.object(fixture,'release_tools',return_value=Path('/fixture/native-worker')),patch.object(fixture,'checked_inputs',return_value={}),patch.object(fixture,'materialize',side_effect=materialize),patch.object(fixture,'run_phase',return_value={'status':'passed'}),patch.object(fixture,'cleanup',return_value={'container':False}):
             with self.assertRaisesRegex(ValueError,'cleanup'):fixture.qualify_runtime(Path(folder),Path('source'),Path('images'))
             result=json.loads((Path(folder)/'runtime-receipt.json').read_text())
             self.assertFalse(result['passed']);self.assertEqual(result['stage'],'cleanup')
@@ -122,87 +82,6 @@ class QualificationLifecycleTests(unittest.TestCase):
             runtime.assert_called_once()
             result=json.loads((Path(folder)/'dist/wsl-backend-qualification.json').read_text())
             self.assertFalse(result['passed']);self.assertEqual(result['stage'],'runtime')
-
-    def test_mjpeg_probe_reads_an_actual_bounded_stream_and_rejects_eof(self):
-        import io
-        from wsl_runtime_probes import first_jpeg
-        self.assertEqual(first_jpeg(io.BytesIO(b'--phone\r\n\xff\xd8abc\xff\xd9\r\n')),b'\xff\xd8abc\xff\xd9')
-        with self.assertRaisesRegex(ValueError,'complete frame'):first_jpeg(io.BytesIO(b'--phone\r\npartial'))
-
-
-class RuntimeHealthContractTests(unittest.TestCase):
-    def test_requests_use_protobuf_auth_and_local_entry_origin_without_proxy(self):
-        import http.server,threading,urllib.request
-        from wsl_runtime_probes import request
-        seen=[]
-        class Handler(http.server.BaseHTTPRequestHandler):
-            def do_POST(self):
-                seen.append((self.path,dict(self.headers),self.rfile.read(int(self.headers.get('content-length',0)))))
-                self.send_response(200);self.send_header('content-type','application/x-protobuf');self.end_headers();self.wfile.write(b'\x08\x01')
-            def log_message(self,*_):pass
-        server=http.server.ThreadingHTTPServer(('127.0.0.1',0),Handler)
-        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-        try:
-            opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
-            with request(opener,'http://127.0.0.1:'+str(server.server_port)+'/fixture',token='fixture-token',data=b'') as response:
-                self.assertEqual(response.read(),b'\x08\x01')
-            self.assertEqual(seen[0][1]['Authorization'],'Bearer fixture-token')
-            self.assertEqual(seen[0][1]['Content-Type'],'application/x-protobuf')
-            with patch.object(opener,'open') as opening:request(opener,'http://127.0.0.1:17860/api/auth/enter',data=b'')
-            self.assertEqual(opening.call_args.args[0].get_header('Origin'),'http://127.0.0.1:17860')
-        finally:server.shutdown();server.server_close();thread.join(timeout=2)
-
-    def test_health_probe_refuses_wrong_content_type_and_empty_html(self):
-        import io
-        from wsl_runtime_probes import wait_response
-        for headers,body,content in (({'content-type':'text/html'},b'fake','application/x-protobuf'),({'content-type':'text/html'},b'','text/html')):
-            response=io.BytesIO(body);response.status=200;response.headers=headers
-            with patch('wsl_runtime_probes.request',return_value=response):
-                with self.assertRaises(ValueError):wait_response(None,'fixture','fixture',b'',content,'token')
-        response=io.BytesIO(b'\x08\x01');response.status=200;response.headers={'content-type':'application/x-protobuf'}
-        with patch('wsl_runtime_probes.request',return_value=response):wait_response(None,'assistant','fixture',b'','application/x-protobuf','token')
-
-    def test_initial_default_protobuf_state_is_a_valid_empty_message(self):
-        import io
-        from wsl_runtime_probes import wait_response
-        response=io.BytesIO(b'');response.status=200;response.headers={'content-type':'application/x-protobuf'}
-        with patch('wsl_runtime_probes.request',return_value=response):
-            wait_response(None,'assistant','fixture',b'','application/x-protobuf','token')
-
-    def test_database_probe_rejects_privileged_role_and_unavailable_redis(self):
-        import wsl_runtime_probes as probes
-        spec={'argv':['fixture-assistant'],'environment':{}}
-        with patch('prebuilt_services.launch_spec',return_value=spec):
-            with patch.object(probes,'execute',return_value=b'{"runtime":"postgres","privileged":true,"ddl":true}'):
-                with self.assertRaisesRegex(ValueError,'restricted'):probes.database_roles(Path('.'))
-            good=b'{"runtime":"ai_phone_runtime","privileged":false,"ddl":false}'
-            with patch.object(probes,'execute',side_effect=[good,b'FAIL']):
-                with self.assertRaisesRegex(ValueError,'Redis'):probes.database_roles(Path('.'))
-            with patch.object(probes,'execute',side_effect=[good,b'PONG\n']):self.assertEqual(probes.database_roles(Path('.')),{'database_roles':True,'redis':True})
-
-    def test_only_container_pid_one_is_admitted_to_nested_cgroup_setup(self):
-        import wsl_runtime_worker as worker
-        with patch.dict(os.environ,{'AI_PHONE_WSL_QUALIFICATION_NONCE':'a'*32,'container':'docker'}),patch.object(worker.Path,'is_file',return_value=True),patch.object(worker.os,'getpid',return_value=2):
-            with self.assertRaisesRegex(ValueError,'PID 1'):worker.fixture_identity()
-        with patch.dict(os.environ,{'AI_PHONE_WSL_QUALIFICATION_NONCE':'a'*32,'container':'docker'}),patch.object(worker.Path,'is_file',return_value=True),patch.object(worker.os,'getpid',return_value=1):self.assertEqual(worker.fixture_identity(),'a'*32)
-
-    def test_cgroup_setup_only_writes_the_supplied_private_mount(self):
-        import wsl_runtime_worker as worker
-        with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);(root/'cgroup.controllers').write_text('cpu memory pids');(root/'cgroup.procs').write_text('1\n')
-            with patch.object(worker,'Path',return_value=root),patch.object(worker.subprocess,'run') as mount:worker.nested_cgroups()
-            self.assertEqual((root/'aiphone-qualification/cgroup.procs').read_text(),'1')
-            self.assertEqual((root/'cgroup.subtree_control').read_text(),'+cpu +memory +pids')
-            self.assertEqual(mount.call_args.args[0],['/bin/mount','--make-rshared','/'])
-
-    def test_failed_worker_retains_fixed_stage_and_does_not_publish_phase_marker(self):
-        import wsl_runtime_worker as worker
-        def fail(receipt,*_):receipt['stage']='desktop';raise ValueError('private credential must never be serialized')
-        with tempfile.TemporaryDirectory() as folder,patch.object(worker,'STATE',Path(folder)),patch.object(worker,'fixture_identity',return_value='a'*32),patch.object(worker,'perform',side_effect=fail):
-            self.assertEqual(worker.main(),1)
-            result=json.loads((Path(folder)/'qualification-result.json').read_text())
-            self.assertEqual(result['stage'],'desktop');self.assertEqual(result['status'],'failed')
-            self.assertNotIn('credential',json.dumps(result));self.assertFalse((Path(folder)/'qualification-marker.json').exists())
 
 
 class QualificationInputsTests(unittest.TestCase):
@@ -238,62 +117,14 @@ class QualificationInputsTests(unittest.TestCase):
             if args[1]=='inspect':
                 kind,_,reference=args
                 return json.dumps([{'Name':reference,'Id':reference,'Labels':{fixture.LABEL:nonce},'Config':{'Labels':{fixture.LABEL:nonce}}}])
+            if args[0]=='cp':return ''
             if args[1]=='rm':return ''
             self.fail('Unexpected fixture command')
         resources={}
-        self.assertEqual(fixture.materialize(Path('own-work'),nonce,resources,docker),container)
+        self.assertEqual(fixture.materialize(Path('own-work'),nonce,resources,Path('/fixture/native-worker'),docker),container)
         self.assertEqual(resources,{'image':image,'volume':volume,'container':container})
+        self.assertIn(['cp',Path('/fixture/native-worker'),container+':/usr/local/libexec/aiphone-qualification'],calls)
         self.assertEqual(fixture.cleanup(nonce,resources,docker),{'container':True,'image':True,'volume':True})
         removals=[args[-1] for args in calls if args[1]=='rm']
         self.assertEqual(removals,[container,image,volume])
         self.assertFalse(any('export' in args or 'prune' in args for args in calls))
-
-    def test_web_media_probe_demands_authenticated_stream_and_guest_decode(self):
-        import io
-        import wsl_runtime_probes as probes
-        for content_type in ('application/octet-stream','Application/Octet-Stream; charset=binary'):
-            with self.subTest(content_type=content_type):
-                login=io.BytesIO(b'ok');login.status=200
-                media=io.BytesIO(b'--phone\r\n\xff\xd8fixture\xff\xd9\r\n');media.status=200;media.headers={'content-type':content_type}
-                with patch.object(probes,'request',side_effect=[login,media]) as request,patch.object(probes,'execute',return_value=b'png') as execute,patch.object(probes,'frame_evidence',return_value={'width':1280,'height':800}):
-                    self.assertTrue(probes.desktop_media(Path('.'),'device-fixture'))
-                    self.assertEqual(request.call_args_list[0].args[1],'http://127.0.0.1:17860/api/auth/enter')
-                    self.assertIn('/api/desktop/media?device_id=device-fixture&raw=1',request.call_args_list[1].args[1])
-                    self.assertEqual(execute.call_args.kwargs['input'],b'\xff\xd8fixture\xff\xd9')
-                    self.assertIn('ai-phone-desktop',execute.call_args.args[1])
-        denied=io.BytesIO();denied.status=403
-        with patch.object(probes,'request',return_value=denied):
-            with self.assertRaisesRegex(ValueError,'Local web entry'):probes.desktop_media(Path('.'),'device-fixture')
-
-    def test_raw_web_media_probe_rejects_a_different_transport_contract(self):
-        import io
-        import wsl_runtime_probes as probes
-        login=io.BytesIO(b'ok');login.status=200
-        media=io.BytesIO(b'--phone\r\n\xff\xd8fixture\xff\xd9\r\n');media.status=200;media.headers={'content-type':'text/html'}
-        with patch.object(probes,'request',side_effect=[login,media]),patch.object(probes,'execute') as execute:
-            with self.assertRaisesRegex(ValueError,'media is unavailable'):probes.desktop_media(Path('.'),'device-fixture')
-            execute.assert_not_called()
-
-
-class WorkingFilePersistenceTests(unittest.TestCase):
-    def test_real_exclusive_file_creation_and_readback_never_overwrite_existing_work(self):
-        import subprocess,sys
-        import wsl_runtime_probes as probes
-        with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);files=root/'data/desktop/home/Files';files.mkdir(parents=True)
-            def relocated_guest(_root,args,**kwargs):
-                self.assertEqual(args[:6],['docker','exec','-i','-u','ai','ai-phone-desktop'])
-                script=args[-1].replace('/home/ai/Files',str(files))
-                return subprocess.run([sys.executable,'-c',script],input=kwargs['input'],capture_output=True,check=True).stdout
-            with patch.object(probes,'execute',side_effect=relocated_guest):
-                self.assertTrue(probes.work_file(root,'a'*32,1))
-                path=files/('qualification-'+'a'*32+'.txt');original=path.read_bytes()
-                self.assertTrue(probes.work_file(root,'a'*32,2));self.assertEqual(path.read_bytes(),original)
-                with self.assertRaises(subprocess.CalledProcessError):probes.work_file(root,'a'*32,1)
-                self.assertEqual(path.read_bytes(),original)
-                path.write_bytes(b'user fixture change')
-                with self.assertRaises(subprocess.CalledProcessError):probes.work_file(root,'a'*32,2)
-                self.assertEqual(path.read_bytes(),b'user fixture change')
-
-
-if __name__=='__main__':unittest.main()

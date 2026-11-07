@@ -22,25 +22,37 @@ def archive(path, rows):
             else:entry.size=len(value);entry.mode=0o644;target.addfile(entry,io.BytesIO(value))
 
 
-def rootfs(path,*,phone_tools=True,node=True):
+def rootfs(path,*,phone_tools=True,legacy=False,node=False):
     from wsl_phone_tools import REQUIRED
     rows=[('etc/os-release',b'ID=ubuntu\n'),('etc/wsl.conf',b'[interop]\nenabled=false\n'),
         ('opt/aiphone/bundle/source.payload',b'fixture-source'),('opt/aiphone/bundle/images.payload',b'fixture-images'),
         ('opt/aiphone/bundle/source.sha256',b'a'*64+b'\n'),('usr/local/libexec/aiphone-bootstrap',b'fixture-native-bootstrap'),
-        ('opt/aiphone/tools/python/bin/python3',b'fixture-python'),
-        ('opt/aiphone/bootstrap/wsl_backend_entry.py',b'fixture-entry'),('usr/local/bin/docker',b'fixture-docker'),
+        ('usr/local/bin/docker',b'fixture-docker'),
         ('usr/local/bin/dockerd',b'fixture-dockerd'),('lib64/ld-linux-x86-64.so.2',('/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',)),
         ('usr/share/doc/base-files/copyright',b'fixture-license')]
     if node:rows.append(('opt/aiphone/tools/node/bin/node',b'fixture-node'))
+    if legacy:rows.extend((('opt/aiphone/tools/python/bin/python3',b'fixture-python'),('opt/aiphone/bootstrap/wsl_backend_entry.py',b'fixture-entry')))
     if phone_tools:rows.extend((name,b'fixture-phone-tools') for name in sorted(REQUIRED))
     archive(path,rows)
 
 
 class WslBackendTests(unittest.TestCase):
+    def test_native_capsule_needs_no_packaged_interpreter_or_build_scripts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);image=root/'rootfs.tar.gz';rootfs(image)
+            with tarfile.open(image,'r:gz') as source:
+                rows=[(entry.name,source.extractfile(entry).read() if entry.isfile() else (entry.linkname,))
+                      for entry in source if not entry.name.startswith(('opt/aiphone/tools/','opt/aiphone/bootstrap/'))]
+            archive(image,rows)
+            payload=root/'backend.payload';publish_capsule(image,payload,{'fixture':True})
+            manifest=verify_capsule(payload)
+            self.assertIn('usr/local/libexec/aiphone-bootstrap',manifest['inventory']['required_files'])
+            self.assertFalse(any('/tools/' in name or '/bootstrap/' in name for name in manifest['inventory']['required_files']))
+
     def test_python_only_and_existing_two_tool_capsules_both_remain_readable(self):
         for node in (False,True):
             with self.subTest(node=node),tempfile.TemporaryDirectory() as folder:
-                root=Path(folder);image=root/'rootfs.tar.gz';rootfs(image,node=node)
+                root=Path(folder);image=root/'rootfs.tar.gz';rootfs(image,legacy=True,node=node)
                 payload=root/'backend.payload';publish_capsule(image,payload,{'fixture':True})
                 manifest=verify_capsule(payload)
                 files=manifest['inventory']['required_files']

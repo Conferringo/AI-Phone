@@ -233,7 +233,6 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
     for (name, digest) in &expected {
         if ![
             "source.payload",
-            "entry.py",
             "android.payload",
             "images.payload",
             "tools/manifest.json",

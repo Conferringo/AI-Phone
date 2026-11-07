@@ -16,7 +16,6 @@ The host requirement is an Apple Silicon Mac running macOS 14.4 or later, at lea
 | Device networking | Android Clash applications and Clash Party in the Linux image |
 | Android | ARM64 emulator, platform tools and Android 35 factory image |
 | Linux and data services | Clean desktop/workspace images, PostgreSQL and Redis |
-| Installer execution | Python 3.13.18 and Node.js 22.23.4 |
 
 Resources are sealed by SHA-256 inventories. Runtime selection checks the host, component identity and file permissions. The distribution includes an inspectable source snapshot; chat, accounts, user files and device disks are never package inputs.
 
@@ -29,7 +28,7 @@ The complete factory requires an Apple Silicon build machine, an ARM64 Linux Doc
 python3 scripts/macos_client_factory.py --compiler-sdk "$ANDROID_HOME"
 ```
 
-The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all nine runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
+The factory collects the pinned ARM Android baseline, verifies emulator and ADB execution in a fresh profile, builds the matched Lima runtime and offline container host, compiles the phone applications, and creates ARM64 desktop/workspace/database images. It passes all eight runtime components into the native packager and checks the resulting DMG inventory and SHA-256. The build report is written to `dist/macos-full-factory-report.json`. Complete assembly requires the selected Docker engine to be available on the build machine.
 
 The `Native client checks` workflow provides the manual `complete_macos_factory` mode. A disposable native ARM64 Linux builder creates the four-role image capsule; an Apple Silicon builder admits that source-bound capsule and assembles the complete DMG without an emulated build engine. The handoff uses an unpublished temporary draft, an exact two-asset inventory and a metadata digest passed between jobs. The Mac job checks source identity, payload bytes, architecture and image inventory before use, then retires only its matching temporary draft. Component transport is a maintainer operation; the installed application contains those resources and does not ask end users to acquire them. The original 6500-second Mac assembly deadline remains in effect.
 
@@ -42,8 +41,7 @@ python3 scripts/build_client.py --platform macos \
   --with-web-runtime --with-service-runtime --with-phone-apps \
   --with-container-host --with-js-services --with-guest-apps \
   --android-runtime /factory/android.payload \
-  --images-runtime /factory/images.payload \
-  --installer-tools /factory/tools
+  --images-runtime /factory/images.payload
 ```
 
 Factory inputs must satisfy their source pins and redistribution requirements. The packager rejects compiled web routes absent from the public source selection. It compiles the application, checks its resources, and creates a verified compressed disk image containing the app and an Applications shortcut. Failed image creation preserves the previous artifact.

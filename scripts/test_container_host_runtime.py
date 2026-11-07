@@ -34,7 +34,7 @@ class ContainerHostRuntimeTests(unittest.TestCase):
         record=lambda path:{'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'size_bytes':path.stat().st_size,'url':'https://example.invalid/'+path.name}
         policy={'engine':'lima-qemu' if host=='linux-x64' else 'lima-vz','arch':arch,'lima':'2.2.1','alpine':'3.24.1','docker':'1.0','compose':'1.0','image':record(iso),'packages':[{'file':package.name,**record(package)}]}
         (root/'config').mkdir();(root/'config/container-host-runtime.json').write_text(json.dumps({'format':1,'hosts':{host:policy}}));(root/'config/host-bootstrap.json').write_text(json.dumps({'lima_hosts':{host:record(lima)}}))
-        config=root/'apps/client/src-tauri/tauri.conf.json';config.parent.mkdir(parents=True);config.write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload','gen/host/entry.py':'host/entry.py'},'macOS':{'minimumSystemVersion':'14.4'}}}))
+        config=root/'apps/client/src-tauri/tauri.conf.json';config.parent.mkdir(parents=True);config.write_text(json.dumps({'bundle':{'resources':{'gen/host/source.payload':'host/source.payload'},'macOS':{'minimumSystemVersion':'14.4'}}}))
         return lima,iso,packages
 
     def test_linux_component_uses_its_own_qemu_and_ssh_after_staging(self):

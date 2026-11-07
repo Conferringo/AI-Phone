@@ -75,7 +75,7 @@ class LinuxClientFactoryTests(unittest.TestCase):
             run.assert_not_called()
 
     def test_compiled_client_requires_the_complete_unchanged_linux_deb(self):
-        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images']
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);(root/'config').mkdir();(root/'dist').mkdir()
             (root/'config/release-policy.json').write_text('{"version":"fixture"}')
@@ -86,16 +86,17 @@ class LinuxClientFactoryTests(unittest.TestCase):
                 artifact.with_suffix(artifact.suffix+'.manifest.json').write_text(json.dumps(metadata));artifacts.append(artifact)
             with patch.object(factory,'run') as run,patch.object(factory,'run_checks'),patch('prepare_client_host.payload_components',return_value=full):
                 run.return_value.stdout='{"metadata":[]}'
-                value,apt=factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                value,apt=factory.compile_client(root,root/'android',root/'images',root/'ocr')
                 run.assert_called_with(['cargo','run','--quiet','--locked','-p','ai-phone-release-tools','--','apt','index',artifacts[0],'--output',root/'dist/apt'],root,capture_output=True,text=True)
                 self.assertEqual(apt,[]);self.assertIsInstance(value,list);self.assertEqual({row['file'] for row in value},{path.name for path in artifacts})
                 self.assertTrue(all(row['delivery']['complete_device_bundle'] for row in value));self.assertEqual(run.call_count,2)
+                self.assertNotIn('--installer-tools',run.call_args_list[0].args[0])
                 for artifact in artifacts:
                     original=artifact.read_bytes();artifact.write_bytes(b'changed installer')
-                    with self.assertRaisesRegex(ValueError,'changed'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                    with self.assertRaisesRegex(ValueError,'changed'):factory.compile_client(root,root/'android',root/'images',root/'ocr')
                     artifact.write_bytes(original)
                 metadata=artifacts[0].with_suffix('.deb.manifest.json');value=json.loads(metadata.read_text());value['complete_device_bundle']=False;metadata.write_text(json.dumps(value))
-                with self.assertRaisesRegex(ValueError,'incomplete'):factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                with self.assertRaisesRegex(ValueError,'incomplete'):factory.compile_client(root,root/'android',root/'images',root/'ocr')
 
     @unittest.skipUnless(os.name=='posix','Complete Linux factory uses its POSIX Bun entry')
     def test_nested_checks_find_project_bun_without_a_global_install(self):
@@ -181,7 +182,7 @@ class LinuxClientFactoryTests(unittest.TestCase):
             self.assertFalse((root/'sdk').exists())
 
     def test_missing_components_cannot_produce_a_complete_factory_receipt(self):
-        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images']
         self.assertTrue(factory.checked_delivery(full)['complete_device_bundle'])
         for name in full:
             with self.assertRaisesRegex(ValueError,'Incomplete'):factory.checked_delivery([r for r in full if r!=name])
@@ -200,7 +201,7 @@ class LinuxSingleDeliveryTests(unittest.TestCase):
     def test_oversized_deb_rejects_complete_delivery_before_any_volume_handoff(self):
         from client_delivery import ASSET_LIMIT
         from contextlib import ExitStack
-        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images','installer-tools']
+        full=['web','native-services','phone-apps','container-host','js-services','guest-apps','android-runtime','container-images']
         for oversized in ('deb',):
             with self.subTest(oversized=oversized),tempfile.TemporaryDirectory() as folder:
                 root=Path(folder);(root/'config').mkdir();(root/'dist').mkdir()
@@ -215,7 +216,7 @@ class LinuxSingleDeliveryTests(unittest.TestCase):
                     stack.enter_context(patch.object(factory,'digest',return_value='a'*64))
                     stack.enter_context(patch('prepare_client_host.payload_components',return_value=full))
                     with self.assertRaisesRegex(ValueError,'single-file'):
-                        factory.compile_client(root,root/'android',root/'images',root/'tools',root/'ocr')
+                        factory.compile_client(root,root/'android',root/'images',root/'ocr')
 
 
 if __name__=='__main__':unittest.main()

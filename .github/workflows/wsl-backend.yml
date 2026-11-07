@@ -56,8 +56,10 @@ jobs:
       - name: Admission and lifecycle regressions
         run: |
           cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
+          cargo test --locked -p ai-phone-release-tools --bin release-tools wsl_qualification
+          cargo test --locked -p ai-phone-release-tools --test wsl_qualification_cli
           PYTHONPATH=scripts python3 -m unittest test_wsl_backend test_wsl_backend_review test_wsl_runtime test_wsl_source_staging test_wsl_phone_tools test_native_services.NativeHostToolsTests
-          ./scripts/bun test ./apps/device-stream/phone-grpc.test.ts ./apps/device-stream/phone-runtime-startup.test.ts ./scripts/wsl-desktop-qualification.test.ts
+          ./scripts/bun test ./apps/device-stream/phone-grpc.test.ts ./apps/device-stream/phone-runtime-startup.test.ts
       - name: Assemble, boot and restart the isolated Linux backend
         env:
           AI_PHONE_DISPOSABLE_QUALIFICATION: '1'

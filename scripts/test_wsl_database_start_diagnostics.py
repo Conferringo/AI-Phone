@@ -133,7 +133,7 @@ class OuterPhaseTests(NoChildProcesses):
         def report(output):
             self.assertIs(output,held[0]);self.assertFalse(output.closed)
             return real_report(output)
-        with tempfile.TemporaryDirectory() as temporary,patch.object(tempfile,'TemporaryFile',side_effect=AssertionError('No duplicate capture')),patch.object(diag,'regular_reader',side_effect=AssertionError('No arbitrary log path')),patch.object(diag,'database_report',side_effect=report):
+        with tempfile.TemporaryDirectory() as temporary,patch.object(tempfile,'TemporaryFile',side_effect=AssertionError('No duplicate capture')),patch.object(diag,'database_report',side_effect=report):
             result,output=self.phase(Path(temporary),original,b'no such image',after_write=lambda fd:held.append(fd))
             self.assertTrue(output.closed);self.assertEqual(result['initialization']['database']['flags'],['image_unavailable'])
             stripped=deepcopy(result);stripped['initialization']['database']=diag.log_result()

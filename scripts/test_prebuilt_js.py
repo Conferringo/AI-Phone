@@ -19,6 +19,7 @@ class JavaScriptRuntimeTests(unittest.TestCase):
             value['files'].append({'path':name,'size':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'mode':0o644})
             value['links']=[{'path':PREFIX+'node_modules/library','target':'.store/library'}];(root/MANIFEST).write_text(json.dumps(value))
             cache=root/'.tools/js-services';shutil.copytree(root/'runtime/js-services',cache/'runtime/js-services');component_links(cache,MANIFEST,PREFIX.rstrip('/'),create=True)
+            (root/'scripts').mkdir()
             shutil.copyfile(Path(__file__).parent/'client_host_entry.py',root/'scripts/client_host_entry.py')
             prepare(root,with_js_services=True);archive=root/'apps/client/src-tauri/gen/host/source.payload';home=root/'installation';staged=stage_source(archive,home);(home/'user/data/chat').write_text('keep')
             alias=staged/PREFIX/'node_modules/library';self.assertEqual((alias/'index.js').read_text(),'module.exports=1;');self.assertEqual(stage_source(archive,home),staged)
@@ -145,7 +146,7 @@ class JavaScriptBuildTests(unittest.TestCase):
                 with patch('prebuilt_js.build_manifest',side_effect=manifest_fixture),patch('bootstrap_bun.bun_path',return_value=root/'runtime/bin/bun'),patch('prebuilt_js.subprocess.check_output',side_effect=version_probe),patch('prebuilt_js.bundle',side_effect=compile_fixture),patch('prebuilt_js.shutil.disk_usage',return_value=SimpleNamespace(free=RESERVE+MAX_BYTES+MAX_SOURCE)):
                     if mode=='success':
                         value=build(root)
-                        self.assertEqual(set(value['entries']), {'media', 'channels', 'native-apps', 'device-network', 'messaging-browser', 'backend-qualification'})
+                        self.assertEqual(set(value['entries']), {'media', 'channels', 'native-apps', 'device-network', 'messaging-browser'})
                         self.assertEqual(build(root),value)
                     else:
                         with self.assertRaises((ValueError,subprocess.CalledProcessError)):build(root)

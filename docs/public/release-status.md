@@ -13,9 +13,11 @@ Updated 2026-11-07. Source code and technical documentation are available. **Com
 
 The required experience is installation followed by device/model configuration and workbench use. Android and Linux baselines, emulators, services and execution runtimes belong in the distribution. The [Apple Silicon resource profile](engineering/macos-full-runtime.md), [Linux factory](linux-client-factory.md) and [runtime format](runtime-bundles.md) describe those package boundaries.
 
-Retained single-file candidate receipts: [Mac](https://github.com/Conferringo/AI-Phone/actions/runs/42107153487) `e5b9abd7`, 1,970,218,877-byte DMG; [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42097421886) `de79a091`, 2,098,866,082-byte DEB; [Windows](https://github.com/Conferringo/AI-Phone/actions/runs/42123340112) `6bd5a816`, 2,111,641,048-byte EXE. Contents and retained asset identities were inspected for those source revisions. They are unpublished maintainer candidates, not current-source downloads or installation certificates. Windows guest boot and physical installation were not executed.
+Retained single-file candidates now share source `ff69779b0ff7`: [Mac and Windows](https://github.com/Conferringo/AI-Phone/actions/runs/42324346884) produced a 1,973,282,210-byte DMG and a 2,111,739,124-byte EXE; [Linux](https://github.com/Conferringo/AI-Phone/actions/runs/42324349334) produced a 2,099,264,964-byte DEB and unsigned APT metadata. Each retained asset digest matches its package manifest and checksum. They are unpublished maintainer candidates, not current-source downloads or installation certificates. They predate the native bootstrap-resource cleanup below. Windows still uses a WebView2 download bootstrapper, so the successful device-bundle build does not prove fully offline client setup. Windows guest boot and physical installation were not executed.
 
 ## Rust migration
+
+Current source removes the unused `host/entry.py` resource. Complete macOS/Linux factories no longer acquire or stage host Python/Node tools; their Rust initializer uses the bundled resources directly. Partial contributor builds, existing saved tool selections and WSL factory verification still have real tool consumers and remain intact. The retained `ff69779` installers above have not been rebuilt from this cleanup and still include their previous tool resources.
 
 The final first-party runtime, installation/recovery, build, test and release tools must be Python-free; the Next.js frontend remains. Explicit database role preparation now runs in Rust/SQLx and is covered by isolated PostgreSQL tests with an empty PATH. Other host orchestration, recovery and build/CI paths still use Python, and channel/media JavaScript services also await their Rust migration. The current project does not yet meet this final architecture requirement.
 
@@ -50,6 +52,10 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 ## 中文
 
 源码与技术文档已公开，**完整产品安装包尚未发布**。三桌面平台保留各自来源的完整单文件候选，见上表及构建回执；旧分卷安装器草稿已退役。Linux只提供DEB及复用该DEB的签名APT渠道，公开源尚未发布。Android客户端与AppImage已取消，桌面内的真实虚拟安卓手机仍保留。
+
+最新三候选已统一至ff69779源码，DMG为1973282210字节、EXE为2111739124字节、DEB为2099264964字节，均有实际成功构建、保留资产与一致摘要。它们尚未公开，且早于本轮资源精简；Windows仍需联网下载WebView2，不能把设备资源完整当作客户端完全离线初装通过。APT元数据尚未签名，实机安装保持未验证。
+
+当前源码已移除原生客户端不再执行的host/entry.py；完整Mac/Linux工厂不再获取或组装宿主Python/Node，初始化直接由Rust处理随包资源。源码部分构建、已有持久工具选择及WSL工厂校验仍有真实消费者，保持可用。上述候选尚未按此清理重新组装，不能称最终纯Rust安装包。
 
 最终自研运行链、安装/恢复与构建、测试、发行工具必须清除Python，前端保留Next.js。数据库角色初始化已迁到Rust/SQLx，并以空PATH执行隔离数据库验证；其余宿主编排、恢复和构建/CI仍有Python，渠道/媒体JavaScript服务也待迁Rust。当前不满足最终纯Rust目标，不能据此发布最终安装包。
 

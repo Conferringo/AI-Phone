@@ -1,16 +1,25 @@
 """Fresh-export producer behavior, with actual bounded OCI bytes and no engine."""
 from copy import deepcopy
+from contextlib import contextmanager
 import io
 import json
 from pathlib import Path
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import build_container_images as producer
 import container_images
 import test_oci_layer_transform as fixtures
+
+
+@contextmanager
+def export_process(child):
+    native=producer.subprocess.Popen
+    docker=Mock(return_value=child)
+    with patch.object(producer.subprocess,'Popen',lambda args,**kwargs:docker(args,**kwargs) if args[0]=='docker' else native(args,**kwargs)):
+        yield docker
 
 
 class Export:
@@ -36,7 +45,7 @@ class FreshProducerTests(unittest.TestCase):
     def run_build(self, root, value, records=None):
         child=Export(fixtures.tar_bytes(value['files']))
         records=deepcopy(value['records'] if records is None else records)
-        with patch.object(producer,'daemon_architecture',return_value='arm64'),patch.object(producer,'source_records',return_value=records),patch.object(producer.subprocess,'Popen',return_value=child) as create,patch.object(producer.shutil,'disk_usage',return_value=type('Usage',(),{'free':32*1024**3})()):
+        with patch.object(producer,'daemon_architecture',return_value='arm64'),patch.object(producer,'source_records',return_value=records),export_process(child) as create,patch.object(producer.shutil,'disk_usage',return_value=type('Usage',(),{'free':32*1024**3})()):
             result=producer.build({role:role for role in container_images.ROLES},root/'images.payload')
         self.assertEqual(create.call_count,1)
         self.assertEqual(create.call_args.args[0],['docker','image','save','--platform','linux/arm64',*[row['ref'] for row in value['records'].values()]])
@@ -180,7 +189,7 @@ class FreshProducerTests(unittest.TestCase):
             raise cancel
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);destination=root/'images.payload';destination.write_bytes(b'previous immutable output')
-            with patch.object(producer,'daemon_architecture',return_value='arm64'),patch.object(producer,'source_records',return_value=deepcopy(value['records'])),patch.object(producer.subprocess,'Popen',return_value=child) as create,patch.object(producer,'transform',side_effect=convert),patch.object(producer.shutil,'disk_usage',return_value=type('Usage',(),{'free':32*1024**3})()),self.assertRaises(Cancelled) as raised:
+            with patch.object(producer,'daemon_architecture',return_value='arm64'),patch.object(producer,'source_records',return_value=deepcopy(value['records'])),export_process(child) as create,patch.object(producer,'transform',side_effect=convert),patch.object(producer.shutil,'disk_usage',return_value=type('Usage',(),{'free':32*1024**3})()),self.assertRaises(Cancelled) as raised:
                 producer.build({role:role for role in container_images.ROLES},destination)
             self.assertIs(raised.exception,cancel)
             self.assertEqual(create.call_count,1)

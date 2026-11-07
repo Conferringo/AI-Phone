@@ -440,6 +440,20 @@ class LifecycleTests(OwnedFixture):
         self.assertNotIn(key, text)
         self.assertLess(len(text), 8400)
 
+    def test_sync_failure_keeps_early_git_errors_before_later_checkout_progress(self):
+        (self.root/'private-build.log').write_text(
+            'fatal: cannot checkout '+str(self.root/'checkout/external/flex')+'\n'
+            'error: api_key=private-key-sentinel\n'+('Updating files: 99% (45343/45801)\n'*1000)+
+            'error: Cannot initialize work tree for platform/external/flex\n')
+        output=io.StringIO()
+        with contextlib.redirect_stderr(output):bootstrap.print_build_failure(self.root,'failed','source_sync')
+        text=output.getvalue()
+        self.assertIn('fatal: cannot checkout <build>/checkout/external/flex',text)
+        self.assertIn('error: Cannot initialize work tree for platform/external/flex',text)
+        self.assertNotIn(str(self.root),text)
+        self.assertNotIn('private-key-sentinel',text)
+        self.assertLess(len(text),8400)
+
     def test_missing_log_or_closed_diagnostic_stream_cannot_replace_build_failure(self):
         output = io.StringIO()
         with contextlib.redirect_stderr(output):

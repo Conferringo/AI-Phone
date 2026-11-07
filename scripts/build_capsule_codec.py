@@ -2,6 +2,7 @@
 from contextlib import contextmanager, nullcontext
 import io
 import lzma
+import subprocess
 from pathlib import Path
 import tarfile
 import zlib
@@ -108,5 +109,12 @@ def read_tar(source,maximum,*,stream=False,expected=None):
             yield archive
 
 
-def write_xz(destination):
-    return lzma.LZMAFile(destination,mode='wb',format=lzma.FORMAT_XZ,check=lzma.CHECK_CRC64,preset=9)
+@contextmanager
+def write_xz(destination, program, architecture, preset=9):
+    from container_images import image_pipe
+    destination.flush()
+    child=subprocess.Popen([program,'encode-xz',architecture,str(preset),Path(destination.name).parent],stdin=subprocess.PIPE,stdout=destination)
+    with image_pipe(child,child.stdin,close_first=True) as source:
+        yield source
+        source.close()
+        if child.wait()!=0:raise ValueError('Native image compression failed')

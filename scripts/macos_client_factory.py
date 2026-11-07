@@ -13,7 +13,7 @@ import shutil
 import tarfile
 from artifact_io import digest
 from host_platform import host_key
-from linux_client_factory import fetch,run,check_docker,prepare_tools,prepare_apps,prepare_images,run_checks
+from linux_client_factory import fetch,run,check_docker,prepare_apps,prepare_images,run_checks
 from macos_guest_runtime import build as build_guest
 
 
@@ -87,13 +87,13 @@ def prepare_guest(root,cache):
     return build_guest(root,cache/'guest-native')
 
 
-def compile_client(root,android,images,tools,env):
+def compile_client(root,android,images,env):
     from client_delivery import installer_metadata
     run_checks(root,env=env)
     run([os.sys.executable,root/'scripts/build_client.py','--platform','macos',
          '--with-web-runtime','--with-service-runtime','--with-phone-apps',
          '--with-container-host','--with-js-services','--with-guest-apps',
-         '--android-runtime',android,'--images-runtime',images,'--installer-tools',tools],root,env=env)
+         '--android-runtime',android,'--images-runtime',images],root,env=env)
     from prepare_client_host import payload_components
     checked_delivery(payload_components(root))
     version=json.loads((root/'config/release-policy.json').read_text())['version']
@@ -126,7 +126,6 @@ def build(root,compiler_sdk,*,prebuilt_images=None):
     else:
         from factory_image_candidate import admit
         prepared=admit(root,*prebuilt_images,os.environ.get('GITHUB_SHA',''))
-    tools,tool_result=prepare_tools(root,cache)
     host=prepare_host(root,cache)
     android,phone_runtime=prepare_android(root,cache)
     apps=prepare_apps(root,env)
@@ -134,12 +133,12 @@ def build(root,compiler_sdk,*,prebuilt_images=None):
         images,image_result=prepare_images(root,cache,source,architecture='arm64',guest_runtime=guest)
     else:
         images,image_result=prepared.payload,{'bytes':prepared.payload.stat().st_size}
-    artifact=compile_client(root,android,images,tools,env)
+    artifact=compile_client(root,android,images,env)
     from package_delivery import prepare as prepare_delivery
     package=prepare_delivery(root,artifact)
     if digest(root/'SOURCE-MANIFEST.json')!=source:raise ValueError('Factory source identity changed during assembly')
     result={'format':1,'host':'macos-arm64','source_commit':os.environ.get('GITHUB_SHA',''),
-            'source_manifest_sha256':source,'artifact':artifact,'package_delivery':package,'tools':tool_result,
+            'source_manifest_sha256':source,'artifact':artifact,'package_delivery':package,
             'container_host':host,'android':phone_runtime,'image_capsule_bytes':image_result['bytes'],
             'phone_apps_source_sha256':apps['phone']['source_sha256'],
             'physical_installation':'not-tested','binary_publication':False}

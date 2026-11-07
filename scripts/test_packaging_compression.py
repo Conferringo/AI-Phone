@@ -14,6 +14,7 @@ import prepare_client_host
 import test_android_runtime
 import test_client_payload
 import test_container_images
+from test_fresh_images_producer import export_process
 from client_host_entry import stage_source
 
 
@@ -70,7 +71,7 @@ class PackagingCompressionTests(unittest.TestCase):
             child = Export(raw)
             with patch.object(build_container_images, 'daemon_architecture', return_value='arm64'), \
                  patch.object(build_container_images, 'source_records', return_value=manifest['images']), \
-                 patch.object(build_container_images.subprocess, 'Popen', return_value=child):
+                 export_process(child):
                 receipt = build_container_images.build({role: role for role in container_images.ROLES}, root / 'fresh.payload')
             prepared = container_images.stage(root / 'fresh.payload')
             self.assertEqual(prepared.manifest['format'], 2)

@@ -1,6 +1,6 @@
 # Portable installer tools
 
-The native client carries a reviewed installer runtime in `host/tools`. When both Web and JavaScript services are prebuilt for Bun, the client includes Python only: it neither carries, checks nor downloads host Node. Contributor/source installations retain the Python/Node toolchain. The native client authenticates the tool manifest against its compiled resource inventory before executing Python.
+The complete macOS/Linux client initializes through Rust and omits `host/tools` and `host/entry.py`. Its factories no longer acquire Python/Node archives. Portable tools remain for contributor/source installations, partial component builds and WSL factory verification. Existing saved tool selections remain readable. Repository tooling and the WSL image still need further Python retirement; this change does not establish a Python-free product.
 
 ## Ownership and integrity
 
@@ -10,7 +10,7 @@ The manifest declares host, versions, executable paths, hashes, sizes and permis
 
 An existing immutable runtime must match exactly. A competing publisher can be reused only after its manifest and files verify. Cancellation, copy errors and Rust unwinding reclaim the publisher's own staging directory. Partial state never becomes an active runtime. Old immutable versions remain available to their existing installations.
 
-The worker starts Python with isolated imports and bytecode writes disabled. After source staging, a verified private selection supplies only the declared tool paths to service launchers. Bundled executables precede host/project alternatives. With all prebuilt components and portable tools supplied, the installation tool list is empty and no package manager runs for those tools. Container-host, application and service dependency delivery remain independent distribution requirements. The same tool selection applies to the prebuilt WSL backend; development tools inside the Linux device remain unchanged.
+The legacy source worker starts Python with isolated imports and bytecode writes disabled; it is not the current native client entry. Its verified private selection supplies declared tool paths to service launchers. The WSL factory still uses Python to verify the sealed image before packaging; WSL runtime initialization is Rust. Development tools inside the Linux device are separate user-task tools.
 
 ## Maintainer build
 
@@ -21,11 +21,6 @@ python3 scripts/installer_tools.py \
   --archives /path/to/verified-archives \
   --output /path/to/new-tool-component
 
-python3 scripts/build_client.py --platform macos \
-  --with-web-runtime --with-js-services --with-service-runtime --with-phone-apps \
-  --android-runtime /path/to/android.payload \
-  --images-runtime /path/to/images.payload \
-  --installer-tools /path/to/new-tool-component
 ```
 
 These are contributor build commands, not the intended product setup. The completed distribution must already contain its runtime components. See [distribution status](../release-status.md).
@@ -39,7 +34,7 @@ These are contributor build commands, not the intended product setup. The comple
 
 The [installer factory](../../../scripts/installer_tool_factory.py) downloads the reviewed archives into a fresh owned directory, builds the component and executes its programs under an isolated profile. Python runs with isolated imports and bytecode writes disabled; SSL, SQLite and native-library loading are checked. Node contributes its executable, licence and README. Windows resource metadata follows native filename, case, alias and permission rules shared with the Android component.
 
-The [Windows qualification workflow](../../../.github/workflows/windows-installer-tools.yml) records the component inventory and actual program versions. This runtime is part of the Windows host installer; the independent device/backend environment has separate qualification.
+The [Windows qualification workflow](../../../.github/workflows/windows-installer-tools.yml) records the component inventory and actual program versions. This is factory component qualification, not proof of a complete Windows installation; the device/backend environment has separate qualification.
 
 ## Public vendor build paths
 
@@ -59,7 +54,7 @@ Primary sources: [Python portable distributions](https://docs.astral.sh/python-b
 
 ## 中文
 
-Web 与 JavaScript 服务均预编译为 Bun 组件时，原生客户端和 WSL 后端只携带安装所需的 Python，不携带、检查或下载宿主 Node。源码安装保留 Python/Node，已有双工具清单仍可读取；Linux 电脑内的开发工具不变。组件来自固定摘要的官方归档，按清单复制到独立、不可变的私有目录。工具、应用版本和用户设备/聊天数据各自保存。
+完整 macOS/Linux 客户端使用 Rust 初始化，不再携带 host/entry.py 或 host/tools，完整工厂也不再获取宿主 Python/Node 归档。源码/部分组件构建与 WSL 工厂校验仍使用这些工具，已有持久选择继续可读，不修改用户数据。仓库维护工具和 WSL 镜像内的 Python 尚待退役；Linux 客体的用户任务工具另行记录，不能称整个产品已无 Python。
 
 原生复制会检查全部文件、权限、架构和空间，取消、异常及并发发布均保持内容验证和暂存目录归属。服务优先使用选定的随包程序。Node 组件不含 npm/Corepack；公开上游构建路径仅按精确的已审阅文件摘要区分，凭据扫描保持开启。
 
