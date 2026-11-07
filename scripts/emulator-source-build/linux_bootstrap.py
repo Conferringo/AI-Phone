@@ -365,17 +365,25 @@ def built_receipt(root):
     return {"artifact_bytes": artifact["bytes"], "artifact_sha256": artifact["sha256"]}
 
 
-def read_log_tail(path, maximum):
+def read_log_tail(path, maximum, *, first_errors=False):
     try:
         with path.open("rb") as source:
-            source.seek(max(0, os.fstat(source.fileno()).st_size - maximum))
-            return source.read(maximum).decode("utf-8", errors="replace")
+            size=os.fstat(source.fileno()).st_size
+            head=b''
+            if first_errors and size>maximum:
+                while line:=source.readline(maximum//2):
+                    if line.startswith((b'fatal:',b'error:')):
+                        head+=line[:maximum//2-len(head)]
+                        if len(head)==maximum//2:break
+            maximum-=len(head)
+            source.seek(max(0, size - maximum))
+            return (head+source.read(maximum)).decode("utf-8", errors="replace")
     except OSError:
         return ""
 
 
 def print_failure_log(root, relative="build/build.log", *, label="Redacted upstream build tail"):
-    text = read_log_tail(root / relative, 8192)
+    text = read_log_tail(root / relative, 8192, first_errors=relative=="private-build.log")
     if not text:
         return
     for value, replacement in ((str(root), "<build>"), (str(Path.home()), "<home>"),
