@@ -12,6 +12,7 @@ enum Service {
     PeerStatus,
     Input,
     Control,
+    GuestAppResources,
     #[cfg(unix)]
     Images,
     #[cfg(unix)]
@@ -39,6 +40,7 @@ fn start(service: Service, arguments: &[OsString]) -> Result<()> {
         Service::PeerStatus => runtime.block_on(crate::device_bridge::guest::status(arguments)),
         Service::Input => runtime.block_on(crate::android::input::run(arguments)),
         Service::Control => runtime.block_on(crate::supervision::control(arguments)),
+        Service::GuestAppResources => runtime.block_on(crate::guest_app_resources::run(arguments)),
         #[cfg(unix)]
         Service::Images => runtime.block_on(crate::images::run(arguments)),
         #[cfg(unix)]
@@ -85,6 +87,10 @@ pub fn run(arguments: &[OsString]) -> Option<Result<()>> {
         "--device-bridge-contract" => Some(contract(arguments, crate::device_bridge::CONTRACT)),
         "--service-supervision-contract" => Some(contract(arguments, crate::supervision::CONTRACT)),
         "--prepare-host-profile" => Some(crate::profile::run(&arguments[1..])),
+        "--guest-app-resources" => Some(start(Service::GuestAppResources, &arguments[1..])),
+        "--guest-app-resources-contract" => {
+            Some(contract(arguments, crate::guest_app_resources::CONTRACT))
+        }
         "--prepare-device-network" => Some(crate::network_paths::run(&arguments[1..])),
         #[cfg(unix)]
         "--observe-device-network" => Some(start(Service::NetworkObservation, &arguments[1..])),

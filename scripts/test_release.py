@@ -178,10 +178,10 @@ class ReleaseTests(unittest.TestCase):
             state.__enter__.return_value.phase.side_effect = phase
             def command(args, **kwargs): commands.append(([str(v) for v in args], kwargs)); return subprocess.CompletedProcess(args, 0, stdout='fixture-image', stderr='')
             checks=[{'name':'sdk/platform-tools/adb','passed':False,'fix':'SDK download required'},{'name':'fixture tool','passed':True,'fix':''}]
-            with patch('release.doctor', return_value=checks), patch('release.environment', return_value=environment), patch('install_state.InstallState', return_value=state), patch('android_sdk.command', return_value=['sdk-fixture']), patch('release.run', side_effect=command), patch('release.subprocess.run', side_effect=command), patch('release.start') as start, patch('release.platform.system', return_value='Darwin'):
+            with patch('prebuilt_services.guest_app_resources_command', return_value=[str(root/'target/debug/host-resources')]), patch('release.doctor', return_value=checks), patch('release.environment', return_value=environment), patch('install_state.InstallState', return_value=state), patch('android_sdk.command', return_value=['sdk-fixture']), patch('release.run', side_effect=command), patch('release.subprocess.run', side_effect=command), patch('release.start') as start, patch('release.platform.system', return_value='Darwin'):
                 release.install(root=root, launch_client=False)
             self.assertEqual(phases, [(name, name!='services') for name in ('sdk-packages', 'dependencies', 'native-apps', 'workspace-image', 'desktop-image', 'messaging-browser', 'services')])
-            self.assertEqual([args[0] for args, _ in commands], ['sdk-fixture', './scripts/bootstrap.sh', str(root/'.tools/bin/bun'), 'docker', 'docker', 'docker',str(root/'.tools/bin/bun')])
+            self.assertEqual([args[0] for args, _ in commands], ['sdk-fixture', './scripts/bootstrap.sh', str(root/'target/debug/host-resources'), 'docker', 'docker', 'docker',str(root/'.tools/bin/bun')])
             for args, kwargs in commands:
                 if args[:3] != ['docker', 'image', 'inspect']:
                     self.assertEqual(kwargs.get('root', kwargs.get('cwd')), root)

@@ -1,6 +1,6 @@
 # Android distribution review
 
-Reviewed 2026-11-06. This records the exact stock inputs used by complete-client factories and the remaining corresponding-source work. It does not approve binary publication or change a running installation.
+Reviewed 2026-11-07. This records the exact stock inputs used by complete-client factories and the remaining corresponding-source work. It does not approve binary publication or change a running installation.
 
 ## Stock inputs
 
@@ -20,6 +20,8 @@ One upstream CSV row labels libselinux `CC-PDDC OR UNKNOWN`. The linked upstream
 
 The existing [source producer](../../../scripts/emulator-source-build/README.md) pins the official **35.3.8 / build 12560773** source manifest. That is a different build from **37.2.13 / 16740729**. Neither its pinned QEMU commit nor a successful new build of those sources can retroactively qualify the stock 37.2.13 archives.
 
+A complete [Linux source build](https://github.com/Conferringo/AI-Phone/actions/runs/42346183474) now succeeds from project commit `1556eca5c875` and pinned QEMU `d1bfd6eb0ea9f697dc4cc1d258887c8b4220b155`. It retained a 304,324,177-byte SDK archive, SHA-256 `da4080e30b30991f171a3297a019b60d63b30aa888386a63a529a1e1019ba3dd`. The receipt records zero initial SDK copy bytes using the native OverlayFS workspace, with 5,562,712,064 bytes remaining after the build. API 35 root boot is explicitly **not executed**, source dependency closure remains **unverified**, and redistribution is **review-pending**. This is an unpublished source-built component candidate, not a replacement of an existing device or stock package.
+
 The official `emu-master-dev` and `emu-main-dev` branches describe different moving source selections. Their current files, a nearby release tag, or a successful HTTP response containing an Artifact Viewer page do not prove which sources produced build 16740729. The immutable release-build binding is still unresolved. If a new source-built component replaces a stock artifact, it needs a new explicit identity and its own runtime checks; existing user devices are preserved.
 
 ## Applicable terms
@@ -32,4 +34,4 @@ Complete publication requires the notices, actual build/source identity and appl
 
 当前完整工厂使用模拟器37.2.13/build16740729、platform-tools37.0.1/build15733141和API35 revision2的AOSP镜像。已直接核对固定Linux模拟器归档及Mac platform-tools归档；模拟器含64条库与程序映射，涵盖GPL、LGPL及宽松许可，不能只看顶层Apache声明。
 
-现有源码工厂固定的是35.3.8/build12560773，不能替代37.2.13的对应源码。精确发布构建与完整源码/依赖/构建参数的绑定仍未闭合；系统镜像的内核及系统程序也须单独核对。libselinux上游声明已澄清一项UNKNOWN标签，未据此批准整包。保持原声明和来源版本，不翻发行标志、不替换现有设备；完整安装器构建成功与许可/对应源码通过分别记录。
+现有源码工厂固定的是35.3.8/build12560773，现已完成一次真实Linux源码构建，保留304324177字节的SDK候选；API35 root启动未执行、源码依赖闭包未验证、再分发审阅未完成。该构建不能替代37.2.13的对应源码，也没有替换现有设备。精确发布构建与完整源码/依赖/构建参数的绑定仍未闭合；系统镜像的内核及系统程序也须单独核对。libselinux上游声明已澄清一项UNKNOWN标签，未据此批准整包。保持原声明和来源版本，不翻发行标志、不替换现有设备；完整安装器构建成功与许可/对应源码通过分别记录。

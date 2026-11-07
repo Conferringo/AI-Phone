@@ -16,6 +16,7 @@ HOST_PROFILE_CONTRACT = 'ai-phone-host-profile-v1'
 MANAGED_ENGINE_CONTRACT = 'ai-phone-managed-engine-v1'
 IMAGE_ACTIVATION_CONTRACT = 'ai-phone-image-activation-v1'
 RUNTIME_ENVIRONMENT_CONTRACT = 'ai-phone-runtime-environment-v1'
+GUEST_APP_RESOURCES_CONTRACT = 'ai-phone-guest-app-resources-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -50,6 +51,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Native image activation capability was not qualified')
     if receipt['checks'].get('runtime_environment') != RUNTIME_ENVIRONMENT_CONTRACT:
         raise ValueError('Native runtime environment capability was not qualified')
+    if receipt['checks'].get('guest_app_resources') != GUEST_APP_RESOURCES_CONTRACT:
+        raise ValueError('Native guest application capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -69,7 +72,7 @@ def prepare_services(root, *, linux_ocr=None):
                 'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT,
                 'database_prepare': DATABASE_PREPARE_CONTRACT, 'host_profile': HOST_PROFILE_CONTRACT,
                 'managed_engine': MANAGED_ENGINE_CONTRACT, 'image_activation': IMAGE_ACTIVATION_CONTRACT,
-                'runtime_environment': RUNTIME_ENVIRONMENT_CONTRACT}
+                'runtime_environment': RUNTIME_ENVIRONMENT_CONTRACT, 'guest_app_resources': GUEST_APP_RESOURCES_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -214,6 +217,10 @@ def runtime_environment_command(root):
 
 def managed_engine_command(root):
     return host_component_command(root,'managed_engine','--managed-engine-contract',MANAGED_ENGINE_CONTRACT)
+
+
+def guest_app_resources_command(root):
+    return host_component_command(root,'guest_app_resources','--guest-app-resources-contract',GUEST_APP_RESOURCES_CONTRACT)
 
 
 def image_activation_command(root):

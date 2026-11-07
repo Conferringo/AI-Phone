@@ -2,7 +2,6 @@
 use super::{Client, LIMIT, Observer, Result, adb, invalid, metadata, now, phone_shell};
 use serde_json::{Value, json};
 use std::{ffi::OsString, fs, os::unix::fs::DirBuilderExt, path::Path, time::Duration};
-use tokio::io::AsyncReadExt;
 
 pub enum Operation {
     Start,
@@ -176,12 +175,7 @@ pub async fn run(args: &[OsString]) -> Result<()> {
     let controller = Controller::new(Path::new(&fields[0]), text(1)?, text(2)?)?;
     let operation = text(3)?.parse()?;
     let result = if owned {
-        let mut lease = crate::native_ipc::owner_input()?;
-        let mut byte = [0];
-        tokio::select! { biased;
-            _=lease.read(&mut byte)=>return Err(crate::Error::Cancelled),
-            result=controller.execute(operation)=>result?,
-        }
+        crate::native_ipc::while_owned(controller.execute(operation)).await?
     } else {
         controller.execute(operation).await?
     };
@@ -193,7 +187,7 @@ pub async fn run(args: &[OsString]) -> Result<()> {
 mod tests {
     use super::*;
     use tokio::{
-        io::AsyncWriteExt,
+        io::{AsyncReadExt, AsyncWriteExt},
         net::{TcpListener, TcpStream},
     };
 

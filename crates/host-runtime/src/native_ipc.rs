@@ -32,6 +32,17 @@ pub(crate) enum OwnerInput {
     Socket(tokio::net::UnixStream),
 }
 #[cfg(unix)]
+pub(crate) async fn while_owned<T>(
+    work: impl std::future::Future<Output = crate::Result<T>>,
+) -> crate::Result<T> {
+    let mut input = owner_input()?;
+    let mut byte = [0];
+    tokio::select! {biased;
+        _=input.read(&mut byte)=>Err(crate::Error::Cancelled),
+        result=work=>result,
+    }
+}
+#[cfg(unix)]
 impl AsyncRead for OwnerInput {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,

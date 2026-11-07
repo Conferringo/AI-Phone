@@ -39,8 +39,10 @@ The JavaScript adapter holds a parent-input lease during a native mutation.
 Closing that FIFO or Unix socket cancels the operation and releases its owned
 guest command. Cancellation does not certify that a preceding guest mutation was
 undone; callers must observe current state before another action. Subscription
-import, YAML conversion, configuration application and app-resource acquisition
-still have JavaScript consumers. Those paths must migrate before the project can
+import, YAML conversion, configuration application and legacy phone installation
+still have JavaScript consumers. App-resource selection, integrity admission and
+streaming acquisition now belong to the native resource component. The remaining
+JavaScript paths must migrate before the project can
 be described as fully Rust. Bundled third-party guest tools are a separate concern.
 
 CLI contracts cover private-state preservation, application ownership, unknown
