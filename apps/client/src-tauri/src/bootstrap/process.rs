@@ -10,18 +10,9 @@ use std::{
 };
 
 fn terminate(child: &mut std::process::Child) {
-    #[cfg(unix)]
-    {
-        let _ = Command::new("/bin/kill")
-            .args(["-TERM", "--", &format!("-{}", child.id())])
-            .status();
-    }
-    #[cfg(windows)]
-    {
-        let _ = Command::new("taskkill")
-            .args(["/PID", &child.id().to_string(), "/T", "/F"])
-            .status();
-    }
+    let _ = Command::new("/bin/kill")
+        .args(["-TERM", "--", &format!("-{}", child.id())])
+        .status();
     let _ = child.kill();
     let _ = child.wait();
 }
@@ -103,12 +94,9 @@ fn spawn(
         .append(true)
         .open(log)
         .map_err(|e| e.to_string())?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::{fs::PermissionsExt, process::CommandExt};
-        fs::set_permissions(log, fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
-        command.process_group(0);
-    }
+    use std::os::unix::{fs::PermissionsExt, process::CommandExt};
+    fs::set_permissions(log, fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
+    command.process_group(0);
     let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

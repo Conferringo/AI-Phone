@@ -81,6 +81,12 @@ with InstallState(root) as state:
 
 class LaunchdFixture(unittest.TestCase):
     def setUp(self):
+        from test_release import native_profile_program
+        native_run=subprocess.run;program=native_profile_program()
+        def environment(root):
+            return json.loads(native_run([program,'--runtime-environment',str(root),str(Path.home())],capture_output=True,text=True,check=True).stdout)
+        selected=patch('service_start.runtime_env',side_effect=environment)
+        selected.start();self.addCleanup(selected.stop)
         # These fixtures exercise launchd contracts even on a Linux CI runner.
         host=patch('platform.system',return_value='Darwin');host.start();self.addCleanup(host.stop)
 

@@ -12,6 +12,8 @@ class InstallationLanguageTests(unittest.TestCase):
         native=patch('prebuilt_services.profile_command',return_value=[native_profile_program()])
         native.start()
         self.addCleanup(native.stop)
+        environment=patch('prebuilt_services.runtime_environment_command',return_value=[native_profile_program()])
+        environment.start();self.addCleanup(environment.stop)
 
     def test_language_is_the_first_prompt_and_drives_configuration(self):
         with tempfile.TemporaryDirectory() as name:

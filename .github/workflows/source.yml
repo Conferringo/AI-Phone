@@ -40,7 +40,9 @@ jobs:
       - name: protobuf, TypeScript and Rust
         run: ./scripts/bun run check
       - name: Isolated UI and adapter tests
-        run: ./scripts/bun test ./apps/channels ./apps/device-network ./apps/device-stream ./scripts/*.test.ts
+        run: |
+          cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
+          ./scripts/bun test ./apps/channels ./apps/device-network ./apps/device-stream ./scripts/*.test.ts
       - name: Pinned emulator producer contracts
         working-directory: scripts/emulator-source-build
         run: python3 -B -m unittest -v test_aosp_emulator_producer.py test_linux_bootstrap.py
@@ -55,7 +57,6 @@ jobs:
           sudo apt-get install --no-install-recommends -y apt-utils dpkg-dev gnupg xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg python3-pil
       - name: Installer and archive tests
         run: |
-          cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
           python3 -m unittest discover -s scripts -p 'test_*.py'
           python3 scripts/required_tests.py test_linux_services
       - name: Rust tests

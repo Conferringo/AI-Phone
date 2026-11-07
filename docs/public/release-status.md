@@ -21,9 +21,15 @@ The final first-party runtime, installation/recovery, build, test and release to
 
 Linux/WSL service start, resume, state inspection and stop now belong to the native Rust controller; existing installer imports retain only a temporary Python adapter. The APT index/sign/build tool and its real installation/upgrade test harness have also moved to Rust, and their former Python files are removed. These changes do not replace the remaining host initializers or make the retained historical packages current.
 
-First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Offline image admission, streaming import and activation records now use the native runtime. Legacy archives are normalized to explicit OCI targets while retaining source archive provenance and leaving old aliases untouched. Real Docker import/resume checks cover gzip, XZ and OCI; they do not constitute complete client installation. Full host orchestration, runtime environment selection, recovery and portable-tool retirement remain incomplete.
+First-run profile creation, explicit configuration edits, schema/preset validation and initial database-password publication now also run in Rust. Owned container-engine state selection, restart environment and selected-engine startup are native too; their remaining installer imports are temporary adapters. Offline image admission, streaming import and activation records now use the native runtime. Legacy archives are normalized to explicit OCI targets while retaining source archive provenance and leaving old aliases untouched. Real Docker import/resume checks cover gzip, XZ and OCI; they do not constitute complete client installation. Full host orchestration, recovery and portable-tool retirement remain incomplete.
+
+The read-only runtime environment policy is now native, including selected tool components, saved launch PATH, SDK/Java, guest resources, proxies and installed image/app metadata. It replaces the former Python policy and WSL's duplicate profile mapping. Client tool preparation shares that native tool implementation; the existing portable-tool and installer callers have not all been retired. This source change does not qualify new complete installers.
+
+The macOS/Linux client entry now calls the Rust initialization controller; its former mise/Python runtime entry and download/layout modules have been retired. The controller connects the packaged resources, saved profile, owned engine, backend services, native phone, input/notification setup and native device completion. Desktop network directory preparation now calls shared Rust directly; the remaining legacy network caller invokes its installed/source Bun entry without a Python launcher and delegates directory changes to that same Rust owner. JavaScript network/channel/media services and other Python callers remain migration work. Local compilation and controller tests are not a completed cold install or a newly released package. WSL qualification currently reaches running services but fails during desktop provisioning; the underlying cause remains unconfirmed.
 
 ## Capability limits
+
+The sealed WSL first-run initializer is now Rust, including its source/profile, engine, image, database and service sequence. Its former Python runtime orchestration has been removed, and the qualification driver calls the same native command. Factory verification, the qualification driver and portable Python used by other consumers remain; full first boot and newly assembled installers are not certified by the local component tests.
 
 - Real Android/Linux execution, input and persisted state exist in the development runtime. Component startup does not establish a complete first-time client installation.
 - [Models and connections](model-and-channel-setup.md) include provider presets and protocol adapters. Support remains dependent on the configured model's capabilities and the application account; a preset is not certification of every provider or delivery path.
@@ -47,7 +53,11 @@ Physical installation is waived for previews on Windows, Apple Silicon macOS and
 
 Linux/WSL服务的启动、复用、状态和停止已迁至Rust，旧安装调用暂留薄Python适配。APT索引/签名/构建工具及真实安装升级测试也已迁至Rust，原两份Python文件已删除。这些改动不代表其余宿主初始化完成，也不把历史安装包视作当前源码版本。
 
-首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验，不能据此声称完整安装通过。宿主编排、恢复及构建/发行工具的Python退役仍未完成。
+首次配置、显式编辑、预设/结构校验、初始数据库密码发布及容器引擎状态管理已迁Rust。离线镜像准入、流式导入与激活记录也由Rust承担；gzip、XZ、OCI的真实Docker导入和恢复已验。密封WSL的源码/配置、引擎、镜像、数据库和服务初始化已串联到Rust，旧Python运行编排已删除，验收驱动调用同一原生命令。本地组件检查不代表完整首启或新安装包通过；工厂/验收工具、其他运行消费者、恢复及构建/发行工具的Python退役仍未完成。
+
+只读运行环境策略也已迁Rust，包含工具组件、保存的PATH、SDK/Java、客体资源/代理及镜像/应用元数据，旧Python策略与WSL重复配置映射已替换；客户端工具准备复用同一原生实现。其余portable工具与安装调用尚未全部退役，此源码改动不等于新完整安装包验收。
+
+macOS/Linux客户端入口已接入Rust初始化控制器，原mise/Python入口及下载/布局模块已退役；控制器串联包内资源、保存配置、自有引擎、后端服务、原生手机、输入/通知与设备完成检查。桌面网络目录准备现直接调用共享Rust；其余旧网络调用直接启动对应包内/源码Bun入口，目录变更也交给同一Rust实现。JavaScript网络/渠道/媒体服务与其他Python调用仍待迁移。本地编译/控制器测试不等于完整冷安装或新包发布。WSL当前实际验收到服务运行，但桌面创建失败，底层原因仍未确认。
 
 这些是各自来源提交的未公开候选，不混用后续源码的资格。Linux ARM64亦未完成独立宿主。
 

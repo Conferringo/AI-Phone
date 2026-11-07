@@ -1,10 +1,12 @@
 //! Native local deployment lifecycle. Remote workbenches never receive this authority.
 use serde::{Deserialize, Serialize};
+#[cfg(unix)]
+use std::process::Command;
 use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
-    process::{ChildStdin, Command},
+    process::ChildStdin,
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
@@ -13,16 +15,14 @@ use std::{
 };
 use tauri::Manager;
 mod checkpoint;
-mod download;
 #[cfg(any(windows, test))]
 mod native_phone;
+#[cfg(unix)]
 mod process;
 mod resources;
-mod toolchain;
-mod tools;
-use download::{hash, mise as download_mise};
+#[cfg(unix)]
 use process::execute;
-use resources::available_bytes;
+use resources::{available_bytes, hash};
 
 const INTEGRITY: &str = include_str!("../gen/host/integrity.json");
 const POLICY: &str = include_str!("../../../../config/host-bootstrap.json");
@@ -197,6 +197,7 @@ impl ManagerState {
         self.check_cancelled()?;
         self.set(folder, "ready", "ready", "")
     }
+    #[cfg(unix)]
     fn process_error(&self) -> String {
         self.progress
             .lock()
@@ -215,16 +216,18 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 }
 
 struct Components {
+    #[cfg(unix)]
+    source: String,
     android: Option<String>,
+    #[cfg(unix)]
     images: bool,
-    tools: Option<String>,
     wsl: Option<String>,
 }
 
 fn verify_resources(folder: &Path) -> Result<Components, String> {
     let expected: std::collections::BTreeMap<String, String> =
         serde_json::from_str(INTEGRITY).map_err(|e| e.to_string())?;
-    if !expected.contains_key("source.payload") || !expected.contains_key("entry.py") {
+    if !expected.contains_key("source.payload") {
         return Err("invalid_payload".into());
     }
     for (name, digest) in &expected {
@@ -237,15 +240,23 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
             "wsl/manifest.json",
         ]
         .contains(&name.as_str())
-            || hash(&folder.join(name))? != *digest
         {
+            return Err("invalid_payload".into());
+        }
+        // Native staging authenticates source and Android while extracting them.
+        if matches!(name.as_str(), "source.payload" | "android.payload") {
+            continue;
+        }
+        if hash(&folder.join(name))? != *digest {
             return Err("invalid_payload".into());
         }
     }
     Ok(Components {
+        #[cfg(unix)]
+        source: expected["source.payload"].clone(),
         android: expected.get("android.payload").cloned(),
+        #[cfg(unix)]
         images: expected.contains_key("images.payload"),
-        tools: expected.get("tools/manifest.json").cloned(),
         wsl: expected.get("wsl/manifest.json").cloned(),
     })
 }
@@ -311,17 +322,6 @@ fn prepare_folder(folder: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn prepare_runtime(manager: &ManagerState, folder: &Path) -> Result<PathBuf, String> {
-    let layout = toolchain::Toolchain::new(folder);
-    layout.prepare()?;
-    let mise = layout.binary;
-    let policy: serde_json::Value = serde_json::from_str(POLICY).map_err(|e| e.to_string())?;
-    manager.set(folder, "runtime", "running", "")?;
-    let key = platform_key(std::env::consts::OS, std::env::consts::ARCH);
-    tauri::async_runtime::block_on(download_mise(manager, &mise, &policy["mise"][&key]))?;
-    Ok(mise)
-}
-
 fn run(
     app: &tauri::AppHandle,
     manager: &Arc<ManagerState>,
@@ -356,7 +356,10 @@ fn run(
     if components.wsl.is_some() {
         return Err("wsl_backend_host".into());
     }
-    run_source_installer(manager, &folder, &resource, request_path, components)
+    #[cfg(unix)]
+    return run_native_installer(manager, &folder, &resource, &request_path, components);
+    #[cfg(not(unix))]
+    Err("wsl_backend_missing".into())
 }
 
 #[cfg(target_os = "windows")]
@@ -422,81 +425,28 @@ fn register_windows_backend(
     manager.complete(folder)
 }
 
-fn run_source_installer(
+#[cfg(unix)]
+fn run_native_installer(
     manager: &Arc<ManagerState>,
     folder: &Path,
     resource: &Path,
-    request_path: PathBuf,
+    request: &Path,
     components: Components,
 ) -> Result<(), String> {
-    let runtime = if let Some(identity) = components.tools {
-        manager.set(folder, "runtime", "running", "")?;
-        Some(tools::prepare(
-            &resource.join("tools"),
-            folder,
-            &identity,
-            &platform_key(std::env::consts::OS, std::env::consts::ARCH),
-            &available_bytes,
-            &|| manager.check_cancelled(),
-        )?)
-    } else {
-        None
-    };
-    let mise = if runtime.is_none() {
-        Some(prepare_runtime(manager, folder)?)
-    } else {
-        None
-    };
-    let layout = toolchain::Toolchain::new(folder);
-    let mut command = if let Some(runtime) = &runtime {
-        let mut command = Command::new(&runtime.python);
-        command.args(["-I", "-S", "-B"]);
-        command
-    } else {
-        let mut command = Command::new(mise.as_ref().ok_or("installer_runtime")?);
-        let policy: serde_json::Value =
-            serde_json::from_str(POLICY).map_err(|_| "invalid_tool_policy")?;
-        let python = policy["tools"]
-            .as_array()
-            .and_then(|rows| {
-                rows.iter()
-                    .filter_map(|v| v.as_str())
-                    .find(|v| v.starts_with("python@"))
-            })
-            .ok_or("invalid_tool_policy")?;
-        command.args(["exec", "-y", python, "--", "python"]);
-        command
-    };
+    let android = components.android.ok_or("android_runtime_missing")?;
+    if !components.images {
+        return Err("image_runtime_missing".into());
+    }
+    let mut command =
+        Command::new(std::env::current_exe().map_err(|_| "native_initializer_program")?);
     command
-        .current_dir(folder)
-        .arg(resource.join("entry.py"))
-        .arg("--payload")
-        .arg(resource.join("source.payload"))
-        .arg("--home")
+        .arg("--initialize-unix-host")
+        .arg(resource)
         .arg(folder)
-        .arg("--request")
-        .arg(request_path);
-    if let Some(mise) = mise {
-        command.arg("--mise").arg(mise);
-    }
-    if let Some(runtime) = runtime {
-        command.arg("--tool-runtime").arg(runtime.directory);
-    }
-    if components.android.is_some() {
-        command
-            .arg("--android-runtime")
-            .arg(resource.join("android.payload"));
-    }
-    if components.images {
-        command
-            .arg("--images-runtime")
-            .arg(resource.join("images.payload"));
-    }
-    layout.apply(&mut command);
-    command
-        .env("MISE_YES", "1")
-        .env("MISE_SELF_UPDATE_AVAILABLE", "false")
-        .env("MISE_PARANOID", "1");
+        .arg(request)
+        .arg(components.source)
+        .arg(android)
+        .current_dir(folder);
     execute(manager, command, folder)
 }
 
@@ -589,8 +539,6 @@ pub fn accept_license(app: &tauri::AppHandle) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sha2::{Digest, Sha256};
-    use std::io::Read;
     #[test]
     #[cfg(unix)]
     fn installer_failure_reason_survives_the_process_boundary() {
@@ -606,60 +554,6 @@ mod tests {
             Err("foreign_installation".into()),
             "the UI needs the actual recovery reason"
         );
-    }
-    #[test]
-    fn stopping_a_download_interrupts_both_headers_and_a_stalled_body() {
-        for headers in [false, true] {
-            let folder = std::env::temp_dir().join(format!(
-                "ai-phone-download-{}-{headers}",
-                std::process::id()
-            ));
-            fs::create_dir_all(&folder).unwrap();
-            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-            let url = format!("http://{}/fixture", listener.local_addr().unwrap());
-            let (accepted, waiting) = std::sync::mpsc::channel();
-            let (release, released) = std::sync::mpsc::channel();
-            let server = std::thread::spawn(move || {
-                let (mut stream, _) = listener.accept().unwrap();
-                let mut bytes = [0; 4096];
-                let _ = stream.read(&mut bytes);
-                if headers {
-                    stream
-                        .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\n")
-                        .unwrap();
-                }
-                accepted.send(()).unwrap();
-                let _ = released.recv_timeout(Duration::from_secs(5));
-                let _ = stream.write_all(if headers {
-                    b"abc"
-                } else {
-                    b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc"
-                });
-            });
-            let manager = Arc::new(ManagerState::default());
-            let state = manager.clone();
-            let destination = folder.join("mise");
-            let (finished, result) = std::sync::mpsc::channel();
-            let download = std::thread::spawn(move || {
-                let record =
-                    serde_json::json!({"url":url,"sha256":format!("{:x}",Sha256::digest(b"abc"))});
-                let outcome =
-                    tauri::async_runtime::block_on(download_mise(&state, &destination, &record));
-                finished.send(outcome).unwrap();
-            });
-            waiting.recv_timeout(Duration::from_secs(3)).unwrap();
-            manager.cancelled.store(true, Ordering::SeqCst);
-            let outcome = result.recv_timeout(Duration::from_secs(1));
-            let _ = release.send(());
-            server.join().unwrap();
-            download.join().unwrap();
-            fs::remove_dir_all(folder).unwrap();
-            assert_eq!(
-                outcome.unwrap(),
-                Err("installation_cancelled".into()),
-                "Stop must not wait for a stalled network peer"
-            );
-        }
     }
     #[test]
     #[cfg(unix)]

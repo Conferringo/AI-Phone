@@ -63,6 +63,7 @@ jobs:
           echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
       - name: Native tests and lint
         run: |
+          cargo build -p ai-phone-host-runtime --bin host-resources --locked
           PYTHONPATH=scripts python3 -m unittest test_native_services
           cargo fmt --manifest-path apps/client/src-tauri/Cargo.toml --check
           cargo test --manifest-path apps/client/src-tauri/Cargo.toml --locked
@@ -318,6 +319,8 @@ jobs:
         run: |
           python -c "import sys; sys.path.insert(0, 'scripts'); from client_artifacts import notice_manifest; notice_manifest()"
           python scripts/bootstrap_bun.py --dependencies
+      - name: Native host fixture executable
+        run: cargo build -p ai-phone-host-runtime --bin host-resources --locked
       - name: Relocated dependency and archive regressions
         env:
           PYTHONPATH: scripts

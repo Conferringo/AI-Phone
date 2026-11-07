@@ -25,7 +25,9 @@ Stopping installation terminates its child process group and retains completed w
 
 Initial profile creation, validation and explicit edits now use the qualified Rust host-profile component. It preserves existing device resources, credentials and staged user-directory links. The installer and contributor CLI delegate to that component; remaining Python orchestration is still scheduled for retirement. See [private installation state](engineering/private-install-state.md).
 
-The Windows adapter imports the owned WSL bundle and invokes its backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. Backend acknowledgement sets only `backend_initialized`. The native client then starts the owned Android/bridge worker and completes the durable device setup and service-readiness check before reporting ready. Cancellation after launch leaves unknown guest results explicit and retains the registered distribution. This activation path is implemented; the complete EXE, WSL2/WHPX and first-run runtime qualification remain pending. Initialization still uses the existing Python guest entry, pending the Rust runtime migration.
+Runtime environment selection now also belongs to Rust: saved PATH ownership, SDK/Java selection, guest ABI/resources, device proxies, installed image references and guest-app metadata share one read-only entry. WSL consumes that same profile policy while retaining its fixed Docker socket and process environment. Installer tool preparation and runtime selection use a shared native component implementation. Existing Python callers retain a thin command adapter; this is not completion of the macOS/Linux initializer or portable Python retirement.
+
+The Windows adapter imports the owned WSL bundle and invokes its Rust backend initializer through a bounded stdin configuration stream. It does not mount Windows drives or put configuration in process arguments. Backend acknowledgement sets only `backend_initialized`. The native client then starts the owned Android/bridge worker and completes the durable device setup and service-readiness check before reporting ready. Cancellation after launch leaves unknown guest results explicit and retains the registered distribution. The qualification driver now invokes that same native initializer. The complete EXE, WSL2/WHPX and first-run runtime qualification remain pending; factory/qualification tooling and other runtime consumers still need Python retirement.
 
 ## Isolation
 
@@ -35,11 +37,15 @@ Tools stay inside the installation, and backend/development dependencies belong 
 
 ## Evidence limits
 
+The Unix client entry now invokes the Rust initializer rather than `entry.py` or a downloaded mise/Python toolchain. It stages bundled source and Android resources, preserves the saved device profile, starts the owned offline container host and backend, boots the native phone owner, installs input/notification and guest applications, and runs native device setup before emitting ready. Missing components fail explicitly. Local controller, CLI and Tauri tests cover this source change; a complete cold installation with both devices has not yet been qualified. Desktop network directory preparation is native, and its former Python launcher is retired. Remaining Python runtime/maintenance calls and JavaScript network/channel/media services still need migration.
+
 Component execution, package inspection and complete installation are separate checks. Booting an Android image, displaying a desktop or starting an offline container host does not establish that a final installer can create both default-sized devices, configure a model and complete the whole workflow on a clean host. The [release status](release-status.md) records their verified scopes and remaining qualification. Redistribution permission and corresponding-source obligations apply even when a package builds successfully.
 
 ---
 
 # 一体化宿主运行时
+
+Unix客户端入口现调用Rust初始化器，移除原entry.py及下载mise/Python工具链路径。初始化串联包内源码/Android资源、保存的设备配置、自有离线容器宿主、数据库与服务、原生手机owner、输入/通知及客体应用安装，最后通过原生设备创建与画面检查才发出ready；缺少组件直接报错。本地控制器、CLI及Tauri测试覆盖这次源码改动，完整双设备冷安装尚未通过。桌面网络目录准备已原生化并退役Python跳板；其余Python运行/维护调用和网络/渠道/媒体JavaScript服务仍须继续迁移。
 
 目标是下载安装客户端后，直接配置手机、电脑和模型，不要求用户手动部署服务。安装包供应、已有组件和各平台待验收项统一见[发行状态](release-status.md)；源码引导和连接客户端是独立的开发/远程使用路径。macOS 仅支持 M 系列芯片；Windows 目标组合原生 Android/WHPX 与 WSL2 后端；Linux 使用匹配架构的 Android/KVM 与容器宿主。
 
@@ -47,4 +53,6 @@ Component execution, package inspection and complete installation are separate c
 
 首次安装需要至少12GiB内存、35GiB可用存储，推荐16GiB内存。设备资源在创建时设置，已有设备不会随预设变化被重建或扩容。关闭、中断、重试、缺失组件和恢复隔离均要明确反馈；单项测试或阶段完成不能代替完整初装验收。现有设备、聊天、账号和密钥不进入源码或运行组件。
 
-Windows适配器已接通所属WSL资源导入和后端初始化，配置经有界标准输入传入，不挂载Windows磁盘、不写入进程参数。后端回执只确认初始化；原生客户端随后启动所属Android/桥接worker，完成持久设备配置与服务就绪检查后才进入ready。启动后取消保留明确的未知结果及原发行实例。该激活路径已实现，完整EXE、WSL2/WHPX及首次运行资格仍待验证；客体初始化暂复用既有Python入口，纯Rust运行链迁移尚未全部完成。
+Windows适配器已接通所属WSL资源导入和Rust后端初始化，配置经有界标准输入传入，不挂载Windows磁盘、不写入进程参数。后端回执只确认初始化；原生客户端随后启动所属Android/桥接worker，完成持久设备配置与服务就绪检查后才进入ready。启动后取消保留明确的未知结果及原发行实例。验收驱动已调用同一原生命令；完整EXE、WSL2/WHPX及首次运行资格仍待验证，工厂/验收工具及其他运行消费者的Python退役尚未完成。
+
+运行环境选取也已迁Rust，统一保存的PATH、SDK/Java、客体ABI/资源、设备代理、镜像引用与客体应用元数据。WSL复用同一配置策略，继续保留其固定Docker套接字和进程环境；工具组件的安装准备与运行选择共享原生实现。旧Python调用仅保留薄命令适配，不代表macOS/Linux完整初始化或portable Python退役完成。

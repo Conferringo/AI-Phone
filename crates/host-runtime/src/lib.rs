@@ -8,17 +8,25 @@ mod control;
 pub mod device_bridge;
 mod filesystem;
 #[cfg(unix)]
+mod guest_apps;
+#[cfg(unix)]
 mod images;
+pub mod installer_tools;
 mod links;
 #[cfg(unix)]
 mod managed_engine;
 mod manifest;
 pub mod native_ipc;
+pub mod network_paths;
 pub mod package;
 mod profile;
+#[cfg(unix)]
+mod runtime_environment;
 mod source_cli;
 mod staging;
 pub mod supervision;
+#[cfg(unix)]
+mod unix_initializer;
 pub mod wsl;
 
 use std::{

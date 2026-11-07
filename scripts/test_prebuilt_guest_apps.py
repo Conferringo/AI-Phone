@@ -229,7 +229,8 @@ class GuestAppsTests(unittest.TestCase):
 
     def test_runtime_profile_selects_matching_guest_abi_without_migrating_devices(self):
         from runtime_config import runtime_env
-        with tempfile.TemporaryDirectory() as temporary:
+        from test_release import native_profile_program
+        with tempfile.TemporaryDirectory() as temporary,patch('prebuilt_services.runtime_environment_command',return_value=[native_profile_program()]):
             root=Path(temporary);self.build_fixture(root);(root/'runtime').mkdir();shutil.copytree(root/'.tools/guest-apps',root/'runtime/guest-apps')
             (root/'data/deployment').mkdir(parents=True);profile=root/'data/deployment/profile.json'
             for template,abi in [('android35-x86_64','x86_64'),('android35-arm64','arm64-v8a')]:

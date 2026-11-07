@@ -6,9 +6,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(unix)]
+pub(crate) mod backend;
 mod bundle;
 mod devices;
 mod initialize;
+pub const BACKEND_INITIALIZER_CONTRACT: &str = "ai-phone-wsl-initializer-v1";
 pub use initialize::{InitializeRequest, Initializer};
 #[cfg(any(windows, test))]
 mod command;

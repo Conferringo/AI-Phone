@@ -15,6 +15,7 @@ DATABASE_PREPARE_CONTRACT = 'ai-phone-database-prepare-v1'
 HOST_PROFILE_CONTRACT = 'ai-phone-host-profile-v1'
 MANAGED_ENGINE_CONTRACT = 'ai-phone-managed-engine-v1'
 IMAGE_ACTIVATION_CONTRACT = 'ai-phone-image-activation-v1'
+RUNTIME_ENVIRONMENT_CONTRACT = 'ai-phone-runtime-environment-v1'
 ROLES = ('assistant', 'runner', 'vision')
 FIXTURE = 'runtime/services/fixtures/ocr.png'
 SOURCE_FIXTURE = 'crates/phone-runner/fixtures/ocr-probe.png'
@@ -47,6 +48,8 @@ def prepare_services(root, *, linux_ocr=None):
         raise ValueError('Native managed engine capability was not qualified')
     if receipt['checks'].get('image_activation') != IMAGE_ACTIVATION_CONTRACT:
         raise ValueError('Native image activation capability was not qualified')
+    if receipt['checks'].get('runtime_environment') != RUNTIME_ENVIRONMENT_CONTRACT:
+        raise ValueError('Native runtime environment capability was not qualified')
     files = []
     for role in ROLES:
         path = root / receipt['artifacts'][role]['path']
@@ -65,7 +68,8 @@ def prepare_services(root, *, linux_ocr=None):
                 'vision': vision_backend(linux_ocr), 'files': records, 'device_setup': DEVICE_SETUP_CONTRACT,
                 'service_supervision': SERVICE_SUPERVISION_CONTRACT, 'phone_input_setup': PHONE_INPUT_SETUP_CONTRACT,
                 'database_prepare': DATABASE_PREPARE_CONTRACT, 'host_profile': HOST_PROFILE_CONTRACT,
-                'managed_engine': MANAGED_ENGINE_CONTRACT, 'image_activation': IMAGE_ACTIVATION_CONTRACT}
+                'managed_engine': MANAGED_ENGINE_CONTRACT, 'image_activation': IMAGE_ACTIVATION_CONTRACT,
+                'runtime_environment': RUNTIME_ENVIRONMENT_CONTRACT}
     return files + [('runtime/services/manifest.json', json.dumps(manifest, sort_keys=True).encode(), 0o644)]
 
 
@@ -202,6 +206,10 @@ def input_setup_command(root):
 
 def profile_command(root):
     return host_component_command(root,'host_profile','--host-profile-contract',HOST_PROFILE_CONTRACT)
+
+
+def runtime_environment_command(root):
+    return host_component_command(root,'runtime_environment','--runtime-environment-contract',RUNTIME_ENVIRONMENT_CONTRACT)
 
 
 def managed_engine_command(root):

@@ -193,27 +193,14 @@ class WslEntryTests(unittest.TestCase):
                 if str(root/'scripts') in paths:paths.remove(str(root/'scripts'))
             select.assert_not_called();self.assertFalse((root/'data').exists())
 
-    def test_initialize_serializes_writers_without_using_existing_installation(self):
-        import wsl_backend_entry as entry
-        from installer_lock import acquire
-        with tempfile.TemporaryDirectory() as folder,patch.object(entry,'INSTALLATION',Path(folder)/'installation'),patch.object(entry,'initialize_locked') as initialize:
-            initialize.return_value={'backend_started':True,'phone_ready':False}
-            with acquire(Path(folder)/'initialize.lock'):
-                with self.assertRaises(BlockingIOError):entry.initialize('fixture')
-            initialize.assert_not_called()
-            self.assertFalse(entry.initialize('fixture')['phone_ready'])
-
-    def test_engine_wait_does_not_treat_an_unavailable_daemon_as_ready(self):
-        import wsl_backend_entry as entry
-        from types import SimpleNamespace
-        from unittest.mock import Mock
-        run=Mock(return_value=SimpleNamespace(returncode=1))
-        with patch.object(entry.time,'monotonic',side_effect=[0,0,31]),patch.object(entry.time,'sleep'):
-            with self.assertRaisesRegex(ValueError,'did not become ready'):entry.wait_engine(run)
-        run.return_value.returncode=0
-        with patch.object(entry.time,'monotonic',side_effect=[0,0]):entry.wait_engine(run)
-
 class WslExecutionPlanTests(unittest.TestCase):
+    def test_factory_verification_rejects_wrong_host(self):
+        import wsl_backend_entry as entry
+        with patch.object(entry.platform,'system',return_value='Windows'):
+            with self.assertRaises(ValueError):entry.require_linux()
+        with patch.object(entry.platform,'system',return_value='Linux'),patch.object(entry.platform,'machine',return_value='x86_64'):
+            entry.require_linux()
+
     def test_only_validated_top_level_bootstrap_scripts_enter_the_context(self):
         from wsl_backend_factory import payload_scripts
         with tempfile.TemporaryDirectory() as folder:
@@ -223,43 +210,6 @@ class WslExecutionPlanTests(unittest.TestCase):
             self.assertEqual({p.name for p in (root/'scripts').iterdir()},{'wsl_backend_entry.py','helper.py'})
             archive(source,[('scripts/helper.py',b'helper')])
             with self.assertRaisesRegex(ValueError,'Rebuild'):payload_scripts(source,root/'missing')
-
-    def test_wrong_host_and_low_capacity_never_materialize_user_state(self):
-        import wsl_backend_entry as entry
-        with patch.object(entry.platform,'system',return_value='Windows'):
-            with self.assertRaises(ValueError):entry.require_linux()
-        with patch.object(entry.platform,'system',return_value='Linux'),patch.object(entry.platform,'machine',return_value='x86_64'):
-            entry.require_linux()
-        with tempfile.TemporaryDirectory() as folder,patch.object(entry,'require_linux'),patch.object(entry,'staged') as stage,patch('client_host.check_request',return_value={}):
-            request=Path(folder)/'request';request.write_text('{}')
-            with patch.object(entry.shutil,'disk_usage') as usage:
-                usage.return_value.free=3*1024**3
-                with self.assertRaisesRegex(ValueError,'4 GiB'):entry.initialize_locked(request)
-            stage.assert_not_called()
-
-    def test_backend_start_uses_only_loaded_images_and_preserves_chat_file(self):
-        import wsl_backend_entry as entry
-        from unittest.mock import Mock
-        from types import SimpleNamespace
-        from contextlib import ExitStack
-        run=Mock()
-        with tempfile.TemporaryDirectory() as folder,ExitStack() as stack:
-            stack.enter_context(patch.dict(entry.os.environ,dict(entry.os.environ)))
-            root=Path(folder);(root/'chat').write_text('existing')
-            for name in ('client_host.verify_container_ownership','linux_host.private_token','linux_host.start_web_service','linux_services.start_unit'):
-                stack.enter_context(patch(name,return_value={}) if name=='client_host.verify_container_ownership' else patch(name))
-            stack.enter_context(patch('linux_services.unit_state',return_value=None))
-            stack.enter_context(patch('container_images.stage',return_value=SimpleNamespace()))
-            stack.enter_context(patch('container_images.activate',return_value={}))
-            stack.enter_context(patch('runtime_config.runtime_env',return_value={}))
-            stack.enter_context(patch('prebuilt_services.launch_spec',return_value={'argv':['assistant'],'environment':{}}))
-            stack.enter_context(patch('prebuilt_js.launch_spec',side_effect=lambda _root,name:{'argv':[name],'environment':{}}))
-            entry.start_backend(root,run)
-            calls=[list(map(str,call.args[0])) for call in run.call_args_list]
-            self.assertTrue(any('postgres' in argv and '--no-build' in argv and '--pull' in argv and 'never' in argv for argv in calls))
-            self.assertFalse(any('compose.desktop.yaml' in argv or argv[:2]==['docker','start'] for argv in calls))
-            self.assertFalse(any('emulator' in word or 'limactl' in word for argv in calls for word in argv))
-            self.assertEqual((root/'chat').read_text(),'existing')
 
 class WslQualificationGuards(unittest.TestCase):
     def test_qualification_guards_preserve_existing_factory_and_low_space(self):

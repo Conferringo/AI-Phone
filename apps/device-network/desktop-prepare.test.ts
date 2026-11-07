@@ -5,6 +5,7 @@ import {join} from 'node:path';
 
 const hostTest=process.platform==='win32'?test.skip:test;
 const desktopId='11111111-1111-4111-8111-111111111111';
+const nativeProgram=join(process.env.CARGO_TARGET_DIR||join(import.meta.dir,'../../target'),'debug',process.platform==='win32'?'host-resources.exe':'host-resources');
 
 function fixture(work:(root:string,call:(kind?:'phone'|'desktop')=>any)=>void){
  const root=mkdtempSync(join(tmpdir(),'ai-phone-bind-prepare-'));
@@ -16,10 +17,12 @@ mock.module('node:child_process',()=>processModule);
 mock.module('child_process',()=>processModule);
 mock.module('node:dns/promises',()=>({lookup:deny}));
 mock.module('node:https',()=>({request:deny}));
-Bun.spawn=deny;Bun.spawnSync=deny;globalThis.fetch=deny;
+const spawn=Bun.spawn.bind(Bun);
+Bun.spawn=((args,options)=>{if(!Array.isArray(args)||args[0]!==process.env.AI_PHONE_NATIVE_HOST_PROGRAM||args[1]!=='--prepare-device-network')return deny();return spawn(args,options);});
+Bun.spawnSync=deny;globalThis.fetch=deny;
 `);
  const call=(kind:'phone'|'desktop'='desktop')=>{
-  const env:Record<string,string>={AI_PHONE_PROJECT_ROOT:root};
+  const env:Record<string,string>={AI_PHONE_PROJECT_ROOT:root,AI_PHONE_NATIVE_HOST_PROGRAM:nativeProgram};
   for(const name of ['PATH','SYSTEMROOT','WINDIR','TMPDIR','TEMP','TMP'])if(process.env[name])env[name]=process.env[name]!;
   const result=Bun.spawnSync([process.execPath,'--no-env-file','--preload',preload,join(import.meta.dir,'control.ts')],{
    cwd:root,env,stdin:new TextEncoder().encode(JSON.stringify({operation:'prepare',kind,deviceId:kind==='desktop'?desktopId:'phone-local-01'})),stdout:'pipe',stderr:'pipe',timeout:10000,

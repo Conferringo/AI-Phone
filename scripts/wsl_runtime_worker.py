@@ -42,8 +42,31 @@ def checkpoint(receipt,stage):
     atomic_json(STATE/'qualification-result.json',receipt)
 
 
-def initialize(receipt):
+def native_initialize(request,progress):
     import wsl_backend_entry as entry
+    import wsl_initialize_diagnostics as diagnostic
+    root=entry.INSTALLATION/'releases'/(entry.BUNDLE/'source.sha256').read_text().strip()
+    argv=[str(entry.BOOTSTRAP),'--initialize-wsl-backend']
+    with subprocess.Popen(argv,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE) as child:
+        try:
+            child.stdin.write(request.read_bytes());child.stdin.close()
+            for line in child.stderr:
+                sys.stderr.buffer.write(line)
+                if line.startswith(b'AI_PHONE_INITIALIZE '):
+                    step=line[len(b'AI_PHONE_INITIALIZE '):].strip().decode('utf-8',errors='replace')
+                    if step in diagnostic.STEPS:progress(step,root)
+            output=child.stdout.read(8193);code=child.wait()
+            if code:raise subprocess.CalledProcessError(code,argv)
+            expected={'backend_started':True,'phone_ready':False,'complete_device_bundle':False,'windows_boot_verified':False}
+            if json.loads(output)!=expected:raise ValueError('Native backend initialization receipt is invalid')
+        finally:
+            if child.poll() is None:child.terminate();child.wait(timeout=20)
+    # Only this isolated PID-1 qualification process uses these for its later probes.
+    os.environ.update({'DOCKER_HOST':'unix:///run/aiphone/docker.sock','DOCKER_CONFIG':str(STATE/'docker-cli')})
+    return root
+
+
+def initialize(receipt):
     import wsl_initialize_diagnostics as diagnostic
     from database import atomic_json
     engine_root=None;before=False
@@ -56,11 +79,8 @@ def initialize(receipt):
     try:
         request=STATE/'qualification-request.json'
         atomic_json(request,{'locale':'en','phone':{'cpus':2,'memory_mb':2048,'storage_gb':16},'desktop':{'cpus':2,'memory_mb':2048}})
-        result=entry.initialize(request,observer=progress)
-        if result['phone_ready'] or result['windows_boot_verified']:raise ValueError('Backend initialization overclaimed readiness')
-        entry.observe(progress,'source')
-        root=entry.staged(entry.INSTALLATION)
-        entry.observe(progress,'complete')
+        root=native_initialize(request,progress)
+        progress('complete',root)
         return root
     except Exception as error:
         receipt['initialization'].update(diagnostic.error_fields(error))
@@ -105,7 +125,7 @@ def perform(receipt,nonce,phase):
 
 def main():
     from wsl_runtime_fixture import CHECKS
-    from wsl_initialize_diagnostics import initial
+    from wsl_initialize_diagnostics import initial,runtime_failure
     nonce=fixture_identity();STATE.mkdir(mode=0o700,exist_ok=True)
     marker=STATE/'qualification-marker.json';phase=next_phase(marker,nonce)
     receipt={'format':1,'nonce':nonce,'phase':phase,'status':'failed','stage':'guard','checks':{name:False for name in sorted(CHECKS)},'frame':{},'windows_boot_verified':False,'phone_ready':False,'initialization':initial()}
@@ -116,9 +136,10 @@ def main():
         from database import atomic_json
         atomic_json(marker,{'nonce':nonce,'phase':phase})
         receipt['status']='passed';checkpoint(receipt,'stopped')
-    except Exception:
+    except Exception as error:
         # Private service logs remain inside the fixture. The public receipt has
         # fixed stage/check fields and never serializes exceptions, tokens or env.
+        receipt['failure']=runtime_failure(error)
         checkpoint(receipt,receipt['stage'])
         return 1
     return 0

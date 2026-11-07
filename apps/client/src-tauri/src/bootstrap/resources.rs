@@ -149,3 +149,18 @@ mod tests {
         assert!(total_memory_bytes() > 0);
     }
 }
+pub(super) fn hash(path: &std::path::Path) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+    let mut file = std::fs::File::open(path).map_err(|error| error.to_string())?;
+    let mut digest = Sha256::new();
+    let mut bytes = [0; 65536];
+    loop {
+        let count = file.read(&mut bytes).map_err(|error| error.to_string())?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&bytes[..count]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
+}

@@ -60,7 +60,7 @@ class ReleaseTests(unittest.TestCase):
         import release
         from install_state import InstallState
         from test_container_images import ContainerImageTests
-        with tempfile.TemporaryDirectory() as folder:
+        with tempfile.TemporaryDirectory() as folder,patch('prebuilt_services.runtime_environment_command',return_value=[native_profile_program()]):
             root=Path(folder);_,manifest=ContainerImageTests().fixture(root)
             record=root/'data/deployment/image-runtime.json';record.parent.mkdir(parents=True);record.write_text(json.dumps(manifest))
             selected=runtime_env(root)
@@ -254,7 +254,7 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'checksum mismatch'):stage_bundle(tampered,root/'install')
             self.assertFalse((root/'install/app/releases/test').exists())
     def test_configuration_preserves_database_and_devices(self):
-        with tempfile.TemporaryDirectory() as name,patch('prebuilt_services.profile_command',return_value=[native_profile_program()]):
+        with tempfile.TemporaryDirectory() as name,patch('prebuilt_services.profile_command',return_value=[native_profile_program()]),patch('prebuilt_services.runtime_environment_command',return_value=[native_profile_program()]):
             root = Path(name)
             (root / '.env').write_text('POSTGRES_PASSWORD=private-fixture\n')
             (root / 'data/android').mkdir(parents=True)

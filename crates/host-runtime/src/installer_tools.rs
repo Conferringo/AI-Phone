@@ -42,9 +42,30 @@ struct Component {
     bytes: Vec<u8>,
     identity: String,
 }
-pub(super) struct Runtime {
+pub struct Runtime {
     pub directory: PathBuf,
     pub python: PathBuf,
+}
+
+#[cfg(test)]
+thread_local! {
+    static HASHED_BYTES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+fn hash(path: &Path) -> Result<String, String> {
+    let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut digest = Sha256::new();
+    let mut bytes = [0; 65536];
+    loop {
+        let count = file.read(&mut bytes).map_err(|e| e.to_string())?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&bytes[..count]);
+        #[cfg(test)]
+        HASHED_BYTES.with(|value| value.set(value.get() + count as u64));
+    }
+    Ok(format!("{:x}", digest.finalize()))
 }
 
 fn invalid() -> String {
@@ -121,9 +142,13 @@ fn validate_tools(
     }
     for (role, tool) in tools {
         let row = names.get(tool.executable.as_str()).ok_or_else(invalid)?;
+        let version = tool.version.split('.').collect::<Vec<_>>();
         if !tool.executable.starts_with(&format!("{role}/"))
             || row.mode != 0o755
-            || tool.version.is_empty()
+            || version.len() != 3
+            || !version
+                .iter()
+                .all(|part| !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit()))
         {
             return Err(invalid());
         }
@@ -196,18 +221,81 @@ fn verify(
     component: &Component,
     cancel: &impl Fn() -> Result<(), String>,
 ) -> Result<(), String> {
-    if super::download::hash(&root.join("manifest.json"))? != component.identity {
+    if hash(&root.join("manifest.json"))? != component.identity {
         return Err("installer_tools_changed".into());
     }
+    verify_payload(root, component, cancel)
+}
+fn verify_payload(
+    root: &Path,
+    component: &Component,
+    cancel: &impl Fn() -> Result<(), String>,
+) -> Result<(), String> {
     verify_inventory(root, component)?;
     for row in &component.manifest.files {
         cancel()?;
         let path = record_path(root, row)?;
-        if super::download::hash(&path)? != row.sha256 {
+        if hash(&path)? != row.sha256 {
             return Err("installer_tools_changed".into());
         }
     }
     Ok(())
+}
+
+/// Runtime selection uses the same manifest and payload owner as client preparation.
+#[cfg(unix)]
+pub(crate) fn selected_environment(
+    root: &Path,
+    host: &str,
+    base: &str,
+) -> Result<BTreeMap<String, String>, String> {
+    #[derive(Deserialize)]
+    struct Selection {
+        format: u32,
+        path: PathBuf,
+        sha256: String,
+    }
+    let bytes = match fs::read(root.join("data/deployment/tool-runtime.json")) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(BTreeMap::new()),
+        Err(error) => return Err(error.to_string()),
+    };
+    let record: Selection = serde_json::from_slice(&bytes).map_err(|_| invalid())?;
+    if record.format != 1 || !record.path.is_absolute() {
+        return Err(invalid());
+    }
+    let component = read_manifest(&record.path, &record.sha256, host)?;
+    // read_manifest already binds the selected manifest bytes to its saved identity.
+    verify_payload(&record.path, &component, &|| Ok(()))?;
+    let directory = record.path.canonicalize().map_err(|_| invalid())?;
+    let mut env = BTreeMap::from([
+        (
+            "AI_PHONE_TOOL_RUNTIME".into(),
+            directory.to_str().ok_or_else(invalid)?.into(),
+        ),
+        ("PYTHONDONTWRITEBYTECODE".into(), "1".into()),
+    ]);
+    let mut paths = vec![];
+    for role in ["python", "node"] {
+        if let Some(tool) = component.manifest.tools.get(role) {
+            let program = directory.join(&tool.executable);
+            paths.push(
+                program
+                    .parent()
+                    .ok_or_else(invalid)?
+                    .to_str()
+                    .ok_or_else(invalid)?
+                    .to_owned(),
+            );
+            env.insert(
+                format!("AI_PHONE_{}", role.to_uppercase()),
+                program.to_str().ok_or_else(invalid)?.to_owned(),
+            );
+        }
+    }
+    paths.push(base.into());
+    env.insert("PATH".into(), paths.join(":"));
+    Ok(env)
 }
 fn verify_inventory(root: &Path, component: &Component) -> Result<(), String> {
     let mut actual = BTreeSet::new();
@@ -293,7 +381,7 @@ fn copy_body(
         output.write_all(&buffer[..length]).map_err(|_| invalid())?;
         hash.update(&buffer[..length]);
         #[cfg(test)]
-        super::download::HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
+        HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
     }
     if size != row.size || format!("{:x}", hash.finalize()) != row.sha256 {
         return Err("installer_tools_changed".into());
@@ -409,7 +497,7 @@ fn publish(
     result
 }
 
-pub(super) fn prepare(
+pub fn prepare(
     source: &Path,
     home: &Path,
     expected: &str,
@@ -450,7 +538,7 @@ mod tests {
             fs::write(source.join(&path), b"owned fixture").unwrap();
             use std::os::unix::fs::PermissionsExt;
             fs::set_permissions(source.join(&path), fs::Permissions::from_mode(0o755)).unwrap();
-            files.push(serde_json::json!({"path":path,"size":13,"mode":493,"sha256":super::super::download::hash(&source.join(path)).unwrap()}));
+            files.push(serde_json::json!({"path":path,"size":13,"mode":493,"sha256":hash(&source.join(path)).unwrap()}));
         }
         let value = serde_json::json!({"format":1,"host":"fixture-host","tools":{"python":{"version":"3.13.18","executable":"python/bin/python","source":{}},"node":{"version":"22.23.4","executable":"node/bin/node","source":{}}},"files":files});
         fs::write(
@@ -458,7 +546,7 @@ mod tests {
             serde_json::to_vec(&value).unwrap(),
         )
         .unwrap();
-        let hash = super::super::download::hash(&source.join("manifest.json")).unwrap();
+        let hash = hash(&source.join("manifest.json")).unwrap();
         (source, hash)
     }
     fn home() -> PathBuf {
@@ -520,7 +608,7 @@ mod tests {
             .unwrap()
             .retain(|row| row["path"].as_str().unwrap().starts_with("python/"));
         fs::write(&path, serde_json::to_vec(&value).unwrap()).unwrap();
-        let hash = super::super::download::hash(&path).unwrap();
+        let hash = hash(&path).unwrap();
         fs::write(home.join("user-chat"), b"keep").unwrap();
         let runtime = prepare(
             &source,
@@ -554,13 +642,13 @@ mod tests {
             let file = source.join(row["path"].as_str().unwrap());
             fs::write(&file, &body).unwrap();
             row["size"] = serde_json::json!(body.len());
-            row["sha256"] = serde_json::json!(super::super::download::hash(&file).unwrap());
+            row["sha256"] = serde_json::json!(hash(&file).unwrap());
         }
         fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
-        let identity = super::super::download::hash(&path).unwrap();
+        let identity = hash(&path).unwrap();
         let metadata_bytes = fs::metadata(&path).unwrap().len();
         let payload_bytes = body.len() as u64 * 2;
-        super::super::download::HASHED_BYTES.with(|bytes| bytes.set(0));
+        HASHED_BYTES.with(|bytes| bytes.set(0));
         let started = std::time::Instant::now();
         let runtime = prepare(
             &source,
@@ -571,9 +659,9 @@ mod tests {
             &|| Ok(()),
         )
         .unwrap();
-        let fresh = super::super::download::HASHED_BYTES.with(std::cell::Cell::get);
+        let fresh = HASHED_BYTES.with(std::cell::Cell::get);
         let fresh_ms = started.elapsed().as_millis();
-        super::super::download::HASHED_BYTES.with(|bytes| bytes.set(0));
+        HASHED_BYTES.with(|bytes| bytes.set(0));
         let started = std::time::Instant::now();
         prepare(
             &source,
@@ -584,7 +672,7 @@ mod tests {
             &|| Ok(()),
         )
         .unwrap();
-        let reused = super::super::download::HASHED_BYTES.with(std::cell::Cell::get);
+        let reused = HASHED_BYTES.with(std::cell::Cell::get);
         let reused_ms = started.elapsed().as_millis();
         fs::write(source.join("python/bin/python"), b"unused source changed").unwrap();
         let unaffected = prepare(
@@ -782,67 +870,5 @@ mod tests {
         );
         assert!(source.exists());
         fs::remove_dir_all(home).unwrap();
-    }
-
-    #[test]
-    #[ignore = "requires reviewed installer tools and source payload"]
-    fn real_portable_tools_stage_source_without_host_python_node_or_network() {
-        let source = PathBuf::from(
-            std::env::var_os("AI_PHONE_TEST_INSTALLER_TOOLS").expect("reviewed tools path"),
-        );
-        let payload = PathBuf::from(
-            std::env::var_os("AI_PHONE_TEST_SOURCE_PAYLOAD").expect("reviewed source payload"),
-        );
-        let home = home();
-        let result = (|| -> Result<(), String> {
-            let identity = super::super::download::hash(&source.join("manifest.json"))?;
-            let host = super::super::platform_key(std::env::consts::OS, std::env::consts::ARCH);
-            let runtime = prepare(
-                &source,
-                &home,
-                &identity,
-                &host,
-                &super::super::available_bytes,
-                &|| Ok(()),
-            )?;
-            let code = r#"import sys,ssl,sqlite3,json,pathlib,subprocess
-sys.path.insert(0,sys.argv[1])
-from client_host_entry import stage_source
-home=pathlib.Path(sys.argv[3]);(home/'user/data').mkdir(parents=True)
-(home/'user/data/chat-fixture').write_text('keep')
-root=stage_source(pathlib.Path(sys.argv[2]),home)
-sys.path.insert(0,str(root/'scripts'))
-from installer_tools import select,verify
-from runtime_config import runtime_env
-component=pathlib.Path(sys.argv[4]).resolve();manifest=verify(component)
-select(root,component);environment=runtime_env(root)
-bins=[str((component/manifest['tools'][role]['executable']).parent) for role in ('python','node') if role in manifest['tools']]
-assert environment['PATH'].split(':')[:len(bins)]==bins
-assert (home/'user/data/chat-fixture').read_text()=='keep'
-assert pathlib.Path(sys.prefix).resolve()==(component/'python').resolve()
-node=None
-if 'node' in manifest['tools']:
-    node=subprocess.check_output(['node','--version'],env={'PATH':str(component/'node/bin')},text=True).strip()
-    assert node=='v'+manifest['tools']['node']['version']
-print(json.dumps({'python':sys.version.split()[0],'node':node,'ssl':ssl.OPENSSL_VERSION,'sqlite':sqlite3.sqlite_version,'staged_source':True,'chat_fixture_preserved':True}))
-"#;
-            let output = std::process::Command::new(&runtime.python)
-                .env_clear()
-                .env("PATH", "/no-host-tools")
-                .args(["-I", "-S", "-B", "-c", code])
-                .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../scripts"))
-                .arg(payload)
-                .arg(home.join("deployment"))
-                .arg(runtime.directory)
-                .output()
-                .map_err(|e| e.to_string())?;
-            if !output.status.success() {
-                return Err(String::from_utf8_lossy(&output.stderr).into());
-            }
-            println!("{}", String::from_utf8_lossy(&output.stdout));
-            Ok(())
-        })();
-        fs::remove_dir_all(home).unwrap();
-        assert!(result.is_ok(), "{result:?}");
     }
 }

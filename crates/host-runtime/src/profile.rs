@@ -8,6 +8,11 @@ pub(crate) const CONTRACT: &str = "ai-phone-host-profile-v1";
 const LOCALES: [&str; 10] = [
     "zh-CN", "en", "zh-TW", "ja", "ko", "de", "fr", "es", "ru", "ar",
 ];
+pub(crate) fn checked_launch_path(value: Option<&str>) -> Result<&str> {
+    value
+        .filter(|path| !path.trim().is_empty() && !path.chars().any(char::is_control))
+        .ok_or(Error::Invalid("host_profile_launch_path"))
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -24,10 +29,34 @@ struct Desktop {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Request {
+pub(crate) struct Request {
     locale: String,
     phone: Phone,
     desktop: Desktop,
+}
+
+#[cfg(unix)]
+pub(crate) fn phone_resources(
+    root: &Path,
+    template: &str,
+    request: &Request,
+) -> Result<crate::android::Resources> {
+    let path = root.join("data/deployment/profile.json");
+    if path.try_exists()? {
+        let value: Value =
+            serde_json::from_slice(&fs::read(path)?).map_err(|_| Error::Invalid("host_profile"))?;
+        validate(&value, template)?;
+        return Ok(crate::android::Resources {
+            cpus: value["phone"]["cpus"].as_u64().unwrap() as u32,
+            memory_mb: value["phone"]["memory_mb"].as_u64().unwrap() as u32,
+            storage_gb: value["phone"]["storage_gb"].as_u64().unwrap() as u32,
+        });
+    }
+    Ok(crate::android::Resources {
+        cpus: request.phone.cpus,
+        memory_mb: request.phone.memory_mb,
+        storage_gb: request.phone.storage_gb,
+    })
 }
 
 fn resources(phone: &Phone, desktop: &Desktop) -> bool {
@@ -109,12 +138,7 @@ fn validate(value: &Value, template: &str) -> Result<()> {
         return Err(Error::Invalid("host_profile"));
     }
     if let Some(path) = value.get("launch_path") {
-        let valid = path
-            .as_str()
-            .is_some_and(|path| !path.trim().is_empty() && !path.chars().any(char::is_control));
-        if !valid {
-            return Err(Error::Invalid("host_profile_launch_path"));
-        }
+        checked_launch_path(path.as_str())?;
     }
     Ok(())
 }
@@ -156,12 +180,37 @@ pub(crate) fn prepare(
     launch_path: &str,
     java: &str,
 ) -> Result<()> {
+    prepare_request(
+        root,
+        sdk,
+        template,
+        parse_request(bytes)?,
+        launch_path,
+        java,
+    )
+}
+
+pub(crate) fn parse_request(bytes: &[u8]) -> Result<Request> {
+    if bytes.len() > 8192 {
+        return Err(Error::Invalid("host_profile_request"));
+    }
     let request: Request =
         serde_json::from_slice(bytes).map_err(|_| Error::Invalid("host_profile_request"))?;
-    if !LOCALES.contains(&request.locale.as_str())
-        || !resources(&request.phone, &request.desktop)
-        || !matches!(template, "android35-arm64" | "android35-x86_64")
-    {
+    if !LOCALES.contains(&request.locale.as_str()) || !resources(&request.phone, &request.desktop) {
+        return Err(Error::Invalid("host_profile_request"));
+    }
+    Ok(request)
+}
+
+pub(crate) fn prepare_request(
+    root: &Path,
+    sdk: &Path,
+    template: &str,
+    request: Request,
+    launch_path: &str,
+    java: &str,
+) -> Result<()> {
+    if !matches!(template, "android35-arm64" | "android35-x86_64") {
         return Err(Error::Invalid("host_profile_request"));
     }
     let destination = root.join("data/deployment/profile.json");
@@ -182,9 +231,7 @@ pub(crate) fn prepare(
     {
         return Err(Error::Invalid("host_profile"));
     }
-    if launch_path.trim().is_empty() || launch_path.chars().any(char::is_control) {
-        return Err(Error::Invalid("host_profile_launch_path"));
-    }
+    checked_launch_path(Some(launch_path))?;
     let value = json!({"schema_version":1,"local_entry":true,"locale":request.locale,
         "launch_path":launch_path,
         "sdk_root":sdk,"java_home":java,
@@ -258,4 +305,59 @@ pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
     )?;
     println!("{{\"prepared\":true}}");
     Ok(())
+}
+
+#[cfg(all(test, unix))]
+mod resume_resources_tests {
+    use super::*;
+    fn request(cpus: u32, memory: u32) -> Request {
+        parse_request(&serde_json::to_vec(&json!({"locale":"en","phone":{"cpus":cpus,"memory_mb":memory,"storage_gb":16},"desktop":{"cpus":2,"memory_mb":2048}})).unwrap()).unwrap()
+    }
+    #[test]
+    fn first_run_defaults_cannot_resize_an_existing_phone_or_change_its_credentials() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        prepare_request(
+            root,
+            Path::new("/owned/sdk"),
+            "android35-arm64",
+            request(4, 4096),
+            "/usr/bin:/bin",
+            "",
+        )
+        .unwrap();
+        let before = fs::read(root.join("data/deployment/profile.json")).unwrap();
+        let credentials = fs::read(root.join(".env")).unwrap();
+        let selected = phone_resources(root, "android35-arm64", &request(2, 2048)).unwrap();
+        assert_eq!(
+            (selected.cpus, selected.memory_mb, selected.storage_gb),
+            (4, 4096, 16)
+        );
+        assert_eq!(
+            fs::read(root.join("data/deployment/profile.json")).unwrap(),
+            before
+        );
+        assert_eq!(fs::read(root.join(".env")).unwrap(), credentials);
+    }
+    #[test]
+    fn invalid_saved_resources_are_rejected_instead_of_being_replaced_by_defaults() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        prepare_request(
+            root,
+            Path::new("/owned/sdk"),
+            "android35-arm64",
+            request(4, 4096),
+            "/usr/bin:/bin",
+            "",
+        )
+        .unwrap();
+        let path = root.join("data/deployment/profile.json");
+        let mut value: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["phone"]["cpus"] = json!(9);
+        let body = serde_json::to_vec(&value).unwrap();
+        fs::write(&path, &body).unwrap();
+        assert!(phone_resources(root, "android35-arm64", &request(2, 2048)).is_err());
+        assert_eq!(fs::read(path).unwrap(), body);
+    }
 }
