@@ -4,7 +4,7 @@
 
 源码包含 Next.js 工作台、Rust 执行服务、Android 桥接、Linux 桌面配方、protobuf 契约、内置 Skill、安装与备份恢复工具、测试及 CI。默认一手机一电脑，可分别绑定 Agent；PostgreSQL 保存任务检查点，Redis 为可选缓存。
 
-原创代码采用 [Apache-2.0](../../LICENSE)，第三方依赖、素材与客体应用保留各自许可，见[第三方声明](../../THIRD_PARTY_NOTICES.md)。源码构建面向贡献者，完整用户安装包的内容与验收条件见[发行状态](release-status.md)。
+原创代码采用 [Apache-2.0](../../LICENSE)，第三方依赖、素材与客体应用保留各自许可，见[第三方声明](../../THIRD_PARTY_NOTICES.md)。[下载 macOS 或 Windows 客户端](release-status.md)。
 
 ## 环境与启动
 
@@ -21,7 +21,7 @@ SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 
 
 ## 源码与用户数据
 
-版本化代码与设备盘、账号、聊天、附件、密钥分离。导出工具按白名单执行隐私和许可检查，开发与验证流程见[贡献指南](../../CONTRIBUTING.md)。本地环境文件、私人 Skill、实机截图及证据不能进入公开提交。
+导出工具按白名单选取源码，执行隐私和许可检查。开发流程见[贡献指南](../../CONTRIBUTING.md)。
 
 ```sh
 ./scripts/bun scripts/source.ts check

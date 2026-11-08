@@ -1,12 +1,12 @@
 import { ROOT } from "./tooling/process";
-import { buildDependency } from "./tooling/linux-dependencies";
+import { buildFactoryDependency } from "./tooling/factory-inputs";
 const args = process.argv.slice(2),
   option = (name: string) => args[args.indexOf(name) + 1]!;
 console.log(
   JSON.stringify(
-    await buildDependency(
+    await buildFactoryDependency(
       ROOT,
-      option("--archive"),
+      option("--work"),
       option("--destination"),
       option("--role"),
     ),

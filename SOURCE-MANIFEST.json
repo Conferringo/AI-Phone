@@ -1180,13 +1180,13 @@
     },
     {
       "path": "config/linux-host-runtime.json",
-      "size": 453,
-      "sha256": "28c8572914264af020f146c76ad44f4a23ac105e3716dc8e897da6d8121425e7"
+      "size": 316,
+      "sha256": "8b4edc41786b42a63dc03b8dd9ea71efc02c03ac05661d8151b6e224128f1773"
     },
     {
       "path": "config/linux-ocr.json",
-      "size": 421,
-      "sha256": "42d855f10cb182fb56008a450e71457526bbdbe0158d416d30b693b3bfc6ea30"
+      "size": 284,
+      "sha256": "7c3b33a68b97b3a123d4b2a5ce3ba96cd6ccf2b76ab959709b0cf18fcc000ada"
     },
     {
       "path": "config/macos-factory.json",
@@ -2250,8 +2250,13 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/connection.rs",
-      "size": 8207,
-      "sha256": "03a9c5189edbef3eb5b381086a4a3718972ca61f6eb622199e91200b0c5f3b9a"
+      "size": 8229,
+      "sha256": "7d3986fb3e4f6042d3a36e79bbe733eb4fd4726ee0d0142ef7c9ae8888605f50"
+    },
+    {
+      "path": "crates/host-runtime/src/device_bridge/connection_owner_tests.rs",
+      "size": 3850,
+      "sha256": "a1ecc8728f4bf6842eeabffd68ecb7fa6ba2a2e68a45aa908728dd3e6aedc80e"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/discovery.rs",
@@ -2265,8 +2270,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/mod.rs",
-      "size": 3479,
-      "sha256": "6a0a9516690d64d0cf15cfff53c1ccd311a43998da57b52e0d64146821761df0"
+      "size": 3520,
+      "sha256": "37b39ca55561b17973865d8b57e27d64f51442b0369440e877ce413b610a6a84"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
@@ -2522,11 +2527,6 @@
       "path": "crates/host-runtime/src/wsl.rs",
       "size": 7964,
       "sha256": "00415394c6b78d964896bce1be78f65694f11df22e80c88dfa4270330ed3aae2"
-    },
-    {
-      "path": "crates/host-runtime/tests/connection_owner.rs",
-      "size": 3839,
-      "sha256": "1db51d3ae083e08234bdd00ae4bf712175cf2fd38f7f810902ba19e4f8a4cd25"
     },
     {
       "path": "crates/host-runtime/tests/device_bridge_cli.rs",
@@ -2815,8 +2815,8 @@
     },
     {
       "path": "docs/public/capabilities-and-data.md",
-      "size": 2875,
-      "sha256": "9a5c392701ad17519627aedd123a83504b232b855d2203caa530ca9a709a2718"
+      "size": 2123,
+      "sha256": "e5fc313695c247633d276ab703c1b98bbd887a046a253558a074e1e0a21da90d"
     },
     {
       "path": "docs/public/companion-extension.md",
@@ -2825,8 +2825,8 @@
     },
     {
       "path": "docs/public/compatibility.md",
-      "size": 6988,
-      "sha256": "fb849d0c7bf691845f0a6f3279bf5e0455895765b0f454d24454de5212b1afe6"
+      "size": 6256,
+      "sha256": "c4ce352efc88b66bf2c5f5c5e11233cf33a271b4af01dfb3b3f09724f7d3f6b7"
     },
     {
       "path": "docs/public/container-host-runtime.md",
@@ -2865,13 +2865,13 @@
     },
     {
       "path": "docs/public/distribution.en.md",
-      "size": 2734,
-      "sha256": "77daae1fa526224e508b854a9e117864f9d818d7fef22dcac14218e52ccfd780"
+      "size": 2516,
+      "sha256": "5d88f4bb09ed8cef36254729503e74ba6a1e74497012edf530faa986d3097a1a"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
-      "size": 2297,
-      "sha256": "9ec944689f7fe44bf22863b8b4bef35737c141500667ae8bfe12e5c9019b933d"
+      "size": 2114,
+      "sha256": "16852bfc1b43ea972f5aabc8b00c160dd2c4e8587c8d329c92b4ccceb9b98f06"
     },
     {
       "path": "docs/public/engineering/android-distribution.md",
@@ -2880,8 +2880,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4664,
-      "sha256": "90927840cc8a075c922df416e7fe7b73a741fff4c95d6968a72fcecd94c68f3e"
+      "size": 4179,
+      "sha256": "5561f798c0b9d7d49106550fcb71961cd3e83f22bb7d0483361675ba384186c0"
     },
     {
       "path": "docs/public/engineering/app-guides.md",
@@ -2905,8 +2905,8 @@
     },
     {
       "path": "docs/public/engineering/guest-apps.md",
-      "size": 6694,
-      "sha256": "e46a8e7c92b53da296de33fd85b7a191399614275d4fe0173ea1ae1b27cda432"
+      "size": 6601,
+      "sha256": "3978e34f9a779ec1cb5837242489875228370cb5ace829b93eb0296680f4c366"
     },
     {
       "path": "docs/public/engineering/index.md",
@@ -2915,18 +2915,18 @@
     },
     {
       "path": "docs/public/engineering/linux-image-runtime.md",
-      "size": 5420,
-      "sha256": "fe253d41646ec62ec19614b54e87b51f0961db2ae98fe83ff0efe3ca47ff2447"
+      "size": 5327,
+      "sha256": "309154fb72bc3f809bd2f17976ebf009f2e135cf7418bba5eb5884c4983ae9a1"
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 4024,
-      "sha256": "1e36f760f7f4dc1a8d295fa2da0a468eb4dd652f2ca3a20ffbd4a33731db5d73"
+      "size": 2238,
+      "sha256": "5288fc240188d555dfc310a7c6dbc9a91ac19e81127f14e1be24c6e425c4e1c6"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
-      "size": 5000,
-      "sha256": "3fb015e57ad3ec7884abc407961974fdce553279e2097d6bad2abac34a0fcd9e"
+      "size": 4905,
+      "sha256": "1b31e0c878d6914037941da7b672de211ed2aa37e4c7528e220aa9e2bc169279"
     },
     {
       "path": "docs/public/engineering/native-android-preparation.md",
@@ -2945,8 +2945,8 @@
     },
     {
       "path": "docs/public/engineering/phone-apps.md",
-      "size": 6688,
-      "sha256": "9187d90c7431ff05b46e9a1923e2825691bfd65b123b4634702b8e251d2750f7"
+      "size": 6595,
+      "sha256": "d3a33063a65f724c077e458a40e70c8cc8522dc29a365a7acc89b9720abaa697"
     },
     {
       "path": "docs/public/engineering/private-install-state.md",
@@ -2980,8 +2980,8 @@
     },
     {
       "path": "docs/public/getting-started.zh-CN.md",
-      "size": 5679,
-      "sha256": "df4d5b4b5df2155f41acebd5d6c392d6aeaebf2cc994c2c59d3c2ecb0705b5ea"
+      "size": 5579,
+      "sha256": "267ccbc942900ad25b7cd4099d759551cfe421059893192dd9347e18a4881214"
     },
     {
       "path": "docs/public/index.md",
@@ -3300,8 +3300,8 @@
     },
     {
       "path": "docs/public/model-and-channel-setup.md",
-      "size": 7993,
-      "sha256": "486f15526ffda17e6b5cd3d24bde81d9f32fe52062806bc25793c3644bab8ce2"
+      "size": 6963,
+      "sha256": "cf93c0b72913b09f31b4655991db1c0513cc703b22ce361fbe45eadc420408a0"
     },
     {
       "path": "docs/public/native-client-licenses.txt",
@@ -3345,53 +3345,53 @@
     },
     {
       "path": "docs/public/readme.ar.md",
-      "size": 4382,
-      "sha256": "bf563d82a3eb6e69178372c5380eb3a4c1cfd5761801a55605816c99f2e34058"
+      "size": 4321,
+      "sha256": "85927a3278c8a26b1250bb6b8457efe9d9ec4b29f01c52348cc5a5c11f096fc3"
     },
     {
       "path": "docs/public/readme.de.md",
-      "size": 3278,
-      "sha256": "e0c19676ddefedfbc67b09a0e146bba62bd13225f1851360e780c7308b6b20d2"
+      "size": 3234,
+      "sha256": "641cfe283256f92300c0148cbbb748b21e24bc5c97da489e002a1082705f0080"
     },
     {
       "path": "docs/public/readme.es.md",
-      "size": 3235,
-      "sha256": "7d118191f8cfc76ced92648cad92e3269e071fd598bdb185c48c84c2a061ff8b"
+      "size": 3184,
+      "sha256": "7916f11a1e7856e95b68cf9f5b6f02560eac0bce07182873306c73a75f8624a1"
     },
     {
       "path": "docs/public/readme.fr.md",
-      "size": 3504,
-      "sha256": "4d19099759ea5f25a0a9a4d759cf635a71203021e60a81e743ff5c183cb7a2ba"
+      "size": 3457,
+      "sha256": "a3173c3ad97105638040e7860a757a36e13c8ada3d273494d90bc70c028ce841"
     },
     {
       "path": "docs/public/readme.ja.md",
-      "size": 3394,
-      "sha256": "b02d806d1c517586a98abaa61df3362ef8372f1488b715acc9dc6c60f68ee77e"
+      "size": 3362,
+      "sha256": "511664c897ec4ba796a62e656457468064420c6f00e0fba25207a9d8594f22ff"
     },
     {
       "path": "docs/public/readme.ko.md",
-      "size": 3372,
-      "sha256": "736a12d7669b45b6018e1307847a96810a08febdd59bc7365171c7f705e13bd6"
+      "size": 3324,
+      "sha256": "6161bf1133d3ee523d35159692807295dde8dc43f0327effb8687230281b4e44"
     },
     {
       "path": "docs/public/readme.ru.md",
-      "size": 5376,
-      "sha256": "8b1d2656755079fd3f6d130fddf170b9966068f796ff4d7de31fe828d688937d"
+      "size": 5303,
+      "sha256": "41a6161ee96d1aa276af08b90977338ddf7ab64eb24d8bad3880d41a889b42dd"
     },
     {
       "path": "docs/public/readme.zh-TW.md",
-      "size": 2738,
-      "sha256": "ff68421ca3039c80e82551abe221233736cc2c2bc6aced71e3cb13036c935b9c"
+      "size": 2702,
+      "sha256": "34203a59338c3b9a1498a1b64027f5ea19fa13725d1dbdc0e723c6cef2a37487"
     },
     {
       "path": "docs/public/release-roadmap.en.md",
-      "size": 4022,
-      "sha256": "c254fc718321d8d8e4bae9d036524fdce22bf2b3733b4e8b76846ea1b868502c"
+      "size": 3907,
+      "sha256": "a797be5e7ebd85e1559db9b39d76317676bb25378a7e8f6322b2d706888b832f"
     },
     {
       "path": "docs/public/release-roadmap.zh-CN.md",
-      "size": 3244,
-      "sha256": "7d98da2314ae85b3f79a090cb7039f9497c14e23a67ef3ac3320160cc7969b1c"
+      "size": 3178,
+      "sha256": "96375e2a3d45637338e20572b25de3787eb3abebe1ba1de80578e3b3a53bc14d"
     },
     {
       "path": "docs/public/release-status.md",
@@ -3400,23 +3400,23 @@
     },
     {
       "path": "docs/public/runtime-bundles.md",
-      "size": 9115,
-      "sha256": "766b5fa6df2fadb6a2ad7face60d412d5bbefb90c81e08d4f4ac1069965fc2fd"
+      "size": 9027,
+      "sha256": "addcb2a7480e4d5992f62d6568744de5f0749508eb658c0b73888c9db392e20c"
     },
     {
       "path": "docs/public/simulated-location.md",
-      "size": 4416,
-      "sha256": "16c838bfb8ef741750bc7c0e11bfab2dc6f394f7c44c3889f4478cf60f761568"
+      "size": 4352,
+      "sha256": "bb020518abe8b778d76ee867165d15e00e0333b27e883b0df1f98fcf56006729"
     },
     {
       "path": "docs/public/source-release.en.md",
-      "size": 3294,
-      "sha256": "fbc32cc1d81e6f4e60f528653da6857be027243971f7f8d7f4105fd316820d4b"
+      "size": 2942,
+      "sha256": "1b00caf99580acac57eca992240b05a5ab535b5b81b172939483f992dfbc5cad"
     },
     {
       "path": "docs/public/source-release.zh-CN.md",
-      "size": 2780,
-      "sha256": "24795d2c1b75aa9f12a782f3a5494bb608da95441246b463069dbea87ef72715"
+      "size": 2574,
+      "sha256": "127d4e22a136418ea00d7e9462c459703cc8c07e71739e86264c5c5cad4bb2c3"
     },
     {
       "path": "docs/public/task-recovery.md",
@@ -3875,8 +3875,8 @@
     },
     {
       "path": "scripts/collect-native.ts",
-      "size": 1597,
-      "sha256": "454586083f689fa48008edf3e5c5196295c749de474f17312766609e3d4c7c5b"
+      "size": 453,
+      "sha256": "3a35340c7d940f3c0c9a1a872888cc1c6ac57c2ada7921034e87796a5ad567f6"
     },
     {
       "path": "scripts/container-images.ts",
@@ -3920,8 +3920,8 @@
     },
     {
       "path": "scripts/linux-dependency.ts",
-      "size": 369,
-      "sha256": "541c2a49c181a36c46fdb43f94222565181a824065258823784604f16b2f22af"
+      "size": 376,
+      "sha256": "4cf49fbc8790116299486df3eb9cd94b5f0a3db31d0e8dd264f3deb9db542315"
     },
     {
       "path": "scripts/linux-host/Dockerfile",
@@ -3957,11 +3957,6 @@
       "path": "scripts/macos-client-factory.ts",
       "size": 629,
       "sha256": "68c15f13c601f1cfe07d29cb1689468c1a2123ae20e8dd509dae1b9838053a38"
-    },
-    {
-      "path": "scripts/native-factory-inputs.ts",
-      "size": 124,
-      "sha256": "77d8686ed27b36c0c6da5c9a06fd6ac7fef48abd74e6580913f30c02d3be9c0d"
     },
     {
       "path": "scripts/native-host",
@@ -4075,8 +4070,8 @@
     },
     {
       "path": "scripts/tooling/factory-inputs.ts",
-      "size": 4384,
-      "sha256": "ad9eff77674954ef7efb61cb19e098cef64c33e76ec88fcdf1d10da3d92420ed"
+      "size": 1857,
+      "sha256": "f314fb22230e893d757fb4b90d76875f08d08844c1ab364d0bba1ac054db458f"
     },
     {
       "path": "scripts/tooling/factory.ts",
@@ -4105,8 +4100,8 @@
     },
     {
       "path": "scripts/tooling/linux-dependencies.ts",
-      "size": 7318,
-      "sha256": "774e7b206e1ad856ffee366a8e20d3adbda2acb9f7c9db73c4348b4833cc90d3"
+      "size": 7352,
+      "sha256": "b7c68fbeccf622ae18c826f324df73ebd8abb8721c8939208a24e21428778f54"
     },
     {
       "path": "scripts/tooling/macos-factory.ts",
@@ -4205,8 +4200,8 @@
     },
     {
       "path": "scripts/tooling/wsl-qualification.ts",
-      "size": 12192,
-      "sha256": "a65fdabe19b8cfa26e03c9b455719e3a332b7c2f46b1a146b5e8980631cc3f8f"
+      "size": 12026,
+      "sha256": "2cc42e9f8c4b88a1eecb1c6bb54eef72e9d785b10b96f604c819cfa03019e634"
     },
     {
       "path": "scripts/tooling/zip.ts",

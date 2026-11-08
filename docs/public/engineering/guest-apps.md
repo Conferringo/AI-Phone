@@ -39,4 +39,4 @@ The pinned `Country.mmdb` and `geoip.dat` match [Loyalsoldier's 202509060052 rel
 
 ## Availability
 
-Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md).

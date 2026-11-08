@@ -46,7 +46,7 @@ Use a reviewed source checkout and architecture-matched factory resources. The d
 
 Factory inputs must satisfy their source pins and redistribution requirements. The packager rejects compiled web routes absent from the public source selection. It compiles the application, checks its resources, and creates a verified compressed disk image containing the app and an Applications shortcut. Failed image creation preserves the previous artifact.
 
-`server_included` describes the inspected service set. `runtime_payload_complete` and `complete_device_bundle` describe the matched host's complete resource inventory. These fields are independent of installation acceptance, signing and binary-publication gates.
+`server_included` describes the inspected service set. `runtime_payload_complete` and `complete_device_bundle` describe the matched host's complete resource inventory.
 
 ## Availability
 

@@ -14,8 +14,7 @@ import { ROOT, hostKey, run, output, digest, bunProgram } from "./process";
 import { json, save } from "./inventory";
 import { releaseTools, buildReleaseTools } from "./archive";
 import { checkDocker, prepareApps, prepareImages, fetchPin } from "./factory";
-import { dependencyContext } from "./factory-inputs";
-import { buildDependency } from "./linux-dependencies";
+import { buildFactoryDependency } from "./factory-inputs";
 import { buildNative } from "./native-build";
 import { preparePayload } from "./client-payload";
 import { checkSource } from "./source";
@@ -319,15 +318,10 @@ export async function buildWslBackend(root = ROOT, deviceApps = false) {
   mkdirSync(work);
   if (deviceApps) prepareApps(root, { ...process.env });
   const phone = await preparePhoneTools(root, join(work, "phone-tools")),
-    context = await dependencyContext(
-      root,
-      join(work, "ocr-context"),
-      "linux-ocr",
-    ),
     ocr = join(root, ".tools/linux-ocr-runtime");
-  await buildDependency(
+  await buildFactoryDependency(
     root,
-    join(context, "linux-x64-ocr.tar.gz"),
+    join(work, "ocr-context"),
     ocr,
     "linux-ocr",
   );

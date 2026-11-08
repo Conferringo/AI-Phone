@@ -14,16 +14,16 @@
 
 The browser and file Skills came from real Android runs and independent review. Their versioned sources contain reusable workflows with semantic targets. Startup installs built-ins from source and preserves their enabled state. User-installed and learned Skills retain separate identities.
 
-知识库功能开箱可用，用户内容保持空白。内置操作知识由Skill承载，不把开发者的私人知识、聊天或记忆复制给新用户。用户新增经验只保存在其服务器，不会自动回传项目。经验未经审计不得作为已验证能力发布。
+知识库初始为空。操作知识由内置 Skill 提供，用户积累的经验保存在自己的服务器。
 
 ## 数据 / Data
 
 Model keys, revisions, chat, device disks, contacts, channel secrets, memory, attachments and screenshots are private user state. Model API requests necessarily send relevant text/images/tool results to the configured provider; selected channels receive authorized replies and screenshots. [Data and privacy](../../PRIVACY.md)
 
-Android root and Linux sudo are guest permissions. Host execution is restricted to the project's defined services and isolated work environment; a model does not receive arbitrary host access. Device identity profiles change display properties, not hardware attestation, carrier/SIM identity or third-party service eligibility.
+Android root and Linux sudo apply inside their respective guests. Host actions use the project services and isolated workspace. Device profiles set the model name and display properties.
 
 ## 使用边界 / Responsible use
 
-Operate devices/accounts you control or are authorized to use. Use the scope set by the account owner when processing incoming content. Contacting others, installing apps and autonomous social actions follow the user's scope; receiving a message does not grant the sender host or file access. Verify actual targets and delivery states. Respect platform account restrictions.
+Use authorized devices and accounts. The account owner sets the scope for incoming content, outgoing messages, app installation and autonomous actions.
 
-Use the action log to check targets and delivery, and take over the device when needed. The roadmap covers eSIM, phone numbers and voice simulation. Those extensions require carrier authorization, consent, synthetic-identity disclosure and misuse controls. [Development roadmap](release-roadmap.en.md)
+The action log shows targets and delivery results. Use the device controls to take over.
