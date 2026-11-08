@@ -1180,13 +1180,13 @@
     },
     {
       "path": "config/linux-host-runtime.json",
-      "size": 453,
-      "sha256": "28c8572914264af020f146c76ad44f4a23ac105e3716dc8e897da6d8121425e7"
+      "size": 316,
+      "sha256": "8b4edc41786b42a63dc03b8dd9ea71efc02c03ac05661d8151b6e224128f1773"
     },
     {
       "path": "config/linux-ocr.json",
-      "size": 421,
-      "sha256": "42d855f10cb182fb56008a450e71457526bbdbe0158d416d30b693b3bfc6ea30"
+      "size": 284,
+      "sha256": "7c3b33a68b97b3a123d4b2a5ce3ba96cd6ccf2b76ab959709b0cf18fcc000ada"
     },
     {
       "path": "config/macos-factory.json",
@@ -2250,8 +2250,13 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/connection.rs",
-      "size": 8207,
-      "sha256": "03a9c5189edbef3eb5b381086a4a3718972ca61f6eb622199e91200b0c5f3b9a"
+      "size": 8229,
+      "sha256": "7d3986fb3e4f6042d3a36e79bbe733eb4fd4726ee0d0142ef7c9ae8888605f50"
+    },
+    {
+      "path": "crates/host-runtime/src/device_bridge/connection_owner_tests.rs",
+      "size": 3850,
+      "sha256": "a1ecc8728f4bf6842eeabffd68ecb7fa6ba2a2e68a45aa908728dd3e6aedc80e"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/discovery.rs",
@@ -2265,8 +2270,8 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/mod.rs",
-      "size": 3479,
-      "sha256": "6a0a9516690d64d0cf15cfff53c1ccd311a43998da57b52e0d64146821761df0"
+      "size": 3520,
+      "sha256": "37b39ca55561b17973865d8b57e27d64f51442b0369440e877ce413b610a6a84"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
@@ -2522,11 +2527,6 @@
       "path": "crates/host-runtime/src/wsl.rs",
       "size": 7964,
       "sha256": "00415394c6b78d964896bce1be78f65694f11df22e80c88dfa4270330ed3aae2"
-    },
-    {
-      "path": "crates/host-runtime/tests/connection_owner.rs",
-      "size": 3839,
-      "sha256": "1db51d3ae083e08234bdd00ae4bf712175cf2fd38f7f810902ba19e4f8a4cd25"
     },
     {
       "path": "crates/host-runtime/tests/device_bridge_cli.rs",
@@ -2920,8 +2920,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 3931,
-      "sha256": "e5347d7d478893c07d8de7af9eb49cfbf78a16aa5eb8a09f5d68c20efa0a6708"
+      "size": 2238,
+      "sha256": "5288fc240188d555dfc310a7c6dbc9a91ac19e81127f14e1be24c6e425c4e1c6"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -3875,8 +3875,8 @@
     },
     {
       "path": "scripts/collect-native.ts",
-      "size": 1597,
-      "sha256": "454586083f689fa48008edf3e5c5196295c749de474f17312766609e3d4c7c5b"
+      "size": 453,
+      "sha256": "3a35340c7d940f3c0c9a1a872888cc1c6ac57c2ada7921034e87796a5ad567f6"
     },
     {
       "path": "scripts/container-images.ts",
@@ -3920,8 +3920,8 @@
     },
     {
       "path": "scripts/linux-dependency.ts",
-      "size": 369,
-      "sha256": "541c2a49c181a36c46fdb43f94222565181a824065258823784604f16b2f22af"
+      "size": 376,
+      "sha256": "4cf49fbc8790116299486df3eb9cd94b5f0a3db31d0e8dd264f3deb9db542315"
     },
     {
       "path": "scripts/linux-host/Dockerfile",
@@ -3957,11 +3957,6 @@
       "path": "scripts/macos-client-factory.ts",
       "size": 629,
       "sha256": "68c15f13c601f1cfe07d29cb1689468c1a2123ae20e8dd509dae1b9838053a38"
-    },
-    {
-      "path": "scripts/native-factory-inputs.ts",
-      "size": 124,
-      "sha256": "77d8686ed27b36c0c6da5c9a06fd6ac7fef48abd74e6580913f30c02d3be9c0d"
     },
     {
       "path": "scripts/native-host",
@@ -4075,8 +4070,8 @@
     },
     {
       "path": "scripts/tooling/factory-inputs.ts",
-      "size": 4384,
-      "sha256": "ad9eff77674954ef7efb61cb19e098cef64c33e76ec88fcdf1d10da3d92420ed"
+      "size": 1857,
+      "sha256": "f314fb22230e893d757fb4b90d76875f08d08844c1ab364d0bba1ac054db458f"
     },
     {
       "path": "scripts/tooling/factory.ts",
@@ -4105,8 +4100,8 @@
     },
     {
       "path": "scripts/tooling/linux-dependencies.ts",
-      "size": 7318,
-      "sha256": "774e7b206e1ad856ffee366a8e20d3adbda2acb9f7c9db73c4348b4833cc90d3"
+      "size": 7352,
+      "sha256": "b7c68fbeccf622ae18c826f324df73ebd8abb8721c8939208a24e21428778f54"
     },
     {
       "path": "scripts/tooling/macos-factory.ts",
@@ -4205,8 +4200,8 @@
     },
     {
       "path": "scripts/tooling/wsl-qualification.ts",
-      "size": 12192,
-      "sha256": "a65fdabe19b8cfa26e03c9b455719e3a332b7c2f46b1a146b5e8980631cc3f8f"
+      "size": 12026,
+      "sha256": "2cc42e9f8c4b88a1eecb1c6bb54eef72e9d785b10b96f604c819cfa03019e634"
     },
     {
       "path": "scripts/tooling/zip.ts",

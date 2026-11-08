@@ -5,7 +5,6 @@ import {
   copyFileSync,
   chmodSync,
   readdirSync,
-  statSync,
   mkdtempSync,
   renameSync,
   rmSync,
@@ -36,6 +35,7 @@ export const profiles: Record<string, DependencyProfile> = {
     source: [
       "config/linux-host-runtime.json",
       "config/linux-factory.json",
+      "scripts/tooling/factory-inputs.ts",
       "scripts/tooling/linux-dependencies.ts",
       "scripts/linux-host/Dockerfile",
       "scripts/linux-host/collect.ts",
@@ -80,6 +80,7 @@ export const profiles: Record<string, DependencyProfile> = {
     source: [
       "config/linux-ocr.json",
       "config/linux-factory.json",
+      "scripts/tooling/factory-inputs.ts",
       "scripts/tooling/linux-dependencies.ts",
       "scripts/linux-ocr/Dockerfile",
       "scripts/linux-ocr/collect.ts",
@@ -112,11 +113,11 @@ export function dependencyFingerprint(
     ),
   );
 }
-export function dependencyPin(root: string, role: string) {
+export function dependencyArchive(root: string, role: string): string {
   const value = json(join(root, profiles[role]!.config));
   if (value.format !== 1 || value.host !== "linux-x64")
-    throw Error("Unsupported Linux dependency pin");
-  return value.archive;
+    throw Error("Unsupported Linux dependency");
+  return value.archive.file;
 }
 export async function verifyDependency(
   root: string,
@@ -128,8 +129,7 @@ export async function verifyDependency(
   if (
     value.format !== 1 ||
     value.host !== "linux-x64" ||
-    value.source_sha256 !== dependencyFingerprint(root, profile) ||
-    value.archive_sha256 !== dependencyPin(root, role).sha256
+    value.source_sha256 !== dependencyFingerprint(root, profile)
   )
     throw Error("Linux component identity changed");
   await verifyFiles(folder, value.files);
@@ -141,14 +141,14 @@ export async function buildDependency(
   destination: string,
   role: string,
 ) {
-  if (existsSync(destination)) return verifyDependency(root, destination, role);
-  const profile = profiles[role]!,
-    pin = dependencyPin(root, role);
-  if (
-    statSync(archive).size !== pin.size_bytes ||
-    (await digest(archive)) !== pin.sha256
-  )
-    throw Error("Linux dependency archive mismatch");
+  const archiveSha256 = await digest(archive);
+  if (existsSync(destination)) {
+    const component = await verifyDependency(root, destination, role);
+    if (component.archive_sha256 !== archiveSha256)
+      throw Error("Linux dependency archive changed");
+    return component;
+  }
+  const profile = profiles[role]!;
   mkdirSync(dirname(destination), { recursive: true });
   const work = mkdtempSync(join(dirname(destination), ".dependency-"));
   try {
@@ -173,7 +173,7 @@ export async function buildDependency(
       format: 1,
       host: "linux-x64",
       source_sha256: dependencyFingerprint(root, profile),
-      archive_sha256: pin.sha256,
+      archive_sha256: archiveSha256,
       files: records(inventory),
     };
     save(join(work, "manifest.json"), value);

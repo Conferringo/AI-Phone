@@ -1,5 +1,6 @@
+use super::{Connection, Guest};
+use crate::Error;
 use ai_phone_api::wire::{DeviceBridgeConfig, DeviceBridgePhone, DeviceBridgeRole};
-use ai_phone_host_runtime::{Error, device_bridge::Connection};
 use std::{
     net::{Ipv4Addr, TcpListener},
     path::{Path, PathBuf},
@@ -68,7 +69,7 @@ async fn actual_child_receipt_cleanup_failure_and_startup_cancellation_are_owned
         let result = Connection::start(
             request(),
             Ipv4Addr::LOCALHOST,
-            command(&program, &folder, mode),
+            Guest::Wsl(command(&program, &folder, mode)),
             &mut stop,
         )
         .await;
@@ -102,7 +103,7 @@ async fn actual_child_receipt_cleanup_failure_and_startup_cancellation_are_owned
     let result = Connection::start(
         request(),
         Ipv4Addr::LOCALHOST,
-        command(&program, &folder, "wait"),
+        Guest::Wsl(command(&program, &folder, "wait")),
         &mut stop,
     )
     .await;

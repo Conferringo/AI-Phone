@@ -32,7 +32,7 @@ pub(crate) enum Guest<'a> {
 
 enum Peer {
     Process {
-        child: Child,
+        child: Box<Child>,
         input: Option<ChildStdin>,
     },
     Stream(TcpStream),
@@ -163,7 +163,7 @@ async fn launch_peer(
             })
             .await;
             let mut peer = Peer::Process {
-                child,
+                child: Box::new(child),
                 input: Some(input),
             };
             if let Err(error) = result {
