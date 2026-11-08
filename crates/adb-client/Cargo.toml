@@ -1,0 +1,16 @@
+[package]
+name = "ai-phone-adb"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { version = "1", features = ["net", "io-util", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "sync"] }
+
+[lints]
+workspace = true

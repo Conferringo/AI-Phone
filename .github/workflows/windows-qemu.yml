@@ -1,0 +1,71 @@
+name: Windows QEMU component
+on:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Private Windows QEMU artifact ID
+        value: ${{ jobs.windows.outputs.artifact }}
+      identity:
+        description: SHA-256 of the QEMU factory manifest
+        value: ${{ jobs.windows.outputs.identity }}
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    outputs:
+      artifact: ${{ steps.handoff.outputs.artifact-id }}
+      identity: ${{ steps.build.outputs.sha256 }}
+    steps:
+      - name: Require a private build repository
+        shell: pwsh
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if ($env:REPOSITORY_PRIVATE -ne 'true') {
+            throw 'Run the Windows QEMU factory in a private repository.'
+          }
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          update: true
+          install: >-
+            tar xz
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-binutils
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-python-pip
+            mingw-w64-ucrt-x86_64-python-setuptools
+            mingw-w64-ucrt-x86_64-python-wheel
+            mingw-w64-ucrt-x86_64-glib2
+            mingw-w64-ucrt-x86_64-libslirp
+            mingw-w64-ucrt-x86_64-zlib
+      - name: Fixed Bun tooling
+        shell: msys2 {0}
+        run: ./scripts/bootstrap.sh
+      - name: Build the Windows x64 QEMU component
+        id: build
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          ./scripts/bun scripts/windows-qemu.ts dist/windows-qemu
+          identity=$(sha256sum dist/windows-qemu/windows-qemu.json)
+          printf 'sha256=%s\n' "${identity%% *}" >> "$GITHUB_OUTPUT"
+      - name: Transfer the runtime and source receipt
+        id: handoff
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: windows-qemu
+          path: dist/windows-qemu/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

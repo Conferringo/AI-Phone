@@ -1,0 +1,129 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+// Native installer IPC, never a model tool. The client owns the installation lock.
+message NativeAndroidPrepare {
+  uint32 version = 1;
+  string payload_path = 2;
+  string payload_sha256 = 3;
+  uint32 cpus = 4;
+  uint32 memory_mb = 5;
+  uint32 storage_gb = 6;
+}
+
+// Factory resources and a writable device configuration, not a boot receipt.
+message NativeAndroidPrepared {
+  uint32 version = 1;
+  string sdk_root = 2;
+  string avd_home = 3;
+  string avd_name = 4;
+  bool reused_sdk = 5;
+  bool reused_device = 6;
+}
+
+// Creation journal. Removed after the AVD directory and its record are durable.
+message NativeAndroidCreation {
+  uint32 version = 1;
+  string sdk_root = 2;
+  uint32 cpus = 3;
+  uint32 memory_mb = 4;
+  uint32 storage_gb = 5;
+}
+
+// Local native component IPC. The installer supplies its already admitted phone.
+message NativeAndroidStart {
+  NativeAndroidPrepared phone = 1;
+  uint32 adb_port = 2;
+  uint32 console_port = 3;
+  uint32 grpc_port = 4;
+  // Only an already registered application-owned WSL backend may be paired.
+  string wsl_distribution = 5;
+  NativeAndroidVmEndpoint linux_vm = 6;
+}
+
+message NativeAndroidVmEndpoint {
+  uint32 port = 1;
+  string key_file = 2;
+}
+
+// Live OS/transport evidence only; provisioning and complete-host readiness differ.
+message NativeAndroidBooted {
+  uint32 version = 1;
+  string serial = 2;
+  bool root_verified = 3;
+  uint32 width = 4;
+  uint32 height = 5;
+  string frame_sha256 = 6;
+  bool reused_session = 7;
+  // Transport pairing differs from device provisioning and complete install.
+  bool backend_paired = 8;
+  string backend_bridge_id = 9;
+}
+
+// A running worker holds the separate lifecycle lock for this exact plan.
+message NativeAndroidSessionOwner {
+  uint32 version = 1;
+  string sdk_root = 2;
+  string avd_home = 3;
+  uint32 adb_port = 4;
+  uint32 console_port = 5;
+  uint32 grpc_port = 6;
+  string wsl_distribution = 7;
+  NativeAndroidVmEndpoint linux_vm = 8;
+}
+
+// A terminal startup failure distinguishes cancellation from unknown cleanup.
+message NativeAndroidSessionFailure {
+  string code = 1;
+  bool outcome_unknown = 2;
+}
+
+message NativeAndroidSessionReply {
+  oneof result {
+    NativeAndroidBooted booted = 1;
+    NativeAndroidSessionFailure failure = 2;
+  }
+}
+
+// Private pipe control during startup. EOF detaches; it does not stop the phone.
+message NativeAndroidSessionControl {
+  bool cancel_startup = 1;
+}
+
+// Local provisioning IPC. Paths refer to verified, bundled installer resources.
+message NativeAndroidInputSetup {
+  uint32 version = 1;
+  string project_root = 2;
+  string adb_program = 3;
+  string serial = 4;
+  string apk_path = 5;
+  string notification_probe_path = 6;
+  bool observe_only = 7;
+  // Complete offline setup also admits the bundled launcher and guest Clash app.
+  bool offline_apps = 8;
+}
+
+message NativeAndroidInputReady {
+  uint32 version = 1;
+  bool changed = 2;
+}
+
+// Private install intent, persisted before a bundled application's only attempt.
+message NativeAndroidApplicationIntent {
+  uint32 version = 1;
+  string serial = 2;
+  string package_name = 3;
+  string apk_sha256 = 4;
+}
+
+message NativeWslDeviceSetupRequest {
+  uint32 version = 1;
+  string bridge_id = 2;
+}
+
+// Emitted only after live pairing, offline phone setup and desktop verification.
+message NativeWslDevicesReady {
+  uint32 version = 1;
+  string bridge_id = 2;
+  string desktop_id = 3;
+}

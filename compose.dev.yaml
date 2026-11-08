@@ -1,0 +1,10 @@
+# Optional loopback ports for native Cargo development only.
+services:
+  postgres:
+    ports: ["127.0.0.1:55482:5432"]
+  redis:
+    ports: ["127.0.0.1:56382:6379"]
+networks:
+  backend:
+    internal: false
+

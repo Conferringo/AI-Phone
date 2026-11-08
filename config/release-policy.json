@@ -1,0 +1,58 @@
+{
+  "version": "0.1.0",
+  "publication_gates": {
+    "ui_acceptance": false,
+    "asset_and_source_license_review": false,
+    "action_ledger_retention": true,
+    "long_running_recovery": false,
+    "database_runtime_role": true,
+    "clean_host_install": false,
+    "backup_restore": false,
+    "self_contained_device_bundle": false,
+    "single_file_installers_verified": false
+  },
+  "source_preview": {
+    "license": "Apache-2.0",
+    "delivery": "public-source-preview",
+    "remote_publication_authorized": true,
+    "workflow_prepared": true,
+    "workflow_remote_run": true,
+    "known_visual_acceptance_pending": [
+      "platform-media-input",
+      "ten-language-window-matrix",
+      "mobile-keyboard-safe-area"
+    ],
+    "remote_review_authorized": true,
+    "repository": "https://github.com/Conferringo/AI-Phone"
+  },
+  "acceptance_waivers": {
+    "clean_host_install": {
+      "date": "2026-10-29",
+      "scope": "source-and-client-preview",
+      "decision": "Maintainer requests publication with untested platforms documented and community issue feedback. Not a passed installation check."
+    },
+    "physical_installation": {
+      "date": "2026-11-05",
+      "scope": "desktop-complete-client-previews",
+      "decision": "Physical installation tests are waived by the maintainer for previews on Windows and Apple Silicon macOS. Target compilation, payload inspection, complete runtime contents and applicable redistribution review remain required. Untested runtime behavior must be disclosed; the waiver is not a passed installation check."
+    }
+  },
+  "distribution": {
+    "delivery": "complete-local-device-bundle",
+    "required_components": [
+      "android-system",
+      "linux-system",
+      "emulator",
+      "prebuilt-services",
+      "client",
+      "third-party-notices",
+      "corresponding-source"
+    ],
+    "user_prepares_images": false,
+    "user_compiles_services": false,
+    "single_installer_file": true,
+    "user_assembles_volumes": false,
+    "user_state_included": false,
+    "status": "not-ready"
+  }
+}

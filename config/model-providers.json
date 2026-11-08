@@ -1,0 +1,106 @@
+[
+  {
+    "id": "deepseek",
+    "label": "DeepSeek",
+    "provider": "deepseek",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.deepseek.com",
+    "model": "deepseek-flash"
+  },
+  {
+    "id": "openai",
+    "label": "OpenAI",
+    "provider": "compatible",
+    "protocol": "responses",
+    "baseUrl": "https://api.openai.com/v1",
+    "model": ""
+  },
+  {
+    "id": "anthropic",
+    "label": "Anthropic",
+    "provider": "anthropic",
+    "protocol": "anthropic-messages",
+    "baseUrl": "https://api.anthropic.com/v1",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": "kimi",
+    "label": "Kimi \u00b7 Global",
+    "provider": "kimi",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.moonshot.ai/v1",
+    "model": "kimi-k3.1-pro"
+  },
+  {
+    "id": "kimi-cn",
+    "label": "Kimi \u00b7 CN",
+    "provider": "kimi-cn",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.moonshot.cn/v1",
+    "model": "kimi-k3.1-pro"
+  },
+  {
+    "id": "glm",
+    "label": "GLM \u00b7 CN",
+    "provider": "glm",
+    "protocol": "chat-completions",
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "model": "glm-4.6v"
+  },
+  {
+    "id": "zai",
+    "label": "GLM \u00b7 Z.ai",
+    "provider": "zai",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.z.ai/api/paas/v4",
+    "model": "glm-4.6v"
+  },
+  {
+    "id": "gemini",
+    "label": "Gemini",
+    "provider": "gemini",
+    "protocol": "chat-completions",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "model": "gemini-3.8-flash"
+  },
+  {
+    "id": "qwen",
+    "label": "Qwen \u00b7 CN",
+    "provider": "qwen",
+    "protocol": "chat-completions",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "model": ""
+  },
+  {
+    "id": "qwen-global",
+    "label": "Qwen \u00b7 Global",
+    "provider": "qwen-global",
+    "protocol": "chat-completions",
+    "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    "model": ""
+  },
+  {
+    "id": "minimax",
+    "label": "MiniMax",
+    "provider": "minimax",
+    "protocol": "anthropic-messages",
+    "baseUrl": "https://api.minimax.io/anthropic/v1",
+    "model": "MiniMax-M3.1-Flash"
+  },
+  {
+    "id": "ollama",
+    "label": "Ollama",
+    "provider": "compatible",
+    "protocol": "chat-completions",
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "model": ""
+  },
+  {
+    "id": "custom",
+    "label": "Custom",
+    "provider": "compatible",
+    "protocol": "chat-completions",
+    "baseUrl": "",
+    "model": ""
+  }
+]

@@ -1,0 +1,49 @@
+name: Bug
+description: Report a reproducible problem
+title: '[Bug] '
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Installation or update
+        - Model API
+        - Messaging
+        - Device or media
+        - Interface or language
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Release version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Host OS and architecture, installed client or source build, guest OS version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: input
+    id: protocol
+    attributes:
+      label: Model or channel
+      placeholder: Provider, model ID and protocol, or messaging platform
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove credentials, private URLs, pairing codes and account data before posting.

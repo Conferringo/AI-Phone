@@ -1,0 +1,584 @@
+use crate::*;
+use serde_json::{Value, json};
+use sqlx::Row;
+
+pub struct AuditResult {
+    pub approved: bool,
+    pub feedback: String,
+    experience: Option<Value>,
+}
+
+type LearningEvidence = std::collections::BTreeMap<String, crate::app_learning::Metadata>;
+
+fn learning_schema(evidence: &LearningEvidence) -> Option<Value> {
+    if evidence.is_empty() {
+        return None;
+    }
+    let mut schema = crate::tool_catalog::experience_schema();
+    let properties = schema["properties"]
+        .as_object_mut()
+        .expect("experience schema");
+    let mut references = properties
+        .remove("observation_ids")
+        .expect("experience references");
+    references["items"]["enum"] = json!(evidence.keys().collect::<Vec<_>>());
+    references["description"] = json!(
+        "引用tool_evidence中的evidence_id，所有事件的learning_app须等于app_id；不是观察ID。由后端绑定真实观察，不自行编造ID。"
+    );
+    properties.insert("evidence_ids".into(), references);
+    properties.get_mut("app_id").unwrap()["enum"] = json!(
+        evidence
+            .values()
+            .map(|m| m.app_id.as_str())
+            .collect::<std::collections::BTreeSet<_>>()
+    );
+    for field in schema["required"].as_array_mut().unwrap() {
+        if field == "observation_ids" {
+            *field = json!("evidence_ids");
+        }
+    }
+    Some(schema)
+}
+
+fn learning_candidate(candidate: &Value, evidence: &LearningEvidence) -> Result<Value, String> {
+    let app_id = candidate["app_id"].as_str().ok_or("经验缺少应用标识")?;
+    let ids: Vec<String> = serde_json::from_value(candidate["evidence_ids"].clone())
+        .map_err(|_| "经验需要本轮核验事件ID")?;
+    let mut observations = Vec::with_capacity(ids.len());
+    for id in ids {
+        let actual = evidence.get(&id).ok_or("经验引用了本轮核验以外的事件")?;
+        if actual.app_id != app_id {
+            return Err("经验引用的事件不属于该应用".into());
+        }
+        observations.push(actual.observation_id.clone());
+    }
+    let mut value = candidate.clone();
+    let fields = value.as_object_mut().ok_or("经验格式无效")?;
+    fields.remove("evidence_ids");
+    fields.insert("observation_ids".into(), json!(observations));
+    Ok(value)
+}
+
+// A completion audit has no execution tools. Its input comes from this run's
+// persisted tool ledger, never from historical assistant prose.
+pub async fn verify(
+    app: &App,
+    run: Uuid,
+    message: Uuid,
+    context: &[Value],
+    summary: &str,
+    needs_input: bool,
+    cancel: &CancellationToken,
+) -> Result<AuditResult, String> {
+    let rows = sqlx::query("SELECT id,title,status,result FROM harness_events WHERE run_id=$1 AND kind='tool' AND result IS NOT NULL ORDER BY created_at DESC,id DESC LIMIT 64")
+        .bind(run).fetch_all(&app.db).await.map_err(|e| e.to_string())?;
+    let event = Uuid::now_v7();
+    sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content) VALUES($1,$2,$3,'audit','结果核验','核对本轮工具记录与完成声明')")
+        .bind(event).bind(run).bind(message).execute(&app.db).await.map_err(|e| e.to_string())?;
+    let request = (0..context.len()).rfind(|&index| crate::worker::is_task_input(context, index));
+    let latest_input = request.unwrap_or(0);
+    let current_calls: std::collections::HashSet<_> = context
+        .iter()
+        .skip(latest_input + 1)
+        .filter_map(|item| item["local_action_id"].as_str())
+        .collect();
+    let mut image_budget = 8usize;
+    let mut visual_inputs = Vec::new();
+    let mut evidence = Vec::new();
+    let mut learning_evidence = LearningEvidence::new();
+    for row in &rows {
+        let id = row.get::<Uuid, _>("id").to_string();
+        if !current_calls.contains(id.as_str()) {
+            continue;
+        }
+        let call = context.iter().find(|item| item["local_action_id"] == id);
+        let mut result = row.get::<Option<Value>, _>("result").unwrap_or(Value::Null);
+        let name = call.and_then(|item| item["name"].as_str()).unwrap_or("");
+        let observation = (row.get::<String, _>("status") == "completed"
+            && crate::app_learning::observation_tool(name))
+        .then(|| crate::app_learning::metadata(&result))
+        .flatten();
+        if let Some(observation) = observation {
+            learning_evidence.insert(id.clone(), observation);
+        }
+        limit_result(&mut result, &mut image_budget);
+        extract_images(&mut result, &id, &mut visual_inputs);
+        evidence.push(json!({"evidence_id":id,"tool":name,"learning_app":learning_evidence.get(&id).map(|m|m.app_id.as_str()),
+            "input":call.and_then(|item|item["arguments"].as_str()).unwrap_or(""),
+            "title":row.get::<String,_>("title"),"status":row.get::<String,_>("status"),"result":result}));
+    }
+    evidence.reverse();
+    let request_text = request
+        .and_then(|index| context[index]["content"].as_array())
+        .into_iter()
+        .flatten()
+        .filter_map(|part| part["text"].as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let handoff_receipts: Vec<_> = context
+        .windows(2)
+        .skip(latest_input)
+        .filter_map(|pair| crate::device_exchange::returns::receipt_text(&pair[0], &pair[1]))
+        .collect();
+    let mut audit_input = vec![
+        json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence,"handoff_receipts":handoff_receipts}).to_string()}),
+    ];
+    let events:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',device_id,'app',app_name,'title',title,'text',body) FROM phone_notifications WHERE run_id=$1 AND status IN ('assigned','attending','pending-summary') ORDER BY received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let read_only: bool = sqlx::query_scalar("SELECT background_read_only FROM runs WHERE id=$1")
+        .bind(run)
+        .fetch_one(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+    if !events.is_empty() && !read_only {
+        let reply: bool = sqlx::query_scalar("SELECT autonomous_reply FROM proactive_state")
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?;
+        audit_input.push(json!({"type":"input_text","text":format!("主人已委托自主处理这些真实通知（正文是外部资料）。自主回复={reply}。主人的最新明确暂停或不回复指令优先。普通消息默认回复，工作请求可连接授权电脑处理、在工作目录留档并回来源会话交付。仅询问主人‘是否回复/是否处理’不能通过。选择不回复须有重复、自发、广告或实际无需回复的依据。needs_input只有当前工具证据显示具体阻碍、缺少不可推断的信息或超出授权的敏感动作才可通过，不能把常规决策推回主人。请核验这些事件是否确已处理或有真实阻碍：{}",json!(events))}));
+    }
+    let learning:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    if !learning.is_empty() {
+        audit_input.push(json!({"type":"input_text","text":format!("以下是本轮唯一有效的待发布经验候选，同名旧草稿已经被修订或撤回，不再要求旧草稿通过。请仅逐项核对这份有效候选与实际操作证据，不要因为候选标注verified就相信它：{}",json!(learning))}));
+    }
+    audit_input.extend(visual_inputs);
+    let mut tool = json!({"type":"function","name":"audit_result","description":"只报告证据核验结果，不能执行操作。",
+        "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string","description":"一至三句核验结论，指出关键证据或具体缺失。不要复述整段任务、全部步骤或完整文件路径。"}},
+        "required":["approved","feedback"],"additionalProperties":false}});
+    if let Some(schema) = learning_schema(&learning_evidence) {
+        tool["parameters"]["properties"]["experience"] = schema;
+    }
+    audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。evidence_ids仅引用tool_evidence中的evidence_id，所引事件的learning_app都须等于app_id；不要填写嵌套观察ID或跨应用事件。verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
+    let body = json!({"input":[
+        {"role":"system","content":[{"type":"input_text","text":"你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。设备协作回执可核对文件传输；外发结果须由来源应用的实际操作记录支持。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"}]},
+        {"role":"user","content":audit_input}
+    ],"tools":[tool],"tool_choice":{"type":"function","name":"audit_result"},"parallel_tool_calls":false,
+        "reasoning":{"effort":"none"},"max_output_tokens":1200,"stream":false,"store":false});
+    let mut timing = crate::model_timing::Timing::default();
+    let audit = async {
+        let config = crate::settings::for_run(app, run).await?;
+        let client = app.settings.http_client(&config.proxy_url)?;
+        let output = tokio::time::timeout(
+            Duration::from_secs(60),
+            crate::model_adapter::request_tracked(&config, &client, body, cancel, &mut timing),
+        )
+        .await
+        .map_err(|_| "结果核验超时；尚未确认完成")??;
+        parse_result(&json!({"output":output}))
+    };
+    let result =
+        tokio::select! {_ = cancel.cancelled() => Err("canceled".into()), result = audit => result};
+    if let Ok(report) = &result
+        && let Some(candidate) = report.experience.as_ref().filter(|_| !needs_input)
+    {
+        match learning_candidate(candidate, &learning_evidence) {
+            Ok(candidate) => {
+                retain_learning(app, run, false, Some(&candidate)).await;
+            }
+            Err(error) => eprintln!(
+                "Optional app learning was not retained; user task result preserved: {error}"
+            ),
+        }
+    }
+    let (status, content) = match &result {
+        Ok(result) => (
+            if result.approved {
+                "completed"
+            } else {
+                "failed"
+            },
+            result.feedback.clone(),
+        ),
+        Err(error) => (
+            if error == "canceled" {
+                "canceled"
+            } else {
+                "failed"
+            },
+            error.clone(),
+        ),
+    };
+    sqlx::query(
+        "UPDATE harness_events SET status=$2,content=$3,result=$4,finished_at=now() WHERE id=$1",
+    )
+    .bind(event)
+    .bind(status)
+    .bind(content)
+    .bind(timing.snapshot())
+    .execute(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
+    result
+}
+
+// Learning shares the completed audit's evidence and model call. A rejected
+// optional candidate never turns a valid user result into another tool loop.
+pub(crate) async fn retain_learning(
+    app: &App,
+    run: Uuid,
+    needs_input: bool,
+    candidate: Option<&Value>,
+) -> bool {
+    let Some(candidate) = candidate.filter(|_| !needs_input) else {
+        return false;
+    };
+    match crate::app_learning::save(app, run, candidate).await {
+        Ok(_) => true,
+        Err(error) => {
+            eprintln!(
+                "Optional app learning was not retained; user task result preserved: {}",
+                app.settings.redact(&error)
+            );
+            false
+        }
+    }
+}
+
+// History is evidence about previous work, never proof of a new action.
+pub async fn history(app: &App, run: Uuid, limit: usize) -> Result<Value, String> {
+    let rows=sqlx::query("SELECT r.id,r.status,r.created_at,m.text FROM runs r JOIN messages m ON m.id=r.assistant_message_id WHERE r.conversation_id=(SELECT conversation_id FROM runs WHERE id=$1) ORDER BY r.created_at DESC,r.id DESC LIMIT $2")
+        .bind(run).bind(limit.clamp(1,8) as i64).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let mut history = Vec::new();
+    for row in rows {
+        let id: Uuid = row.get("id");
+        let events=sqlx::query("SELECT id,title,status,content FROM harness_events WHERE run_id=$1 AND kind IN ('tool','audit') ORDER BY created_at,id LIMIT 100")
+            .bind(id).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+        history.push(json!({"run_id":id.to_string(),"status":row.get::<String,_>("status"),
+            "assistant_claim_not_evidence":row.get::<String,_>("text").chars().take(1600).collect::<String>(),
+            "actual_ledger":events.iter().map(|event|json!({"id":event.get::<Uuid,_>("id").to_string(),"title":event.get::<String,_>("title"),"status":event.get::<String,_>("status"),"content":app.settings.redact(&event.get::<String,_>("content")).chars().take(4000).collect::<String>()})).collect::<Vec<_>>() }));
+    }
+    Ok(json!({"note":"这是旧轮次真实账本，仅用于回答质疑，不可用作本轮执行证据","runs":history}))
+}
+
+fn parse_result(value: &Value) -> Result<AuditResult, String> {
+    let args = value["output"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|item| item["type"] == "function_call" && item["name"] == "audit_result")
+        .and_then(|item| item["arguments"].as_str())
+        .ok_or("结果核验没有返回有效结论")?;
+    let report: Value = serde_json::from_str(args).map_err(|_| "结果核验没有返回有效结论")?;
+    let approved = report["approved"].as_bool().ok_or("结果核验缺少证据判定")?;
+    let feedback = report["feedback"]
+        .as_str()
+        .filter(|s| !s.trim().is_empty())
+        .ok_or("结果核验缺少说明")?;
+    Ok(AuditResult {
+        approved,
+        feedback: feedback.chars().take(4000).collect(),
+        experience: report
+            .get("experience")
+            .filter(|v| approved && v.is_object())
+            .cloned(),
+    })
+}
+
+fn extract_images(value: &mut Value, id: &str, inputs: &mut Vec<Value>) {
+    match value {
+        Value::Array(items) => {
+            for item in items {
+                extract_images(item, id, inputs);
+            }
+        }
+        Value::Object(object) => {
+            if object.get("type").and_then(Value::as_str) == Some("input_image") {
+                inputs.push(json!({"type":"input_text","text":format!("真实截图证据 {id}")}));
+                inputs.push(value.clone());
+                *value = json!({"type":"input_text","text":format!("真实截图证据 {id} 见附图")});
+            } else {
+                for item in object.values_mut() {
+                    extract_images(item, id, inputs);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn limit_result(value: &mut Value, images: &mut usize) {
+    match value {
+        Value::Array(items) => {
+            for item in items.iter_mut().rev() {
+                limit_result(item, images);
+            }
+        }
+        Value::Object(object) => {
+            if object.get("type").and_then(Value::as_str) == Some("input_image") {
+                if *images == 0 {
+                    *value = json!({"type":"input_text","text":"较早截图已归档，不能据此猜测内容"});
+                    return;
+                }
+                *images -= 1;
+            }
+            if let Some(Value::String(text)) = object.get_mut("text")
+                && text.len() > 24000
+            {
+                *text = text.chars().take(24000).collect();
+            }
+            for (key, item) in object {
+                if key != "image_url" {
+                    limit_result(item, images);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn audit_learning_references_only_the_exposed_event_namespace() {
+        let evidence = LearningEvidence::from([(
+            "event-id".into(),
+            crate::app_learning::Metadata {
+                app_id: "linux:libreoffice-draw".into(),
+                device_id: "desktop".into(),
+                observation_id: "frame-id".into(),
+            },
+        )]);
+        let schema = learning_schema(&evidence).unwrap();
+        assert!(schema["properties"].get("observation_ids").is_none());
+        assert_eq!(
+            schema["properties"]["evidence_ids"]["items"]["enum"],
+            json!(["event-id"])
+        );
+        assert!(
+            schema["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|v| v == "evidence_ids")
+        );
+        // Execution tools retain their observation-ID contract.
+        assert!(
+            crate::tool_catalog::experience_schema()["properties"]
+                .get("observation_ids")
+                .is_some()
+        );
+        assert!(learning_schema(&LearningEvidence::new()).is_none());
+    }
+    #[test]
+    fn audit_learning_binds_current_app_events_to_actual_observations() {
+        let evidence = LearningEvidence::from([
+            (
+                "event-a".into(),
+                crate::app_learning::Metadata {
+                    app_id: "linux:libreoffice-draw".into(),
+                    device_id: "desktop".into(),
+                    observation_id: "frame-a".into(),
+                },
+            ),
+            (
+                "event-b".into(),
+                crate::app_learning::Metadata {
+                    app_id: "linux:libreoffice-calc".into(),
+                    device_id: "desktop".into(),
+                    observation_id: "frame-b".into(),
+                },
+            ),
+        ]);
+        let candidate = json!({"app_id":"linux:libreoffice-draw","title":"draw method","evidence_ids":["event-a"]});
+        let actual = learning_candidate(&candidate, &evidence).unwrap();
+        assert_eq!(actual["observation_ids"], json!(["frame-a"]));
+        assert!(actual.get("evidence_ids").is_none());
+        for ids in [
+            json!(["frame-a"]),
+            json!(["unknown-event"]),
+            json!(["event-a", "event-b"]),
+            json!(null),
+        ] {
+            let mut invalid = candidate.clone();
+            invalid["evidence_ids"] = ids;
+            assert!(learning_candidate(&invalid, &evidence).is_err());
+        }
+        assert!(!crate::app_learning::observation_tool("host_exec"));
+        assert!(!crate::app_learning::observation_tool("workspace_read"));
+    }
+    #[test]
+    fn audit_cannot_default_to_approved_on_missing_or_malformed_result() {
+        assert!(parse_result(&json!({"output":[]})).is_err());
+        assert!(parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":"{\"feedback\":\"done\"}"}]})).is_err());
+    }
+    #[test]
+    fn successful_audit_retains_optional_experience_without_requiring_another_model_turn() {
+        let candidate = json!({"app_id":"com.example.reader","title":"搜索","procedure":"点击当前可见搜索入口，输入后核对实际列表。","outcome":"verified","limitations":"仅限已观察版本","observation_ids":["before","after"]});
+        let result=parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":json!({"approved":true,"feedback":"界面与记录吻合","experience":candidate}).to_string()}]})).unwrap();
+        assert!(result.approved);
+        assert_eq!(result.experience, Some(candidate));
+    }
+    #[test]
+    fn rejected_or_absent_experience_does_not_create_learning_or_reject_a_valid_task() {
+        for (approved, experience) in [
+            (false, json!({"app_id":"com.example.fake"})),
+            (true, Value::Null),
+            (true, json!("invalid")),
+        ] {
+            let result=parse_result(&json!({"output":[{"type":"function_call","name":"audit_result","arguments":json!({"approved":approved,"feedback":"核验结论","experience":experience}).to_string()}]})).unwrap();
+            assert_eq!(result.approved, approved);
+            assert!(result.experience.is_none());
+        }
+    }
+    #[test]
+    fn evidence_retains_only_bounded_recent_images() {
+        let mut result = json!([{"type":"input_image","image_url":"old"},{"type":"input_image","image_url":"new"}]);
+        limit_result(&mut result, &mut 1);
+        assert!(result[0].get("image_url").is_none());
+        assert_eq!(result[1]["image_url"], "new");
+    }
+    #[tokio::test]
+    #[ignore = "real disposable PostgreSQL and loopback audit provider; no external model or device calls"]
+    async fn audit_event_references_save_promote_and_recall_only_real_current_app_evidence() {
+        use axum::{Json, Router, routing::post};
+        async fn scenario(app: Shared) {
+            let reply = Arc::new(std::sync::Mutex::new(Value::Null));
+            let response = reply.clone();
+            let (sent, mut received) = tokio::sync::mpsc::channel(4);
+            let router = Router::new().route("/responses",post(move |Json(body):Json<Value>| {
+                let sent=sent.clone();let response=response.clone();
+                async move {
+                    sent.send(body).await.unwrap();
+                    let args=response.lock().unwrap().clone();
+                    let event=json!({"type":"response.completed","response":{"status":"completed","output":[{"type":"function_call","name":"audit_result","arguments":args.to_string()}]}});
+                    ([("content-type","text/event-stream")],format!("data: {event}\n\n"))
+                }
+            }));
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            struct Server(tokio::task::JoinHandle<()>);
+            impl Drop for Server {
+                fn drop(&mut self) {
+                    self.0.abort();
+                }
+            }
+            let _server = Server(tokio::spawn(async move {
+                axum::serve(listener, router).await.unwrap()
+            }));
+            app.settings.test_revision(crate::settings::ModelConfig {
+                api_key: String::new(),
+                base_url: format!("http://{address}"),
+                model: "audit-fixture".into(),
+                provider: "compatible".into(),
+                protocol: "responses".into(),
+                proxy_url: String::new(),
+                verified_at_ms: 1,
+            });
+            crate::registry::initialize(&app.db, &app.settings)
+                .await
+                .unwrap();
+            let conversation: Uuid =
+                sqlx::query_scalar("SELECT id FROM conversations WHERE device_id='phone-local-01'")
+                    .fetch_one(&app.db)
+                    .await
+                    .unwrap();
+            let run = Uuid::now_v7();
+            let message = Uuid::now_v7();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
+                .bind(message)
+                .bind(conversation)
+                .execute(&app.db)
+                .await
+                .unwrap();
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status) VALUES($1,$2,$3,$1,'fixture','running')").bind(run).bind(conversation).bind(message).execute(&app.db).await.unwrap();
+            let ids = [
+                Uuid::now_v7(),
+                Uuid::now_v7(),
+                Uuid::now_v7(),
+                Uuid::now_v7(),
+            ];
+            let mut context = vec![
+                json!({"role":"user","content":[{"type":"input_text","text":"Read the current app"}]}),
+            ];
+            for (i, id) in ids.iter().enumerate() {
+                let tool = if i == 3 {
+                    "workspace_read"
+                } else {
+                    "phone_observe"
+                };
+                let package = if i == 2 {
+                    "com.example.other"
+                } else {
+                    "com.example.reader"
+                };
+                let output = json!([{"type":"input_text","text":json!({"success":true,"device_id":"phone-local-01","observation_id":format!("frame-{i}"),"foreground_app":package}).to_string()}]);
+                sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,result) VALUES($1,$2,$3,'tool','fixture','completed',$4)").bind(id).bind(run).bind(message).bind(&output).execute(&app.db).await.unwrap();
+                context.push(json!({"type":"function_call","name":tool,"local_action_id":id.to_string(),"arguments":"{}"}));
+                if crate::app_learning::observation_tool(tool) {
+                    crate::app_learning::observe(&app, run, *id, i > 0, &output)
+                        .await
+                        .unwrap();
+                }
+            }
+            let mut candidate = json!({"app_id":"com.example.reader","title":"Open the search field","procedure":"Click the visible search entry and verify the actual input field before typing.","outcome":"verified","limitations":"Only the observed application version."});
+            for (references, saved) in [
+                (json!([ids[0].to_string(), ids[2].to_string()]), 0i64),
+                (json!([ids[0].to_string(), "unknown-event"]), 0),
+                (json!([ids[0].to_string(), ids[3].to_string()]), 0),
+                (json!([ids[0].to_string(), ids[1].to_string()]), 1),
+            ] {
+                candidate["evidence_ids"] = references;
+                *reply.lock().unwrap() = json!({"approved":true,"feedback":"Fixture task evidence matches","experience":candidate});
+                assert!(
+                    verify(
+                        &app,
+                        run,
+                        message,
+                        &context,
+                        "Fixture result",
+                        false,
+                        &CancellationToken::new()
+                    )
+                    .await
+                    .unwrap()
+                    .approved
+                );
+                let request = received.recv().await.unwrap();
+                let schema = &request["tools"][0]["parameters"]["properties"]["experience"];
+                assert!(schema["properties"].get("observation_ids").is_none());
+                let allowed = schema["properties"]["evidence_ids"]["items"]["enum"]
+                    .as_array()
+                    .unwrap();
+                assert!(allowed.contains(&json!(ids[0].to_string())));
+                assert!(
+                    !allowed.contains(&json!(ids[3].to_string())),
+                    "arbitrary workspace output cannot produce GUI learning evidence"
+                );
+                assert_eq!(
+                    sqlx::query_scalar::<_, i64>(
+                        "SELECT count(*) FROM app_experiences WHERE run_id=$1"
+                    )
+                    .bind(run)
+                    .fetch_one(&app.db)
+                    .await
+                    .unwrap(),
+                    saved
+                );
+            }
+            crate::app_learning::promote(&app, run).await.unwrap();
+            let name = crate::app_learning::recall(&app, "com.example.reader")
+                .await
+                .unwrap()
+                .unwrap();
+            let stored = crate::workbench::skill_text(&app, &name).await.unwrap();
+            assert!(stored.contains("Click the visible search entry"));
+            let observed = vec![
+                json!({"type":"function_call","name":"phone_observe","call_id":"current"}),
+                json!({"type":"function_call_output","call_id":"current","output":[{"type":"input_text","text":json!({"success":true,"observation_id":"current-frame","foreground_app":"com.example.reader"}).to_string()}]}),
+            ];
+            let call = crate::worker::experience_call(
+                &app,
+                &observed,
+                &mut crate::agent_loop::LoopState::default(),
+            )
+            .await
+            .unwrap();
+            assert_eq!(call["name"], "skill_read");
+            assert_eq!(
+                serde_json::from_str::<Value>(call["arguments"].as_str().unwrap()).unwrap()["name"],
+                name
+            );
+        }
+        crate::worker::steering_regressions::database_case(scenario).await;
+    }
+}

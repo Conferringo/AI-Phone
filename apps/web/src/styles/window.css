@@ -1,0 +1,11 @@
+/* FloatingWindow owns lifecycle/geometry; this file owns its shared visual surface. */
+.floating-window{position:fixed;z-index:40;display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:48px;border:.75px solid var(--border);border-radius:var(--radius-panel);background:var(--glass-fill);backdrop-filter:blur(18px) saturate(1.05);box-shadow:0 18px 70px #00000020,0 2px 8px #0000000a;outline:0;will-change:auto}
+.floating-window[data-active=true]{z-index:45;box-shadow:0 24px 90px #00000024,0 2px 8px #0000000a}
+.floating-header{height:var(--window-header);min-height:var(--window-header);display:flex;align-items:center;gap:12px;padding:0 16px 0 var(--window-inset);user-select:none}
+.floating-header h2{min-width:0;font-size:14px;font-weight:500;letter-spacing:0;line-height:20px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.floating-actions{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
+.floating-actions button[data-slot=button]{width:32px;height:32px;min-width:32px;min-height:32px;border-radius:var(--radius);cursor:pointer}
+.floating-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px var(--window-inset) 24px;scrollbar-width:thin;scrollbar-gutter:auto}
+@media(max-width:640px){.floating-window{--window-inset:18px;--window-header:52px}.floating-header{padding-right:12px}}
+@media(pointer:coarse){.floating-actions button[data-slot=button]{width:44px;height:44px;min-width:44px;min-height:44px}}
+@media(prefers-reduced-transparency:reduce),(forced-colors:active){.floating-window{background:var(--background);backdrop-filter:none}}

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Compatibility
+    url: https://github.com/Conferringo/AI-Phone/blob/master/docs/public/compatibility.md
+    about: Check model, channel and platform support.

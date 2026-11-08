@@ -1,0 +1,91 @@
+name: Windows Linux guest
+on:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Private Windows Linux guest artifact ID
+        value: ${{ jobs.linux.outputs.artifact }}
+      identity:
+        description: SHA-256 of windows-guest.payload
+        value: ${{ jobs.linux.outputs.identity }}
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      artifact: ${{ steps.handoff.outputs.artifact-id }}
+      identity: ${{ steps.disk.outputs.sha256 }}
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
+    steps:
+      - name: Require a private build repository
+        if: ${{ !github.event.repository.private }}
+        run: |
+          echo "::error::Run the Windows guest factory in a private repository."
+          exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Set up the disposable Linux x64 builder
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$(uname -m)" = x86_64
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup "$ANDROID_HOME/ndk"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config libssl-dev libelf-dev bc bison flex kmod \
+            ca-certificates unzip e2fsprogs qemu-utils \
+            tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+      - name: Build the pinned guest kernel
+        run: ./scripts/bun scripts/windows-guest-disk.ts kernel "$RUNNER_TEMP/windows-guest-kernel"
+      - name: Start the disposable Docker image store
+        uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: ai-phone-windows-guest
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Seal the Linux backend with phone components
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AI_PHONE_DISPOSABLE_QUALIFICATION: '1'
+        run: ./scripts/bun scripts/wsl-backend.ts --with-device-apps
+      - name: Assemble the QEMU guest disk
+        id: disk
+        run: |
+          work=.tools/wsl-backend-qualification
+          assembled="$work/assembled"
+          capsule="$assembled/wsl-backend.payload"
+          kernel="$RUNNER_TEMP/windows-guest-kernel"
+          guest=dist/windows-guest/windows-guest.payload
+          rm -r "$assembled/context" "$assembled/rootfs.tar" "$assembled/rootfs.tar.gz" "$work/images.payload"
+          docker --host "$DOCKER_HOST" system prune --all --force
+          mkdir -p "$(dirname "$guest")"
+          backend_hash=$(sha256sum "$capsule")
+          sudo ./scripts/bun scripts/windows-guest-disk.ts \
+            "$capsule" "${backend_hash%% *}" "$kernel/bzImage" \
+            "$kernel/modules.tar.gz" "$kernel/kernel-receipt.json" "$guest"
+          guest_hash=$(sha256sum "$guest")
+          printf 'sha256=%s\n' "${guest_hash%% *}" >> "$GITHUB_OUTPUT"
+      - name: Transfer the sealed guest to the Windows builder
+        id: handoff
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: windows-guest
+          path: dist/windows-guest/windows-guest.payload
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2

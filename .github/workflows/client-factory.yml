@@ -1,0 +1,218 @@
+name: Desktop installer factory
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Complete offline installer
+        type: choice
+        options: [macos, windows]
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: installer-${{ inputs.platform }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  admit:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a private build repository
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if [ "$REPOSITORY_PRIVATE" != true ]; then
+            echo "::error::Run the installer factory in a private repository."
+            exit 1
+          fi
+
+  windows-qemu:
+    if: inputs.platform == 'windows'
+    needs: admit
+    uses: ./.github/workflows/windows-qemu.yml
+
+  windows-guest:
+    if: inputs.platform == 'windows'
+    needs: admit
+    uses: ./.github/workflows/windows-guest.yml
+
+  windows-exe:
+    needs: [windows-qemu, windows-guest]
+    runs-on: windows-2022
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      actions: read
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_HTTP_MULTIPLEXING: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Locked build tools
+        shell: bash
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          github-token: ${{ github.token }}
+          artifact-ids: ${{ needs.windows-qemu.outputs.artifact }}
+          path: dist/windows-qemu
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          github-token: ${{ github.token }}
+          artifact-ids: ${{ needs.windows-guest.outputs.artifact }}
+          path: dist/windows-guest
+      - name: Assemble and inspect the offline Windows EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QEMU_SHA256: ${{ needs.windows-qemu.outputs.identity }}
+          GUEST_SHA256: ${{ needs.windows-guest.outputs.identity }}
+        run: |
+          ./.tools/bin/bun.exe scripts/windows-client-factory.ts build-qemu --qemu dist/windows-qemu --qemu-identity $env:QEMU_SHA256 --guest dist/windows-guest/windows-guest.payload --guest-identity $env:GUEST_SHA256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: complete-windows-installer
+          path: |
+            dist/AI-Phone-*-windows-x64-setup.exe
+            dist/AI-Phone-*-windows-x64-setup.exe.manifest.json
+            dist/AI-Phone-*-windows-x64-setup.exe.sha256
+            dist/windows-full-factory-report.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
+
+  native-arm-images:
+    if: inputs.platform == 'macos'
+    needs: admit
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    outputs:
+      candidate_tag: ${{ steps.retain.outputs.candidate_tag }}
+      candidate_release_id: ${{ steps.retain.outputs.candidate_release_id }}
+      metadata_sha256: ${{ steps.assemble.outputs.metadata_sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Disposable native image build space
+        run: |
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$RUNNER_OS" = Linux
+          test "$(uname -m)" = aarch64
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/lib/android/sdk
+          df -h .
+      - name: Owned native image store
+        uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: ai-phone-arm-image-factory
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Fixed image factory tooling
+        run: |
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+      - name: Source and image handoff contracts
+        run: |
+          ./scripts/bun scripts/source.ts check --repository --manifest
+      - name: Build and seal native ARM64 images
+        id: assemble
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/bun scripts/factory-image-candidate.ts build "$RUNNER_TEMP/arm-images" --result "$RUNNER_TEMP/arm-images-result.json"
+          identity=$(jq -er .metadata_sha256 "$RUNNER_TEMP/arm-images-result.json")
+          printf 'metadata_sha256=%s\n' "$identity" >> "$GITHUB_OUTPUT"
+      - name: Retain the source-bound unpublished handoff
+        id: retain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          report=$(jq -er .report "$RUNNER_TEMP/arm-images-result.json")
+          bash scripts/retain-factory-images.sh "$report"
+
+  full-macos-arm64:
+    if: inputs.platform == 'macos'
+    needs: native-arm-images
+    runs-on: macos-26
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      AI_PHONE_IMAGE_HANDOFF_TAG: ${{ needs.native-arm-images.outputs.candidate_tag }}
+      AI_PHONE_IMAGE_HANDOFF_RELEASE_ID: ${{ needs.native-arm-images.outputs.candidate_release_id }}
+      AI_PHONE_IMAGE_HANDOFF_IDENTITY: ${{ needs.native-arm-images.outputs.metadata_sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Disposable Mac factory toolchain
+        run: |
+          set -euo pipefail
+          # This hosted job builds only macOS/ARM Linux, so no Android NDK is
+          # consumed. Reclaim only this disposable runner's unused compiler SDKs.
+          rm -rf "$ANDROID_HOME/ndk"
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          rustup target add --toolchain 1.96.0 aarch64-unknown-linux-musl
+          ./scripts/bootstrap.sh
+          brew update
+          brew install tesseract
+          ./scripts/bun scripts/prepare-ocr-models.ts --destination "$RUNNER_TEMP/aiphone-ocr-models"
+          echo "AI_PHONE_TEST_TESSERACT=$(command -v tesseract)" >> "$GITHUB_ENV"
+          echo "AI_PHONE_TEST_TESSDATA=$RUNNER_TEMP/aiphone-ocr-models" >> "$GITHUB_ENV"
+          export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          df -h .
+      - name: Acquire the exact unpublished native image component
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/bun scripts/factory-image-candidate.ts fetch "$AI_PHONE_IMAGE_HANDOFF_TAG" --release-id "$AI_PHONE_IMAGE_HANDOFF_RELEASE_ID" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY" --work "$RUNNER_TEMP/mac-native-images"
+      - name: Build the complete Mac client
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/bun scripts/macos-client-factory.ts --compiler-sdk "$ANDROID_HOME" --image-candidate "$RUNNER_TEMP/mac-native-images" --image-metadata-sha256 "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"
+      - name: Retain text qualification receipts
+        if: always() && hashFiles('dist/macos-full-factory-report.json') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: complete-macos-build-receipt
+          path: |
+            dist/macos-full-factory-report.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain the complete installer for maintainer delivery
+        if: always() && hashFiles('dist/AI-Phone-*-macos-arm64.dmg') != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: complete-macos-installer
+          path: |
+            dist/AI-Phone-*-macos-arm64.dmg
+            dist/AI-Phone-*-macos-arm64.dmg.manifest.json
+            dist/AI-Phone-*-macos-arm64.dmg.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
+      - name: Retire only this source-bound temporary image handoff
+        if: success() && env.AI_PHONE_IMAGE_HANDOFF_TAG != '' && env.AI_PHONE_IMAGE_HANDOFF_RELEASE_ID != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/bun scripts/factory-image-candidate.ts discard "$AI_PHONE_IMAGE_HANDOFF_TAG" --release-id "$AI_PHONE_IMAGE_HANDOFF_RELEASE_ID" --identity "$AI_PHONE_IMAGE_HANDOFF_IDENTITY"

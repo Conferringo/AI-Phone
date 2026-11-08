@@ -1,0 +1,42 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message WorkbenchRequest { string query = 1; string id = 2; reserved 3; reserved "archived"; string agent_id = 4; }
+message RuntimeSkill { string id = 1; string name = 2; string description = 3; string source = 4; string content = 5; bool enabled = 6; bool builtin = 7; string content_sha256 = 8; }
+message SkillList { repeated RuntimeSkill skills = 1; }
+message SkillImportRequest { string source = 1; string content = 2; string name = 3; }
+message SkillUpdateRequest { string id = 1; bool enabled = 2; bool remove = 3; }
+message SkillEditRequest { string id = 1; string content = 2; string expected_content_sha256 = 3; }
+message KnowledgeDocument { string id = 1; string title = 2; string content = 3; uint64 revision = 4; repeated string related_ids = 5; bool trashed = 6; }
+message KnowledgeList { repeated KnowledgeDocument documents = 1; }
+message KnowledgeSaveRequest { string id = 1; string title = 2; string content = 3; uint64 expected_revision = 4; repeated string related_ids = 5; }
+message KnowledgeDeleteRequest { string id = 1; uint64 expected_revision = 2; }
+message ModelCallTiming {
+  uint64 preparation_ms = 1;
+  optional uint64 headers_ms = 2;
+  optional uint64 first_byte_ms = 3;
+  uint64 model_ms = 4;
+  uint64 elapsed_ms = 5;
+  uint64 request_bytes = 6;
+}
+message HarnessEvent { string id = 1; string run_id = 2; string message_id = 3; string kind = 4; string title = 5; string content = 6; string status = 7; uint64 created_at_ms = 8; uint64 finished_at_ms = 9; ModelCallTiming model_timing = 10; }
+message HarnessEventRequest { string run_id = 1; string message_id = 2; uint64 after_ms = 3; }
+message HarnessEventList { repeated HarnessEvent events = 1; }
+message WorkspaceEntry { string path = 1; string name = 2; bool directory = 3; uint64 size_bytes = 4; }
+message WorkspaceFiles { repeated WorkspaceEntry files = 1; string path = 2; }
+
+message ModelMemory { string id = 1; string content = 2; uint64 revision = 3; }
+message MemoryList { repeated ModelMemory memories = 1; }
+message MemorySaveRequest { string id = 1; string content = 2; uint64 expected_revision = 3; string agent_id = 4; }
+message MemoryDeleteRequest { string id = 1; uint64 expected_revision = 2; string agent_id = 3; }
+
+message KnowledgeLinkRequest { string id = 1; string target_id = 2; bool present = 3; uint64 expected_revision = 4; }
+
+// Empty device_id addresses the shared harness workspace; device paths are absolute.
+message FileLocation { string device_id = 1; string path = 2; }
+message FileEntry { string path = 1; string name = 2; bool directory = 3; uint64 size_bytes = 4; uint64 modified_at_ms = 5; bool symlink = 6; }
+message FileListing { FileLocation location = 1; repeated FileEntry entries = 2; }
+enum FileOperation { FILE_OPERATION_UNSPECIFIED = 0; FILE_OPERATION_COPY = 1; FILE_OPERATION_MOVE = 2; FILE_OPERATION_DELETE = 3; FILE_OPERATION_MKDIR = 4; FILE_OPERATION_RENAME = 5; }
+message FileManageRequest { FileOperation operation = 1; repeated FileLocation sources = 2; FileLocation target = 3; string name = 4; }
+message FileResult { FileLocation source = 1; FileLocation target = 2; string error = 3; }
+message FileManageResult { repeated FileResult results = 1; }
