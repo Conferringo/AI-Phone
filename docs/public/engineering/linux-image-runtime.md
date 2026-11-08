@@ -39,7 +39,7 @@ This is a maintainer workflow. Complete product users should receive the compone
 
 ## Availability
 
-Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md).
 
 The component remains subject to complete host/media integration and third-party redistribution requirements. See the [Android component](android-runtime.md) for its separate resource contract.
 

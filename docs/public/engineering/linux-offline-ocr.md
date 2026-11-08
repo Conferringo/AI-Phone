@@ -30,7 +30,7 @@ The matching Linux OCR component is assembled into the Windows WSL backend. Its 
 
 ## Availability
 
-Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md).
 
 ## 中文
 

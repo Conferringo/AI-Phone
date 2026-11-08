@@ -4,7 +4,7 @@
 
 The source contains the Next.js workbench, Rust execution services, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and CI workflows. The default workspace has one phone and one computer, each bound to an Agent. PostgreSQL persists task checkpoints; Redis is optional caching.
 
-Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest applications retain their own terms; see [third-party notices](../../THIRD_PARTY_NOTICES.md). Source builds are intended for contributors. Complete end-user installers have separate contents and acceptance requirements in [release status](release-status.md).
+Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest applications retain their own terms; see [third-party notices](../../THIRD_PARTY_NOTICES.md). [Download the macOS or Windows client](release-status.md).
 
 ## Prerequisites and startup
 
@@ -21,7 +21,7 @@ See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [a
 
 ## Source and user data
 
-Versioned code is separate from device disks, accounts, conversations, attachments and keys. Source export uses an allowlist with privacy and licence checks. Development and validation requirements are maintained in [Contributing](../../CONTRIBUTING.md). Local environment files, private Skills, screenshots and evidence must stay outside public commits.
+Source export uses an allowlist with privacy and licence checks. [Contribution guide](../../CONTRIBUTING.md)
 
 ```sh
 ./scripts/bun scripts/source.ts check

@@ -43,4 +43,4 @@ Optional [companion applications](companion-extension.md), additional devices an
 
 Use signed versioned artifacts, compatibility/capacity checks, consistent backup, explicit migration, health checks and activation/rollback. See [application and user-data boundaries](distribution.en.md) and [backup/recovery](backup-restore.en.md).
 
-Original code remains Apache-2.0. Third-party software, images and assets retain their own licences and source obligations. Distribution review and physical installation scope are recorded separately from compilation and protocol support.
+Original code remains Apache-2.0. Third-party software, images and assets retain their own licences and source obligations.

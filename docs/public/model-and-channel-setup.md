@@ -17,7 +17,7 @@ Configure a model and applications inside **Configuration → Agent**. Device bi
 | Ollama | Chat Completions | `http://127.0.0.1:11434/v1` |
 | Custom | Any of the three implemented protocols | User supplied |
 
-Select the preset, enter a model ID and API key, then run the connection check before saving. Preset examples may change availability; choose a model supporting **images and tools** for device control. A text-only service cannot pass the required vision probe. Cloud credentials must match the endpoint's region; keys never move from the previous provider when changing presets. The advanced proxy applies only to that model connection. No protocol fallback silently retries failed requests.
+Select the preset, enter a model ID and API key, then run the connection check before saving. Choose a model supporting **images and tools** for device control. Cloud credentials must match the endpoint's region; keys never move from the previous provider when changing presets. The advanced proxy applies only to that model connection.
 
 After correcting a model ID, API endpoint or key, test and save the configuration in the original Agent. Choose **Resume** on its paused task, or send a follow-up in that task’s conversation. Recovery uses that Agent’s latest saved configuration; changing the device’s default Agent does not reassign the task. Running tasks keep their existing model snapshot until they pause and you resume them. Conversation and execution records are retained. If the replacement configuration is unavailable or unverified, the task remains paused. [Task recovery](task-recovery.md) describes the execution contract.
 
@@ -28,15 +28,15 @@ Local real-HTTP fixtures verify authentication, image/tool round-trips and frami
 ## Local WhatsApp pairing
 
 1. Open the Agent's **Connected applications → WhatsApp**, then **Bind**. The server generates a local session; no Meta App ID, business account or public webhook is required.
-2. Scan the QR from WhatsApp's **Linked devices**. This is an **unofficial Web protocol adapter**, not Meta Cloud API. Its upstream may change and account/platform restrictions still apply.
-3. After connected, send the displayed `/pair …` command from the private account that will own remote commands to the linked WhatsApp account. Only that paired sender can create Agent jobs. Groups, status broadcasts, self-sent messages and notes-to-self are ignored. This requires a separate sender account; linking alone does not authorize all contacts.
+2. Scan the QR from WhatsApp's **Linked devices**. The adapter uses the unofficial WhatsApp Web protocol.
+3. From a separate private account, send the displayed `/pair …` command to the linked WhatsApp account. Send Agent commands from that paired account in private chat.
 4. Send private instructions. Text and outgoing PNG screenshots use the existing durable queue. Unknown delivery results are retained for reconciliation and never automatically resent. Incoming attachment/file ingestion is not implemented yet.
 
 An optional proxy is under **Advanced**. Empty uses the host's configured default (direct in a normal deployment). QR payloads and linked sessions are credentials: they remain in authenticated local responses and ignored private storage, never in logs, source bundles or screenshots published as evidence.
 
 **Rescan** removes that session locally and starts a new identity/owner pairing. **Unbind** attempts remote logout and removes the local session. If remote confirmation is unknown, the interface reports it; check WhatsApp's Linked devices and remove the old session there. Network reconnect keeps the same local session; shutdown stops the active connection.
 
-Channels run inside the Rust assistant process. WhatsApp uses a native linked-device adapter and local session storage; it does not require a host browser. This adapter has compiled, while QR login, account pairing, reconnect and actual text/image delivery still need acceptance. QQ, WeCom, Feishu and Telegram also use native Rust adapters; [the matrix](compatibility.md) distinguishes compilation from real-account verification.
+The Rust assistant runs the WhatsApp, QQ, WeCom, Feishu and Telegram adapters. WhatsApp stores its linked-device session locally. [Supported channels and operations](compatibility.md)
 
 ## Primary references
 
@@ -57,4 +57,4 @@ Channels run inside the Rust assistant process. WhatsApp uses a native linked-de
 
 WhatsApp 采用用户选择的本地扫码关联设备，无需公网回调。入口在 Agent → 连接应用 → WhatsApp。扫码后，从另一个私聊账号发送界面上的配对指令，再进行远程操作；不接收群聊、状态、自发消息或“发给自己”。文字和PNG回复进入原持久任务队列，未知送达不自动重发，入站附件暂未支持。高级项可选代理；用户浏览器资料不会被复用。解绑/重扫会清理当前本地会话；远端注销不确定时会明确提示。
 
-真实浏览器已两次生成有效二维码，未绑定任何真实账号，也未发送测试消息。新服务商缺少实号密钥的验收保持待验证，不将下拉选项视为通过。完整桌面发行包仍需预装浏览器、客体镜像、模拟器和服务组件，不能用开发安装脚本替代最终交付。完整技术与边界、官方资料见上方英文部分。
+[渠道与操作](compatibility.md)

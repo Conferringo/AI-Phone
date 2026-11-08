@@ -34,7 +34,7 @@ EinkBro binaries, exact hashes, signer and source revision are pinned in [the br
 
 ## Availability
 
-Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md). Component formats and build interfaces do not independently qualify a complete installation.
+Current platform support, installer availability and distribution requirements are maintained in [release status](../release-status.md).
 
 ---
 
