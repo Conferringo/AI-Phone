@@ -4,7 +4,9 @@ use image::{Rgb, RgbImage};
 use std::sync::Mutex;
 use x11rb::{
     connection::Connection,
+    errors::ReplyError,
     protocol::{
+        ErrorKind,
         xproto::{self, ConnectionExt as _, ImageFormat, ImageOrder},
         xtest::ConnectionExt as _,
     },
@@ -15,10 +17,26 @@ pub trait Screen: Send + Sync {
     fn capture(&self) -> Result<RgbImage>;
     fn title(&self) -> Result<String>;
     fn window(&self) -> Result<WindowIdentity>;
+    fn paint_focus(&self) -> Result<PaintFocus> {
+        let window = self.window()?;
+        Ok(PaintFocus {
+            title: window.title,
+            window_id: window.window_id,
+        })
+    }
+    fn confirmed_desktop_reveal(&self, _previous: u32, _focused: u32) -> bool {
+        false
+    }
     fn move_to(&self, x: i16, y: i16) -> Result<()>;
     fn button(&self, button: u8, down: bool) -> Result<()>;
     fn pointer(&self) -> Result<(i32, i32)>;
 }
+#[derive(Default)]
+pub struct PaintFocus {
+    pub title: String,
+    pub window_id: u32,
+}
+
 #[derive(Default)]
 pub struct WindowIdentity {
     pub title: String,
@@ -207,6 +225,45 @@ impl Screen for NativeScreen {
                 process_id: process,
             })
         })
+    }
+    fn paint_focus(&self) -> Result<PaintFocus> {
+        self.with(|display| {
+            let window_id = display.active_window()?;
+            let title = if window_id == 0 {
+                String::new()
+            } else {
+                display.window_title(window_id)?
+            };
+            Ok(PaintFocus { title, window_id })
+        })
+    }
+
+    fn confirmed_desktop_reveal(&self, previous: u32, focused: u32) -> bool {
+        if previous == 0 || previous == focused {
+            return false;
+        }
+        self.with(|display| {
+            if focused != 0 && focused != display.root {
+                let desktop = display.atom(b"_NET_WM_WINDOW_TYPE_DESKTOP")?;
+                let kind = display.atom(b"_NET_WM_WINDOW_TYPE")?;
+                let reply = display
+                    .connection
+                    .get_property(false, focused, kind, xproto::AtomEnum::ATOM, 0, 32)?
+                    .reply()?;
+                if !reply
+                    .value32()
+                    .is_some_and(|mut kinds| kinds.any(|kind| kind == desktop))
+                {
+                    return Ok(false);
+                }
+            }
+            // BadWindow confirms destruction. A surviving or unmapped window may still be loading.
+            Ok(matches!(
+                display.connection.get_window_attributes(previous)?.reply(),
+                Err(ReplyError::X11Error(error)) if error.error_kind == ErrorKind::Window
+            ))
+        })
+        .unwrap_or(false)
     }
 
     fn move_to(&self, x: i16, y: i16) -> Result<()> {

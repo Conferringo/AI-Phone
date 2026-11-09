@@ -236,7 +236,7 @@ pub fn notification_read_only_tool(name: &str) -> bool {
 }
 pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> {
     let row=sqlx::query("SELECT r.status,r.origin,r.background_read_only,p.exploring,p.notifications_enabled,p.autonomous_install,p.wechat_watch FROM runs r CROSS JOIN proactive_state p WHERE r.id=$1").bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-    if row.get::<String, _>("status") == "canceled" {
+    if matches!(row.get::<&str, _>("status"), "canceled" | "paused") {
         return Err("canceled".into());
     }
     let origin: String = row.get("origin");

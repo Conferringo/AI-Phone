@@ -188,6 +188,24 @@ export async function prepareServices(root = ROOT, linuxOcr?: string) {
       mode: 0o755,
     });
   }
+  const bridge = process.env.AI_PHONE_RELEASE_DESKTOP_BRIDGE;
+  if (bridge) {
+    const data = publicBytes(readFileSync(bridge), "desktop-bridge");
+    const machines: Record<string, number> = { "macos-arm64": 183, "linux-x64": 62 };
+    const machine = machines[hostKey()];
+    if (
+      !machine ||
+      data.length < 64 ||
+      data.subarray(0, 6).toString("hex") !== "7f454c460201" ||
+      data.readUInt16LE(18) !== machine
+    )
+      throw Error("Desktop bridge must be a matching Linux ELF");
+    files.push({
+      path: "runtime/services/bin/desktop-bridge",
+      data,
+      mode: 0o755,
+    });
+  }
   files.push({
     path: "runtime/services/fixtures/ocr.png",
     data: readFileSync(join(root, fixture)),

@@ -97,7 +97,7 @@ pub(crate) async fn current_run(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
 ) -> Result<Option<sqlx::postgres::PgRow>, sqlx::Error> {
-    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1")
+    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1")
         .bind(id).fetch_optional(&mut **tx).await
 }
 
@@ -231,6 +231,7 @@ pub(crate) async fn state_selected(
             })
             .unwrap_or_default(),
         next_wake_at_ms: run.as_ref().map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
+        can_pause: run.as_ref().is_some_and(|r| r.get("can_pause")),
     };
     Ok(value)
 }
@@ -390,7 +391,7 @@ pub async fn send(
                 crate::registry::refresh_paused_model(&mut tx, &app.settings, run, (id, active.get("agent_id"))).await?;
             }
             let input = steering_input(&app, &request, &attachments).await?;
-            let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
+            let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, loop_state=CASE WHEN status='paused' THEN jsonb_set(loop_state,'{resume_requested}','true'::jsonb) ELSE loop_state END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
                 .bind(run).bind(request_id.to_string()).bind(input).bind(steering_quiet_ms).execute(&mut *tx).await?;
             if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
             sqlx::query("INSERT INTO run_inputs(request_id,run_id,message_id,fingerprint) VALUES($1,$2,$3,$4)")
@@ -602,8 +603,7 @@ async fn run_command(
     let result = if resume {
         resume_paused(&app, id).await
     } else {
-        sqlx::query_scalar("UPDATE runs SET status='canceled',finished_at=now(),next_wake_at=NULL WHERE id=$1 AND status IN ('queued','running','paused') RETURNING conversation_id")
-            .bind(id).fetch_optional(&app.db).await
+        stop_run(&app.db, id, request.pause).await
     };
     let conversation: Option<Uuid> = match result {
         Ok(v) => v,
@@ -625,7 +625,7 @@ async fn run_command(
             "任务状态已改变，请刷新",
         );
     };
-    if !resume {
+    if !resume && !request.pause {
         let background =
             sqlx::query_scalar::<_, bool>("SELECT origin<>'user' FROM runs WHERE id=$1")
                 .bind(id)
@@ -654,14 +654,38 @@ async fn run_command(
         }
         if let Err(e)=sqlx::query("UPDATE messages SET text='已停止。' WHERE id=(SELECT assistant_message_id FROM runs WHERE id=$1) AND text=''")
             .bind(id).execute(&app.db).await { return db_error(e); }
+    }
+    if !resume {
         if let Some(token) = app.active.lock().await.get(&id) {
             token.cancel();
         }
+        app.run_signals.chat_changed(conversation);
     }
     match state(&app, conversation).await {
         Ok(v) => pb(StatusCode::OK, v),
         Err(e) => db_error(e),
     }
+}
+
+async fn stop_run(db: &PgPool, id: Uuid, pause: bool) -> Result<Option<Uuid>, sqlx::Error> {
+    sqlx::query_scalar(
+        "WITH stopped AS (
+        UPDATE runs SET status=CASE WHEN $2 THEN 'paused' ELSE 'canceled' END,
+            error=CASE WHEN $2 THEN '' ELSE error END,
+            finished_at=CASE WHEN $2 THEN NULL ELSE now() END,
+            next_wake_at=CASE WHEN $2 THEN next_wake_at ELSE NULL END
+        WHERE id=$1 AND status IN ('queued','running','paused')
+            AND (NOT $2 OR (origin='user' AND status<>'paused'))
+        RETURNING id,conversation_id,status,finished_at
+    ), trace AS (
+        UPDATE harness_events e SET status=s.status,finished_at=s.finished_at
+        FROM stopped s WHERE e.id=s.id
+    ) SELECT conversation_id FROM stopped",
+    )
+    .bind(id)
+    .bind(pause)
+    .fetch_optional(db)
+    .await
 }
 
 async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error> {
@@ -685,7 +709,7 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
     let conversation =
         crate::registry::refresh_paused_model(&mut tx, &app.settings, id, expected).await?;
     if conversation.is_some() {
-        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',next_wake_at=NULL,loop_state=jsonb_set(loop_state,'{resume_requested}','true'::jsonb) WHERE id=$1")
+        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',loop_state=jsonb_set(loop_state,'{resume_requested}','true'::jsonb) WHERE id=$1")
             .bind(id).execute(&mut *tx).await?;
     }
     tx.commit().await?;

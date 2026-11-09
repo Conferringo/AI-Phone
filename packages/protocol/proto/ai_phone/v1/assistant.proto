@@ -72,6 +72,7 @@ message ChatState {
   uint64 revision = 10;
   RunNoticeKind notice_kind = 11;
   ChatMessageWindow message_window = 12;
+  bool can_pause = 13;
 }
 message ChatSendRequest {
   string conversation_id = 1;
@@ -84,6 +85,10 @@ message ChatSendRequest {
   // Return only the accepted message and its conversation, device, and run IDs.
   bool receipt_only = 8;
 }
-message ChatRunRequest { string run_id = 1; }
+message ChatRunRequest {
+  string run_id = 1;
+  // Pause retains the checkpoint. Omitted on an explicit terminal stop.
+  bool pause = 2;
+}
 // A committed conversation change. Fetch history for authoritative content.
 message ChatChanged { string conversation_id = 1; }

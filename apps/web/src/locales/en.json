@@ -1,4 +1,8 @@
 {
+  "系统更新": "System Update",
+  "确认更新": "Confirm update",
+  "正在更新…": "Updating…",
+  "更新中断，请重试": "Update interrupted. Try again.",
   "登录": "Sign in",
   "登录失败": "Sign-in failed",
   "账号": "Account",

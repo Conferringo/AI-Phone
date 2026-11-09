@@ -8,10 +8,14 @@ if (!keyFile || !macFile || !windowsFile || !output || process.argv.length !== 6
   throw Error("Usage: sign-client-update.ts <private-key> <mac.dmg> <windows.exe> <update.json>");
 }
 const policy = await Bun.file(join(ROOT, "config/client-update.json")).json();
-const { version } = await Bun.file(join(ROOT, "config/release-policy.json")).json();
+const { version, release_name: name, release_notes: notes } =
+  await Bun.file(join(ROOT, "config/release-policy.json")).json();
 if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version) ||
     basename(output) !== `AI-Phone-${version}-update.json`) {
   throw Error("Output must match the stable release version");
+}
+if (typeof name !== "string" || !name.trim() || typeof notes !== "string" || !notes.trim()) {
+  throw Error("The release policy must supply a version name and release notes");
 }
 const privateKey = createPrivateKey(await Bun.file(keyFile).text());
 const publicKey = createPublicKey(privateKey);
@@ -48,6 +52,8 @@ const [macos_arm64, windows_x64] = await Promise.all([
   artifact(macFile, "macos", "arm64", "macos-arm64.dmg"),
   artifact(windowsFile, "windows", "x64", "windows-x64-setup.exe"),
 ]);
-const manifest = JSON.stringify({ version, macos_arm64, windows_x64 });
+const manifest = JSON.stringify({ version, name: name.trim(), notes: notes.trim(), macos_arm64, windows_x64 });
 const signature = sign(null, Buffer.from(manifest), privateKey).toString("base64");
-await writeFile(output, JSON.stringify({ manifest, signature }) + "\n", { flag: "wx" });
+const envelope = JSON.stringify({ manifest, signature }) + "\n";
+if (Buffer.byteLength(envelope) > 16 * 1024) throw Error("Update manifest exceeds the client limit");
+await writeFile(output, envelope, { flag: "wx" });

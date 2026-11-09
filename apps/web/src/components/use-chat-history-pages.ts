@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useRef,useState,type RefObject} from 'react';
 import type {ChatSnapshot} from '../lib/chat-snapshot';
-type Reader=(signal?:AbortSignal,beforeMessageId?:string)=>Promise<void>;
+type Reader=(signal?:AbortSignal,beforeMessageId?:string)=>Promise<unknown>;
 type PageOwner=RefObject<AbortController|null>;
 
 async function readPage(owner:PageOwner,before:string,reader:Reader,loading:(value:boolean)=>void){

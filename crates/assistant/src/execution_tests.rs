@@ -211,6 +211,7 @@ async fn stalled_phone_model_does_not_block_desktop_and_cancel_is_per_run() {
             Ok(Bytes::from(
                 wire::ChatRunRequest {
                     run_id: phone.0.to_string(),
+                    ..Default::default()
                 }
                 .encode_to_vec(),
             )),

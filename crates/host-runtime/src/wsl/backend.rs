@@ -287,6 +287,15 @@ impl<E: Execute> Backend<'_, E> {
                     .await?;
             }
         }
+        if let Some(desktop) = existing.get("ai-phone-desktop") {
+            if !desktop.running {
+                self.docker(&["start", &desktop.id]).await?;
+            }
+            if let Some(bridge) = crate::desktop_bridge::DesktopBridge::staged(self.root).await? {
+                let command = self.command("docker", bridge.install_args(&desktop.id));
+                self.checked(command, bridge.bytes).await?;
+            }
+        }
         phase("services_start");
         let ocr = text(&self.root.join("runtime/services/bin/vision"))?;
         self.unit(
@@ -326,11 +335,6 @@ impl<E: Execute> Backend<'_, E> {
             &[],
         )
         .await?;
-        if let Some(desktop) = existing.get("ai-phone-desktop")
-            && !desktop.running
-        {
-            self.docker(&["start", &desktop.id]).await?;
-        }
         Ok(())
     }
 }

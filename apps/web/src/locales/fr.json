@@ -1,4 +1,8 @@
 {
+  "系统更新": "Mise à jour du système",
+  "确认更新": "Confirmer la mise à jour",
+  "正在更新…": "Mise à jour en cours…",
+  "更新中断，请重试": "Mise à jour interrompue. Réessaie.",
   "登录": "Se connecter",
   "登录失败": "Échec de la connexion",
   "账号": "Compte",

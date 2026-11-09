@@ -241,6 +241,44 @@ fn require_local_window(window: &tauri::WebviewWindow) -> Result<(), String> {
     Ok(())
 }
 
+fn require_update_window(window: &tauri::WebviewWindow) -> Result<(), String> {
+    let url = window.url().map_err(|e| e.to_string())?;
+    if window.label() == "workbench"
+        && url.scheme() == "http"
+        && url.port() == Some(17860)
+        && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
+        && url.path() == "/phone"
+    {
+        Ok(())
+    } else {
+        Err("Use the native update menu for this connection".into())
+    }
+}
+
+#[tauri::command]
+async fn check_client_update(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<Option<updates::UpdateDetails>, String> {
+    require_update_window(&window)?;
+    updates::refresh(&app)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+async fn install_client_update(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    version: String,
+) -> Result<(), String> {
+    require_update_window(&window)?;
+    let version = semver::Version::parse(&version).map_err(|error| error.to_string())?;
+    updates::apply(&app, Some(version))
+        .await
+        .map_err(|error| error.to_string())
+}
+
 // Only the local setup asset may request content-sized native chrome.
 #[tauri::command]
 fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
@@ -413,7 +451,9 @@ pub fn run() {
             deployment_status,
             start_deployment,
             cancel_deployment,
-            accept_deployment_license
+            accept_deployment_license,
+            check_client_update,
+            install_client_update
         ])
         .setup(|app| {
             updates::cleanup_current(app.handle());

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6 Apocalypse
+
+- Review the version, name, and notes from the workbench update icon. Confirm to download, verify, install, and restart.
+- Continue interrupted tasks from their saved checkpoints.
+- Expand model provider options and preserve native tool results across model turns.
+- Reduce device observation work, Linux screen confirmation time, and background workbench requests.
+
 ## 0.1.5
 
 - Record the first model text separately from the first network bytes.

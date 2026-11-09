@@ -1498,6 +1498,14 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
             "desktop",
         ]);
     process(start, vec![], 16384, 90).await?;
+    if let Some(bridge) = ai_phone_host_runtime::desktop_bridge::DesktopBridge::staged(&app.root)
+        .await
+        .map_err(|e| e.to_string())?
+    {
+        let mut update = docker();
+        update.args(bridge.install_args(CONTAINER));
+        process(update, bridge.bytes, 4096, 20).await?;
+    }
     install_step(app, id, "验证画面与控制").await?;
     let mut ok = false;
     for _ in 0..30 {

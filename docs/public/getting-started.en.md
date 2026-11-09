@@ -10,7 +10,7 @@ The instructions below build the project from source on Apple Silicon. For the W
 
 ## Update the installed client
 
-Starting with 0.1.4, open **AI Phone → Check for Updates…**, then select **Install Update**. AI Phone downloads the package, installs it and reopens. Windows may show a system approval prompt. Devices, model settings and conversations use the existing application data. Install 0.1.4 once from its release package to enable this menu workflow.
+When an update is available, the workbench shows an update icon at the top right. Open it to read the version, release name and notes, then select **Install Update**. AI Phone verifies the package, installs it and reopens using your existing devices, model settings and conversations. Windows may show a system approval prompt.
 
 ## Source alternative: prerequisites
 

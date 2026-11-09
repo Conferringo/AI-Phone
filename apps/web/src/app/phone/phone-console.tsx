@@ -34,6 +34,7 @@ import {
   ArrowUp,
   Paperclip,
   Square,
+  Pause,
   Play,
   X,
   LoaderCircle,
@@ -75,6 +76,7 @@ import {useChatOutbox} from "@/components/use-chat-outbox";
 import {acceptInputReceipt,acceptSnapshot,type AcceptedInput,type ChatSnapshot} from "@/lib/chat-snapshot";
 import {readChatHistory} from "@/lib/chat-history-reader";
 import {useChatHistoryPages} from "@/components/use-chat-history-pages";
+import {ClientUpdate} from "@/components/client-update";
 
 type Screen = MessageShape<typeof DeviceObservationSchema>;
 type Chat = MessageShape<typeof ChatStateSchema>;
@@ -144,6 +146,7 @@ function DeviceWorkbench(){
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("文件管理")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("配置中心")} open={settingsOpen} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
+    <ClientUpdate open={feature==='update'} onOpen={()=>setFeature('update')} onClose={()=>close('update')}/>
    </nav>
    <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!states[current]} onClick={()=>refreshers.current[current]?.()}><RefreshCw size={18}/></Button>
   </header>
@@ -286,35 +289,54 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
     return()=>{abort.abort();clearTimeout(phoneTimer);document.removeEventListener("visibilitychange",visibility);};
   },[observe,focused]);
   useEffect(() => {
-    const abort=new AbortController();
-    const url=new URL('/api/chat/events',location.href);
-    url.protocol=url.protocol==='https:'?'wss:':'ws:';
-    const updates=new WebSocket(url);
-    updates.binaryType='arraybuffer';
-    let chatTimer:ReturnType<typeof setTimeout>;
-    let reading=false,changed=false;
-    const messages=async()=>{
-      if(abort.signal.aborted||document.visibilityState!=="visible"||reading)return;
+    const abort = new AbortController();
+    const url = new URL('/api/chat/events', location.href);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    const updates = new WebSocket(url);
+    updates.binaryType = 'arraybuffer';
+    let chatTimer: ReturnType<typeof setTimeout>;
+    let reading = false;
+    let changed = false;
+    const visible = () => document.visibilityState === 'visible';
+    const messages = async () => {
+      if (abort.signal.aborted || !visible() || reading) return;
       clearTimeout(chatTimer);
-      reading=true;
-      do{
-        changed=false;
-        await fetchChat(abort.signal);
-      }while(changed&&!abort.signal.aborted&&document.visibilityState==="visible");
-      reading=false;
-      if(!abort.signal.aborted)chatTimer=setTimeout(messages,700);
+      reading = true;
+      let latest: Chat | undefined;
+      do {
+        changed = false;
+        latest = await fetchChat(abort.signal);
+      } while (changed && !abort.signal.aborted && visible());
+      reading = false;
+      if (abort.signal.aborted || !visible()) return;
+      const idle = latest && !['queued', 'running', 'paused'].includes(latest.runStatus)
+        && !latest.messages.some(message => message.active);
+      // An idle connection gets a slower backstop for changes without a socket event.
+      chatTimer = setTimeout(messages, idle && updates.readyState === WebSocket.OPEN ? 5000 : 700);
     };
-    updates.onmessage=({data})=>{
-      const {conversationId}=fromBinary(ChatChangedSchema,new Uint8Array(data));
-      if(!conversationId||!conversation.current||conversation.current===conversationId){
-        changed=true;
-        void messages();
-      }
+    const refresh = () => {
+      changed = true;
+      void messages();
     };
-    const visibility=()=>{if(document.visibilityState==="visible")void messages();};
-    void messages();document.addEventListener("visibilitychange",visibility);
-    return()=>{abort.abort();updates.close();clearTimeout(chatTimer);document.removeEventListener("visibilitychange",visibility);};
-  },[fetchChat]);
+    updates.onopen = refresh;
+    updates.onclose = refresh;
+    updates.onmessage = ({data}) => {
+      const {conversationId} = fromBinary(ChatChangedSchema, new Uint8Array(data));
+      if (!conversationId || !conversation.current || conversation.current === conversationId) refresh();
+    };
+    const visibility = () => {
+      if (visible()) refresh();
+      else clearTimeout(chatTimer);
+    };
+    void messages();
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      abort.abort();
+      updates.close();
+      clearTimeout(chatTimer);
+      document.removeEventListener('visibilitychange', visibility);
+    };
+  }, [fetchChat]);
   useEffect(
     () => () => {
       if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
@@ -449,14 +471,14 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
       files.forEach(file=>{if(file.preview)URL.revokeObjectURL(file.preview);});
     }catch(value){setError(value instanceof Error?value.message:t('发送失败'));}
   };
-  const runCommand = async (operation: "cancel" | "resume") => {
+  const runCommand = async (operation: "pause" | "cancel" | "resume") => {
     if (!chat?.runId) return;
     try {
       const next = await rpc(
         "assistant",
-        operation,
+        operation === "resume" ? "resume" : "cancel",
         ChatRunRequestSchema,
-        create(ChatRunRequestSchema, { runId: chat.runId }),
+        create(ChatRunRequestSchema, { runId: chat.runId, pause: operation === "pause" }),
         ChatStateSchema,
       );
       acceptChat(next);
@@ -736,10 +758,10 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
                     variant="ghost"
                     size="icon"
                     type="button"
-                    aria-label={t("停止任务")}
-                    onClick={() => void runCommand("cancel")}
+                    aria-label={t(chat?.canPause ? "暂停" : "停止任务")}
+                    onClick={() => void runCommand(chat?.canPause ? "pause" : "cancel")}
                   >
-                    <Square size={14} fill="currentColor" />
+                    {chat?.canPause ? <Pause size={18} /> : <Square size={14} fill="currentColor" />}
                   </Button>
                 )}
                 {(

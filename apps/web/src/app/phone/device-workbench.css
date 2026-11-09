@@ -4,6 +4,13 @@
 .workbench-navigation{min-height:60px;flex-shrink:0;display:flex;align-items:flex-start;gap:5px;padding:11px 24px;position:relative;z-index:10;direction:ltr}
 .workbench-shared-tools{display:flex;flex-shrink:0;align-items:center;gap:3px;margin-left:auto;padding-right:12px;border-right:1px solid var(--border);margin-right:6px}
 .workbench-navigation button[data-slot=button]{width:36px;height:38px;min-height:38px;min-width:36px}
+.client-update-details{display:grid;gap:12px;font-size:14px}
+.client-update-details p{margin:0;overflow-wrap:anywhere}
+.client-update-release{display:flex;align-items:baseline;gap:8px}
+.client-update-release span{font-variant-numeric:tabular-nums}
+.client-update-notes{white-space:pre-wrap;line-height:1.6}
+.client-update-error{color:var(--destructive)}
+@media(pointer:coarse){.workbench-navigation .client-update-trigger button[data-slot=button]{width:44px;height:44px;min-width:44px;min-height:44px}}
 .device-focus-grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,1fr);grid-template-rows:minmax(0,1fr);gap:24px;padding:6px 24px 20px;isolation:isolate;perspective:1800px;perspective-origin:30% 50%;overflow:hidden}
 .device-session,.device-session>.workspace-panes{display:contents!important}
 .device-focus-grid .device-pane{container-type:size;display:flex;flex-direction:column;position:relative;align-items:center;justify-content:flex-start;align-self:stretch;justify-self:center;gap:12px;width:86%;height:100%;min-width:0;min-height:0;grid-column:1!important;grid-row:1!important;z-index:2;pointer-events:none}

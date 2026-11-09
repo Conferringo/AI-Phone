@@ -5,6 +5,8 @@ mod archive;
 mod capsule;
 pub mod component;
 mod control;
+#[cfg(unix)]
+pub mod desktop_bridge;
 pub mod device_bridge;
 mod filesystem;
 pub mod guest_app_resources;

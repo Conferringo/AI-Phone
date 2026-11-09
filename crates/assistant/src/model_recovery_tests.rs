@@ -14,6 +14,7 @@ async fn resume(app: &Shared, run: Uuid) -> (StatusCode, Vec<u8>) {
         Ok(Bytes::from(
             wire::ChatRunRequest {
                 run_id: run.to_string(),
+                ..Default::default()
             }
             .encode_to_vec(),
         )),
@@ -89,6 +90,77 @@ async fn explicit_resume_checkpoint_consumes_the_notice_once() {
         assert!(!prepare_run_context(&app, run.conversation, run.message, &mut restored, &mut restored_state).await.unwrap());
         assert_eq!(restored, context, "an ordinary restart must not append another recovery notice");
     }).await;
+}
+
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; pause and resume race at a durable wait"]
+async fn pause_resume_preserves_the_wait_and_wins_over_the_previous_attempt() {
+    database_case(|app| async move {
+        let mut run = FixtureRun::start(&app, "检查点继续").await;
+        checkpoint(
+            &app,
+            run.id,
+            &mut run.context,
+            &run.pending,
+            &run.answer,
+            2,
+            &run.state,
+        )
+        .await
+        .unwrap();
+        let wake: i64 = sqlx::query_scalar(
+            "UPDATE runs SET next_wake_at=now()+interval '1 minute' WHERE id=$1
+             RETURNING (extract(epoch FROM next_wake_at)*1000)::bigint",
+        )
+        .bind(run.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+        let token = CancellationToken::new();
+        app.active.lock().await.insert(run.id, token.clone());
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "authorization",
+            "Bearer steering-fixture-token".parse().unwrap(),
+        );
+        headers.insert("content-type", MEDIA.parse().unwrap());
+        let body = wire::ChatRunRequest {
+            run_id: run.id.to_string(),
+            pause: true,
+        };
+        let response = crate::http::cancel(
+            State(app.clone()),
+            headers,
+            Ok(Bytes::from(body.encode_to_vec())),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 1_000_000)
+            .await
+            .unwrap();
+        let paused = wire::ChatState::decode(bytes).unwrap();
+        assert_eq!(paused.run_status, "paused");
+        assert!(!paused.can_pause);
+        assert_eq!(paused.next_wake_at_ms, wake);
+        assert!(token.is_cancelled());
+
+        assert_eq!(resume(&app, run.id).await.0, StatusCode::OK);
+        finish_attempt(&app, run.id, run.message, &Err("canceled".into()), true)
+            .await
+            .unwrap();
+        let (status, deadline, context): (String, i64, Value) = sqlx::query_as(
+            "SELECT status,(extract(epoch FROM next_wake_at)*1000)::bigint,context
+             FROM runs WHERE id=$1",
+        )
+        .bind(run.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+        assert_eq!(status, "queued");
+        assert_eq!(deadline, wake);
+        assert_eq!(context, json!(run.context));
+    })
+    .await;
 }
 
 async fn pause(app: &Shared, run: Uuid) {

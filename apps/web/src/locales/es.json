@@ -1,4 +1,8 @@
 {
+  "系统更新": "Actualización del sistema",
+  "确认更新": "Confirmar actualización",
+  "正在更新…": "Actualizando…",
+  "更新中断，请重试": "Actualización interrumpida. Vuelve a intentarlo.",
   "登录": "Iniciar sesión",
   "登录失败": "Error al iniciar sesión",
   "账号": "Cuenta",

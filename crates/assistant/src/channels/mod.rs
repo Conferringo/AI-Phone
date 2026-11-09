@@ -198,8 +198,15 @@ impl State {
         store.save()?;
         drop(store);
         for run_id in runs {
-            let _: Result<wire::ChatState> =
-                self.rpc("cancel", wire::ChatRunRequest { run_id }).await;
+            let _: Result<wire::ChatState> = self
+                .rpc(
+                    "cancel",
+                    wire::ChatRunRequest {
+                        run_id,
+                        ..Default::default()
+                    },
+                )
+                .await;
         }
         Ok(())
     }

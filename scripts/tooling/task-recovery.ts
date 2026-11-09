@@ -43,6 +43,11 @@ class Model {
         name = body.model as string,
         index = (this.counts[name] || 0) + 1;
       this.counts[name] = index;
+      if (name === "unknown") {
+        const history = JSON.stringify(body.input);
+        assert(history.includes("result_unknown"));
+        assert(history.includes("superseded_after_interruption"));
+      }
       const calls = new Set(
           body.input
             .filter((item: any) => item.name === "memory_save")
@@ -261,7 +266,7 @@ class Driver {
     );
     return { root, database, runId, message };
   }
-  start(root: string) {
+  start(root: string, resume?: string) {
     const log = openSync(
         join(root, "worker-" + randomUUID() + ".log"),
         "wx",
@@ -275,7 +280,7 @@ class Driver {
           "--ignored",
           "--nocapture",
         ],
-        { env: this.env(root), stdout: log, stderr: log },
+        { env: { ...this.env(root), AI_PHONE_RECOVERY_RESUME_RUN: resume ?? "" }, stdout: log, stderr: log },
       );
     this.processes.push({ child, log });
     return child;
@@ -384,18 +389,31 @@ class Driver {
           path: "forbidden.txt",
           content: "DO_NOT_RUN",
         }),
+      },
+      unstarted = {
+        type: "function_call",
+        call_id: "unstarted-write",
+        local_action_id: randomUUID(),
+        name: "memory_save",
+        arguments: JSON.stringify({ content: "DO_NOT_RUN_UNSTARTED" }),
       };
     this.sql(
       db,
-      `UPDATE runs SET status='running',context=${literal([{ role: "user", content: [{ type: "input_text", text: "你好" }] }, call])}::jsonb,pending_tools=${literal([call])}::jsonb WHERE id='${id}'; INSERT INTO harness_events(id,run_id,message_id,kind,title,status) VALUES('${action}','${id}','${message}','tool','unknown','running');`,
+      `UPDATE runs SET status='running',context=${literal([{ role: "user", content: [{ type: "input_text", text: "你好" }] }, call, unstarted])}::jsonb,pending_tools=${literal([call, unstarted])}::jsonb WHERE id='${id}'; INSERT INTO harness_events(id,run_id,message_id,kind,title,status) VALUES('${action}','${id}','${message}','tool','unknown','running');`,
     );
     const child = this.start(root);
     await this.wait(() => this.row(db, id).status === "paused");
     await this.stop(child);
     assert(!existsSync(join(root, "data/workspaces/admin/forbidden.txt")));
     assert.equal(this.model.counts.unknown || 0, 0);
+    const resumed = this.start(root, id);
+    await this.wait(() => this.row(db, id).status === "succeeded");
+    await this.stop(resumed);
+    assert.equal(this.model.counts.unknown, 1);
+    assert.equal(this.sql(db, `SELECT count(*) FROM memories;`), "0");
+    assert(!existsSync(join(root, "data/workspaces/admin/forbidden.txt")));
     this.reports.push(
-      "Interrupted side effect with unknown result pauses without execution or model call",
+      "Unknown side effect pauses on restart; explicit resume replans with the unknown receipt without executing either old write",
     );
   }
   async provider() {

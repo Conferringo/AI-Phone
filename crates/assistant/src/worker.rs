@@ -46,6 +46,10 @@ async fn finish_attempt(
     };
     if status == "canceled" {
         trace = "canceled";
+    } else if status == "paused" {
+        trace = "paused";
+    } else if status == "queued" {
+        trace = "waiting";
     } else if let Err(error) = result {
         let manual = error == "paused:manual_takeover";
         let unresolved:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM harness_events WHERE run_id=$1 AND kind='tool' AND status='running' AND result IS NULL)").bind(id).fetch_one(&mut *tx).await?;
@@ -1831,7 +1835,7 @@ async fn consume_wait_completion(
         .fetch_one(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-    if row.get::<String, _>("status") == "canceled" {
+    if row.get::<String, _>("status") != "running" {
         return Err("canceled".into());
     }
     let stored: Value = row.get("loop_state");
@@ -1888,7 +1892,7 @@ async fn consume_steering(
             .fetch_one(&app.db)
             .await
             .map_err(|e| e.to_string())?;
-    if status == "canceled" {
+    if status != "running" {
         return Err("canceled".into());
     }
     if !pending_input {
@@ -1900,7 +1904,7 @@ async fn consume_steering(
         .fetch_one(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-    if row.get::<String, _>("status") == "canceled" {
+    if row.get::<String, _>("status") != "running" {
         return Err("canceled".into());
     }
     let steering: Value = row.get("steering");
@@ -1990,7 +1994,7 @@ async fn persist_disposition(
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
-    if row.get::<String, _>("status") == "canceled" {
+    if row.get::<String, _>("status") != "running" {
         return Err("canceled".into());
     }
     let steering: Value = row.get("steering");
@@ -2068,6 +2072,87 @@ async fn prepare_run_context(
     Ok(apply_explicit_resume(context, state) || initialized)
 }
 
+async fn resolve_pending_resume(
+    app: &App,
+    run: Uuid,
+    context: &mut Vec<Value>,
+    pending: &mut Vec<Value>,
+    state: &mut crate::agent_loop::LoopState,
+) -> Result<bool, String> {
+    let Some(first) = pending.first().filter(|call| !can_restart_tool(call)) else {
+        return Ok(false);
+    };
+    let action = Uuid::parse_str(first["local_action_id"].as_str().ok_or("待办工具ID无效")?)
+        .map_err(|error| error.to_string())?;
+    let result = json!([{"type":"input_text","text":json!({
+        "success":false,"result_unknown":true,"request_id":action,
+        "error":"上一条操作没有确认回执。请先读取当前状态或查询原请求的结果，再决定后续步骤。"
+    }).to_string()}]);
+    let mut tx = app.db.begin().await.map_err(|error| error.to_string())?;
+    let changed = sqlx::query(
+        "UPDATE harness_events SET status='failed',result=$3,finished_at=now(),
+        content=content||E'\\n\\n操作结果待核对。'
+        WHERE id=$1 AND run_id=$2 AND kind='tool' AND status<>'queued' AND result IS NULL",
+    )
+    .bind(action)
+    .bind(run)
+    .bind(&result)
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| error.to_string())?
+    .rows_affected();
+    if changed == 0 {
+        return Ok(false);
+    }
+
+    let name = first["name"].as_str().unwrap_or("");
+    let observe = if name.starts_with("phone_") {
+        Some(("phone_observe", json!({})))
+    } else if name.starts_with("computer_") {
+        let args: Value =
+            serde_json::from_str(first["arguments"].as_str().unwrap_or("{}")).unwrap_or_default();
+        Some(("computer_observe", json!({"device_id":args["device_id"]})))
+    } else {
+        None
+    };
+    let mut outputs = pending.drain(..);
+    let uncertain = outputs.next().expect("pending action");
+    context.push(
+        json!({"type":"function_call_output","call_id":uncertain["call_id"],"output":result}),
+    );
+    let superseded = json!([{"type":"input_text","text":"{\"success\":false,\"not_executed\":true,\"error\":\"superseded_after_interruption\"}"}]);
+    for call in outputs {
+        context.push(
+            json!({"type":"function_call_output","call_id":call["call_id"],"output":superseded}),
+        );
+    }
+    apply_explicit_resume(context, state);
+    if let Some((name, args)) = observe {
+        let call = json!({"type":"function_call","name":name,"arguments":args.to_string(),
+            "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
+        context.push(call.clone());
+        pending.push(call);
+    }
+    crate::agent_loop::compact_observations(context);
+    let changed = sqlx::query(
+        "UPDATE runs SET context=$2,pending_tools=$3,loop_state=$4,heartbeat_at=now()
+        WHERE id=$1 AND status='running'",
+    )
+    .bind(run)
+    .bind(json!(context))
+    .bind(json!(pending))
+    .bind(json!(state))
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| error.to_string())?
+    .rows_affected();
+    if changed == 0 {
+        return Err("canceled".into());
+    }
+    tx.commit().await.map_err(|error| error.to_string())?;
+    Ok(true)
+}
+
 async fn execute(
     app: &App,
     id: Uuid,
@@ -2109,7 +2194,11 @@ async fn execute(
             .any(|item| item["type"] == "function_call" && item["name"] == "task_wait");
     let mut state: crate::agent_loop::LoopState =
         serde_json::from_value(stored_state).map_err(|e| e.to_string())?;
-    if prepare_run_context(app, conversation, message, &mut context, &mut state).await? {
+    let reconciled = state.resume_requested
+        && resolve_pending_resume(app, id, &mut context, &mut pending, &mut state).await?;
+    if !reconciled
+        && prepare_run_context(app, conversation, message, &mut context, &mut state).await?
+    {
         checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
     loop {
@@ -2378,7 +2467,6 @@ async fn execute(
                     .await?;
                 }
             }
-            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if !failed && name == "task_wait" {
                 let wake = value
                     .as_ref()
@@ -2438,6 +2526,7 @@ async fn execute(
                 }
                 continue;
             }
+            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if stalled {
                 let reason = if state.observation_recoveries >= 4 {
                     format!(
@@ -2491,13 +2580,22 @@ async fn execute(
             }
             continue;
         }
+        let effort = if verification_attempts(&context) > 0 && !has_current_observation(&context) {
+            "none"
+        } else if (phone_task(&context) || action_task(&context))
+            && (state.stalls > 0 || !gui_execution(&context))
+        {
+            "high"
+        } else {
+            "low"
+        };
         let output = match respond_to_current_input(
             app,
             id,
             message,
             &context,
             cancel,
-            verification_attempts(&context) > 0 && !has_current_observation(&context),
+            effort,
             state.model_replay_boundary,
         )
         .await
@@ -2781,7 +2879,7 @@ async fn respond_to_current_input(
     message: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    require_observation: bool,
+    effort: &str,
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
     if !input_ready(app, run, cancel).await? {
@@ -2793,7 +2891,7 @@ async fn respond_to_current_input(
         biased;
         _=cancel.cancelled()=>Err("canceled".into()),
         changed=wait_for_steering(app,run)=>changed.map(|()|None),
-        result=respond(app,run,context,cancel,require_observation,model_replay_boundary,&mut timing)=>result.map(Some),
+        result=respond(app,run,context,cancel,effort,model_replay_boundary,&mut timing)=>result.map(Some),
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.
     if result.is_ok() {
@@ -2818,7 +2916,7 @@ async fn respond(
     run: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    require_observation: bool,
+    effort: &str,
     model_replay_boundary: usize,
     timing: &mut crate::model_timing::Timing,
 ) -> Result<Vec<Value>, String> {
@@ -2833,8 +2931,8 @@ async fn respond(
     if !execution_policy::command_execution(context) {
         input.push(json!({"role":"system","content":[{"type":"input_text","text":execution_policy::GUI_GUIDANCE}]}));
     }
-    let mut body = json!({"input":input,"tools":execution_tools(context),"parallel_tool_calls":false,"reasoning":{"effort":if require_observation {"none"} else if phone_task(context)||action_task(context) {"high"} else {"low"}},"max_output_tokens":8192});
-    if require_observation {
+    let mut body = json!({"input":input,"tools":execution_tools(context),"parallel_tool_calls":false,"reasoning":{"effort":effort},"max_output_tokens":8192});
+    if effort == "none" {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }
     let client = app.settings.http_client(&config.proxy_url)?;
@@ -2903,23 +3001,10 @@ async fn recorded_tool(
             sqlx::query("UPDATE harness_events SET status='completed',result=$2,finished_at=now() WHERE id=$1").bind(id).bind(&value).execute(&app.db).await.map_err(|e|e.to_string())?;
             return Ok(value);
         }
-        if [
-            "channel_notify",
-            "workspace_run",
-            "computer_run",
-            "workspace_write",
-            "device_file_manage",
-            "workspace_fetch",
-            "skill_install",
-            "skill_create",
-            "skill_edit",
-            "skill_set_enabled",
-            "knowledge_write",
-        ]
-        .contains(&name)
-            && row.get::<String, _>("status") == "running"
-        {
-            return Err("上一条工作操作结果未知，请先检查成果后继续。".into());
+        if !can_restart_tool(call) && row.get::<String, _>("status") != "queued" {
+            return Err(
+                "paused:unknown_outcome:上一条操作结果未知，请先检查当前状态后继续。".into(),
+            );
         }
     }
     let title = match name {
@@ -3007,7 +3092,23 @@ async fn recorded_tool(
             .await?;
         }
     }
-    sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content) VALUES($1,$2,$3,'tool',$4,$5) ON CONFLICT(id) DO UPDATE SET status='running'").bind(id).bind(run).bind(message).bind(title).bind(format!("输入\n{input}")).execute(&app.db).await.map_err(|e|e.to_string())?;
+    let admitted = sqlx::query(
+        "INSERT INTO harness_events(id,run_id,message_id,kind,title,content)
+        SELECT $1,id,$3,'tool',$4,$5 FROM runs WHERE id=$2 AND status='running'
+        ON CONFLICT(id) DO UPDATE SET status='running'",
+    )
+    .bind(id)
+    .bind(run)
+    .bind(message)
+    .bind(title)
+    .bind(format!("输入\n{input}"))
+    .execute(&app.db)
+    .await
+    .map_err(|error| error.to_string())?
+    .rows_affected();
+    if admitted == 0 {
+        return Err("canceled".into());
+    }
     let result = match tool(app, run, message, call, epoch, cancel).await {
         Err(error) if !fatal_tool_error(&error) => Ok(recoverable_tool_failure(error)),
         other => other,
@@ -3068,6 +3169,35 @@ async fn recorded_tool(
         retain_tool_observation(app, run, id, call, output).await?;
     }
     result
+}
+
+// Reads can be restarted. The few writes here deduplicate on local_action_id.
+fn can_restart_tool(call: &Value) -> bool {
+    matches!(
+        call["name"].as_str().unwrap_or(""),
+        "phone_observe"
+            | "phone_notifications"
+            | "computer_observe"
+            | "computer_find_text"
+            | "computer_find_control"
+            | "device_list"
+            | "device_files"
+            | "device_file_list"
+            | "device_notifications"
+            | "device_transfer_status"
+            | "channel_delivery"
+            | "workspace_read"
+            | "workspace_list"
+            | "skill_read"
+            | "skill_list"
+            | "knowledge_search"
+            | "knowledge_read"
+            | "task_history"
+            | "task_plan"
+            | "task_wait"
+            | "memory_save"
+            | "device_message"
+    )
 }
 
 // Fresh execution and receipt replay share one learning boundary. Replaying a
@@ -4799,9 +4929,11 @@ mod loop_persistence_tests {
             assert_eq!(fault_message,"","an operational pause must not become assistant speech");
             let model_error="模型服务返回 HTTP 402；请检查模型 ID、密钥和服务权限";
             sqlx::query("UPDATE messages SET text='已读取表格，正在处理。' WHERE id=$1").bind(message).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:model_error,step:56,state:&state},RunDisposition::Paused,None).await.unwrap());
             let retained:String=sqlx::query_scalar("SELECT text FROM messages WHERE id=$1").bind(message).fetch_one(&app.db).await.unwrap();
             assert_eq!(retained,"已读取表格，正在处理。","provider failure must preserve existing dialogue");
+            sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:"请提供收件人。",step:56,state:&state},RunDisposition::NeedsInput,None).await.unwrap());
             let question=crate::http::state(&app,conversation).await.unwrap();
             assert_eq!(question.notice_kind,wire::RunNoticeKind::NeedsInput as i32);
@@ -4841,6 +4973,7 @@ mod loop_persistence_tests {
             assert_eq!(completed_error.error,"database transport failed");
             assert_eq!(completed_error.notice_kind,wire::RunNoticeKind::SystemFailure as i32);
             assert_eq!(completed_error.messages.iter().find(|m|m.id==message.to_string()).unwrap().text,"已有真实回复");
+            sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             assert!(persist_disposition(&app,run,message,Checkpoint {context:&mut context,pending:&pending,answer:"HTTP 429",step:56,state:&state},RunDisposition::Retrying,Some(now_ms()+2000)).await.unwrap());
             let retry=crate::http::state(&app,conversation).await.unwrap();
             assert_eq!(retry.run_status,"queued");assert_eq!(retry.error,"HTTP 429");assert_eq!(retry.notice_kind,wire::RunNoticeKind::SystemFailure as i32);assert!(retry.next_wake_at_ms>now_ms() as i64);
@@ -4923,6 +5056,24 @@ mod process_recovery_tests {
             location_mutation: Mutex::new(()),
             network_mutation: Mutex::new(()),
         });
+        if let Ok(run_id) = std::env::var("AI_PHONE_RECOVERY_RESUME_RUN")
+            && !run_id.is_empty()
+        {
+            let mut headers = HeaderMap::new();
+            headers.insert("authorization", "Bearer isolated".parse().unwrap());
+            headers.insert("content-type", MEDIA.parse().unwrap());
+            let request = wire::ChatRunRequest {
+                run_id,
+                ..Default::default()
+            };
+            let result = crate::http::resume(
+                axum::extract::State(app.clone()),
+                headers,
+                Ok(axum::body::Bytes::from(request.encode_to_vec())),
+            )
+            .await;
+            assert_eq!(result.status(), StatusCode::OK);
+        }
         work(app).await;
     }
 }

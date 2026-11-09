@@ -10,13 +10,13 @@ let remembered:Anchor={element:null,mode:'keyboard'};
 let activeWindow="";
 const surfaces=new Map<string,{panel:HTMLElement;anchor:HTMLElement|null;parent?:string}>();
 export function rememberAnchor(element:HTMLElement,mode='click'){remembered={element,mode};}
-export function WindowTrigger({onOpen,children,label,open=false}:{onOpen:()=>void;children:ReactNode;label:string;open?:boolean}){
+export function WindowTrigger({onOpen,children,label,open=false,openOnFocus=false}:{onOpen:()=>void;children:ReactNode;label:string;open?:boolean;openOnFocus?:boolean}){
  const timer=useRef<ReturnType<typeof setTimeout>|null>(null);const cancel=()=>{if(timer.current)clearTimeout(timer.current);};useEffect(()=>cancel,[]);
  const show=(element:HTMLElement,mode:string)=>{rememberAnchor(element,mode);window.dispatchEvent(new CustomEvent("phone:window-source",{detail:{element,mode}}));onOpen();};
- return <Button variant="ghost" size="icon" aria-label={label} title={label} aria-expanded={open} onPointerEnter={e=>{if(e.pointerType!=='mouse'||e.buttons)return;const element=e.currentTarget;cancel();timer.current=setTimeout(()=>show(element,'mouse'),240);}} onPointerLeave={cancel} onPointerDown={cancel} onBlur={cancel} onKeyDown={e=>{if(e.key==='ArrowDown'){e.preventDefault();cancel();show(e.currentTarget,'keyboard');}}} onClick={e=>{cancel();show(e.currentTarget,e.detail===0?'keyboard':'click');}}>{children}</Button>;
+ return <Button variant="ghost" size="icon" aria-label={label} title={label} aria-expanded={open} onPointerEnter={e=>{if(e.pointerType!=='mouse'||e.buttons)return;const element=e.currentTarget;cancel();timer.current=setTimeout(()=>show(element,'mouse'),240);}} onPointerLeave={cancel} onPointerDown={cancel} onBlur={cancel} onFocus={openOnFocus?e=>{if(!open&&e.currentTarget.matches(':focus-visible'))show(e.currentTarget,'keyboard');}:undefined} onKeyDown={e=>{if(e.key==='ArrowDown'){e.preventDefault();cancel();show(e.currentTarget,'keyboard');}}} onClick={e=>{cancel();show(e.currentTarget,e.detail===0?'keyboard':'click');}}>{children}</Button>;
 }
 function related(id:string){const ids=new Set([id]);let changed=true;while(changed){changed=false;for(const [key,value] of surfaces)if(value.parent&&ids.has(value.parent)&&!ids.has(key)){ids.add(key);changed=true;}}return [...ids].map(key=>surfaces.get(key)).filter(Boolean) as NonNullable<ReturnType<typeof surfaces.get>>[];}
-export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean}){const {t}=useI18n();
+export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false,focusPanel=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean;focusPanel?:boolean}){const {t}=useI18n();
  const label=useId(),element=useRef<HTMLElement>(null),anchor=useRef<Anchor>({element:null,mode:'click'}),latest=useRef(onClose),motion=useRef<Animation|null>(null),composing=useRef(false);
  const interrupted=useRef<Keyframe|null>(null);
  latest.current=onClose;
@@ -62,7 +62,7 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
    motion.current=animation;animation.onfinish=()=>{if(motion.current!==animation)return;panel.style.willChange='';if(!open)setMounted(false);};
    if(open&&anchor.current.mode==='keyboard'){
     const candidates=[...panel.querySelectorAll<HTMLElement>('input:not([type=file]),textarea,button')].filter(el=>el.getClientRects().length>0&&!el.closest('[hidden]')&&!el.hasAttribute('disabled'));
-    (candidates.find(el=>el.closest('.floating-body'))??candidates[0])?.focus({preventScroll:true});
+    (focusPanel?panel:candidates.find(el=>el.closest('.floating-body'))??candidates[0])?.focus({preventScroll:true});
    }
   });
   return()=>{
@@ -72,7 +72,7 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
    }
    motion.current?.cancel();panel.style.willChange='';
   };
- },[open,mounted,id]);
+ },[open,mounted,id,focusPanel]);
  if(!mounted)return null;
  return createPortal(<section ref={element} role="dialog" aria-labelledby={label} tabIndex={-1} className="floating-window" data-window-id={id} data-active={active} style={{...geometry,...(fitContent?{height:"auto",maxHeight:geometry.height}:{})} as CSSProperties} onPointerDown={()=>{anchor.current.mode='click';window.dispatchEvent(new CustomEvent('phone:window-focus',{detail:id}));}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}}><header className="floating-header"><h2 id={label}>{title}</h2><div className="floating-actions">{actions}<Button variant="ghost" size="icon" aria-label={t("关闭{0}", {"0":title})} onClick={onClose}><X size={17}/></Button></div></header><div className="floating-body">{children}</div></section>,document.body);
 }
