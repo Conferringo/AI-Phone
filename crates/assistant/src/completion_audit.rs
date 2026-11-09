@@ -164,13 +164,8 @@ pub async fn verify(
     let mut audit_input = vec![
         json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence,"handoff_receipts":handoff_receipts}).to_string()}),
     ];
-    let events:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',device_id,'app',app_name,'title',title,'text',body) FROM phone_notifications WHERE run_id=$1 AND status IN ('assigned','attending','pending-summary') ORDER BY received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    let read_only: bool = sqlx::query_scalar("SELECT background_read_only FROM runs WHERE id=$1")
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
-    if !events.is_empty() && !read_only {
+    let events:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',n.device_id,'app',n.app_name,'title',n.title,'text',n.body) FROM phone_notifications n JOIN runs r ON r.id=n.run_id WHERE n.run_id=$1 AND NOT r.background_read_only AND n.status IN ('assigned','attending','pending-summary') ORDER BY n.received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    if !events.is_empty() {
         let reply: bool = sqlx::query_scalar("SELECT autonomous_reply FROM proactive_state")
             .fetch_one(&app.db)
             .await
@@ -254,6 +249,7 @@ pub async fn verify(
     .map_err(|e| e.to_string())?;
     if !needs_input
         && let Ok(report) = &result
+        && report.approved
         && let Some((title, summary, observations)) = report
             .knowledge
             .as_ref()
@@ -578,39 +574,50 @@ mod tests {
                 }
             }
             let mut candidate = json!({"app_id":"com.example.reader","title":"Open the search field","procedure":"Click the visible search entry and verify the actual input field before typing.","outcome":"verified","limitations":"Only the observed application version."});
-            for (references, saved, note_references, notes) in [
+            for (references, saved, note_references, approved, notes) in [
                 (
                     json!([ids[0].to_string(), ids[2].to_string()]),
                     0i64,
                     [ids[0], ids[1]],
+                    true,
                     0i64,
                 ),
                 (
                     json!([ids[0].to_string(), "unknown-event"]),
                     0,
                     [ids[0], ids[3]],
+                    true,
                     0,
                 ),
                 (
                     json!([ids[0].to_string(), ids[3].to_string()]),
                     0,
                     [ids[0], ids[2]],
+                    false,
+                    0,
+                ),
+                (
+                    json!([ids[0].to_string(), ids[3].to_string()]),
+                    0,
+                    [ids[0], ids[2]],
+                    true,
                     1,
                 ),
                 (
                     json!([ids[0].to_string(), ids[1].to_string()]),
                     1,
                     [ids[0], ids[2]],
+                    true,
                     1,
                 ),
             ] {
                 candidate["evidence_ids"] = references;
-                *reply.lock().unwrap() = json!({"approved":true,"feedback":"Fixture task evidence matches","experience":candidate,"knowledge":{
+                *reply.lock().unwrap() = json!({"approved":approved,"feedback":"Fixture task evidence","experience":candidate,"knowledge":{
                     "title":"Check import results in both applications",
                     "summary":"Verify the actual result in the receiving application instead of assuming a handoff is complete.",
                     "evidence_ids":note_references,
                 }});
-                assert!(
+                assert_eq!(
                     verify(
                         &app,
                         run,
@@ -622,7 +629,8 @@ mod tests {
                     )
                     .await
                     .unwrap()
-                    .approved
+                    .approved,
+                    approved
                 );
                 let request = received.recv().await.unwrap();
                 let schema = &request["tools"][0]["parameters"]["properties"]["experience"];
