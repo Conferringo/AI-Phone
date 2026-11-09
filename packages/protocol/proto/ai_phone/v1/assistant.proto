@@ -81,5 +81,9 @@ message ChatSendRequest {
   string device_id = 5;
   string agent_id = 6;
   ChatVoiceInput voice = 7;
+  // Return only the accepted message and its conversation, device, and run IDs.
+  bool receipt_only = 8;
 }
 message ChatRunRequest { string run_id = 1; }
+// A committed conversation change. Fetch history for authoritative content.
+message ChatChanged { string conversation_id = 1; }

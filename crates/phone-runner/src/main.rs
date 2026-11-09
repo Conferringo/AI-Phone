@@ -84,7 +84,6 @@ struct Runner {
     tree_lock: Mutex<()>,
     cursor: Mutex<wire::DeviceCursor>,
     root_ready: AtomicBool,
-    rotation: AtomicU32,
     width: AtomicU32,
     height: AtomicU32,
     local: reqwest::Client,
@@ -331,10 +330,6 @@ async fn dimensions(runner: &Runner) -> (u32, u32) {
         && let (Some(width), Some(height)) = (value["width"].as_u64(), value["height"].as_u64())
         && matches!((width, height), (720, 1440) | (1440, 720))
     {
-        runner.rotation.store(
-            value["rotation"].as_u64().unwrap_or(0) as u32,
-            Ordering::Release,
-        );
         runner.width.store(width as u32, Ordering::Release);
         runner.height.store(height as u32, Ordering::Release);
     }
@@ -360,8 +355,8 @@ async fn notifications(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as u64;
-    for (file, attention) in [("notifications.json", false), ("attention.json", true)] {
-        let result = adb(
+    let read = |file| {
+        adb(
             &runner,
             vec![
                 "exec-out".into(),
@@ -369,7 +364,10 @@ async fn notifications(
                 format!("/data/user/0/dev.aiphone.input/files/{file}"),
             ],
         )
-        .await;
+    };
+    let (notifications, attention) =
+        tokio::join!(read("notifications.json"), read("attention.json"));
+    for (result, attention) in [(notifications, false), (attention, true)] {
         if let Ok((true, bytes, _)) = result
             && let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes)
         {
@@ -382,7 +380,7 @@ async fn notifications(
                 output.connected = connected;
                 output.checked_at_ms = checked;
             }
-            if connected && let Some(events) = value["notifications"].as_array() {
+            if let Some(events) = value["notifications"].as_array() {
                 for event in events.iter().take(if attention { 80 } else { 160 }) {
                     let string = |key: &str, max: usize| {
                         event[key]
@@ -470,11 +468,12 @@ async fn observe(
         } else {
             String::new()
         };
-        let mut png = Vec::new();
-        let (mut width, mut height) = dimensions(&runner).await;
-        if !request.metadata_only {
-            (png, width, height) = capture_frame(&runner).await?;
-        }
+        let (png, width, height) = if request.metadata_only {
+            let (width, height) = dimensions(&runner).await;
+            (Vec::new(), width, height)
+        } else {
+            capture_frame(&runner).await?
+        };
         let mut ledger = runner.ledger.lock().await;
         ledger.sequence += 1;
         Ok(wire::DeviceObservation {
@@ -701,7 +700,6 @@ async fn action(
         _ => ("", vec![]),
     };
     let (width, height) = dimensions(&runner).await;
-    let fast_body = request.encode_to_vec();
     let complex = matches!(request.action, Some(Action::Gesture(_) | Action::Motion(_)));
     let fast_touch = complex
         || (((width == 720 && height == 1440) || (width == 1440 && height == 720))
@@ -709,6 +707,7 @@ async fn action(
                 request.action,
                 Some(Action::Tap(_) | Action::Swipe(_) | Action::Drag(_) | Action::LongPress(_))
             ));
+    let fast_body = fast_touch.then(|| request.encode_to_vec());
     let expected_orientation = match request.action.as_ref() {
         Some(Action::Orientation(value)) => Some(*value),
         _ => None,
@@ -878,7 +877,7 @@ async fn action(
                 tokio::time::sleep(Duration::from_millis(300)).await;
             }
         }
-        if fast_touch {
+        if let Some(fast_body) = fast_body {
             match runner
                 .local
                 .post(format!("{}/action", runner.media_url))
@@ -1009,7 +1008,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         tree_lock: Mutex::new(()),
         cursor: Mutex::new(wire::DeviceCursor::default()),
         root_ready: AtomicBool::new(false),
-        rotation: AtomicU32::new(0),
         width: AtomicU32::new(720),
         height: AtomicU32::new(1440),
         local: reqwest::Client::builder()
@@ -1117,7 +1115,6 @@ mod observation_tests {
                 tree_lock: Mutex::new(()),
                 cursor: Mutex::new(wire::DeviceCursor::default()),
                 root_ready: AtomicBool::new(true),
-                rotation: AtomicU32::new(0),
                 width: AtomicU32::new(720),
                 height: AtomicU32::new(1440),
                 local: reqwest::Client::builder().no_proxy().build().unwrap(),

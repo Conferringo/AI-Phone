@@ -808,7 +808,6 @@ mod tests {
             tree_lock: Mutex::new(()),
             cursor: Mutex::new(wire::DeviceCursor::default()),
             root_ready: AtomicBool::new(true),
-            rotation: AtomicU32::new(0),
             width: AtomicU32::new(720),
             height: AtomicU32::new(1440),
             local: reqwest::Client::new(),

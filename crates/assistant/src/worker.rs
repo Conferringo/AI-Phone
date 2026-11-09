@@ -31,8 +31,8 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, _message): (String, Uuid) =
-        sqlx::query_as("SELECT status,assistant_message_id FROM runs WHERE id=$1 FOR UPDATE")
+    let (status, conversation): (String, Uuid) =
+        sqlx::query_as("SELECT status,conversation_id FROM runs WHERE id=$1 FOR UPDATE")
             .bind(id)
             .fetch_one(&mut *tx)
             .await?;
@@ -81,7 +81,11 @@ async fn finish_attempt(
         .bind(id)
         .execute(&mut *tx)
         .await?;
-    tx.commit().await
+    tx.commit().await?;
+    if result.is_err() {
+        app.run_signals.chat_changed(conversation);
+    }
+    Ok(())
 }
 
 pub async fn work(app: Shared) {
@@ -91,6 +95,7 @@ pub async fn work(app: Shared) {
             let cancel = CancellationToken::new();
             app.active.lock().await.insert(id, cancel.clone());
             attempts.spawn(attempt(app.clone(), id, message, cancel));
+            continue;
         }
         tokio::select! {
             Some(result) = attempts.join_next(), if !attempts.is_empty() => {
@@ -99,6 +104,7 @@ pub async fn work(app: Shared) {
                     Err(_) => eprintln!("Task finalization stopped unexpectedly; device ownership retained until recovery"),
                 }
             }
+            _ = app.run_signals.queue.notified() => {}
             _ = tokio::time::sleep(Duration::from_millis(250)) => {}
         }
     }
@@ -562,6 +568,26 @@ mod target_wording_tests {
             json!({"role":"user","content":[{"type":"input_text","text":"用电脑打开表格并核验金额。"}]}),
         ];
         assert!(computer_task(&desktop));
+    }
+
+    #[test]
+    fn exploration_does_not_impose_a_device_action() {
+        for phone in [true, false] {
+            let kind = if phone { "phone" } else { "desktop" };
+            let mut context =
+                vec![json!({"role":"system","content":format!("[当前设备类型:{kind}]")})];
+            context.extend(crate::exploration_policy::context(phone, true, true, ""));
+            assert!(!phone_task(&context));
+            assert!(!computer_task(&context));
+            assert!(!action_task(&context));
+            assert!(initial_observation(&context).is_none());
+            assert!(finish_rejection(&context, "暂时休息。").is_none());
+            if !phone {
+                context.push(json!({"type":"function_call","name":"computer_click"}));
+                assert!(action_task(&context));
+                assert!(finish_rejection(&context, "已点击。").is_some());
+            }
+        }
     }
 }
 fn phone_task(context: &[Value]) -> bool {
@@ -1482,6 +1508,9 @@ fn action_task(context: &[Value]) -> bool {
         || context.iter().skip(evidence_start(context)).any(|call| {
             call["type"] == "function_call"
                 && (phone_mutation(call)
+                    || call["name"]
+                        .as_str()
+                        .is_some_and(execution_policy::visible_action)
                     || [
                         "skill_create",
                         "skill_edit",
@@ -1719,6 +1748,20 @@ fn verification_attempts(context: &[Value]) -> usize {
         .count()
 }
 
+fn needs_verification_observation(context: &[Value]) -> bool {
+    let scope = &context[evidence_start(context)..];
+    let Some(prompt) = scope
+        .iter()
+        .rposition(|item| item["role"] == "system" && item["content"][0]["text"] == VERIFY_PHONE)
+    else {
+        return false;
+    };
+    !has_current_observation(context)
+        && !scope[prompt + 1..]
+            .iter()
+            .any(|call| call["type"] == "function_call" && call["name"] == "phone_observe")
+}
+
 async fn progress_event(
     app: &App,
     run: Uuid,
@@ -1836,6 +1879,18 @@ async fn consume_steering(
         state,
         epoch,
     } = input;
+    let (status, pending_input): (String, bool) =
+        sqlx::query_as("SELECT status,jsonb_array_length(steering)>0 FROM runs WHERE id=$1")
+            .bind(id)
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?;
+    if status == "canceled" {
+        return Err("canceled".into());
+    }
+    if !pending_input {
+        return Ok(false);
+    }
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
     let row = sqlx::query("SELECT steering,status FROM runs WHERE id=$1 FOR UPDATE")
         .bind(id)
@@ -1926,11 +1981,12 @@ async fn persist_disposition(
         state,
     } = checkpoint;
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
-    let row = sqlx::query("SELECT steering,status FROM runs WHERE id=$1 FOR UPDATE")
-        .bind(id)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(|e| e.to_string())?;
+    let row =
+        sqlx::query("SELECT steering,status,conversation_id FROM runs WHERE id=$1 FOR UPDATE")
+            .bind(id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
     if row.get::<String, _>("status") == "canceled" {
         return Err("canceled".into());
     }
@@ -1981,6 +2037,7 @@ async fn persist_disposition(
             .map_err(|e| e.to_string())?;
     }
     tx.commit().await.map_err(|e| e.to_string())?;
+    app.run_signals.chat_changed(row.get("conversation_id"));
     Ok(true)
 }
 fn apply_explicit_resume(
@@ -2099,7 +2156,8 @@ async fn execute(
             },
         )
         .await?;
-        if crate::proactive::should_yield(app, id).await?
+        if exploration
+            && crate::proactive::should_yield(app, id).await?
             && persist_disposition(
                 app,
                 id,
@@ -2118,7 +2176,9 @@ async fn execute(
         {
             return Ok(RunDisposition::Queued);
         }
-        crate::proactive::inject_attention(app, id, &mut context).await?;
+        if !exploration && pending.is_empty() {
+            crate::proactive::inject_attention(app, id, &mut context).await?;
+        }
         if handoffs_pending
             && crate::device_exchange::returns::receive(app, id, &mut context).await?
         {
@@ -2207,7 +2267,9 @@ async fn execute(
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
         if pending.is_empty()
-            && let Some((name, arguments)) = initial_observation(&context)
+            && let Some((name, arguments)) = initial_observation(&context).or_else(|| {
+                needs_verification_observation(&context).then(|| ("phone_observe", json!({})))
+            })
         {
             let call = json!({"type":"function_call","name":name,"arguments":arguments.to_string(),
                 "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
@@ -2415,24 +2477,6 @@ async fn execute(
             {
                 return Ok(RunDisposition::Queued);
             }
-            continue;
-        }
-        // Re-check user steering immediately before the model call as well as before tools.
-        if consume_steering(
-            app,
-            id,
-            &mut message,
-            SteeringInput {
-                context: &mut context,
-                pending: &mut pending,
-                answer: &mut answer,
-                step,
-                state: &mut state,
-                epoch: &mut epoch,
-            },
-        )
-        .await?
-        {
             continue;
         }
         let output = match respond_to_current_input(
@@ -2692,24 +2736,31 @@ async fn has_steering(app: &App, run: Uuid) -> Result<bool, String> {
 
 async fn wait_for_steering(app: &App, run: Uuid) -> Result<(), String> {
     loop {
+        let changed = app.run_signals.input.notified();
         if has_steering(app, run).await? {
             return Ok(());
         }
-        tokio::time::sleep(Duration::from_millis(120)).await;
+        tokio::select! {
+            _ = changed => {}
+            _ = tokio::time::sleep(Duration::from_millis(120)) => {}
+        }
     }
 }
 
 // Text bursts settle briefly. Voice was already endpointed by the capture owner.
-async fn input_quiet(app: &App, run: Uuid, cancel: &CancellationToken) -> Result<(), String> {
+async fn input_ready(app: &App, run: Uuid, cancel: &CancellationToken) -> Result<bool, String> {
     loop {
-        let remaining:f64=sqlx::query_scalar("SELECT COALESCE(GREATEST(0,input_quiet_ms-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision FROM runs WHERE id=$1")
+        let (remaining, steering):(f64,bool)=sqlx::query_as("SELECT COALESCE(GREATEST(0,input_quiet_ms-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision,jsonb_array_length(steering)>0 FROM runs WHERE id=$1")
             .bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+        if steering {
+            return Ok(false);
+        }
         if remaining <= 0.0 {
-            return Ok(());
+            return Ok(true);
         }
         tokio::select! {
             _=cancel.cancelled()=>return Err("canceled".into()),
-            changed=wait_for_steering(app,run)=>{changed?;return Ok(());},
+            changed=wait_for_steering(app,run)=>{changed?;return Ok(false);},
             _=tokio::time::sleep(Duration::from_millis(remaining.ceil() as u64))=>{}
         }
     }
@@ -2724,8 +2775,7 @@ async fn respond_to_current_input(
     require_observation: bool,
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
-    input_quiet(app, run, cancel).await?;
-    if has_steering(app, run).await? {
+    if !input_ready(app, run, cancel).await? {
         return Ok(None);
     }
     let event = model_trace::start(app, run, message).await?;
@@ -3353,7 +3403,10 @@ async fn tool(
         );
     }
     if name == "phone_notifications" {
-        let mut feed: wire::PhoneNotificationList = phone(
+        if let Some(output) = crate::proactive::assigned_notifications(app, run, &phone_id).await? {
+            return Ok(output);
+        }
+        let feed: wire::PhoneNotificationList = phone(
             app,
             "notifications",
             wire::DeviceRequest {
@@ -3362,16 +3415,6 @@ async fn tool(
             },
         )
         .await?;
-        let assigned: Vec<String> =
-            sqlx::query_scalar("SELECT event_id FROM phone_notifications WHERE run_id=$1")
-                .bind(run)
-                .fetch_all(&app.db)
-                .await
-                .map_err(|e| e.to_string())?;
-        if !assigned.is_empty() {
-            feed.notifications
-                .retain(|event| assigned.contains(&event.event_id));
-        }
         return Ok(
             json!([{"type":"input_text","text":json!({"connected":feed.connected,"error":feed.error,"notifications":feed.notifications.iter().rev().take(24).map(|n|json!({"event_id":n.event_id,"source":if n.notification_key.starts_with("wechat-badge:"){"unread_badge"}else{"android_notification"},"app":n.app_name,"package":n.package_name,"title":n.title,"text":n.text,"posted_at_ms":n.posted_at_ms})).collect::<Vec<_>>()} ).to_string()}]),
         );
@@ -4682,6 +4725,7 @@ mod loop_persistence_tests {
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
             login_attempts: Mutex::new(Vec::new()),
             workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
@@ -4864,6 +4908,7 @@ mod process_recovery_tests {
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
             login_attempts: Mutex::new(vec![]),
             workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),

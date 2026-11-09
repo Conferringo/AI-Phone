@@ -339,13 +339,16 @@ pub async fn read_device_notifications(
         requested
     };
     crate::desktop::authorized(app, run, device_id).await?;
+    if let Some(output) = assigned_notifications(app, run, device_id).await? {
+        return Ok(output);
+    }
     let kind: String =
         sqlx::query_scalar("SELECT kind FROM devices WHERE id=$1 AND runtime_state='managed'")
             .bind(device_id)
             .fetch_one(&app.db)
             .await
             .map_err(|e| e.to_string())?;
-    let mut feed = if kind == "desktop" {
+    let feed = if kind == "desktop" {
         crate::desktop::notifications(app, device_id).await?
     } else {
         crate::worker::phone::<_, wire::PhoneNotificationList>(
@@ -358,26 +361,41 @@ pub async fn read_device_notifications(
         )
         .await?
     };
-    let assigned: Vec<String> = sqlx::query_scalar(
-        "SELECT event_id FROM phone_notifications WHERE run_id=$1 AND device_id=$2",
-    )
-    .bind(run)
-    .bind(device_id)
-    .fetch_all(&app.db)
-    .await
-    .map_err(|e| e.to_string())?;
-    if !assigned.is_empty() {
-        feed.notifications
-            .retain(|event| assigned.contains(&event.event_id));
-    }
     Ok(
         json!([{"type":"input_text","text":json!({"device_id":device_id,"connected":feed.connected,"error":feed.error,"notifications":feed.notifications.iter().map(|n|json!({"event_id":n.event_id,"app":n.app_name,"package":n.package_name,"title":n.title,"text":n.text,"posted_at_ms":n.posted_at_ms})).collect::<Vec<_>>()} ).to_string()}]),
     )
 }
+pub async fn assigned_notifications(
+    app: &App,
+    run: Uuid,
+    device: &str,
+) -> Result<Option<Value>, String> {
+    let events: Option<Value> = sqlx::query_scalar(
+        "SELECT jsonb_agg(jsonb_build_object('event_id',event_id,'package',package_name,
+            'app',app_name,'title',title,'text',body,'posted_at_ms',floor(extract(epoch FROM posted_at)*1000)::bigint,
+            'source',CASE WHEN notification_key LIKE 'wechat-badge:%' THEN 'unread_badge'
+                          WHEN notification_key LIKE 'wechat-visible:%' THEN 'visible_change'
+                          WHEN $2=$3 THEN 'android_notification' ELSE 'desktop_notification' END)
+            ORDER BY received_at,event_id) FROM phone_notifications WHERE run_id=$1 AND device_id=$2",
+    )
+    .bind(run)
+    .bind(device)
+    .bind(registry::PHONE)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(events.map(|events| json!([{"type":"input_text","text":json!({"device_id":device,"notifications":events}).to_string()}])))
+}
 /// Exploration yields at a checkpoint so a notification is not stuck behind a
 /// long cycle. User work instead receives attention in its existing context.
 pub async fn should_yield(app: &App, run: Uuid) -> Result<bool, String> {
-    sqlx::query_scalar("SELECT r.origin IN ('exploration','desktop-exploration') AND p.notifications_enabled AND EXISTS(SELECT 1 FROM phone_notifications n WHERE n.device_id=r.device_id AND n.status='pending') FROM runs r CROSS JOIN proactive_state p WHERE r.id=$1")
+    sqlx::query_scalar("WITH owned AS (SELECT device_id FROM runs WHERE id=$1
+        UNION SELECT device_id FROM device_execution_leases WHERE run_id=$1)
+        SELECT EXISTS(SELECT 1 FROM runs WHERE id=$1 AND origin IN ('exploration','desktop-exploration')) AND p.notifications_enabled AND (
+        EXISTS(SELECT 1 FROM phone_notifications n JOIN owned USING(device_id) WHERE n.status='pending') OR
+        EXISTS(SELECT 1 FROM runs notice JOIN owned USING(device_id) WHERE notice.origin='notification'
+            AND notice.status='queued' AND (notice.next_wake_at IS NULL OR notice.next_wake_at<=now()))
+        ) FROM proactive_state p")
         .bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())
 }
 /// Deliver fresh device events to an existing worker at an action boundary.
@@ -387,11 +405,18 @@ pub async fn inject_attention(
     run: Uuid,
     context: &mut Vec<Value>,
 ) -> Result<bool, String> {
-    let device: String = sqlx::query_scalar("SELECT device_id FROM runs WHERE id=$1")
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
+    let Some(device) = sqlx::query_scalar::<_, String>(
+        "SELECT n.device_id FROM phone_notifications n JOIN runs r ON r.id=$1
+         WHERE n.status='pending' AND r.status='running' AND NOT r.background_read_only
+         AND (n.device_id=r.device_id OR EXISTS(SELECT 1 FROM device_execution_leases l WHERE l.run_id=r.id AND l.device_id=n.device_id))
+         ORDER BY n.received_at,n.event_id LIMIT 1",
+    )
+    .bind(run)
+    .fetch_optional(&app.db)
+    .await
+    .map_err(|e| e.to_string())? else {
+        return Ok(false);
+    };
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
     let row =
         sqlx::query("SELECT status,origin,background_read_only,assistant_message_id FROM runs WHERE id=$1 FOR UPDATE")
@@ -434,16 +459,15 @@ pub async fn inject_attention(
         .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-    for row in rows {
-        sqlx::query(
-            "UPDATE phone_notifications SET status='attending',run_id=$2 WHERE event_id=$1",
-        )
-        .bind(row.get::<String, _>("event_id"))
-        .bind(run)
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| e.to_string())?;
-    }
+    let ids: Vec<String> = rows.iter().map(|row| row.get("event_id")).collect();
+    sqlx::query(
+        "UPDATE phone_notifications SET status='attending',run_id=$2 WHERE event_id=ANY($1)",
+    )
+    .bind(ids)
+    .bind(run)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
     *context = next;
     Ok(true)
@@ -459,16 +483,9 @@ async fn ingest_device_feed(
     if device_id == crate::registry::PHONE {
         sqlx::query("UPDATE proactive_state SET listener_connected=$1,attention_connected=$2,listener_checked_at=now() WHERE owner_id='local-user'").bind(feed.connected).bind(feed.attention_connected).execute(&app.db).await.map_err(|e|e.to_string())?;
     }
-    if !feed.connected && !feed.attention_connected {
+    if feed.notifications.is_empty() {
         return Ok(());
     }
-    let active: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM runs WHERE device_id=$1 AND status IN ('queued','running'))",
-    )
-    .bind(device_id)
-    .fetch_one(&app.db)
-    .await
-    .map_err(|e| e.to_string())?;
     let ids: Vec<String> = feed
         .notifications
         .iter()
@@ -487,14 +504,20 @@ async fn ingest_device_feed(
         if seen.contains(&event.event_id) || ignored_usage_warning(&event) {
             continue;
         }
-        let during_task = if event.notification_key.starts_with("wechat-visible:") {
-            sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM runs WHERE device_id=$2 AND (status IN ('queued','running') OR finished_at IS NOT NULL) AND created_at<=to_timestamp($1::double precision/1000) AND COALESCE(finished_at,now())+interval '3 seconds'>=to_timestamp($1::double precision/1000))").bind(event.posted_at_ms as f64).bind(device_id).fetch_one(&app.db).await.map_err(|e|e.to_string())?
-        } else {
-            false
-        };
         // UI changes made by the agent or during manual takeover are consumed without waking another run.
         // Notifications and badge transitions remain queued even while work is active.
-        if (active || during_task) && event.notification_key.starts_with("wechat-visible:") {
+        if event.notification_key.starts_with("wechat-visible:")
+            && sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM runs WHERE device_id=$1 AND (
+                    status IN ('queued','running') OR to_timestamp($2::double precision/1000)
+                    BETWEEN created_at AND finished_at+interval '3 seconds'))",
+            )
+            .bind(device_id)
+            .bind(event.posted_at_ms as f64)
+            .fetch_one(&app.db)
+            .await
+            .map_err(|e| e.to_string())?
+        {
             sqlx::query("INSERT INTO phone_notifications(event_id,notification_key,package_name,app_name,title,body,posted_at,status,device_id) VALUES($1,$2,$3,$4,$5,$6,to_timestamp($7::double precision/1000),'ignored-active-ui',$8) ON CONFLICT(event_id) DO NOTHING")
                 .bind(&event.event_id).bind(&event.notification_key).bind(&event.package_name).bind(&event.app_name).bind(&event.title).bind(&event.text).bind(event.posted_at_ms as f64).bind(device_id).execute(&app.db).await.map_err(|e|e.to_string())?;
             continue;
@@ -520,7 +543,22 @@ async fn schedule(app: &App, kinds: &[&str]) -> Result<(), sqlx::Error> {
         }
         crate::registry::initialize(&app.db, &app.settings).await?;
     }
-    let devices: Vec<(String, String)> = sqlx::query_as("SELECT d.id,d.kind FROM devices d JOIN agents a ON a.id=d.default_agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND m.model_revision>0 AND d.kind=ANY($1) ORDER BY d.id").bind(kinds).fetch_all(&app.db).await?;
+    let devices: Vec<(String, String)> = sqlx::query_as(
+        "SELECT d.id,d.kind FROM devices d
+         JOIN agents a ON a.id=d.default_agent_id
+         JOIN model_connections m ON m.id=a.model_connection_id
+         JOIN proactive_state p ON p.owner_id=d.owner_id
+         WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND m.model_revision>0
+           AND d.kind=ANY($1) AND (
+             (p.notifications_enabled AND EXISTS(SELECT 1 FROM phone_notifications n
+                 WHERE n.device_id=d.id AND n.status IN ('pending','pending-summary')))
+             OR (d.id=$2 AND p.exploring AND p.next_cycle_at<=now()))
+         ORDER BY d.id",
+    )
+    .bind(kinds)
+    .bind(registry::PHONE)
+    .fetch_all(&app.db)
+    .await?;
     for (device_id, kind) in devices {
         sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(&device_id).execute(&app.db).await?;
         schedule_device(app, &device_id, &kind).await?;
@@ -535,7 +573,7 @@ async fn schedule_device(app: &App, device_id: &str, kind: &str) -> Result<(), s
     .bind(device_id)
     .fetch_one(&mut *tx)
     .await?;
-    if sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM runs WHERE conversation_id=$1 AND status IN ('queued','running') AND NOT (status='queued' AND origin IN ('exploration','desktop-exploration') AND next_wake_at>now()))").bind(conversation).fetch_one(&mut *tx).await? {return Ok(());}
+    if sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM runs WHERE conversation_id=$1 AND status IN ('queued','running') AND NOT (status='queued' AND origin IN ('exploration','desktop-exploration'))) OR EXISTS(SELECT 1 FROM device_execution_leases l JOIN runs holder ON holder.id=l.run_id WHERE l.device_id=$2 AND holder.status='running')").bind(conversation).bind(device_id).fetch_one(&mut *tx).await? {return Ok(());}
     let config=sqlx::query("SELECT notifications_enabled,wechat_watch,exploring,next_cycle_at<=now() due,wechat_quiet_until>now() manual_quiet FROM proactive_state FOR UPDATE").fetch_one(&mut *tx).await?;
     if kind == "phone" && config.get::<bool, _>("manual_quiet") {
         return Ok(());
@@ -579,14 +617,22 @@ async fn schedule_device(app: &App, device_id: &str, kind: &str) -> Result<(), s
         .await?;
     sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,origin,trigger_input,background_read_only,device_id) VALUES($1,$2,$3,$1,$4,'queued',$5,$6,$7,$8,$9)").bind(run).bind(conversation).bind(message).bind(format!("background:{run}")).bind(app.settings.current() as i64).bind(origin).bind(trigger).bind(read_only).bind(device_id).execute(&mut *tx).await?;
     crate::registry::pin_run(&mut tx, &app.settings, run).await?;
-    for row in notifications {
-        sqlx::query("UPDATE phone_notifications SET status='assigned',run_id=$2 WHERE event_id=$1")
-            .bind(row.get::<String, _>("event_id"))
-            .bind(run)
-            .execute(&mut *tx)
-            .await?;
+    if !notifications.is_empty() {
+        let ids: Vec<String> = notifications
+            .iter()
+            .map(|row| row.get("event_id"))
+            .collect();
+        sqlx::query(
+            "UPDATE phone_notifications SET status='assigned',run_id=$2 WHERE event_id=ANY($1)",
+        )
+        .bind(ids)
+        .bind(run)
+        .execute(&mut *tx)
+        .await?;
     }
     tx.commit().await?;
+    app.run_signals.queue.notify_one();
+    app.run_signals.chat_changed(conversation);
     Ok(())
 }
 async fn reconcile(app: &App) -> Result<(), sqlx::Error> {
@@ -711,38 +757,43 @@ async fn attend_phone(app: &App) {
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         interval.tick().await;
-        if ingest(app).await.is_err() {
-            let _ = sqlx::query("UPDATE proactive_state SET listener_connected=false")
-                .execute(&app.db)
-                .await;
-        }
-        // Manual takeover pauses even between exploration cycles, before a new run can claim control.
-        if let Ok(Some(epoch)) = sqlx::query_scalar::<_, i64>(
-            "SELECT control_epoch FROM proactive_state WHERE exploring OR wechat_watch",
-        )
-        .fetch_optional(&app.db)
-        .await
-            && let Ok(observation) =
-                crate::worker::phone::<_, wire::DeviceObservation>(app, "observe", device(true))
-                    .await
-        {
-            if epoch > 0
-                && observation.controller == "manual"
-                && observation.control_epoch > epoch as u64
-            {
-                let _ = stop_exploration(app, "你已接管手机，自主探索已暂停").await;
-                let _=sqlx::query("UPDATE proactive_state SET wechat_quiet_until=now()+interval '60 seconds',control_epoch=$1").bind(observation.control_epoch as i64).execute(&app.db).await;
-            } else {
-                let _ = sqlx::query(
-                    "UPDATE proactive_state SET control_epoch=$1 WHERE exploring OR wechat_watch",
-                )
-                .bind(observation.control_epoch as i64)
-                .execute(&app.db)
-                .await;
-            }
+        let (inbox, ()) = tokio::join!(ingest(app), supervise_phone(app));
+        if inbox.is_err() {
+            let _ = sqlx::query(
+                "UPDATE proactive_state SET listener_connected=false,attention_connected=false",
+            )
+            .execute(&app.db)
+            .await;
         }
         let _ = reconcile(app).await;
         let _ = schedule(app, &["phone"]).await;
+    }
+}
+
+async fn supervise_phone(app: &App) {
+    // Manual takeover pauses even between exploration cycles, before admission.
+    if let Ok(Some(epoch)) = sqlx::query_scalar::<_, i64>(
+        "SELECT control_epoch FROM proactive_state WHERE exploring OR wechat_watch",
+    )
+    .fetch_optional(&app.db)
+    .await
+        && let Ok(observation) =
+            crate::worker::phone::<_, wire::DeviceObservation>(app, "observe", device(true)).await
+    {
+        if epoch > 0
+            && observation.controller == "manual"
+            && observation.control_epoch > epoch as u64
+        {
+            let _ = stop_exploration(app, "你已接管手机，自主探索已暂停").await;
+            let _=sqlx::query("UPDATE proactive_state SET wechat_quiet_until=now()+interval '60 seconds',control_epoch=$1").bind(observation.control_epoch as i64).execute(&app.db).await;
+        } else if observation.control_epoch != epoch as u64 {
+            let _ = sqlx::query(
+                "UPDATE proactive_state SET control_epoch=$1 WHERE exploring OR wechat_watch",
+            )
+            .bind(observation.control_epoch as i64)
+            .execute(&app.db)
+            .await;
+        }
     }
 }
 
@@ -871,6 +922,7 @@ mod tests {
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
             login_attempts: Mutex::new(vec![]),
             workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
@@ -995,12 +1047,14 @@ mod tests {
             sqlx::query("UPDATE devices SET default_agent_id=$2 WHERE id=$1").bind(desktop).bind(agent).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','fixture-only-not-a-real-device')").bind(desktop).execute(&app.db).await.unwrap();
             let mut pc=event.clone();pc.event_id="7".repeat(64);pc.notification_key="desktop-message".into();
-            ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:true,notifications:vec![pc.clone()],..Default::default()}).await.unwrap();
+            ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:false,notifications:vec![pc.clone()],..Default::default()}).await.unwrap();
+            assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM phone_notifications WHERE event_id=$1").bind(&pc.event_id).fetch_one(&app.db).await.unwrap(),"pending","persisted events survive listener disconnect");
             ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:true,notifications:vec![pc],..Default::default()}).await.unwrap();
 
             let (a,b)=tokio::join!(schedule(&app, &["phone", "desktop"]),schedule(&app, &["phone", "desktop"]));a.unwrap();b.unwrap();
             let pc_run:(Uuid,bool)=sqlx::query_as("SELECT id,background_read_only FROM runs WHERE device_id=$1 AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap();
             assert!(!pc_run.1,"idle desktop notifications are actionable without exploration");
+            assert!(assigned_notifications(&app,pc_run.0,desktop).await.unwrap().unwrap().to_string().contains(&"7".repeat(64)),"an assigned notification is readable from the durable feed before calling the guest");
             assert!(guard_tool(&app,pc_run.0,"computer_click").await.is_ok());
             // A live exploration yields without dropping its context, and a fresh
             // notification takes its own slot while the old task waits.
@@ -1009,9 +1063,13 @@ mod tests {
             ingest_device_feed(&app,desktop,wire::PhoneNotificationList{connected:true,notifications:vec![urgent],..Default::default()}).await.unwrap();
 
             assert!(should_yield(&app,pc_run.0).await.unwrap());
-            sqlx::query("UPDATE runs SET status='queued',next_wake_at=now()+interval '5 seconds' WHERE id=$1").bind(pc_run.0).execute(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET status='queued',next_wake_at=NULL WHERE id=$1").bind(pc_run.0).execute(&app.db).await.unwrap();
             schedule(&app, &["phone", "desktop"]).await.unwrap();
-            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs WHERE device_id=$1 AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap(),2,"notification and waiting exploration retain separate checkpoints");
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM runs WHERE device_id=$1 AND status='queued'").bind(desktop).fetch_one(&app.db).await.unwrap(),2,"a due exploration cannot block notification admission");
+            assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM phone_notifications WHERE event_id=$1").bind("6".repeat(64)).fetch_one(&app.db).await.unwrap(),"assigned");
+            sqlx::query("UPDATE runs SET status='running' WHERE id=$1").bind(pc_run.0).execute(&app.db).await.unwrap();
+            assert!(should_yield(&app,pc_run.0).await.unwrap(),"a notification assigned just as exploration is claimed still takes priority at the checkpoint");
+            sqlx::query("UPDATE runs SET status='queued' WHERE id=$1").bind(pc_run.0).execute(&app.db).await.unwrap();
 
 
             assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM phone_notifications WHERE device_id=$1").bind(desktop).fetch_one(&app.db).await.unwrap(),2,"desktop event replay is deduplicated");

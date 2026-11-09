@@ -311,6 +311,7 @@ mod persistence_tests {
             local: reqwest::Client::builder().no_proxy().build().unwrap(),
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
             login_attempts: Mutex::new(vec![]),
             workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),

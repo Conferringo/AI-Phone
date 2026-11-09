@@ -136,7 +136,7 @@ fn cookie(headers: &HeaderMap) -> &str {
         .find_map(|v| v.strip_prefix("ai_phone_session="))
         .unwrap_or("")
 }
-async fn websocket_authorization(
+pub(crate) async fn websocket_authorization(
     app: &App,
     headers: &HeaderMap,
 ) -> std::result::Result<(), Response> {

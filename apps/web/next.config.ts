@@ -20,9 +20,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@ai-phone/protocol"],
   async rewrites() {
     return {
-      beforeFiles: ["stream", "playback"].map((operation) => ({
-        source: `/api/voice/${operation}`,
-        destination: `http://127.0.0.1:17863/v1/voice/${operation}`,
+      beforeFiles: ["voice/stream", "voice/playback", "chat/events"].map((operation) => ({
+        source: `/api/${operation}`,
+        destination: `http://127.0.0.1:17863/v1/${operation}`,
       })),
     };
   },

@@ -15,15 +15,20 @@ export function assistantError(status: number, code: string, message: string) {
     },
   );
 }
+export function loopbackOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  return origin === "http://127.0.0.1:17860" || origin === "http://localhost:17860";
+}
 export function allowedOrigin(request: Request) {
-  const origins=["http://127.0.0.1:17860","http://localhost:17860"];
+  if (loopbackOrigin(request)) return true;
   try {
     const root=process.env.AI_PHONE_PROJECT_ROOT??path.resolve(/* turbopackIgnore: true */ process.cwd(),"../..");
     const deploymentPath=path.join(/* turbopackIgnore: true */ root,"data/deployment.json");
     // Persistent configuration is runtime state, not a build asset.
-    origins.push(JSON.parse(readFileSync(/* turbopackIgnore: true */ deploymentPath,"utf8")).origin);
+    const origin = request.headers.get("origin");
+    return origin !== null && origin === JSON.parse(readFileSync(/* turbopackIgnore: true */ deploymentPath,"utf8")).origin;
   } catch {}
-  return origins.includes(request.headers.get("origin")??"");
+  return false;
 }
 export async function assistantToken() {
   const root =

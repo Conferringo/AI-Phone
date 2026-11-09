@@ -53,6 +53,13 @@ pub async fn request_tracked(
         configure_chat(&mut body, config, &effort);
     } else if messages_protocol {
         body = crate::anthropic_messages::request_body(&body)?;
+        if config.provider == "deepseek" {
+            let enabled = effort != "none" && body["tool_choice"]["type"] != "tool";
+            body["thinking"] = json!({"type":if enabled {"enabled"} else {"disabled"}});
+            if enabled {
+                body["output_config"] = json!({"effort":effort});
+            }
+        }
     }
     let encoded = serde_json::to_vec(&body).map_err(|_| "模型请求编码失败")?;
     timing.request_started(encoded.len());
@@ -395,6 +402,19 @@ mod tests {
                         .iter()
                         .any(|p| p["type"] == "tool_result")
                 });
+                if body["model"] == "deepseek-fixture" {
+                    assert_eq!(
+                        body["thinking"]["type"],
+                        if tool { "enabled" } else { "disabled" }
+                    );
+                    assert_eq!(
+                        body["output_config"]["effort"],
+                        if tool { json!("low") } else { Value::Null }
+                    );
+                } else {
+                    assert!(body.get("thinking").is_none());
+                    assert!(body.get("output_config").is_none());
+                }
                 if tool {
                     assert_eq!(body["messages"][1]["content"][0]["id"], "native-call");
                     assert_eq!(
@@ -411,12 +431,13 @@ mod tests {
                         "image/png"
                     );
                     assert_eq!(body["tools"][0]["input_schema"]["type"], "object");
+                    assert_eq!(body["tool_choice"]["name"], "observe");
                 }
                 ([("content-type", "text/event-stream")], events(!tool))
             }),
         );
         let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
-        let config = ModelConfig {
+        let mut config = ModelConfig {
             provider: "anthropic".into(),
             protocol: "anthropic-messages".into(),
             api_key: "fixture-secret".into(),
@@ -425,25 +446,29 @@ mod tests {
             proxy_url: String::new(),
             verified_at_ms: 0,
         };
-        let mut input = vec![
-            json!({"role":"user","content":[{"type":"input_text","text":"inspect"},{"type":"input_image","image_url":"data:image/png;base64,Zml4dHVyZQ=="}]}),
-        ];
-        let first=request(&config,json!({"instructions":"runtime-policy","input":input,"tools":[{"type":"function","name":"observe","description":"inspect","parameters":{"type":"object"}}]}),&CancellationToken::new()).await.unwrap();
-        assert_eq!(first[0]["call_id"], "native-call");
-        input.extend(first);
-        input.push(
-            json!({"type":"function_call_output","call_id":"native-call","output":"actual-result"}),
-        );
-        let projected = crate::model_context::for_chat_api(&input);
-        let second = request(
-            &config,
-            json!({"instructions":"runtime-policy","input":projected}),
-            &CancellationToken::new(),
-        )
-        .await
-        .unwrap();
+        for (provider, model) in [("anthropic", "fixture"), ("deepseek", "deepseek-fixture")] {
+            config.provider = provider.into();
+            config.model = model.into();
+            let mut input = vec![
+                json!({"role":"user","content":[{"type":"input_text","text":"inspect"},{"type":"input_image","image_url":"data:image/png;base64,Zml4dHVyZQ=="}]}),
+            ];
+            let first=request(&config,json!({"instructions":"runtime-policy","input":input,"tools":[{"type":"function","name":"observe","description":"inspect","parameters":{"type":"object"}}],"tool_choice":{"type":"function","name":"observe"},"reasoning":{"effort":"high"}}),&CancellationToken::new()).await.unwrap();
+            assert_eq!(first[0]["call_id"], "native-call");
+            input.extend(first);
+            input.push(
+                json!({"type":"function_call_output","call_id":"native-call","output":"actual-result"}),
+            );
+            let projected = crate::model_context::for_chat_api(&input);
+            let second = request(
+                &config,
+                json!({"instructions":"runtime-policy","input":projected,"reasoning":{"effort":"low"}}),
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+            assert_eq!(text(&second), "actual-native-receipt");
+        }
         server.abort();
-        assert_eq!(text(&second), "actual-native-receipt");
     }
 
     #[tokio::test]

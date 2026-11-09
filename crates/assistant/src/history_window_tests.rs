@@ -349,7 +349,10 @@ async fn real_pg_older_pages_and_foreign_identifiers_preserve_canonical_scope() 
             .unwrap_err();
             assert!(matches!(error,sqlx::Error::Protocol(code) if code == "history_anchor_scope"));
             let mut tx = transaction(db).await.unwrap();
-            let legacy = crate::http::state_selected(&mut tx, conversation, None, None)
+            let run = crate::http::current_run(&mut tx, conversation)
+                .await
+                .unwrap();
+            let legacy = crate::http::state_selected(&mut tx, conversation, None, None, run)
                 .await
                 .unwrap();
             tx.commit().await.unwrap();
@@ -369,10 +372,12 @@ async fn real_pg_same_ordinal_updates_and_rr_snapshot_are_authoritative() {
         bulk(db,conversation,60).await;
         let first = read(db,conversation,parsed(&request(1))).await.unwrap();
         let mut tx = transaction(db).await.unwrap();
-        let (ids,window) = selection(&mut tx,conversation,&parsed(&request(1))).await.unwrap();
+        let run_row = crate::http::current_run(&mut tx, conversation).await.unwrap();
+        let current_head = run_row.as_ref().map(|row| row.get("assistant_message_id"));
+        let (ids,window) = selection(&mut tx,conversation,&parsed(&request(1)),current_head).await.unwrap();
         sqlx::query("UPDATE messages SET text='final reply\n第二行' WHERE id=$1").bind(head).execute(db).await.unwrap();
         sqlx::query("UPDATE runs SET status='succeeded',error='',next_wake_at=NULL WHERE id=$1").bind(run_id).execute(db).await.unwrap();
-        let prior = crate::http::state_selected(&mut tx,conversation,Some(&ids),Some(window)).await.unwrap();
+        let prior = crate::http::state_selected(&mut tx,conversation,Some(&ids),Some(window),run_row).await.unwrap();
         tx.commit().await.unwrap();
         assert_eq!(prior.messages.iter().find(|m|m.id==head.to_string()).unwrap().text,"outside-tail head");
         let next = read(db,conversation,parsed(&wire::ChatHistoryRequest {watch_message_ids:vec![head.to_string()],..request(1)})).await.unwrap();

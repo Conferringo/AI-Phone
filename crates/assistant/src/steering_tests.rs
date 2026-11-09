@@ -43,6 +43,7 @@ where
         local: reqwest::Client::new(),
         remote: reqwest::Client::new(),
         active: Mutex::new(Default::default()),
+        run_signals: Default::default(),
         login_attempts: Mutex::new(vec![]),
         workspace_init: Mutex::new(None),
         location_mutation: Mutex::new(()),
@@ -316,6 +317,15 @@ async fn voice_corrections_are_durable_ordered_and_scoped() {
 async fn voice_uses_existing_user_priority_without_an_extra_text_delay() {
     database_case(|app| async move {
         let old = FixtureRun::start(&app, "autonomous exploration fixture").await;
+        assert_eq!(
+            sqlx::query_scalar::<_, i16>("SELECT input_quiet_ms FROM runs WHERE id=$1")
+                .bind(old.id)
+                .fetch_one(&app.db)
+                .await
+                .unwrap(),
+            0,
+            "an explicit first text input starts without the steering debounce"
+        );
         sqlx::query("UPDATE runs SET origin='exploration' WHERE id=$1")
             .bind(old.id)
             .execute(&app.db)
@@ -346,11 +356,11 @@ async fn voice_uses_existing_user_priority_without_an_extra_text_delay() {
         assert!(
             tokio::time::timeout(
                 Duration::from_millis(300),
-                input_quiet(&app, run, &CancellationToken::new())
+                input_ready(&app, run, &CancellationToken::new())
             )
             .await
             .unwrap()
-            .is_ok()
+            .unwrap()
         );
         accept(&app, &request("文字补充保持原合并策略")).await;
         let quiet: i16 = sqlx::query_scalar("SELECT input_quiet_ms FROM runs WHERE id=$1")
@@ -374,6 +384,11 @@ async fn voice_interrupts_an_in_progress_text_quiet_window() {
     database_case(|app| async move {
         let first = accept(&app, &request("等待文字补充")).await;
         let run = Uuid::parse_str(&first.run_id).unwrap();
+        sqlx::query("UPDATE runs SET input_quiet_ms=700,input_at=clock_timestamp() WHERE id=$1")
+            .bind(run)
+            .execute(&app.db)
+            .await
+            .unwrap();
         let interrupt = async {
             tokio::time::sleep(Duration::from_millis(30)).await;
             accept(
@@ -383,13 +398,15 @@ async fn voice_interrupts_an_in_progress_text_quiet_window() {
             .await;
         };
         let quiet = async {
-            tokio::time::timeout(
-                Duration::from_millis(300),
-                input_quiet(&app, run, &CancellationToken::new()),
-            )
-            .await
-            .unwrap()
-            .unwrap();
+            assert!(
+                !tokio::time::timeout(
+                    Duration::from_millis(300),
+                    input_ready(&app, run, &CancellationToken::new()),
+                )
+                .await
+                .unwrap()
+                .unwrap()
+            );
         };
         tokio::join!(quiet, interrupt);
     })

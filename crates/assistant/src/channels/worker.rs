@@ -146,6 +146,7 @@ async fn process(state: &State, mut job: Job) -> Result<()> {
                             request_id: job.id.clone(),
                             agent_id: job.agent_id.clone(),
                             device_id: device.into(),
+                            receipt_only: true,
                             ..Default::default()
                         },
                     )

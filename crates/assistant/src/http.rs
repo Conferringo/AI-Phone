@@ -59,26 +59,36 @@ async fn resolve(app: &App, id: &str, device: &str) -> Result<Uuid, Response> {
 }
 pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
     let mut tx = crate::history_window::transaction(&app.db).await?;
-    let value = state_selected(&mut tx, id, None, None).await?;
+    let run = current_run(&mut tx, id).await?;
+    let value = state_selected(&mut tx, id, None, None, run).await?;
     tx.commit().await?;
     Ok(value)
+}
+
+enum MessageSelection<'a> {
+    All,
+    Ids(&'a [Uuid]),
+    Receipt(Uuid),
 }
 
 async fn message_rows(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
-    selected: Option<&[Uuid]>,
+    selected: MessageSelection<'_>,
 ) -> Result<Vec<sqlx::postgres::PgRow>, sqlx::Error> {
     const PROJECTION: &str = "SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1";
-    let statement = if selected.is_some() {
-        format!("{PROJECTION} AND m.id=ANY($2) ORDER BY m.ordinal")
-    } else {
-        format!("{PROJECTION} ORDER BY m.ordinal")
+    let statement = match selected {
+        MessageSelection::All => format!("{PROJECTION} ORDER BY m.ordinal"),
+        MessageSelection::Ids(_) => format!("{PROJECTION} AND m.id=ANY($2) ORDER BY m.ordinal"),
+        MessageSelection::Receipt(_) => {
+            format!("{PROJECTION} AND m.request_id=$2 AND m.role='user'")
+        }
     };
     let query = sqlx::query(&statement).bind(id);
     let query = match selected {
-        Some(ids) => query.bind(ids),
-        None => query,
+        MessageSelection::All => query,
+        MessageSelection::Ids(ids) => query.bind(ids),
+        MessageSelection::Receipt(request) => query.bind(request),
     };
     query.fetch_all(&mut **tx).await
 }
@@ -91,18 +101,21 @@ pub(crate) async fn current_run(
         .bind(id).fetch_optional(&mut **tx).await
 }
 
-pub(crate) async fn state_selected(
+async fn chat_messages(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
-    selected: Option<&[Uuid]>,
-    window: Option<wire::ChatMessageWindow>,
-) -> Result<wire::ChatState, sqlx::Error> {
+    selected: MessageSelection<'_>,
+) -> Result<Vec<wire::ChatMessage>, sqlx::Error> {
     let rows = message_rows(tx, id, selected).await?;
     let ids: Vec<Uuid> = rows
         .iter()
         .flat_map(|row| row.get::<Vec<Uuid>, _>("attachment_ids"))
         .collect();
-    let files=sqlx::query("SELECT id,name,media_type,size_bytes FROM attachments WHERE id=ANY($1) AND owner_id='local-user'").bind(&ids).fetch_all(&mut **tx).await?;
+    let files = if ids.is_empty() {
+        Vec::new()
+    } else {
+        sqlx::query("SELECT id,name,media_type,size_bytes FROM attachments WHERE id=ANY($1) AND owner_id='local-user'").bind(&ids).fetch_all(&mut **tx).await?
+    };
     let files: HashMap<Uuid, wire::ChatAttachment> = files
         .iter()
         .map(|r| {
@@ -118,7 +131,7 @@ pub(crate) async fn state_selected(
             )
         })
         .collect();
-    let messages = rows
+    Ok(rows
         .iter()
         .map(|r| {
             let notice = crate::run_notice::kind(
@@ -161,8 +174,22 @@ pub(crate) async fn state_selected(
                     .collect(),
             }
         })
-        .collect();
-    let run = current_run(tx, id).await?;
+        .collect())
+}
+
+pub(crate) async fn state_selected(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+    selected: Option<&[Uuid]>,
+    window: Option<wire::ChatMessageWindow>,
+    run: Option<sqlx::postgres::PgRow>,
+) -> Result<wire::ChatState, sqlx::Error> {
+    let messages = chat_messages(
+        tx,
+        id,
+        selected.map_or(MessageSelection::All, MessageSelection::Ids),
+    )
+    .await?;
     let value = wire::ChatState {
         revision: sqlx::query_scalar::<_, i64>(
             "SELECT ordinal FROM messages WHERE conversation_id=$1 ORDER BY ordinal DESC LIMIT 1",
@@ -246,7 +273,7 @@ pub async fn send(
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    let request: wire::ChatSendRequest = match decode(&app, &headers, body) {
+    let mut request: wire::ChatSendRequest = match decode(&app, &headers, body) {
         Ok(v) => v,
         Err(e) => return e.into(),
     };
@@ -282,7 +309,7 @@ pub async fn send(
             "语音输入需要文字且不能混入附件",
         );
     }
-    let quiet_ms: i16 = if voice.is_some() { 0 } else { 700 };
+    let steering_quiet_ms: i16 = if voice.is_some() { 0 } else { 700 };
     let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
         Ok(v) => v,
         Err(e) => return e,
@@ -309,6 +336,8 @@ pub async fn send(
             );
         }
     };
+    // Response shape does not participate in the durable input identity.
+    let receipt_only = std::mem::take(&mut request.receipt_only);
     let fingerprint = format!("{:x}", Sha256::digest(request.encode_to_vec()));
     let result: Result<Uuid, sqlx::Error> = async {
         let mut tx = app.db.begin().await?;
@@ -362,7 +391,7 @@ pub async fn send(
             }
             let input = steering_input(&app, &request, &attachments).await?;
             let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
-                .bind(run).bind(request_id.to_string()).bind(input).bind(quiet_ms).execute(&mut *tx).await?;
+                .bind(run).bind(request_id.to_string()).bind(input).bind(steering_quiet_ms).execute(&mut *tx).await?;
             if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
             sqlx::query("INSERT INTO run_inputs(request_id,run_id,message_id,fingerprint) VALUES($1,$2,$3,$4)")
                 .bind(request_id).bind(run).bind(user).bind(&fingerprint).execute(&mut *tx).await?;
@@ -373,13 +402,16 @@ pub async fn send(
             let run = Uuid::now_v7();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
                 .bind(assistant).bind(id).execute(&mut *tx).await?;
-            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),$7)")
-                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64).bind(quiet_ms).execute(&mut *tx).await?;
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0)")
+                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64).execute(&mut *tx).await?;
             sqlx::query("UPDATE messages SET run_id=$2 WHERE id=$1").bind(assistant).bind(run).execute(&mut *tx).await?;
             crate::registry::pin_run_for(&mut tx, &app.settings, run, &request.agent_id).await?;
             run
         };
         tx.commit().await?;
+        app.run_signals.queue.notify_one();
+        app.run_signals.input.notify_waiters();
+        app.run_signals.chat_changed(id);
         Ok(run)
     }.await;
     let run_id = match result {
@@ -426,6 +458,12 @@ pub async fn send(
         }
     };
     crate::proactive::cancel_stopped(&app).await;
+    if receipt_only {
+        return match send_receipt(&app, id, run_id, request_id, request.device_id).await {
+            Ok(value) => pb(StatusCode::ACCEPTED, value),
+            Err(error) => db_error(error),
+        };
+    }
     match state(&app, id).await {
         Ok(mut value) => {
             // A retry's receipt stays attached to the original run (including channel clients).
@@ -446,6 +484,32 @@ pub async fn send(
         }
         Err(e) => db_error(e),
     }
+}
+
+async fn send_receipt(
+    app: &App,
+    conversation: Uuid,
+    run: Uuid,
+    request: Uuid,
+    device_id: String,
+) -> Result<wire::ChatState, sqlx::Error> {
+    let mut tx = crate::history_window::transaction(&app.db).await?;
+    let messages = chat_messages(&mut tx, conversation, MessageSelection::Receipt(request)).await?;
+    if messages.is_empty() {
+        return Err(sqlx::Error::RowNotFound);
+    }
+    tx.commit().await?;
+    Ok(wire::ChatState {
+        conversation_id: conversation.to_string(),
+        run_id: run.to_string(),
+        device_id: if device_id.is_empty() {
+            crate::registry::PHONE.into()
+        } else {
+            device_id
+        },
+        messages,
+        ..Default::default()
+    })
 }
 
 /// Build the exact model input before accepting a steering request. Files remain owner-scoped.
@@ -625,6 +689,10 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
             .bind(id).execute(&mut *tx).await?;
     }
     tx.commit().await?;
+    if let Some(conversation) = conversation {
+        app.run_signals.queue.notify_one();
+        app.run_signals.chat_changed(conversation);
+    }
     Ok(conversation)
 }
 
@@ -876,6 +944,7 @@ mod steering_tests {
             local: reqwest::Client::new(),
             remote: reqwest::Client::new(),
             active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
             login_attempts: Mutex::new(Vec::new()),
             workspace_init: Mutex::new(None),
             location_mutation: Mutex::new(()),
@@ -889,6 +958,14 @@ mod steering_tests {
             let original_state = wire::ChatState::decode(bytes.as_slice()).unwrap();
             let run = Uuid::parse_str(&original_state.run_id).unwrap();
             assert_eq!(original_state.messages.len(), 2);
+            let receipt = wire::ChatSendRequest { receipt_only: true, ..original.clone() };
+            let (status, bytes) = submit(&app, &receipt).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let receipt = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.conversation_id, original_state.conversation_id);
+            assert_eq!(receipt.device_id, original_state.device_id);
+            assert_eq!(receipt.run_id, original_state.run_id);
+            assert_eq!(receipt.messages, [original_state.messages[0].clone()]);
             sqlx::query("UPDATE runs SET status='running',control_epoch=8,next_wake_at=now()+interval '1 hour' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             assert!(state(&app, Uuid::parse_str(&original_state.conversation_id).unwrap()).await.unwrap().next_wake_at_ms > 0);
 
@@ -903,9 +980,16 @@ mod steering_tests {
                 sqlx::query("INSERT INTO attachments(id,name,media_type,size_bytes,storage_key) VALUES($1,$2,$3,$4,$5)").bind(id).bind(key).bind(media).bind(size as i64).bind(key).execute(&app.db).await.unwrap();
             }
             let steer = wire::ChatSendRequest { text: "改成新的处理顺序".into(), attachment_ids: vec![text_id.to_string(), image_id.to_string().to_uppercase()], request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            let (status, bytes) = submit(&app, &wire::ChatSendRequest { receipt_only: true, ..steer.clone() }).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let receipt = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.run_id, original_state.run_id);
+            assert_eq!(receipt.messages.len(), 1);
+            assert_eq!(receipt.messages[0].attachments.len(), 2);
             let (status, bytes) = submit(&app, &steer).await;
             assert_eq!(status, StatusCode::ACCEPTED);
             let value = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.messages[0], *value.messages.iter().find(|message| message.request_id == steer.request_id).unwrap());
             assert_eq!(value.run_id, original_state.run_id);
             assert_eq!(value.messages.len(), 3);
             assert_eq!(value.run_status, "running");
@@ -984,6 +1068,15 @@ mod steering_tests {
             }
             let assistants: i64 = sqlx::query_scalar("SELECT count(*) FROM messages WHERE role='assistant'").fetch_one(&app.db).await.unwrap();
             assert_eq!(assistants, 2);
+            let conversation = Uuid::parse_str(&original_state.conversation_id).unwrap();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role,text) SELECT gen_random_uuid(),$1,'user',repeat('historical message ',20) FROM generate_series(1,100)").bind(conversation).execute(&app.db).await.unwrap();
+            let (status, full) = submit(&app, &original).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let (status, compact) = submit(&app, &wire::ChatSendRequest { receipt_only: true, ..original }).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            assert_eq!(wire::ChatState::decode(compact.as_slice()).unwrap().messages.len(), 1);
+            assert!(compact.len() < full.len());
+            println!("100 historical messages: full response {} bytes, receipt {} bytes", full.len(), compact.len());
         }).catch_unwind().await;
         drop(app);
         test_db.close().await;
