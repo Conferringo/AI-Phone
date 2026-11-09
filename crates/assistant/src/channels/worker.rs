@@ -7,7 +7,10 @@ use super::{
 use ai_phone_api::wire;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use prost::Message;
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, atomic::Ordering},
+    time::Duration,
+};
 
 async fn update(state: &State, job: &Job, apply: impl FnOnce(&mut Job)) -> Result<bool> {
     let mut store = state.store.lock().await;
@@ -264,11 +267,15 @@ pub(super) async fn run(state: Arc<State>) {
             .cloned()
             .collect();
         let pending = !jobs.is_empty();
+        let mut awaiting_result = jobs
+            .iter()
+            .all(|job| job.stage == Stage::Running && job.run_id.is_some());
         for job in jobs {
             if state.stop.is_cancelled() {
                 return;
             }
             if let Err(error) = process(&state, job.clone()).await {
+                awaiting_result = false;
                 if error
                     .downcast_ref::<RpcError>()
                     .is_some_and(|error| !matches!(error.0, 409 | 500 | 503))
@@ -286,10 +293,15 @@ pub(super) async fn run(state: Arc<State>) {
                 }
             }
         }
+        let check_after = if awaiting_result && state.broker_connected.load(Ordering::Acquire) {
+            Duration::from_secs(3)
+        } else {
+            Duration::from_millis(300)
+        };
         tokio::select! {
             _ = state.stop.cancelled()=>return,
             _ = state.changed.notified()=>{},
-            _ = tokio::time::sleep(Duration::from_millis(300)),if pending=>{},
+            _ = tokio::time::sleep(check_after),if pending=>{},
         }
     }
 }

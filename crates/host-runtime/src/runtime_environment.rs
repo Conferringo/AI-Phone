@@ -155,6 +155,7 @@ impl Profile {
         let host = string(&self.value, "host_proxy", self.legacy("HOST_HTTP_PROXY"))?;
         let mut env = Environment::from([
             ("AI_PHONE_PROJECT_ROOT".into(), text(root)?),
+            ("AI_PHONE_REDIS_PORT".into(), "56382".into()),
             (
                 "AI_PHONE_DATA_ROOT".into(),
                 text(&resolved(&root.join("data"))?)?,

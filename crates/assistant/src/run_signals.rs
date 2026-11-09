@@ -8,6 +8,9 @@ use tokio::sync::{Notify, broadcast};
 pub(crate) struct RunSignals {
     pub queue: Notify,
     pub input: Notify,
+    pub handoff: Notify,
+    pub handoff_export: Notify,
+    pub channel_update: Notify,
     chat: broadcast::Sender<Uuid>,
 }
 
@@ -16,6 +19,9 @@ impl Default for RunSignals {
         Self {
             queue: Notify::new(),
             input: Notify::new(),
+            handoff: Notify::new(),
+            handoff_export: Notify::new(),
+            channel_update: Notify::new(),
             chat: broadcast::channel(32).0,
         }
     }

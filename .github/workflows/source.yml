@@ -91,10 +91,17 @@ jobs:
         if: always()
         run: |
           ./scripts/bun -e 'import {existsSync,readFileSync,unlinkSync} from "node:fs"; const path="data/assistant/token"; if(existsSync(path)&&readFileSync(path,"utf8")==="build-only-private-path-sentinel")unlinkSync(path)'
-      - name: Isolated PostgreSQL integration
+      - name: Isolated PostgreSQL, Redis and Kafka integration
+        env:
+          AI_PHONE_TEST_REDIS_PORT: "56383"
+          AI_PHONE_TEST_KAFKA_BROKER: "127.0.0.1:59092"
         run: |
+          docker run -d --name aiphone-ci-redis --memory 128m -p 127.0.0.1:56383:6379 redis:8-alpine@sha256:becdda6c7f4b3fb42e42fd7f120bbf5c54c4caaaf16f26da24e4563d2c1f0576
+          docker compose -p aiphone-ci-events -f compose.kafka.yaml --profile events up -d --no-deps --wait kafka
           docker run -d --name aiphone-ci-pg --label dev.aiphone.test=permissions --memory 512m -p 127.0.0.1:55500:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
           ./scripts/bun scripts/ci-integration.ts --container aiphone-ci-pg --port 55500
-      - name: Remove disposable PostgreSQL
+      - name: Remove disposable event and database services
         if: always()
-        run: docker rm -fv aiphone-ci-pg 2>/dev/null || true
+        run: |
+          docker rm -fv aiphone-ci-pg aiphone-ci-redis 2>/dev/null || true
+          docker compose -p aiphone-ci-events -f compose.kafka.yaml --profile events down -v

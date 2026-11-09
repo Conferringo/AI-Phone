@@ -2,6 +2,7 @@ use crate::*;
 use serde_json::{Value, json};
 use sqlx::{Acquire, Row};
 type Result<T> = std::result::Result<T, String>;
+mod kafka;
 #[path = "handoff_returns.rs"]
 pub(crate) mod returns;
 fn message(row: &sqlx::postgres::PgRow) -> wire::DeviceMessage {
@@ -71,8 +72,9 @@ async fn publish_message(
     link: (Uuid, i64),
     r: wire::DeviceMessageRequest,
     run: Option<Uuid>,
+    export: bool,
 ) -> Result<wire::DeviceMessage> {
-    let row=sqlx::query("INSERT INTO device_messages(id,link_id,link_revision,source_device_id,target_device_id,source_run_id,text) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *, (extract(epoch FROM created_at)*1000)::bigint ms").bind(id).bind(link.0).bind(link.1).bind(r.source_device_id).bind(r.target_device_id).bind(run).bind(r.text).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
+    let row=sqlx::query("INSERT INTO device_messages(id,link_id,link_revision,source_device_id,target_device_id,source_run_id,text,kafka_pending) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *, (extract(epoch FROM created_at)*1000)::bigint ms").bind(id).bind(link.0).bind(link.1).bind(r.source_device_id).bind(r.target_device_id).bind(run).bind(r.text).bind(export).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
     Ok(message(&row))
 }
@@ -90,7 +92,13 @@ pub async fn send(
         return Ok(old);
     }
     let link = receiving_link(&mut tx, &r, run).await?;
-    publish_message(tx, id, link, r, run).await
+    let export = kafka::configured();
+    let message = publish_message(tx, id, link, r, run, export).await?;
+    app.run_signals.handoff.notify_one();
+    if export {
+        app.run_signals.handoff_export.notify_one();
+    }
+    Ok(message)
 }
 pub async fn guard(app: &App, run: Uuid, name: &str) -> Result<()> {
     let live:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM device_messages m JOIN device_links l ON l.id=m.link_id LEFT JOIN runs parent ON parent.id=m.source_run_id WHERE m.target_run_id=$1 AND l.connected AND l.revision=m.link_revision AND (parent.id IS NULL OR parent.status<>'canceled'))").bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
@@ -150,15 +158,14 @@ async fn ready_conversation(
 
 async fn settle_messages(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-) -> std::result::Result<(), sqlx::Error> {
+) -> std::result::Result<u64, sqlx::Error> {
     sqlx::query("UPDATE runs target SET status='canceled',error='来源任务已停止',finished_at=now(),next_wake_at=NULL FROM device_messages m JOIN runs parent ON parent.id=m.source_run_id WHERE m.target_run_id=target.id AND parent.status='canceled' AND target.status IN ('queued','running','paused')")
         .execute(&mut **tx).await?;
     sqlx::query("UPDATE device_messages m SET status=CASE WHEN r.status='succeeded' THEN 'completed' WHEN r.status='canceled' THEN 'canceled' ELSE 'failed' END,error=r.error FROM runs r WHERE m.target_run_id=r.id AND m.status='running' AND r.status IN ('succeeded','failed','canceled','paused')").execute(&mut **tx).await?;
     sqlx::query("UPDATE device_messages m SET status='canceled',error='数据线已断开' FROM device_links l WHERE m.link_id=l.id AND m.status='queued' AND (NOT l.connected OR l.revision<>m.link_revision)").execute(&mut **tx).await?;
     sqlx::query("UPDATE device_messages m SET status='canceled',error='来源任务已停止' FROM runs parent WHERE parent.id=m.source_run_id AND parent.status='canceled' AND m.status='queued'")
         .execute(&mut **tx).await?;
-    returns::wake(tx).await?;
-    Ok(())
+    returns::wake(tx).await
 }
 
 async fn start_receiving_run(
@@ -188,7 +195,7 @@ async fn start_receiving_run(
 
 async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    settle_messages(&mut tx).await?;
+    let returned = settle_messages(&mut tx).await?;
     let rows=sqlx::query("SELECT m.* FROM device_messages m WHERE m.status='queued' ORDER BY created_at LIMIT 10 FOR UPDATE SKIP LOCKED").fetch_all(&mut *tx).await?;
     let mut admitted = Vec::new();
     for row in rows {
@@ -220,7 +227,7 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
         }
     }
     tx.commit().await?;
-    if !admitted.is_empty() {
+    if returned > 0 || !admitted.is_empty() {
         app.run_signals.queue.notify_one();
     }
     for conversation in admitted {
@@ -229,11 +236,15 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
     Ok(())
 }
 pub async fn work(app: Shared) {
+    tokio::spawn(kafka::work(app.clone()));
     loop {
         if let Err(e) = tick(&app).await {
             eprintln!("device handoff scheduling failed: {e}");
         }
-        tokio::time::sleep(Duration::from_secs(3)).await;
+        tokio::select! {
+            _ = app.run_signals.handoff.notified() => {},
+            _ = tokio::time::sleep(Duration::from_secs(3)) => {},
+        }
     }
 }
 
@@ -288,7 +299,11 @@ mod tests {
    desktop::link(&app,wire::DeviceLinkRequest{source_device_id:registry::PHONE.into(),target_device_id:"desktop-test".into(),connected:true}).await.unwrap();
    assert!(desktop::file_authorized(&app,source_run,"desktop-test").await.is_ok());assert!(desktop::authorized(&app,source_run,"desktop-test").await.is_err(),"data cable must not steal another Agent's GUI control");
    let request=wire::DeviceMessageRequest{request_id:Uuid::new_v4().to_string(),source_device_id:registry::PHONE.into(),target_device_id:"desktop-test".into(),text:"核对测试文件，无需回信".into()};let one=send(&app,request.clone(),Some(source_run)).await.unwrap();let two=send(&app,request,Some(source_run)).await.unwrap();assert_eq!(one.id,two.id);
-   tick(&app).await.unwrap();let messages=list(&app).await.unwrap();let target_run=Uuid::parse_str(&messages[0].run_id).unwrap();let row=sqlx::query("SELECT agent_id,device_id,origin FROM runs WHERE id=$1").bind(target_run).fetch_one(&db).await.unwrap();assert_eq!(row.get::<Uuid,_>("agent_id"),a);assert_eq!(row.get::<String,_>("device_id"),"desktop-test");assert_eq!(row.get::<String,_>("origin"),"device-handoff");let target_message:Uuid=sqlx::query_scalar("SELECT assistant_message_id FROM runs WHERE id=$1").bind(target_run).fetch_one(&db).await.unwrap();assert!(crate::proactive::context(&app,target_message).await.unwrap().unwrap()[1]["content"][0]["text"].as_str().unwrap().contains("核对测试文件"));
+   let accepted=std::time::Instant::now();
+   tokio::time::timeout(Duration::from_secs(1), app.run_signals.handoff.notified()).await.unwrap();
+   tick(&app).await.unwrap();
+   eprintln!("accepted device handoff to admitted run: {:.3} ms", accepted.elapsed().as_secs_f64()*1000.0);
+   let messages=list(&app).await.unwrap();let target_run=Uuid::parse_str(&messages[0].run_id).unwrap();let row=sqlx::query("SELECT agent_id,device_id,origin FROM runs WHERE id=$1").bind(target_run).fetch_one(&db).await.unwrap();assert_eq!(row.get::<Uuid,_>("agent_id"),a);assert_eq!(row.get::<String,_>("device_id"),"desktop-test");assert_eq!(row.get::<String,_>("origin"),"device-handoff");let target_message:Uuid=sqlx::query_scalar("SELECT assistant_message_id FROM runs WHERE id=$1").bind(target_run).fetch_one(&db).await.unwrap();assert!(crate::proactive::context(&app,target_message).await.unwrap().unwrap()[1]["content"][0]["text"].as_str().unwrap().contains("核对测试文件"));
    assert!(guard(&app,target_run,"computer_observe").await.is_ok());
    desktop::link(&app,wire::DeviceLinkRequest{source_device_id:registry::PHONE.into(),target_device_id:"desktop-test".into(),connected:false}).await.unwrap();assert!(desktop::file_authorized(&app,source_run,"desktop-test").await.is_err());assert!(guard(&app,target_run,"computer_observe").await.is_err());
    sqlx::query("UPDATE runs SET status='canceled' WHERE id=$1").bind(target_run).execute(&db).await.unwrap();
