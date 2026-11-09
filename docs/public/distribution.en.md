@@ -33,7 +33,7 @@ The client downloads the stable release for its platform and verifies its Ed2551
 After verifying both installers, sign the update manifest on the release maintainer's machine:
 
 ```sh
-./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.6-macos-arm64.dmg AI-Phone-0.1.6-windows-x64-setup.exe AI-Phone-0.1.6-update.json
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.7-macos-arm64.dmg AI-Phone-0.1.7-windows-x64-setup.exe AI-Phone-0.1.7-update.json
 ```
 
 Attach the two installers and the signed manifest to the same stable GitHub release. Upload the same manifest as `AI-Phone-update.json` for workbench discovery and under its versioned filename for earlier clients. Keep the private signing key in the release maintainer's offline storage.

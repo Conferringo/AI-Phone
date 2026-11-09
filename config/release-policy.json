@@ -1,7 +1,7 @@
 {
-  "version": "0.1.6",
-  "release_name": "Apocalypse",
-  "release_notes": "Resume interrupted tasks from saved checkpoints. Review signed updates in the workbench, then download, install, and restart in the app. Faster screen recognition, device feedback, and task lookups. More model providers and PostgreSQL-backed WhatsApp sessions.",
+  "version": "0.1.7",
+  "release_name": "Relay",
+  "release_notes": "Faster replies from connected apps via Redis, immediate device handoffs, and an optional Kafka stream for replaying handoff events.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

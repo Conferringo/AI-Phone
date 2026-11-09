@@ -18,11 +18,11 @@ pub(crate) fn receipt_text<'a>(instruction: &Value, item: &'a Value) -> Option<&
 
 pub(super) async fn wake(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-) -> std::result::Result<(), sqlx::Error> {
+) -> std::result::Result<u64, sqlx::Error> {
     // A provider backoff, manual pause or cancellation is not a device-result wait.
-    sqlx::query("UPDATE runs r SET next_wake_at=now() WHERE r.status='queued' AND r.error='' AND r.next_wake_at>now() AND EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL AND m.status IN ('completed','failed','canceled'))")
+    let updated = sqlx::query("UPDATE runs r SET next_wake_at=now() WHERE r.status='queued' AND r.error='' AND r.next_wake_at>now() AND EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL AND m.status IN ('completed','failed','canceled'))")
         .execute(&mut **tx).await?;
-    Ok(())
+    Ok(updated.rows_affected())
 }
 
 pub(crate) async fn pending(app: &App, run: Uuid) -> Result<bool> {

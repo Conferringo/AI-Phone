@@ -31,11 +31,12 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, conversation): (String, Uuid) =
-        sqlx::query_as("SELECT status,conversation_id FROM runs WHERE id=$1 FOR UPDATE")
-            .bind(id)
-            .fetch_one(&mut *tx)
-            .await?;
+    let (status, conversation, handoff): (String, Uuid, bool) = sqlx::query_as(
+        "SELECT status,conversation_id,origin='device-handoff' FROM runs WHERE id=$1 FOR UPDATE",
+    )
+    .bind(id)
+    .fetch_one(&mut *tx)
+    .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
         Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
@@ -88,6 +89,12 @@ async fn finish_attempt(
     tx.commit().await?;
     if result.is_err() {
         app.run_signals.chat_changed(conversation);
+    }
+    if trace != "waiting" {
+        app.run_signals.channel_update.notify_one();
+        if handoff {
+            app.run_signals.handoff.notify_one();
+        }
     }
     Ok(())
 }

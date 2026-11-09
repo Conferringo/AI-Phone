@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7 Relay
+
+- Wake connected-app delivery immediately after task completion using local Redis.
+- Start device handoffs as soon as PostgreSQL commits the request.
+- Export accepted device handoff events to optional Kafka for replay.
+
 ## 0.1.6 Apocalypse
 
 - Review the version, name, and notes from the workbench update icon. Confirm to download, verify, install, and restart.

@@ -11,7 +11,8 @@
 | 媒体 | Rust runner、Android gRPC、FFmpeg/X11 | JPEG帧流、PCM音频；原生触点/指针进入同一画面 |
 | Linux电脑 | Docker、Debian/Openbox、Xvfb、桌面桥 | computer use、办公软件、客体sudo与文件处理 |
 | 渠道 | Rust、官方Bot API及原生WhatsApp关联设备适配 | Agent级凭据、私聊配对、入站排队、送达状态 |
-| 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、WhatsApp 配对会话、模型版本和任务队列；Redis 为可选缓存 |
+| 存储 | PostgreSQL/SQLx；私有数据文件 | 注册表、连续对话、WhatsApp 配对会话、模型版本和任务队列 |
+| 事件 | Redis Pub/Sub、可选 Kafka | Redis 唤醒渠道回复；Kafka 供外部工作流重放[设备交接回执](event-relay.md) |
 
 手机执行器与原生启动观察共用[Rust ADB客户端](engineering/device-bridge.md#runner-adb-transport)，执行器不再逐命令创建adb进程。宿主SDK仍提供ADB服务，其他媒体和初始化路径仍有SDK工具依赖。
 

@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "0.1.6",
+  "version": "0.1.7",
   "license": "Apache-2.0",
   "remote_publication_authorized": true,
   "remote_review_authorized": true,
@@ -65,8 +65,8 @@
     },
     {
       "path": ".github/workflows/source.yml",
-      "size": 5789,
-      "sha256": "3c5e5f58aba7eff4e2f1d1647f29dc3265abbd862aa8a0321b30f6baca0b4719"
+      "size": 6345,
+      "sha256": "ba7e52a2ecb15a44a9c4db9bf249af52da8ffe1d450b6bcb7a34357edb8fd83c"
     },
     {
       "path": ".github/workflows/windows-android-component.yml",
@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 2813,
-      "sha256": "81ab4f7dff6a1b456add139b0f6c41f4a14aaf4bb0920093c080edb4657f8bd4"
+      "size": 3050,
+      "sha256": "08ddd9f79bbff431f6051800806f237f5608c98ff0dd1e564c61f2189780ad7a"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -105,8 +105,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 112491,
-      "sha256": "ca1104b8de6369abcddd1e9f7adcc79c5f68b52789a4a7c9f5cfe1d67be56184"
+      "size": 115599,
+      "sha256": "47e23d80a29111d101d13e9f432073cd5b6d76d1a661d239e5dfe387ccf37a37"
     },
     {
       "path": "Cargo.toml",
@@ -136,12 +136,12 @@
     {
       "path": "README.en.md",
       "size": 3291,
-      "sha256": "fdab4b39b5c1f4a23758106fc10143b77f739573625779b69eafd61b91c8bfac"
+      "sha256": "e3d59ffcc7fe12ce0379b5a9c8edc275d81d2bfe296d3875d640d40d1fa91134"
     },
     {
       "path": "README.md",
       "size": 5787,
-      "sha256": "e17fab373e6df20d9fd034ea6a9000865288700fc707b538a768eb6a3c9a092e"
+      "sha256": "ad8cdbe3c36c9b9f9d471a5b5fc7b07862f13662ec75e59ae96f0d5d2e696472"
     },
     {
       "path": "SECURITY.md",
@@ -231,17 +231,17 @@
     {
       "path": "apps/client/package.json",
       "size": 232,
-      "sha256": "d22e8e6cf56104de4c56b56b99ed8f48682fa635f5f012dfb6978b18db664bd2"
+      "sha256": "a962b9875376abdab52e8e914cc7ad09ea9f1d168412de0cdbd5aaf482cac13d"
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
       "size": 126355,
-      "sha256": "dc3a7a7a956e0ab079759a852c4fa5f6381d44964cd1c88c36f6811fc0941ea3"
+      "sha256": "84f9634c08c37cfb55a58d072be64e853bdf36005cf529b5e93aae0024663213"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
       "size": 1175,
-      "sha256": "f0bf40aa4a9b836e81c9765ece84d8e2a2ad3512ce61bcfc76e8be4b7b23d451"
+      "sha256": "f4d846cb9736d2277156d5c5929de348ac5151092ed716c279e05fe697eb7727"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -446,7 +446,7 @@
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
       "size": 2264,
-      "sha256": "25ba5a09454176a61fce693e539c1856201a1c0868ae521246d23c4a6aa50767"
+      "sha256": "cd51500a03bd4af3cdcc5946babcd2ebd3d376063be92f7f67af7fc63634d1a9"
     },
     {
       "path": "apps/client/src-tauri/windows/installer.iss",
@@ -1164,6 +1164,11 @@
       "sha256": "83d37521a542eb5ccd48b5a7e0223e634b1b8e776a004b4572a6d7c3dfa339a4"
     },
     {
+      "path": "compose.kafka.yaml",
+      "size": 1331,
+      "sha256": "d748235019a56059ce682dde64822abfc1d7989ac2937998e113f1250cf5db30"
+    },
+    {
       "path": "compose.yaml",
       "size": 2107,
       "sha256": "5f62527815ec96f10cfd8896f8340338579f75394cb71511035d842402ece354"
@@ -1260,8 +1265,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2372,
-      "sha256": "c52d85414ee6a9f326734fe40e799cbf543fa72a4160c91d4e30b1b3ab18b86e"
+      "size": 2238,
+      "sha256": "d8b6062bdf818280e5c5db2bd0b559200659932f767dd969ccd10516e4da6dd0"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -1325,8 +1330,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1742,
-      "sha256": "8b33bcdbd88d75e37a5849befdd45b47fd71d6a56e722d38eb9e2dbdb5672a4f"
+      "size": 1885,
+      "sha256": "7596f192c3504567d5712b0ad2b426e3fa3b0f947b48bcd8dadca0db78192249"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -1539,6 +1544,11 @@
       "sha256": "e36c2349785b597de888647ed8c3ab26abb29ccebe6157079303a9c07d34ce41"
     },
     {
+      "path": "crates/assistant/migrations/0043_device_handoff_kafka.sql",
+      "size": 183,
+      "sha256": "3a4f0a7e82c7582d4183524be3acf3232a9fa888ab96a240230cc83a34ac8480"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
       "size": 10262,
       "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
@@ -1605,8 +1615,8 @@
     },
     {
       "path": "crates/assistant/src/channels/mod.rs",
-      "size": 25251,
-      "sha256": "22c5f82023dee32b1e93ed96ccf9804e52c81a8f55838eb22c6990005818d63a"
+      "size": 25806,
+      "sha256": "a568cf6d4a920166cfd6ce0e2596d5328450836434133e4bfbf1cd52d515d430"
     },
     {
       "path": "crates/assistant/src/channels/qq.rs",
@@ -1670,8 +1680,8 @@
     },
     {
       "path": "crates/assistant/src/channels/worker.rs",
-      "size": 10038,
-      "sha256": "3f9f40f4be83bab594d6c3e4936a23b2509f71b256b77713a6c67990efcf2a54"
+      "size": 10430,
+      "sha256": "7f656731311191310139d9378958897c6937a6a12fe7486cf4fcbbdfeaf6e2ee"
     },
     {
       "path": "crates/assistant/src/chat_completions.rs",
@@ -1724,9 +1734,14 @@
       "sha256": "914bacebfabad3c5493d6d20792a33db29882c68d996b78f10753e9eb2795ff0"
     },
     {
+      "path": "crates/assistant/src/device_exchange/kafka.rs",
+      "size": 8640,
+      "sha256": "283468922cb7b0bd79ee41339eaaed381bdfdb770afd6eae508eaeb6c42975ff"
+    },
+    {
       "path": "crates/assistant/src/device_exchange.rs",
-      "size": 19146,
-      "sha256": "0ff5a245a66b92ad588ee287c16a746a52c87919e11835119c63217d9ca177a6"
+      "size": 19819,
+      "sha256": "57b4bebab3006f2097bddfa040f594106daed5c1ba4704522771a7c4cfc50c2e"
     },
     {
       "path": "crates/assistant/src/device_network.rs",
@@ -1780,8 +1795,8 @@
     },
     {
       "path": "crates/assistant/src/handoff_returns.rs",
-      "size": 5441,
-      "sha256": "4aec897290165a878e7d747fd9700a3646a1fb21938ad7bd42b42d4e717f171b"
+      "size": 5477,
+      "sha256": "6a7d43d945c316c3122422d7a470754746f15a499801522f8a6def30c24cf63c"
     },
     {
       "path": "crates/assistant/src/handoff_tests.rs",
@@ -1800,8 +1815,8 @@
     },
     {
       "path": "crates/assistant/src/http.rs",
-      "size": 51624,
-      "sha256": "122fff482d310e056fc3f137aa53b6a74828396dca88ee87cc3c18eb4de5043d"
+      "size": 51677,
+      "sha256": "02218000d2e9e8c28bd66f9f9f17c06eb541a33ca745e01f650cd7fe1e78eaaa"
     },
     {
       "path": "crates/assistant/src/location.rs",
@@ -1820,8 +1835,8 @@
     },
     {
       "path": "crates/assistant/src/main.rs",
-      "size": 13453,
-      "sha256": "1da0b2540cd53b17e0cf5bd33a6d7dc11f862dd35e1d7dcb600570be0d76d6d7"
+      "size": 13687,
+      "sha256": "077189e38b564306eed5c424a1900c1f34a4840d1070395f9c52db6507ec524f"
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
@@ -1879,6 +1894,11 @@
       "sha256": "5d50570e0442a8e18ff8528561146b1b98288e73759279cc412977a53857cff7"
     },
     {
+      "path": "crates/assistant/src/redis_events.rs",
+      "size": 3266,
+      "sha256": "8e619a192daf26da52729aea7c6861d5c6d584fafcd2a986b2c6a4efee239583"
+    },
+    {
       "path": "crates/assistant/src/registry.rs",
       "size": 51109,
       "sha256": "cfa9e8322f8d10a2aaa8d2d11f477907b132d33ebbf0616c94460deec72e6bcc"
@@ -1900,8 +1920,8 @@
     },
     {
       "path": "crates/assistant/src/run_signals.rs",
-      "size": 5549,
-      "sha256": "a546bbb7c63e32e98886a38857bdc274f3a7ceff773edb74a8c0b1e249f4756d"
+      "size": 5760,
+      "sha256": "850f4a4f4c2886e4d9ac31635a58ad22a241b6ced5533929949b0144438e3bf1"
     },
     {
       "path": "crates/assistant/src/settings.rs",
@@ -2000,8 +2020,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 223955,
-      "sha256": "f29dc69d2d9e9a2c63908ed336f8f2b227a5c18f8e1d679fd9c25ed1b443d25f"
+      "size": 224145,
+      "sha256": "2170a42deb852eadf54c87473cd1e9616f05f129909764dc8ac490764ca661f0"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -2490,8 +2510,8 @@
     },
     {
       "path": "crates/host-runtime/src/runtime_environment.rs",
-      "size": 10615,
-      "sha256": "f08d172252f5cda953b671c8cfde28a795bd956c6dfa866891e90a25f98a6334"
+      "size": 10675,
+      "sha256": "0223b8cf8f0dbb70a0ee08a8eb97ac78e1e872f966aa7404dfa6637780787d24"
     },
     {
       "path": "crates/host-runtime/src/source_cli.rs",
@@ -2880,13 +2900,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 8155,
-      "sha256": "41aa648880a143b64e6af4a9f483c72d27f3c8cb40297d7aafe497015ed1f8d7"
+      "size": 8398,
+      "sha256": "15e7d12b1889e683ee5f248156e92fb6bbefe4165354b3e79d6979d544507882"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 7273,
-      "sha256": "7f2eb99b0183fc9a3211bd14fd945a751e9968d763d907cd1a9e0713759d369c"
+      "size": 7387,
+      "sha256": "db091f7246a0d6fad51455c7950536fbbd368ebc9e0dd8da4381eb01666a4332"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -2940,8 +2960,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 424399,
-      "sha256": "e3a65f0a8bae2e3390e660ce3b0a28c5597476e83bba258aac3537b74195ebe9"
+      "size": 428390,
+      "sha256": "a420ce6f4225f0a531b469d26ffa98f8cca2ac56225bf84c0e98ed9ba16f8508"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -2956,12 +2976,12 @@
     {
       "path": "docs/public/distribution.en.md",
       "size": 2986,
-      "sha256": "153fa758aa62e186027e25ee46d834bdb6ab88ef0efd12800a38ea650f52bdf8"
+      "sha256": "a5ff7b45d7cdc985e61b588d4b6b9678a43ef13d8e8a5e96dbf1a27ef38cb55a"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
       "size": 2536,
-      "sha256": "9baa833e7164898e12025e99635126a9c1388f25add51f28fe3e43c4658449ca"
+      "sha256": "ae8d59ce1684969ccea12eea7ec7a23eacd1970303ef8f39f6856e0c1e8e7c6b"
     },
     {
       "path": "docs/public/engineering/android-distribution.md",
@@ -3057,6 +3077,11 @@
       "path": "docs/public/engineering/workspace-runtime.md",
       "size": 2549,
       "sha256": "87ffd29af5c9ae17278e90da21e11d59b420e05c43d2744ddbc08bcc2e46ef7d"
+    },
+    {
+      "path": "docs/public/event-relay.md",
+      "size": 1626,
+      "sha256": "bf419a6d792dd22a130d16bf370f75c830a4f96013bb556a09a086cea2e3ed4e"
     },
     {
       "path": "docs/public/file-management.md",
@@ -3405,13 +3430,13 @@
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
-      "size": 11398,
-      "sha256": "f27deb9124cd9a975c3d4ee5dded41c1407d5420872f5035ae3c52ae0b6aa636"
+      "size": 11648,
+      "sha256": "5cd12ca35e3397390ce8a2a0b28c016ae58411082a4b35c062f469eabe2271fd"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 4695367,
-      "sha256": "67bdb88dd43fb3aa9624e00143c05339037e3163258d3c8f498aea7a0763a3e5"
+      "size": 4786252,
+      "sha256": "0eecdbaf233d18f1d350ceed23e92266856f7ce3d4506ac33d59c35f5b8d0153"
     },
     {
       "path": "docs/public/network.md",
@@ -3481,7 +3506,7 @@
     {
       "path": "docs/public/release-status.md",
       "size": 854,
-      "sha256": "acf38512337091a229a9de577b004a897a266400340d6debf6c5a0499e422a79"
+      "sha256": "b96d799989e04b8b2ee3f484142b554581c23104f14274c95c307a93f3159f55"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -3950,8 +3975,8 @@
     },
     {
       "path": "scripts/ci-integration.ts",
-      "size": 3624,
-      "sha256": "05d961f06791c2688324a3af7fd5ab57c8a58d9f829b4753be4f01149988f113"
+      "size": 3895,
+      "sha256": "ac59de0d3fbf4ea395691d4a3899f8dadf8c4813f914647740d96c8a5b275839"
     },
     {
       "path": "scripts/cli.ts",
@@ -4235,8 +4260,8 @@
     },
     {
       "path": "scripts/tooling/source.ts",
-      "size": 13697,
-      "sha256": "8f68655729d1e36401907f49a7aa36055b0289467cbce67547ba2e50984c461b"
+      "size": 13721,
+      "sha256": "fd550c6ad229890cdfe1d7de97b88cbda2d124fadf872e65c4337a69ed939122"
     },
     {
       "path": "scripts/tooling/task-recovery.ts",

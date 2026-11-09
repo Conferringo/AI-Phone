@@ -660,6 +660,7 @@ async fn run_command(
             token.cancel();
         }
         app.run_signals.chat_changed(conversation);
+        app.run_signals.channel_update.notify_one();
     }
     match state(&app, conversation).await {
         Ok(v) => pb(StatusCode::OK, v),

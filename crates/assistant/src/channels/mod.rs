@@ -23,7 +23,13 @@ use prost::Message;
 use reqwest::Client;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeMap, fs, path::Path as FilePath, sync::Arc, time::Duration};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::Path as FilePath,
+    sync::{Arc, atomic::AtomicBool},
+    time::Duration,
+};
 use store::{Config, Job, PROVIDERS, Pairing, Result, Stage, Store, event_id, now, scope};
 use tokio::sync::{Mutex, Notify, RwLock};
 use tokio_util::sync::CancellationToken;
@@ -39,6 +45,7 @@ struct State {
     connections: RwLock<BTreeMap<String, Connection>>,
     mutation: Mutex<()>,
     changed: Notify,
+    broker_connected: AtomicBool,
     stop: CancellationToken,
 }
 impl State {
@@ -661,6 +668,7 @@ pub async fn run(root: &FilePath) -> Result<()> {
         connections: RwLock::new(BTreeMap::new()),
         mutation: Mutex::new(()),
         changed: Notify::new(),
+        broker_connected: AtomicBool::new(false),
         stop: CancellationToken::new(),
     });
     let configs = state.store.lock().await.vault.configs.clone();
@@ -668,6 +676,15 @@ pub async fn run(root: &FilePath) -> Result<()> {
         state.restart(key, config).await?;
     }
     let worker = tokio::spawn(worker::run(state.clone()));
+    let subscriber = crate::redis_events::client().map(|redis| {
+        let state = state.clone();
+        tokio::spawn(async move {
+            tokio::select! {
+                _ = state.stop.cancelled() => {}
+                _ = crate::redis_events::subscribe(redis, &state.broker_connected, &state.changed) => {}
+            }
+        })
+    });
     let router = Router::new()
         .route("/v1/{operation}", post(handle))
         .layer(DefaultBodyLimit::max(5 * 1024 * 1024))
@@ -685,6 +702,9 @@ pub async fn run(root: &FilePath) -> Result<()> {
         connection.stop().await;
     }
     worker.await?;
+    if let Some(subscriber) = subscriber {
+        subscriber.await?;
+    }
     state.store.lock().await.save()?;
     Ok(())
 }

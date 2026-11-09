@@ -43,7 +43,7 @@ run(
 END $fixture$;`,
   },
 );
-const env = {
+const env: NodeJS.ProcessEnv = {
   ...process.env,
   AI_PHONE_TEST_DATABASE_URL: `postgres://ai_phone:isolated-fixture-password@127.0.0.1:${port}/ai_phone`,
   AI_PHONE_TEST_PERSISTENCE_DATABASE_URL: `postgres://aiphone_test:isolated-persistence-fixture@127.0.0.1:${port}/ai_phone`,
@@ -104,6 +104,12 @@ run(
     "model_adapter::tests::live_model_capabilities",
     "--skip",
     "worker::process_recovery_tests::worker_child",
+    ...(!env.AI_PHONE_TEST_REDIS_PORT
+      ? ["--skip", "redis_events::tests::committed_wake_reaches_channel"]
+      : []),
+    ...(!env.AI_PHONE_TEST_KAFKA_BROKER
+      ? ["--skip", "device_exchange::kafka::tests::kafka_handoff_replay"]
+      : []),
     "--test-threads=1",
   ],
   { cwd: ROOT, env: { ...env, AI_PHONE_TEST_ASSISTANT_BINARY: assistant } },

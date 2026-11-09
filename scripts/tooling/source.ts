@@ -46,6 +46,7 @@ const files = [
   "compose.yaml",
   "compose.dev.yaml",
   "compose.desktop.yaml",
+  "compose.kafka.yaml",
   ".env.example",
   ".gitignore",
   ".dockerignore",

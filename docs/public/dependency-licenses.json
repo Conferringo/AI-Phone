@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "ca1104b8de6369abcddd1e9f7adcc79c5f68b52789a4a7c9f5cfe1d67be56184",
+    "Cargo.lock": "47e23d80a29111d101d13e9f432073cd5b6d76d1a661d239e5dfe387ccf37a37",
     "bun.lock": "ac03ce66c53dee01fbe99345a701810695488acb144564c30bdadcc177012bb5",
-    "apps/client/src-tauri/Cargo.lock": "dc3a7a7a956e0ab079759a852c4fa5f6381d44964cd1c88c36f6811fc0941ea3"
+    "apps/client/src-tauri/Cargo.lock": "84f9634c08c37cfb55a58d072be64e853bdf36005cf529b5e93aae0024663213"
   },
   "rust": [
     {
@@ -152,6 +152,29 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "arcstr",
+      "version": "1.2.0",
+      "license": "Apache-2.0 OR MIT OR Zlib",
+      "repository": "https://github.com/thomcc/arcstr",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a8a76b5fd1f1e53246d8d12dac4e6bed981f93b1f94d63f4edbf9a367b83cfc4"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "fda9772d7c51b4770fe0d031547f8bf60f4fd7435e558f9cb989545a2b5abd78"
+        },
+        {
+          "file": "LICENSE-ZLIB",
+          "sha256": "96a5cd9c7eaa78e5dc5a0a6145b173551fedb863a73fc98246020a2591d21224"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
       ]
     },
     {
@@ -1376,6 +1399,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -1634,6 +1658,25 @@
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/akhilles/crc-catalog.git",
       "notices": [],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "crc32c",
+      "version": "0.6.9",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/zowens/crc32c",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "10ee639af58890becf8c0751984e576cf6ef7d3f619cbfc47603d7be5eb77e01"
+        }
+      ],
       "workspaces": [
         "Cargo.toml"
       ]
@@ -4397,6 +4440,21 @@
       ]
     },
     {
+      "name": "integer-encoding",
+      "version": "4.1.0",
+      "license": "MIT",
+      "repository": "https://github.com/dermesser/integer-encoding-rs",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "ff7b7d58d69a53ebad234527530bdd67d459ca8b6f0d6de34b769610d5fee481"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "ipnet",
       "version": "2.12.2",
       "license": "MIT OR Apache-2.0",
@@ -5835,6 +5893,25 @@
       ]
     },
     {
+      "name": "pbkdf2",
+      "version": "0.12.2",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/RustCrypto/password-hashes/tree/master/pbkdf2",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "8ea5cea8ddecc46a64a004406414d25529fca7eb71cfd8c0cfe49c343bff79c5"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "pem-rfc7468",
       "version": "0.7.0",
       "license": "Apache-2.0 OR MIT",
@@ -7060,6 +7137,21 @@
       ]
     },
     {
+      "name": "redis",
+      "version": "1.8.1",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/redis-rs/redis-rs",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "500d6bc35e93b68ea9c8b41c37ba2de9357b19f701e1e0acb66a13e92b88144d"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
       "name": "redox_syscall",
       "version": "0.5.18",
       "license": "MIT",
@@ -7298,6 +7390,44 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "rsasl",
+      "version": "2.3.1",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://codeberg.org/dequbed/rsasl",
+      "notices": [
+        {
+          "file": "LICENSE.APACHE-2.0",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "LICENSE.MIT",
+          "sha256": "eeb1b337d2d8e9eac0a2e35f4f472baa884f45c6f243ea42f25cb6e2668a9a57"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "rskafka",
+      "version": "0.6.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/influxdata/rskafka/",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "791a00933f2ea7e512856361e026998362241c3918d7be948c24d29441033b55"
         }
       ],
       "workspaces": [
@@ -8974,6 +9104,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -9013,6 +9144,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -11868,6 +12000,21 @@
         {
           "file": "LICENSE",
           "sha256": "bebc725b8cb1ba1ed1798cb505cf31bf9bce4cbe942baf358b642666ba8186bd"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml"
+      ]
+    },
+    {
+      "name": "xxhash-rust",
+      "version": "0.8.19",
+      "license": "BSL-1.0",
+      "repository": "https://github.com/DoumanAsh/xxhash-rust",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
         }
       ],
       "workspaces": [

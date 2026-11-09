@@ -47,6 +47,7 @@ mod notification_policy;
 mod phone_system;
 mod private_file;
 mod proactive;
+mod redis_events;
 mod registry;
 mod run_notice;
 mod run_queue;
@@ -330,6 +331,12 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     workbench::initialize(&app.db, &app.root).await?;
     app_learning::backfill(&app).await?;
     desktop::recover(app.clone()).await;
+    if let Some(redis) = redis_events::client() {
+        let app = app.clone();
+        tokio::spawn(
+            async move { redis_events::publish(redis, &app.run_signals.channel_update).await },
+        );
+    }
     tokio::spawn(worker::work(app.clone()));
     tokio::spawn(proactive::work(app.clone()));
     tokio::spawn(location::work(app.clone()));
