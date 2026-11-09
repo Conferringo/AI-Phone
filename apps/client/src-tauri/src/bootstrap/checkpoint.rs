@@ -8,6 +8,9 @@ struct Checkpoint {
     format: u8,
     payload: String,
     progress: Progress,
+    #[cfg(target_os = "macos")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    installed_payload: Option<String>,
 }
 
 fn payload() -> Result<String, String> {
@@ -20,10 +23,19 @@ fn payload() -> Result<String, String> {
 }
 
 pub(super) fn save(folder: &Path, progress: &Progress) -> Result<(), String> {
+    let payload = payload()?;
+    #[cfg(target_os = "macos")]
+    let installed_payload = if progress.state == "ready" {
+        Some(payload.clone())
+    } else {
+        read_record(folder)?.and_then(Checkpoint::installed_payload)
+    };
     let checkpoint = Checkpoint {
         format: 1,
-        payload: payload()?,
+        payload,
         progress: progress.clone(),
+        #[cfg(target_os = "macos")]
+        installed_payload,
     };
     let bytes = serde_json::to_vec(&checkpoint).map_err(|_| "invalid_install_checkpoint")?;
     if bytes.len() > 160_000 {
@@ -62,7 +74,7 @@ fn atomic_write(folder: &Path, bytes: &[u8]) -> Result<(), String> {
     result.map_err(|_| "checkpoint_write_failed".into())
 }
 
-fn read(folder: &Path) -> Result<Option<Progress>, String> {
+fn read_record(folder: &Path) -> Result<Option<Checkpoint>, String> {
     let file = folder.join("deployment.json");
     let metadata = match fs::symlink_metadata(&file) {
         Ok(value) => value,
@@ -72,16 +84,35 @@ fn read(folder: &Path) -> Result<Option<Progress>, String> {
     if !metadata.is_file() || metadata.len() > 160_000 {
         return Err("invalid_install_checkpoint".into());
     }
-    decode(&fs::read(file).map_err(|_| "invalid_install_checkpoint")?)
+    let checkpoint: Checkpoint =
+        serde_json::from_slice(&fs::read(file).map_err(|_| "invalid_install_checkpoint")?)
+            .map_err(|_| "invalid_install_checkpoint")?;
+    Ok((checkpoint.format == 1).then_some(checkpoint))
 }
 
-fn decode(bytes: &[u8]) -> Result<Option<Progress>, String> {
-    let checkpoint: Checkpoint =
-        serde_json::from_slice(bytes).map_err(|_| "invalid_install_checkpoint")?;
-    if checkpoint.format != 1 || checkpoint.payload != payload()? {
-        return Ok(None);
+#[cfg(target_os = "macos")]
+impl Checkpoint {
+    fn installed_payload(self) -> Option<String> {
+        if self.progress.state == "ready" {
+            return Some(self.payload);
+        }
+        self.installed_payload
     }
-    Ok(Some(checkpoint.progress))
+}
+
+fn read(folder: &Path) -> Result<Option<Progress>, String> {
+    let payload = payload()?;
+    Ok(read_record(folder)?
+        .filter(|checkpoint| checkpoint.payload == payload)
+        .map(|checkpoint| checkpoint.progress))
+}
+
+#[cfg(target_os = "macos")]
+pub(super) fn upgrade_needed(folder: &Path) -> Result<bool, String> {
+    let payload = payload()?;
+    Ok(read_record(folder)?
+        .and_then(Checkpoint::installed_payload)
+        .is_some_and(|installed| installed != payload))
 }
 
 pub(super) fn completed(folder: &Path) -> Result<bool, String> {
@@ -156,12 +187,35 @@ mod tests {
         let file = folder.join("deployment.json");
         let mut record: serde_json::Value =
             serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
-        record["payload"] = serde_json::json!("another-release");
+        record["payload"] = serde_json::json!("0".repeat(64));
+        record.as_object_mut().unwrap().remove("installed_payload");
         fs::write(&file, serde_json::to_vec(&record).unwrap()).unwrap();
         assert!(
             !completed(&folder).unwrap(),
-            "another source version cannot auto-activate"
+            "an earlier payload is not this payload's ready receipt"
         );
+        #[cfg(target_os = "macos")]
+        {
+            assert!(upgrade_needed(&folder).unwrap());
+            save(
+                &folder,
+                &Progress {
+                    state: "failed".into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(upgrade_needed(&folder).unwrap());
+            save(
+                &folder,
+                &Progress {
+                    state: "ready".into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            assert!(!upgrade_needed(&folder).unwrap());
+        }
         fs::write(&file, b"partial checkpoint").unwrap();
         assert!(restore(&folder).is_err());
         fs::remove_dir_all(folder).unwrap();

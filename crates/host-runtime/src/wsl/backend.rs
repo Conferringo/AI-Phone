@@ -355,16 +355,22 @@ impl Container {
                 .get("com.docker.compose.project")
                 .map(String::as_str)
                 != Some("ai-phone")
-            || self
-                .labels
-                .get("com.docker.compose.project.working_dir")
-                .and_then(|path| Path::new(path).canonicalize().ok())
-                .as_deref()
-                != Some(root)
         {
             return Err(Error::Invalid("foreign_installation"));
         }
-        Ok(())
+        let directory = self
+            .labels
+            .get("com.docker.compose.project.working_dir")
+            .and_then(|path| Path::new(path).canonicalize().ok())
+            .ok_or(Error::Invalid("foreign_installation"))?;
+        if directory == root {
+            return Ok(());
+        }
+        #[cfg(target_os = "macos")]
+        return crate::staging::owns_release(root, &directory)
+            .map_err(|_| Error::Invalid("foreign_installation"));
+        #[cfg(not(target_os = "macos"))]
+        Err(Error::Invalid("foreign_installation"))
     }
 }
 pub(crate) fn token(root: &Path, section: &str) -> Result<()> {

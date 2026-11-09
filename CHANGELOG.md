@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Restore the macOS workbench after local services finish starting.
+- Read CPU and memory settings from existing Android devices with spaced configuration entries.
+- Keep phone and desktop frames current when switching devices or reconnecting.
+- Deliver confirmed IME text once and preserve the order of desktop clicks and keyboard input.
+- Keep each device’s audio active when switching views and resume playback after an interruption.
+
 ## 0.1.0
 
 - macOS Apple Silicon and Windows 11 x64 clients with bundled Android and Linux devices.

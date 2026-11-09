@@ -2,8 +2,12 @@
 set -eu
 . "$(dirname -- "$0")/android-env.sh"
 # Read applied AVD resources: changing the host profile must not silently resize an existing phone.
-phone_memory=$(awk -F= '$1=="hw.ramSize" {print $2; exit}' "$ANDROID_AVD_HOME/phone-local-01.avd/config.ini")
-phone_cpus=$(awk -F= '$1=="hw.cpu.ncore" {print $2; exit}' "$ANDROID_AVD_HOME/phone-local-01.avd/config.ini")
+avd_config="$ANDROID_AVD_HOME/phone-local-01.avd/config.ini"
+applied_resource() {
+  awk -F '[[:space:]]*=[[:space:]]*' -v key="$1" '$1==key {sub(/[[:space:]]+$/, "", $2); print $2; exit}' "$avd_config"
+}
+phone_memory=$(applied_resource hw.ramSize)
+phone_cpus=$(applied_resource hw.cpu.ncore)
 if [ -n "$AI_PHONE_EMULATOR_PROXY" ]; then set -- -http-proxy "$AI_PHONE_EMULATOR_PROXY"; else set --; fi
 if [ -n "${AI_PHONE_EMULATOR_DNS:-}" ]; then set -- "$@" -dns-server "$AI_PHONE_EMULATOR_DNS"; fi
 phone_gpu=host

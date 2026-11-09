@@ -32,12 +32,15 @@ async fn screen(media: &Media) -> Result<()> {
     let mut heartbeat = tokio::time::interval(Duration::from_secs(1));
     let mut buffer = Vec::new();
     let mut chunk = [0; 65536];
-    while media.desktop.viewers.load(Ordering::Relaxed) > 0 {
+    let ended = 'capture: loop {
+        if media.desktop.viewers.load(Ordering::Relaxed) == 0 {
+            break false;
+        }
         tokio::select! {
             _=heartbeat.tick()=>input.write_all(b"1").await?,
             _=media.desktop.changed.notified()=>{},
             bytes=output.read(&mut chunk)=>{
-                let bytes=bytes?;if bytes==0{break;}
+                let bytes=bytes?;if bytes==0{break 'capture true;}
                 buffer.extend_from_slice(&chunk[..bytes]);
                 if buffer.len()>4*1024*1024{return Err("desktop frame exceeds capture buffer".into());}
                 while let Some(begin)=buffer.windows(2).position(|v|v==[255,216]){
@@ -47,9 +50,12 @@ async fn screen(media: &Media) -> Result<()> {
                 }
             }
         }
-    }
+    };
     drop(input);
     child.wait().await?;
+    if ended {
+        return Err("desktop screen ended".into());
+    }
     Ok(())
 }
 pub async fn capture(media: Arc<Media>) {
@@ -57,9 +63,9 @@ pub async fn capture(media: Arc<Media>) {
         media.desktop.demand().await;
         if let Err(error) = screen(&media).await {
             eprintln!("desktop screen: {error}");
+            media.desktop.end();
+            media.desktop.changed.notified().await;
         }
-        media.desktop.end();
-        media.desktop.changed.notified().await;
     }
 }
 pub async fn audio() -> Result<Body> {

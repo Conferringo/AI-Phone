@@ -1,6 +1,6 @@
 [package]
 name = "ai-phone-client"
-version = "0.1.0"
+version = "0.1.1"
 description = "Native client for a user-owned AI Phone deployment"
 edition = "2024"
 rust-version = "1.95"

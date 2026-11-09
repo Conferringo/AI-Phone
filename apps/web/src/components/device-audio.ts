@@ -39,14 +39,14 @@ async function readAudio(endpoint:string,signal:AbortSignal,output:AudioPlayback
   while(!signal.aborted){
    const part=await reader.read();if(signal.aborted)return;
    if(part.done)throw Error('声音连接已断开');
-   output.push(part.value);onFrame();
+   if(output.push(part.value))onFrame();
   }
  }finally{void reader.cancel().catch(()=>{});}
 }
 
 function playbackFailure(issue:unknown){
  const message=issue instanceof Error?issue.message:'声音连接失败';
- return {message,terminal:message==='请重新登录'||message==='声音播放已暂停，请重新开启'};
+ return {message,terminal:message==='请重新登录'};
 }
 
 async function streamAudio(endpoint:string,signal:AbortSignal,output:AudioPlayback,onFrame:()=>void,onFailure:(failure:ReturnType<typeof playbackFailure>)=>void){
@@ -64,27 +64,29 @@ async function streamAudio(endpoint:string,signal:AbortSignal,output:AudioPlayba
 /** Owned by the device workspace, independently of its visible controls. */
 export function useDeviceAudio(deviceId:string,endpoint:string){
  const [enabled,setEnabled]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const [running,setRunning]=useState(false);
  const player=useRef<AudioPlayback|null>(null),starting=useRef(false);
- if(!player.current)player.current=new AudioPlayback();
+ if(!player.current)player.current=new AudioPlayback(undefined,setRunning);
  const {volume,setVolume,level,audibleLevel}=usePlaybackVolume(deviceId,player.current);
+ useEffect(()=>{if(!enabled)player.current!.suspend();},[enabled]);
  useEffect(()=>{
   const output=player.current!;
-  if(!enabled){output.suspend();return;}
+  if(!enabled||!running)return;
   const abort=new AbortController();
   void streamAudio(endpoint,abort.signal,output,()=>setError(''),failure=>{setError(failure.message);if(failure.terminal)setEnabled(false);});
   // Switching endpoints clears old samples, but must not suspend the shared graph.
   return()=>{abort.abort();output.reset();};
- },[enabled,endpoint]);
+ },[enabled,running,endpoint]);
  useEffect(()=>()=>{player.current!.close();},[]);
  const toggle=async()=>{
   if(starting.current)return;
-  if(enabled&&level.current>0){setEnabled(false);setError('');return;}
+  if(enabled&&running&&level.current>0){setEnabled(false);setError('');return;}
   if(level.current===0)setVolume(audibleLevel.current);
   starting.current=true;setBusy(true);
   try{await player.current!.resume();setError('');setEnabled(true);}
-  catch{setEnabled(false);setError('声音未开启，请再次点击');}
+  catch{setError('声音未开启，请再次点击');}
   finally{starting.current=false;setBusy(false);}
  };
- return {enabled,volume,error,busy,toggle,setVolume};
+ return {enabled:enabled&&running,volume,error:error||(enabled&&!running?'声音播放已暂停，请重新开启':''),busy,toggle,setVolume};
 }
 export type DeviceAudioControls=Pick<ReturnType<typeof useDeviceAudio>,'enabled'|'volume'|'busy'|'toggle'|'setVolume'>;

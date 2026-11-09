@@ -19,6 +19,28 @@ fn layout(home: &Path) -> Result<()> {
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn owns_release(root: &Path, candidate: &Path) -> Result<()> {
+    let releases = root
+        .parent()
+        .filter(|parent| parent.file_name().is_some_and(|name| name == "releases"))
+        .ok_or(Error::Invalid("foreign_installation"))?;
+    let home = releases
+        .parent()
+        .ok_or(Error::Invalid("foreign_installation"))?;
+    if candidate.parent() != Some(releases)
+        || !candidate
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(manifest::identity)
+        || !fs::symlink_metadata(candidate.join(manifest::HOST_MANIFEST))?.is_file()
+    {
+        return Err(Error::Invalid("foreign_installation"));
+    }
+    links::persistent(root, home, false)?;
+    links::persistent(candidate, home, false)
+}
+
 fn verify_existing(
     root: &Path,
     index: &Inventory,

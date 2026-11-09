@@ -37,6 +37,10 @@ fn local_connection_url(url: &Url) -> bool {
 }
 
 impl Navigation {
+    fn cancel_startup(&self) {
+        self.startup_cancelled.store(true, Ordering::SeqCst);
+    }
+
     fn permits(&self, url: &Url) -> bool {
         url.username().is_empty()
             && url.password().is_none()
@@ -269,9 +273,6 @@ fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
 #[tauri::command]
 fn current_server(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<String, String> {
     require_local_window(&window)?;
-    app.state::<Navigation>()
-        .startup_cancelled
-        .store(true, Ordering::SeqCst);
     load_connection(&app).map(|url| url.origin().ascii_serialization())
 }
 
@@ -281,9 +282,6 @@ fn deployment_status(
     window: tauri::WebviewWindow,
 ) -> Result<bootstrap::Snapshot, String> {
     require_local_window(&window)?;
-    app.state::<Navigation>()
-        .startup_cancelled
-        .store(true, Ordering::SeqCst);
     bootstrap::snapshot(&app)
 }
 #[tauri::command]
@@ -293,11 +291,13 @@ fn start_deployment(
     request: bootstrap::Request,
 ) -> Result<(), String> {
     require_local_window(&window)?;
+    app.state::<Navigation>().cancel_startup();
     bootstrap::start(app, request)
 }
 #[tauri::command]
 fn cancel_deployment(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
     require_local_window(&window)?;
+    app.state::<Navigation>().cancel_startup();
     bootstrap::cancel(&app);
     Ok(())
 }
@@ -319,9 +319,7 @@ async fn connect_server(
     connecting: tauri::State<'_, Connecting>,
 ) -> Result<(), String> {
     require_local_window(&window)?;
-    app.state::<Navigation>()
-        .startup_cancelled
-        .store(true, Ordering::SeqCst);
+    app.state::<Navigation>().cancel_startup();
     if connecting.0.swap(true, Ordering::SeqCst) {
         return Err("Connection already in progress".into());
     }
@@ -337,8 +335,13 @@ async fn connect_server(
     result
 }
 
-async fn resume_local_host(app: &tauri::AppHandle) -> Option<Url> {
-    if !bootstrap::resume_installed(app).unwrap_or(false) {
+async fn resume_local_host(app: &tauri::AppHandle, upgrade: bool) -> Option<Url> {
+    if app
+        .state::<Navigation>()
+        .startup_cancelled
+        .load(Ordering::SeqCst)
+        || !bootstrap::resume_installed(app, upgrade).unwrap_or(false)
+    {
         return None;
     }
     let setup = app.clone();
@@ -427,13 +430,19 @@ pub fn run() {
             }
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let mut reachable = match load_connection(&handle) {
+                let saved = load_connection(&handle);
+                #[cfg(target_os = "macos")]
+                let upgrade = saved.as_ref().is_ok_and(|url| {
+                    url.port() == Some(17860)
+                        && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
+                }) && bootstrap::upgrade_needed(&handle).unwrap_or(false);
+                #[cfg(not(target_os = "macos"))]
+                let upgrade = false;
+                let reachable = match saved {
+                    _ if upgrade => resume_local_host(&handle, true).await,
                     Ok(url) if probe(&url).await.is_ok() => Some(url),
-                    _ => None,
+                    _ => resume_local_host(&handle, false).await,
                 };
-                if reachable.is_none() {
-                    reachable = resume_local_host(&handle).await;
-                }
                 let ui = handle.clone();
                 // Commit on the UI thread: opening Connection while probing wins.
                 let _ = handle.run_on_main_thread(move || {
@@ -457,9 +466,7 @@ pub fn run() {
         });
     let builder = builder.on_menu_event(|app, event| {
         if event.id().as_ref() == "connection" {
-            app.state::<Navigation>()
-                .startup_cancelled
-                .store(true, Ordering::SeqCst);
+            app.state::<Navigation>().cancel_startup();
             let _ = show_connection(app);
         }
     });

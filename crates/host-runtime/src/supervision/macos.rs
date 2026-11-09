@@ -2,7 +2,12 @@
 use crate::{Error, Result, filesystem};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use std::{collections::BTreeMap, ffi::OsString, io::Read, path::Path};
+use std::{
+    collections::BTreeMap,
+    ffi::OsString,
+    io::Read,
+    path::{Path, PathBuf},
+};
 use tokio::process::Command;
 
 const SERVICES: [(&str, &str); 7] = [
@@ -30,16 +35,18 @@ fn label(name: &str) -> Result<&'static str> {
 fn domain() -> String {
     format!("gui/{}", rustix::process::getuid().as_raw())
 }
-fn job_state(root: &Path, body: &str) -> Result<bool> {
+fn parse_job(body: &str) -> Result<(PathBuf, bool)> {
     let field = |key: &str| body.lines().find_map(|line| line.trim().strip_prefix(key));
     let directory = field("working directory = ").ok_or(Error::Invalid("foreign_installation"))?;
-    let directory = Path::new(directory).canonicalize()?;
-    if directory != root && directory != root.join("apps/web") {
-        return Err(Error::Invalid("foreign_installation"));
-    }
-    Ok(field("state = ") == Some("running"))
+    Ok((
+        Path::new(directory).canonicalize()?,
+        field("state = ") == Some("running"),
+    ))
 }
-async fn status(root: &Path, label: &str) -> Result<Option<bool>> {
+fn matches_root(root: &Path, directory: &Path) -> bool {
+    directory == root || directory == root.join("apps/web")
+}
+async fn job(label: &str) -> Result<Option<(PathBuf, bool)>> {
     let output = Command::new("/bin/launchctl")
         .args(["print", &format!("{}/{label}", domain())])
         .output()
@@ -50,14 +57,40 @@ async fn status(root: &Path, label: &str) -> Result<Option<bool>> {
     if !output.status.success() {
         return Err(Error::Invalid("service_observation_failed"));
     }
-    Ok(Some(job_state(
-        root,
-        &String::from_utf8_lossy(&output.stdout),
-    )?))
+    parse_job(&String::from_utf8_lossy(&output.stdout)).map(Some)
 }
-pub(crate) async fn preflight(root: &Path) -> Result<()> {
-    for (_, label) in SERVICES {
-        status(root, label).await?;
+async fn status(root: &Path, label: &str) -> Result<Option<bool>> {
+    let Some((directory, running)) = job(label).await? else {
+        return Ok(None);
+    };
+    if !matches_root(root, &directory) {
+        return Err(Error::Invalid("foreign_installation"));
+    }
+    Ok(Some(running))
+}
+pub(crate) async fn activate(root: &Path) -> Result<()> {
+    let mut previous = Vec::new();
+    for (_, label) in SERVICES.into_iter().rev() {
+        if let Some((directory, _)) = job(label).await?
+            && !matches_root(root, &directory)
+        {
+            let directory = if directory.ends_with("apps/web") {
+                directory
+                    .parent()
+                    .and_then(Path::parent)
+                    .ok_or(Error::Invalid("foreign_installation"))?
+            } else {
+                &directory
+            };
+            crate::staging::owns_release(root, directory)
+                .map_err(|_| Error::Invalid("foreign_installation"))?;
+            previous.push((label, directory.to_owned()));
+        }
+    }
+    for (label, directory) in previous {
+        if status(&directory, label).await?.is_some() {
+            bootout(&directory, label).await?;
+        }
     }
     Ok(())
 }
@@ -103,6 +136,17 @@ async fn launch(args: &[&std::ffi::OsStr]) -> Result<()> {
     let status = Command::new("/bin/launchctl").args(args).status().await?;
     if !status.success() {
         return Err(Error::Invalid("service_start_failed"));
+    }
+    Ok(())
+}
+async fn bootout(root: &Path, label: &str) -> Result<()> {
+    launch(&[
+        std::ffi::OsStr::new("bootout"),
+        std::ffi::OsStr::new(&format!("{}/{label}", domain())),
+    ])
+    .await?;
+    while status(root, label).await?.is_some() {
+        tokio::time::sleep(std::time::Duration::from_millis(25)).await;
     }
     Ok(())
 }
@@ -157,14 +201,7 @@ pub(super) async fn run(arguments: &[OsString]) -> Result<()> {
         }
         Some("stop") => {
             if observed.is_some() {
-                launch(&[
-                    std::ffi::OsStr::new("bootout"),
-                    std::ffi::OsStr::new(&format!("{}/{label}", domain())),
-                ])
-                .await?;
-                while status(&root, label).await?.is_some() {
-                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
-                }
+                bootout(&root, label).await?;
             }
             Value::Null
         }
@@ -181,22 +218,34 @@ mod tests {
     fn foreign_job_is_rejected_and_running_owned_job_is_observed() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().canonicalize().unwrap();
-        assert!(
-            job_state(
-                &root,
-                &format!("working directory = {}\nstate = running", root.display())
-            )
-            .unwrap()
-        );
-        assert!(
-            !job_state(
-                &root,
-                &format!("working directory = {}\nstate = waiting", root.display())
-            )
-            .unwrap()
-        );
-        assert!(job_state(&root, "working directory = /\nstate = running").is_err());
-        assert!(job_state(&root, "state = running").is_err());
+        let (directory, running) = parse_job(&format!(
+            "working directory = {}\nstate = running",
+            root.display()
+        ))
+        .unwrap();
+        assert!(matches_root(&root, &directory));
+        assert!(running);
+        let (_, running) = parse_job(&format!(
+            "working directory = {}\nstate = waiting",
+            root.display()
+        ))
+        .unwrap();
+        assert!(!running);
+        assert!(!matches_root(&root, Path::new("/")));
+        assert!(parse_job("state = running").is_err());
+        let current = root.join("releases").join("0".repeat(64));
+        let previous = root.join("releases").join("1".repeat(64));
+        std::fs::create_dir_all(root.join("user/data")).unwrap();
+        for release in [&current, &previous] {
+            std::fs::create_dir_all(release).unwrap();
+            std::fs::write(release.join(crate::manifest::HOST_MANIFEST), []).unwrap();
+            crate::links::persistent(release, &root, true).unwrap();
+        }
+        assert!(crate::staging::owns_release(&current, &previous).is_ok());
+        assert!(crate::staging::owns_release(&current, &root).is_err());
+        std::fs::remove_file(previous.join("data")).unwrap();
+        crate::links::symbolic(&current, &previous.join("data")).unwrap();
+        assert!(crate::staging::owns_release(&current, &previous).is_err());
     }
     #[test]
     fn launchd_spec_preserves_argv_and_escapes_xml() {
