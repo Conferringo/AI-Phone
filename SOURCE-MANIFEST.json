@@ -1791,7 +1791,7 @@
     {
       "path": "crates/assistant/src/model_recovery_tests.rs",
       "size": 37642,
-      "sha256": "783952c3c00710f99a8551c76ce690c901a6a025e44d0f9a96275e21716a50aa"
+      "sha256": "e019823c48fe91705a8b661f295f084d367be5fda1607944e6ec5b4b4538d7bc"
     },
     {
       "path": "crates/assistant/src/model_sse.rs",
@@ -1921,7 +1921,7 @@
     {
       "path": "crates/assistant/src/steering_tests.rs",
       "size": 49155,
-      "sha256": "f3e22d4d52dcd54b81b3d62cf173ff5a17ec854d533edd4be4973aa7705a6b72"
+      "sha256": "8e6fa8ec6a4b5dfeda85fe4c95d116fcf4792023c1eac1dc6384533b9c6d5863"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",

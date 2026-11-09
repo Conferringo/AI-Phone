@@ -453,7 +453,7 @@ async fn resumed_provider_request_uses_saved_key_and_strips_previous_protocol_me
             assert_eq!(resume(&app,run.id).await.0,StatusCode::OK);
             claim_due_run(&app).await.unwrap().unwrap();
             let state:Value=sqlx::query_scalar("SELECT loop_state FROM runs WHERE id=$1").bind(run.id).fetch_one(&app.db).await.unwrap();
-            let error=respond(&app,run.id,&run.context,&CancellationToken::new(),false,state["model_replay_boundary"].as_u64().unwrap() as usize,&mut crate::model_timing::Timing::default()).await.unwrap_err();
+            let error=respond(&app,run.id,&run.context,&CancellationToken::new(),"low",state["model_replay_boundary"].as_u64().unwrap() as usize,&mut crate::model_timing::Timing::default()).await.unwrap_err();
             assert!(error.contains("HTTP 402"),"loopback fixture must receive a correctly encoded request");
             {
             let seen=captured.lock().unwrap();let (headers,body)=seen.last().unwrap();
