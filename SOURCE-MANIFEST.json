@@ -1195,8 +1195,8 @@
     },
     {
       "path": "config/container-host-runtime.json",
-      "size": 19317,
-      "sha256": "aa408a0fa8bffaf8fa338abd10bcc16ed89ea28ef2eb1bd7ad416f2fddaf87f3"
+      "size": 19313,
+      "sha256": "989667ed74b495f1f7c34717b288fd305e0410ae4455da0104dfe913c0906301"
     },
     {
       "path": "config/device-presets.json",
