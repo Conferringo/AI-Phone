@@ -1870,8 +1870,8 @@
     },
     {
       "path": "crates/assistant/src/notification_forwarding_tests.rs",
-      "size": 14690,
-      "sha256": "67f1e71c8f3d42743e82bacf6d63fb7d089e0e7ea6c471a92f57fdb77a5570c5"
+      "size": 14689,
+      "sha256": "8fd95b933ff4984892a3a1bc284a0a644600e2f974e437a54fdf203c11b61fc3"
     },
     {
       "path": "crates/assistant/src/notification_policy.rs",
