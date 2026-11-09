@@ -513,6 +513,41 @@ async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_d
 }
 
 #[tokio::test]
+async fn upgrade_adopts_only_containers_with_the_same_persistent_state() {
+    let folder = tempfile::tempdir().unwrap();
+    let home = folder.path().canonicalize().unwrap();
+    let current = home.join("releases").join("a".repeat(64));
+    let previous = home.join("releases").join("b".repeat(64));
+    fs::create_dir_all(home.join("user/data")).unwrap();
+    for release in [&current, &previous] {
+        fs::create_dir_all(release).unwrap();
+        fs::write(release.join(crate::manifest::HOST_MANIFEST), []).unwrap();
+        crate::links::persistent(release, &home, true).unwrap();
+    }
+    let mut backend = fixture(
+        &current,
+        Fixture {
+            container: Some((previous.to_str().unwrap().into(), true)),
+            ..Fixture::default()
+        },
+    );
+    assert!(
+        backend
+            .containers()
+            .await
+            .unwrap()
+            .contains_key("ai-phone-desktop")
+    );
+
+    fs::remove_file(previous.join("data")).unwrap();
+    crate::links::symbolic(&current, &previous.join("data")).unwrap();
+    assert!(matches!(
+        backend.containers().await,
+        Err(Error::Invalid("foreign_installation"))
+    ));
+}
+
+#[tokio::test]
 async fn foreign_container_rejects_before_import_database_or_service_changes() {
     let folder = tempfile::tempdir().unwrap();
     let root = folder.path().canonicalize().unwrap();

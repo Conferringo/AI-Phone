@@ -10,6 +10,7 @@ use std::{
 };
 use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
 mod bootstrap;
+mod updates;
 
 const DEFAULT_SERVER: &str = "http://127.0.0.1:17860";
 
@@ -365,6 +366,20 @@ pub fn run() {
     {
         let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
         #[cfg(windows)]
+        if arguments.len() == 1 && arguments[0] == "--stop-windows-backend" {
+            let result = std::env::var_os("APPDATA")
+                .map(std::path::PathBuf::from)
+                .ok_or("windows_app_data")
+                .and_then(|home| {
+                    let home = home.join("dev.aiphone.client/host");
+                    tauri::async_runtime::block_on(
+                        ai_phone_host_runtime::qemu_host::stop_installed(&home),
+                    )
+                    .map_err(|error| error.code())
+                });
+            std::process::exit(if result.is_ok() { 0 } else { 1 });
+        }
+        #[cfg(windows)]
         if arguments.len() == 1 && arguments[0] == "--prepare-windows-host" {
             match bootstrap::prepare_windows_host() {
                 Ok(code) => std::process::exit(code),
@@ -402,12 +417,21 @@ pub fn run() {
                 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
                 let connection =
                     MenuItem::with_id(app, "connection", "Setup…", true, Some("CmdOrCtrl+,"))?;
+                let update = MenuItem::with_id(
+                    app,
+                    updates::ID,
+                    updates::CHECK,
+                    updates::platform().is_some(),
+                    None::<&str>,
+                )?;
+                app.manage(updates::Menu::new(update.clone()));
                 let app_menu = Submenu::with_items(
                     app,
                     "AI Phone",
                     true,
                     &[
                         &connection,
+                        &update,
                         &PredefinedMenuItem::separator(app)?,
                         &PredefinedMenuItem::quit(app, Some("Quit AI Phone"))?,
                     ],
@@ -431,12 +455,12 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let saved = load_connection(&handle);
-                #[cfg(target_os = "macos")]
+                #[cfg(any(target_os = "macos", windows))]
                 let upgrade = saved.as_ref().is_ok_and(|url| {
                     url.port() == Some(17860)
                         && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
                 }) && bootstrap::upgrade_needed(&handle).unwrap_or(false);
-                #[cfg(not(target_os = "macos"))]
+                #[cfg(not(any(target_os = "macos", windows)))]
                 let upgrade = false;
                 let reachable = match saved {
                     _ if upgrade => resume_local_host(&handle, true).await,
@@ -464,11 +488,13 @@ pub fn run() {
             });
             Ok(())
         });
-    let builder = builder.on_menu_event(|app, event| {
-        if event.id().as_ref() == "connection" {
+    let builder = builder.on_menu_event(|app, event| match event.id().as_ref() {
+        "connection" => {
             app.state::<Navigation>().cancel_startup();
             let _ = show_connection(app);
         }
+        updates::ID => updates::select(app),
+        _ => {}
     });
     builder
         .build(tauri::generate_context!())

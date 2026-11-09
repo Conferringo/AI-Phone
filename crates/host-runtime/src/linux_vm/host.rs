@@ -33,6 +33,7 @@ pub struct QemuVmConfig<'a> {
     pub web_port: u16,
     pub control_port: u16,
     pub base_sha256: &'a str,
+    pub release_sha256: Option<&'a str>,
 }
 
 pub fn key_path(home: &Path) -> PathBuf {
@@ -41,7 +42,18 @@ pub fn key_path(home: &Path) -> PathBuf {
 
 impl<'a> QemuVmConfig<'a> {
     fn parse(arguments: &'a [OsString]) -> Result<Self> {
-        let [runtime, guest, home, cpu, memory, web, control, base] = arguments else {
+        let [
+            runtime,
+            guest,
+            home,
+            cpu,
+            memory,
+            web,
+            control,
+            base,
+            release,
+        ] = arguments
+        else {
             return Err(Error::Invalid("vm_owner_arguments"));
         };
         let invalid = || Error::Invalid("vm_owner_arguments");
@@ -60,6 +72,7 @@ impl<'a> QemuVmConfig<'a> {
             web_port: number(web)?.try_into().map_err(|_| invalid())?,
             control_port: number(control)?.try_into().map_err(|_| invalid())?,
             base_sha256: base.to_str().ok_or_else(invalid)?,
+            release_sha256: Some(release.to_str().ok_or_else(invalid)?).filter(|id| !id.is_empty()),
         })
     }
 
@@ -72,11 +85,8 @@ impl<'a> QemuVmConfig<'a> {
             || self.web_port == self.control_port
             || self.cpu == 0
             || self.memory_mib == 0
-            || self.base_sha256.len() != 64
-            || !self
-                .base_sha256
-                .bytes()
-                .all(|value| value.is_ascii_hexdigit())
+            || !digest(self.base_sha256)
+            || self.release_sha256.is_some_and(|id| !digest(id))
         {
             return Err(Error::Invalid("vm_owner_arguments"));
         }
@@ -96,6 +106,7 @@ impl<'a> QemuVmConfig<'a> {
                 self.control_port.to_string(),
             ])
             .arg(self.base_sha256)
+            .arg(self.release_sha256.unwrap_or_default())
             .creation_flags(HIDDEN)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -159,6 +170,10 @@ impl<'a> QemuVmConfig<'a> {
         fs::rename(staging.path(), &disk)?;
         self.existing_disk()
     }
+}
+
+fn digest(id: &str) -> bool {
+    id.len() == 64 && id.bytes().all(|value| value.is_ascii_hexdigit())
 }
 
 fn log(home: &Path, name: &str) -> io::Result<File> {
@@ -273,6 +288,23 @@ impl<'a> QemuVm<'a> {
             .stdout(Stdio::null())
             .stderr(log(config.home, "qemu.log")?)
             .kill_on_drop(true);
+        if config.release_sha256.is_some() {
+            let initramfs = config.guest.join("release-init.cpio.gz");
+            let release = config.guest.join("release.ext4");
+            for path in [&initramfs, &release] {
+                filesystem::regular(path)?;
+            }
+            let layer = serde_json::json!({
+                "driver": "raw", "node-name": "aiphone-release", "read-only": true,
+                "file": {"driver": "file", "filename": release}
+            });
+            command.arg("-initrd").arg(initramfs).args([
+                "-blockdev",
+                &layer.to_string(),
+                "-device",
+                "virtio-blk-pci,drive=aiphone-release",
+            ]);
+        }
         drop((web, control));
         let mut child = command.spawn()?;
         tokio::select! {
@@ -284,7 +316,15 @@ impl<'a> QemuVm<'a> {
             config,
             _lease: lease,
         };
-        vm_control::ping(vm.config.control_port, &key).await?;
+        let active = vm_control::version(vm.config.control_port, &key).await?;
+        if vm
+            .config
+            .release_sha256
+            .is_some_and(|id| active.as_slice() != id.as_bytes())
+        {
+            vm.stop().await?;
+            return Err(Error::Invalid("vm_release_identity"));
+        }
         Ok(vm)
     }
 
@@ -313,6 +353,38 @@ async fn cancelled(test: &dyn Fn() -> bool) {
     }
 }
 
+pub async fn stop_installed(home: &Path) -> Result<()> {
+    let qemu = home.join("user/qemu");
+    if qemu.try_exists()? {
+        stop_running(&qemu, vm_control::GUEST_PORT).await?;
+    }
+    let android = home.join("user/data/android/native/session.lock");
+    if android.try_exists()? {
+        wait_for_stop(&android).await?;
+    }
+    Ok(())
+}
+
+async fn stop_running(home: &Path, port: u16) -> Result<()> {
+    let lock = home.join("owner.lock");
+    if filesystem::lease(&lock)?.is_some() {
+        return Ok(());
+    }
+    vm_control::shutdown(port, &key_path(home)).await?;
+    wait_for_stop(&lock).await
+}
+
+async fn wait_for_stop(lock: &Path) -> Result<()> {
+    timeout(STOP_LIMIT, async {
+        while filesystem::lease(lock)?.is_none() {
+            sleep(Duration::from_millis(100)).await;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|_| Error::Invalid("vm_stop_unknown"))?
+}
+
 pub async fn ensure(
     config: QemuVmConfig<'_>,
     profile: &[u8],
@@ -328,9 +400,16 @@ pub async fn ensure(
         if config.lease()?.is_some() {
             break;
         }
-        if vm_control::ping(config.control_port, &key).await.is_ok() {
+        if let Ok(active) = vm_control::version(config.control_port, &key).await {
             config.existing_disk()?;
-            return Ok(());
+            if config
+                .release_sha256
+                .is_none_or(|id| active.as_slice() == id.as_bytes())
+            {
+                return Ok(());
+            }
+            stop_running(config.home, config.control_port).await?;
+            break;
         }
         if Instant::now() >= deadline {
             return Err(Error::Invalid("vm_owner_start_timeout"));

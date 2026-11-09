@@ -1,3 +1,5 @@
+#define HasReleaseLayer FileExists(AppSource + "\host\qemu\guest\release.ext4")
+
 [Setup]
 AppId=dev.aiphone.client
 AppName=AI Phone
@@ -32,7 +34,13 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
 
 [Files]
+#if HasReleaseLayer
+Source: "{#AppSource}\ai-phone-client.exe"; DestDir: "{tmp}"; Flags: dontcopy noencryption
+Source: "{#AppSource}\host\qemu\guest\guest.qcow2"; DestDir: "{app}\host\qemu\guest"; Flags: onlyifdoesntexist
+Source: "{#AppSource}\*"; DestDir: "{app}"; Excludes: "\host\qemu\guest\guest.qcow2"; Flags: ignoreversion recursesubdirs createallsubdirs
+#else
 Source: "{#AppSource}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
 
 [Icons]
 Name: "{autoprograms}\AI Phone"; Filename: "{app}\ai-phone-client.exe"; AppUserModelID: "dev.aiphone.client"
@@ -55,6 +63,30 @@ arabic.HostSetupFailed=تعذر تثبيت بيئة تشغيل الأجهزة.
 [Code]
 var
   HostRestart: Boolean;
+
+#if HasReleaseLayer
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Base: String;
+  ResultCode: Integer;
+begin
+  Result := '';
+  Base := ExpandConstant('{app}\host\qemu\guest\guest.qcow2');
+  if FileExists(Base) then
+  begin
+    ExtractTemporaryFile('ai-phone-client.exe');
+    if not ExecAsOriginalUser(ExpandConstant('{tmp}\ai-phone-client.exe'),
+      '--stop-windows-backend', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or
+      (ResultCode <> 0) then
+    begin
+      Result := ExpandConstant('{cm:HostSetupFailed}');
+      Exit;
+    end;
+    if CompareText(GetSHA256OfFile(Base), '{#BaseDiskSHA256}') <> 0 then
+      Result := ExpandConstant('{cm:HostSetupFailed}');
+  end;
+end;
+#endif
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var

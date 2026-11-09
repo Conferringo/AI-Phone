@@ -107,6 +107,7 @@ pub(super) struct VmManifest {
     format: u8,
     runtime: String,
     files: Vec<VmFile>,
+    release_sha256: Option<String>,
 }
 #[derive(serde::Deserialize)]
 struct VmFile {
@@ -116,7 +117,7 @@ struct VmFile {
 }
 
 impl VmManifest {
-    pub(super) fn base_identity(folder: &Path) -> Result<String, String> {
+    pub(super) fn identities(folder: &Path) -> Result<(String, Option<String>), String> {
         let manifest: Self = serde_json::from_reader(
             std::fs::File::open(folder.join("manifest.json")).map_err(|e| e.to_string())?,
         )
@@ -124,18 +125,31 @@ impl VmManifest {
         if manifest.format != 1 || manifest.runtime != "qemu-whpx-backend" {
             return Err("vm_bundle_invalid".into());
         }
-        let base = manifest
-            .files
-            .iter()
-            .find(|file| file.path == "guest/guest.qcow2")
-            .ok_or("vm_bundle_invalid")?;
-        if std::fs::metadata(folder.join(&base.path))
-            .map_err(|e| e.to_string())?
-            .len()
-            != base.size
-        {
-            return Err("vm_bundle_changed".into());
+        let file = |name: &str| -> Result<_, String> {
+            let record = manifest
+                .files
+                .iter()
+                .find(|file| file.path == name)
+                .ok_or("vm_bundle_invalid".to_owned())?;
+            let path = folder.join(name);
+            if std::fs::metadata(&path)
+                .map_err(|error| error.to_string())?
+                .len()
+                != record.size
+            {
+                return Err("vm_bundle_changed".into());
+            }
+            Ok((path, record))
+        };
+        let (_, base) = file("guest/guest.qcow2")?;
+        if manifest.release_sha256.is_some() {
+            for name in ["guest/release-init.cpio.gz", "guest/release.ext4"] {
+                let (path, record) = file(name)?;
+                if super::resources::hash(&path)? != record.sha256 {
+                    return Err("vm_bundle_changed".into());
+                }
+            }
         }
-        Ok(base.sha256.clone())
+        Ok((base.sha256.clone(), manifest.release_sha256))
     }
 }
