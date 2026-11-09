@@ -4,7 +4,7 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY packages/protocol/proto ./packages/protocol/proto
-RUN cargo build --release --locked -p ai-phone-guest-runtime && strip target/release/desktop-bridge
+RUN CARGO_HTTP_MULTIPLEXING=false cargo build --release --locked -p ai-phone-guest-runtime && strip target/release/desktop-bridge
 FROM ${GUEST_RUNTIME_SOURCE} AS guest-runtime
 FROM oven/bun:1.4.4@sha256:1d22548f177f4ff38e0c15baa3c2c46c6c2060ba2d1bc573bb4720b407548f1d AS bun
 FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2

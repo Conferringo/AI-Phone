@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "Apache-2.0",
   "remote_publication_authorized": true,
   "remote_review_authorized": true,
@@ -85,8 +85,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2782,
-      "sha256": "0781e4996f59c78f8bc360a08fae4cd38d953010ec75bf602acf24134f878e4b"
+      "size": 2821,
+      "sha256": "75f9730950d78969e93fd5c70aef6dcef5ce751504bc7f306460f68ea03e8e8e"
     },
     {
       "path": ".gitignore",
@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 1021,
-      "sha256": "3a14d8e2c0f610cd314bb90d110df4371010dfaea5baeea9dcba8f7aadce0b13"
+      "size": 1229,
+      "sha256": "087d46420536b51ea6c4186d5d9086f1edadb9c421594da2cc76e20800e0e64c"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -136,12 +136,12 @@
     {
       "path": "README.en.md",
       "size": 3291,
-      "sha256": "888a2bde0341c486f9c8a50b720970395f9d07a529c89141372c13c1c6d1cd6b"
+      "sha256": "612ba9e95f4453afd21f6b098d322ccd8c849545559b6024614820f5e7ecdf40"
     },
     {
       "path": "README.md",
       "size": 5787,
-      "sha256": "cf229c07da2d89703b7c35b9e82d6bfd272d95172377033b55331b7be7485ef4"
+      "sha256": "7b7a08cd7eb507a111c3e3175d2f6977419daaedb0b510fdfc2e0f58638d845e"
     },
     {
       "path": "SECURITY.md",
@@ -231,17 +231,17 @@
     {
       "path": "apps/client/package.json",
       "size": 232,
-      "sha256": "45ea2151afe778387f4194528e27be76a254cb552082c23a8c39c8a5be91bdc9"
+      "sha256": "228b0afa54f218e4cc6fd8b52366875bd534a932b04003358c11cfc1ac991a81"
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
       "size": 126295,
-      "sha256": "91733345db7c6237b5184f381e9d3ca17699f9c43638c114affee994bbbdc354"
+      "sha256": "eae9792612d1fb15ff05025769939a6c54f92863aef292db45bdb862c098806e"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
       "size": 933,
-      "sha256": "7735fe6b86bf8880963d69f72cd17c28cbb358f2080b93c873dd5be43cec947f"
+      "sha256": "85983fe57162d984a40432ada0350b44fb82cb7d2850bf824a39f1f992ccbfce"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -400,8 +400,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/windows_host.rs",
-      "size": 4374,
-      "sha256": "5ca8412c4bb82844317fcc971d5598a123f4511b18202f3fcf9da4c66077b2fb"
+      "size": 4382,
+      "sha256": "e4622f428bf14a194cca03cdc91e546474332ec35962d518b408848accee4872"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
@@ -421,7 +421,7 @@
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
       "size": 1800,
-      "sha256": "0aeeab42f97bab40625767611c6ffe5f323686a3825ca8139123e1217a6744a2"
+      "sha256": "23cd2d56570284d5428bcbad1630656c219125ace783c00d909d809eb47868a1"
     },
     {
       "path": "apps/client/src-tauri/windows/installer.iss",
@@ -1226,7 +1226,7 @@
     {
       "path": "config/release-policy.json",
       "size": 2057,
-      "sha256": "4aa03b5837f0cc92bb766c5c78eaee5097b03fee764da652b3fa6aacfb459637"
+      "sha256": "62f327bb82a37ed0c977889e04f00c0e8a2315af8a41112769dccc10d6ae8f10"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -3396,7 +3396,7 @@
     {
       "path": "docs/public/release-status.md",
       "size": 854,
-      "sha256": "bc3af153091e084386628be3597e3620ef3d82fddd7f4ed35a88dba41ca6b1c7"
+      "sha256": "4d1ce69005915512a2e8680871bc75747cafe5c9104eb487fe5250f59f6270e3"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -3445,8 +3445,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 3517,
-      "sha256": "41292b3c1c56e4e23462a826bf49b7bb31d86426a4dc15e38c9c427638df4757"
+      "size": 3547,
+      "sha256": "e29c48a00c3103e1b8967e25d90b924b9b356f4dd48cf3944696f143067874eb"
     },
     {
       "path": "infra/desktop/clash-launch.sh",
@@ -3490,8 +3490,8 @@
     },
     {
       "path": "infra/workspace/Dockerfile",
-      "size": 1129,
-      "sha256": "7cab47d0fe47606e7b9a4d735e17bb612dc8f4f6683837040e0ec2da929cc124"
+      "size": 1159,
+      "sha256": "70c2a17cd6d3bf0c0cd6fd32e8cea46845e21ed752c366ff0c4183bee82e5fa2"
     },
     {
       "path": "package.json",
