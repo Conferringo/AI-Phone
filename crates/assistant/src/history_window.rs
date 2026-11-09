@@ -117,6 +117,7 @@ async fn page(
 async fn heads(
     tx: &mut Transaction<'_, Postgres>,
     conversation: Uuid,
+    current_head: Option<Uuid>,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
     // Each lane has an explicit LIMIT. Paused notification heads are not a lane
     // union: only the one selected current header may add such a historical head.
@@ -129,9 +130,7 @@ async fn heads(
           (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running') AND origin='notification' ORDER BY created_at DESC,id DESC LIMIT 1)
         ) selected_heads"
     ).bind(conversation).fetch_all(&mut **tx).await?;
-    if let Some(row) = crate::http::current_run(tx, conversation).await? {
-        ids.push(row.get("assistant_message_id"));
-    }
+    ids.extend(current_head);
     Ok(ids)
 }
 
@@ -140,6 +139,9 @@ async fn receipts(
     conversation: Uuid,
     input: &Request,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
+    if input.receipts.is_empty() {
+        return Ok(Vec::new());
+    }
     sqlx::query_scalar(
         "SELECT id FROM messages WHERE conversation_id=$1 AND role='user' AND request_id=ANY($2)",
     )
@@ -153,6 +155,7 @@ async fn selection(
     tx: &mut Transaction<'_, Postgres>,
     conversation: Uuid,
     input: &Request,
+    current_head: Option<Uuid>,
 ) -> Result<(Vec<Uuid>, wire::ChatMessageWindow), sqlx::Error> {
     let (page, has_older) = page(tx, conversation, input).await?;
     let window = wire::ChatMessageWindow {
@@ -166,7 +169,7 @@ async fn selection(
         page_message_ids: page.iter().map(Uuid::to_string).collect(),
     };
     let mut ids: BTreeSet<Uuid> = page.into_iter().collect();
-    ids.extend(heads(tx, conversation).await?);
+    ids.extend(heads(tx, conversation, current_head).await?);
     ids.extend(input.watch.iter().copied());
     ids.extend(receipts(tx, conversation, input).await?);
     Ok((ids.into_iter().collect(), window))
@@ -178,9 +181,11 @@ pub(crate) async fn read(
     input: Request,
 ) -> Result<wire::ChatState, sqlx::Error> {
     let mut tx = transaction(pool).await?;
-    let (ids, window) = selection(&mut tx, conversation, &input).await?;
+    let run = crate::http::current_run(&mut tx, conversation).await?;
+    let current_head = run.as_ref().map(|row| row.get("assistant_message_id"));
+    let (ids, window) = selection(&mut tx, conversation, &input, current_head).await?;
     let value =
-        crate::http::state_selected(&mut tx, conversation, Some(&ids), Some(window)).await?;
+        crate::http::state_selected(&mut tx, conversation, Some(&ids), Some(window), run).await?;
     tx.commit().await?;
     Ok(value)
 }

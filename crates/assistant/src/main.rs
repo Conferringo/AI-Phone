@@ -50,6 +50,7 @@ mod proactive;
 mod registry;
 mod run_notice;
 mod run_queue;
+mod run_signals;
 mod settings;
 mod setup;
 mod speech;
@@ -69,6 +70,7 @@ struct App {
     local: reqwest::Client,
     remote: reqwest::Client,
     active: Mutex<std::collections::HashMap<Uuid, CancellationToken>>,
+    run_signals: run_signals::RunSignals,
     login_attempts: Mutex<Vec<std::time::Instant>>,
     workspace_init: Mutex<Option<String>>,
     location_mutation: Mutex<()>,
@@ -319,6 +321,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
             .timeout(Duration::from_secs(180))
             .build()?,
         active: Mutex::new(Default::default()),
+        run_signals: Default::default(),
         login_attempts: Mutex::new(Vec::new()),
         workspace_init: Mutex::new(None),
         location_mutation: Mutex::new(()),
@@ -350,6 +353,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .route("/v1/session", post(auth::session))
         .route("/v1/logout", post(auth::logout))
         .route("/v1/history", post(http::history))
+        .route("/v1/chat/events", axum::routing::get(run_signals::events))
         .route("/v1/send", post(http::send))
         .route("/v1/run", post(http::run_state))
         .route("/v1/workbench/{operation}", post(workbench::route))

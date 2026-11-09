@@ -6,6 +6,6 @@ import type {OutboxInput} from './chat-outbox';
 export function encodeChatSend(item:OutboxInput){
   return toBinary(ChatSendRequestSchema,create(ChatSendRequestSchema,{
     conversationId:item.conversationId,deviceId:item.deviceId,text:item.text,
-    attachmentIds:item.attachments.map(file=>file.id),requestId:item.id,voice:item.voice,
+    attachmentIds:item.attachments.map(file=>file.id),requestId:item.id,voice:item.voice,receiptOnly:true,
   }));
 }

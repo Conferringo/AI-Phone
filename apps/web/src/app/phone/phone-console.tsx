@@ -23,6 +23,7 @@ import {
 } from "@ai-phone/protocol/ai_phone/v1/phone_runtime_pb";
 import {
   RunNoticeKind,
+  ChatChangedSchema,
   ChatMessageSchema,
   ChatStateSchema,
   ChatRunRequestSchema,
@@ -285,11 +286,34 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
     return()=>{abort.abort();clearTimeout(phoneTimer);document.removeEventListener("visibilitychange",visibility);};
   },[observe,focused]);
   useEffect(() => {
-    const abort=new AbortController();let chatTimer:ReturnType<typeof setTimeout>;
-    const messages=async()=>{if(document.visibilityState==="visible")await fetchChat(abort.signal);if(!abort.signal.aborted)chatTimer=setTimeout(messages,700);};
-    const visibility=()=>{if(document.visibilityState==="visible")void fetchChat(abort.signal);};
+    const abort=new AbortController();
+    const url=new URL('/api/chat/events',location.href);
+    url.protocol=url.protocol==='https:'?'wss:':'ws:';
+    const updates=new WebSocket(url);
+    updates.binaryType='arraybuffer';
+    let chatTimer:ReturnType<typeof setTimeout>;
+    let reading=false,changed=false;
+    const messages=async()=>{
+      if(abort.signal.aborted||document.visibilityState!=="visible"||reading)return;
+      clearTimeout(chatTimer);
+      reading=true;
+      do{
+        changed=false;
+        await fetchChat(abort.signal);
+      }while(changed&&!abort.signal.aborted&&document.visibilityState==="visible");
+      reading=false;
+      if(!abort.signal.aborted)chatTimer=setTimeout(messages,700);
+    };
+    updates.onmessage=({data})=>{
+      const {conversationId}=fromBinary(ChatChangedSchema,new Uint8Array(data));
+      if(!conversationId||!conversation.current||conversation.current===conversationId){
+        changed=true;
+        void messages();
+      }
+    };
+    const visibility=()=>{if(document.visibilityState==="visible")void messages();};
     void messages();document.addEventListener("visibilitychange",visibility);
-    return()=>{abort.abort();clearTimeout(chatTimer);document.removeEventListener("visibilitychange",visibility);};
+    return()=>{abort.abort();updates.close();clearTimeout(chatTimer);document.removeEventListener("visibilitychange",visibility);};
   },[fetchChat]);
   useEffect(
     () => () => {

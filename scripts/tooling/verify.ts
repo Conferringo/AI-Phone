@@ -1,9 +1,11 @@
 import {
   existsSync,
+  mkdirSync,
   readdirSync,
   mkdtempSync,
   rmSync,
   readFileSync,
+  writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -87,6 +89,39 @@ export async function verifyWeb(root = ROOT) {
         if (Date.now() >= deadline) throw error;
         await Bun.sleep(100);
       }
+    }
+    const lanOrigin = "http://192.0.2.2:17860";
+    mkdirSync(join(folder, "data"), { recursive: true });
+    writeFileSync(
+      join(folder, "data/deployment.json"),
+      JSON.stringify({ origin: lanOrigin }),
+    );
+    const deniedEntry = await fetch(origin + "/api/auth/enter", {
+      method: "POST",
+      headers: {
+        Origin: "http://127.0.0.1:17860",
+        "x-aiphone-lan": "1",
+        "Content-Type": "application/x-protobuf",
+      },
+      body: new Uint8Array(),
+    });
+    if (deniedEntry.status !== 403)
+      throw Error("Relayed local entry must be refused despite a loopback Origin");
+    for (const [operation, requestOrigin] of [
+      ["login", lanOrigin],
+      ["enter", "http://127.0.0.1:17860"],
+    ] as const) {
+      const request = await fetch(origin + "/api/auth/" + operation, {
+        method: "POST",
+        headers: {
+          Origin: requestOrigin,
+          "Content-Type": "text/plain",
+          ...(operation === "login" ? { "x-aiphone-lan": "1" } : {}),
+        },
+        body: "fixture",
+      });
+      if (request.status !== 415)
+        throw Error("Allowed authentication must reach body validation: " + operation);
     }
     const scripts = [
       ...html.matchAll(/<script[^>]+src="(\/_next\/static\/[^"?]+)"/g),

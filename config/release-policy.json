@@ -1,5 +1,5 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

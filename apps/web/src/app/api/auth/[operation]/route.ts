@@ -1,11 +1,12 @@
 import { readRequestBody } from '@/lib/request-body';
 import { create,fromBinary,toBinary } from "@bufbuild/protobuf";
 import { SessionRequestSchema,SessionStateSchema,LoginResultSchema } from "@ai-phone/protocol/ai_phone/v1/auth_pb";
-import { allowedOrigin,assistantToken,assistantError } from "@/lib/assistant-server";
+import { allowedOrigin,assistantToken,assistantError,loopbackOrigin } from "@/lib/assistant-server";
 import { SESSION_COOKIE,requestSessionToken } from "@/lib/session-server";
 export const runtime="nodejs";
 export async function POST(request:Request,{params}:{params:Promise<{operation:string}>}){
   const {operation}=await params;if(!["login","enter","logout"].includes(operation))return assistantError(404,"not_found","操作不存在");
+  if(operation==="enter"&&(request.headers.has("x-aiphone-lan")||!loopbackOrigin(request)))return assistantError(403,"local_entry_disabled","此部署未启用本地入口");
   if(!allowedOrigin(request))return assistantError(403,"wrong_origin","请从工作台登录");
   try{
     if(Number(request.headers.get("content-length")??0)>4096)return assistantError(413,"body_rejected","内容过大");

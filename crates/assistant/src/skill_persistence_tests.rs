@@ -324,6 +324,7 @@ async fn committed_skill_survives_lost_commit_acknowledgement() {
                 local: reqwest::Client::new(),
                 remote: reqwest::Client::new(),
                 active: Mutex::new(Default::default()),
+                run_signals: Default::default(),
                 login_attempts: Mutex::new(vec![]),
                 workspace_init: Mutex::new(None),
                 location_mutation: Mutex::new(()),

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Start new chat requests promptly and refresh saved activity as it arrives.
+- Wake the Agent on device notifications and keep progress when instructions are added to a running task.
+- Reduce Android observation work by reusing screen dimensions and reading notification data in parallel.
+- Handle DeepSeek thinking options on Anthropic-compatible endpoints.
+- Require sign-in for access over the local network.
+
 ## 0.1.2
 
 - Locate the bundled QEMU manifest during Windows setup so the installer can enable the hypervisor and start the local devices.

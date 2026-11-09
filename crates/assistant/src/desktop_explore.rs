@@ -144,7 +144,12 @@ async fn tick_device(app: &App, device: &str) -> Result<(), sqlx::Error> {
     if due && !busy {
         queue_cycle(&mut tx, &app.settings, device, conversation).await?;
     }
-    tx.commit().await
+    tx.commit().await?;
+    if due && !busy {
+        app.run_signals.queue.notify_one();
+        app.run_signals.chat_changed(conversation);
+    }
+    Ok(())
 }
 async fn reconcile_cycles(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
