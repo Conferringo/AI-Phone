@@ -238,9 +238,8 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
         } else {
             Some(
                 app.settings
-                    .get(version as u64)
-                    .map_err(|m| conflict(&m))?
-                    .profile(version as u64),
+                    .profile_at(version as u64)
+                    .map_err(|m| conflict(&m))?,
             )
         };
         models.push(wire::RegisteredModel {
@@ -250,7 +249,8 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
             profile,
         });
     }
-    let result = wire::RegistryState {
+    tx.commit().await.map_err(storage)?;
+    Ok(wire::RegistryState {
         active_device_id: PHONE.into(),
         phone_limit: device_limit("phone"),
         desktop_limit: device_limit("desktop"),
@@ -288,9 +288,7 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
                 }
             })
             .collect(),
-    };
-    tx.commit().await.map_err(storage)?;
-    Ok(result)
+    })
 }
 async fn save_device(app: &App, r: wire::DeviceSaveRequest) -> Result<()> {
     if r.id != PHONE {

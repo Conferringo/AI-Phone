@@ -365,6 +365,9 @@ async fn resume_local_host(app: &tauri::AppHandle, upgrade: bool) -> Option<Url>
 pub fn run() {
     {
         let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
+        if let Some(code) = updates::run(&arguments) {
+            std::process::exit(code);
+        }
         #[cfg(windows)]
         if arguments.len() == 1 && arguments[0] == "--stop-windows-backend" {
             let result = std::env::var_os("APPDATA")
@@ -413,6 +416,7 @@ pub fn run() {
             accept_deployment_license
         ])
         .setup(|app| {
+            updates::cleanup_current(app.handle());
             {
                 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
                 let connection =

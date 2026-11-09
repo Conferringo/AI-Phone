@@ -228,6 +228,15 @@ impl SettingsStore {
             .cloned()
             .ok_or("请先在设置中连接模型".into())
     }
+    pub(crate) fn profile_at(&self, revision: u64) -> Result<wire::ModelProfile, String> {
+        self.state
+            .lock()
+            .expect("settings lock")
+            .models
+            .get(&revision)
+            .map(|model| model.profile(revision))
+            .ok_or("请先在设置中连接模型".into())
+    }
     // Saved immutable revisions determine native replay compatibility. Database
     // selection, Agent ownership and the atomic run update belong to registry.
     pub(crate) fn recovery_replay(

@@ -12,7 +12,26 @@ pub(super) fn available_bytes(path: &Path) -> u64 {
     disk_bytes(directory)
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(target_os = "macos")]
+fn disk_bytes(directory: &Path) -> u64 {
+    use std::{ffi::CString, mem::MaybeUninit, os::unix::ffi::OsStrExt};
+
+    let Ok(directory) = CString::new(directory.as_os_str().as_bytes()) else {
+        return 0;
+    };
+    let mut capacity = MaybeUninit::<libc::statfs>::uninit();
+    // The path is terminated and statfs initializes capacity on success.
+    if unsafe { libc::statfs(directory.as_ptr(), capacity.as_mut_ptr()) } != 0 {
+        return 0;
+    }
+    let capacity = unsafe { capacity.assume_init() };
+    capacity
+        .f_bavail
+        .checked_mul(u64::from(capacity.f_bsize))
+        .unwrap_or(0)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn disk_bytes(directory: &Path) -> u64 {
     std::process::Command::new("/bin/df")
         .args(["-kP"])
@@ -77,14 +96,23 @@ pub(super) fn total_memory_bytes() -> u64 {
 
 #[cfg(target_os = "macos")]
 pub(super) fn total_memory_bytes() -> u64 {
-    std::process::Command::new("/usr/sbin/sysctl")
-        .args(["-n", "hw.memsize"])
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .and_then(|text| text.trim().parse::<u64>().ok())
-        .unwrap_or(0)
+    let mut bytes = 0u64;
+    let mut size = std::mem::size_of_val(&bytes);
+    // hw.memsize is a read-only 64-bit value.
+    let status = unsafe {
+        libc::sysctlbyname(
+            c"hw.memsize".as_ptr(),
+            (&mut bytes as *mut u64).cast(),
+            &mut size,
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    if status == 0 && size == std::mem::size_of_val(&bytes) {
+        bytes
+    } else {
+        0
+    }
 }
 
 #[cfg(all(test, any(target_os = "macos", target_os = "windows")))]

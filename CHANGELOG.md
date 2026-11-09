@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Download, verify, install and restart from the macOS and Windows client.
+- Reuse the existing device disks, model configuration and conversations.
+- Read macOS host capacity without starting command-line tools.
+- Reduce model configuration work when loading the registry.
+
 ## 0.1.3
 
 - Start new chat requests promptly and refresh saved activity as it arrives.
