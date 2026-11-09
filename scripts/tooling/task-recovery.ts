@@ -100,6 +100,11 @@ class Model {
                 status: "needs_input",
                 summary: "计时验证已返回，等待维护者核对校验值。",
               });
+      else if (name === "unknown")
+        item = call("task_finish", {
+          status: "needs_input",
+          summary: "需核对原工作文件的写入结果。",
+        });
       else if (name === "long")
         item =
           longIndex <= 56
@@ -407,13 +412,16 @@ class Driver {
     assert(!existsSync(join(root, "data/workspaces/admin/forbidden.txt")));
     assert.equal(this.model.counts.unknown || 0, 0);
     const resumed = this.start(root, id);
-    await this.wait(() => this.row(db, id).status === "succeeded");
+    await this.wait(() => {
+      const row = this.row(db, id);
+      return row.status === "paused" && row.loop_state.notice_kind === "needs_input";
+    });
     await this.stop(resumed);
     assert.equal(this.model.counts.unknown, 1);
     assert.equal(this.sql(db, `SELECT count(*) FROM memories;`), "0");
     assert(!existsSync(join(root, "data/workspaces/admin/forbidden.txt")));
     this.reports.push(
-      "Unknown side effect pauses on restart; explicit resume replans with the unknown receipt without executing either old write",
+      "Explicit resume replans with the unknown receipt, asks for verification and executes neither old write",
     );
   }
   async provider() {
