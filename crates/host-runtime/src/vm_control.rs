@@ -82,8 +82,15 @@ async fn empty(port: u16, key: &Path, operation: LinuxVmOperation) -> Result<()>
     Ok(())
 }
 
-pub async fn ping(port: u16, key: &Path) -> Result<()> {
-    empty(port, key, LinuxVmOperation::Ping).await
+#[cfg(windows)]
+pub(crate) async fn version(port: u16, key: &Path) -> Result<Vec<u8>> {
+    let (_, payload) = tokio::time::timeout(
+        Duration::from_secs(15),
+        open(port, key, LinuxVmOperation::Ping, Vec::new()),
+    )
+    .await
+    .map_err(|_| Error::Invalid("vm_control_timeout"))??;
+    Ok(payload)
 }
 
 pub async fn shutdown(port: u16, key: &Path) -> Result<()> {

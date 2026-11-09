@@ -8,6 +8,10 @@
 
 下文介绍 macOS Apple Silicon 的源码开发环境。完整安装包见[下载](release-status.md)。Windows 后端开发见[WSL 指南](windows-backend-runtime.md)。
 
+## 更新已安装客户端
+
+打开 **AI Phone → Check for Updates…**。找到当前平台的新版本后，从同一菜单选择 **Download Update**，再运行下载的安装包。设备、配置和聊天保存在应用数据目录中。
+
 ## 源码安装的支持范围
 
 这条源码路径使用 macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux 电脑使用 Docker 内的 Debian 13/Openbox。

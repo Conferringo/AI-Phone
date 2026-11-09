@@ -366,11 +366,8 @@ impl Container {
         if directory == root {
             return Ok(());
         }
-        #[cfg(target_os = "macos")]
-        return crate::staging::owns_release(root, &directory)
-            .map_err(|_| Error::Invalid("foreign_installation"));
-        #[cfg(not(target_os = "macos"))]
-        Err(Error::Invalid("foreign_installation"))
+        crate::staging::owns_release(root, &directory)
+            .map_err(|_| Error::Invalid("foreign_installation"))
     }
 }
 pub(crate) fn token(root: &Path, section: &str) -> Result<()> {

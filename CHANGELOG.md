@@ -7,6 +7,7 @@
 - Reduce Android observation work by reusing screen dimensions and reading notification data in parallel.
 - Handle DeepSeek thinking options on Anthropic-compatible endpoints.
 - Require sign-in for access over the local network.
+- Keep the existing Windows device disk during updates and check for client releases from the app.
 
 ## 0.1.2
 

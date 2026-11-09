@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 1652,
-      "sha256": "ca08c3be449eb4d4610c0d945cebabc8b43f6fbf8b629ed79cac9e6fc1e7fb91"
+      "size": 1751,
+      "sha256": "28e2d1dccf33e1425f1644ef4553086781be915cde54694b52ed638febef276d"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -136,12 +136,12 @@
     {
       "path": "README.en.md",
       "size": 3291,
-      "sha256": "00b77d4a20c8e797c5c43964ec6d3f9c135a1a49afdfe917d1618b61a62296bc"
+      "sha256": "8dd97c0f960c6b1b1794cd2f57dfd30dc8835a26cf1e9da2313d7b080b5a0aa1"
     },
     {
       "path": "README.md",
       "size": 5787,
-      "sha256": "d7025dffe02e2c93fc485691020775772e3eb24f71a193cb9262c65328969362"
+      "sha256": "813f1a0acbb44e35d88a0424f9c68ae9495702cc2eb2c01a7092543707f52612"
     },
     {
       "path": "SECURITY.md",
@@ -235,13 +235,13 @@
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
-      "size": 126295,
-      "sha256": "66cf2a98e486afda9d147be234d092b145a372c946040ff3413e2f1367c73922"
+      "size": 126306,
+      "sha256": "7398877048ce5280e2a2684b993b0c9d728ab96c74338fad6b6a59246fba118b"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
-      "size": 933,
-      "sha256": "4554933e05fa81a1f50f84413036d8f85830d90bee4b0e353a1e4c728efea346"
+      "size": 1002,
+      "sha256": "6283f0e982999b8d5c1deb3937dc7602f26b738452e6f8a4231847272065010a"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -380,8 +380,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/checkpoint.rs",
-      "size": 7386,
-      "sha256": "cebc7d27bb1d3ad6bd83e701e6b9b7645cce5024e1c94de4dbb91ef63434ed8d"
+      "size": 7456,
+      "sha256": "1517c88b91381e3d7aa6fa38815d1d4c80c07f44f0a0422da17e27a1c95c553f"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/native_phone.rs",
@@ -400,23 +400,28 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/windows_host.rs",
-      "size": 4382,
-      "sha256": "e4622f428bf14a194cca03cdc91e546474332ec35962d518b408848accee4872"
+      "size": 5036,
+      "sha256": "efe5458b96c980fa7d6e559280dece01bae044b81f1ee8fcf6d7b2f65392de8a"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 28206,
-      "sha256": "bd611ab87fa43c44e6bec937447807cf3a81c646850793212e938e8dbc6e5e43"
+      "size": 28500,
+      "sha256": "c9ab145267364ee9833230c1ebcb5902ded4a9abbddde759779a27942fc6e482"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
-      "size": 22081,
-      "sha256": "1c4e862b6320d0529a8ec5cbb21044bfe4910be0707f8608926ba9a9d427ba55"
+      "size": 23183,
+      "sha256": "16257075ce96aab935ed875af69ee57485b4ad765c4fd89f6bc8e2663eb647c8"
     },
     {
       "path": "apps/client/src-tauri/src/main.rs",
       "size": 108,
       "sha256": "59ac8370fc1ad11004c5105b3c794bf78436e3799e2d5ecee5fc01c5c24d942b"
+    },
+    {
+      "path": "apps/client/src-tauri/src/updates.rs",
+      "size": 6093,
+      "sha256": "3d9a2e074dfe0964cb0a505a8580ae420e478d226994e9210a9657cbab2ca5cc"
     },
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
@@ -425,8 +430,8 @@
     },
     {
       "path": "apps/client/src-tauri/windows/installer.iss",
-      "size": 3424,
-      "sha256": "7cd4c1299f4ade76fda695a12d20d145b643b630dd8bf3c7df4960a0227b1502"
+      "size": 4596,
+      "sha256": "1adf76d07e61eaba9f8f4f2935ce8f68b681d5526b2a58b6c4940e67334735ca"
     },
     {
       "path": "apps/client/ui/connection-i18n.js",
@@ -2350,8 +2355,8 @@
     },
     {
       "path": "crates/host-runtime/src/linux_vm/host.rs",
-      "size": 14477,
-      "sha256": "d89b88904287184d5563c2a28ba894736ad2abdabe34f6e3736743b1859b1218"
+      "size": 16986,
+      "sha256": "087d4d46170936afd24fe40dd4a84854a0b4e2c9aff3826ce5859a5fc024d8f3"
     },
     {
       "path": "crates/host-runtime/src/linux_vm.rs",
@@ -2420,8 +2425,8 @@
     },
     {
       "path": "crates/host-runtime/src/staging.rs",
-      "size": 5462,
-      "sha256": "8cea094f8adf333ad5c7826f6e573f75af042a29dc9b36df718a709b7594cde9"
+      "size": 5447,
+      "sha256": "faf73e16b13be0f665ce94e70b04f7af126bd1097e7547c2400927d361ad6ffb"
     },
     {
       "path": "crates/host-runtime/src/supervision/linux/control/state.rs",
@@ -2475,13 +2480,13 @@
     },
     {
       "path": "crates/host-runtime/src/vm_control/guest.rs",
-      "size": 5613,
-      "sha256": "81d68f3ec099af3ac771cf95407058ec2296c322c2e901b94c393cf784d7ec27"
+      "size": 5844,
+      "sha256": "3a8e3d19033ef0efaff4b4aff5a0e3522c318d8f4bda53eb3554b632d8fa57b0"
     },
     {
       "path": "crates/host-runtime/src/vm_control.rs",
-      "size": 3396,
-      "sha256": "d0184ddbbee587765f444625926c51d4440dc0e40c1b83e0d9548c073ed64678"
+      "size": 3606,
+      "sha256": "cbd5f7ca380d151fe730a78b17d9981f98836a17d264d47b81c876fbc6674e8d"
     },
     {
       "path": "crates/host-runtime/src/wsl/backend/process.rs",
@@ -2490,13 +2495,13 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/backend/tests.rs",
-      "size": 22464,
-      "sha256": "d3fce52c86d2e1806b4727208818121b37710f0208c7171bc3ed8386169968d8"
+      "size": 23660,
+      "sha256": "4b2c3ccb81a3aba0b17ab548184d5f68f375253da3d946512968432eb6d5b460"
     },
     {
       "path": "crates/host-runtime/src/wsl/backend.rs",
-      "size": 16021,
-      "sha256": "f64f961df255268709ce41616c71f1a423b81bec5017fcc7cc6b528768d7213e"
+      "size": 15884,
+      "sha256": "5063bbf51b087496a79698b2d9254e2992e6d29264cb58ce92993102d067efc9"
     },
     {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
@@ -2980,13 +2985,13 @@
     },
     {
       "path": "docs/public/getting-started.en.md",
-      "size": 5657,
-      "sha256": "b166889a158e037883e1804a627aec440a611fc4cffc06606a0de1b15e3c78af"
+      "size": 5942,
+      "sha256": "d8eab0c6077c4685ecd6d0b67d653a6a369f1e6218ec1f4b13358b62f9437eba"
     },
     {
       "path": "docs/public/getting-started.zh-CN.md",
-      "size": 5579,
-      "sha256": "267ccbc942900ad25b7cd4099d759551cfe421059893192dd9347e18a4881214"
+      "size": 5824,
+      "sha256": "014160e270da540daa76f14a9c73d41ec7cc739efdb0cf2600996a477cf414e5"
     },
     {
       "path": "docs/public/index.md",
@@ -3401,7 +3406,7 @@
     {
       "path": "docs/public/release-status.md",
       "size": 854,
-      "sha256": "7d70eeac2aa2b9a206f8cf8372251166aeceb1007ebf212ae220b48df72a351a"
+      "sha256": "df00ba8db7cd6ef4b1f173db17087919f70d3fb78d22c7175432a43139841c06"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4180,8 +4185,8 @@
     },
     {
       "path": "scripts/tooling/windows-installer.ts",
-      "size": 2663,
-      "sha256": "520fa4b65cf89252686899473d9a252a4fc516d7cd5c2907c45c98378377b47d"
+      "size": 2966,
+      "sha256": "6838c5eedf742db828d316ea7f39987b553cc296689e93e8e4dffa64ff28c1b8"
     },
     {
       "path": "scripts/tooling/windows-qemu.ts",
@@ -4232,6 +4237,11 @@
       "path": "scripts/windows-qemu.ts",
       "size": 328,
       "sha256": "398efe59959b566cb667ea413c29ec32f4314ea02b3583a45aa852bdd121f1fc"
+    },
+    {
+      "path": "scripts/windows-release-layer.sh",
+      "size": 2945,
+      "sha256": "999ed7e93333358efab79850f6565d709a618d62bf03242744b5f85d3e1f0c0a"
     },
     {
       "path": "scripts/wsl-backend-qualification.ts",

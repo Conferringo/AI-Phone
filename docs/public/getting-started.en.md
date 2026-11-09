@@ -8,6 +8,10 @@ Check [release status](release-status.md) for installer availability and platfor
 
 The instructions below build the project from source on Apple Silicon. For the Windows package, see the [Windows factory](windows-client-factory.md).
 
+## Update the installed client
+
+Open **AI Phone → Check for Updates…**. If an installer is available for your platform, choose **Download Update** in the same menu and run the installer from your downloads. Your devices, settings and conversations live in the app data directory.
+
 ## Source alternative: prerequisites
 
 This source path uses macOS Apple Silicon, native Android Emulator (Android 15 ARM64) and a Docker Debian 13/Openbox desktop. Install Node.js 22+, Bun (project bootstrap), Rust 1.95+ (release builds pin 1.96.0), Java 17, Xcode Command Line Tools, Docker Desktop and Android command-line tools with sdkmanager. Recommend 16GB+ RAM and 35GiB free disk for fresh images/builds.
