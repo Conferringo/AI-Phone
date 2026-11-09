@@ -13,7 +13,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
 }) {
   const [url, setUrl] = useState('');
   const connection = useRef(onConnectionState);
-  const presented = useRef<(source: string) => void>(() => {});
+  const presented = useRef<(source: string, loaded: boolean) => void>(() => {});
   connection.current = onConnectionState;
 
   useEffect(() => {
@@ -46,25 +46,27 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
         let cancelDecode: (() => void) | undefined;
         let expectedUrl = '';
         let decodingUrl = '';
-        let lastPacket = performance.now();
-        let lastPresented = performance.now();
-        let waitingForPresentation = false;
-        presented.current = source => {
-          if (!active || source !== expectedUrl) return;
-          lastPresented = performance.now();
-          waitingForPresentation = false;
+        let lastFrame = performance.now();
+        let presentationStarted: number | null = null;
+        presented.current = (source, loaded) => {
+          if (!active || !live || presentationStarted === null || source !== expectedUrl) return;
+          if (!loaded) {
+            reconnect();
+            return;
+          }
+          presentationStarted = null;
           connection.current(true);
-          for (const old of owned) if (old !== source && old !== decodingUrl && old !== expectedUrl) release(old);
+          for (const old of owned) if (old !== source && old !== decodingUrl) release(old);
           void pump();
         };
         const pump = async () => {
-          if (decoding || waitingForPresentation) return;
+          if (decoding || presentationStarted !== null) return;
           decoding = true;
           try {
             // Keep one frame in presentation. Replacing src again before its
             // load event can starve WebKit on larger desktop frames forever.
             // Incoming packets overwrite pending, so no stale-frame queue grows.
-            while (active && live && pending && !waitingForPresentation) {
+            while (active && live && pending && presentationStarted === null) {
               const bytes = pending;
               pending = null;
               const source = URL.createObjectURL(new Blob([new Uint8Array(bytes)], {type: 'image/jpeg'}));
@@ -87,7 +89,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
                 });
                 if (!active || !live) { release(source); break; }
                 expectedUrl = source;
-                waitingForPresentation = true;
+                presentationStarted = performance.now();
                 setUrl(source);
                 // Keep the current and previous URLs until the new image is
                 // actually presented. Bound memory even if the browser stalls.
@@ -103,13 +105,15 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
           } finally {
             decoding = false;
             decodingUrl = '';
-            if(active && live && pending && !waitingForPresentation)void pump();
+            if (active && live && pending && presentationStarted === null) void pump();
           }
         };
         const watchdog = setInterval(() => {
           const now = performance.now();
-          if (now - lastPacket > 4000 || (waitingForPresentation && now - lastPresented > 3000)) {
-            diagnose(now-lastPacket>4000?'network_timeout':'presentation_timeout');reconnect();
+          const frameTimeout = now - lastFrame > 4000;
+          if (frameTimeout || (presentationStarted !== null && now - presentationStarted > 3000)) {
+            diagnose(frameTimeout ? 'frame_timeout' : 'presentation_timeout');
+            reconnect();
           }
         }, 500);
         try {
@@ -122,7 +126,6 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
           while (active && live) {
             const next = await reader.read();
             if (!live || next.done) break;
-            lastPacket = performance.now();
             const combined = new Uint8Array(data.length + next.value.length);
             combined.set(data);
             combined.set(next.value, data.length);
@@ -138,6 +141,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
               const length = Number(header.match(/Content-Length:\s*(\d+)/i)?.[1]);
               if (!length || length > 1_000_000) throw new Error('frame_header');
               if (data.length < end + 4 + length) break;
+              lastFrame = performance.now();
               pending = data.slice(end + 4, end + 4 + length);
               data = data.slice(end + 4 + length);
             }
@@ -145,15 +149,16 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
           }
         } catch (error) {
           if(error instanceof Error&&error.name!=='AbortError')diagnose(error.message);
-          connection.current(false);
         } finally {
           active = false;
           pending = null;
           cancelDecode?.();
           clearInterval(watchdog);
           abort.abort();
-          connection.current(false);
-          if (live) setUrl('');
+          if (live) {
+            connection.current(false);
+            setUrl('');
+          }
           for (const source of owned) release(source);
         }
         if (live) await new Promise(resolve => setTimeout(resolve, 250));
@@ -170,6 +175,6 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
   }, [enabled,endpoint]);
 
   return <img {...props} src={enabled && url ? url : fallback || undefined}
-    onLoad={event => { presented.current(event.currentTarget.currentSrc); props.onLoad?.(event); }}
-    onError={event => { connection.current(false); props.onError?.(event); }}/>
+    onLoad={event => { presented.current(event.currentTarget.currentSrc, true); props.onLoad?.(event); }}
+    onError={event => { presented.current(event.currentTarget.currentSrc, false); props.onError?.(event); }}/>
 }

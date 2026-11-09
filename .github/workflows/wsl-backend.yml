@@ -15,6 +15,7 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
+      CARGO_HTTP_MULTIPLEXING: 'false'
       NEXT_TELEMETRY_DISABLED: '1'
       AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
     steps:

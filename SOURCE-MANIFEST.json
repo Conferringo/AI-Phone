@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "license": "Apache-2.0",
   "remote_publication_authorized": true,
   "remote_review_authorized": true,
@@ -85,8 +85,8 @@
     },
     {
       "path": ".github/workflows/wsl-backend.yml",
-      "size": 2782,
-      "sha256": "0781e4996f59c78f8bc360a08fae4cd38d953010ec75bf602acf24134f878e4b"
+      "size": 2821,
+      "sha256": "75f9730950d78969e93fd5c70aef6dcef5ce751504bc7f306460f68ea03e8e8e"
     },
     {
       "path": ".gitignore",
@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 571,
-      "sha256": "4159234167daf985012f5d140f3874d19323b1abaad8769fe5fdca866aeff871"
+      "size": 1229,
+      "sha256": "087d46420536b51ea6c4186d5d9086f1edadb9c421594da2cc76e20800e0e64c"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -135,13 +135,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 3294,
-      "sha256": "29d6336da7104e781df717f899f8b544797712eda9c564a631c189ecf8e7b986"
+      "size": 3291,
+      "sha256": "612ba9e95f4453afd21f6b098d322ccd8c849545559b6024614820f5e7ecdf40"
     },
     {
       "path": "README.md",
-      "size": 5793,
-      "sha256": "ccf4e6be0dd295710a37c6a722ae1a2444be9c73546d386a329493ce04122e64"
+      "size": 5787,
+      "sha256": "7b7a08cd7eb507a111c3e3175d2f6977419daaedb0b510fdfc2e0f58638d845e"
     },
     {
       "path": "SECURITY.md",
@@ -231,17 +231,17 @@
     {
       "path": "apps/client/package.json",
       "size": 232,
-      "sha256": "02e995502f184f92edbf9806968727faddc2c632b3477a9fc3d992b63cca77fa"
+      "sha256": "228b0afa54f218e4cc6fd8b52366875bd534a932b04003358c11cfc1ac991a81"
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
       "size": 126295,
-      "sha256": "2551d8c360c77ac8b51673d45f1ab8cec5deb3c14a120be3658f508ccc691995"
+      "sha256": "eae9792612d1fb15ff05025769939a6c54f92863aef292db45bdb862c098806e"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
       "size": 933,
-      "sha256": "96965c1d761135bc2694462aab8044c088d7bc68941e7c104a4c3e2ee20df612"
+      "sha256": "85983fe57162d984a40432ada0350b44fb82cb7d2850bf824a39f1f992ccbfce"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -380,8 +380,8 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/checkpoint.rs",
-      "size": 5654,
-      "sha256": "c9f51343c21e68987088b9021c0e8ce1673f776416135b116856803b09e57eb3"
+      "size": 7386,
+      "sha256": "cebc7d27bb1d3ad6bd83e701e6b9b7645cce5024e1c94de4dbb91ef63434ed8d"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/native_phone.rs",
@@ -400,18 +400,18 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/windows_host.rs",
-      "size": 4374,
-      "sha256": "5ca8412c4bb82844317fcc971d5598a123f4511b18202f3fcf9da4c66077b2fb"
+      "size": 4382,
+      "sha256": "e4622f428bf14a194cca03cdc91e546474332ec35962d518b408848accee4872"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 28112,
-      "sha256": "1a5a8f416db4f7eaddeb57743b1478f53d9d2894e0e9d106affcc4dc70c19123"
+      "size": 28206,
+      "sha256": "bd611ab87fa43c44e6bec937447807cf3a81c646850793212e938e8dbc6e5e43"
     },
     {
       "path": "apps/client/src-tauri/src/lib.rs",
-      "size": 21634,
-      "sha256": "ccc1145b63efd2cf3d773f89a77fe8794f3e6d782ffa51c40e649236b2190b55"
+      "size": 22081,
+      "sha256": "1c4e862b6320d0529a8ec5cbb21044bfe4910be0707f8608926ba9a9d427ba55"
     },
     {
       "path": "apps/client/src-tauri/src/main.rs",
@@ -421,7 +421,7 @@
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
       "size": 1800,
-      "sha256": "1ba737ccd673a08bc999a6a461bb6d8593ada76aea155be4b548754b921ce707"
+      "sha256": "23cd2d56570284d5428bcbad1630656c219125ace783c00d909d809eb47868a1"
     },
     {
       "path": "apps/client/src-tauri/windows/installer.iss",
@@ -615,8 +615,8 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 45560,
-      "sha256": "b341340f4be005253bc46bffa8cd27a974ed8fbb6d135bafd5b9e1a61289e0d2"
+      "size": 45599,
+      "sha256": "b47a45a211d0117982f39b5ba6ebd4a0527d2cb7f381ca124b91503176e53ae7"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
@@ -670,13 +670,13 @@
     },
     {
       "path": "apps/web/src/components/desktop-surface.tsx",
-      "size": 6274,
-      "sha256": "c0fb006be3f89db9458242ad126d0cf5b670ddb1dcecbad41bea76659c11232f"
+      "size": 6643,
+      "sha256": "bb1ba822c02ca7f2cdf9dfbe48f630990d53b4101bfc2bfd6e1b2a99fca9c863"
     },
     {
       "path": "apps/web/src/components/device-audio.ts",
-      "size": 4092,
-      "sha256": "06bad458edc5960e0ca5fb95984cecf0608dcb928fac6e466b7c615fa0672a23"
+      "size": 4254,
+      "sha256": "9d4d80889d39e0f6290a04306f3b2204fba048ae28fb302ff0eb7926542d033d"
     },
     {
       "path": "apps/web/src/components/device-cable-line.tsx",
@@ -785,8 +785,8 @@
     },
     {
       "path": "apps/web/src/components/phone-stream-image.tsx",
-      "size": 7702,
-      "sha256": "b23471637a88b74ae7a3d3e05e3b3c271916c41f3481e26ba64b232bb58464b2"
+      "size": 7864,
+      "sha256": "beb8413de62eb433cb10b25940607034b727941db9e82be2273ccc39fd552524"
     },
     {
       "path": "apps/web/src/components/phone-toolbar.tsx",
@@ -880,8 +880,8 @@
     },
     {
       "path": "apps/web/src/lib/audio-playback.ts",
-      "size": 3239,
-      "sha256": "d99c4416a8c62f0c1ff60d05276ad2f6b8dc91a85cc2efe85bdb42eb6d46a56e"
+      "size": 3472,
+      "sha256": "7350ef8635c00fa1a4967d9072254c78d0a394e0e4798aac68f9aecacc95cbf6"
     },
     {
       "path": "apps/web/src/lib/chat-history-reader.ts",
@@ -1226,7 +1226,7 @@
     {
       "path": "config/release-policy.json",
       "size": 2057,
-      "sha256": "83b907ffe6023d6825e80efdbceccc6233b213245c5eb2bd2c81904762655a61"
+      "sha256": "62f327bb82a37ed0c977889e04f00c0e8a2315af8a41112769dccc10d6ae8f10"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2415,8 +2415,8 @@
     },
     {
       "path": "crates/host-runtime/src/staging.rs",
-      "size": 4649,
-      "sha256": "11c2e7b1859854c275ff2a0ce4379ea4d3ad461c37befe9d68c94a1fdbd34f53"
+      "size": 5462,
+      "sha256": "8cea094f8adf333ad5c7826f6e573f75af042a29dc9b36df718a709b7594cde9"
     },
     {
       "path": "crates/host-runtime/src/supervision/linux/control/state.rs",
@@ -2435,8 +2435,8 @@
     },
     {
       "path": "crates/host-runtime/src/supervision/macos.rs",
-      "size": 8935,
-      "sha256": "22e7cbad6ce3ba26872711f81e4898c850c2f60807cd266ab24782de53e917a8"
+      "size": 10849,
+      "sha256": "f3a4df4167be9966901e27841a4dc1b71e848c11e9e8dfe8a4c8b84b58b8d082"
     },
     {
       "path": "crates/host-runtime/src/supervision/mod.rs",
@@ -2455,8 +2455,8 @@
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/mod.rs",
-      "size": 8152,
-      "sha256": "09632328f6f1d552258987f45e46f62fe6498d45edb14652c3f5aad3cf806fa5"
+      "size": 8151,
+      "sha256": "c0a495ea7fb7f97a628999f11d26e41119924325cfd464f9458cb942b3666778"
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/phone.rs",
@@ -2490,8 +2490,8 @@
     },
     {
       "path": "crates/host-runtime/src/wsl/backend.rs",
-      "size": 15711,
-      "sha256": "3bc90b3539723c3c5f368446624028ac36368125530ac77dd16b04e83bd0b068"
+      "size": 16021,
+      "sha256": "f64f961df255268709ce41616c71f1a423b81bec5017fcc7cc6b528768d7213e"
     },
     {
       "path": "crates/host-runtime/src/wsl/bundle.rs",
@@ -2680,8 +2680,8 @@
     },
     {
       "path": "crates/phone-runner/src/media/desktop.rs",
-      "size": 3582,
-      "sha256": "7e3f8adf752835c489ac331439df8aaeea35c722ba15ff9a2b86edb8d74f7f48"
+      "size": 3747,
+      "sha256": "3b66c99a0027caa11fc746c2492c45f3b70e86792c8ab122dc8b2e02a4b6feed"
     },
     {
       "path": "crates/phone-runner/src/media/grpc.rs",
@@ -3395,8 +3395,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 1060,
-      "sha256": "70a05521eb9bd0de00ce258751fbc438f0fec23a86430f2ff2435c7e5580fe1b"
+      "size": 854,
+      "sha256": "4d1ce69005915512a2e8680871bc75747cafe5c9104eb487fe5250f59f6270e3"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -3445,8 +3445,8 @@
     },
     {
       "path": "infra/desktop/Dockerfile",
-      "size": 3517,
-      "sha256": "41292b3c1c56e4e23462a826bf49b7bb31d86426a4dc15e38c9c427638df4757"
+      "size": 3547,
+      "sha256": "e29c48a00c3103e1b8967e25d90b924b9b356f4dd48cf3944696f143067874eb"
     },
     {
       "path": "infra/desktop/clash-launch.sh",
@@ -3490,8 +3490,8 @@
     },
     {
       "path": "infra/workspace/Dockerfile",
-      "size": 1129,
-      "sha256": "7cab47d0fe47606e7b9a4d735e17bb612dc8f4f6683837040e0ec2da929cc124"
+      "size": 1159,
+      "sha256": "70c2a17cd6d3bf0c0cd6fd32e8cea46845e21ed752c366ff0c4183bee82e5fa2"
     },
     {
       "path": "package.json",
@@ -3745,8 +3745,8 @@
     },
     {
       "path": "scripts/android-emulator.sh",
-      "size": 969,
-      "sha256": "b57372b9766cb6b6d387efe2cd3daa707a99e3124f6c8e7ceba5a571f1fd470a"
+      "size": 1041,
+      "sha256": "295329ad98844b2d4b964080c283ffda51c3f63f16a545cecae42afd3cff30ac"
     },
     {
       "path": "scripts/android-env.sh",

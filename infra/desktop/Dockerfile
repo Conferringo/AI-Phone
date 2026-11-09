@@ -5,7 +5,7 @@ WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY packages/protocol/proto ./packages/protocol/proto
-RUN cargo build --release --locked -p ai-phone-guest-runtime && strip target/release/desktop-bridge
+RUN CARGO_HTTP_MULTIPLEXING=false cargo build --release --locked -p ai-phone-guest-runtime && strip target/release/desktop-bridge
 FROM ${GUEST_RUNTIME_SOURCE} AS guest-runtime
 FROM ${WORKSPACE_IMAGE}
 ARG HTTP_PROXY

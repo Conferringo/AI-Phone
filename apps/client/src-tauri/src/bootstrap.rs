@@ -532,10 +532,14 @@ pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {
     Ok(())
 }
 
-// Only a completed checkpoint for this exact payload may resume automatically.
-pub fn resume_installed(app: &tauri::AppHandle) -> Result<bool, String> {
+#[cfg(target_os = "macos")]
+pub fn upgrade_needed(app: &tauri::AppHandle) -> Result<bool, String> {
+    checkpoint::upgrade_needed(&home(app)?)
+}
+
+pub fn resume_installed(app: &tauri::AppHandle, upgrade: bool) -> Result<bool, String> {
     let folder = home(app)?;
-    if !checkpoint::completed(&folder)? {
+    if !upgrade && !checkpoint::completed(&folder)? {
         return Ok(false);
     }
     let request: Request = serde_json::from_slice(

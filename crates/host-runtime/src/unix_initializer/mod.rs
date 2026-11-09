@@ -115,8 +115,6 @@ async fn initialize(
     if root.join("data/restore-quarantine.json").try_exists()? {
         return Err(Error::Invalid("restored_state_quarantined"));
     }
-    #[cfg(target_os = "macos")]
-    crate::supervision::macos::preflight(&root).await?;
     let resources = profile::phone_resources(&root, template, &args.request)?;
     progress("android", "running", "")?;
     let android = args.resource.join("android.payload");
@@ -137,6 +135,8 @@ async fn initialize(
     .map_err(|_| Error::Invalid("unix_host_worker"))??;
     // Keep the installation lease for the complete source/profile/engine/device transaction.
     let _installation = installation;
+    #[cfg(target_os = "macos")]
+    crate::supervision::macos::activate(&root).await?;
     progress("profile", "running", "")?;
     profile::prepare_request(
         &root,

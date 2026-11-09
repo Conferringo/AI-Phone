@@ -220,7 +220,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
   function openFeature(name:string){setFeature(name+':'+deviceId);}
   function closeFeature(name:string){setFeature(value=>value===name+':'+deviceId?'':value);}
   function setActiveFeature(name:string){setFeature(name?name+':'+deviceId:'');}
-  const phoneInput=useRef<HTMLTextAreaElement>(null),phoneComposing=useRef(false),lastComposition=useRef<{value:string;at:number}|null>(null),inputQueue=useRef<Promise<void>>(Promise.resolve()),inputBuffer=useRef(""),inputTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const phoneInput=useRef<HTMLTextAreaElement>(null),phoneComposing=useRef(false),inputQueue=useRef<Promise<void>>(Promise.resolve()),inputBuffer=useRef(""),inputTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const [landscape,setLandscape]=useState(false),[size,setSize]=useState({width:720,height:1440});
   const orientation=useRef(false),container=useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -521,9 +521,19 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
             )}
           </div>
           <textarea ref={phoneInput} className="phone-keyboard-proxy" aria-label={t("手机键盘输入")} autoComplete="off" autoCapitalize="off" spellCheck={false} tabIndex={-1}
-            onCompositionStart={()=>{lastComposition.current=null;phoneComposing.current=true;}}
-            onCompositionEnd={e=>{phoneComposing.current=false;const value=e.currentTarget.value;lastComposition.current={value,at:Date.now()};e.currentTarget.value="";if(value)typePhone(value);}}
-            onChange={e=>{if(phoneComposing.current)return;const value=e.currentTarget.value;e.currentTarget.value="";if(value&&!(lastComposition.current?.value===value&&Date.now()-lastComposition.current.at<80))typePhone(value);}}
+            onCompositionStart={()=>{phoneComposing.current=true;}}
+            onCompositionEnd={e=>{
+              phoneComposing.current=false;
+              e.currentTarget.value="";
+              if(e.data)typePhone(e.data);
+            }}
+            onInput={e=>{
+              if(phoneComposing.current)return;
+              const {isComposing,inputType}=e.nativeEvent as InputEvent;
+              const value=e.currentTarget.value;
+              e.currentTarget.value="";
+              if(value&&!isComposing&&inputType!=="insertCompositionText"&&inputType!=="insertFromComposition")typePhone(value);
+            }}
             onPaste={e=>{e.preventDefault();const value=e.clipboardData.getData("text/plain");if(value)typePhone(value);}}
             onKeyDown={e=>{if(e.nativeEvent.isComposing||phoneComposing.current||e.keyCode===229)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="a"){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:"SELECT_ALL"}});return;}if(e.metaKey||e.ctrlKey||e.altKey)return;const keys:Record<string,string>={Backspace:"DEL",Delete:"FORWARD_DEL",Enter:"ENTER",Tab:"TAB",Escape:"BACK",ArrowLeft:"DPAD_LEFT",ArrowRight:"DPAD_RIGHT",ArrowUp:"DPAD_UP",ArrowDown:"DPAD_DOWN"};if(keys[e.key]){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:keys[e.key]}});}}}/>
         </>:<div className="device-pending" data-scene-device={deviceId}>{selectedDevice?.kind==='desktop'?<Monitor size={32}/>:<Smartphone size={32}/>}<h2>{selectedDevice?.name||t("设备")}</h2><p>{t("尚未安装系统")}</p></div>}
