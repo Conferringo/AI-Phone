@@ -5,7 +5,7 @@ mod skill_resources;
 
 #[cfg(test)]
 #[path = "persistence_tests.rs"]
-mod persistence_tests;
+pub(crate) mod persistence_tests;
 use axum::extract::{Multipart, Path, Query, State};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};

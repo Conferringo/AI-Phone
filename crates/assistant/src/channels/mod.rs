@@ -6,6 +6,7 @@ mod telegram;
 mod transport;
 mod wecom;
 mod whatsapp;
+mod whatsapp_pg;
 mod worker;
 
 use ai_phone_api::wire;
@@ -22,13 +23,7 @@ use prost::Message;
 use reqwest::Client;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{
-    collections::BTreeMap,
-    fs,
-    path::{Path as FilePath, PathBuf},
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::BTreeMap, fs, path::Path as FilePath, sync::Arc, time::Duration};
 use store::{Config, Job, PROVIDERS, Pairing, Result, Stage, Store, event_id, now, scope};
 use tokio::sync::{Mutex, Notify, RwLock};
 use tokio_util::sync::CancellationToken;
@@ -36,7 +31,7 @@ use transport::{Connection, Context, Payload};
 use uuid::Uuid;
 
 struct State {
-    root: PathBuf,
+    db: sqlx::PgPool,
     token: String,
     runner_token: String,
     local: Client,
@@ -653,7 +648,9 @@ pub async fn run(root: &FilePath) -> Result<()> {
         .trim()
         .to_owned();
     let state = Arc::new(State {
-        root: root.into(),
+        db: crate::database::connect(root, false)
+            .await
+            .map_err(|error| error.to_string())?,
         token,
         runner_token,
         local: Client::builder()

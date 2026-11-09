@@ -6,6 +6,7 @@
 - Continue interrupted tasks from their saved checkpoints.
 - Expand model provider options and preserve native tool results across model turns.
 - Reduce device observation work, Linux screen confirmation time, and background workbench requests.
+- Store WhatsApp sessions in PostgreSQL and index the current task lookup.
 
 ## 0.1.5
 

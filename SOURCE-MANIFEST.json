@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 2738,
-      "sha256": "8a70ece4c32e7570c9723d723208b7806fac7b5662ee5751bf2a8320eadceb7b"
+      "size": 2813,
+      "sha256": "81ab4f7dff6a1b456add139b0f6c41f4a14aaf4bb0920093c080edb4657f8bd4"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -105,8 +105,8 @@
     },
     {
       "path": "Cargo.lock",
-      "size": 118785,
-      "sha256": "16ca20ba901f181f9753e4658af48380e7c4dbada8396eaabdbe3e8cc8467c66"
+      "size": 112491,
+      "sha256": "ca1104b8de6369abcddd1e9f7adcc79c5f68b52789a4a7c9f5cfe1d67be56184"
     },
     {
       "path": "Cargo.toml",
@@ -1240,8 +1240,8 @@
     },
     {
       "path": "config/native-notice-supplements.json",
-      "size": 51437,
-      "sha256": "f44cffee45f8b0903d38716deef93ecf353f19834b7a5ea19b84b8b9bef38e6b"
+      "size": 50381,
+      "sha256": "df4dc09649da816c4f90ac7c5dd7de89c1dcdcf0baaa08100c8db37076a8fb5a"
     },
     {
       "path": "config/ocr-models.json",
@@ -1260,8 +1260,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2322,
-      "sha256": "8c8532a0d38b2c5588c47b4ad30d9b39089842efa8f93cc54b91074162000d6f"
+      "size": 2372,
+      "sha256": "c52d85414ee6a9f326734fe40e799cbf543fa72a4160c91d4e30b1b3ab18b86e"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -1325,8 +1325,8 @@
     },
     {
       "path": "crates/assistant/Cargo.toml",
-      "size": 1887,
-      "sha256": "c05414e0dd845f7c00faff53c9c979e479b635327d3535a194ccca7879bf9ed1"
+      "size": 1742,
+      "sha256": "8b33bcdbd88d75e37a5849befdd45b47fd71d6a56e722d38eb9e2dbdb5672a4f"
     },
     {
       "path": "crates/assistant/build.rs",
@@ -1519,6 +1519,26 @@
       "sha256": "4531f6d351e71b3f235b04f3972e39baee6b45387c10b31fea10edc71664e1c5"
     },
     {
+      "path": "crates/assistant/migrations/0039_whatsapp_device.sql",
+      "size": 93,
+      "sha256": "a8092cc692fa7649a64a10f86c9ce0da30bf9a833f25521019879e1aa28d5449"
+    },
+    {
+      "path": "crates/assistant/migrations/0040_whatsapp_protocol.sql",
+      "size": 2936,
+      "sha256": "840a63a815640493777237c842a1b122f2621bb9c47cecbace7d947511f04e20"
+    },
+    {
+      "path": "crates/assistant/migrations/0041_whatsapp_signal.sql",
+      "size": 1091,
+      "sha256": "d7c6c59721d7ebb24de631c4057f5dc47a49b1bd3eba4f65aa133a5226681a6e"
+    },
+    {
+      "path": "crates/assistant/migrations/0042_current_run_index.sql",
+      "size": 189,
+      "sha256": "e36c2349785b597de888647ed8c3ab26abb29ccebe6157079303a9c07d34ce41"
+    },
+    {
       "path": "crates/assistant/src/agent_loop.rs",
       "size": 10262,
       "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
@@ -1585,8 +1605,8 @@
     },
     {
       "path": "crates/assistant/src/channels/mod.rs",
-      "size": 25173,
-      "sha256": "97fe9f0fa8c250ac3f31ba87884b3b298659030057a7c04d7b9470ffc45a1eda"
+      "size": 25251,
+      "sha256": "22c5f82023dee32b1e93ed96ccf9804e52c81a8f55838eb22c6990005818d63a"
     },
     {
       "path": "crates/assistant/src/channels/qq.rs",
@@ -1620,8 +1640,33 @@
     },
     {
       "path": "crates/assistant/src/channels/whatsapp.rs",
-      "size": 13975,
-      "sha256": "7ca9469b65ece298080849005bdaaaa3c155d38f50a0cf9483c7ba7b1693d206"
+      "size": 13557,
+      "sha256": "b4728de6d25890683097a672d3e140496247a39d2def57fd23b8e27764effac6"
+    },
+    {
+      "path": "crates/assistant/src/channels/whatsapp_pg/app_sync.rs",
+      "size": 6048,
+      "sha256": "ae4874a0dcb90872a8501541daad42dc4eb29298752ad4dea57a5bbf6296e54c"
+    },
+    {
+      "path": "crates/assistant/src/channels/whatsapp_pg/device.rs",
+      "size": 2155,
+      "sha256": "b8d0041fb35f72e7be46859fa8621cf4bc4d5c55fc4f4cba45020ffd6c3659d9"
+    },
+    {
+      "path": "crates/assistant/src/channels/whatsapp_pg/mod.rs",
+      "size": 5503,
+      "sha256": "2e120e4e88290b648702346fde7a6fdfd7f4101ba034f41f44c30a59826573d2"
+    },
+    {
+      "path": "crates/assistant/src/channels/whatsapp_pg/protocol.rs",
+      "size": 18954,
+      "sha256": "5aeb2272b07591c82195684236dd641644aec3b1042105195a62f6593a48ced5"
+    },
+    {
+      "path": "crates/assistant/src/channels/whatsapp_pg/signal.rs",
+      "size": 13439,
+      "sha256": "569431a1f525dbc2095492878c823805936576e9227b0801728eac577add165a"
     },
     {
       "path": "crates/assistant/src/channels/worker.rs",
@@ -1815,8 +1860,8 @@
     },
     {
       "path": "crates/assistant/src/persistence_tests.rs",
-      "size": 19557,
-      "sha256": "5c8fa8344d6997ef904889c0079d42952e06c93cf978362b537c2a046a41a65b"
+      "size": 19568,
+      "sha256": "91b215cae55e0d99ff6ac61289f19fa67ad8b385adf4c118f8afbeaf084390bc"
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
@@ -1935,8 +1980,8 @@
     },
     {
       "path": "crates/assistant/src/workbench.rs",
-      "size": 48298,
-      "sha256": "da0f321a4b60e8cd2b0cfcfb78fb9a9487c1d4fdecb85210e9e36a08f98c0bbe"
+      "size": 48309,
+      "sha256": "044864d9f9a2e6b0296ebf60b7b2281445f12ef96b48c73c7a0aab531b605062"
     },
     {
       "path": "crates/assistant/src/worker/execution_policy.rs",
@@ -2835,13 +2880,13 @@
     },
     {
       "path": "docs/public/architecture.en.md",
-      "size": 8134,
-      "sha256": "4de2598551ec16d7577c24d3dd2ee240a76f818b6aefd0f62058231826efd342"
+      "size": 8155,
+      "sha256": "41aa648880a143b64e6af4a9f483c72d27f3c8cb40297d7aafe497015ed1f8d7"
     },
     {
       "path": "docs/public/architecture.zh-CN.md",
-      "size": 7254,
-      "sha256": "d91fd50c7de5b26f9ca46ce3f7ca6250f6b39e30362add0eb8c40c4fd7ddbb64"
+      "size": 7273,
+      "sha256": "7f2eb99b0183fc9a3211bd14fd945a751e9968d763d907cd1a9e0713759d369c"
     },
     {
       "path": "docs/public/autonomous-exploration.md",
@@ -2895,8 +2940,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 433834,
-      "sha256": "86a11db64456d3a1e5e63a0bb54baa149b36ff46d10997a593d4f819e7b74931"
+      "size": 424399,
+      "sha256": "e3a65f0a8bae2e3390e660ce3b0a28c5597476e83bba258aac3537b74195ebe9"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3239,11 +3284,6 @@
       "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
     },
     {
-      "path": "docs/public/licenses/native/e1c1975c3474cce3-sqlite-wasm-rs-LICENSE",
-      "size": 1061,
-      "sha256": "e1c1975c3474cce31722836f101a40ffaf1cc784e4d2f38ce3e77b9712934e78"
-    },
-    {
       "path": "docs/public/licenses/native/e26ae9475108d3b1-buffa-LICENSE",
       "size": 10760,
       "sha256": "e26ae9475108d3b118fe27915d36e8c5ab72732a8bbba24787eb4f45492c3300"
@@ -3345,8 +3385,8 @@
     },
     {
       "path": "docs/public/model-and-channel-setup.md",
-      "size": 10737,
-      "sha256": "5992e240dee9293b95fa8b4781f0aecb2ff939ed52c925db42a7d5f56b8fb45c"
+      "size": 10870,
+      "sha256": "54cc031b1c26633dc00d08e63f539fd4271fc0035ef964b24c563908c79e0a34"
     },
     {
       "path": "docs/public/native-client-licenses.txt",
@@ -3365,13 +3405,13 @@
     },
     {
       "path": "docs/public/native-services-license-inventory.json",
-      "size": 12056,
-      "sha256": "c591358b4d5505a3e9881fb62897026d6def2911a897eca18f94cbc8cb8ffd5b"
+      "size": 11398,
+      "sha256": "f27deb9124cd9a975c3d4ee5dded41c1407d5420872f5035ae3c52ae0b6aa636"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
-      "size": 4901884,
-      "sha256": "caea28394764269a9e8e83431b045d8a009d72c4a0273b4fd90873ecacdfa053"
+      "size": 4695367,
+      "sha256": "67bdb88dd43fb3aa9624e00143c05339037e3163258d3c8f498aea7a0763a3e5"
     },
     {
       "path": "docs/public/network.md",

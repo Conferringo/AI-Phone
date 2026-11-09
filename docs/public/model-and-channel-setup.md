@@ -59,7 +59,7 @@ An optional proxy is under **Advanced**. Empty uses the host's configured defaul
 
 **Rescan** removes that session locally and starts a new identity/owner pairing. **Unbind** attempts remote logout and removes the local session. If remote confirmation is unknown, the interface reports it; check WhatsApp's Linked devices and remove the old session there. Network reconnect keeps the same local session; shutdown stops the active connection.
 
-The Rust assistant runs the WhatsApp, QQ, WeCom, Feishu and Telegram adapters. WhatsApp stores its linked-device session locally. [Supported channels and operations](compatibility.md)
+The Rust assistant runs the WhatsApp, QQ, WeCom, Feishu and Telegram adapters. WhatsApp stores its linked-device session in local PostgreSQL. On upgrades from 0.1.5, scan the new WhatsApp QR once. Existing AI Phone conversations and Agent settings stay in place. [Supported channels and operations](compatibility.md)
 
 ## Primary references
 

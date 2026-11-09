@@ -2,7 +2,7 @@
 
 [简体中文](architecture.zh-CN.md)
 
-Next.js App Router/Turbopack, React, Tailwind, shadcn/ui and GSAP provide the workbench. Rust/Axum/Tokio own durable runs, model adapters, tools, permissions and completion auditing. PostgreSQL and SQLx store registry and conversation state and back the task queue. Redis is reserved for optional caching.
+Next.js App Router/Turbopack, React, Tailwind, shadcn/ui and GSAP provide the workbench. Rust/Axum/Tokio own durable runs, model adapters, tools, permissions and completion auditing. PostgreSQL and SQLx store registry, conversations, WhatsApp linked-device sessions, and the task queue. Redis is reserved for optional caching.
 
 Android runs natively through Android Emulator, controlled by a Rust runner, ADB and guest bridges. Native UI targets with OCR/screenshot fallback ground actions. The Rust media runner uses Android gRPC and the Rust guest capture service for JPEG frames and PCM audio. Native touch indicators/pointers are captured in the same frame. The Linux computer uses Docker, Debian/Openbox and Xvfb. A native Rust guest service owns X11 capture and input, cursor receipts, audio-process supervision, capture leases, durable notifications and Chromium location sessions. Its location CLI and loopback daemon use protobuf and preserve the existing private state file. FFmpeg provides screen/audio encoding. The workbench supports screenshot-based control and read-only regional zoom.
 

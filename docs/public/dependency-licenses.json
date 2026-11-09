@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "6034cd0ca739da793aad1f8807e7b2cd8ad7f0097807d8334583a0591d3c7644",
-    "bun.lock": "9db44d70c2ed4e4622dc2f28584cbd2667c2cbbc65c89245d09ff48b48d28fe0",
-    "apps/client/src-tauri/Cargo.lock": "4300d590f65332603262ee6254bdad18c35afa967f49ab3201ae843bead6931b"
+    "Cargo.lock": "ca1104b8de6369abcddd1e9f7adcc79c5f68b52789a4a7c9f5cfe1d67be56184",
+    "bun.lock": "ac03ce66c53dee01fbe99345a701810695488acb144564c30bdadcc177012bb5",
+    "apps/client/src-tauri/Cargo.lock": "dc3a7a7a956e0ab079759a852c4fa5f6381d44964cd1c88c36f6811fc0941ea3"
   },
   "rust": [
     {
@@ -1901,21 +1901,6 @@
     },
     {
       "name": "darling",
-      "version": "0.21.3",
-      "license": "MIT",
-      "repository": "https://github.com/TedDriggs/darling",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "darling",
       "version": "0.24.1",
       "license": "MIT",
       "repository": "https://github.com/TedDriggs/darling",
@@ -1932,21 +1917,6 @@
     },
     {
       "name": "darling_core",
-      "version": "0.21.3",
-      "license": "MIT",
-      "repository": "https://github.com/TedDriggs/darling",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "darling_core",
       "version": "0.24.1",
       "license": "MIT",
       "repository": "https://github.com/TedDriggs/darling",
@@ -1959,21 +1929,6 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "darling_macro",
-      "version": "0.21.3",
-      "license": "MIT",
-      "repository": "https://github.com/TedDriggs/darling",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -2153,82 +2108,6 @@
       ]
     },
     {
-      "name": "diesel",
-      "version": "2.3.14",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "diesel_derives",
-      "version": "2.3.10",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel/",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "diesel_migrations",
-      "version": "2.3.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "diesel_table_macro_syntax",
-      "version": "0.3.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel/",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "digest",
       "version": "0.10.7",
       "license": "MIT OR Apache-2.0",
@@ -2386,25 +2265,6 @@
       ]
     },
     {
-      "name": "downcast-rs",
-      "version": "2.0.2",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/marcianx/downcast-rs",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "fb252fecf98d9af8f1d9201c5860319a514f5a8a24700dc84fc6ea287a7a4958"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "dpi",
       "version": "0.1.2",
       "license": "Apache-2.0 AND MIT",
@@ -2421,25 +2281,6 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "dsl_auto_type",
-      "version": "0.2.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": null,
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -5097,25 +4938,6 @@
       ]
     },
     {
-      "name": "lock_api",
-      "version": "0.5.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/Amanieu/parking_lot",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "log",
       "version": "0.4.34",
       "license": "MIT OR Apache-2.0",
@@ -5285,44 +5107,6 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "migrations_internals",
-      "version": "2.3.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "migrations_macros",
-      "version": "2.3.1",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/diesel-rs/diesel",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "d548bb26eee0834237e749540368a9cbbd19174fd59b0b119f1daaecb912057d"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "05f6aab1f9adf1e248e11a2734f9554d1220fa18f31773eb60e61cc7a283d99a"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -6009,44 +5793,6 @@
       "workspaces": [
         "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "parking_lot",
-      "version": "0.13.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/Amanieu/parking_lot",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "parking_lot_core",
-      "version": "0.10.0",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/Amanieu/parking_lot",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -7081,25 +6827,6 @@
       ]
     },
     {
-      "name": "r2d2",
-      "version": "0.8.10",
-      "license": "MIT/Apache-2.0",
-      "repository": "https://github.com/sfackler/r2d2",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "e3fdaa2fdee203f530ea1b386472a83f7efdbc8d662f3f4feebc1d9acfc5c2b2"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "rand",
       "version": "0.10.3",
       "license": "MIT OR Apache-2.0",
@@ -7578,16 +7305,6 @@
       ]
     },
     {
-      "name": "rsqlite-vfs",
-      "version": "0.2.0",
-      "license": "MIT",
-      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
-      "notices": [],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "rustc_version",
       "version": "0.4.1",
       "license": "MIT OR Apache-2.0",
@@ -7798,25 +7515,6 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "scheduled-thread-pool",
-      "version": "0.2.8",
-      "license": "MIT/Apache-2.0",
-      "repository": "https://github.com/sfackler/scheduled-thread-pool",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "b6d30c35fafab576a27221d46aeba09f92fe2b221ef1fbe76a0139ed3e6d73f0"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -8103,25 +7801,6 @@
       ],
       "workspaces": [
         "apps/client/src-tauri/Cargo.toml"
-      ]
-    },
-    {
-      "name": "serde_spanned",
-      "version": "1.1.3",
-      "license": "MIT OR Apache-2.0",
-      "repository": "https://github.com/toml-rs/toml",
-      "notices": [
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
       ]
     },
     {
@@ -8619,21 +8298,6 @@
         {
           "file": "LICENSE-MIT",
           "sha256": "c995204cc6bad2ed67dd41f7d89bb9f1a9d48e0edd745732b30640d7912089a4"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "sqlite-wasm-rs",
-      "version": "0.6.2",
-      "license": "MIT",
-      "repository": "https://github.com/Spxg/sqlite-wasm-rs",
-      "notices": [
-        {
-          "file": "LICENSE",
-          "sha256": "e1c1975c3474cce31722836f101a40ffaf1cc784e4d2f38ce3e77b9712934e78"
         }
       ],
       "workspaces": [
@@ -9605,7 +9269,6 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -9663,7 +9326,6 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -10933,16 +10595,6 @@
       ]
     },
     {
-      "name": "whatsapp-rust-sqlite-storage",
-      "version": "0.7.0",
-      "license": "MIT",
-      "repository": "https://github.com/jlucaso1/whatsapp-rust",
-      "notices": [],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
       "name": "whoami",
       "version": "1.6.1",
       "license": "Apache-2.0 OR BSL-1.0 OR MIT",
@@ -12042,7 +11694,6 @@
         }
       ],
       "workspaces": [
-        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },

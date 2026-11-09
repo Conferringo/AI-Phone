@@ -2,16 +2,18 @@ use super::{
     State, socket,
     store::{Config, Result},
     transport::{Context, Payload},
+    whatsapp_pg::PgStore,
 };
 use async_trait::async_trait;
 use futures_util::{SinkExt, StreamExt, future::BoxFuture, stream::SplitSink};
 use image::{ImageFormat, Luma};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{fs, io::Cursor, os::unix::fs::PermissionsExt, sync::Arc, time::Duration};
+use std::{io::Cursor, sync::Arc, time::Duration};
 use tokio::sync::{Mutex, RwLock, watch};
 use tokio_tungstenite::tungstenite::Message;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 use whatsapp_rust::{
     Client, Jid, SendOptions, UploadOptions,
     prelude::{Bot, EventKind, MessageExt, MessageField, wa},
@@ -20,7 +22,6 @@ use whatsapp_rust::{
         net::{self, DisconnectReason, TransportEvent},
     },
 };
-use whatsapp_rust_sqlite_storage::SqliteStore;
 
 struct Network {
     client: reqwest::Client,
@@ -170,22 +171,8 @@ impl WhatsApp {
         self.context.status("connected", "");
         Ok(())
     }
-    async fn run(self: Arc<Self>, config: Config) -> Result<()> {
-        let session = self
-            .context
-            .state
-            .root
-            .join("data/channels/native-whatsapp")
-            .join(&config.app_id);
-        fs::create_dir_all(&session)?;
-        fs::set_permissions(&session, fs::Permissions::from_mode(0o700))?;
-        let store = SqliteStore::new(
-            session
-                .join("session.sqlite")
-                .to_str()
-                .ok_or("invalid_session_path")?,
-        )
-        .await?;
+    async fn run(self: Arc<Self>, config: Config, binding: Uuid) -> Result<()> {
+        let store = PgStore::new(self.context.state.db.clone(), binding);
         let client = State::external_client(&config.proxy_url, Duration::from_secs(60))?;
         let qr_owner = self.clone();
         let connected = self.clone();
@@ -310,7 +297,7 @@ impl WhatsApp {
     }
 }
 pub(super) fn start(context: Context, config: Config) -> Result<Arc<WhatsApp>> {
-    uuid::Uuid::parse_str(&config.app_id)?;
+    let binding = Uuid::parse_str(&config.app_id)?;
     let (ready, _) = watch::channel(false);
     let owner = Arc::new(WhatsApp {
         context,
@@ -319,7 +306,7 @@ pub(super) fn start(context: Context, config: Config) -> Result<Arc<WhatsApp>> {
     });
     let task = owner.clone();
     owner.context.tasks.spawn(async move {
-        if let Err(error) = task.clone().run(config).await {
+        if let Err(error) = task.clone().run(config, binding).await {
             task.context.status("failed", &error.to_string());
             task.context.cancel.cancel();
         }
