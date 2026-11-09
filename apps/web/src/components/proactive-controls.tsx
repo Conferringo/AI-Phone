@@ -10,7 +10,7 @@ import {Compass,Pause,LoaderCircle} from 'lucide-react';
 import './proactive-controls.css';
 type State=MessageShape<typeof ProactiveStateSchema>;
 type Options=Pick<State,'exploring'>;
-const statusLabel:Record<string,string>={exploring:'正在探索',notification:'查看手机动态',user_busy:'正在处理你的任务',paused:'任务已暂停',waiting:'等待下一轮',idle:'待机'};
+const statusLabel:Record<string,string>={exploring:'Liberty 运行中',notification:'查看手机动态',user_busy:'正在处理你的任务',paused:'任务已暂停',waiting:'等待下一轮',idle:'待机'};
 type Controller={state:State|null;error:string;saving:boolean;update:(patch:Partial<Options>)=>Promise<void>};
 const ProactiveContext=createContext<Controller|null>(null);
 function useProactive(){const value=useContext(ProactiveContext);if(!value)throw new Error('ProactiveProvider is required');return value;}
@@ -37,18 +37,23 @@ export function ProactiveProvider({children}:{children:ReactNode}){
   if(!current.current||updating.current)return;updating.current=true;generation.current++;setSaving(true);setSaveError('');
   const value=current.current;
   try{
-   const response=await fetch('/api/proactive/update',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:toBinary(ProactiveUpdateRequestSchema,create(ProactiveUpdateRequestSchema,{expectedRevision:value.revision,exploring:value.exploring,notificationsEnabled:true,forwardNotifications:true,autonomousReply:true,autonomousInstall:true,intervalSeconds:value.intervalSeconds,wechatWatch:true,...patch}))});
+   const response=await fetch('/api/proactive/update',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:toBinary(ProactiveUpdateRequestSchema,create(ProactiveUpdateRequestSchema,{
+    expectedRevision:value.revision,exploring:value.exploring,
+    notificationsEnabled:value.notificationsEnabled,forwardNotifications:value.forwardNotifications,
+    autonomousReply:value.autonomousReply,autonomousInstall:value.autonomousInstall,
+    intervalSeconds:value.intervalSeconds,wechatWatch:value.wechatWatch,...patch
+   }))});
    const bytes=new Uint8Array(await response.arrayBuffer());if(!response.ok)throw new Error(fromBinary(ApiErrorSchema,bytes).message);receive(fromBinary(ProactiveStateSchema,bytes));
   }catch(e){setSaveError(e instanceof Error?e.message:'保存失败');try{receive(await readState());}catch{}}
   finally{updating.current=false;setSaving(false);}
  }
  return <ProactiveContext.Provider value={{state,error:saveError||connectionError,saving,update}}>{children}<ExplorationAura active={!!state?.exploring} paused={!visible||!!connectionError}/></ProactiveContext.Provider>;
 }
-/** Both device types expose the same durable pause/resume control and failure feedback. */
+/** Both device types expose the same Liberty control and failure feedback. */
 export function ExplorationControl({active,ready,saving,error,status,onToggle}:{active:boolean;ready:boolean;saving:boolean;error:string;status:string;onToggle:()=>void}){
  const {t}=useI18n();
  useWorkbenchNotice(error);
- return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoaderCircle size={16} className="spinning"/>:active?<Pause size={15}/>:<Compass size={16}/>}<span>{active?t("暂停探索"):t("自主探索")}</span></button></div></div>;
+ return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoaderCircle size={16} className="spinning"/>:active?<Pause size={15}/>:<Compass size={16}/>}<span>Liberty</span></button></div></div>;
 }
 export function ExplorationToggle(){
  const {state,saving,error,update}=useProactive();

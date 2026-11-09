@@ -56,6 +56,6 @@ LAN地址见私有 `data/deployment.json`，只选私有网络接口。后端、
 
 运行服务与数据库迁移使用独立角色；启动前显式执行迁移，运行服务不使用bootstrap超级用户。见[数据库权限](database-roles.md)。使用 `backup` 备份、`restore` 恢复到空目标，见[私有备份恢复](backup-restore.zh-CN.md)。
 
-## 无指向自主探索（开发中运行时）
+## Liberty（开发中运行时）
 
-为已配置设备开启探索后，Agent自行选择应用与活动，不要求指定方向、轮换App或每轮产出心得；回复与安装开关仍有效。旧暂停任务单独保留，停止探索不会删除历史。见[无指向探索](autonomous-exploration.md)与[通知工作流](notification-workflows.md)。本节描述开发中运行时，完整安装包可用性见[发行状态](release-status.md)。
+在已配置设备的对话中开启 Liberty，Agent 可自己选择活动、形成和调整目标。原有回复与安装设置继续生效，已暂停的主人任务保留各自的记录。Agent 可以在核验后保存可复用的方法。见 [Liberty](autonomous-exploration.md) 和[通知工作流](notification-workflows.md)。

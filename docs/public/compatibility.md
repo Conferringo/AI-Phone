@@ -50,4 +50,4 @@ Backend detailed errors and some tool records still contain source-language stri
 See [downloads and platform status](release-status.md).
 ## Development runtime: exploration and notifications
 
-The source runtime supports [self-directed exploration](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. See [platform status](release-status.md).
+The source runtime supports [Liberty](autonomous-exploration.md) with one phone/desktop policy and persisted resource windows, plus [device notification wake and delegated work](notification-workflows.md). Independent exploration, owner tasks and notifications have separate scheduling lanes. See [platform status](release-status.md).

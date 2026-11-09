@@ -38,13 +38,13 @@ fn installed_bundle() -> Result<PathBuf, String> {
     let bundle = executable
         .ancestors()
         .nth(3)
-        .ok_or("Install AI Phone first.")?;
+        .ok_or("Install AImanity first.")?;
     if bundle.extension().is_some_and(|ext| ext == "app")
         && executable.starts_with(bundle.join("Contents/MacOS"))
     {
         Ok(bundle.to_path_buf())
     } else {
-        Err("Install AI Phone before updating.".into())
+        Err("Install AImanity before updating.".into())
     }
 }
 
@@ -95,7 +95,7 @@ pub(super) fn launch(app: &AppHandle, downloaded: &Path, version: &Version) -> R
     DirBuilder::new()
         .mode(0o700)
         .create(&work)
-        .map_err(|error| format!("Cannot update AI Phone in this folder. {error}"))?;
+        .map_err(|error| format!("Cannot update AImanity in this folder. {error}"))?;
 
     if let Err(error) = Command::new(env::current_exe().map_err(|error| error.to_string())?)
         .arg(HELPER)
@@ -118,7 +118,7 @@ fn wait_for_parent(pid: u32) -> Result<(), String> {
     let deadline = Instant::now() + Duration::from_secs(120);
     while unsafe { getppid() } as u32 == pid {
         if Instant::now() >= deadline {
-            return Err("AI Phone did not quit. Close it and try the update again.".into());
+            return Err("AImanity did not quit. Close it and try the update again.".into());
         }
         thread::sleep(Duration::from_millis(100));
     }
@@ -194,7 +194,7 @@ fn reopen(bundle: &Path) -> Result<(), String> {
 fn restart_after_error(bundle: &Path, error: String) -> String {
     match reopen(bundle) {
         Ok(()) => error,
-        Err(restart) => format!("{error}\nCould not reopen AI Phone. {restart}"),
+        Err(restart) => format!("{error}\nCould not reopen AImanity. {restart}"),
     }
 }
 
@@ -233,7 +233,7 @@ fn alert(message: &str) {
             "-e",
             "on run argv",
             "-e",
-            "display alert \"AI Phone update failed\" message (item 1 of argv) as critical",
+            "display alert \"AImanity update failed\" message (item 1 of argv) as critical",
             "-e",
             "end run",
             "--",

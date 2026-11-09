@@ -144,7 +144,7 @@ export async function macosFactory(
     { cwd: root, env },
   );
   const version = json(join(root, "config/release-policy.json")).version,
-    file = join(root, "dist", `AI-Phone-${version}-macos-arm64.dmg`),
+    file = join(root, "dist", `AImanity-${version}-macos-arm64.dmg`),
     manifest = json(file + ".manifest.json"),
     delivery = deliveryMetadata(manifest.prebuilt_components, "macos-arm64");
   if (

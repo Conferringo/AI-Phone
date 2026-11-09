@@ -237,21 +237,42 @@ fn successful_skill_name(call: Option<&Value>, output: &Value) -> Option<String>
         .then(|| name.to_string())
 }
 
+fn saved_goal(output: &Value) -> Option<String> {
+    let text = output["output"][0]["text"].as_str()?;
+    let value: Value = serde_json::from_str(text).ok()?;
+    if value["success"] == true {
+        value["plan"]["goal"].as_str().map(str::to_owned)
+    } else {
+        None
+    }
+}
+
 // Keep the newest successful read of each Skill, even outside the recent archive.
 // A failed later read must not evict valid instructions; an updated read replaces them.
 fn archive_selection(
     context: &[Value],
     cut: usize,
     calls: &HashMap<&str, &Value>,
-) -> HashSet<usize> {
+) -> (HashSet<usize>, Option<(usize, String)>) {
+    let liberty = crate::exploration_policy::is_context(context);
     let mut selected = HashSet::new();
     let mut skills = HashSet::new();
+    let mut goal = None;
     let mut recent = 0;
     for (index, item) in context.iter().enumerate().rev() {
         let call = item["call_id"]
             .as_str()
             .and_then(|id| calls.get(id).copied());
-        if let Some(name) = successful_skill_name(call, item) {
+        if liberty
+            && item["type"] == "function_call_output"
+            && call.is_some_and(|call| call["name"] == "task_plan")
+        {
+            if goal.is_none()
+                && let Some(saved) = saved_goal(item)
+            {
+                goal = Some((index, saved));
+            }
+        } else if let Some(name) = successful_skill_name(call, item) {
             if skills.insert(name) && index < cut {
                 selected.insert(index);
             }
@@ -263,7 +284,7 @@ fn archive_selection(
             recent += 1;
         }
     }
-    selected
+    (selected, goal)
 }
 // Keep a complete recent model turn, including providers without reasoning items.
 fn archive_boundary(context: &[Value]) -> Option<usize> {
@@ -351,10 +372,16 @@ fn bounded_history(context: &[Value]) -> Cow<'_, [Value]> {
         .filter(|item| item["type"] == "function_call")
         .filter_map(|call| Some((call["call_id"].as_str()?, call)))
         .collect();
-    let selected = archive_selection(context, cut, &calls);
+    let (selected, goal) = archive_selection(context, cut, &calls);
     let mut result = Vec::new();
     let mut omitted = 0;
     for (index, item) in context[..cut].iter().enumerate() {
+        if let Some((saved_index, saved)) = &goal
+            && index == *saved_index
+        {
+            result.push(json!({"role":"user","content":[{"type":"input_text","text":format!("Liberty 上次保存的自主目标（供重新观察后判断是否调整）：{saved}")}]}));
+            continue;
+        }
         if (item["type"] == "function_call_output" || item["role"] == "assistant")
             && !selected.contains(&index)
         {
@@ -590,6 +617,20 @@ mod tests {
     fn long_exploration_bounds_old_tool_material_without_losing_owner_constraints_or_skills() {
         let owner = json!({"role":"user","content":[{"type":"input_text","text":"Keep my existing accounts and choose your own activity."}]});
         let mut context = vec![owner.clone()];
+        context.extend(crate::exploration_policy::context(true, false, false, ""));
+        for (id, goal) in [
+            ("first", "Look at the gallery"),
+            ("revised", "Learn how the map works"),
+        ] {
+            context.extend([
+                json!({"type":"function_call","name":"task_plan","call_id":id,"arguments":"{}"}),
+                json!({"type":"function_call_output","call_id":id,"output":[{"type":"input_text","text":json!({"success":true,"plan":{"goal":goal,"steps":["Inspect the map legend"]}}).to_string()}]}),
+            ]);
+        }
+        context.extend([
+            json!({"type":"function_call","name":"task_plan","call_id":"rejected","arguments":"{}"}),
+            json!({"type":"function_call_output","call_id":"rejected","output":[{"type":"input_text","text":json!({"success":false,"reason":"Rejected plan"}).to_string()}]}),
+        ]);
         for version in 1..=2 {
             context.push(json!({"type":"function_call","name":"skill_read","call_id":format!("skill-{version}"),"arguments":"{\"name\":\"phone-use\"}"}));
             context.push(json!({"type":"function_call_output","call_id":format!("skill-{version}"),"output":[{"type":"input_text","text":format!("Skill id=phone-use，version-{version}: {}", "valid instructions ".repeat(100))}]}));
@@ -632,6 +673,11 @@ mod tests {
             context, saved,
             "projection cannot delete the actual execution history"
         );
+        for projected in [request, for_chat_api(&context)] {
+            let serialized = serde_json::to_string(&projected).unwrap();
+            assert!(serialized.contains("Learn how the map works"));
+            assert!(!serialized.contains("Look at the gallery"));
+        }
     }
     #[test]
     fn non_thinking_history_compacts_and_a_failed_skill_read_keeps_valid_instructions() {

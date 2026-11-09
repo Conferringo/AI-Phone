@@ -2,11 +2,11 @@
 
 [Setup]
 AppId=dev.aiphone.client
-AppName=AI Phone
+AppName=AImanity
 AppVersion={#AppVersion}
 VersionInfoVersion={#NumericVersion}
 DefaultDirName={autopf}\AI Phone
-DefaultGroupName=AI Phone
+DefaultGroupName=AImanity
 ArchitecturesAllowed=x64os
 ArchitecturesInstallIn64BitMode=x64os
 SetupArchitecture=x64
@@ -42,11 +42,14 @@ Source: "{#AppSource}\*"; DestDir: "{app}"; Excludes: "\host\qemu\guest\guest.qc
 Source: "{#AppSource}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 #endif
 
+[InstallDelete]
+Type: files; Name: "{autoprograms}\AI Phone.lnk"
+
 [Icons]
-Name: "{autoprograms}\AI Phone"; Filename: "{app}\ai-phone-client.exe"; AppUserModelID: "dev.aiphone.client"
+Name: "{autoprograms}\AImanity"; Filename: "{app}\ai-phone-client.exe"; AppUserModelID: "dev.aiphone.client"
 
 [Run]
-Filename: "{app}\ai-phone-client.exe"; Description: "{cm:LaunchProgram,AI Phone}"; Flags: nowait postinstall skipifsilent; Check: not NeedRestart
+Filename: "{app}\ai-phone-client.exe"; Description: "{cm:LaunchProgram,AImanity}"; Flags: nowait postinstall skipifsilent; Check: not NeedRestart
 
 [CustomMessages]
 english.HostSetupFailed=Device runtime setup failed.

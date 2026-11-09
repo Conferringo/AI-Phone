@@ -333,7 +333,7 @@ export async function buildClient(
     );
     source = join(native, "target/release/bundle/macos/AI Phone.app");
     const inspection = await inspectMacBundle(source, root);
-    destination = join(dist, `AI-Phone-${version}-macos-arm64.dmg`);
+    destination = join(dist, `AImanity-${version}-macos-arm64.dmg`);
     buildDmg(source, destination);
     return {
       artifact: destination,
@@ -354,7 +354,7 @@ export async function buildClient(
     native,
     "target/x86_64-pc-windows-msvc/release/ai-phone-client.exe",
   );
-  destination = join(dist, `AI-Phone-${version}-windows-x64-setup.exe`);
+  destination = join(dist, `AImanity-${version}-windows-x64-setup.exe`);
   await buildWindowsInstaller(root, source, destination);
   return {
     artifact: destination,

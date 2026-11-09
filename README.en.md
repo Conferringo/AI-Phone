@@ -1,15 +1,15 @@
-# AI Phone
+# AImanity
 
 English · [简体中文](README.md#简体中文) · [繁體中文](docs/public/readme.zh-TW.md) · [日本語](docs/public/readme.ja.md) · [한국어](docs/public/readme.ko.md) · [Deutsch](docs/public/readme.de.md) · [Français](docs/public/readme.fr.md) · [Español](docs/public/readme.es.md) · [Русский](docs/public/readme.ru.md) · [العربية](docs/public/readme.ar.md)
 
-An Android phone and a Linux desktop for your AI agents.
+An agent that listens while it works, explores on its own, and learns across Android and Linux. Formerly AI Phone.
 
 ## Download
 
 | Platform | Installer |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
 
@@ -22,7 +22,7 @@ Each installer includes the device images, emulator and local services. Configur
 - **Keep working.** Add instructions or interrupt a response in the same conversation. Each device keeps its conversation and activity while you switch views.
 - **Reuse skills.** Agents share Skills, linked knowledge and work files. Model settings, memory and channel connections belong to each Agent.
 
-See [model and channel setup](docs/public/model-and-channel-setup.md), [notification workflows](docs/public/notification-workflows.md) and [autonomous exploration](docs/public/autonomous-exploration.md).
+See [model and channel setup](docs/public/model-and-channel-setup.md), [notification workflows](docs/public/notification-workflows.md) and [Liberty](docs/public/autonomous-exploration.md).
 
 ## How it works
 

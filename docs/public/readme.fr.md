@@ -1,4 +1,4 @@
-# AI Phone
+# AImanity
 
 [English](../../README.md) · [Toutes les langues](../../README.md) · Apache-2.0
 
@@ -10,11 +10,11 @@ Configuration requise : macOS 14.4 ou ultérieur sur Apple Silicon, ou Windows 
 
 ## Fonctions et scénarios
 
-AI Phone réunit un véritable Android invité, un bureau Linux léger et des Agents. Par défaut : un téléphone et un ordinateur, chacun avec sa conversation continue. Un Agent peut être partagé ou des modèles distincts peuvent être affectés.
+AImanity réunit un véritable Android invité, un bureau Linux léger et des Agents. Par défaut : un téléphone et un ordinateur, chacun avec sa conversation continue. Un Agent peut être partagé ou des modèles distincts peuvent être affectés.
 
 - Utiliser des applications telles que WeChat à partir de l’écran et des notifications réels ; répondre selon les instructions de l’utilisateur. Les restrictions du compte et de l’application restent applicables.
 - Recevoir un fichier sur le téléphone, le transférer à Linux, traiter et vérifier un tableau, puis retourner le résultat. Transfert entre appareils et remise à un contact sont deux résultats distincts.
-- Ajouter des instructions et interrompre la génération sans perdre messages ni actions. Les notifications peuvent réveiller l’Agent ; l’exploration autonome se met en pause par appareil.
+- Ajouter des instructions et interrompre la génération sans perdre messages ni actions. Les notifications peuvent réveiller l’Agent ; Liberty se met en pause par appareil.
 - Partager Skills, documents de connaissance liés et fichiers de travail. Modèles/API, mémoire et connexions externes appartiennent aux Agents. Clash fonctionne dans chaque système invité ; le réseau de l’hôte est direct par défaut.
 
 Les actions sont liées à une observation, un appareil, une tâche, une époque de contrôle et un identifiant unique. Un résultat inconnu est observé avant toute répétition.

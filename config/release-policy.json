@@ -1,7 +1,7 @@
 {
-  "version": "0.1.7",
-  "release_name": "Relay",
-  "release_notes": "Faster replies from connected apps via Redis, immediate device handoffs, and an optional Kafka stream for replaying handoff events.",
+  "version": "0.1.8",
+  "release_name": "Bibliography",
+  "release_notes": "AImanity introduces Liberty, faster Copilot corrections, screen-change judgment, cross-device collaboration, and evidence-backed knowledge.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,
@@ -25,7 +25,7 @@
       "mobile-keyboard-safe-area"
     ],
     "remote_review_authorized": true,
-    "repository": "https://github.com/Conferringo/AI-Phone"
+    "repository": "https://github.com/MrMilkDragon/AI-Phone"
   },
   "acceptance_waivers": {
     "clean_host_install": {

@@ -7,6 +7,7 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use image::RgbImage;
 use serde::Deserialize;
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::time::Duration;
 
 pub enum Response {
@@ -67,7 +68,7 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
                 .map(Response::Json),
             "action" => self.perform_action(args).await.map(Response::Json),
             "run" => self.run(args).await.map(Response::Json),
-            "notifications" => self.notifications().await.map(Response::Json),
+            "notifications" => self.notifications(args).await.map(Response::Json),
             _ => self.read(operation, args),
         }
     }
@@ -115,13 +116,28 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
         Ok(observation)
     }
 
-    async fn notifications(&self) -> Result<Value> {
-        crate::notifications::list(
+    async fn notifications(&self, args: Value) -> Result<Value> {
+        let mut feed = crate::notifications::list(
             &self.runner,
             &self.settings.home.join(".aiphone"),
             rustix::process::getuid().as_raw(),
         )
-        .await
+        .await?;
+        if args["include_window"] == true
+            && let Ok(window) = self.screen.window()
+            && window.window_id != 0
+            && window.process_id != 0
+            && !window.application_class.is_empty()
+            && !window.title.trim().is_empty()
+        {
+            feed["foreground"] = json!([
+                window.window_id,
+                window.process_id,
+                window.application_class,
+                format!("{:x}", Sha256::digest(window.title.trim().as_bytes())),
+            ]);
+        }
+        Ok(feed)
     }
 
     async fn run(&self, value: Value) -> Result<Value> {

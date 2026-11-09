@@ -33,9 +33,9 @@ PostgreSQL使用Docker命名卷。备份恢复覆盖数据库、Android状态、
 两端安装包验收后，在发行维护者本机签署更新清单。
 
 ```sh
-./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.7-macos-arm64.dmg AI-Phone-0.1.7-windows-x64-setup.exe AI-Phone-0.1.7-update.json
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.1.8-macos-arm64.dmg AImanity-0.1.8-windows-x64-setup.exe stable.json
 ```
 
-将两个安装包和已签名清单附到同一个 GitHub 正式发行。同一份清单上传为 `AI-Phone-update.json` 供工作台检查，同时保留带版本号的文件名供旧客户端读取。签名私钥由发行维护者离线保管。
+GitHub 发行页附 DMG 和 EXE。发布后将签名的 `stable.json` 提交到 `update-feed` 分支。0.1.8 起客户端读取这个地址。0.1.7 用户手动安装一次 0.1.8，即可切换到新地址。
 
 完整包必须包含干净Android/Linux基础、模拟器、预编译服务与匹配运行环境，并附来源、声明和适用对应源码。详见[发行要求](distribution-requirements.md)、[当前状态](release-status.md)和[备份恢复](backup-restore.zh-CN.md)。

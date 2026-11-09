@@ -1,9 +1,11 @@
 use super::*;
+use futures_util::FutureExt;
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::{mpsc, oneshot},
 };
 use tokio_tungstenite::{client_async, tungstenite::client::IntoClientRequest};
+use tokio_util::sync::CancellationToken;
 type Client = WebSocketStream<TcpStream>;
 
 async fn listen(
@@ -87,17 +89,22 @@ async fn actual_websocket_delivers_before_commit_reuses_provider_and_drains_on_d
         recognition_model: "fixture-transcribe".into(),
         ..Default::default()
     };
+    let activity = Arc::new(super::super::activity::SpeechActivity::default());
+    let gateway_activity = activity.clone();
+    let conversation = Uuid::new_v4();
+    let session = Uuid::new_v4();
     let router = Router::new().route(
         "/",
         axum::routing::get(move |ws: WebSocketUpgrade| {
             let draft = draft.clone();
+            let activity = gateway_activity.clone();
             async move {
                 ws.on_upgrade(move |mut socket| async move {
                     let provider = connect(&reqwest::Client::new(), &draft).await.unwrap();
                     send(&mut socket, wire::voice_stream_output::Event::Ready(true))
                         .await
                         .unwrap();
-                    pipe(socket, provider).await;
+                    pipe(socket, provider, &activity, Some(conversation), session).await;
                 })
             }
         }),
@@ -124,6 +131,10 @@ async fn actual_websocket_delivers_before_commit_reuses_provider_and_drains_on_d
         };
         assert_eq!(partial.utterance_id, id);
         assert!(!partial.r#final);
+        let cancel = CancellationToken::new();
+        let hold = activity.wait(conversation, &cancel);
+        tokio::pin!(hold);
+        assert!(hold.as_mut().now_or_never().is_none());
         input(
             &mut socket,
             wire::voice_stream_input::Event::Commit(wire::VoiceStreamCommit {
@@ -137,6 +148,9 @@ async fn actual_websocket_delivers_before_commit_reuses_provider_and_drains_on_d
         assert_eq!(final_.utterance_id, id);
         assert!(final_.r#final);
         assert_eq!(final_.text, "打开天气");
+        assert!(hold.as_mut().now_or_never().is_none());
+        activity.accepted(conversation, session, &id);
+        assert!(hold.await.unwrap());
     }
     socket.close(None).await.unwrap();
     tokio::time::timeout(Duration::from_secs(2), closure.recv())

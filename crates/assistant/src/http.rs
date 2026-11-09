@@ -412,6 +412,9 @@ pub async fn send(
         tx.commit().await?;
         app.run_signals.queue.notify_one();
         app.run_signals.input.notify_waiters();
+        if let Some(voice) = &voice {
+            voice.release_activity(&app.run_signals.speech, id);
+        }
         app.run_signals.chat_changed(id);
         Ok(run)
     }.await;

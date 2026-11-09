@@ -115,12 +115,23 @@ async fn helper(op: &str, args: Value) -> Result<Value> {
     serde_json::from_slice(&out).map_err(|e| e.to_string())
 }
 pub async fn notifications(app: &App, device: &str) -> Result<wire::PhoneNotificationList> {
+    let (feed, _) = notification_feed(app, device, false).await?;
+    Ok(feed)
+}
+pub(crate) async fn notification_feed(
+    app: &App,
+    device: &str,
+    include_window: bool,
+) -> Result<(
+    wire::PhoneNotificationList,
+    Option<(u32, u32, String, String)>,
+)> {
     available(app, device).await?;
-    let value = helper("notifications", json!({})).await?;
+    let value = helper("notifications", json!({"include_window":include_window})).await?;
     let events = value["notifications"]
         .as_array()
         .ok_or("电脑通知格式无效")?;
-    Ok(wire::PhoneNotificationList {
+    let feed = wire::PhoneNotificationList {
         connected: value["connected"].as_bool().unwrap_or(false),
         checked_at_ms: now(),
         notifications: events
@@ -141,7 +152,11 @@ pub async fn notifications(app: &App, device: &str) -> Result<wire::PhoneNotific
             })
             .collect(),
         ..Default::default()
-    })
+    };
+    Ok((
+        feed,
+        serde_json::from_value(value["foreground"].clone()).ok(),
+    ))
 }
 async fn adb(app: &App, device: &str, args: &[&str], limit: usize) -> Result<Vec<u8>> {
     adb_bounded(app, device, args, limit, 60).await
@@ -1088,6 +1103,17 @@ fn plain(value: Value) -> Value {
 pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Value> {
     let name = call["name"].as_str().unwrap_or("");
     let device = args["device_id"].as_str().unwrap_or("");
+    if matches!(name, "device_location_state" | "device_location_set") {
+        return Ok(plain(
+            crate::location::tool(
+                app,
+                run,
+                call["local_action_id"].as_str().unwrap_or(""),
+                (name == "device_location_set").then(|| args.clone()),
+            )
+            .await?,
+        ));
+    }
     if matches!(name, "device_file_list" | "device_file_manage") {
         return Ok(plain(crate::files::tool(app, run, name, args).await?));
     }
@@ -1175,7 +1201,25 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         ));
     }
     if name == "computer_observe" {
-        return Ok(blocks(observe(app, device, Some(run), true).await?));
+        let source: Option<(String, bool)> = sqlx::query_as(
+            "SELECT n.device_id,EXISTS(SELECT 1 FROM desktop_controls c WHERE c.device_id=n.device_id
+               AND c.controller='manual' AND c.touched_at>now()-interval '15 seconds')
+             FROM phone_notifications n WHERE n.run_id=$1 AND n.notification_key=$2 LIMIT 1",
+        )
+        .bind(run)
+        .bind(crate::proactive::screen_attention::KEY)
+        .fetch_optional(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+        if source.as_ref().is_some_and(|(source, _)| source != device) {
+            return Err("画面变化任务只允许观察事件来源设备。".into());
+        }
+        if source.as_ref().is_some_and(|(_, manual)| *manual) {
+            return Err("用户正在操作电脑，画面检查已跳过。".into());
+        }
+        return Ok(blocks(
+            observe(app, device, Some(run), source.is_none()).await?,
+        ));
     }
     if name == "computer_run" {
         control(app, device, Some(run), true).await?;
@@ -1254,7 +1298,30 @@ pub fn catalog() -> Vec<Value> {
     let num = json!({"type":"integer"});
     let origin = json!({"type":"integer","minimum":0});
     let extent = json!({"type":"integer","minimum":1});
+    let coordinate = json!({"type":"object","properties":{
+        "latitude":{"type":"number","minimum":-90,"maximum":90},
+        "longitude":{"type":"number","minimum":-180,"maximum":180}
+    },"required":["latitude","longitude"],"additionalProperties":false});
     vec![
+        f(
+            "device_location_state",
+            "查看模拟位置是否开启、本任务是否可调整，以及获准时的模拟位置和设备回执。只读，不查询宿主真实位置。",
+            json!({}),
+            vec![],
+        ),
+        f(
+            "device_location_set",
+            "本任务获准控制全部受影响设备时可启用和调整模拟位置。先读取device_location_state，使用返回的revision作为expected_revision。point用指定模拟坐标启用静态位置；route启用路线并指定两个以上模拟路线点、speed_kph和repeat；pause暂停当前路线。坐标只用于客体模拟，不查询真实位置。",
+            json!({
+                "expected_revision":{"type":"integer","minimum":0},
+                "mode":{"type":"string","enum":["point","route","pause"]},
+                "point":coordinate,
+                "route":{"type":"array","minItems":2,"maxItems":200,"items":coordinate},
+                "speed_kph":{"type":"number","minimum":0.5,"maximum":500},
+                "repeat":{"type":"boolean"}
+            }),
+            vec!["expected_revision", "mode"],
+        ),
         f(
             "device_file_list",
             "列出手机/电脑根目录或共享工作文件。device_id为空表示harness工作文件；path为绝对路径，默认/。仅文件管理；应用操作仍须phone-use/computer-use。",
@@ -1269,7 +1336,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "device_message",
-            "向已连线的另一设备Agent交接任务、文件路径或进展。对方空闲时自动唤醒；排队不等于已处理。禁止无意义循环回复。",
+            "向已连线的另一设备Agent交接一项工作，包含预期结果和已核对的文件路径。对方空闲时自动唤醒；可用task_wait让出运行，返回结果会唤醒原任务。排队不是完成。",
             json!({"source_device_id":id,"target_device_id":id,"text":id}),
             vec!["source_device_id", "target_device_id", "text"],
         ),

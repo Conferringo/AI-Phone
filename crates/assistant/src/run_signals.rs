@@ -8,6 +8,7 @@ use tokio::sync::{Notify, broadcast};
 pub(crate) struct RunSignals {
     pub queue: Notify,
     pub input: Notify,
+    pub speech: crate::speech::activity::SpeechActivity,
     pub handoff: Notify,
     pub handoff_export: Notify,
     pub channel_update: Notify,
@@ -19,6 +20,7 @@ impl Default for RunSignals {
         Self {
             queue: Notify::new(),
             input: Notify::new(),
+            speech: Default::default(),
             handoff: Notify::new(),
             handoff_export: Notify::new(),
             channel_update: Notify::new(),

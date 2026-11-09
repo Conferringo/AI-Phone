@@ -6,6 +6,7 @@ pub struct AuditResult {
     pub approved: bool,
     pub feedback: String,
     experience: Option<Value>,
+    knowledge: Option<Value>,
 }
 
 type LearningEvidence = std::collections::BTreeMap<String, crate::app_learning::Metadata>;
@@ -57,6 +58,46 @@ fn learning_candidate(candidate: &Value, evidence: &LearningEvidence) -> Result<
     fields.remove("evidence_ids");
     fields.insert("observation_ids".into(), json!(observations));
     Ok(value)
+}
+
+fn knowledge_schema(evidence: &LearningEvidence) -> Option<Value> {
+    let app = &evidence.values().next()?.app_id;
+    if !evidence.values().any(|item| &item.app_id != app) {
+        return None;
+    }
+    Some(json!({"type":"object","additionalProperties":false,
+        "description":"可复用的跨应用知识，不记录单个应用的操作步骤。仅在当前真实证据足以支持结论时提供。",
+        "properties":{
+            "title":{"type":"string","maxLength":100},
+            "summary":{"type":"string","maxLength":1200,"description":"结论和适用条件；不含私密内容。"},
+            "evidence_ids":{"type":"array","minItems":2,"maxItems":8,"items":{"type":"string","enum":evidence.keys().collect::<Vec<_>>()}}
+        },"required":["title","summary","evidence_ids"]}))
+}
+
+fn knowledge_candidate<'a>(
+    candidate: &'a Value,
+    evidence: &LearningEvidence,
+) -> Option<(&'a str, &'a str, Vec<String>)> {
+    let title = candidate["title"].as_str()?.trim();
+    let summary = candidate["summary"].as_str()?.trim();
+    let ids = candidate["evidence_ids"].as_array()?;
+    if title.is_empty()
+        || title.chars().count() > 100
+        || summary.is_empty()
+        || summary.chars().count() > 1200
+        || !(2..=8).contains(&ids.len())
+    {
+        return None;
+    }
+    let mut apps = std::collections::BTreeSet::new();
+    let mut observations = std::collections::BTreeSet::new();
+    for id in ids {
+        let item = evidence.get(id.as_str()?)?;
+        apps.insert(&item.app_id);
+        observations.insert(item.observation_id.clone());
+    }
+    (apps.len() >= 2 && observations.len() == ids.len())
+        .then(|| (title, summary, observations.into_iter().collect()))
 }
 
 // A completion audit has no execution tools. Its input comes from this run's
@@ -147,6 +188,10 @@ pub async fn verify(
     if let Some(schema) = learning_schema(&learning_evidence) {
         tool["parameters"]["properties"]["experience"] = schema;
     }
+    if let Some(schema) = knowledge_schema(&learning_evidence) {
+        tool["parameters"]["properties"]["knowledge"] = schema;
+        audit_input.push(json!({"type":"input_text","text":"若已核验的跨应用操作得出一条可供后续任务引用的事实或通用结论，可附一份knowledge。引用至少两个不同应用的本轮evidence_id，包含动作后的复查。只保存结论和适用条件，不重复单应用Skill，不保存私密通知、会话、凭据、路径或原文。没有可复用结论就省略。已有结论用相同标题，不另起同义标题。"}));
+    }
     audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。evidence_ids仅引用tool_evidence中的evidence_id，所引事件的learning_app都须等于app_id；不要填写嵌套观察ID或跨应用事件。verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
     let body = json!({"input":[
         {"role":"system","content":[{"type":"input_text","text":"你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。设备协作回执可核对文件传输；外发结果须由来源应用的实际操作记录支持。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"}]},
@@ -207,6 +252,24 @@ pub async fn verify(
     .execute(&app.db)
     .await
     .map_err(|e| e.to_string())?;
+    if !needs_input
+        && let Ok(report) = &result
+        && let Some((title, summary, observations)) = report
+            .knowledge
+            .as_ref()
+            .and_then(|candidate| knowledge_candidate(candidate, &learning_evidence))
+        && let Err(error) = crate::workbench::publish_learned_knowledge(
+            app,
+            run,
+            event,
+            title,
+            summary,
+            &observations,
+        )
+        .await
+    {
+        eprintln!("Optional knowledge was not retained: {error}");
+    }
     result
 }
 
@@ -268,6 +331,10 @@ fn parse_result(value: &Value) -> Result<AuditResult, String> {
         feedback: feedback.chars().take(4000).collect(),
         experience: report
             .get("experience")
+            .filter(|v| approved && v.is_object())
+            .cloned(),
+        knowledge: report
+            .get("knowledge")
             .filter(|v| approved && v.is_object())
             .cloned(),
     })
@@ -511,14 +578,38 @@ mod tests {
                 }
             }
             let mut candidate = json!({"app_id":"com.example.reader","title":"Open the search field","procedure":"Click the visible search entry and verify the actual input field before typing.","outcome":"verified","limitations":"Only the observed application version."});
-            for (references, saved) in [
-                (json!([ids[0].to_string(), ids[2].to_string()]), 0i64),
-                (json!([ids[0].to_string(), "unknown-event"]), 0),
-                (json!([ids[0].to_string(), ids[3].to_string()]), 0),
-                (json!([ids[0].to_string(), ids[1].to_string()]), 1),
+            for (references, saved, note_references, notes) in [
+                (
+                    json!([ids[0].to_string(), ids[2].to_string()]),
+                    0i64,
+                    [ids[0], ids[1]],
+                    0i64,
+                ),
+                (
+                    json!([ids[0].to_string(), "unknown-event"]),
+                    0,
+                    [ids[0], ids[3]],
+                    0,
+                ),
+                (
+                    json!([ids[0].to_string(), ids[3].to_string()]),
+                    0,
+                    [ids[0], ids[2]],
+                    1,
+                ),
+                (
+                    json!([ids[0].to_string(), ids[1].to_string()]),
+                    1,
+                    [ids[0], ids[2]],
+                    1,
+                ),
             ] {
                 candidate["evidence_ids"] = references;
-                *reply.lock().unwrap() = json!({"approved":true,"feedback":"Fixture task evidence matches","experience":candidate});
+                *reply.lock().unwrap() = json!({"approved":true,"feedback":"Fixture task evidence matches","experience":candidate,"knowledge":{
+                    "title":"Check import results in both applications",
+                    "summary":"Verify the actual result in the receiving application instead of assuming a handoff is complete.",
+                    "evidence_ids":note_references,
+                }});
                 assert!(
                     verify(
                         &app,
@@ -554,6 +645,15 @@ mod tests {
                     .unwrap(),
                     saved
                 );
+                let knowledge = crate::workbench::invoke(
+                    &app,
+                    "knowledge_search",
+                    &json!({"query":"Check import results"}),
+                    &CancellationToken::new(),
+                )
+                .await
+                .unwrap();
+                assert_eq!(knowledge.as_array().unwrap().len(), notes as usize);
             }
             crate::app_learning::promote(&app, run).await.unwrap();
             let name = crate::app_learning::recall(&app, "com.example.reader")

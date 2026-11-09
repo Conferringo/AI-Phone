@@ -33,9 +33,9 @@ The client downloads the stable release for its platform and verifies its Ed2551
 After verifying both installers, sign the update manifest on the release maintainer's machine:
 
 ```sh
-./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.7-macos-arm64.dmg AI-Phone-0.1.7-windows-x64-setup.exe AI-Phone-0.1.7-update.json
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.1.8-macos-arm64.dmg AImanity-0.1.8-windows-x64-setup.exe stable.json
 ```
 
-Attach the two installers and the signed manifest to the same stable GitHub release. Upload the same manifest as `AI-Phone-update.json` for workbench discovery and under its versioned filename for earlier clients. Keep the private signing key in the release maintainer's offline storage.
+Attach the DMG and EXE to the GitHub release. After publication, publish the signed `stable.json` on the `update-feed` branch. Clients from 0.1.8 use that feed. Install 0.1.8 manually once when upgrading from 0.1.7.
 
 Full packages must contain clean Android/Linux baselines, emulator, prebuilt services and matched runtime components, with provenance, notices and applicable corresponding source. See [distribution requirements](distribution-requirements.md), [release status](release-status.md), and [backup/recovery](backup-restore.en.md).

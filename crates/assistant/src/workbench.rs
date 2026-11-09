@@ -532,6 +532,43 @@ async fn synchronize_knowledge_relationships(
     Ok(())
 }
 
+pub(crate) async fn publish_learned_knowledge(
+    app: &App,
+    run: Uuid,
+    audit: Uuid,
+    title: &str,
+    summary: &str,
+    observations: &[String],
+) -> Result<(), String> {
+    let title = app.settings.redact(title);
+    let key = title
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase();
+    let content = format!(
+        "{}\n\n来源：任务 `{run}`，核验 `{audit}`。",
+        app.settings.redact(summary)
+    );
+    sqlx::query(
+        "INSERT INTO knowledge_documents(id,title,content,learned_key)
+         SELECT $1,$2,$3,$4 WHERE EXISTS (
+             SELECT 1 FROM app_learning_observations
+             WHERE run_id=$5 AND observation_id=ANY($6) AND after_action
+         ) ON CONFLICT (learned_key) DO NOTHING",
+    )
+    .bind(Uuid::now_v7())
+    .bind(title)
+    .bind(content)
+    .bind(key)
+    .bind(run)
+    .bind(observations)
+    .execute(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 async fn knowledge_save(
     app: &App,
     input: wire::KnowledgeSaveRequest,

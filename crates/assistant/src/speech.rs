@@ -1,4 +1,5 @@
 //! Agent-owned speech configuration and transport. Chat model verification is independent.
+pub(crate) mod activity;
 pub(crate) mod playback;
 mod provider;
 pub(crate) mod realtime;

@@ -11,7 +11,7 @@ const policy = await Bun.file(join(ROOT, "config/client-update.json")).json();
 const { version, release_name: name, release_notes: notes } =
   await Bun.file(join(ROOT, "config/release-policy.json")).json();
 if (typeof version !== "string" || !/^\d+\.\d+\.\d+$/.test(version) ||
-    basename(output) !== `AI-Phone-${version}-update.json`) {
+    basename(output) !== "stable.json") {
   throw Error("Output must match the stable release version");
 }
 if (typeof name !== "string" || !name.trim() || typeof notes !== "string" || !notes.trim()) {
@@ -25,7 +25,7 @@ if (publicKey.asymmetricKeyType !== "ed25519" || rawKey.toString("base64") !== p
 }
 
 async function artifact(path: string, os: "macos" | "windows", arch: string, suffix: string) {
-  if (basename(path) !== `AI-Phone-${version}-${suffix}`) throw Error("Wrong installer filename");
+  if (basename(path) !== `AImanity-${version}-${suffix}`) throw Error("Wrong installer filename");
   const report = await Bun.file(path + ".manifest.json").json();
   if (report.version !== version || report.os !== os || report.arch !== arch ||
       !report.complete_device_bundle || !report.runtime_payload_complete) {

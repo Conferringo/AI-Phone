@@ -13,7 +13,7 @@ export default function Setup(){
   useEffect(()=>{void check();},[]);
   async function submit(e:React.FormEvent){e.preventDefault();if(busy)return;if(password!==repeat){setError(t("两次密码不一致"));return;}setBusy(true);setError('');try{await settingsRpc('owner',SetupOwnerRequestSchema,{setupCode:code,password},SetupStateSchema,'setup');location.replace('/phone');}catch(e){setError(e instanceof Error?e.message:t("创建失败"));setBusy(false);}}
   return <main className="entry-screen"><form className="entry-card" aria-label={t("初始化管理员")} onSubmit={submit}>
-   <header className="entry-heading"><h1>{t("初始化 AI Phone")}</h1><LanguageSelect/></header>
+   <header className="entry-heading"><h1>{t("初始化 AImanity")}</h1><LanguageSelect/></header>
    {ready?<><div className="entry-fields">
     <label className="entry-field" htmlFor="setup-code">{t("本机初始化码")}<input id="setup-code" value={code} onChange={e=>setCode(e.target.value)} autoComplete="off" spellCheck={false} required disabled={busy} aria-describedby="setup-code-hint"/></label>
     <p id="setup-code-hint" className="field-hint">{t("从安装目录的 data/assistant/setup-code 读取。")}</p>

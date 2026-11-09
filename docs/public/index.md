@@ -14,7 +14,7 @@
 - [Model, channel and platform compatibility](compatibility.md)
 - [Continuous conversation](conversation-steering.md)
 - [Notification-driven work](notification-workflows.md)
-- [Self-directed exploration](autonomous-exploration.md)
+- [Liberty](autonomous-exploration.md)
 - [Device networking](network.md)
 - [Simulated location](simulated-location.md)
 

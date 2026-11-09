@@ -1,4 +1,4 @@
-# AI Phone
+# AImanity
 
 [English](../../README.md) · [Alle Sprachen](../../README.md) · Apache-2.0
 
@@ -14,7 +14,7 @@ Ein echter Android-Gast und ein schlanker Linux-Desktop teilen sich eine Arbeits
 
 - Apps wie WeChat anhand realer Bildschirme und Benachrichtigungen bedienen und im Auftrag des Nutzers antworten. Konto- und App-Beschränkungen bleiben wirksam.
 - Eine Datei am Telefon empfangen, an Linux übertragen, dort eine Tabelle bearbeiten und prüfen und das Ergebnis zurückgeben. Geräteübertragung und Zustellung an einen Kontakt werden getrennt geprüft.
-- Laufende Aufgaben durch weitere Nachrichten lenken und unterbrechen, ohne frühere Nachrichten oder Aktionen zu verlieren. Benachrichtigungen können den Agenten wecken; autonome Erkundung lässt sich pro Gerät pausieren.
+- Laufende Aufgaben durch weitere Nachrichten lenken und unterbrechen, ohne frühere Nachrichten oder Aktionen zu verlieren. Benachrichtigungen können den Agenten wecken; Liberty lässt sich pro Gerät pausieren.
 - Skills, verknüpfte Wissensdokumente und Arbeitsdateien gemeinsam nutzen. Modelle/APIs, Gedächtnis und externe Verbindungen gehören zum Agenten. Clash läuft als Anwendung in den Gästen; der Host nutzt standardmäßig Direktverbindungen.
 
 Aktionen sind an Beobachtung, Gerät, Aufgabe, Kontroll-Epoche und eindeutige Aktions-ID gebunden. Unbekannte Ergebnisse werden vor Wiederholung beobachtet.

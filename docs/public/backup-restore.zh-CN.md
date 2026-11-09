@@ -30,7 +30,7 @@ Rust 命令 `assistant --state-backup` 负责备份与恢复。
 
 目标PostgreSQL管理员需与备份`.env`中的管理员一致；命令经容器本地管理连接导入。现有表或用户文件会导致拒绝，不提供覆盖式恢复。导入表结构、内容和权限在一个事务中进行；导入后逐表比较行数及行摘要。文件逐一校验，稀疏磁盘恢复为空洞，Android绝对路径按新目录重定位，并验证SDK基础镜像。
 
-恢复结果保持隔离：未完成任务转为暂停，自主探索及通知触发关闭，保留`data/restore-quarantine.json`，不启动Android、渠道或Agent。Linux根文件系统保存到`data/desktop/recovery`。可使用`./ai-phone recover-desktop --destination /private/AIPhone-recovered --desktop-container aiphone-recovery-check`导入并启动离线验证容器：不发布端口，不替换原容器，仅挂载恢复目录。导入前预估解压空间并保留4GiB空闲。`data/restore-report.json`记录校验结果。原实例仍能使用；不能让原副本和恢复副本同时联网使用同一登录账号。
+恢复结果保持隔离：未完成任务转为暂停，Liberty 及通知触发关闭，保留`data/restore-quarantine.json`，不启动Android、渠道或Agent。Linux根文件系统保存到`data/desktop/recovery`。可使用`./ai-phone recover-desktop --destination /private/AIPhone-recovered --desktop-container aiphone-recovery-check`导入并启动离线验证容器：不发布端口，不替换原容器，仅挂载恢复目录。导入前预估解压空间并保留4GiB空闲。`data/restore-report.json`记录校验结果。原实例仍能使用；不能让原副本和恢复副本同时联网使用同一登录账号。
 
 启用恢复环境前，先停掉旧实例，再核对程序与用户目录的链接、Linux 导入结果、设备绑定和网络。核对完成后，由维护者解除隔离并启动。
 

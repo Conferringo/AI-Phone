@@ -21,6 +21,14 @@ fn valid_segment(voice: &wire::ChatVoiceInput) -> bool {
 }
 
 impl VoiceInput {
+    pub(crate) fn release_activity(
+        &self,
+        activity: &crate::speech::activity::SpeechActivity,
+        conversation: Uuid,
+    ) {
+        activity.accepted(conversation, self.session, &self.utterance);
+    }
+
     pub fn parse(voice: &wire::ChatVoiceInput) -> Result<Self, &'static str> {
         let session = Uuid::parse_str(&voice.session_id).map_err(|_| "invalid_voice")?;
         if session.is_nil() || !valid_segment(voice) {

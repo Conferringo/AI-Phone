@@ -163,7 +163,7 @@ export async function windowsFactory(
     { cwd: root },
   );
   const version = json(join(root, "config/release-policy.json")).version,
-    file = join(root, "dist", `AI-Phone-${version}-windows-x64-setup.exe`),
+    file = join(root, "dist", `AImanity-${version}-windows-x64-setup.exe`),
     manifest = json(file + ".manifest.json"),
     delivery = deliveryMetadata(manifest.prebuilt_components, "windows-x64");
   if (
