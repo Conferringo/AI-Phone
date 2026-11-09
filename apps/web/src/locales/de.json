@@ -392,6 +392,7 @@
   "准备请求": "Vorbereitung",
   "等待响应头": "Warten auf Header",
   "等待首段数据": "Warten auf erste Daten",
+  "模型首字": "Erster Modelltext",
   "读取模型流": "Modellstream lesen",
   "工具执行": "Werkzeuge",
   "完成核验": "Abschlussprüfung",

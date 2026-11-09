@@ -156,6 +156,10 @@ pub struct ChatStream {
     finish: Option<String>,
 }
 impl ChatStream {
+    pub fn has_text(&self) -> bool {
+        !self.text.trim().is_empty()
+    }
+
     pub fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
         for data in self.sse.feed(chunk)? {
             let data = data.trim();

@@ -125,13 +125,17 @@ pub async fn request_tracked(
                 if !chunk.is_empty() {
                     timing.first_bytes_received();
                 }
-                if let Some(output) = if chat_protocol {
-                    chat_parser.feed(&chunk)?
+                let (output, has_text) = if chat_protocol {
+                    (chat_parser.feed(&chunk)?, chat_parser.has_text())
                 } else if messages_protocol {
-                    messages_parser.feed(&chunk)?
+                    (messages_parser.feed(&chunk)?, messages_parser.has_text())
                 } else {
-                    parser.feed(&chunk)?
-                } {
+                    (parser.feed(&chunk)?, parser.has_text)
+                };
+                if has_text {
+                    timing.text_received();
+                }
+                if let Some(output) = output {
                     return Ok(output);
                 }
             }
@@ -196,6 +200,7 @@ fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
 #[derive(Default)]
 struct ResponseStream {
     sse: crate::model_sse::SseDecoder,
+    has_text: bool,
 }
 impl ResponseStream {
     fn completed(response: &Value) -> Result<Vec<Value>, String> {
@@ -219,8 +224,17 @@ impl ResponseStream {
             }
             let event: Value = serde_json::from_str(&data).map_err(|_| "模型流格式无效")?;
             match event["type"].as_str() {
+                Some("response.output_text.delta") => {
+                    self.has_text |= has_text(&event["delta"]);
+                }
                 Some("response.completed") => {
-                    return Self::completed(&event["response"]).map(Some);
+                    let output = Self::completed(&event["response"])?;
+                    self.has_text |= output
+                        .iter()
+                        .filter(|item| item["type"] == "message")
+                        .flat_map(|item| item["content"].as_array().into_iter().flatten())
+                        .any(|part| part["type"] == "output_text" && has_text(&part["text"]));
+                    return Ok(Some(output));
                 }
                 Some("response.failed" | "response.incomplete" | "error") => {
                     return Err("模型未完成本轮回复；未将部分输出作为操作执行".into());
@@ -230,6 +244,9 @@ impl ResponseStream {
         }
         Ok(None)
     }
+}
+fn has_text(value: &Value) -> bool {
+    value.as_str().is_some_and(|text| !text.trim().is_empty())
 }
 fn text(output: &[Value]) -> String {
     output
@@ -570,13 +587,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn transport_timing_separates_headers_first_bytes_and_complete_output() {
+    async fn transport_timing_separates_headers_first_bytes_first_text_and_complete_output() {
         use axum::{Router, body::Body, routing::post};
         use futures_util::StreamExt;
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let router = Router::new().route("/v1/responses",post(|| async {
-            let events = [json!({"type":"response.created"}),json!({"type":"response.completed",
+            let events = [json!({"type":"response.created"}),
+                json!({"type":"response.reasoning_text.delta","delta":"fixture-reasoning"}),
+                json!({"type":"response.output_text.delta","delta":"timed-"}),
+                json!({"type":"response.completed",
                 "response":{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"timed-output"}]}]}})];
             let stream = futures_util::stream::iter(events).then(|event| async move {
                 tokio::time::sleep(Duration::from_millis(30)).await;
@@ -611,7 +631,8 @@ mod tests {
         assert!(value.request_bytes > 0);
         assert!(value.headers_ms.unwrap() <= value.first_byte_ms.unwrap());
         assert!(value.first_byte_ms.unwrap() >= 20);
-        assert!(value.model_ms >= value.first_byte_ms.unwrap());
+        assert!(value.first_text_ms.unwrap() >= value.first_byte_ms.unwrap() + 40);
+        assert!(value.model_ms >= value.first_text_ms.unwrap() + 20);
         assert!(value.elapsed_ms >= value.model_ms);
         assert!(!facts.to_string().contains("fixture-secret"));
         let roundtrip = wire::ModelCallTiming::decode(value.encode_to_vec().as_slice()).unwrap();
@@ -636,6 +657,7 @@ mod tests {
         let value = crate::model_timing::wire(&timing.snapshot()).unwrap();
         assert!(value.headers_ms.is_some());
         assert!(value.first_byte_ms.is_none());
+        assert!(value.first_text_ms.is_none());
     }
 
     async fn error_fixture(

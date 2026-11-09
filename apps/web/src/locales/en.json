@@ -392,6 +392,7 @@
   "准备请求": "Preparation",
   "等待响应头": "Response headers",
   "等待首段数据": "First data",
+  "模型首字": "First model text",
   "读取模型流": "Model stream",
   "工具执行": "Tools",
   "完成核验": "Completion check",

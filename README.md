@@ -8,8 +8,8 @@ An Android phone and a Linux desktop for your AI agents.
 
 | Platform | Installer |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.3](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.3/AI-Phone-0.1.3-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.3](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.3/AI-Phone-0.1.3-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.5](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.5/AI-Phone-0.1.5-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.5](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.5/AI-Phone-0.1.5-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
 
@@ -59,8 +59,8 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 | 平台 | 安装包 |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.3](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.3/AI-Phone-0.1.3-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.3](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.3/AI-Phone-0.1.3-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.5](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.5/AI-Phone-0.1.5-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.5](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.5/AI-Phone-0.1.5-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [构建和平台状态](docs/public/release-status.md)
 

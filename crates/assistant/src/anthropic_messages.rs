@@ -144,8 +144,13 @@ pub struct MessagesStream {
     ended: bool,
     blocks: BTreeMap<u64, Block>,
     stop: Option<String>,
+    has_text: bool,
 }
 impl MessagesStream {
+    pub fn has_text(&self) -> bool {
+        self.has_text
+    }
+
     pub fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
         for data in self.sse.feed(chunk)? {
             if data.is_empty() {
@@ -182,6 +187,13 @@ impl MessagesStream {
                     ) {
                         return Err("模型返回不支持的内容类型".into());
                     }
+                    if block["type"] == "text"
+                        && block["text"]
+                            .as_str()
+                            .is_some_and(|text| !text.trim().is_empty())
+                    {
+                        self.has_text = true;
+                    }
                     self.blocks.insert(
                         id,
                         Block {
@@ -217,9 +229,13 @@ impl MessagesStream {
                         _ => return Err("模型流内容类型不匹配".into()),
                     };
                     let part = part.ok_or("模型流内容格式无效")?;
-                    let mut joined = block.value[field].as_str().unwrap_or("").to_owned();
-                    joined.push_str(part);
-                    block.value[field] = json!(joined);
+                    if field == "text" && !part.trim().is_empty() {
+                        self.has_text = true;
+                    }
+                    match &mut block.value[field] {
+                        Value::String(text) => text.push_str(part),
+                        value => *value = Value::String(part.to_owned()),
+                    }
                 }
                 Some("content_block_stop") => {
                     let id = event["index"].as_u64().ok_or("模型内容编号无效")?;

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Record the first model text separately from the first network bytes.
+- Start work on the selected computer without listing devices again.
+- Refresh stale phone observations immediately when no action was executed.
+- Wake on committed instructions and avoid redundant database reads during model work.
+
 ## 0.1.4
 
 - Download, verify, install and restart from the macOS and Windows client.
