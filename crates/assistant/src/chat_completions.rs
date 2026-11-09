@@ -21,6 +21,17 @@ fn content(value: &Value) -> Result<Vec<Value>, String> {
     Ok(parts)
 }
 
+fn replay(message: &mut Value, item: &Value, enabled: bool) {
+    if enabled {
+        if let Some(reasoning) = item.get("chat_reasoning_content") {
+            message["reasoning_content"] = reasoning.clone();
+        }
+        if let Some(details) = item.get("chat_reasoning_details") {
+            message["reasoning_details"] = details.clone();
+        }
+    }
+}
+
 pub fn request_body(body: &Value, replay_reasoning: bool) -> Result<Value, String> {
     let mut messages = Vec::<Value>::new();
     if let Some(instructions) = body["instructions"].as_str() {
@@ -43,17 +54,11 @@ pub fn request_body(body: &Value, replay_reasoning: bool) -> Result<Value, Strin
                         last["tool_calls"] = json!([]);
                     }
                     last["tool_calls"].as_array_mut().unwrap().push(call);
-                    if replay_reasoning && let Some(reasoning) = item.get("chat_reasoning_content")
-                    {
-                        last["reasoning_content"] = reasoning.clone();
-                    }
+                    replay(last, item, replay_reasoning);
                 } else {
                     let mut message =
                         json!({"role":"assistant","content":null,"tool_calls":[call]});
-                    if replay_reasoning && let Some(reasoning) = item.get("chat_reasoning_content")
-                    {
-                        message["reasoning_content"] = reasoning.clone();
-                    }
+                    replay(&mut message, item, replay_reasoning);
                     messages.push(message);
                 }
             }
@@ -100,11 +105,8 @@ pub fn request_body(body: &Value, replay_reasoning: bool) -> Result<Value, Strin
                 };
                 let mut message =
                     json!({"role":if role=="developer" {"system"} else {role},"content":mapped});
-                if replay_reasoning
-                    && role == "assistant"
-                    && let Some(reasoning) = item.get("chat_reasoning_content")
-                {
-                    message["reasoning_content"] = reasoning.clone();
+                if role == "assistant" {
+                    replay(&mut message, item, replay_reasoning);
                 }
                 messages.push(message);
             }
@@ -152,10 +154,15 @@ pub struct ChatStream {
     sse: crate::model_sse::SseDecoder,
     text: String,
     reasoning: String,
+    reasoning_details: Vec<Value>,
     calls: BTreeMap<u64, Call>,
     finish: Option<String>,
 }
 impl ChatStream {
+    pub fn has_text(&self) -> bool {
+        !self.text.trim().is_empty()
+    }
+
     pub fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
         for data in self.sse.feed(chunk)? {
             let data = data.trim();
@@ -179,6 +186,9 @@ impl ChatStream {
                 }
                 if let Some(reasoning) = delta["reasoning_content"].as_str() {
                     self.reasoning.push_str(reasoning);
+                }
+                if let Some(details) = delta["reasoning_details"].as_array() {
+                    self.reasoning_details.extend(details.iter().cloned());
                 }
                 if let Some(text) = delta["content"].as_str() {
                     self.text.push_str(text);
@@ -251,6 +261,11 @@ impl ChatStream {
             for item in &mut output {
                 item["chat_reasoning_content"] = json!(self.reasoning);
             }
+        }
+        if !self.reasoning_details.is_empty()
+            && let Some(first) = output.first_mut()
+        {
+            first["chat_reasoning_details"] = json!(self.reasoning_details);
         }
         for item in &mut output {
             if item["type"] != "reasoning" {

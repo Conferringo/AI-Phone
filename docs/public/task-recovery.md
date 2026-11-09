@@ -1,6 +1,8 @@
 # Task checkpoints and recovery / 任务检查点与恢复
 
-The PostgreSQL run checkpoint stores the goal/context, pending calls, unique local action IDs, model revision, retry counters, step, control epoch and original wake deadline. The public execution ledger is separate from the bounded model-request projection. Closing the browser is not cancellation. Each foreground slice yields after eight model turns without marking the goal complete.
+PostgreSQL checkpoints each task's goal, context, pending calls, action IDs, model revision, retry counters, step, control epoch and wake deadline. Closing the window leaves the task active. If the runtime restarts during an update or after an interruption, it queues the last saved step again. Pause and Resume keep the same task and its original wait deadline. Stop ends the task.
+
+If a dispatched action loses its receipt, the task pauses for verification. Resume marks the outcome as unknown, withdraws the rest of that tool batch and reads the current device for an interrupted phone or computer action. The model continues from that evidence. A new instruction sent to the paused task uses the same recovery path.
 
 ## Model configuration on recovery
 
@@ -34,6 +36,12 @@ Recovery preserves the raw context, pending calls, action IDs and execution reco
 Runtime result finalization locks the run and updates the run, message and top-level event in one transaction. It preserves cancellation and pending user steering. If PostgreSQL is unavailable, the worker holds the claimed run and retries finalization. Unresolved tool records pause the run.
 
 Host sleep/reboot, power-loss recovery and prolonged multi-device operation have separate platform qualification. Current availability is maintained in [release status](release-status.md).
+
+## 任务中断与继续
+
+关闭窗口后，任务可以在后台继续。服务因更新或意外退出而重启时，运行中的任务从最近已保存的步骤重新排队。对话底部的「暂停」保留同一任务和原等待截止时间，「继续」恢复执行，「停止」结束任务。
+
+已派发的操作缺少回执时，任务会暂停。继续或向该任务追加指令后，执行器保留结果未知的记录，撤回同批尚未执行的操作。如果中断发生在手机或电脑上，先重新读取当前界面，再依据新的证据规划。
 
 ## 安装中断
 

@@ -26,10 +26,16 @@ The contributor staging command uses the same native, content-addressed source s
 
 PostgreSQL uses a Docker named volume. Backup/recovery covers the database, Android state, desktop rootfs/home and private files. Recovery goes to an empty target and stays quarantined until explicit validation/activation. Built-in Skills belong to the code version; user Skills, learned experience, memory, knowledge, attachments and disabled-Skill preferences must survive updates. Device resizing and system replacement are separate operations from application updates.
 
-## Update contract
+## Native client updates
 
-The intended update sequence is signed version discovery → compatibility/capacity check → task checkpoint → consistent backup → signature/hash verification → staging → explicit migrations and health checks → activation or rollback. A failed backup prevents activation. Application rollback and database recovery are distinct; irreversible migrations need compatible restored data.
+The client downloads the stable release for its platform and verifies its Ed25519 manifest and installer digest. macOS replaces the application bundle and reopens it. Windows runs the existing Inno installer and relaunches the installed client. The persistent host directory stays outside the application bundle and installer payload. Windows updates reuse the pinned QEMU base and existing writable disk.
 
-Local staging and recovery are available. Signed update discovery and automatic rollback are planned.
+After verifying both installers, sign the update manifest on the release maintainer's machine:
+
+```sh
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.6-macos-arm64.dmg AI-Phone-0.1.6-windows-x64-setup.exe AI-Phone-0.1.6-update.json
+```
+
+Attach the two installers and the signed manifest to the same stable GitHub release. Upload the same manifest as `AI-Phone-update.json` for workbench discovery and under its versioned filename for earlier clients. Keep the private signing key in the release maintainer's offline storage.
 
 Full packages must contain clean Android/Linux baselines, emulator, prebuilt services and matched runtime components, with provenance, notices and applicable corresponding source. See [distribution requirements](distribution-requirements.md), [release status](release-status.md), and [backup/recovery](backup-restore.en.md).

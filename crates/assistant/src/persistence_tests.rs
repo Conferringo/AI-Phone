@@ -10,7 +10,7 @@ use std::{os::unix::fs::PermissionsExt, str::FromStr};
 #[path = "skill_persistence_tests.rs"]
 mod skill_persistence_tests;
 
-async fn database_case(test: impl for<'a> FnOnce(&'a App) -> BoxFuture<'a, ()>) {
+pub(crate) async fn database_case(test: impl for<'a> FnOnce(&'a App) -> BoxFuture<'a, ()>) {
     let url = std::env::var("AI_PHONE_TEST_PERSISTENCE_DATABASE_URL")
         .expect("explicit persistence fixture URL; run scripts/ci-integration.ts");
     let options = PgConnectOptions::from_str(&url).unwrap();

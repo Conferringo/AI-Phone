@@ -26,10 +26,16 @@ host/
 
 PostgreSQL使用Docker命名卷。备份恢复覆盖数据库、Android状态、桌面根文件系统/主目录及私有文件。恢复到空目标，保持隔离直到明确验证/激活。内置Skill属于代码版本；用户Skill、使用经验、记忆、知识、附件与停用偏好必须跨升级保留。设备扩容和系统替换独立于应用更新。
 
-## 升级约定
+## 客户端更新
 
-目标流程：签名版本发现 → 兼容/空间检查 → 任务检查点 → 一致备份 → 签名/摘要校验 → 暂存 → 明确迁移与健康检查 → 激活或回退。备份失败不进入激活；程序回退和数据库恢复分开，不可逆迁移需兼容的数据恢复。
+客户端选择当前平台的正式发行，核验 Ed25519 签名和安装包摘要后安装。macOS 替换应用包并重新打开。Windows 运行现有 Inno 安装器并重新打开客户端，沿用已发布的 QEMU 底盘和原写入层。设备、模型与聊天使用独立的持久数据目录。
 
-当前提供本地暂存与恢复。签名版本发现和自动回退尚未实现。
+两端安装包验收后，在发行维护者本机签署更新清单。
+
+```sh
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AI-Phone-0.1.6-macos-arm64.dmg AI-Phone-0.1.6-windows-x64-setup.exe AI-Phone-0.1.6-update.json
+```
+
+将两个安装包和已签名清单附到同一个 GitHub 正式发行。同一份清单上传为 `AI-Phone-update.json` 供工作台检查，同时保留带版本号的文件名供旧客户端读取。签名私钥由发行维护者离线保管。
 
 完整包必须包含干净Android/Linux基础、模拟器、预编译服务与匹配运行环境，并附来源、声明和适用对应源码。详见[发行要求](distribution-requirements.md)、[当前状态](release-status.md)和[备份恢复](backup-restore.zh-CN.md)。

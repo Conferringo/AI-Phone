@@ -1,5 +1,8 @@
 //! Bounded application redraw sampling; encode only the final frame.
-use crate::{Result, screen::Screen};
+use crate::{
+    Result,
+    screen::{PaintFocus, Screen},
+};
 use image::RgbImage;
 use std::time::Duration;
 use tokio::time::Instant;
@@ -18,14 +21,19 @@ fn changed(before: &RgbImage, after: &RgbImage) -> bool {
     if before.dimensions() != after.dimensions() {
         return true;
     }
+    const CHANNELS: usize = 3;
+    const BLOCK_BYTES: usize = 256 * CHANNELS;
+    let visible_bytes = before.pixels().len() * CHANNELS;
     // A text caret or a few antialiased pixels must not reset the quiet window.
-    before
-        .pixels()
-        .zip(after.pixels())
+    before.as_raw()[..visible_bytes]
+        .chunks(BLOCK_BYTES)
+        .zip(after.as_raw()[..visible_bytes].chunks(BLOCK_BYTES))
+        .filter(|(a, b)| a != b)
+        .flat_map(|(a, b)| a.chunks_exact(CHANNELS).zip(b.chunks_exact(CHANNELS)))
         .filter(|(a, b)| {
-            a.0.iter()
-                .zip(b.0)
-                .map(|(a, b)| u16::from(a.abs_diff(b)))
+            a.iter()
+                .zip(*b)
+                .map(|(a, b)| u16::from(a.abs_diff(*b)))
                 .sum::<u16>()
                 > 30
         })
@@ -34,26 +42,10 @@ fn changed(before: &RgbImage, after: &RgbImage) -> bool {
         == 64
 }
 
-fn settled_state(
-    painted: bool,
-    transition: bool,
-    quiet: Duration,
-    elapsed: Duration,
-) -> Option<&'static str> {
-    let expired = elapsed >= DEADLINE;
-    if painted && quiet >= QUIET && (!transition || expired) {
-        Some("stable")
-    } else if expired {
-        Some(if painted { "changing" } else { "unchanged" })
-    } else {
-        None
-    }
-}
-
 pub async fn after(
     screen: &impl Screen,
     mut previous: RgbImage,
-    before_title: &str,
+    before: &PaintFocus,
 ) -> Result<Frame> {
     let start = Instant::now();
     let mut last_change = start;
@@ -66,23 +58,28 @@ pub async fn after(
             painted = true;
             last_change = now;
         }
-        // A new title can precede document layout by several quiet intervals.
-        // Use the existing budget for transitions, without delaying ordinary input.
-        let transition = screen.title().is_ok_and(|title| title != before_title);
-        let state = settled_state(
-            painted,
-            transition,
-            now.duration_since(last_change),
-            now.duration_since(start),
-        );
+        let elapsed = now.duration_since(start);
+        let expired = elapsed >= DEADLINE;
+        let quiet = now.duration_since(last_change) >= QUIET;
+        // A new document title can precede layout. A confirmed desktop reveal has no app to load.
+        let state = if painted
+            && quiet
+            && (expired
+                || !screen.paint_focus().is_ok_and(|focus| {
+                    focus.title != before.title
+                        && !screen.confirmed_desktop_reveal(before.window_id, focus.window_id)
+                })) {
+            Some("stable")
+        } else if expired {
+            Some(if painted { "changing" } else { "unchanged" })
+        } else {
+            None
+        };
         if let Some(state) = state {
             return Ok(Frame {
                 image,
                 state,
-                wait_ms: now
-                    .duration_since(start)
-                    .as_millis()
-                    .min(u128::from(u32::MAX)) as u32,
+                wait_ms: elapsed.as_millis().min(u128::from(u32::MAX)) as u32,
             });
         }
         if different {
@@ -102,12 +99,14 @@ mod tests {
         count: AtomicUsize,
         busy: bool,
         transition: bool,
+        desktop_reveal: bool,
     }
     impl Screen for Frames {
         fn window(&self) -> Result<crate::screen::WindowIdentity> {
             Ok(crate::screen::WindowIdentity {
                 title: self.title()?,
                 application_class: String::new(),
+                window_id: if self.desktop_reveal { 2 } else { 1 },
                 ..Default::default()
             })
         }
@@ -116,6 +115,8 @@ mod tests {
             let mut image = RgbImage::new(32, 32);
             if self.busy {
                 image.fill(if count.is_multiple_of(2) { 255 } else { 0 });
+            } else if self.desktop_reveal {
+                image.fill(255);
             } else if self.transition {
                 for p in image.pixels_mut().take(if count < 5 { 64 } else { 128 }) {
                     *p = Rgb([255, 255, 255]);
@@ -128,11 +129,16 @@ mod tests {
             Ok(image)
         }
         fn title(&self) -> Result<String> {
-            Ok(if self.transition {
+            Ok(if self.desktop_reveal {
+                "Desktop".into()
+            } else if self.transition {
                 "New document".into()
             } else {
                 String::new()
             })
+        }
+        fn confirmed_desktop_reveal(&self, previous: u32, focused: u32) -> bool {
+            self.desktop_reveal && (previous, focused) == (1, 2)
         }
         fn move_to(&self, _: i16, _: i16) -> Result<()> {
             unreachable!()
@@ -145,6 +151,13 @@ mod tests {
         }
     }
 
+    fn focus(title: &str) -> PaintFocus {
+        PaintFocus {
+            title: title.into(),
+            window_id: 1,
+        }
+    }
+
     #[test]
     fn caret_noise_is_ignored_but_material_and_size_changes_are_retained() {
         let before = RgbImage::new(32, 32);
@@ -153,11 +166,16 @@ mod tests {
             *p = Rgb([255, 255, 255]);
         }
         assert!(!changed(&before, &after));
-        for p in after.pixels_mut().take(64) {
+        for p in after.pixels_mut().skip(256).take(32) {
             *p = Rgb([255, 255, 255]);
         }
         assert!(changed(&before, &after));
         assert!(changed(&before, &RgbImage::new(64, 32)));
+        let padded = RgbImage::from_raw(1, 1, vec![0; 3 + 64 * 3]).unwrap();
+        let mut raw = vec![255; 3 + 64 * 3];
+        raw[..3].fill(0);
+        let changed_padding = RgbImage::from_raw(1, 1, raw).unwrap();
+        assert!(!changed(&padded, &changed_padding));
     }
 
     #[tokio::test]
@@ -166,8 +184,11 @@ mod tests {
             count: AtomicUsize::new(0),
             busy: false,
             transition: false,
+            desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), "").await.unwrap();
+        let frame = after(&screen, RgbImage::new(32, 32), &focus(""))
+            .await
+            .unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
         assert!(frame.wait_ms < 800);
@@ -179,8 +200,11 @@ mod tests {
             count: AtomicUsize::new(0),
             busy: true,
             transition: false,
+            desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), "").await.unwrap();
+        let frame = after(&screen, RgbImage::new(32, 32), &focus(""))
+            .await
+            .unwrap();
         assert_eq!(frame.state, "changing");
         assert!(frame.wait_ms >= 800);
         assert!(frame.wait_ms < 1500);
@@ -192,10 +216,11 @@ mod tests {
             count: AtomicUsize::new(0),
             busy: false,
             transition: false,
+            desktop_reveal: false,
         };
         screen.count.store(4, Ordering::Relaxed);
         let baseline = screen.capture().unwrap();
-        let same = after(&screen, baseline, "").await.unwrap();
+        let same = after(&screen, baseline, &focus("")).await.unwrap();
         assert_eq!(same.state, "unchanged");
         assert!(same.wait_ms >= 800);
     }
@@ -206,12 +231,29 @@ mod tests {
             count: AtomicUsize::new(0),
             busy: false,
             transition: true,
+            desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), "Previous document")
+        let frame = after(&screen, RgbImage::new(32, 32), &focus("Previous document"))
             .await
             .unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
         assert!(frame.wait_ms >= 800 && frame.wait_ms < 1500);
+    }
+
+    #[tokio::test]
+    async fn closing_a_window_to_reveal_the_desktop_returns_after_the_quiet_period() {
+        let screen = Frames {
+            count: AtomicUsize::new(0),
+            busy: false,
+            transition: false,
+            desktop_reveal: true,
+        };
+        let frame = after(&screen, RgbImage::new(32, 32), &focus("Closed window"))
+            .await
+            .unwrap();
+        assert_eq!(frame.state, "stable");
+        assert_eq!(*frame.image.get_pixel(0, 0), Rgb([255, 255, 255]));
+        assert!((80..800).contains(&frame.wait_ms), "{} ms", frame.wait_ms);
     }
 }

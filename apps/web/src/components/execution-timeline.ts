@@ -1,6 +1,6 @@
-type ModelTiming={preparationMs:bigint;headersMs?:bigint;firstByteMs?:bigint;modelMs:bigint;elapsedMs:bigint;requestBytes:bigint};
+type ModelTiming={preparationMs:bigint;headersMs?:bigint;firstByteMs?:bigint;firstTextMs?:bigint;modelMs:bigint;elapsedMs:bigint;requestBytes:bigint};
 export type TimelineEvent={id:string;kind:string;title:string;content:string;status:string;createdAtMs:bigint;finishedAtMs:bigint;modelTiming?:ModelTiming};
-const timingKey=(value?:ModelTiming)=>value?`${value.preparationMs}/${value.headersMs}/${value.firstByteMs}/${value.modelMs}/${value.elapsedMs}/${value.requestBytes}`:'';
+const timingKey=(value?:ModelTiming)=>value?`${value.preparationMs}/${value.headersMs}/${value.firstByteMs}/${value.firstTextMs}/${value.modelMs}/${value.elapsedMs}/${value.requestBytes}`:'';
 /** Read replicas/retries may temporarily return a shorter list; already seen steps remain. */
 export function mergeTimeline<T extends TimelineEvent>(previous:T[],incoming:T[]):T[]{
  const items=new Map(previous.map(item=>[item.id,item]));for(const item of incoming){const old=items.get(item.id);items.set(item.id,old&&old.kind===item.kind&&old.title===item.title&&old.content===item.content&&old.status===item.status&&old.createdAtMs===item.createdAtMs&&old.finishedAtMs===item.finishedAtMs&&timingKey(old.modelTiming)===timingKey(item.modelTiming)?old:item);}
@@ -13,7 +13,8 @@ export function tracePerformance(events:TimelineEvent[]){
  const result={preparation:0,headers:0,firstByte:0,stream:0,tools:0,audits:0,requests:calls.length};
  for(const call of calls){const total=Number(call.modelMs),headers=Number(call.headersMs??call.modelMs),first=Number(call.firstByteMs??call.modelMs);result.preparation+=Number(call.preparationMs);result.headers+=headers;result.firstByte+=Math.max(0,first-headers);result.stream+=Math.max(0,total-first);}
  for(const event of events){if(event.finishedAtMs<=0n)continue;const duration=Math.max(0,Number(event.finishedAtMs-event.createdAtMs));if(event.kind==='tool'&&event.title!=='任务验收')result.tools+=duration;if(event.kind==='audit')result.audits+=duration;}
- return result;
+ const firstText=calls.find(call=>call.firstTextMs!==undefined)?.firstTextMs;
+ return {...result,firstText:firstText===undefined?undefined:Number(firstText)};
 }
 export function waitingForModel(events:TimelineEvent[]){return events.some(event=>event.kind==='model'&&event.status==='running');}
 export function traceWaitingSeconds(wakeAt:number,now:number,status?:string){if(!Number.isFinite(wakeAt)||['paused','failed','canceled','succeeded','completed'].includes(status||''))return 0;return Math.max(0,Math.ceil((wakeAt-now)/1000));}

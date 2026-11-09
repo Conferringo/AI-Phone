@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.6 Apocalypse
+
+- Review the version, name, and notes from the workbench update icon. Confirm to download, verify, install, and restart.
+- Continue interrupted tasks from their saved checkpoints.
+- Expand model provider options and preserve native tool results across model turns.
+- Reduce device observation work, Linux screen confirmation time, and background workbench requests.
+- Store WhatsApp sessions in PostgreSQL and index the current task lookup.
+
+## 0.1.5
+
+- Record the first model text separately from the first network bytes.
+- Start work on the selected computer without listing devices again.
+- Refresh stale phone observations immediately when no action was executed.
+- Wake on committed instructions and avoid redundant database reads during model work.
+
+## 0.1.4
+
+- Download, verify, install and restart from the macOS and Windows client.
+- Reuse the existing device disks, model configuration and conversations.
+- Read macOS host capacity without starting command-line tools.
+- Reduce model configuration work when loading the registry.
+
 ## 0.1.3
 
 - Start new chat requests promptly and refresh saved activity as it arrives.
@@ -7,6 +29,7 @@
 - Reduce Android observation work by reusing screen dimensions and reading notification data in parallel.
 - Handle DeepSeek thinking options on Anthropic-compatible endpoints.
 - Require sign-in for access over the local network.
+- Keep the existing Windows device disk during updates and check for client releases from the app.
 
 ## 0.1.2
 

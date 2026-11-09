@@ -1,5 +1,7 @@
 {
-  "version": "0.1.3",
+  "version": "0.1.6",
+  "release_name": "Apocalypse",
+  "release_notes": "Resume interrupted tasks from saved checkpoints. Review signed updates in the workbench, then download, install, and restart in the app. Faster screen recognition, device feedback, and task lookups. More model providers and PostgreSQL-backed WhatsApp sessions.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

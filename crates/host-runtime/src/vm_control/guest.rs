@@ -90,7 +90,13 @@ async fn handle(mut stream: TcpStream, key: &hmac::Key) -> Result<()> {
     let operation = LinuxVmOperation::try_from(request.operation)
         .map_err(|_| Error::Invalid("vm_control_operation"))?;
     let flag = match operation {
-        LinuxVmOperation::Ping => return reply(&mut stream, key, &nonce, Ok(Vec::new())).await,
+        LinuxVmOperation::Ping => {
+            let release = tokio::fs::read_to_string("/opt/aiphone/bundle/source.sha256")
+                .await
+                .map(|value| value.trim().as_bytes().to_vec())
+                .map_err(Error::from);
+            return reply(&mut stream, key, &nonce, release).await;
+        }
         LinuxVmOperation::Shutdown => {
             // BusyBox asks PID 1 to shut down and flush the persistent guest disk.
             reply(&mut stream, key, &nonce, Ok(Vec::new())).await?;

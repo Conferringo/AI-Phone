@@ -6,9 +6,20 @@ pub(crate) async fn recover(db: &PgPool) -> Result<(), sqlx::Error> {
     // Startup holds the installation's listening socket. Preserve checkpoints,
     // unknown actions and wait deadlines; only the previous process's leases end.
     let mut tx = db.begin().await?;
-    sqlx::query("UPDATE runs SET status='queued' WHERE status='running'")
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query(
+        "WITH interrupted AS (
+        UPDATE runs SET status='queued' WHERE status='running' RETURNING id
+    ) UPDATE harness_events e SET status='waiting' FROM interrupted r
+        WHERE e.id=r.id AND e.kind='task' AND e.status='running'",
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query(
+        "UPDATE harness_events SET status='canceled',finished_at=now()
+        WHERE kind='model' AND status='running'",
+    )
+    .execute(&mut *tx)
+    .await?;
     sqlx::query("DELETE FROM device_execution_leases")
         .execute(&mut *tx)
         .await?;

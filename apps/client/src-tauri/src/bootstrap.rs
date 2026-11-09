@@ -411,7 +411,7 @@ fn start_windows_backend(
     let profile = serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?;
     if components.qemu {
         let bundle = resource.join("qemu");
-        let base = windows_host::VmManifest::base_identity(&bundle)?;
+        let (base, release) = windows_host::VmManifest::identities(&bundle)?;
         let home = folder.join("user/qemu");
         let control = vm_control::GUEST_PORT;
         manager.set(folder, "backend", "running", "")?;
@@ -425,6 +425,7 @@ fn start_windows_backend(
                 web_port: 17860,
                 control_port: control,
                 base_sha256: &base,
+                release_sha256: release.as_deref(),
             },
             &profile,
             &cancelled,
@@ -532,8 +533,18 @@ pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", windows))]
 pub fn upgrade_needed(app: &tauri::AppHandle) -> Result<bool, String> {
+    #[cfg(windows)]
+    if !app
+        .path()
+        .resource_dir()
+        .map_err(|error| error.to_string())?
+        .join("host/qemu/guest/release.ext4")
+        .is_file()
+    {
+        return Ok(false);
+    }
     checkpoint::upgrade_needed(&home(app)?)
 }
 

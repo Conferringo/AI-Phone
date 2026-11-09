@@ -12,6 +12,8 @@ fn main() {
         "start_deployment",
         "cancel_deployment",
         "accept_deployment_license",
+        "check_client_update",
+        "install_client_update",
     ]);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))
         .expect("Unable to build client capability manifest");

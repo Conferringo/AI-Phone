@@ -11,8 +11,7 @@ pub struct Target {
     pub element: wire::PhoneElement,
     key: String,
 }
-#[derive(Clone)]
-pub struct Snapshot {
+struct Snapshot {
     id: String,
     epoch: u64,
     revision: u64,
@@ -22,7 +21,16 @@ pub struct Snapshot {
     created: Instant,
     targets: Vec<Target>,
     native_hash: String,
+    ocr: Option<OcrEvidence>,
+}
+struct OcrEvidence {
+    png_sha256: [u8; 32],
     grid: Vec<u8>,
+}
+pub struct ResolvedAction {
+    pub action: wire::device_action_request::Action,
+    pub scroll: Option<ScrollAttempt>,
+    pub dimensions: (u32, u32),
 }
 #[derive(Clone)]
 pub struct ScrollAttempt {
@@ -34,7 +42,7 @@ pub struct ScrollAttempt {
 }
 #[derive(Default)]
 pub struct GroundingState {
-    snapshots: VecDeque<Snapshot>,
+    snapshots: VecDeque<Arc<Snapshot>>,
     pending_scroll: Option<ScrollAttempt>,
     blocked: Option<ScrollAttempt>,
 }
@@ -394,14 +402,17 @@ pub async fn observe(
     let (png, width, height) = capture_frame(runner).await?;
     let mut targets = parse_native(&xml, &app, width, height);
     let hash = native_hash(&targets);
-    let mut grid = vec![];
+    let mut ocr_evidence = None;
     let mut note = String::new();
     if !native_content_available(&targets, height)
         || ["always", "only"].contains(&request.ocr_mode.as_str())
     {
         match ocr(runner, &png, width, height).await {
             Ok((mut recognized, visual)) => {
-                grid = visual;
+                ocr_evidence = Some(OcrEvidence {
+                    png_sha256: Sha256::digest(&png).into(),
+                    grid: visual,
+                });
                 targets.append(&mut recognized);
                 note = "OCR文字仅为可见文字区域，不保证是按钮".into();
             }
@@ -445,7 +456,7 @@ pub async fn observe(
             blocked.direction
         );
     }
-    cache.snapshots.push_back(Snapshot {
+    cache.snapshots.push_back(Arc::new(Snapshot {
         id: id.clone(),
         epoch,
         revision,
@@ -455,8 +466,8 @@ pub async fn observe(
         created: Instant::now(),
         targets: targets.clone(),
         native_hash: hash,
-        grid,
-    });
+        ocr: ocr_evidence,
+    }));
     while cache.snapshots.len() > 4 {
         cache.snapshots.pop_front();
     }
@@ -528,7 +539,7 @@ pub async fn resolve(
     request: &wire::DeviceActionRequest,
     epoch: u64,
     revision: u64,
-) -> Result<Option<(wire::device_action_request::Action, Option<ScrollAttempt>)>, String> {
+) -> Result<Option<ResolvedAction>, String> {
     use wire::device_action_request::Action;
     let (id, element_id, direction) = match request.action.as_ref() {
         Some(Action::TapElement(v)) => {
@@ -556,10 +567,8 @@ pub async fn resolve(
     }
     .ok_or("stale_target:观察记录不存在或服务已重启，请重新观察")?;
     validate_snapshot(&snapshot, epoch, revision)?;
-    if dimensions(runner).await != (snapshot.width, snapshot.height)
-        || foreground(runner).await? != snapshot.app
-    {
-        return Err("stale_target:前台应用或方向已变化，请重新观察".into());
+    if foreground(runner).await? != snapshot.app {
+        return Err("stale_target:前台应用已变化，请重新观察".into());
     }
     let target = element_id
         .map(|id| {
@@ -572,30 +581,9 @@ pub async fn resolve(
         .transpose()?;
     let requires_ocr = target
         .map(|t| t.element.source == "ocr")
-        .unwrap_or(!snapshot.grid.is_empty() || !has_native_targets(&snapshot.targets));
+        .unwrap_or(snapshot.ocr.is_some() || !has_native_targets(&snapshot.targets));
     if requires_ocr {
-        let (png, w, h) = capture_frame(runner).await?;
-        let (fresh, grid) = ocr(runner, &png, w, h).await?;
-        if (w, h) != (snapshot.width, snapshot.height) || !similar_grid(&snapshot.grid, &grid) {
-            return Err("stale_target:画面已变化，请重新观察".into());
-        }
-        if let Some(target) = target {
-            let b = target.element.bounds.as_ref().unwrap();
-            let matches = fresh
-                .iter()
-                .filter(|candidate| {
-                    let c = candidate.element.bounds.as_ref().unwrap();
-                    candidate.element.text == target.element.text
-                        && b.left.abs_diff(c.left) <= 4
-                        && b.top.abs_diff(c.top) <= 4
-                        && b.right.abs_diff(c.right) <= 4
-                        && b.bottom.abs_diff(c.bottom) <= 4
-                })
-                .count();
-            if matches != 1 {
-                return Err("stale_target:OCR文字已变化或无法唯一核对，未执行".into());
-            }
-        }
+        validate_ocr(runner, &snapshot, target).await?;
     } else {
         let fresh = parse_native(
             &capture_ui_tree(runner).await,
@@ -614,8 +602,10 @@ pub async fn resolve(
             return Err("stale_target:坐标所依据的界面已变化，未执行".into());
         }
     }
-    if foreground(runner).await? != snapshot.app {
-        return Err("stale_target:执行前应用切换，未执行".into());
+    let dimensions = dimensions(runner).await;
+    if dimensions != (snapshot.width, snapshot.height) || foreground(runner).await? != snapshot.app
+    {
+        return Err("stale_target:执行前应用或方向已变化，请重新观察".into());
     }
     if let Some(target) = target {
         let e = &target.element;
@@ -643,8 +633,8 @@ pub async fn resolve(
                 return Err("scroll_no_change:此页面已验证同向滚动无变化，未重复执行；请换方向或等待内容改变".into());
             }
             let attempt = ScrollAttempt {
-                app: snapshot.app,
-                hash: snapshot.native_hash,
+                app: snapshot.app.clone(),
+                hash: snapshot.native_hash.clone(),
                 container,
                 direction: direction.into(),
                 revision: revision + 1,
@@ -673,20 +663,77 @@ pub async fn resolve(
                     swipe.duration_ms = value.duration_ms;
                 }
             }
-            return Ok(Some((Action::Swipe(swipe), Some(attempt))));
+            return Ok(Some(ResolvedAction {
+                action: Action::Swipe(swipe),
+                scroll: Some(attempt),
+                dimensions,
+            }));
         }
         if e.source == "native" && !e.clickable && !e.editable {
             return Err("invalid_target:这是只读文字或容器，不是可点击控件".into());
         }
-        return Ok(Some((
-            Action::Tap(wire::TapAction {
+        return Ok(Some(ResolvedAction {
+            action: Action::Tap(wire::TapAction {
                 x: b.left + (b.right - b.left) / 2,
                 y: b.top + (b.bottom - b.top) / 2,
             }),
-            None,
-        )));
+            scroll: None,
+            dimensions,
+        }));
     }
-    Ok(Some((request.action.clone().ok_or("缺少动作")?, None)))
+    Ok(Some(ResolvedAction {
+        action: request.action.clone().ok_or("缺少动作")?,
+        scroll: None,
+        dimensions,
+    }))
+}
+
+async fn validate_ocr(
+    runner: &Runner,
+    snapshot: &Snapshot,
+    target: Option<&Target>,
+) -> Result<(), String> {
+    let previous = snapshot
+        .ocr
+        .as_ref()
+        .ok_or("stale_target:没有可复查的OCR画面，请重新观察")?;
+    let (png, width, height) = capture_frame(runner).await?;
+    if (width, height) != (snapshot.width, snapshot.height) {
+        return Err("stale_target:画面已变化，请重新观察".into());
+    }
+    let current_sha256: [u8; 32] = Sha256::digest(&png).into();
+    let recognized;
+    let candidates = if current_sha256 == previous.png_sha256 {
+        // The freshly captured PNG is identical, so its OCR result still applies.
+        &snapshot.targets
+    } else {
+        let (fresh, grid) = ocr(runner, &png, width, height).await?;
+        if !similar_grid(&previous.grid, &grid) {
+            return Err("stale_target:画面已变化，请重新观察".into());
+        }
+        recognized = fresh;
+        &recognized
+    };
+    if let Some(target) = target {
+        let bounds = target.element.bounds.as_ref().unwrap();
+        let matches = candidates
+            .iter()
+            .filter(|candidate| {
+                let element = &candidate.element;
+                let current = element.bounds.as_ref().unwrap();
+                element.source == "ocr"
+                    && element.text == target.element.text
+                    && bounds.left.abs_diff(current.left) <= 4
+                    && bounds.top.abs_diff(current.top) <= 4
+                    && bounds.right.abs_diff(current.right) <= 4
+                    && bounds.bottom.abs_diff(current.bottom) <= 4
+            })
+            .count();
+        if matches != 1 {
+            return Err("stale_target:OCR文字已变化或无法唯一核对，未执行".into());
+        }
+    }
+    Ok(())
 }
 pub async fn record_scroll(runner: &Runner, attempt: Option<ScrollAttempt>, success: bool) {
     if success && let Some(attempt) = attempt {
@@ -898,7 +945,7 @@ mod tests {
             created: Instant::now(),
             targets: vec![],
             native_hash: String::new(),
-            grid: vec![],
+            ocr: None,
         };
         assert!(validate_snapshot(&s, 3, 4).is_ok());
         assert!(validate_snapshot(&s, 4, 4).is_err());

@@ -470,7 +470,7 @@ async fn fresh_backend_uses_native_services_and_never_creates_desktop_or_starts_
 
 #[tokio::test]
 async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_desktop() {
-    for running in [false, true] {
+    for (running, staged) in [(false, false), (false, true), (true, true)] {
         let folder = tempfile::tempdir().unwrap();
         let root = folder.path().canonicalize().unwrap();
         let mut backend = fixture(
@@ -483,6 +483,14 @@ async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_d
         );
         fs::create_dir_all(root.join("data/assistant")).unwrap();
         fs::write(root.join("data/assistant/token"), "keep-token").unwrap();
+        if staged {
+            fs::create_dir_all(root.join("runtime/services/bin")).unwrap();
+            fs::write(
+                root.join("runtime/services/bin/desktop-bridge"),
+                b"guest bridge",
+            )
+            .unwrap();
+        }
         backend
             .start(Path::new("images.payload"), Path::new("/root"), "127.0.0.1")
             .await
@@ -509,7 +517,56 @@ async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_d
         if !running {
             assert_eq!(starts[0].1, ["start".into(), "a".repeat(64)]);
         }
+        let calls = &backend.execute.calls;
+        let update = calls
+            .iter()
+            .position(|(_, args, _)| args.first().map(String::as_str) == Some("exec"));
+        assert_eq!(update.is_some(), staged);
+        if let Some(index) = update {
+            assert_eq!(calls[index].1[4], "a".repeat(64));
+            assert_eq!(calls[index].2, b"guest bridge");
+            let first_service = calls
+                .iter()
+                .position(|(_, args, _)| args[0] == "--service-control" && args[3] == "start")
+                .unwrap();
+            assert!(index < first_service);
+        }
     }
+}
+
+#[tokio::test]
+async fn upgrade_adopts_only_containers_with_the_same_persistent_state() {
+    let folder = tempfile::tempdir().unwrap();
+    let home = folder.path().canonicalize().unwrap();
+    let current = home.join("releases").join("a".repeat(64));
+    let previous = home.join("releases").join("b".repeat(64));
+    fs::create_dir_all(home.join("user/data")).unwrap();
+    for release in [&current, &previous] {
+        fs::create_dir_all(release).unwrap();
+        fs::write(release.join(crate::manifest::HOST_MANIFEST), []).unwrap();
+        crate::links::persistent(release, &home, true).unwrap();
+    }
+    let mut backend = fixture(
+        &current,
+        Fixture {
+            container: Some((previous.to_str().unwrap().into(), true)),
+            ..Fixture::default()
+        },
+    );
+    assert!(
+        backend
+            .containers()
+            .await
+            .unwrap()
+            .contains_key("ai-phone-desktop")
+    );
+
+    fs::remove_file(previous.join("data")).unwrap();
+    crate::links::symbolic(&current, &previous.join("data")).unwrap();
+    assert!(matches!(
+        backend.containers().await,
+        Err(Error::Invalid("foreign_installation"))
+    ));
 }
 
 #[tokio::test]

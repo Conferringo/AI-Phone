@@ -190,6 +190,7 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
     settle_messages(&mut tx).await?;
     let rows=sqlx::query("SELECT m.* FROM device_messages m WHERE m.status='queued' ORDER BY created_at LIMIT 10 FOR UPDATE SKIP LOCKED").fetch_all(&mut *tx).await?;
+    let mut admitted = Vec::new();
     for row in rows {
         let device: String = row.get("target_device_id");
         let Some(conversation) = ready_conversation(&mut tx, &device).await? else {
@@ -197,7 +198,10 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
         };
         let mut admission = tx.begin().await?;
         match start_receiving_run(&mut admission, &app.settings, &row, conversation).await {
-            Ok(()) => admission.commit().await?,
+            Ok(()) => {
+                admission.commit().await?;
+                admitted.push(conversation);
+            }
             Err(error) => {
                 let reason = match error {
                     sqlx::Error::Protocol(code) if code == "model_missing" => {
@@ -215,7 +219,14 @@ async fn tick(app: &App) -> std::result::Result<(), sqlx::Error> {
             }
         }
     }
-    tx.commit().await
+    tx.commit().await?;
+    if !admitted.is_empty() {
+        app.run_signals.queue.notify_one();
+    }
+    for conversation in admitted {
+        app.run_signals.chat_changed(conversation);
+    }
+    Ok(())
 }
 pub async fn work(app: Shared) {
     loop {

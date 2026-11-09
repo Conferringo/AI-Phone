@@ -1,0 +1,448 @@
+use base64::{Engine, engine::general_purpose::STANDARD};
+use reqwest::Client;
+use ring::signature::{ED25519, UnparsedPublicKey};
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{error::Error, ffi::OsString, path::PathBuf, time::Duration};
+use tauri::{
+    AppHandle, Manager, Wry,
+    menu::MenuItem,
+    window::{ProgressBarState, ProgressBarStatus},
+};
+use tokio::{io::AsyncWriteExt, sync::Mutex};
+
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(windows)]
+mod windows;
+
+pub const ID: &str = "client-updates";
+pub const CHECK: &str = "Check for Updates…";
+const REPOSITORY: &str = "MrMilkDragon/AI-Phone";
+const MAX_MANIFEST: usize = 16 * 1024;
+const MAX_INSTALLER: u64 = 2 * 1024 * 1024 * 1024;
+type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+
+#[derive(Clone, Copy)]
+pub enum Platform {
+    Mac,
+    Windows,
+}
+
+impl Platform {
+    fn installer(self, version: &Version) -> String {
+        let suffix = match self {
+            Self::Mac => "macos-arm64.dmg",
+            Self::Windows => "windows-x64-setup.exe",
+        };
+        format!("AI-Phone-{version}-{suffix}")
+    }
+
+    fn artifact(self, manifest: Manifest) -> Artifact {
+        match self {
+            Self::Mac => manifest.macos_arm64,
+            Self::Windows => manifest.windows_x64,
+        }
+    }
+}
+
+pub fn platform() -> Option<Platform> {
+    match (std::env::consts::OS, std::env::consts::ARCH) {
+        ("macos", "aarch64") => Some(Platform::Mac),
+        ("windows", "x86_64") => Some(Platform::Windows),
+        _ => None,
+    }
+}
+
+pub struct Menu {
+    item: MenuItem<Wry>,
+    offered: Mutex<Option<Offer>>,
+}
+
+impl Menu {
+    pub fn new(item: MenuItem<Wry>) -> Self {
+        Self {
+            item,
+            offered: Mutex::new(None),
+        }
+    }
+}
+
+pub fn cleanup_current(app: &AppHandle) {
+    if let (Some(platform), Ok(cache)) = (platform(), app.path().app_cache_dir()) {
+        let name = platform.installer(&app.package_info().version);
+        let _ = std::fs::remove_file(cache.join("client-updates").join(name));
+    }
+}
+
+#[derive(Deserialize)]
+struct SignedManifest {
+    manifest: String,
+    signature: String,
+}
+
+#[derive(Deserialize)]
+struct Manifest {
+    version: String,
+    name: String,
+    notes: String,
+    macos_arm64: Artifact,
+    windows_x64: Artifact,
+}
+
+#[derive(Deserialize)]
+struct Artifact {
+    size: u64,
+    sha256: String,
+}
+
+struct Offer {
+    version: Version,
+    name: String,
+    notes: String,
+    artifact: Artifact,
+}
+
+#[derive(Serialize)]
+pub struct UpdateDetails {
+    version: String,
+    name: String,
+    notes: String,
+}
+
+impl From<&Offer> for UpdateDetails {
+    fn from(offer: &Offer) -> Self {
+        Self {
+            version: offer.version.to_string(),
+            name: offer.name.clone(),
+            notes: offer.notes.clone(),
+        }
+    }
+}
+
+fn asset_url(version: &Version, name: &str) -> String {
+    format!("https://github.com/{REPOSITORY}/releases/download/v{version}/{name}")
+}
+
+fn verify_manifest(
+    bytes: &[u8],
+    key: &[u8],
+    current: &Version,
+    platform: Platform,
+) -> Result<Option<Offer>> {
+    let signed: SignedManifest = serde_json::from_slice(bytes)?;
+    let signature = STANDARD.decode(signed.signature)?;
+    UnparsedPublicKey::new(&ED25519, key)
+        .verify(signed.manifest.as_bytes(), &signature)
+        .map_err(|_| "Update signature did not verify")?;
+    let manifest: Manifest = serde_json::from_str(&signed.manifest)?;
+    let version = Version::parse(&manifest.version)?;
+    if !version.pre.is_empty() || !version.build.is_empty() || &version <= current {
+        return Ok(None);
+    }
+    let name = manifest.name.trim().to_owned();
+    let notes = manifest.notes.trim().to_owned();
+    if name.is_empty() || notes.is_empty() {
+        return Err("The signed release is missing its name or notes".into());
+    }
+    let artifact = platform.artifact(manifest);
+    if !(1..MAX_INSTALLER).contains(&artifact.size)
+        || artifact.sha256.len() != 64
+        || !artifact
+            .sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        return Err("Invalid installer metadata".into());
+    }
+    Ok(Some(Offer {
+        version,
+        name,
+        notes,
+        artifact,
+    }))
+}
+
+fn client() -> Result<Client> {
+    Ok(Client::builder()
+        .user_agent(concat!("AI-Phone/", env!("CARGO_PKG_VERSION")))
+        .https_only(true)
+        .connect_timeout(Duration::from_secs(12))
+        .read_timeout(Duration::from_secs(60))
+        .build()?)
+}
+
+async fn check(current: &Version, platform: Platform) -> Result<Option<Offer>> {
+    let client = client()?;
+    let response = client
+        .get(format!(
+            "https://github.com/{REPOSITORY}/releases/latest/download/AI-Phone-update.json"
+        ))
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
+    let mut response = response.error_for_status()?;
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await? {
+        if bytes.len() + chunk.len() > MAX_MANIFEST {
+            return Err("Update manifest exceeded its size limit".into());
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    #[derive(Deserialize)]
+    struct Policy {
+        public_key: String,
+    }
+    let policy: Policy =
+        serde_json::from_str(include_str!("../../../../config/client-update.json"))?;
+    verify_manifest(
+        &bytes,
+        &STANDARD.decode(policy.public_key)?,
+        current,
+        platform,
+    )
+}
+
+async fn download(app: &AppHandle, offer: &Offer, platform: Platform) -> Result<PathBuf> {
+    let folder = app.path().app_cache_dir()?.join("client-updates");
+    std::fs::create_dir_all(&folder)?;
+    let name = platform.installer(&offer.version);
+    let mut response = client()?
+        .get(asset_url(&offer.version, &name))
+        .send()
+        .await?
+        .error_for_status()?;
+    let temporary = tempfile::NamedTempFile::new_in(&folder)?;
+    let mut file = tokio::fs::File::from_std(temporary.reopen()?);
+    let mut hash = Sha256::new();
+    let mut size = 0;
+    let mut shown = 0;
+    while let Some(chunk) = response.chunk().await? {
+        size += chunk.len() as u64;
+        if size > offer.artifact.size {
+            return Err("Installer exceeded the signed size".into());
+        }
+        hash.update(&chunk);
+        file.write_all(&chunk).await?;
+        let percent = size * 100 / offer.artifact.size;
+        if percent != shown {
+            shown = percent;
+            progress(app, ProgressBarStatus::Normal, Some(percent));
+        }
+    }
+    if size != offer.artifact.size || format!("{:x}", hash.finalize()) != offer.artifact.sha256 {
+        return Err("Installer did not match the signed release".into());
+    }
+    file.sync_all().await?;
+    drop(file);
+    let path = folder.join(name);
+    temporary.persist(&path)?;
+    Ok(path)
+}
+
+fn progress(app: &AppHandle, status: ProgressBarStatus, value: Option<u64>) {
+    if let Some(window) = app
+        .get_webview_window("workbench")
+        .or_else(|| app.get_webview_window("connection"))
+    {
+        let _ = window.set_progress_bar(ProgressBarState {
+            status: Some(status),
+            progress: value,
+        });
+    }
+}
+
+pub async fn refresh(app: &AppHandle) -> Result<Option<UpdateDetails>> {
+    let Some(platform) = platform() else {
+        return Ok(None);
+    };
+    let menu = app.state::<Menu>();
+    let mut offered = menu.offered.lock().await;
+    let _ = menu.item.set_enabled(false);
+    let _ = menu.item.set_text("Checking for Updates…");
+    match check(&app.package_info().version, platform).await {
+        Ok(next) => {
+            *offered = next;
+            show_menu(&menu, offered.as_ref(), "Up to Date · Check Again");
+            Ok(offered.as_ref().map(UpdateDetails::from))
+        }
+        Err(error) => {
+            show_menu(
+                &menu,
+                offered.as_ref(),
+                "Could Not Check for Updates · Retry",
+            );
+            Err(error)
+        }
+    }
+}
+
+fn show_menu(menu: &Menu, offer: Option<&Offer>, no_offer_label: &str) {
+    let label = offer.map_or_else(
+        || no_offer_label.to_owned(),
+        |offer| format!("Install Update {}…", offer.version),
+    );
+    let _ = menu.item.set_text(label);
+    let _ = menu.item.set_enabled(true);
+}
+
+pub async fn apply(app: &AppHandle, requested: Option<Version>) -> Result<()> {
+    let platform = platform().ok_or("Updates are unavailable on this platform")?;
+    let menu = app.state::<Menu>();
+    let offered = menu
+        .offered
+        .try_lock()
+        .map_err(|_| "An update operation is already in progress")?;
+    let offer = offered.as_ref().ok_or("Check for an update first")?;
+    if requested.is_some_and(|version| version != offer.version) {
+        return Err("The available update has changed".into());
+    }
+    let _ = menu.item.set_enabled(false);
+    let _ = menu
+        .item
+        .set_text(format!("Downloading Update {}…", offer.version));
+    match install(app, offer, platform).await {
+        Ok(()) => {
+            app.exit(0);
+            Ok(())
+        }
+        Err(error) => {
+            progress(app, ProgressBarStatus::None, None);
+            show_menu(&menu, Some(offer), CHECK);
+            Err(error)
+        }
+    }
+}
+
+pub fn select(app: &AppHandle) {
+    if platform().is_none() {
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let menu = app.state::<Menu>();
+        let ready = match menu.offered.try_lock() {
+            Ok(offer) => offer.is_some(),
+            Err(_) => return,
+        };
+        let result = if ready {
+            apply(&app, None).await
+        } else {
+            refresh(&app).await.map(|_| ())
+        };
+        if let Err(error) = result {
+            eprintln!("Client update: {error}");
+            if ready {
+                let _ = menu.item.set_text("Update Interrupted · Retry");
+            }
+        }
+    });
+}
+
+async fn install(app: &AppHandle, offer: &Offer, platform: Platform) -> Result<()> {
+    if crate::bootstrap::is_running(app) {
+        return Err("Wait for device setup to finish".into());
+    }
+    let downloaded = download(app, offer, platform).await?;
+    if crate::bootstrap::is_running(app) {
+        return Err("Wait for device setup to finish".into());
+    }
+    progress(app, ProgressBarStatus::Indeterminate, None);
+    let _ = app
+        .state::<Menu>()
+        .item
+        .set_text(format!("Installing Update {}…", offer.version));
+    #[cfg(target_os = "macos")]
+    macos::launch(app, &downloaded, &offer.version)?;
+    #[cfg(windows)]
+    windows::launch(app, &downloaded, &offer.version)?;
+    Ok(())
+}
+
+pub(crate) fn run(args: &[OsString]) -> Option<i32> {
+    #[cfg(target_os = "macos")]
+    return macos::run(args);
+    #[cfg(windows)]
+    return windows::run(args);
+    #[cfg(not(any(target_os = "macos", windows)))]
+    {
+        let _ = args;
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ring::{
+        rand::SystemRandom,
+        signature::{Ed25519KeyPair, KeyPair},
+    };
+
+    #[test]
+    fn stable_alias_offers_only_a_newer_signed_release_and_its_platform_installer() {
+        let current = Version::new(0, 1, 6);
+        let version = Version::new(0, 1, 7);
+        let document = Ed25519KeyPair::generate_pkcs8(&SystemRandom::new()).unwrap();
+        let key = Ed25519KeyPair::from_pkcs8(document.as_ref()).unwrap();
+        let mac = serde_json::json!({"size":17,"sha256":"a".repeat(64)});
+        let windows = serde_json::json!({"size":29,"sha256":"b".repeat(64)});
+        let manifest = serde_json::json!({
+            "version":version.to_string(),
+            "name":"Release name",
+            "notes":"Signed release notes",
+            "macos_arm64":mac,
+            "windows_x64":windows
+        })
+        .to_string();
+        let signature = STANDARD.encode(key.sign(manifest.as_bytes()).as_ref());
+        let envelope = |manifest| {
+            serde_json::to_vec(&serde_json::json!({"manifest":manifest,"signature":signature}))
+                .unwrap()
+        };
+        let offer = verify_manifest(
+            &envelope(manifest.clone()),
+            key.public_key().as_ref(),
+            &current,
+            Platform::Windows,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(offer.version, version);
+        assert_eq!(offer.artifact.size, 29);
+        assert_eq!(offer.name, "Release name");
+        assert_eq!(offer.notes, "Signed release notes");
+        let mac = verify_manifest(
+            &envelope(manifest.clone()),
+            key.public_key().as_ref(),
+            &current,
+            Platform::Mac,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(mac.artifact.size, 17);
+        assert!(
+            verify_manifest(
+                &envelope(manifest.replace("Signed release notes", "Untrusted notes")),
+                key.public_key().as_ref(),
+                &current,
+                Platform::Windows
+            )
+            .is_err()
+        );
+        assert!(
+            verify_manifest(
+                &envelope(manifest),
+                key.public_key().as_ref(),
+                &version,
+                Platform::Windows
+            )
+            .unwrap()
+            .is_none()
+        );
+    }
+}

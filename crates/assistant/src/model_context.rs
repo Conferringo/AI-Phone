@@ -27,6 +27,7 @@ pub fn after_model_switch(context: &[Value], boundary: usize) -> Cow<'_, [Value]
                     for key in [
                         "provider_native",
                         "chat_reasoning_content",
+                        "chat_reasoning_details",
                         "chat_extra_content",
                         "anthropic_blocks",
                     ] {
@@ -68,25 +69,21 @@ pub fn for_chat_api(context: &[Value]) -> Vec<Value> {
             batch.clear();
         }
     }
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(compacted.len());
     let mut calls = HashMap::new();
     let mut pending = Vec::new();
     for (index, item) in compacted.iter().enumerate() {
         match item["type"].as_str() {
             Some("reasoning") => {
-                let following: Vec<_> = compacted[index + 1..]
+                let complete_turn = compacted[index + 1..]
                     .iter()
                     .take_while(|v| {
                         !matches!(v["role"].as_str(), Some("user" | "system" | "developer"))
                             && v["type"] != "function_call_output"
                     })
                     .filter(|v| v["type"] == "function_call")
-                    .collect();
-                if item["anthropic_blocks"].is_array()
-                    && following
-                        .iter()
-                        .all(|v| native.contains(v["call_id"].as_str().unwrap_or("")))
-                {
+                    .all(|v| native.contains(v["call_id"].as_str().unwrap_or("")));
+                if item["anthropic_blocks"].is_array() && complete_turn {
                     result.push(item.clone());
                 }
             }
@@ -128,30 +125,32 @@ pub fn for_chat_api(context: &[Value]) -> Vec<Value> {
 // A provider closes a native tool turn at the next user/system input.
 // Interrupted calls remain evidence records; they must never be replayed.
 fn completed_native_calls(context: &[Value]) -> HashSet<&str> {
-    context
-        .iter()
-        .enumerate()
-        .filter_map(|(index, item)| {
-            let id = item["call_id"].as_str()?;
-            if item["type"] != "function_call" {
-                return None;
-            }
-            context[index + 1..]
-                .iter()
-                .take_while(|next| {
-                    !matches!(next["role"].as_str(), Some("user" | "system" | "developer"))
-                })
-                .any(|next| next["type"] == "function_call_output" && next["call_id"] == id)
-                .then_some(id)
-        })
-        .collect()
+    let mut completed = HashSet::new();
+    let mut later_outputs = HashSet::new();
+    for item in context.iter().rev() {
+        let id = item["call_id"].as_str();
+        if item["type"] == "function_call"
+            && let Some(id) = id
+            && later_outputs.contains(id)
+        {
+            completed.insert(id);
+        }
+        if matches!(item["role"].as_str(), Some("user" | "system" | "developer")) {
+            later_outputs.clear();
+        } else if item["type"] == "function_call_output"
+            && let Some(id) = id
+        {
+            later_outputs.insert(id);
+        }
+    }
+    completed
 }
 
 // Protocol-only projection. The persisted context and public execution ledger stay unchanged.
 // Real reasoning is passed back verbatim to the same model, never fabricated or rendered.
 pub fn for_api(context: &[Value]) -> Vec<Value> {
     let compacted = bounded_history(context);
-    let context = compacted.as_slice();
+    let context = compacted.as_ref();
     let native_calls = completed_native_calls(context);
     let mut result = Vec::with_capacity(context.len());
     let mut response_has_reasoning = false;
@@ -169,9 +168,15 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
             result.push(item.clone());
         } else if kind == "function_call" {
             let id = item["call_id"].as_str().unwrap_or("").to_string();
-            if response_has_reasoning && native_calls.contains(id.as_str()) {
+            if (response_has_reasoning || item["provider_native"] == true)
+                && native_calls.contains(id.as_str())
+            {
                 preserved_ids.insert(id);
-                result.push(item.clone());
+                let mut call = item.clone();
+                let fields = call.as_object_mut().unwrap();
+                fields.remove("provider_native");
+                fields.remove("local_action_id");
+                result.push(call);
             } else {
                 pending_order.push(id.clone());
                 legacy_calls.insert(id, item.clone());
@@ -334,12 +339,12 @@ fn archived_item(call: Option<&Value>, item: &Value) -> Option<Value> {
 
 // Run only at the next model decision (after tool outputs are checkpointed).
 // Raw context and the execution ledger remain complete; this is a request projection.
-fn bounded_history(context: &[Value]) -> Vec<Value> {
+fn bounded_history(context: &[Value]) -> Cow<'_, [Value]> {
     if context.iter().map(text_size).sum::<usize>() <= 96000 {
-        return context.to_vec();
+        return Cow::Borrowed(context);
     }
     let Some(cut) = archive_boundary(context) else {
-        return context.to_vec();
+        return Cow::Borrowed(context);
     };
     let calls: HashMap<_, _> = context
         .iter()
@@ -365,7 +370,7 @@ fn bounded_history(context: &[Value]) -> Vec<Value> {
         result.push(json!({"role":"user","content":[{"type":"input_text","text":format!("系统归档提示（非新任务）：模型请求省略了{omitted}条较早的工具结果或助手叙述；原始执行账本仍完整保存。旧摘录不是当前屏幕，不得据此重放动作或推断成功，必要时重新观察并核对产物。") }]}));
     }
     result.extend_from_slice(&context[cut..]);
-    result
+    Cow::Owned(result)
 }
 fn tool_record(call: Option<&Value>, output: Option<&Value>) -> Value {
     let name = call
@@ -406,6 +411,28 @@ fn append_parts(destination: &mut Vec<Value>, value: Option<&Value>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn responses_replay_a_completed_tool_even_without_a_reasoning_item() {
+        let native = json!({"type":"function_call","name":"phone_observe","call_id":"observed","arguments":"{}"});
+        let mut recorded = native.clone();
+        recorded["provider_native"] = json!(true);
+        recorded["local_action_id"] = json!("private-action");
+        let receipt =
+            json!({"type":"function_call_output","call_id":"observed","output":"Screen receipt"});
+        assert_eq!(
+            for_api(&[recorded.clone(), receipt.clone()]),
+            [native, receipt.clone()]
+        );
+
+        let boundary = json!({"role":"user","content":"Stop"});
+        assert!(
+            for_api(&[recorded, boundary, receipt])
+                .iter()
+                .all(|item| item["type"] != "function_call"
+                    && item["type"] != "function_call_output")
+        );
+    }
 
     #[test]
     fn switched_model_drops_only_prior_private_metadata_and_preserves_paired_evidence() {
@@ -449,7 +476,9 @@ mod tests {
                 "old calls and late results become one evidence record, never orphan native messages"
             );
             assert!(input.contains(&fresh_reason));
-            assert!(input.contains(&fresh_call));
+            assert!(input.iter().any(|item| item["call_id"] == "new"
+                && item["type"] == "function_call"
+                && item["name"] == fresh_call["name"]));
             assert!(input.contains(&fresh_output));
             let text = serde_json::to_string(&input).unwrap();
             for preserved in [

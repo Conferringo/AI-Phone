@@ -1,4 +1,8 @@
 {
+  "系统更新": "Actualización del sistema",
+  "确认更新": "Confirmar actualización",
+  "正在更新…": "Actualizando…",
+  "更新中断，请重试": "Actualización interrumpida. Vuelve a intentarlo.",
   "登录": "Iniciar sesión",
   "登录失败": "Error al iniciar sesión",
   "账号": "Cuenta",
@@ -392,6 +396,7 @@
   "准备请求": "Preparación",
   "等待响应头": "Espera de cabeceras",
   "等待首段数据": "Espera de primeros datos",
+  "模型首字": "Primer texto del modelo",
   "读取模型流": "Lectura del flujo",
   "工具执行": "Ejecución de herramientas",
   "完成核验": "Verificación final",

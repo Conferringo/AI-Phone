@@ -42,6 +42,7 @@ export async function readChatHistory(owner:Owner,deviceId:string,projection:Pro
   if(signal?.aborted||conversation!==owner.conversation.current)return;
   scoped(chat,deviceId,conversation);owner.conversation.current=chat.conversationId;
   projection.accept(chat,order,before);projection.error('');
+  return chat;
  }catch(error){failure(error,projection,signal);}
  finally{if(!before)owner.fetching.current=false;}
 }

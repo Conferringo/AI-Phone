@@ -672,15 +672,15 @@ async fn action(
             "Control was transferred; reacquire before acting",
         );
     }
-    let mut scroll_attempt = None;
-    match grounding::resolve(&runner, &request, ledger.epoch, ledger.revision).await {
-        Ok(Some((resolved, scroll))) => {
-            request.action = Some(resolved);
-            scroll_attempt = scroll;
-        }
-        Ok(None) => {}
-        Err(message) => return err(StatusCode::CONFLICT, "target_rejected", &message),
-    }
+    let (scroll_attempt, (width, height)) =
+        match grounding::resolve(&runner, &request, ledger.epoch, ledger.revision).await {
+            Ok(Some(resolved)) => {
+                request.action = Some(resolved.action);
+                (resolved.scroll, resolved.dimensions)
+            }
+            Ok(None) => (None, dimensions(&runner).await),
+            Err(message) => return err(StatusCode::CONFLICT, "target_rejected", &message),
+        };
     use wire::device_action_request::Action;
     let (kind, gesture) = match request.action.as_ref() {
         Some(Action::Tap(v)) => ("tap", vec![v.x, v.y]),
@@ -699,7 +699,6 @@ async fn action(
         ),
         _ => ("", vec![]),
     };
-    let (width, height) = dimensions(&runner).await;
     let complex = matches!(request.action, Some(Action::Gesture(_) | Action::Motion(_)));
     let fast_touch = complex
         || (((width == 720 && height == 1440) || (width == 1440 && height == 720))

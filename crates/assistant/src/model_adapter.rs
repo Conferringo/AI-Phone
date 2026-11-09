@@ -5,6 +5,7 @@ use futures_util::StreamExt;
 use serde_json::{Value, json};
 use std::time::Instant;
 
+#[cfg(test)]
 pub async fn request(
     config: &ModelConfig,
     body: Value,
@@ -34,7 +35,6 @@ pub async fn request_tracked(
         .as_str()
         .unwrap_or("high")
         .to_owned();
-    // DeepSeek-specific reasoning levels are not sent to arbitrary compatible endpoints.
     if config.provider != "deepseek" {
         body.as_object_mut()
             .ok_or("模型请求格式错误")?
@@ -42,13 +42,22 @@ pub async fn request_tracked(
     }
     let chat_protocol = config.protocol == "chat-completions";
     let messages_protocol = config.protocol == "anthropic-messages";
+    let claude_binding = messages_protocol && uses_claude_binding(config);
     if chat_protocol {
         body = crate::chat_completions::request_body(
             &body,
             matches!(
                 config.provider.as_str(),
-                "deepseek" | "kimi" | "kimi-cn" | "glm" | "zai"
-            ),
+                "deepseek"
+                    | "kimi"
+                    | "kimi-cn"
+                    | "glm"
+                    | "zai"
+                    | "mimo"
+                    | "hunyuan"
+                    | "stepfun"
+                    | "openrouter"
+            ) || qwen_38(config),
         )?;
         configure_chat(&mut body, config, &effort);
     } else if messages_protocol {
@@ -59,7 +68,11 @@ pub async fn request_tracked(
             if enabled {
                 body["output_config"] = json!({"effort":effort});
             }
+        } else if claude_binding {
+            configure_claude(&mut body, &config.model, &effort);
         }
+    } else {
+        configure_responses(&mut body, config, &effort);
     }
     let encoded = serde_json::to_vec(&body).map_err(|_| "模型请求编码失败")?;
     timing.request_started(encoded.len());
@@ -77,6 +90,9 @@ pub async fn request_tracked(
     }
     if messages_protocol {
         request = request.header("anthropic-version", "2023-06-01");
+    }
+    if claude_binding {
+        request = request.header("anthropic-beta", "thinking-binding-controls-2026-08-01");
     }
     let response = tokio::select! {_ = cancel.cancelled()=>return Err("canceled".into()),r=request.send()=>r.map_err(|_|"模型网络连接失败，请检查地址、代理与服务状态")?};
     timing.headers_received();
@@ -125,13 +141,25 @@ pub async fn request_tracked(
                 if !chunk.is_empty() {
                     timing.first_bytes_received();
                 }
-                if let Some(output) = if chat_protocol {
-                    chat_parser.feed(&chunk)?
+                let (output, has_text) = if chat_protocol {
+                    (chat_parser.feed(&chunk)?, chat_parser.has_text())
                 } else if messages_protocol {
-                    messages_parser.feed(&chunk)?
+                    (messages_parser.feed(&chunk)?, messages_parser.has_text())
                 } else {
-                    parser.feed(&chunk)?
-                } {
+                    (parser.feed(&chunk)?, parser.has_text)
+                };
+                if has_text {
+                    timing.text_received();
+                }
+                if let Some(mut output) = output {
+                    if !chat_protocol && !messages_protocol {
+                        for call in output
+                            .iter_mut()
+                            .filter(|item| item["type"] == "function_call")
+                        {
+                            call["provider_native"] = json!(true);
+                        }
+                    }
                     return Ok(output);
                 }
             }
@@ -167,6 +195,49 @@ async fn quota_exhausted(
         }))
 }
 
+fn configure_responses(body: &mut Value, config: &ModelConfig, effort: &str) {
+    let fast = effort == "none";
+    match config.provider.as_str() {
+        "meta" => {
+            body["include"] = json!(["reasoning.encrypted_content"]);
+            body["reasoning"] = json!({"effort":if fast {"minimal"} else {effort}});
+        }
+        "xai"
+            if matches!(
+                config.model.as_str(),
+                "grok-4.7" | "grok-4.7-fast" | "grok-4.6" | "grok-4.5"
+            ) =>
+        {
+            body["reasoning"] = json!({"effort":if fast {"low"} else {effort}});
+        }
+        "mistral"
+            if matches!(
+                config.model.as_str(),
+                "mistral-large-4" | "mistral-large-4-0"
+            ) =>
+        {
+            body["reasoning"] = json!({"effort":if fast {"low"} else {effort}});
+        }
+        "compatible"
+            if (config.base_url == "https://api.openai.com"
+                || config.base_url.starts_with("https://api.openai.com/"))
+                && config.model.starts_with("gpt-6") =>
+        {
+            let requires_reasoning =
+                config.model.starts_with("gpt-6-astra") || config.model.starts_with("gpt-6.1-sol");
+            body["include"] = json!(["reasoning.encrypted_content"]);
+            body["reasoning"] =
+                json!({"effort":if fast && requires_reasoning {"low"} else {effort}});
+        }
+        _ => {}
+    }
+}
+
+fn qwen_38(config: &ModelConfig) -> bool {
+    matches!(config.provider.as_str(), "qwen" | "qwen-global")
+        && config.model.starts_with("qwen3.8-")
+}
+
 fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
     let fast = effort == "none";
     if config.provider == "deepseek" {
@@ -176,10 +247,22 @@ fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
             body["reasoning_effort"] = json!(effort);
         }
     }
-    if matches!(config.provider.as_str(), "kimi" | "kimi-cn" | "glm" | "zai") {
+    if matches!(config.provider.as_str(), "glm" | "zai")
+        && (config.model == "glm-5.3" || config.model.starts_with("glm-5.3-flash"))
+    {
+        body["thinking"] = json!({"type":"enabled","clear_thinking":false});
+        body["reasoning_effort"] = json!(if fast { "low" } else { effort });
+        body["tool_stream"] = json!(true);
+    } else if matches!(config.provider.as_str(), "kimi" | "kimi-cn" | "glm" | "zai") {
         body["thinking"] = json!({"type":if fast{"disabled"}else{"enabled"}});
     }
-    if matches!(config.provider.as_str(), "glm" | "zai") {
+    let qwen_38 = qwen_38(config);
+    if qwen_38 {
+        body["reasoning_effort"] = json!(effort);
+    } else if config.provider == "stepfun" && config.model == "step-5-preview" {
+        body["reasoning_effort"] = json!(if fast { "low" } else { effort });
+    }
+    if qwen_38 || matches!(config.provider.as_str(), "glm" | "zai" | "mimo") {
         if let Some(name) = body["tool_choice"]["function"]["name"]
             .as_str()
             .map(str::to_owned)
@@ -190,12 +273,46 @@ fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
         if body["tools"].is_array() && body["tool_choice"] != "none" {
             body["tool_choice"] = json!("auto");
         }
-        body.as_object_mut().unwrap().remove("parallel_tool_calls");
+        if !qwen_38 {
+            body.as_object_mut().unwrap().remove("parallel_tool_calls");
+        }
+    }
+}
+
+fn uses_claude_binding(config: &ModelConfig) -> bool {
+    config.provider == "anthropic"
+        && matches!(
+            config.model.as_str(),
+            "claude-opus-5-5"
+                | "claude-sonnet-5-5"
+                | "claude-haiku-5-5"
+                | "claude-fable-5-1"
+                | "claude-mythos-5-1"
+        )
+}
+
+fn configure_claude(body: &mut Value, model: &str, effort: &str) {
+    // Compaction and changing the available tools can invalidate earlier thinking.
+    body["thinking"] = json!({
+        "type": "adaptive",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"}
+    });
+    body["output_config"] = json!({"effort": if effort == "none" { "low" } else { effort }});
+    if model != "claude-haiku-5-5"
+        && matches!(body["tool_choice"]["type"].as_str(), Some("tool" | "any"))
+    {
+        if let Some(name) = body["tool_choice"]["name"].as_str().map(str::to_owned)
+            && let Some(tools) = body["tools"].as_array_mut()
+        {
+            tools.retain(|tool| tool["name"] == name);
+        }
+        body["tool_choice"] = json!({"type":"auto","disable_parallel_tool_use":true});
     }
 }
 #[derive(Default)]
 struct ResponseStream {
     sse: crate::model_sse::SseDecoder,
+    has_text: bool,
 }
 impl ResponseStream {
     fn completed(response: &Value) -> Result<Vec<Value>, String> {
@@ -219,8 +336,17 @@ impl ResponseStream {
             }
             let event: Value = serde_json::from_str(&data).map_err(|_| "模型流格式无效")?;
             match event["type"].as_str() {
+                Some("response.output_text.delta") => {
+                    self.has_text |= has_text(&event["delta"]);
+                }
                 Some("response.completed") => {
-                    return Self::completed(&event["response"]).map(Some);
+                    let output = Self::completed(&event["response"])?;
+                    self.has_text |= output
+                        .iter()
+                        .filter(|item| item["type"] == "message")
+                        .flat_map(|item| item["content"].as_array().into_iter().flatten())
+                        .any(|part| part["type"] == "output_text" && has_text(&part["text"]));
+                    return Ok(Some(output));
                 }
                 Some("response.failed" | "response.incomplete" | "error") => {
                     return Err("模型未完成本轮回复；未将部分输出作为操作执行".into());
@@ -230,6 +356,9 @@ impl ResponseStream {
         }
         Ok(None)
     }
+}
+fn has_text(value: &Value) -> bool {
+    value.as_str().is_some_and(|text| !text.trim().is_empty())
 }
 fn text(output: &[Value]) -> String {
     output
@@ -242,14 +371,18 @@ fn text(output: &[Value]) -> String {
 }
 async fn check(
     config: &ModelConfig,
+    client: &reqwest::Client,
     name: &str,
     body: Value,
     expected: &str,
 ) -> wire::CapabilityCheck {
     let start = Instant::now();
     let cancel = CancellationToken::new();
-    let result =
-        tokio::time::timeout(Duration::from_secs(55), request(config, body, &cancel)).await;
+    let result = tokio::time::timeout(
+        Duration::from_secs(55),
+        request_tracked(config, client, body, &cancel, &mut Default::default()),
+    )
+    .await;
     let (passed, detail) = match result {
         Ok(Ok(output)) if text(&output).contains(expected) => (true, "通过".into()),
         Ok(Ok(_)) => (false, "已收到输出，但实际内容未通过验证".into()),
@@ -263,25 +396,31 @@ async fn check(
         duration_ms: start.elapsed().as_millis() as u64,
     }
 }
-pub async fn probe(config: &ModelConfig) -> Vec<wire::CapabilityCheck> {
+pub async fn probe(config: &ModelConfig, client: &reqwest::Client) -> Vec<wire::CapabilityCheck> {
     let nonce = Uuid::new_v4().simple().to_string();
     let text_body = json!({"input":[{"role":"user","content":[{"type":"input_text","text":format!("Reply exactly with this code: {nonce}")}]}],"max_output_tokens":256,"reasoning":{"effort":"none"}});
     let image_body = json!({"input":[{"role":"user","content":[{"type":"input_text","text":"Read the four digits in this image. Reply only with the digits."},{"type":"input_image","image_url":format!("data:image/png;base64,{}",STANDARD.encode(include_bytes!("../fixtures/vision-probe.png")))}]}],"max_output_tokens":256,"reasoning":{"effort":"none"}});
     let (text_check, image_check, tool_check) = tokio::join!(
-        check(config, "文字与流式输出", text_body, &nonce),
-        check(config, "图片识别", image_body, "7319"),
-        tool_probe(config)
+        check(config, client, "文字与流式输出", text_body, &nonce),
+        check(config, client, "图片识别", image_body, "7319"),
+        tool_probe(config, client)
     );
     vec![text_check, image_check, tool_check]
 }
-async fn tool_probe(config: &ModelConfig) -> wire::CapabilityCheck {
+async fn tool_probe(config: &ModelConfig, client: &reqwest::Client) -> wire::CapabilityCheck {
     let start = Instant::now();
     let nonce = Uuid::new_v4().simple().to_string();
     let cancel = CancellationToken::new();
     let tool = json!({"type":"function","name":"diagnostic_echo","description":"Returns a diagnostic result; no external effects.","parameters":{"type":"object","properties":{"code":{"type":"string"}},"required":["code"],"additionalProperties":false}});
     let initial = json!({"role":"user","content":[{"type":"input_text","text":format!("Call diagnostic_echo with code {nonce}. After the result, reply with only the returned receipt.")} ]});
     let work = async {
-        let output=request(config,json!({"input":[initial.clone()],"tools":[tool],"tool_choice":{"type":"function","name":"diagnostic_echo"},"parallel_tool_calls":false,"reasoning":{"effort":"none"},"max_output_tokens":512}),&cancel).await?;
+        let output = request_tracked(
+            config,
+            client,
+            json!({"input":[initial.clone()],"tools":[tool.clone()],"tool_choice":{"type":"function","name":"diagnostic_echo"},"parallel_tool_calls":false,"reasoning":{"effort":"none"},"max_output_tokens":512}),
+            &cancel,
+            &mut Default::default(),
+        ).await?;
         let calls: Vec<_> = output
             .iter()
             .filter(|v| v["type"] == "function_call")
@@ -300,12 +439,19 @@ async fn tool_probe(config: &ModelConfig) -> wire::CapabilityCheck {
         let mut input = vec![initial];
         input.extend(output);
         input.push(result);
-        let final_output = request(
-            config,
-            json!({"input":input,"max_output_tokens":256,"reasoning":{"effort":"none"}}),
-            &cancel,
-        )
-        .await?;
+        let input = if config.protocol == "responses" {
+            crate::model_context::for_api(&input)
+        } else {
+            crate::model_context::for_chat_api(&input)
+        };
+        let mut followup =
+            json!({"input":input,"max_output_tokens":256,"reasoning":{"effort":"none"}});
+        if config.protocol == "anthropic-messages" && uses_claude_binding(config) {
+            followup["tools"] = json!([tool]);
+            followup["tool_choice"] = json!("none");
+        }
+        let final_output =
+            request_tracked(config, client, followup, &cancel, &mut Default::default()).await?;
         if !text(&final_output).contains(&receipt) {
             return Err("模型未读取工具的实际返回结果".into());
         }
@@ -570,13 +716,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn transport_timing_separates_headers_first_bytes_and_complete_output() {
+    async fn transport_timing_separates_headers_first_bytes_first_text_and_complete_output() {
         use axum::{Router, body::Body, routing::post};
         use futures_util::StreamExt;
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let router = Router::new().route("/v1/responses",post(|| async {
-            let events = [json!({"type":"response.created"}),json!({"type":"response.completed",
+            let events = [json!({"type":"response.created"}),
+                json!({"type":"response.reasoning_text.delta","delta":"fixture-reasoning"}),
+                json!({"type":"response.output_text.delta","delta":"timed-"}),
+                json!({"type":"response.completed",
                 "response":{"status":"completed","output":[{"type":"message","content":[{"type":"output_text","text":"timed-output"}]}]}})];
             let stream = futures_util::stream::iter(events).then(|event| async move {
                 tokio::time::sleep(Duration::from_millis(30)).await;
@@ -611,7 +760,8 @@ mod tests {
         assert!(value.request_bytes > 0);
         assert!(value.headers_ms.unwrap() <= value.first_byte_ms.unwrap());
         assert!(value.first_byte_ms.unwrap() >= 20);
-        assert!(value.model_ms >= value.first_byte_ms.unwrap());
+        assert!(value.first_text_ms.unwrap() >= value.first_byte_ms.unwrap() + 40);
+        assert!(value.model_ms >= value.first_text_ms.unwrap() + 20);
         assert!(value.elapsed_ms >= value.model_ms);
         assert!(!facts.to_string().contains("fixture-secret"));
         let roundtrip = wire::ModelCallTiming::decode(value.encode_to_vec().as_slice()).unwrap();
@@ -636,6 +786,7 @@ mod tests {
         let value = crate::model_timing::wire(&timing.snapshot()).unwrap();
         assert!(value.headers_ms.is_some());
         assert!(value.first_byte_ms.is_none());
+        assert!(value.first_text_ms.is_none());
     }
 
     async fn error_fixture(
@@ -972,7 +1123,7 @@ mod tests {
         let root = std::env::var("AI_PHONE_LIVE_TEST_ROOT").expect("explicit live test root");
         let store = crate::settings::SettingsStore::open(std::path::Path::new(&root)).unwrap();
         let config = store.get(store.current()).unwrap();
-        let checks = probe(&config).await;
+        let checks = probe(&config, &config.client().unwrap()).await;
         for check in &checks {
             println!(
                 "{}: {} ({}ms) {}",

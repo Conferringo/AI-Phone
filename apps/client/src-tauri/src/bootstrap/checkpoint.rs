@@ -8,7 +8,7 @@ struct Checkpoint {
     format: u8,
     payload: String,
     progress: Progress,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", windows))]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     installed_payload: Option<String>,
 }
@@ -24,7 +24,7 @@ fn payload() -> Result<String, String> {
 
 pub(super) fn save(folder: &Path, progress: &Progress) -> Result<(), String> {
     let payload = payload()?;
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", windows))]
     let installed_payload = if progress.state == "ready" {
         Some(payload.clone())
     } else {
@@ -34,7 +34,7 @@ pub(super) fn save(folder: &Path, progress: &Progress) -> Result<(), String> {
         format: 1,
         payload,
         progress: progress.clone(),
-        #[cfg(target_os = "macos")]
+        #[cfg(any(target_os = "macos", windows))]
         installed_payload,
     };
     let bytes = serde_json::to_vec(&checkpoint).map_err(|_| "invalid_install_checkpoint")?;
@@ -90,7 +90,7 @@ fn read_record(folder: &Path) -> Result<Option<Checkpoint>, String> {
     Ok((checkpoint.format == 1).then_some(checkpoint))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", windows))]
 impl Checkpoint {
     fn installed_payload(self) -> Option<String> {
         if self.progress.state == "ready" {
@@ -107,7 +107,7 @@ fn read(folder: &Path) -> Result<Option<Progress>, String> {
         .map(|checkpoint| checkpoint.progress))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", windows))]
 pub(super) fn upgrade_needed(folder: &Path) -> Result<bool, String> {
     let payload = payload()?;
     Ok(read_record(folder)?

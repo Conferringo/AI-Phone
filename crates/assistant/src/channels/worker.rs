@@ -158,7 +158,13 @@ async fn process(state: &State, mut job: Job) -> Result<()> {
                 .await?
                 {
                     let _: Result<wire::ChatState> = state
-                        .rpc("cancel", wire::ChatRunRequest { run_id: run.run_id })
+                        .rpc(
+                            "cancel",
+                            wire::ChatRunRequest {
+                                run_id: run.run_id,
+                                ..Default::default()
+                            },
+                        )
                         .await;
                     return Ok(());
                 }
@@ -169,6 +175,7 @@ async fn process(state: &State, mut job: Job) -> Result<()> {
                     "run",
                     wire::ChatRunRequest {
                         run_id: job.run_id.clone().unwrap(),
+                        ..Default::default()
                     },
                 )
                 .await?;

@@ -8,6 +8,10 @@
 
 下文介绍 macOS Apple Silicon 的源码开发环境。完整安装包见[下载](release-status.md)。Windows 后端开发见[WSL 指南](windows-backend-runtime.md)。
 
+## 更新已安装客户端
+
+有新版时，工作台右上角会显示更新图标。展开查看版本号、版本名和更新说明，选择**安装更新**。客户端会核验安装包、完成安装并重启，继续使用原设备、模型配置和聊天。Windows 安装时可能出现系统授权提示。
+
 ## 源码安装的支持范围
 
 这条源码路径使用 macOS Apple Silicon；Android 15 ARM64 使用原生 Android Emulator，Linux 电脑使用 Docker 内的 Debian 13/Openbox。

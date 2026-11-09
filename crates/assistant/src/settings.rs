@@ -2,7 +2,20 @@ use crate::private_file::atomic_private;
 use crate::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{collections::BTreeMap, fs, path::Path, sync::Mutex as SyncMutex, time::Instant};
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::Path,
+    sync::{Mutex as SyncMutex, OnceLock},
+    time::Instant,
+};
+
+#[derive(Deserialize)]
+struct ProviderPreset {
+    provider: String,
+}
+
+static PROVIDER_PRESETS: OnceLock<Vec<ProviderPreset>> = OnceLock::new();
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
@@ -67,6 +80,7 @@ impl ModelConfig {
         };
         Ok(format!("{base}{version}{suffix}"))
     }
+    #[cfg(test)]
     pub fn client(&self) -> Result<reqwest::Client, String> {
         client_for_proxy(&self.proxy_url)
     }
@@ -228,6 +242,15 @@ impl SettingsStore {
             .cloned()
             .ok_or("请先在设置中连接模型".into())
     }
+    pub(crate) fn profile_at(&self, revision: u64) -> Result<wire::ModelProfile, String> {
+        self.state
+            .lock()
+            .expect("settings lock")
+            .models
+            .get(&revision)
+            .map(|model| model.profile(revision))
+            .ok_or("请先在设置中连接模型".into())
+    }
     // Saved immutable revisions determine native replay compatibility. Database
     // selection, Agent ownership and the atomic run update belong to registry.
     pub(crate) fn recovery_replay(
@@ -299,10 +322,11 @@ impl SettingsStore {
         } else {
             normalize_url(&draft.proxy_url, true)?
         };
-        let presets: Vec<serde_json::Value> =
+        let presets = PROVIDER_PRESETS.get_or_init(|| {
             serde_json::from_str(include_str!("../../../config/model-providers.json"))
-                .expect("valid provider presets");
-        if !presets.iter().any(|p| p["provider"] == draft.provider)
+                .expect("valid provider presets")
+        });
+        if !presets.iter().any(|p| p.provider == draft.provider)
             || !["responses", "chat-completions", "anthropic-messages"]
                 .contains(&draft.protocol.as_str())
         {
@@ -358,6 +382,7 @@ impl SettingsStore {
         state.verified.clear();
         Ok(revision)
     }
+    #[cfg(test)]
     fn verified(&self, config: &ModelConfig, revision: u64) -> String {
         self.verified_for(config, revision, "")
     }
@@ -452,7 +477,8 @@ impl SettingsStore {
             }
         }
         let _guard = Guard(self);
-        let checks = crate::model_adapter::probe(config).await;
+        let client = self.http_client(&config.proxy_url)?;
+        let checks = crate::model_adapter::probe(config, &client).await;
         let ready = checks.iter().all(|c| c.passed);
         let verification_id = if ready {
             self.verified_for(config, expected, scope)
@@ -491,9 +517,17 @@ pub(crate) fn normalize_url(raw: &str, proxy: bool) -> Result<String, String> {
     Ok(url.as_str().trim_end_matches('/').to_string())
 }
 pub async fn for_run(app: &App, run: Uuid) -> Result<ModelConfig, String> {
-    let current = app.settings.current() as i64;
-    let revision: i64=sqlx::query_scalar("UPDATE runs SET model_revision=CASE WHEN model_revision=0 THEN $2 ELSE model_revision END WHERE id=$1 RETURNING model_revision")
-        .bind(run).bind(current).fetch_one(&app.db).await.map_err(|_|"无法读取任务的模型配置")?;
+    let revision = sqlx::query_scalar::<_, i64>("SELECT model_revision FROM runs WHERE id=$1")
+        .bind(run)
+        .fetch_one(&app.db)
+        .await
+        .map_err(|_| "无法读取任务的模型配置")?;
+    let revision = if revision == 0 {
+        sqlx::query_scalar("UPDATE runs SET model_revision=CASE WHEN model_revision=0 THEN $2 ELSE model_revision END WHERE id=$1 RETURNING model_revision")
+            .bind(run).bind(app.settings.current() as i64).fetch_one(&app.db).await.map_err(|_|"无法读取任务的模型配置")?
+    } else {
+        revision
+    };
     app.settings.get(revision as u64)
 }
 pub async fn route(
@@ -579,36 +613,9 @@ pub async fn route(
                     Err(e) => return Ok(e.into()),
                 };
                 let config = app.settings.resolve(request.draft.ok_or("缺少模型配置")?)?;
-                {
-                    let mut state = app.settings.state.lock().expect("settings lock");
-                    if state.testing {
-                        return Err("已有配置测试正在进行，请稍候".into());
-                    }
-                    state.testing = true;
-                }
-                struct Guard<'a>(&'a SettingsStore);
-                impl Drop for Guard<'_> {
-                    fn drop(&mut self) {
-                        self.0.state.lock().expect("settings lock").testing = false;
-                    }
-                }
-                let _guard = Guard(&app.settings);
                 let revision = app.settings.current();
-                let checks = crate::model_adapter::probe(&config).await;
-                let ready = checks.iter().all(|c| c.passed);
-                let verification_id = if ready {
-                    app.settings.verified(&config, revision)
-                } else {
-                    String::new()
-                };
-                Ok(pb(
-                    StatusCode::OK,
-                    wire::ModelTestResult {
-                        ready,
-                        checks,
-                        verification_id,
-                    },
-                ))
+                let result = app.settings.test_connection("", revision, &config).await?;
+                Ok(pb(StatusCode::OK, result))
             }
             "save" => {
                 let request = match decode::<wire::SettingsSaveRequest>(&app, &headers, body) {

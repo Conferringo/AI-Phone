@@ -13,7 +13,7 @@
     "provider": "compatible",
     "protocol": "responses",
     "baseUrl": "https://api.openai.com/v1",
-    "model": ""
+    "model": "gpt-6.1-terra"
   },
   {
     "id": "anthropic",
@@ -21,7 +21,7 @@
     "provider": "anthropic",
     "protocol": "anthropic-messages",
     "baseUrl": "https://api.anthropic.com/v1",
-    "model": "claude-sonnet-4-6"
+    "model": "claude-sonnet-5-5"
   },
   {
     "id": "kimi",
@@ -53,7 +53,7 @@
     "provider": "zai",
     "protocol": "chat-completions",
     "baseUrl": "https://api.z.ai/api/paas/v4",
-    "model": "glm-4.6v"
+    "model": "glm-5.3-flash"
   },
   {
     "id": "gemini",
@@ -69,7 +69,7 @@
     "provider": "qwen",
     "protocol": "chat-completions",
     "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    "model": ""
+    "model": "qwen3.8-flash"
   },
   {
     "id": "qwen-global",
@@ -77,7 +77,7 @@
     "provider": "qwen-global",
     "protocol": "chat-completions",
     "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    "model": ""
+    "model": "qwen3.8-flash"
   },
   {
     "id": "minimax",
@@ -86,6 +86,86 @@
     "protocol": "anthropic-messages",
     "baseUrl": "https://api.minimax.io/anthropic/v1",
     "model": "MiniMax-M3.1-Flash"
+  },
+  {
+    "id": "xai",
+    "label": "xAI · Grok",
+    "provider": "xai",
+    "protocol": "responses",
+    "baseUrl": "https://api.x.ai/v1",
+    "model": "grok-4.7"
+  },
+  {
+    "id": "meta",
+    "label": "Meta · Muse",
+    "provider": "meta",
+    "protocol": "responses",
+    "baseUrl": "https://api.meta.ai/v1",
+    "model": "muse-wonder-1.0"
+  },
+  {
+    "id": "hunyuan",
+    "label": "Tencent · Hunyuan",
+    "provider": "hunyuan",
+    "protocol": "chat-completions",
+    "baseUrl": "https://tokenhub.tencentmaas.com/v1",
+    "model": "hy4"
+  },
+  {
+    "id": "mimo",
+    "label": "Xiaomi · MiMo",
+    "provider": "mimo",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.xiaomimimo.com/v1",
+    "model": "mimo-v2.6-flash"
+  },
+  {
+    "id": "ant-ling",
+    "label": "Ant · Ling",
+    "provider": "ant-ling",
+    "protocol": "anthropic-messages",
+    "baseUrl": "https://api.ant-ling.com/anthropic/v1",
+    "model": "Ling-3.2-flash"
+  },
+  {
+    "id": "stepfun",
+    "label": "StepFun · CN",
+    "provider": "stepfun",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.stepfun.com/v1",
+    "model": "step-5-preview"
+  },
+  {
+    "id": "stepfun-global",
+    "label": "StepFun · Global",
+    "provider": "stepfun",
+    "protocol": "chat-completions",
+    "baseUrl": "https://api.stepfun.ai/v1",
+    "model": "step-5-preview"
+  },
+  {
+    "id": "mistral",
+    "label": "Mistral",
+    "provider": "mistral",
+    "protocol": "responses",
+    "baseUrl": "https://api.mistral.ai/v1",
+    "model": "mistral-large-4"
+  },
+  {
+    "id": "nvidia",
+    "label": "NVIDIA · NIM",
+    "provider": "nvidia",
+    "protocol": "chat-completions",
+    "baseUrl": "https://integrate.api.nvidia.com/v1",
+    "model": "nvidia/nemotron-3.5-super-vl-120b-a12b"
+  },
+  {
+    "id": "openrouter",
+    "label": "OpenRouter",
+    "provider": "openrouter",
+    "protocol": "chat-completions",
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "model": ""
   },
   {
     "id": "ollama",

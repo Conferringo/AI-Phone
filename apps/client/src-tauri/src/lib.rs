@@ -10,6 +10,7 @@ use std::{
 };
 use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
 mod bootstrap;
+mod updates;
 
 const DEFAULT_SERVER: &str = "http://127.0.0.1:17860";
 
@@ -240,6 +241,44 @@ fn require_local_window(window: &tauri::WebviewWindow) -> Result<(), String> {
     Ok(())
 }
 
+fn require_update_window(window: &tauri::WebviewWindow) -> Result<(), String> {
+    let url = window.url().map_err(|e| e.to_string())?;
+    if window.label() == "workbench"
+        && url.scheme() == "http"
+        && url.port() == Some(17860)
+        && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
+        && url.path() == "/phone"
+    {
+        Ok(())
+    } else {
+        Err("Use the native update menu for this connection".into())
+    }
+}
+
+#[tauri::command]
+async fn check_client_update(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+) -> Result<Option<updates::UpdateDetails>, String> {
+    require_update_window(&window)?;
+    updates::refresh(&app)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+async fn install_client_update(
+    app: tauri::AppHandle,
+    window: tauri::WebviewWindow,
+    version: String,
+) -> Result<(), String> {
+    require_update_window(&window)?;
+    let version = semver::Version::parse(&version).map_err(|error| error.to_string())?;
+    updates::apply(&app, Some(version))
+        .await
+        .map_err(|error| error.to_string())
+}
+
 // Only the local setup asset may request content-sized native chrome.
 #[tauri::command]
 fn fit_setup(window: tauri::WebviewWindow, height: f64) -> Result<(), String> {
@@ -364,6 +403,23 @@ async fn resume_local_host(app: &tauri::AppHandle, upgrade: bool) -> Option<Url>
 pub fn run() {
     {
         let arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
+        if let Some(code) = updates::run(&arguments) {
+            std::process::exit(code);
+        }
+        #[cfg(windows)]
+        if arguments.len() == 1 && arguments[0] == "--stop-windows-backend" {
+            let result = std::env::var_os("APPDATA")
+                .map(std::path::PathBuf::from)
+                .ok_or("windows_app_data")
+                .and_then(|home| {
+                    let home = home.join("dev.aiphone.client/host");
+                    tauri::async_runtime::block_on(
+                        ai_phone_host_runtime::qemu_host::stop_installed(&home),
+                    )
+                    .map_err(|error| error.code())
+                });
+            std::process::exit(if result.is_ok() { 0 } else { 1 });
+        }
         #[cfg(windows)]
         if arguments.len() == 1 && arguments[0] == "--prepare-windows-host" {
             match bootstrap::prepare_windows_host() {
@@ -395,19 +451,31 @@ pub fn run() {
             deployment_status,
             start_deployment,
             cancel_deployment,
-            accept_deployment_license
+            accept_deployment_license,
+            check_client_update,
+            install_client_update
         ])
         .setup(|app| {
+            updates::cleanup_current(app.handle());
             {
                 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
                 let connection =
                     MenuItem::with_id(app, "connection", "Setup…", true, Some("CmdOrCtrl+,"))?;
+                let update = MenuItem::with_id(
+                    app,
+                    updates::ID,
+                    updates::CHECK,
+                    updates::platform().is_some(),
+                    None::<&str>,
+                )?;
+                app.manage(updates::Menu::new(update.clone()));
                 let app_menu = Submenu::with_items(
                     app,
                     "AI Phone",
                     true,
                     &[
                         &connection,
+                        &update,
                         &PredefinedMenuItem::separator(app)?,
                         &PredefinedMenuItem::quit(app, Some("Quit AI Phone"))?,
                     ],
@@ -431,12 +499,12 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let saved = load_connection(&handle);
-                #[cfg(target_os = "macos")]
+                #[cfg(any(target_os = "macos", windows))]
                 let upgrade = saved.as_ref().is_ok_and(|url| {
                     url.port() == Some(17860)
                         && matches!(url.host_str(), Some("127.0.0.1" | "localhost" | "[::1]"))
                 }) && bootstrap::upgrade_needed(&handle).unwrap_or(false);
-                #[cfg(not(target_os = "macos"))]
+                #[cfg(not(any(target_os = "macos", windows)))]
                 let upgrade = false;
                 let reachable = match saved {
                     _ if upgrade => resume_local_host(&handle, true).await,
@@ -464,11 +532,13 @@ pub fn run() {
             });
             Ok(())
         });
-    let builder = builder.on_menu_event(|app, event| {
-        if event.id().as_ref() == "connection" {
+    let builder = builder.on_menu_event(|app, event| match event.id().as_ref() {
+        "connection" => {
             app.state::<Navigation>().cancel_startup();
             let _ = show_connection(app);
         }
+        updates::ID => updates::select(app),
+        _ => {}
     });
     builder
         .build(tauri::generate_context!())

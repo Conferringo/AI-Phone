@@ -1,4 +1,8 @@
 {
+  "系统更新": "Systemupdate",
+  "确认更新": "Update bestätigen",
+  "正在更新…": "Update läuft…",
+  "更新中断，请重试": "Update unterbrochen. Versuche es erneut.",
   "登录": "Anmelden",
   "登录失败": "Anmeldung fehlgeschlagen",
   "账号": "Konto",
@@ -392,6 +396,7 @@
   "准备请求": "Vorbereitung",
   "等待响应头": "Warten auf Header",
   "等待首段数据": "Warten auf erste Daten",
+  "模型首字": "Erster Modelltext",
   "读取模型流": "Modellstream lesen",
   "工具执行": "Werkzeuge",
   "完成核验": "Abschlussprüfung",

@@ -61,6 +61,12 @@ export async function buildWindowsInstaller(
     linkSync(join(root, "apps/client/src-tauri", input), target);
   }
   const version = json(join(root, "config/release-policy.json")).version;
+  const qemu = join(stage, "host/qemu");
+  const base = existsSync(join(qemu, "guest/release.ext4"))
+    ? json(join(qemu, "manifest.json")).files.find(
+      (file: { path: string }) => file.path === "guest/guest.qcow2",
+    ).sha256
+    : undefined;
   run([
     compiler,
     "/Qp",
@@ -68,6 +74,7 @@ export async function buildWindowsInstaller(
     "/DNumericVersion=" + version.split("-")[0] + ".0",
     "/DAppSource=" + stage,
     "/DProjectRoot=" + root,
+    ...(base ? ["/DBaseDiskSHA256=" + base] : []),
     "/O" + dirname(destination),
     "/F" + basename(destination, ".exe"),
     join(root, "apps/client/src-tauri/windows/installer.iss"),
