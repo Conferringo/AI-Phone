@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 Daemon
+
+- Route a completion draft from a single Android Settings action directly to independent verification. Six paired runs cut median planning calls from 3 to 2 and median completion time from 6.18 to 5.02 seconds.
+- Seal the complete macOS application bundle with an ad hoc signature.
+- Sign the Windows installer with a temporary Authenticode test certificate.
+
 ## 0.1.9 Cock
 
 - Use the recorded post-action frame to verify desktop input and bind execution receipts to the owning task.

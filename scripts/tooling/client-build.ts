@@ -165,6 +165,8 @@ export async function inspectMacBundle(bundle: string, root = ROOT) {
     ...Object.values(resourceMap(root)).map((s) => "Contents/Resources/" + s),
   ]);
   const files = filesIn(bundle);
+  const signature = "Contents/_CodeSignature/CodeResources";
+  if (Object.hasOwn(files, signature)) allowed.add(signature);
   if (
     Object.keys(files).length !== allowed.size ||
     Object.keys(files).some((name) => !allowed.has(name))

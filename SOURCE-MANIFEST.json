@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "version": "0.1.9",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "remote_publication_authorized": true,
   "remote_review_authorized": true,
@@ -95,8 +95,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 4225,
-      "sha256": "6864251bb61e3084e5284bb469583e63a9a0b0a65c5c3926550a895980d12d40"
+      "size": 4602,
+      "sha256": "8bdb22ea79d0f82e7cac1997b8dad15a1e4763b35700ad09bd814015cae95bc8"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -136,12 +136,12 @@
     {
       "path": "README.en.md",
       "size": 3307,
-      "sha256": "7b24d74504d5e41f1acbcff1e57f16eee19c99363c3c88b34eb85baf7e8a577b"
+      "sha256": "944fa3b6b9800a4a7232b8c698c74d65b41abab139ab426234dc61edda6d80a6"
     },
     {
       "path": "README.md",
       "size": 6035,
-      "sha256": "ba92bcea413f30a5e93321627a83839d8734dd8064cd468f05bbedb70be1d4cc"
+      "sha256": "1bd2e8bc3b4ff38be6312e28b823caf42932c3eb7fcbc8df6e49450e72799228"
     },
     {
       "path": "SECURITY.md",
@@ -231,17 +231,17 @@
     {
       "path": "apps/client/package.json",
       "size": 232,
-      "sha256": "dab28464ab57f86a5a8832ad36d19ae366a81cf0c82c60b0658a9208446ed93d"
+      "sha256": "328347c021bdb3fdc2cd295252ad57847701d8db23918e508a180bd22a4a8417"
     },
     {
       "path": "apps/client/src-tauri/Cargo.lock",
       "size": 126355,
-      "sha256": "ab33219f7d54706b2d59caac335a187d38fff48712e90c29b331f2c5de91b722"
+      "sha256": "630de2838b1963964b3e2d4bca5fb2a9dcee1f191aa5e6e7a06ffb9295259fe7"
     },
     {
       "path": "apps/client/src-tauri/Cargo.toml",
       "size": 1175,
-      "sha256": "1b801164cc1980c720b214c3ea1d5d4f81bfd763c7000e3bb1eb5b2d3df52cfb"
+      "sha256": "3546ef85f75f90c36c41d8219e42c3aa9c60674a584af0f414ca1fc6645fffa7"
     },
     {
       "path": "apps/client/src-tauri/Info.plist",
@@ -446,7 +446,7 @@
     {
       "path": "apps/client/src-tauri/tauri.conf.json",
       "size": 2264,
-      "sha256": "b6aae759f7bd41bc810db7b682ca6f2fbe7d16c27ffb9abf274224402483720a"
+      "sha256": "d68731b14ada9bff38b8bd5ebd299471b009c11194e537c5ca7a1a1b8af489a9"
     },
     {
       "path": "apps/client/src-tauri/windows/installer.iss",
@@ -1265,8 +1265,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2315,
-      "sha256": "fc4740cb0414462f4f113b2edd25a71e38f1a27e5ecb8a23c0e3372ef9d61acf"
+      "size": 2362,
+      "sha256": "48450ef1f605b77e635f61e75e352c8594918273affa2ffb973a4adc04e9f01a"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2035,8 +2035,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 230916,
-      "sha256": "4698c71d361e75ab0206c427fa2354ff86e85678a913e0c97dc9392556686380"
+      "size": 234505,
+      "sha256": "86c2361a9a1d52dfa3b4a722b56899e823fcf0cf6863341535dc358fdae63986"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -2981,7 +2981,7 @@
     {
       "path": "docs/public/dependency-licenses.json",
       "size": 428390,
-      "sha256": "368e349314ca8d7c2a179b77d56f14d889df0d8707ce95050a70de06d0123959"
+      "sha256": "67e4a948a5b706ecc7111281e4734b7ecf144038af817d0a86d694be769a09a1"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -2996,12 +2996,12 @@
     {
       "path": "docs/public/distribution.en.md",
       "size": 2913,
-      "sha256": "c08f4a8df6e1116a81b2bdd72957fe498694b8a8aa8162361daa1e20556304df"
+      "sha256": "f7e2c932c4ea3e48ec8947023f34fc63cf0b3725162b12603e507f7efd6b25d7"
     },
     {
       "path": "docs/public/distribution.zh-CN.md",
       "size": 2476,
-      "sha256": "00839f2e8ea9ffdb32eeac36adbca77beacef2979d403f9f7ce8b9e52879916b"
+      "sha256": "7ba7b80cf0750fa4a1f002fcac666f13564d51433c0c8a50265bd0d92def6ffc"
     },
     {
       "path": "docs/public/engineering/android-distribution.md",
@@ -3525,8 +3525,8 @@
     },
     {
       "path": "docs/public/release-status.md",
-      "size": 854,
-      "sha256": "b7fb953d87985e351baf4b43653878b01494189138660d33ffbe2d8a9f99546f"
+      "size": 1090,
+      "sha256": "1b913fddd621753a09f6266bfad66523001d47c9961ac57c3511c8776a040f4c"
     },
     {
       "path": "docs/public/runtime-bundles.md",
@@ -4180,8 +4180,8 @@
     },
     {
       "path": "scripts/tooling/client-build.ts",
-      "size": 12088,
-      "sha256": "705c018aff2024fc6c21689d7678ece3a7fb17bf2a1ad720ba55ee9b1df86d67"
+      "size": 12212,
+      "sha256": "30c65837b7b52e505216b560d3edf1f1dd4d49bdf89ef0164754c0fd82e22738"
     },
     {
       "path": "scripts/tooling/client-payload.ts",

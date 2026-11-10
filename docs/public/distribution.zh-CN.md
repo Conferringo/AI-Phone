@@ -33,7 +33,7 @@ PostgreSQL使用Docker命名卷。备份恢复覆盖数据库、Android状态、
 两端安装包验收后，在发行维护者本机签署更新清单。
 
 ```sh
-./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.1.9-macos-arm64.dmg AImanity-0.1.9-windows-x64-setup.exe stable.json
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.2.0-macos-arm64.dmg AImanity-0.2.0-windows-x64-setup.exe stable.json
 ```
 
 GitHub 发行页附 DMG 和 EXE。发布后将签名的 `stable.json` 提交到 `update-feed` 分支。0.1.8 起客户端读取这个地址。从 0.1.7 升级时，手动安装一次当前版本即可。

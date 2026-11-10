@@ -1,7 +1,7 @@
 {
-  "version": "0.1.9",
-  "release_name": "Cock",
-  "release_notes": "Android Settings reaches its first device action and independent verification sooner. Liberty wakes immediately on activation. Desktop input and cross-Agent file handoffs are verified from real tool receipts.",
+  "version": "0.2.0",
+  "release_name": "Daemon",
+  "release_notes": "Android Settings navigation can finish with one fewer planning call while keeping independent verification. In six paired runs, median completion fell from 6.18 to 5.02 seconds. The macOS app bundle and Windows installer carry temporary test signatures.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

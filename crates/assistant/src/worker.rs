@@ -1735,6 +1735,49 @@ fn finish_rejection(context: &[Value], summary: &str) -> Option<String> {
     }
     None
 }
+
+fn phone_completion_proposal(context: &[Value], output: &[Value], summary: &str) -> Option<Value> {
+    let summary = summary.trim();
+    if summary.is_empty()
+        || summary.len() > 12000
+        || output.iter().any(|item| item["type"] == "function_call")
+        || phone_claim(context, summary) != PhoneClaim::Action
+    {
+        return None;
+    }
+    let recent = &context[evidence_start(context)..];
+    let frame = recent.last()?;
+    if frame["type"] != "function_call_output" {
+        return None;
+    }
+    let observe = recent
+        .iter()
+        .rev()
+        .find(|call| call["call_id"] == frame["call_id"] && phone_observation(call, context))?;
+    let action_id = observe["local_after_action"].as_str()?;
+    let mut actions = recent.iter().filter(|call| {
+        call["type"] == "function_call"
+            && !matches!(call["name"].as_str(), Some("skill_read" | "phone_observe"))
+    });
+    let action = actions.next()?;
+    if actions.next().is_some()
+        || action["name"] != "phone_tap_element"
+        || action["call_id"] != action_id
+        || !tool_value(&frame["output"]).is_some_and(|grounding| {
+            grounding["foreground_app"]
+                .as_str()
+                .is_some_and(|app| app.starts_with("com.android.settings/"))
+        })
+        || !phone_action_verified(context)
+    {
+        return None;
+    }
+    Some(
+        json!({"type":"function_call","name":"task_finish","call_id":Uuid::now_v7().to_string(),
+        "arguments":json!({"status":"completed","summary":summary}).to_string()}),
+    )
+}
+
 fn progress_is_verified(context: &[Value], text: &str) -> bool {
     let claim = phone_claim(context, text);
     // Completion claims belong only in an audited task_finish, never an interim model draft.
@@ -2721,7 +2764,7 @@ async fn execute(
         {
             continue;
         }
-        let output = match response {
+        let mut output = match response {
             Ok(Some(output)) => {
                 step = step.saturating_add(1);
                 state.model_retries = 0;
@@ -2830,6 +2873,13 @@ async fn execute(
                 return Err("无法形成有本轮证据支持的结果，任务未完成。".into());
             }
             continue;
+        }
+        if !background
+            && !handoffs_pending
+            && let Some(proposal) = phone_completion_proposal(&context, &output, &new_text)
+        {
+            output.push(proposal);
+            new_text.clear();
         }
         for mut item in output {
             if item["type"] == "function_call" {
@@ -4026,6 +4076,43 @@ mod verification_tests {
             json!({"type":"function_call","name":name,"call_id":id,"arguments":args.to_string()}),
             json!({"type":"function_call_output","call_id":id,"output":[{"type":"input_text","text":"{\"success\":true}"}]}),
         ]
+    }
+    #[test]
+    fn text_completion_after_a_settings_tap_queues_normal_finish_only_once() {
+        let mut context = request("在真实安卓手机的系统设置中点击进入电池页面，再简短回复。");
+        context.extend(read_skill());
+        context.extend(observe("before"));
+        context.extend(action(
+            "tap",
+            "phone_tap_element",
+            json!({"element_id":"battery"}),
+        ));
+        let mut after = observe("after");
+        after[0]["local_after_action"] = json!("tap");
+        after[1]["output"].as_array_mut().unwrap().push(json!({"type":"input_text",
+            "text":"{\"device_id\":\"phone\",\"observation_id\":\"battery\",\"foreground_app\":\"com.android.settings/.BatterySettings\"}"}));
+        context.extend(after);
+
+        let summary = "已点击并进入电池页面。";
+        let proposal = phone_completion_proposal(&context, &[], summary).unwrap();
+        assert_eq!(proposal["name"], "task_finish");
+        assert_eq!(
+            serde_json::from_str::<Value>(proposal["arguments"].as_str().unwrap()).unwrap(),
+            json!({"status":"completed","summary":summary})
+        );
+        assert!(
+            phone_completion_proposal(
+                &context,
+                &action("next", "phone_scroll", json!({})),
+                summary
+            )
+            .is_none()
+        );
+        assert!(phone_completion_proposal(&context, &[], "接下来检查电池页面。 ").is_none());
+        context.extend(action("finish", "task_finish", json!({})));
+        assert!(phone_completion_proposal(&context, &[], summary).is_none());
+        context.extend(request("改为打开显示页面"));
+        assert!(phone_completion_proposal(&context, &[], summary).is_none());
     }
     #[test]
     fn wechat_routing_uses_current_request_actual_app_or_notification_source() {
