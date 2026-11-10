@@ -46,6 +46,7 @@ pub async fn after(
     screen: &impl Screen,
     mut previous: RgbImage,
     before: &PaintFocus,
+    mousepad_text: bool,
 ) -> Result<Frame> {
     let start = Instant::now();
     let mut last_change = start;
@@ -67,6 +68,7 @@ pub async fn after(
             && (expired
                 || !screen.paint_focus().is_ok_and(|focus| {
                     focus.title != before.title
+                        && !(mousepad_text && mousepad_dirty_title(before, &focus))
                         && !screen.confirmed_desktop_reveal(before.window_id, focus.window_id)
                 })) {
             Some("stable")
@@ -87,6 +89,13 @@ pub async fn after(
         }
         tokio::time::sleep(SAMPLE).await;
     }
+}
+
+fn mousepad_dirty_title(before: &PaintFocus, after: &PaintFocus) -> bool {
+    before.window_id != 0
+        && before.window_id == after.window_id
+        && (before.title.strip_prefix('*') == Some(after.title.as_str())
+            || after.title.strip_prefix('*') == Some(before.title.as_str()))
 }
 
 #[cfg(test)]
@@ -186,7 +195,7 @@ mod tests {
             transition: false,
             desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), &focus(""))
+        let frame = after(&screen, RgbImage::new(32, 32), &focus(""), false)
             .await
             .unwrap();
         assert_eq!(frame.state, "stable");
@@ -202,7 +211,7 @@ mod tests {
             transition: false,
             desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), &focus(""))
+        let frame = after(&screen, RgbImage::new(32, 32), &focus(""), false)
             .await
             .unwrap();
         assert_eq!(frame.state, "changing");
@@ -220,7 +229,7 @@ mod tests {
         };
         screen.count.store(4, Ordering::Relaxed);
         let baseline = screen.capture().unwrap();
-        let same = after(&screen, baseline, &focus("")).await.unwrap();
+        let same = after(&screen, baseline, &focus(""), false).await.unwrap();
         assert_eq!(same.state, "unchanged");
         assert!(same.wait_ms >= 800);
     }
@@ -233,9 +242,14 @@ mod tests {
             transition: true,
             desktop_reveal: false,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), &focus("Previous document"))
-            .await
-            .unwrap();
+        let frame = after(
+            &screen,
+            RgbImage::new(32, 32),
+            &focus("Previous document"),
+            false,
+        )
+        .await
+        .unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(31, 3), Rgb([255, 255, 255]));
         assert!(frame.wait_ms >= 800 && frame.wait_ms < 1500);
@@ -249,11 +263,35 @@ mod tests {
             transition: false,
             desktop_reveal: true,
         };
-        let frame = after(&screen, RgbImage::new(32, 32), &focus("Closed window"))
-            .await
-            .unwrap();
+        let frame = after(
+            &screen,
+            RgbImage::new(32, 32),
+            &focus("Closed window"),
+            false,
+        )
+        .await
+        .unwrap();
         assert_eq!(frame.state, "stable");
         assert_eq!(*frame.image.get_pixel(0, 0), Rgb([255, 255, 255]));
         assert!((80..800).contains(&frame.wait_ms), "{} ms", frame.wait_ms);
+    }
+
+    #[test]
+    fn mousepad_dirty_marker_is_local_to_the_same_window_and_document() {
+        let clean = focus("Untitled 1 - Mousepad");
+        let dirty = focus("*Untitled 1 - Mousepad");
+        assert!(mousepad_dirty_title(&clean, &dirty));
+        assert!(mousepad_dirty_title(&dirty, &clean));
+        assert!(!mousepad_dirty_title(
+            &clean,
+            &focus("*Untitled 2 - Mousepad")
+        ));
+        assert!(!mousepad_dirty_title(
+            &clean,
+            &PaintFocus {
+                window_id: 2,
+                ..dirty
+            }
+        ));
     }
 }

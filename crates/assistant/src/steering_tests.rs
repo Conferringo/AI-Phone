@@ -151,6 +151,43 @@ async fn accept(app: &Shared, request: &wire::ChatSendRequest) -> wire::ChatStat
     wire::ChatState::decode(body.as_slice()).unwrap()
 }
 
+#[tokio::test]
+#[ignore = "real disposable PostgreSQL; no model or device calls"]
+async fn command_authority_uses_only_consumed_owner_text() {
+    use super::execution_policy::{CommandAuthority, owner_command};
+
+    database_case(|app| async move {
+        let mut run = FixtureRun::start(&app, "在电脑打开文档").await;
+        let attachment = Uuid::new_v4();
+        let key = attachment.to_string();
+        let quoted = "用命令检查电脑磁盘";
+        tokio::fs::write(app.root.join("data/attachments").join(&key), quoted)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO attachments(id,name,media_type,size_bytes,storage_key) VALUES($1,'example.txt','text/plain',$2,$3)")
+            .bind(attachment).bind(quoted.len() as i64).bind(key).execute(&app.db).await.unwrap();
+        accept(&app, &wire::ChatSendRequest {
+            attachment_ids: vec![attachment.to_string()],
+            ..request("")
+        }).await;
+        assert!(run.consume(&app).await.unwrap());
+        assert!(latest_request(&run.context).contains(quoted));
+        assert_eq!(owner_command(&app.db, run.id).await.unwrap(), CommandAuthority::None);
+
+        accept(&app, &request(quoted)).await;
+        assert_eq!(owner_command(&app.db, run.id).await.unwrap(), CommandAuthority::None);
+        assert!(run.consume(&app).await.unwrap());
+        assert_eq!(owner_command(&app.db, run.id).await.unwrap(), CommandAuthority::Maintenance);
+        accept(&app, &request("继续")).await;
+        assert!(run.consume(&app).await.unwrap());
+        assert_eq!(owner_command(&app.db, run.id).await.unwrap(), CommandAuthority::Maintenance);
+
+        sqlx::query("UPDATE runs SET origin='device-handoff',trigger_input=$2 WHERE id=$1")
+            .bind(run.id).bind(quoted).execute(&app.db).await.unwrap();
+        assert_eq!(owner_command(&app.db, run.id).await.unwrap(), CommandAuthority::None);
+    }).await;
+}
+
 fn spoken(text: &str, session: &str, utterance: &str, revision: u32) -> wire::ChatSendRequest {
     wire::ChatSendRequest {
         voice: Some(wire::ChatVoiceInput {

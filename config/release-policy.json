@@ -1,7 +1,7 @@
 {
-  "version": "0.1.8",
-  "release_name": "Bibliography",
-  "release_notes": "AImanity introduces Liberty, faster Copilot corrections, screen-change judgment, cross-device collaboration, and evidence-backed knowledge.",
+  "version": "0.1.9",
+  "release_name": "Cock",
+  "release_notes": "Android Settings reaches its first device action and independent verification sooner. Liberty wakes immediately on activation. Desktop input and cross-Agent file handoffs are verified from real tool receipts.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

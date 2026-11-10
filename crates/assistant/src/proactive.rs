@@ -170,7 +170,11 @@ pub async fn route(
                 }
                 if !input.notifications_enabled {sqlx::query("UPDATE phone_notifications SET status='ignored' WHERE status IN ('pending','pending-summary')").execute(&mut *tx).await?;}
             }
-            tx.commit().await?;Ok(changed)
+            tx.commit().await?;
+            if changed && exploration_changed && input.exploring {
+                app.run_signals.phone_exploration.notify_one();
+            }
+            Ok(changed)
         }.await;
         match result {
             Ok(true) => cancel_stopped(&app).await,
@@ -448,11 +452,21 @@ pub async fn assigned_notifications(
 pub async fn should_yield(app: &App, run: Uuid) -> Result<bool, String> {
     sqlx::query_scalar("WITH owned AS (SELECT device_id FROM runs WHERE id=$1
         UNION SELECT device_id FROM device_execution_leases WHERE run_id=$1)
-        SELECT EXISTS(SELECT 1 FROM runs WHERE id=$1 AND origin IN ('exploration','desktop-exploration')) AND p.notifications_enabled AND (
-        EXISTS(SELECT 1 FROM phone_notifications n JOIN owned USING(device_id) WHERE n.status='pending' AND n.notification_key<>$2) OR
-        EXISTS(SELECT 1 FROM runs notice JOIN owned USING(device_id) WHERE notice.origin='notification'
-            AND notice.status='queued' AND (notice.next_wake_at IS NULL OR notice.next_wake_at<=now())
-            AND NOT EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=notice.id AND n.notification_key=$2))
+        SELECT EXISTS(SELECT 1 FROM runs WHERE id=$1 AND origin IN ('exploration','desktop-exploration')) AND (
+        (EXISTS(SELECT 1 FROM device_messages m JOIN owned o ON o.device_id=m.target_device_id
+            JOIN device_links l ON l.id=m.link_id AND l.connected AND l.revision=m.link_revision
+            LEFT JOIN runs parent ON parent.id=m.source_run_id
+            LEFT JOIN runs receiver ON m.status='running' AND receiver.id=m.target_run_id
+            WHERE (m.status='queued' OR (receiver.status='queued' AND (receiver.next_wake_at IS NULL OR receiver.next_wake_at<=now())))
+                AND (parent.id IS NULL OR parent.status<>'canceled'))
+         AND NOT EXISTS(SELECT 1 FROM runs r JOIN harness_events e ON e.run_id=r.id
+             JOIN jsonb_array_elements(r.pending_tools) pending ON e.id::text=pending->>'local_action_id'
+             WHERE r.id=$1 AND e.kind='tool' AND e.status<>'queued' AND e.result IS NULL)) OR
+        (p.notifications_enabled AND (
+            EXISTS(SELECT 1 FROM phone_notifications n JOIN owned USING(device_id) WHERE n.status='pending' AND n.notification_key<>$2) OR
+            EXISTS(SELECT 1 FROM runs notice JOIN owned USING(device_id) WHERE notice.origin='notification'
+                AND notice.status='queued' AND (notice.next_wake_at IS NULL OR notice.next_wake_at<=now())
+                AND NOT EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=notice.id AND n.notification_key=$2))))
         ) FROM proactive_state p")
         .bind(run).bind(screen_attention::KEY).fetch_one(&app.db).await.map_err(|e|e.to_string())
 }
@@ -897,7 +911,10 @@ async fn attend_phone(app: &App) {
     let mut interval = tokio::time::interval(Duration::from_secs(3));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
-        interval.tick().await;
+        tokio::select! {
+            _ = interval.tick() => {}
+            _ = app.run_signals.phone_exploration.notified() => {}
+        }
         let (inbox, ()) = tokio::join!(ingest(app), supervise_phone(app));
         if inbox.is_err() {
             let _ = sqlx::query(
@@ -1126,6 +1143,7 @@ mod tests {
             let update=wire::ProactiveUpdateRequest{expected_revision:revision,interval_seconds:45,..Default::default()};
             assert_eq!(route(State(app.clone()),Path("update".into()),headers.clone(),Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::OK);
             assert_eq!(route(State(app.clone()),Path("update".into()),headers,Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
+            assert!(app.run_signals.phone_exploration.notified().now_or_never().is_none(), "disabling and stale revisions must not wake phone exploration");
             assert!(guard_tool(&app,notification,"phone_notifications").await.is_err(),"disabling notifications revokes a queued summary");
             schedule(&app, &["phone", "desktop"]).await.unwrap();assert!(state(&app).await.unwrap().active_run_id.is_empty());
             // All application notifications wake an idle worker without exploration.

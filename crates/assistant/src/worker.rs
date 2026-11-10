@@ -31,12 +31,17 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, conversation, handoff): (String, Uuid, bool) = sqlx::query_as(
-        "SELECT status,conversation_id,origin='device-handoff' FROM runs WHERE id=$1 FOR UPDATE",
-    )
-    .bind(id)
-    .fetch_one(&mut *tx)
-    .await?;
+    let (status, conversation, handoff, queued_handoff): (String, Uuid, bool, bool) =
+        sqlx::query_as(
+            "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
+            SELECT 1 FROM device_messages m WHERE m.status='queued' AND (
+                m.target_device_id=r.device_id OR EXISTS(SELECT 1 FROM device_execution_leases l
+                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id)))
+         FROM runs r WHERE r.id=$1 FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
         Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
@@ -92,9 +97,9 @@ async fn finish_attempt(
     }
     if trace != "waiting" {
         app.run_signals.channel_update.notify_one();
-        if handoff {
-            app.run_signals.handoff.notify_one();
-        }
+    }
+    if queued_handoff || (handoff && trace != "waiting") {
+        app.run_signals.handoff.notify_one();
     }
     Ok(())
 }
@@ -179,7 +184,7 @@ async fn initial_context(
         identity.get::<&str, _>("device_id"),
     ));
     let kind: &str = identity.get("kind");
-    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；统一文件管理用device_file_list/device_file_manage，手机/电脑根路径为/，device_id空字符串为共享工作文件，copy/move支持跨工作区与设备的真实文件/目录。传输后核对实际目标路径；应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
+    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
     let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal").bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
@@ -274,10 +279,14 @@ fn latest_request(context: &[Value]) -> String {
             item["role"] == "system" && text_of(item).starts_with("AI_PHONE_CURRENT_TASK：")
         })
         .unwrap_or(0);
-    let mut requests = (boundary..context.len())
+    let requests = (boundary..context.len())
         .rev()
         .filter(|&index| is_task_input(context, index))
         .map(|index| text_of(&context[index]));
+    resolved_request(requests)
+}
+
+fn resolved_request(mut requests: impl Iterator<Item = String>) -> String {
     let latest = requests.next().unwrap_or_default();
     // Short continuations preserve the current goal's evidence requirements. Explicit
     // corrections remain the latest request, and never revive an earlier task.
@@ -542,6 +551,9 @@ fn phone_acknowledgement(request: &str) -> bool {
             .any(|ending| text.ends_with(ending))
 }
 fn computer_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return true;
+    }
     let request = latest_request(context).to_lowercase();
     (!explanatory_request(&request) || execution_policy::lookup_request(&request))
         && (request
@@ -558,8 +570,14 @@ fn computer_task(context: &[Value]) -> bool {
 }
 fn desktop_focused(context: &[Value]) -> bool {
     context
-        .iter()
-        .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
+        .first()
+        .filter(|item| item["role"] == "system")
+        .and_then(|item| item["content"][0]["text"].as_str())
+        .and_then(|text| text.rsplit_once("[当前设备类型:"))
+        .is_some_and(|(_, kind)| kind.starts_with("desktop]"))
+}
+fn desktop_handoff(context: &[Value]) -> bool {
+    desktop_focused(context) && crate::device_exchange::is_incoming_handoff(context)
 }
 fn desktop_focus_task(request: &str) -> bool {
     !work_intent::harness_resource_request(request)
@@ -572,6 +590,33 @@ fn desktop_focus_task(request: &str) -> bool {
 #[cfg(test)]
 mod target_wording_tests {
     use super::*;
+    #[test]
+    fn desktop_handoff_uses_its_bound_desktop_even_when_it_returns_a_file_to_a_phone() {
+        let text = "核对 Linux 桌面上的文件，再传回手机，别打开微信。";
+        let mut context = vec![
+            json!({"role":"system","content":[{"type":"input_text","text":"[当前设备类型:desktop]"}]}),
+        ];
+        context.extend(crate::device_exchange::context(json!({"text":text})));
+        assert!(computer_task(&context));
+        assert!(!phone_task(&context));
+        assert!(!wechat_task(&context));
+        assert_eq!(phone_claim(&context, "已传回手机。"), PhoneClaim::None);
+        assert_eq!(
+            initial_observation(&context, Some("desktop-test"))
+                .unwrap()
+                .0,
+            "computer_observe"
+        );
+        let error = recoverable_tool_failure(crate::phone_system::NO_PHONE_BINDING.into());
+        assert!(!observation_retry_needed(
+            &json!({"name":"phone_observe"}),
+            &tool_value(&error).unwrap()
+        ));
+        context[0]["content"][0]["text"] =
+            json!("记忆中提到[当前设备类型:desktop]。[当前设备类型:phone]");
+        assert!(!desktop_handoff(&context));
+    }
+
     #[test]
     fn excluded_computer_is_not_a_computer_goal() {
         let phone = vec![
@@ -605,6 +650,9 @@ mod target_wording_tests {
     }
 }
 fn phone_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let request = latest_request(context).to_lowercase();
     if computer_task(context) && !explicit_phone_target(&request) {
         return false;
@@ -690,6 +738,9 @@ fn phone_task(context: &[Value]) -> bool {
     (continuation || phone_acknowledgement(&request)) && recent_phone
 }
 fn phone_claim(context: &[Value], answer: &str) -> PhoneClaim {
+    if desktop_handoff(context) {
+        return PhoneClaim::None;
+    }
     if computer_task(context)
         && !phone_task(context)
         && !explicit_phone_target(&answer.to_lowercase())
@@ -904,6 +955,9 @@ fn guidance_read(name: &str) -> Value {
         "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name})
 }
 fn wechat_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let request = latest_request(context)
         .to_lowercase()
         .replace("企业微信", "");
@@ -1343,8 +1397,8 @@ fn wait_reentry_rejection(
         )
     }
 }
-fn maintenance_request(context: &[Value]) -> bool {
-    let request = latest_request(context).to_lowercase();
+fn maintenance_request(request: &str) -> bool {
+    let request = request.to_lowercase();
     work_intent::positive_clauses(&request).any(|clause| {
         [
             "用命令",
@@ -1458,7 +1512,7 @@ fn fresh_phone_evidence(context: &[Value], claim: PhoneClaim) -> bool {
         .filter(|(_, call)| {
             call["type"] == "function_call"
                 && phone_mutation(call)
-                && (call["name"] != "phone_shell" || maintenance_request(context))
+                && (call["name"] != "phone_shell" || maintenance_request(&latest_request(context)))
                 && tool_output(context, call).is_some_and(output_success)
         })
         .map(|(index, _)| index)
@@ -1475,7 +1529,7 @@ fn evidence_start(context: &[Value]) -> usize {
         .rfind(|&index| is_task_input(context, index))
         .unwrap_or(0)
 }
-fn tool_value(output: &Value) -> Option<Value> {
+pub(super) fn tool_value(output: &Value) -> Option<Value> {
     output
         .as_array()?
         .iter()
@@ -1491,7 +1545,12 @@ fn tool_outcome(value: Option<&Value>) -> ToolOutcome {
         {
             ToolOutcome::Blocked
         }
-        Some(value) if value["success"] == false || value["error"].is_string() => {
+        Some(value)
+            if value["success"] == false
+                || value["error"]
+                    .as_str()
+                    .is_some_and(|error| !error.is_empty()) =>
+        {
             ToolOutcome::Failed
         }
         _ => ToolOutcome::Completed,
@@ -1734,6 +1793,11 @@ fn fatal_tool_error(error: &str) -> bool {
 fn recoverable_tool_failure(error: String) -> Value {
     let detail = if let Some(message) = error.strip_prefix("device_busy:") {
         json!({"success":false,"error":message,"code":"device_busy","recoverable":true,"not_executed":true,"next_tool":"task_wait"})
+    } else if matches!(
+        error.as_str(),
+        crate::phone_system::NO_PHONE_BINDING | crate::phone_system::PHONE_BINDING_REVOKED
+    ) {
+        json!({"success":false,"error":error,"code":"device_not_authorized","not_executed":true})
     } else {
         json!({"success":false,"error":error,"recoverable":true})
     };
@@ -1763,6 +1827,9 @@ fn verification_attempts(context: &[Value]) -> usize {
 }
 
 fn needs_verification_observation(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let scope = &context[evidence_start(context)..];
     let Some(prompt) = scope
         .iter()
@@ -2412,6 +2479,34 @@ async fn execute(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
             );
             pending.remove(0);
+            if name == "computer_type"
+                && let Some(receipt) = value.as_ref()
+                && receipt["code"] == "input_unconfirmed"
+                && receipt["success"] == false
+                && receipt["result_unknown"] == true
+            {
+                pending.clear();
+                let reason = "电脑未确认收到文字，已暂停。请检查当前输入框后再继续。";
+                if persist_disposition(
+                    app,
+                    id,
+                    message,
+                    Checkpoint {
+                        context: &mut context,
+                        pending: &pending,
+                        answer: reason,
+                        step,
+                        state: &state,
+                    },
+                    RunDisposition::Paused,
+                    None,
+                )
+                .await?
+                {
+                    return Ok(RunDisposition::Paused);
+                }
+                continue;
+            }
             queue_post_action_observation(&call, &result, &mut context, &mut pending);
             if !failed && phone_mutation(&call) {
                 state.observation_recoveries = 0;
@@ -2600,7 +2695,9 @@ async fn execute(
             continue;
         }
         let effort = if screen_attention
-            || (verification_attempts(&context) > 0 && !has_current_observation(&context))
+            || (!desktop_handoff(&context)
+                && verification_attempts(&context) > 0
+                && !has_current_observation(&context))
         {
             "none"
         } else if (phone_task(&context) || action_task(&context))
@@ -2953,15 +3050,19 @@ async fn respond(
         } else {
             crate::model_context::for_api(&projected)
         };
-    if !execution_policy::command_execution(context) {
+    let authority = execution_policy::owner_command(&app.db, run).await?;
+    if authority == execution_policy::CommandAuthority::None {
         input.push(json!({"role":"system","content":[{"type":"input_text","text":execution_policy::GUI_GUIDANCE}]}));
     }
-    let mut body = json!({"input":input,"tools":execution_tools(context),"parallel_tool_calls":false,"reasoning":{"effort":effort},"max_output_tokens":8192});
+    let mut body = json!({"input":input,"tools":execution_tools(authority),"parallel_tool_calls":false,"reasoning":{"effort":effort},"max_output_tokens":8192});
     if effort == "none" {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }
     let client = app.settings.http_client(&config.proxy_url)?;
-    crate::model_adapter::request_tracked(&config, &client, body, cancel, timing).await
+    let output =
+        crate::model_adapter::request_tracked(&config, &client, body, cancel, timing).await?;
+    crate::model_adapter::validate_call_ids(context, &output)?;
+    Ok(output)
 }
 
 pub(crate) async fn phone<I: Message, O: Message + Default>(
@@ -3003,11 +3104,14 @@ async fn recorded_tool(
     let id = Uuid::parse_str(call["local_action_id"].as_str().ok_or("工具调用ID无效")?)
         .map_err(|e| e.to_string())?;
     let name = call["name"].as_str().unwrap_or("");
-    let existing = sqlx::query("SELECT status,result FROM harness_events WHERE id=$1")
-        .bind(id)
-        .fetch_optional(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
+    let existing = sqlx::query(
+        "SELECT status,result FROM harness_events WHERE id=$1 AND run_id=$2 AND kind='tool'",
+    )
+    .bind(id)
+    .bind(run)
+    .fetch_optional(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     if let Some(row) = &existing {
         if let Some(result) = row.get::<Option<Value>, _>("result") {
             if row.get::<String, _>("status") == "completed" {
@@ -3023,7 +3127,7 @@ async fn recorded_tool(
                         "paused:unknown_outcome:远端推送结果尚不能核对，未重发".to_string()
                     })?;
             let value = json!([{"type":"input_text","text":json!({"request_id":id.to_string(),"deliveries":delivery.deliveries.iter().map(|d|json!({"provider":d.provider,"status":d.status,"error":d.error})).collect::<Vec<_>>(),"note":"这是原推送的状态查询，没有重新发送。not_found只表示没有可核对的队列记录，不能声称送达。"}).to_string()}]);
-            sqlx::query("UPDATE harness_events SET status='completed',result=$2,finished_at=now() WHERE id=$1").bind(id).bind(&value).execute(&app.db).await.map_err(|e|e.to_string())?;
+            sqlx::query("UPDATE harness_events SET status='completed',result=$2,finished_at=now() WHERE id=$1 AND run_id=$3 AND kind='tool'").bind(id).bind(&value).bind(run).execute(&app.db).await.map_err(|e|e.to_string())?;
             return Ok(value);
         }
         if !can_restart_tool(call) && row.get::<String, _>("status") != "queued" {
@@ -3122,7 +3226,8 @@ async fn recorded_tool(
     let admitted = sqlx::query(
         "INSERT INTO harness_events(id,run_id,message_id,kind,title,content)
         SELECT $1,id,$3,'tool',$4,$5 FROM runs WHERE id=$2 AND status='running'
-        ON CONFLICT(id) DO UPDATE SET status='running'",
+        ON CONFLICT(id) DO UPDATE SET status='running'
+        WHERE harness_events.run_id=EXCLUDED.run_id AND harness_events.kind='tool'",
     )
     .bind(id)
     .bind(run)
@@ -3149,7 +3254,9 @@ async fn recorded_tool(
                     .any(|text| {
                         serde_json::from_str::<Value>(text)
                             .ok()
-                            .is_some_and(|value| value["success"] == false)
+                            .is_some_and(|value| {
+                                tool_outcome(Some(&value)) != ToolOutcome::Completed
+                            })
                     })
             }) {
                 "failed"
@@ -3181,12 +3288,14 @@ async fn recorded_tool(
         output.chars().take(96000).collect::<String>()
     );
     sqlx::query(
-        "UPDATE harness_events SET content=$2,status=$3,result=$4,finished_at=now() WHERE id=$1",
+        "UPDATE harness_events SET content=$2,status=$3,result=$4,finished_at=now()
+         WHERE id=$1 AND run_id=$5 AND kind='tool'",
     )
     .bind(id)
     .bind(content)
     .bind(status)
     .bind(result.as_ref().ok().cloned())
+    .bind(run)
     .execute(&app.db)
     .await
     .map_err(|e| e.to_string())?;
@@ -3261,23 +3370,27 @@ async fn tool(
     let arguments: Value =
         serde_json::from_str(call["arguments"].as_str().unwrap_or("{}")).unwrap_or(json!({}));
     crate::proactive::guard_tool(app, run, name).await?;
-    if execution_policy::command_tool(name) {
+    let command = execution_policy::command_tool(name);
+    let authority = if command {
+        execution_policy::owner_command(&app.db, run).await?
+    } else {
+        execution_policy::CommandAuthority::None
+    };
+    if command && authority == execution_policy::CommandAuthority::None {
         let raw: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
             .bind(run)
             .fetch_one(&app.db)
             .await
             .map_err(|e| e.to_string())?;
         let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
-        if !execution_policy::command_execution(&current) {
-            let next = if execution_policy::desktop_target(&current) {
-                "computer_observe"
-            } else {
-                "phone_observe"
-            };
-            return Ok(json!([{"type":"input_text","text":json!({"success":false,
-                "not_executed":true,"code":"visible_device_required","next_tool":next,
-                "error":"本轮设备任务必须使用真实GUI。请在设备浏览器或对应应用中操作；命令抓取、工作容器和模型内置搜索不能替代。"}).to_string()}]));
-        }
+        let next = if execution_policy::desktop_target(&current) {
+            "computer_observe"
+        } else {
+            "phone_observe"
+        };
+        return Ok(json!([{"type":"input_text","text":json!({"success":false,
+            "not_executed":true,"code":"visible_device_required","next_tool":next,
+            "error":"本轮设备任务必须使用真实GUI。请在设备浏览器或对应应用中操作；命令抓取、工作容器和模型内置搜索不能替代。"}).to_string()}]));
     }
     if name == "app_experience_withdraw" {
         let value = crate::app_learning::withdraw(app, run, &arguments).await?;
@@ -3552,7 +3665,10 @@ async fn tool(
             );
         }
     }
-    if name == "phone_shell" && phone_mutation(call) && !maintenance_request(&current) {
+    if name == "phone_shell"
+        && phone_mutation(call)
+        && authority != execution_policy::CommandAuthority::Maintenance
+    {
         return Ok(
             json!([{"type":"input_text","text":json!({"success":false,"not_executed":true,"error":"普通手机任务必须通过GUI操作，不能用shell启动应用、安装包或替代浏览。请phone_observe后用phone_tap/swipe/input/key等工具。","next_tool":"phone_observe"}).to_string()}]),
         );
@@ -4844,6 +4960,27 @@ mod loop_persistence_tests {
             tool_value(&output).unwrap(),
             json!({"success":false,"error":"文件读取失败","recoverable":true})
         );
+    }
+
+    #[test]
+    fn completed_transfer_receipt_with_empty_error_resets_the_stall_budget() {
+        let receipt = json!({"success":true,"status":"completed","bytes":80,"error":""});
+        let output = json!([{"type":"input_text","text":receipt.to_string()}]);
+        assert!(output_success(&output));
+        assert!(!failed_output(&output));
+        let mut state = crate::agent_loop::LoopState {
+            stalls: 2,
+            ..Default::default()
+        };
+        assert!(!state.tool_result(
+            "device_transfer_status",
+            "{}",
+            &output,
+            tool_outcome(Some(&receipt))
+        ));
+        assert_eq!(state.stalls, 0);
+        let failure = json!({"success":true,"error":"copy failed"});
+        assert_eq!(tool_outcome(Some(&failure)), ToolOutcome::Failed);
     }
 
     #[test]

@@ -8,8 +8,8 @@ An agent that listens while it works, explores on its own, and learns across And
 
 | Platform | Installer |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
 

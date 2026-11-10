@@ -8,12 +8,12 @@ An agent that listens while it works, explores on its own, and learns from using
 
 | Platform | Installer |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
 
-Upgrading from 0.1.7? Install 0.1.8 once from the table above. Your devices, models and chats stay in place.
+Upgrading from 0.1.7? Install 0.1.9 once from the table above. Your devices, models and chats stay in place.
 
 Each installer includes the device images, emulator and local services. Configure devices and choose a model in the app. Setup and the workbench support ten [interface languages](docs/public/languages.md).
 
@@ -61,12 +61,12 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 | 平台 | 安装包 |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.9](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.9/AImanity-0.1.9-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [构建和平台状态](docs/public/release-status.md)
 
-从 0.1.7 升级时，下载上面的安装包，手动覆盖安装一次。设备、模型配置和聊天记录保留。
+从 0.1.7 升级时，下载上面的 0.1.9 安装包，手动覆盖安装一次。设备、模型配置和聊天记录保留。
 
 完整安装包内置设备镜像、模拟器和服务。打开客户端，配置设备和模型后进入工作台。初次配置和工作台支持[十种界面语言](docs/public/languages.md)。
 

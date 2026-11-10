@@ -30,7 +30,8 @@ impl Screen for FakeScreen {
         Ok(ai_phone_guest_runtime::screen::WindowIdentity {
             title: self.title()?,
             application_class: "fixture-app".into(),
-            ..Default::default()
+            window_id: 9,
+            process_id: 10,
         })
     }
     fn capture(&self) -> Result<RgbImage> {
@@ -296,6 +297,20 @@ async fn chinese_paste_has_exact_utf8_bytes_and_no_shell_interpolation() {
     assert_eq!(requests[1].program, "xdotool");
     assert_eq!(requests[1].args, ["key", "--clearmodifiers", "ctrl+v"]);
     assert!(app.screen.state.lock().unwrap().moves.is_empty());
+}
+
+#[tokio::test]
+async fn paste_with_no_redraw_returns_unconfirmed_without_resending_input() {
+    let home = tempfile::tempdir().unwrap();
+    let app = runtime(home.path());
+    let result = app
+        .dispatch(
+            "action",
+            json!({"kind":"text","text":"visible text","window_id":9,"process_id":10,"wait_for_paint":true}),
+        )
+        .await;
+    assert!(matches!(result, Err(error) if error.is::<actions::InputUnconfirmed>()));
+    assert_eq!(app.runner.requests.lock().unwrap().len(), 2);
 }
 
 #[tokio::test]

@@ -140,6 +140,9 @@ async fn main() -> ExitCode {
             if error.is::<ai_phone_guest_runtime::actions::InputRejected>() {
                 value["not_executed"] = json!(true);
                 value["code"] = json!("field_focus");
+            } else if error.is::<ai_phone_guest_runtime::actions::InputUnconfirmed>() {
+                value["result_unknown"] = json!(true);
+                value["code"] = json!("input_unconfirmed");
             }
             let _ = emit(Response::Json(value));
         }

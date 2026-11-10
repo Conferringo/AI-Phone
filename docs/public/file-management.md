@@ -16,7 +16,7 @@ The Rust Assistant owns `/v1/files/list`, `/v1/files/manage` and `/v1/files/uplo
 
 Android uses the native Rust ADB client and SYNC streams, without a host SDK subprocess. Linux operations execute in the owned desktop container as guest root. Workspace paths resolve within the persistent workspace. Cross-device staging is private, file content streams without model calls or whole-file hashes, and a failed batch exposes each completed or failed item.
 
-The Agent uses `device_file_list` and `device_file_manage` with the same implementation as the interface. Empty `device_id` selects the workspace. Guest access retains run/device binding checks. File operations are data-plane operations; browsing, social messages and office work still require the corresponding phone-use or computer-use tools.
+Agents use `device_file_list` and `device_file_manage` for the workspace and devices bound to the current run. Across Agents, a connected cable exposes the shared directories through `device_files` and copies files through `device_transfer`. Browsing, social messages and office work use the corresponding phone-use or computer-use tools.
 
 ## Verification scope
 
@@ -32,4 +32,4 @@ macOS development validation covers real Android and Linux guest roots, nested d
 
 新上传附件、设备取回的文件和 Harness 产物使用同一工作区。聊天原始附件与可编辑的工作副本分开保留。三个面板分别显示工作区、手机文件和电脑文件。列表显示名称、大小和修改时间。
 
-接口与 Agent 共用 Rust 实现，普通业务请求使用 protobuf，上传和下载流式传输，不经过模型或整文件重复校验。支持目录递归复制；符号链接可进入目录，特殊文件和符号链接复制会明确报错；暂不提供目录打包下载。实测环境为 macOS 宿主及 Android、Linux 客体。
+接口与 Agent 共用 Rust 实现，普通业务请求使用 protobuf，上传和下载流式传输。Agent 可管理工作区和本任务绑定的设备。跨 Agent 连接数据线后，用 `device_files` 查看共享目录，用 `device_transfer` 复制文件。复制支持普通文件和目录，可进入符号链接指向的目录，下载目录内容时逐个下载文件。实测环境为 macOS 宿主及 Android、Linux 客体。

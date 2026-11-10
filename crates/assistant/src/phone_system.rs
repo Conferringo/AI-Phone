@@ -1,6 +1,9 @@
 //! Route managed phone operations to the retained Android runtime.
 use crate::*;
 
+pub(crate) const NO_PHONE_BINDING: &str = "此Agent未授权手机";
+pub(crate) const PHONE_BINDING_REVOKED: &str = "该任务没有此设备的授权";
+
 pub struct Target {
     pub runner: u16,
     pub token: String,
@@ -30,9 +33,9 @@ pub async fn for_run(app: &App, run: Uuid) -> Result<String, String> {
     .fetch_optional(&app.db)
     .await
     .map_err(|e| e.to_string())?
-    .ok_or("此Agent未授权手机")?;
+    .ok_or(NO_PHONE_BINDING)?;
     if !authorized {
-        return Err("该任务没有此设备的授权".into());
+        return Err(PHONE_BINDING_REVOKED.into());
     }
     Ok(id)
 }
