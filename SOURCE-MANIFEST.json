@@ -1695,8 +1695,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 39997,
-      "sha256": "3b21a9e3e40b982f2bfdad2762753e11985410026fa1441fac18ae1656fca24a"
+      "size": 47843,
+      "sha256": "2de94632b98ab2b6ed9f4d290f8525d98652d91c8dd0e458f00d2327d5af3481"
     },
     {
       "path": "crates/assistant/src/database/bootstrap.rs",
@@ -1790,8 +1790,8 @@
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
-      "size": 2887,
-      "sha256": "04e3b0bf8739a946882489f5523b38b3fa66bb87170976a9b7de8ac179bb1fd1"
+      "size": 2908,
+      "sha256": "628aeca5b1a0f542bc24427e377c32189d67a177add3e858afd3b13556727bc8"
     },
     {
       "path": "crates/assistant/src/files.rs",
@@ -1900,8 +1900,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 79530,
-      "sha256": "a45cf40d19cf7343316fb5c6927516d1c47f696b4b570b5af2132d10428e7a27"
+      "size": 79954,
+      "sha256": "78c283528ed183f3d607a9ad12021950a4fc54c17e64ec8616605b1e164c451d"
     },
     {
       "path": "crates/assistant/src/redis_events.rs",
@@ -1930,8 +1930,8 @@
     },
     {
       "path": "crates/assistant/src/run_signals.rs",
-      "size": 5857,
-      "sha256": "ba7c17e408196571781e1810be84ab41360b9f526d128f38616f263022d7026c"
+      "size": 5938,
+      "sha256": "4b8104e34c88e394b0884ba9175e2b634aada8c2ca429df9b1aa0bc638c41c97"
     },
     {
       "path": "crates/assistant/src/settings.rs",
@@ -2035,8 +2035,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 230752,
-      "sha256": "82bd7fbd754dc088a5d0be564a38bb9de8c7ad43b1c180afae94c3d162fb0023"
+      "size": 230916,
+      "sha256": "4698c71d361e75ab0206c427fa2354ff86e85678a913e0c97dc9392556686380"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",

@@ -2,6 +2,7 @@ use crate::*;
 use serde_json::{Value, json};
 use sqlx::Row;
 use std::collections::HashMap;
+use std::ops::Range;
 
 pub struct AuditResult {
     pub approved: bool,
@@ -128,6 +129,99 @@ fn single_desktop_input(evidence: &[Value]) -> bool {
     inputs == 1
 }
 
+struct SettingsTapAudit {
+    source: Value,
+    tap: usize,
+    after: usize,
+    visuals: Range<usize>,
+}
+
+fn single_settings_tap(
+    evidence: &[Value],
+    calls: &HashMap<Uuid, &Value>,
+    post_visuals: Option<(Uuid, Range<usize>)>,
+) -> Option<SettingsTapAudit> {
+    let (visual_event, visuals) = post_visuals?;
+    if evidence
+        .iter()
+        .any(|receipt| receipt["status"] != "completed")
+    {
+        return None;
+    }
+    let mut device_rows = evidence.iter().enumerate().filter(|(_, receipt)| {
+        !matches!(receipt["tool"].as_str(), Some("skill_read" | "task_plan"))
+    });
+    let (_, before) = device_rows.next()?;
+    let (tap, action) = device_rows.next()?;
+    let (after, post) = device_rows.next()?;
+    if device_rows.next().is_some()
+        || before["tool"] != "phone_observe"
+        || action["tool"] != "phone_tap_element"
+        || post["tool"] != "phone_observe"
+    {
+        return None;
+    }
+
+    let result = crate::worker::tool_value(&action["result"])?;
+    if result["success"] != true
+        || result["not_executed"] == true
+        || result["result_unknown"] == true
+    {
+        return None;
+    }
+    let action_event = Uuid::parse_str(action["evidence_id"].as_str()?).ok()?;
+    let post_event = Uuid::parse_str(post["evidence_id"].as_str()?).ok()?;
+    let action_call = calls.get(&action_event)?;
+    let action_id = action_call["call_id"]
+        .as_str()
+        .filter(|id| !id.is_empty())?;
+    if visual_event != post_event || calls.get(&post_event)?["local_after_action"] != action_id {
+        return None;
+    }
+
+    let arguments: Value = serde_json::from_str(action_call["arguments"].as_str()?).ok()?;
+    let source = crate::worker::tool_value(&before["result"])?;
+    let destination = crate::worker::tool_value(&post["result"])?;
+    let source_app = source["foreground_app"].as_str()?;
+    let target_app = destination["foreground_app"].as_str()?;
+    let device = source["device_id"].as_str().filter(|id| !id.is_empty())?;
+    let source_observation = source["observation_id"]
+        .as_str()
+        .filter(|id| !id.is_empty())?;
+    let target_observation = destination["observation_id"]
+        .as_str()
+        .filter(|id| !id.is_empty())?;
+    if !source_app.starts_with("com.android.settings/")
+        || !target_app.starts_with("com.android.settings/")
+        || source_app == target_app
+        || destination["device_id"] != device
+        || source_observation == target_observation
+        || arguments["observation_id"] != source_observation
+    {
+        return None;
+    }
+    let element_id = arguments["element_id"]
+        .as_str()
+        .filter(|id| !id.is_empty())?;
+    let control = source["elements"].as_array()?.iter().find(|element| {
+        element["id"] == element_id
+            && element["source"] == "native"
+            && element["clickable"] == true
+            && element["text"]
+                .as_str()
+                .is_some_and(|text| !text.trim().is_empty())
+    })?;
+    let source = json!({"device_id":device,"observation_id":source_observation,"foreground_app":source_app,
+        "target":{"id":element_id,"text":control["text"],"resource_id":control["resource_id"]}});
+    Some(SettingsTapAudit {
+        source: json!({"evidence_id":before["evidence_id"],"tool":"phone_observe","status":"completed",
+            "result":[{"type":"input_text","text":source.to_string()}]}),
+        tap,
+        after,
+        visuals,
+    })
+}
+
 // A completion audit has no execution tools. Its input comes from this run's
 // persisted tool ledger, never from historical assistant prose.
 pub async fn verify(
@@ -153,7 +247,7 @@ pub async fn verify(
         })
         .collect();
     let ids: Vec<_> = current_calls.keys().copied().collect();
-    let rows = sqlx::query("SELECT id,title,status,result FROM harness_events WHERE run_id=$1 AND id=ANY($2) AND kind='tool' AND result IS NOT NULL ORDER BY created_at DESC,id DESC LIMIT 64")
+    let rows = sqlx::query("SELECT e.id,e.title,e.status,e.result,r.origin='user' AS user_run FROM harness_events e JOIN runs r ON r.id=e.run_id WHERE e.run_id=$1 AND e.id=ANY($2) AND e.kind='tool' AND e.result IS NOT NULL ORDER BY e.created_at DESC,e.id DESC LIMIT 64")
         .bind(run).bind(&ids).fetch_all(&app.db).await.map_err(|e| e.to_string())?;
     if !needs_input
         && !rows.iter().any(|row| {
@@ -169,6 +263,7 @@ pub async fn verify(
     let mut image_budget = 8usize;
     let mut visual_inputs = Vec::new();
     let mut input_visuals = None;
+    let mut post_visuals = None;
     let mut evidence = Vec::new();
     let mut learning_evidence = LearningEvidence::new();
     for row in &rows {
@@ -194,6 +289,16 @@ pub async fn verify(
         if name == "computer_type" && first_visual < visual_inputs.len() {
             input_visuals = Some(first_visual..visual_inputs.len());
         }
+        if name == "phone_observe"
+            && call["local_after_action"].is_string()
+            && visual_inputs.len() == first_visual + 2
+            && visual_inputs[first_visual + 1]["image_url"]
+                .as_str()
+                .and_then(|url| url.strip_prefix("data:image/png;base64,"))
+                .is_some_and(|png| !png.is_empty())
+        {
+            post_visuals = Some((row_id, first_visual..visual_inputs.len()));
+        }
         evidence.push(json!({"evidence_id":id,"tool":name,"learning_app":learning_evidence.get(&id).map(|m|m.app_id.as_str()),
             "input":call["arguments"].as_str().unwrap_or(""),
             "title":row.get::<String,_>("title"),"status":row.get::<String,_>("status"),"result":result}));
@@ -214,16 +319,32 @@ pub async fn verify(
         sqlx::query_scalar::<_, Value>("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8")
             .bind(run).fetch_all(&app.db),
     ).map_err(|e| e.to_string())?;
-    let compact = !needs_input
+    let compact_allowed = !needs_input
         && handoff_receipts.is_empty()
         && notifications.is_empty()
         && learning.is_empty()
-        && rows.len() < 64
-        && input_visuals.is_some()
-        && single_desktop_input(&evidence);
-    if compact {
+        && rows.len() < 64;
+    let settings_tap = (compact_allowed
+        && rows
+            .first()
+            .is_some_and(|row| row.get::<bool, _>("user_run")))
+    .then(|| single_settings_tap(&evidence, &current_calls, post_visuals))
+    .flatten();
+    let compact_phone = settings_tap.is_some();
+    let compact_visuals = if let Some(tap) = settings_tap {
+        evidence = vec![
+            tap.source,
+            std::mem::take(&mut evidence[tap.tap]),
+            std::mem::take(&mut evidence[tap.after]),
+        ];
+        Some(tap.visuals)
+    } else if compact_allowed && input_visuals.is_some() && single_desktop_input(&evidence) {
         evidence.retain(|receipt| receipt["tool"] == "computer_type");
-    }
+        input_visuals
+    } else {
+        None
+    };
+    let compact = compact_visuals.is_some();
     let mut audit_input = vec![
         json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence,"handoff_receipts":handoff_receipts}).to_string()}),
     ];
@@ -237,7 +358,7 @@ pub async fn verify(
     if !learning.is_empty() {
         audit_input.push(json!({"type":"input_text","text":format!("以下是本轮唯一有效的待发布经验候选，同名旧草稿已经被修订或撤回，不再要求旧草稿通过。请仅逐项核对这份有效候选与实际操作证据，不要因为候选标注verified就相信它：{}",json!(learning))}));
     }
-    if compact && let Some(range) = input_visuals {
+    if let Some(range) = compact_visuals {
         audit_input.extend(visual_inputs.drain(range));
     } else {
         audit_input.extend(visual_inputs);
@@ -255,7 +376,9 @@ pub async fn verify(
     if !compact {
         audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。evidence_ids仅引用tool_evidence中的evidence_id，所引事件的learning_app都须等于app_id；不要填写嵌套观察ID或跨应用事件。verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
     }
-    let instructions = if compact {
+    let instructions = if compact_phone {
+        "核对单次 Android 设置页面跳转。检查真实点击回执、点击前的控件记录和点击后的同设备画面与可见控件。只有点击目标和实际到达页面都符合用户要求，且完成声明中的事实均有画面或控件证据时，才可 approved=true。点击成功本身不证明目标页面已到达。只调用 audit_result，用一句话报告证据或阻碍。"
+    } else if compact {
         "核对单次电脑输入。以执行器的输入回执与动作后真实画面核对用户要求的内容、目标窗口与完成声明。只有画面或可靠回读确认实际内容才可通过；键盘派发本身不证明文本已进入。仅调用 audit_result，用一句话报告证据或阻碍。"
     } else {
         "你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。设备协作回执可核对文件传输；外发结果须由来源应用的实际操作记录支持。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"
@@ -428,8 +551,10 @@ fn extract_images(value: &mut Value, id: &str, inputs: &mut Vec<Value>) {
         Value::Object(object) => {
             if object.get("type").and_then(Value::as_str) == Some("input_image") {
                 inputs.push(json!({"type":"input_text","text":format!("真实截图证据 {id}")}));
-                inputs.push(value.clone());
-                *value = json!({"type":"input_text","text":format!("真实截图证据 {id} 见附图")});
+                inputs.push(std::mem::replace(
+                    value,
+                    json!({"type":"input_text","text":format!("真实截图证据 {id} 见附图")}),
+                ));
             } else {
                 for item in object.values_mut() {
                     extract_images(item, id, inputs);
@@ -488,6 +613,56 @@ mod tests {
         assert!(!single_desktop_input(&[input.clone(), input.clone()]));
         input["status"] = json!("failed");
         assert!(!single_desktop_input(&[observation, input]));
+    }
+
+    #[test]
+    fn settings_short_review_requires_its_own_tap_and_post_action_image() {
+        let before = Uuid::new_v4();
+        let action = Uuid::new_v4();
+        let after = Uuid::new_v4();
+        let receipt = |id, tool, result: Value| {
+            json!({"evidence_id":id,"tool":tool,"status":"completed",
+            "result":[{"type":"input_text","text":result.to_string()}]})
+        };
+        let source = json!({"device_id":"phone-local-01","observation_id":"home",
+            "foreground_app":"com.android.settings/.Settings","elements":[
+                {"id":"n1","source":"native","clickable":true,"text":"Battery","resource_id":"android:id/title"},
+                {"id":"n2","source":"native","clickable":true,"text":"Network"}]});
+        let destination = json!({"device_id":"phone-local-01","observation_id":"details",
+            "foreground_app":"com.android.settings/.SubSettings"});
+        let mut evidence = vec![
+            receipt(before, "phone_observe", source),
+            receipt(
+                action,
+                "phone_tap_element",
+                json!({"success":true,"output":"tap"}),
+            ),
+            receipt(after, "phone_observe", destination.clone()),
+        ];
+        let tap_call = json!({"call_id":"tap","arguments":"{\"observation_id\":\"home\",\"element_id\":\"n1\"}"});
+        let post_call = json!({"local_after_action":"tap"});
+        let unrelated_call = json!({"local_after_action":"other-tap"});
+        let calls = HashMap::from([(action, &tap_call), (after, &post_call)]);
+        let images = Some((after, 0..2));
+        let short = single_settings_tap(&evidence, &calls, images.clone()).unwrap();
+        assert_eq!(short.visuals, 0..2);
+        let target = crate::worker::tool_value(&short.source["result"]).unwrap();
+        assert_eq!(target["target"]["text"], "Battery");
+        assert!(target.get("elements").is_none());
+
+        assert!(single_settings_tap(&evidence, &calls, None).is_none());
+        let unlinked = HashMap::from([(action, &tap_call), (after, &unrelated_call)]);
+        assert!(single_settings_tap(&evidence, &unlinked, images.clone()).is_none());
+        evidence[2] = receipt(
+            after,
+            "phone_observe",
+            json!({"device_id":"another-phone",
+            "observation_id":"details","foreground_app":"com.android.settings/.SubSettings"}),
+        );
+        assert!(single_settings_tap(&evidence, &calls, images.clone()).is_none());
+        evidence[2] = receipt(after, "phone_observe", destination);
+        evidence.push(evidence[1].clone());
+        assert!(single_settings_tap(&evidence, &calls, images).is_none());
     }
 
     #[test]

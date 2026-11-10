@@ -170,7 +170,11 @@ pub async fn route(
                 }
                 if !input.notifications_enabled {sqlx::query("UPDATE phone_notifications SET status='ignored' WHERE status IN ('pending','pending-summary')").execute(&mut *tx).await?;}
             }
-            tx.commit().await?;Ok(changed)
+            tx.commit().await?;
+            if changed && exploration_changed && input.exploring {
+                app.run_signals.phone_exploration.notify_one();
+            }
+            Ok(changed)
         }.await;
         match result {
             Ok(true) => cancel_stopped(&app).await,
@@ -907,7 +911,10 @@ async fn attend_phone(app: &App) {
     let mut interval = tokio::time::interval(Duration::from_secs(3));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
-        interval.tick().await;
+        tokio::select! {
+            _ = interval.tick() => {}
+            _ = app.run_signals.phone_exploration.notified() => {}
+        }
         let (inbox, ()) = tokio::join!(ingest(app), supervise_phone(app));
         if inbox.is_err() {
             let _ = sqlx::query(
@@ -1136,6 +1143,7 @@ mod tests {
             let update=wire::ProactiveUpdateRequest{expected_revision:revision,interval_seconds:45,..Default::default()};
             assert_eq!(route(State(app.clone()),Path("update".into()),headers.clone(),Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::OK);
             assert_eq!(route(State(app.clone()),Path("update".into()),headers,Ok(Bytes::from(update.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
+            assert!(app.run_signals.phone_exploration.notified().now_or_never().is_none(), "disabling and stale revisions must not wake phone exploration");
             assert!(guard_tool(&app,notification,"phone_notifications").await.is_err(),"disabling notifications revokes a queued summary");
             schedule(&app, &["phone", "desktop"]).await.unwrap();assert!(state(&app).await.unwrap().active_run_id.is_empty());
             // All application notifications wake an idle worker without exploration.
