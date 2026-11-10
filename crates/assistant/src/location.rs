@@ -3,6 +3,8 @@ use super::location_devices::apply;
 use super::location_motion as motion;
 use crate::*;
 use axum::extract::{Path, State};
+use serde::Deserialize;
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 pub(super) fn now() -> u64 {
     std::time::SystemTime::now()
@@ -149,9 +151,16 @@ fn repeated(
     Ok(true)
 }
 async fn update(app: &App, r: wire::LocationUpdate) -> Result<wire::LocationState, String> {
-    validate(&r)?;
     let _guard = app.location_mutation.lock().await;
     let current = load(app).await?;
+    update_locked(app, current, r).await
+}
+async fn update_locked(
+    app: &App,
+    current: wire::LocationState,
+    r: wire::LocationUpdate,
+) -> Result<wire::LocationState, String> {
+    validate(&r)?;
     let fingerprint = Sha256::digest(r.encode_to_vec()).to_vec();
     if repeated(&current, &r, &fingerprint)? {
         return Ok(current);
@@ -171,6 +180,140 @@ async fn update(app: &App, r: wire::LocationUpdate) -> Result<wire::LocationStat
     commit_devices(app, &mut state).await?;
     Ok(state)
 }
+
+#[derive(Deserialize)]
+struct MockPoint {
+    latitude: f64,
+    longitude: f64,
+}
+
+impl MockPoint {
+    fn into_fix(self) -> wire::GeoPoint {
+        wire::GeoPoint {
+            latitude: self.latitude,
+            longitude: self.longitude,
+            accuracy_m: 5.,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "mode", rename_all = "snake_case")]
+enum MockChange {
+    Point {
+        point: MockPoint,
+    },
+    Route {
+        route: Vec<MockPoint>,
+        speed_kph: f64,
+        repeat: bool,
+    },
+    Pause,
+}
+
+#[derive(Deserialize)]
+struct MockUpdate {
+    expected_revision: u64,
+    #[serde(flatten)]
+    change: MockChange,
+}
+
+fn mock_request(
+    current: &wire::LocationState,
+    update: MockUpdate,
+    action_id: &str,
+) -> wire::LocationUpdate {
+    let mut request = wire::LocationUpdate {
+        request_id: action_id.into(),
+        expected_revision: update.expected_revision,
+        enabled: true,
+        speed_kph: current.speed_kph,
+        ..Default::default()
+    };
+    match update.change {
+        MockChange::Point { point } => request.point = Some(point.into_fix()),
+        MockChange::Route {
+            route,
+            speed_kph,
+            repeat,
+        } => {
+            request.route = route.into_iter().map(MockPoint::into_fix).collect();
+            request.point = request.route.first().copied();
+            request.speed_kph = speed_kph;
+            request.moving = true;
+            request.repeat = repeat;
+        }
+        MockChange::Pause => {
+            request.point = current.point;
+            request.route.clone_from(&current.route);
+            request.repeat = current.repeat;
+        }
+    }
+    request
+}
+
+async fn run_authorized(app: &App, run: Uuid) -> Result<bool, String> {
+    sqlx::query_scalar(
+        "SELECT COALESCE(bool_and(a.device_id IS NOT NULL),false)
+         FROM devices d
+         LEFT JOIN run_device_bindings b ON b.device_id=d.id AND b.run_id=$1
+         LEFT JOIN runs r ON r.id=b.run_id
+         LEFT JOIN agent_device_bindings a ON a.agent_id=r.agent_id AND a.device_id=d.id
+         WHERE d.owner_id='local-user' AND d.runtime_state='managed' AND d.kind IN ('phone','desktop')",
+    )
+    .bind(run)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())
+}
+
+fn mock_result(state: &wire::LocationState, applied: bool) -> Value {
+    let point = |p: &wire::GeoPoint| json!({"latitude":p.latitude,"longitude":p.longitude});
+    let manual = state.enabled && state.source == "manual";
+    json!({
+        "success":!applied || state.error.is_empty(),
+        "enabled":state.enabled,
+        "can_adjust":true,
+        "revision":state.revision,
+        "point":state.point.as_ref().filter(|_| manual).map(point),
+        "route":state.route.iter().filter(|_| manual).map(point).collect::<Vec<_>>(),
+        "moving":state.moving,
+        "speed_kph":state.speed_kph,
+        "repeat":state.repeat,
+        "devices":state.devices.iter().map(|d|json!({
+            "device_id":d.device_id,"status":d.status,"error":d.error
+        })).collect::<Vec<_>>(),
+        "error":state.error,
+    })
+}
+
+pub(crate) async fn tool(
+    app: &App,
+    run: Uuid,
+    action_id: &str,
+    update: Option<Value>,
+) -> Result<Value, String> {
+    if let Some(args) = update {
+        let update: MockUpdate = serde_json::from_value(args).map_err(|e| e.to_string())?;
+        let _guard = app.location_mutation.lock().await;
+        let current = load(app).await?;
+        if !run_authorized(app, run).await? {
+            return Err("调整模拟位置需要本任务获准控制全部受影响设备".into());
+        }
+        if matches!(update.change, MockChange::Pause) && !current.moving {
+            return Ok(mock_result(&current, false));
+        }
+        let request = mock_request(&current, update, action_id);
+        let state = update_locked(app, current, request).await?;
+        return Ok(mock_result(&state, true));
+    }
+    let state = load(app).await?;
+    if run_authorized(app, run).await? {
+        return Ok(mock_result(&state, false));
+    }
+    Ok(json!({"success":true,"enabled":state.enabled,"can_adjust":false}))
+}
+
 async fn commit_devices(app: &App, s: &mut wire::LocationState) -> Result<(), String> {
     // Persist intent before touching devices. Unknown motion must never resume itself.
     s.error = "位置更新中，设备结果待确认".into();
@@ -270,6 +413,39 @@ mod tests {
         assert!(validate(&r).is_ok());
         r.speed_kph = f64::NAN;
         assert!(validate(&r).is_err());
+    }
+    #[test]
+    fn model_routes_only_use_simulated_points_and_hide_network_coordinates() {
+        let point = wire::GeoPoint {
+            latitude: 34.,
+            longitude: 110.,
+            accuracy_m: 50000.,
+        };
+        let mut state = wire::LocationState {
+            enabled: false,
+            point: Some(point),
+            source: "network".into(),
+            speed_kph: 5.,
+            revision: 7,
+            ..Default::default()
+        };
+        let update = serde_json::from_value(json!({
+            "mode":"route", "expected_revision":7, "use_host":true,
+            "route":[{"latitude":0,"longitude":0},{"latitude":0,"longitude":1}],
+            "speed_kph":30, "repeat":false
+        }))
+        .unwrap();
+        let request = mock_request(&state, update, &Uuid::new_v4().to_string());
+        assert!(validate(&request).is_ok());
+        assert!(request.enabled);
+        assert_eq!(request.expected_revision, state.revision);
+        assert!(!request.use_host);
+        assert!(request.moving);
+        assert_eq!(request.point.as_ref().unwrap().latitude, 0.);
+        state.enabled = true;
+        assert!(mock_result(&state, false)["point"].is_null());
+        state.source = "manual".into();
+        assert_eq!(mock_result(&state, false)["point"]["latitude"], 34.);
     }
 }
 

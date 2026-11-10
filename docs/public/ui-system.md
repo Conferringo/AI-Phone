@@ -19,7 +19,7 @@ All controls use the shared 8px radius, compact items 6px and windows/popovers 1
 
 The language glyph immediately left of Skills is the only workbench language entry. It opens in place on hover, click or Arrow Down, and Escape dismisses it. Native first-run language selection remains available before the workbench exists.
 
-Exploration has one pause/resume control in each device conversation. Device toolbars have no exploration settings. Notifications, replies, installation and application learning use enabled defaults; explicit pauses and failure stops persist. Errors take normal layout space rather than overlaying the composer.
+Liberty has one toggle in each device conversation. Device toolbars have no exploration settings. Notifications, replies, installation and application learning use enabled defaults; explicit pauses and failure stops persist. Errors take normal layout space rather than overlaying the composer.
 
 Conversation panels morph their measured position and dimensions using GSAP Flip with real width/height, without text scaling or opacity transitions. Hidden-page, interruption and reduced-motion cleanup remain owned by the layout hook. Chat identity and drafts stay with the device.
 

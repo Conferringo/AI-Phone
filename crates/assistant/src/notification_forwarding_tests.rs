@@ -213,7 +213,7 @@ async fn stalled_device_collection_cannot_delay_other_device_admission() {
                 } else {
                     tokio::time::timeout(Duration::from_secs(2), async {
                         loop {
-                            let blocked: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT d.id FROM devices d JOIN device_runtimes%')").fetch_one(&app.db).await.unwrap();
+                            let blocked: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_locks l JOIN pg_stat_activity a USING(pid) WHERE a.datname=current_database() AND l.relation='device_runtimes'::regclass AND NOT l.granted)").fetch_one(&app.db).await.unwrap();
                             if blocked { break; }
                             tokio::time::sleep(Duration::from_millis(25)).await;
                         }

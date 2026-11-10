@@ -215,15 +215,28 @@ async fn voice_corrections_are_durable_ordered_and_scoped() {
         let mut correction = spoken("处理第二份", &session, "utterance-1", 2);
         correction.voice.as_mut().unwrap().literal = "不是，说错了，第二份".into();
         correction.voice.as_mut().unwrap().corrects_request_id = first.request_id.clone();
+        let conversation = Uuid::parse_str(&state.conversation_id).unwrap();
+        app.run_signals.speech.heard(
+            conversation,
+            Uuid::parse_str(&session).unwrap(),
+            "utterance-1".into(),
+        );
+        let cancel = CancellationToken::new();
+        let hold = app.run_signals.speech.wait(conversation, &cancel);
+        tokio::pin!(hold);
+        assert!(hold.as_mut().now_or_never().is_none());
+        let mut rejected = correction.clone();
+        rejected.voice.as_mut().unwrap().corrects_request_id = Uuid::new_v4().to_string();
+        assert_eq!(submit(&app, &rejected).await.0, StatusCode::CONFLICT);
+        assert!(hold.as_mut().now_or_never().is_none());
         let corrected = accept(&app, &correction).await;
+        assert!(hold.await.unwrap());
         assert_eq!(corrected.run_id, state.run_id);
         let follow = spoken("保存一份副本", &session, "utterance-2", 1);
         accept(&app, &follow).await;
         accept(&app, &first).await;
         accept(&app, &correction).await;
-        let history = crate::http::state(&app, Uuid::parse_str(&state.conversation_id).unwrap())
-            .await
-            .unwrap();
+        let history = crate::http::state(&app, conversation).await.unwrap();
         let users: Vec<_> = history
             .messages
             .iter()

@@ -14,5 +14,5 @@ export function useDesktopExploration(deviceId:string,enabled:boolean){
 type Control=ReturnType<typeof useDesktopExploration>;
 export function DesktopExploreToggle({control,focused}:{control:Control;focused:boolean}){
  const {state,error,saving,update}=control;
- return <><ExplorationControl active={!!state?.enabled} ready={!!state} saving={saving} error={error||state?.lastError||''} status={state?.enabled?(state.runId?'正在探索':'等待下一轮'):'待机'} onToggle={()=>void update({enabled:!state?.enabled})}/><ExplorationAura kind="desktop" active={focused&&!!state?.enabled} paused={!!error}/></>;
+ return <><ExplorationControl active={!!state?.enabled} ready={!!state} saving={saving} error={error||state?.lastError||''} status={state?.enabled?(state.runId?'Liberty 运行中':'等待下一轮'):'待机'} onToggle={()=>void update({enabled:!state?.enabled})}/><ExplorationAura kind="desktop" active={focused&&!!state?.enabled} paused={!!error}/></>;
 }

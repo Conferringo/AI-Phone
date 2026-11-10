@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 Bibliography
+
+- Introduce AImanity and rename autonomous exploration to Liberty.
+- Hold undispatched Copilot actions while the user speaks.
+- Retain chosen Liberty goals and reuse verified cross-application knowledge.
+- Observe meaningful desktop changes and support authorized Harness collaboration.
+- Publish the signed update feed separately from the two installers.
+
 ## 0.1.7 Relay
 
 - Wake connected-app delivery immediately after task completion using local Redis.

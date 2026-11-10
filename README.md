@@ -1,17 +1,19 @@
-# AI Phone
+# AImanity
 
 English · [简体中文](#简体中文) · [繁體中文](docs/public/readme.zh-TW.md) · [日本語](docs/public/readme.ja.md) · [한국어](docs/public/readme.ko.md) · [Deutsch](docs/public/readme.de.md) · [Français](docs/public/readme.fr.md) · [Español](docs/public/readme.es.md) · [Русский](docs/public/readme.ru.md) · [العربية](docs/public/readme.ar.md)
 
-An Android phone and a Linux desktop for your AI agents.
+An agent that listens while it works, explores on its own, and learns from using your phone and computer.
 
 ## Download
 
 | Platform | Installer |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
+
+Upgrading from 0.1.7? Install 0.1.8 once from the table above. Your devices, models and chats stay in place.
 
 Each installer includes the device images, emulator and local services. Configure devices and choose a model in the app. Setup and the workbench support ten [interface languages](docs/public/languages.md).
 
@@ -22,7 +24,7 @@ Each installer includes the device images, emulator and local services. Configur
 - **Keep working.** Add instructions or interrupt a response in the same conversation. Each device keeps its conversation and activity while you switch views.
 - **Reuse skills.** Agents share Skills, linked knowledge and work files. Model settings, memory and channel connections belong to each Agent.
 
-See [model and channel setup](docs/public/model-and-channel-setup.md), [notification workflows](docs/public/notification-workflows.md) and [autonomous exploration](docs/public/autonomous-exploration.md).
+See [model and channel setup](docs/public/model-and-channel-setup.md), [notification workflows](docs/public/notification-workflows.md) and [Liberty](docs/public/autonomous-exploration.md).
 
 ## How it works
 
@@ -37,11 +39,11 @@ See [model and channel setup](docs/public/model-and-channel-setup.md), [notifica
 
 Agents plan from current device observations and record their actions and results. Bun and Cargo build the project. Device disks, accounts and attachments stay in the local installation.
 
-[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/MrMilkDragon/AI-Phone/issues/new/choose)
 
 ## Roadmap
 
-Signed updates, voice Copilot, more app Skills and notification-driven office work. [Development roadmap](docs/public/release-roadmap.en.md)
+More voice providers, app Skills and notification-driven office workflows. [Development roadmap](docs/public/release-roadmap.en.md)
 
 ## License and use
 
@@ -53,16 +55,18 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 # 简体中文
 
-[Back to English](#ai-phone)
+[Back to English](#aimanity)
 
 ## 下载
 
 | 平台 | 安装包 |
 | --- | --- |
-| macOS 14.4+ · Apple Silicon | [DMG 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-macos-arm64.dmg) |
-| Windows 11 · x64 | [EXE 0.1.7](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.7/AI-Phone-0.1.7-windows-x64-setup.exe) |
+| macOS 14.4+ · Apple Silicon | [DMG 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-macos-arm64.dmg) |
+| Windows 11 · x64 | [EXE 0.1.8](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.1.8/AImanity-0.1.8-windows-x64-setup.exe) |
 
 [GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [构建和平台状态](docs/public/release-status.md)
+
+从 0.1.7 升级时，下载上面的安装包，手动覆盖安装一次。设备、模型配置和聊天记录保留。
 
 完整安装包内置设备镜像、模拟器和服务。打开客户端，配置设备和模型后进入工作台。初次配置和工作台支持[十种界面语言](docs/public/languages.md)。
 
@@ -73,7 +77,7 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 - **持续工作。** 在同一对话中补充指令或打断回复。切换设备时，各自的聊天和任务继续保留。
 - **复用能力。** Skill、关联知识文档和工作文件共享。模型、记忆和外部连接按 Agent 配置。
 
-[模型与渠道](docs/public/model-and-channel-setup.md) · [通知工作流](docs/public/notification-workflows.md) · [自主探索](docs/public/autonomous-exploration.md)
+[模型与渠道](docs/public/model-and-channel-setup.md) · [通知工作流](docs/public/notification-workflows.md) · [Liberty](docs/public/autonomous-exploration.md)
 
 ## 技术架构
 
@@ -81,11 +85,11 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 Agent 根据当前设备画面操作，动作账本保留执行过程和结果。设备盘、账号、聊天和附件保存在本地安装目录或数据库中。
 
-[架构与目录](docs/public/architecture.zh-CN.md) · [文档](docs/public/index.md) · [参与贡献](CONTRIBUTING.md) · [提交问题](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[架构与目录](docs/public/architecture.zh-CN.md) · [文档](docs/public/index.md) · [参与贡献](CONTRIBUTING.md) · [提交问题](https://github.com/MrMilkDragon/AI-Phone/issues/new/choose)
 
 ## 后续开发
 
-推进签名更新、语音 Copilot、应用专项 Skill 和通知触发的办公流程。[开发路线](docs/public/release-roadmap.zh-CN.md)
+扩展语音服务商、应用专项 Skill 和通知触发的办公流程。[开发路线](docs/public/release-roadmap.zh-CN.md)
 
 ## 许可与使用
 

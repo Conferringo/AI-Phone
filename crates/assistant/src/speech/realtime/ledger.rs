@@ -86,7 +86,7 @@ impl Ledger {
         });
         Ok(())
     }
-    fn append(&mut self, audio: wire::VoiceStreamAudio) -> Result<Value> {
+    fn append(&mut self, audio: &wire::VoiceStreamAudio) -> Result<Value> {
         if audio.pcm16.is_empty()
             || audio.pcm16.len() > 3200
             || !audio.pcm16.len().is_multiple_of(2)
@@ -107,7 +107,7 @@ impl Ledger {
         let pcm = self.pcm.push(&audio.pcm16);
         Ok(json!({"type":"input_audio_buffer.append","audio":STANDARD.encode(pcm)}))
     }
-    pub(super) fn input(&mut self, event: wire::voice_stream_input::Event) -> Result<Vec<Value>> {
+    pub(super) fn input(&mut self, event: &wire::voice_stream_input::Event) -> Result<Vec<Value>> {
         use wire::voice_stream_input::Event;
         match event {
             Event::Audio(audio) => self.append(audio).map(|v| vec![v]),
@@ -234,7 +234,7 @@ mod tests {
     }
     fn commit(ledger: &mut Ledger, id: &str) {
         ledger
-            .input(wire::voice_stream_input::Event::Commit(
+            .input(&wire::voice_stream_input::Event::Commit(
                 wire::VoiceStreamCommit {
                     utterance_id: id.into(),
                 },
@@ -262,7 +262,7 @@ mod tests {
         let mut ledger = Ledger::default();
         let a = Uuid::new_v4().to_string();
         let b = Uuid::new_v4().to_string();
-        let append = ledger.input(audio(&a)).unwrap();
+        let append = ledger.input(&audio(&a)).unwrap();
         assert_eq!(
             STANDARD
                 .decode(append[0]["audio"].as_str().unwrap())
@@ -276,7 +276,7 @@ mod tests {
         ledger
             .output(json!({"type":"input_audio_buffer.committed","item_id":"a"}))
             .unwrap();
-        ledger.input(audio(&b)).unwrap();
+        ledger.input(&audio(&b)).unwrap();
         commit(&mut ledger, &b);
         ledger
             .output(json!({"type":"input_audio_buffer.committed","item_id":"b"}))
@@ -287,7 +287,7 @@ mod tests {
             assert!(final_.r#final);
         }
         assert!(ledger.output(json!({"type":"conversation.item.input_audio_transcription.completed","item_id":"a","transcript":"duplicate"})).unwrap().is_none());
-        assert!(ledger.input(audio(&a)).is_err());
+        assert!(ledger.input(&audio(&a)).is_err());
     }
     #[test]
     fn invalid_frames_interleaving_duplicate_commit_and_unfinished_results_fail() {
@@ -296,7 +296,7 @@ mod tests {
         let b = Uuid::new_v4().to_string();
         assert!(
             ledger
-                .input(wire::voice_stream_input::Event::Audio(
+                .input(&wire::voice_stream_input::Event::Audio(
                     wire::VoiceStreamAudio {
                         utterance_id: a.clone(),
                         pcm16: vec![1]
@@ -304,13 +304,13 @@ mod tests {
                 ))
                 .is_err()
         );
-        ledger.input(audio(&a)).unwrap();
-        assert!(ledger.input(audio(&b)).is_err());
+        ledger.input(&audio(&a)).unwrap();
+        assert!(ledger.input(&audio(&b)).is_err());
         assert!(ledger.output(json!({"type":"conversation.item.input_audio_transcription.completed","item_id":"a","transcript":"early"})).is_err());
         commit(&mut ledger, &a);
         assert!(
             ledger
-                .input(wire::voice_stream_input::Event::Commit(
+                .input(&wire::voice_stream_input::Event::Commit(
                     wire::VoiceStreamCommit { utterance_id: a }
                 ))
                 .is_err()

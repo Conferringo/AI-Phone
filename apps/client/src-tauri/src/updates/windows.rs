@@ -63,7 +63,7 @@ fn installed_folder(path: &Path) -> io::Result<&Path> {
 }
 
 fn invalid_path() -> io::Error {
-    io::Error::other("Windows update paths do not match the installed AI Phone client")
+    io::Error::other("Windows update paths do not match the installed AImanity client")
 }
 
 fn spawn_helper(folder: &Path, version: &Version) -> io::Result<()> {
@@ -126,7 +126,7 @@ pub(crate) fn run(args: &[OsString]) -> Option<i32> {
         return Some(1);
     }
     if unsafe { WaitForSingleObject(parent.as_raw_handle(), INFINITE) } != WAIT_OBJECT_0 {
-        notice("AI Phone could not close for the update.", MB_ICONWARNING);
+        notice("AImanity could not close for the update.", MB_ICONWARNING);
         return Some(1);
     }
     drop(parent);
@@ -202,12 +202,12 @@ fn install(installed: &Path, downloaded: &Path, locked: File) -> i32 {
     if code == Some(3010) {
         if reopen_after_restart(installed).is_ok() {
             notice(
-                "Restart Windows to finish the AI Phone update.",
+                "Restart Windows to finish the AImanity update.",
                 MB_ICONINFORMATION,
             );
         } else {
             notice(
-                "Restart Windows, then open AI Phone to finish the update.",
+                "Restart Windows, then open AImanity to finish the update.",
                 MB_ICONINFORMATION,
             );
         }
@@ -215,7 +215,7 @@ fn install(installed: &Path, downloaded: &Path, locked: File) -> i32 {
     }
     if let Err(error) = Command::new(installed).current_dir(folder).spawn() {
         notice(
-            &format!("Could not reopen AI Phone. {error}"),
+            &format!("Could not reopen AImanity. {error}"),
             MB_ICONWARNING,
         );
         return 1;
@@ -225,14 +225,14 @@ fn install(installed: &Path, downloaded: &Path, locked: File) -> i32 {
         Ok(status) if status.code() == Some(2) => 2,
         Ok(status) => {
             notice(
-                &format!("AI Phone update did not finish ({status})."),
+                &format!("AImanity update did not finish ({status})."),
                 MB_ICONWARNING,
             );
             1
         }
         Err(error) => {
             notice(
-                &format!("Could not start the AI Phone installer. {error}"),
+                &format!("Could not start the AImanity installer. {error}"),
                 MB_ICONWARNING,
             );
             1
@@ -264,7 +264,7 @@ fn reopen_after_restart(installed: &Path) -> io::Result<()> {
     status
         .success()
         .then_some(())
-        .ok_or_else(|| io::Error::other("Could not schedule AI Phone to reopen"))
+        .ok_or_else(|| io::Error::other("Could not schedule AImanity to reopen"))
 }
 
 fn notice(message: &str, icon: u32) {
@@ -278,7 +278,7 @@ fn notice(message: &str, icon: u32) {
         MessageBoxW(
             null_mut(),
             wide(message).as_ptr(),
-            wide("AI Phone").as_ptr(),
+            wide("AImanity").as_ptr(),
             icon,
         )
     };

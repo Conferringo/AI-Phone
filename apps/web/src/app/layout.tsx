@@ -5,8 +5,8 @@ import {LocaleProvider} from '@/components/locale-provider';
 import {normalizeLocale,preferredLocale} from '@/lib/locale';
 
 export const metadata: Metadata = {
-  title: "AI Phone",
-  description: "AI Phone",
+  title: "AImanity",
+  description: "AImanity",
   robots: { index: false, follow: false },
 };
 

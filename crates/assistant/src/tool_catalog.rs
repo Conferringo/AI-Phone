@@ -169,7 +169,7 @@ pub(crate) fn tools() -> Value {
         ),
         function(
             "knowledge_write",
-            "用户要求整理或保存知识时创建/更新Markdown文档。更新前读取revision。",
+            "创建或更新有用的Markdown知识文档。先用knowledge_search检查是否已有同主题文档，更新前读取revision。",
             json!({"id":{"type":"string"},"title":{"type":"string"},"content":{"type":"string"},"revision":{"type":"integer"}}),
             vec!["title", "content"]
         ),
@@ -287,6 +287,12 @@ mod tests {
             "computer_observe",
             "computer_find_text",
             "computer_find_control",
+            "device_list",
+            "device_link",
+            "device_message",
+            "device_file_manage",
+            "device_location_state",
+            "device_location_set",
             "skill_install",
             "task_finish",
         ] {

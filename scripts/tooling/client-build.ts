@@ -216,7 +216,7 @@ export function windowsCargo(operation: "build" | "test", root = ROOT) {
     { cwd: root, env },
   );
 }
-function buildDmg(application: string, destination: string) {
+function buildDmg(application: string, destination: string, development: boolean) {
   const temporary = mkdtempSync(join(dirname(destination), ".dmg-"));
   try {
     const contents = join(temporary, "contents");
@@ -240,7 +240,7 @@ function buildDmg(application: string, destination: string) {
       "-volname",
       "AI Phone",
       "-format",
-      "ULMO",
+      ...(development ? ["UDZO", "-imagekey", "zlib-level=1"] : ["ULMO"]),
       image,
     ]);
     run(["hdiutil", "verify", image]);
@@ -308,6 +308,7 @@ export async function buildClient(
   platform: Platform,
   root = ROOT,
   packageOnly = false,
+  developmentDmg = false,
 ) {
   const version = json(join(root, "config/release-policy.json")).version,
     native = join(root, "apps/client/src-tauri"),
@@ -333,8 +334,8 @@ export async function buildClient(
     );
     source = join(native, "target/release/bundle/macos/AI Phone.app");
     const inspection = await inspectMacBundle(source, root);
-    destination = join(dist, `AI-Phone-${version}-macos-arm64.dmg`);
-    buildDmg(source, destination);
+    destination = join(dist, `AImanity-${version}-macos-arm64.dmg`);
+    buildDmg(source, destination, developmentDmg);
     return {
       artifact: destination,
       ...(await recordInstaller(
@@ -354,7 +355,7 @@ export async function buildClient(
     native,
     "target/x86_64-pc-windows-msvc/release/ai-phone-client.exe",
   );
-  destination = join(dist, `AI-Phone-${version}-windows-x64-setup.exe`);
+  destination = join(dist, `AImanity-${version}-windows-x64-setup.exe`);
   await buildWindowsInstaller(root, source, destination);
   return {
     artifact: destination,

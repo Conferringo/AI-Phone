@@ -54,6 +54,6 @@ Both guest creation flows install native Clash apps. Import subscriptions and ma
 
 Installation stores private durable per-phase checkpoints and uses a process lock. On retry, install verifies source inputs and artifacts before reusing completed work; start resumes missing owned services and preserves running tasks. See [task recovery and retry behavior](task-recovery.md).
 
-## Self-directed exploration (development runtime)
+## Liberty (development runtime)
 
-Enable exploration for a configured device to let its Agent choose activities without an App or goal preset. Reply/install settings still apply. A paused older owner task is retained separately; stopping exploration does not delete its history. Reusable Skill capture is optional and evidence-checked. See [self-directed exploration](autonomous-exploration.md) and [notification-driven work](notification-workflows.md). This section describes the development runtime. Complete installer availability is listed in [release status](release-status.md).
+Enable Liberty in the conversation of a configured device. The Agent can choose and revise its own goals. Reply and installation settings still apply. A paused owner task keeps its own history. The Agent can save reusable methods after checking the evidence. See [Liberty](autonomous-exploration.md) and [notification-driven work](notification-workflows.md).

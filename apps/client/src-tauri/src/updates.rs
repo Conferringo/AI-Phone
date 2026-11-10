@@ -20,6 +20,8 @@ mod windows;
 pub const ID: &str = "client-updates";
 pub const CHECK: &str = "Check for Updates…";
 const REPOSITORY: &str = "MrMilkDragon/AI-Phone";
+const UPDATE_FEED: &str =
+    "https://raw.githubusercontent.com/MrMilkDragon/AI-Phone/update-feed/stable.json";
 const MAX_MANIFEST: usize = 16 * 1024;
 const MAX_INSTALLER: u64 = 2 * 1024 * 1024 * 1024;
 type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
@@ -36,7 +38,7 @@ impl Platform {
             Self::Mac => "macos-arm64.dmg",
             Self::Windows => "windows-x64-setup.exe",
         };
-        format!("AI-Phone-{version}-{suffix}")
+        format!("AImanity-{version}-{suffix}")
     }
 
     fn artifact(self, manifest: Manifest) -> Artifact {
@@ -166,7 +168,7 @@ fn verify_manifest(
 
 fn client() -> Result<Client> {
     Ok(Client::builder()
-        .user_agent(concat!("AI-Phone/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("AImanity/", env!("CARGO_PKG_VERSION")))
         .https_only(true)
         .connect_timeout(Duration::from_secs(12))
         .read_timeout(Duration::from_secs(60))
@@ -175,17 +177,12 @@ fn client() -> Result<Client> {
 
 async fn check(current: &Version, platform: Platform) -> Result<Option<Offer>> {
     let client = client()?;
-    let response = client
-        .get(format!(
-            "https://github.com/{REPOSITORY}/releases/latest/download/AI-Phone-update.json"
-        ))
+    let mut response = client
+        .get(UPDATE_FEED)
         .timeout(Duration::from_secs(15))
         .send()
-        .await?;
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Ok(None);
-    }
-    let mut response = response.error_for_status()?;
+        .await?
+        .error_for_status()?;
     let mut bytes = Vec::new();
     while let Some(chunk) = response.chunk().await? {
         if bytes.len() + chunk.len() > MAX_MANIFEST {

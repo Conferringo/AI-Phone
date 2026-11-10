@@ -92,7 +92,7 @@ async fn configure(provider: &mut Provider) -> Result<()> {
     .map_err(|_| "实时语音配置超时")??;
     Ok(())
 }
-async fn prepare(app: &App, socket: &mut WebSocket) -> Result<Provider> {
+async fn prepare(app: &App, socket: &mut WebSocket) -> Result<(Provider, Option<Uuid>, Uuid)> {
     let frame = tokio::time::timeout(Duration::from_secs(10), socket.recv())
         .await
         .map_err(|_| "缺少语音会话配置")?
@@ -107,7 +107,7 @@ async fn prepare(app: &App, socket: &mut WebSocket) -> Result<Provider> {
     let Some(wire::voice_stream_input::Event::Start(start)) = start else {
         return Err("缺少语音会话配置".into());
     };
-    Uuid::parse_str(&start.session_id).map_err(|_| "语音会话无效")?;
+    let session = Uuid::parse_str(&start.session_id).map_err(|_| "语音会话无效")?;
     let draft = super::configured(
         app,
         &start.agent_id,
@@ -118,17 +118,34 @@ async fn prepare(app: &App, socket: &mut WebSocket) -> Result<Provider> {
     if draft.input_protocol != wire::VoiceInputProtocol::RealtimeTranscription as i32 {
         return Err("请选择实时转写协议".into());
     }
+    let conversation = sqlx::query_scalar(
+        "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
+    )
+    .bind(&start.device_id)
+    .fetch_optional(&app.db)
+    .await
+    .map_err(|_| "设备对话读取失败")?;
     let client = app.settings.http_client(&draft.proxy_url)?;
-    tokio::select! {result=connect(&client,&draft)=>result,_=socket.recv()=>Err("语音连接已关闭".into())}
+    tokio::select! {
+        result = connect(&client, &draft) => result.map(|provider| (provider, conversation, session)),
+        _ = socket.recv() => Err("语音连接已关闭".into()),
+    }
 }
 async fn serve(app: Shared, mut socket: WebSocket) {
     match prepare(&app, &mut socket).await {
-        Ok(provider) => {
+        Ok((provider, conversation, session)) => {
             if send(&mut socket, wire::voice_stream_output::Event::Ready(true))
                 .await
                 .is_ok()
             {
-                pipe(socket, provider).await;
+                pipe(
+                    socket,
+                    provider,
+                    &app.run_signals.speech,
+                    conversation,
+                    session,
+                )
+                .await;
             }
         }
         Err(message) => {
@@ -141,7 +158,13 @@ async fn serve(app: Shared, mut socket: WebSocket) {
         }
     }
 }
-async fn pipe(socket: WebSocket, mut provider: Provider) {
+async fn pipe(
+    socket: WebSocket,
+    mut provider: Provider,
+    activity: &super::activity::SpeechActivity,
+    conversation: Option<Uuid>,
+    session: Uuid,
+) {
     let (mut outgoing, mut incoming) = socket.split();
     let (tx, mut rx) = tokio::sync::mpsc::channel(16);
     let reader = async {
@@ -165,8 +188,18 @@ async fn pipe(socket: WebSocket, mut provider: Provider) {
             tokio::select! {
                 Some(bytes)=rx.recv()=>{
                     let event=wire::VoiceStreamInput::decode(bytes).map_err(|_|"实时语音帧无效")?.event.ok_or("缺少实时语音事件")?;
-                    for event in ledger.input(event)? {
-                        provider.send(ProviderMessage::Text(event.to_string().into())).await.map_err(|_|"实时语音发送失败")?;
+                    let messages = ledger.input(&event)?;
+                    if let Some(conversation) = conversation {
+                        use wire::voice_stream_input::Event;
+                        let utterance = match event {
+                            Event::Audio(audio) => audio.utterance_id,
+                            Event::Commit(commit) => commit.utterance_id,
+                            Event::Start(_) => unreachable!("the ledger rejects another start"),
+                        };
+                        activity.heard(conversation, session, utterance);
+                    }
+                    for message in messages {
+                        provider.send(ProviderMessage::Text(message.to_string().into())).await.map_err(|_|"实时语音发送失败")?;
                     }
                 }
                 event=provider.next()=>{

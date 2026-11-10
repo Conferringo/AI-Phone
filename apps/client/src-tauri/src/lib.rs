@@ -155,7 +155,7 @@ fn show_connection(app: &tauri::AppHandle) -> Result<(), String> {
         return window.set_focus().map_err(|e| e.to_string());
     }
     WebviewWindowBuilder::new(app, "connection", WebviewUrl::App("index.html".into()))
-        .title("AI Phone")
+        .title("AImanity")
         .inner_size(680., 620.)
         .min_inner_size(360., 260.)
         .resizable(true)
@@ -214,7 +214,7 @@ fn show_workbench(
             })
             .unwrap_or((1440., 980.));
         WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
-            .title("AI Phone")
+            .title("AImanity")
             .inner_size(width, height)
             .min_inner_size(700., 600.)
             .on_navigation(move |url| handle.state::<Navigation>().permits(url))
@@ -471,13 +471,13 @@ pub fn run() {
                 app.manage(updates::Menu::new(update.clone()));
                 let app_menu = Submenu::with_items(
                     app,
-                    "AI Phone",
+                    "AImanity",
                     true,
                     &[
                         &connection,
                         &update,
                         &PredefinedMenuItem::separator(app)?,
-                        &PredefinedMenuItem::quit(app, Some("Quit AI Phone"))?,
+                        &PredefinedMenuItem::quit(app, Some("Quit AImanity"))?,
                     ],
                 )?;
                 let edit = Submenu::with_items(
@@ -542,7 +542,7 @@ pub fn run() {
     });
     builder
         .build(tauri::generate_context!())
-        .expect("Unable to launch AI Phone client")
+        .expect("Unable to launch AImanity client")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested { api, .. } = event
                 && bootstrap::is_running(app)

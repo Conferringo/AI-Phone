@@ -76,7 +76,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Local unsigned bundle and privacy checks
-        run: ./scripts/bun scripts/build-client.ts --with-web-runtime --with-service-runtime --android-runtime "$AI_PHONE_FACTORY_ANDROID_PAYLOAD"
+        run: ./scripts/bun scripts/build-client.ts --development-dmg --with-web-runtime --with-service-runtime --android-runtime "$AI_PHONE_FACTORY_ANDROID_PAYLOAD"
 
   desktop-packages:
     strategy:

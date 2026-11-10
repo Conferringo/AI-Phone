@@ -2166,9 +2166,11 @@ async fn execute(
     cancel: &CancellationToken,
 ) -> Result<RunDisposition, String> {
     let row = sqlx::query("SELECT r.*,d.kind device_kind,extract(epoch FROM now()-r.created_at)::bigint elapsed_seconds,
-        EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending
+        EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending,
+        r.background_read_only AND EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.notification_key=$2) screen_attention
         FROM runs r LEFT JOIN devices d ON d.id=r.device_id WHERE r.id=$1 AND (r.origin<>'notification' OR d.id IS NOT NULL)")
         .bind(id)
+        .bind(crate::proactive::screen_attention::KEY)
         .fetch_one(&app.db)
         .await
         .map_err(|e| e.to_string())?;
@@ -2188,6 +2190,7 @@ async fn execute(
         "exploration" | "desktop-exploration"
     );
     let notification_run = row.get::<String, _>("origin") == "notification";
+    let screen_attention: bool = row.get("screen_attention");
     let desktop = row.get::<Option<&str>, _>("device_kind") == Some("desktop");
     let desktop_id = desktop.then(|| row.get::<&str, _>("device_id"));
     let desktop_notification = notification_run && desktop;
@@ -2212,6 +2215,8 @@ async fn execute(
         if cancel.is_cancelled() {
             return Err("canceled".into());
         }
+        let input_changed = app.run_signals.input.notified();
+        app.run_signals.speech.wait(conversation, cancel).await?;
         if exploration && state.exploration_yield_due(now_ms(), step) {
             let interval: i64 = sqlx::query_scalar("SELECT CASE WHEN r.origin='desktop-exploration' THEN (SELECT interval_seconds FROM desktop_exploration WHERE device_id=r.device_id) ELSE (SELECT interval_seconds FROM proactive_state) END::bigint FROM runs r WHERE r.id=$1").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
             if persist_disposition(
@@ -2337,6 +2342,7 @@ async fn execute(
             "phone_notifications"
         };
         if notification_run
+            && !screen_attention
             && !context.iter().any(|v| {
                 v["type"] == "function_call"
                     && v["name"] == notification_tool
@@ -2363,6 +2369,7 @@ async fn execute(
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
         if pending.is_empty()
+            && !screen_attention
             && let Some(call) = experience_call(app, &context, &mut state).await
         {
             context.push(call.clone());
@@ -2382,6 +2389,11 @@ async fn execute(
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
         if let Some(call) = pending.first().cloned() {
+            if app.run_signals.speech.wait(conversation, cancel).await?
+                || (input_changed.now_or_never().is_some() && has_steering(app, id).await?)
+            {
+                continue;
+            }
             let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
             let name = call["name"].as_str().unwrap_or("");
             let value = tool_value(&result);
@@ -2587,7 +2599,9 @@ async fn execute(
             }
             continue;
         }
-        let effort = if verification_attempts(&context) > 0 && !has_current_observation(&context) {
+        let effort = if screen_attention
+            || (verification_attempts(&context) > 0 && !has_current_observation(&context))
+        {
             "none"
         } else if (phone_task(&context) || action_task(&context))
             && (state.stalls > 0 || !gui_execution(&context))
@@ -2596,7 +2610,7 @@ async fn execute(
         } else {
             "low"
         };
-        let output = match respond_to_current_input(
+        let response = respond_to_current_input(
             app,
             id,
             message,
@@ -2605,8 +2619,12 @@ async fn execute(
             effort,
             state.model_replay_boundary,
         )
-        .await
+        .await;
+        if app.run_signals.speech.wait(conversation, cancel).await? && has_steering(app, id).await?
         {
+            continue;
+        }
+        let output = match response {
             Ok(Some(output)) => {
                 step = step.saturating_add(1);
                 state.model_retries = 0;
@@ -2723,7 +2741,7 @@ async fn execute(
             }
             context.push(item);
         }
-        if action_task(&context) || phone_task(&context) {
+        if screen_attention || action_task(&context) || phone_task(&context) {
             answer.clear();
             if !new_text.trim().is_empty() {
                 if progress_is_verified(&context, &new_text) {
@@ -3032,6 +3050,8 @@ async fn recorded_tool(
         "device_transfer" => "传输设备文件",
         "device_message" => "设备间交接",
         "device_transfer_status" => "核对传输结果",
+        "device_location_state" => "查看模拟位置",
+        "device_location_set" => "调整模拟位置",
         "phone_notifications" => "读取手机通知",
         "device_notifications" => "读取设备通知",
         "channel_notify" => "联系远端主人",
@@ -3192,6 +3212,7 @@ fn can_restart_tool(call: &Value) -> bool {
             | "device_file_list"
             | "device_notifications"
             | "device_transfer_status"
+            | "device_location_state"
             | "channel_delivery"
             | "workspace_read"
             | "workspace_list"
@@ -3389,33 +3410,41 @@ async fn tool(
         if !["completed", "needs_input"].contains(&status.as_str()) {
             return Err("status必须是completed或needs_input".into());
         }
-        let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        let current: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-        let pending: Value = sqlx::query_scalar("SELECT pending_tools FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
+        let row = sqlx::query(
+            "SELECT r.context,r.pending_tools,r.origin='notification' AND r.background_read_only summary_only,
+                NOT r.background_read_only AND (r.origin='notification' OR EXISTS(
+                    SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.status IN ('attending','pending-summary'))) audit_notification,
+                EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending,
+                r.background_read_only AND EXISTS(
+                    SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.notification_key=$2) screen_attention
+             FROM runs r WHERE r.id=$1",
+        )
+        .bind(run)
+        .bind(crate::proactive::screen_attention::KEY)
+        .fetch_one(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+        let current: Vec<Value> =
+            serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
+        let pending: Value = row.get("pending_tools");
+        let screen_attention: bool = row.get("screen_attention");
         if pending.as_array().is_some_and(|calls| calls.len() > 1) {
             return Err("仍有待执行工具；请先完成这些步骤，再重新task_finish".into());
         }
         if status == "completed" {
-            let policy = sqlx::query(
-                "SELECT r.origin='notification' AND r.background_read_only summary_only,EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending FROM runs r WHERE r.id=$1",
-            )
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-            if policy.get::<bool, _>("handoffs_pending") {
+            if row.get::<bool, _>("handoffs_pending") {
                 return Err("设备协作尚未返回并核对；使用task_wait等待结果，系统会唤醒原任务。不要把交接排队说成已完成。".into());
             }
-            let summary_only: bool = policy.get("summary_only");
+            let summary_only: bool = row.get("summary_only");
+            if screen_attention
+                && !current.iter().skip(evidence_start(&current)).any(|call| {
+                    call["name"] == "computer_observe" && successful_call(call, &current)
+                })
+            {
+                return Err("先观察来源电脑当前画面，再判断这次变化。".into());
+            }
             if summary_only
+                && !screen_attention
                 && !current
                     .iter()
                     .any(|call| call["name"] == "task_history" && successful_call(call, &current))
@@ -3436,15 +3465,9 @@ async fn tool(
                     .into(),
             );
         }
-        let notification: bool = sqlx::query_scalar(
-            "SELECT NOT r.background_read_only AND (r.origin='notification' OR EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.status IN ('attending','pending-summary'))) FROM runs r WHERE r.id=$1",
-        )
-        .bind(run)
-        .fetch_one(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
-        let audit = notification
-            || status == "completed"
+        let audit = row.get::<bool, _>("audit_notification")
+            || !screen_attention
+                && status == "completed"
                 && (action_task(&current)
                     || computer_task(&current)
                     || phone_task(&current)
@@ -3471,7 +3494,7 @@ async fn tool(
                 ));
             }
         }
-        if status == "completed" {
+        if status == "completed" && !screen_attention {
             crate::app_learning::promote(app, run).await?;
         }
         return Ok(

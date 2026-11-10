@@ -38,7 +38,7 @@ export function SessionBootstrap(){
  },[]);
  return <main className="entry-screen" aria-busy={pending}>
   {passwordMode?<form className="entry-card" onSubmit={e=>{e.preventDefault();void connect(undefined,password);}}>
-   <header className="entry-heading"><h1>AI Phone</h1><LanguageSelect/></header>
+   <header className="entry-heading"><h1>AImanity</h1><LanguageSelect/></header>
    <label className="entry-field" htmlFor="owner-password">{t('管理员密码')}
    <input id="owner-password" type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} disabled={pending} required autoFocus/></label>
    {error&&<p role="alert">{error}</p>}

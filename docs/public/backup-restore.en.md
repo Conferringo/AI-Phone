@@ -20,7 +20,7 @@ Restore only into an empty directory and a separate empty PostgreSQL 17 database
 
 The target container's local administrator must match the bootstrap login in the backup. A compatible Android SDK/system image must already be installed. Existing tables or files are refused. Schema/data/role grants are imported transactionally; every public table's row count and row hashes are checked. Private files are individually verified, sparse disks remain sparse, and Android backing paths are relocated against verified SDK files.
 
-The recovered instance stays offline and quarantined. Pending tasks are paused; exploration and notification triggers are disabled. `data/restore-report.json` records verification. Linux rootfs and metadata remain in `data/desktop/recovery` for controlled import. Do not run cloned signed-in social accounts concurrently. Normal start refuses `data/restore-quarantine.json`.
+The recovered instance stays offline and quarantined. Pending tasks are paused; Liberty and notification triggers are disabled. `data/restore-report.json` records verification. Linux rootfs and metadata remain in `data/desktop/recovery` for controlled import. Do not run cloned signed-in social accounts concurrently. Normal start refuses `data/restore-quarantine.json`.
 
 Before activation, verify the source links, Linux import, device bindings and network setup. Stop the original instance.
 
