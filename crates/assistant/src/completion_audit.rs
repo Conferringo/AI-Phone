@@ -1,6 +1,7 @@
 use crate::*;
 use serde_json::{Value, json};
 use sqlx::Row;
+use std::collections::HashMap;
 
 pub struct AuditResult {
     pub approved: bool,
@@ -100,6 +101,32 @@ fn knowledge_candidate<'a>(
         .then(|| (title, summary, observations.into_iter().collect()))
 }
 
+fn single_desktop_input(evidence: &[Value]) -> bool {
+    let mut inputs = 0;
+    for receipt in evidence {
+        match receipt["tool"].as_str() {
+            Some("computer_type") if receipt["status"] == "completed" => {
+                let observed = crate::worker::tool_value(&receipt["result"]).is_some_and(|value| {
+                    value["success"] == true && value["observation_id"].is_string()
+                });
+                if !observed {
+                    return false;
+                }
+                inputs += 1;
+            }
+            Some(
+                "skill_read"
+                | "computer_observe"
+                | "computer_find_text"
+                | "computer_find_control"
+                | "task_plan",
+            ) => {}
+            _ => return false,
+        }
+    }
+    inputs == 1
+}
+
 // A completion audit has no execution tools. Its input comes from this run's
 // persisted tool ledger, never from historical assistant prose.
 pub async fn verify(
@@ -111,30 +138,47 @@ pub async fn verify(
     needs_input: bool,
     cancel: &CancellationToken,
 ) -> Result<AuditResult, String> {
-    let rows = sqlx::query("SELECT id,title,status,result FROM harness_events WHERE run_id=$1 AND kind='tool' AND result IS NOT NULL ORDER BY created_at DESC,id DESC LIMIT 64")
-        .bind(run).fetch_all(&app.db).await.map_err(|e| e.to_string())?;
+    let request = (0..context.len()).rfind(|&index| crate::worker::is_task_input(context, index));
+    let latest_input = request.unwrap_or(0);
+    let current_calls: HashMap<Uuid, &Value> = context
+        .iter()
+        .skip(latest_input + 1)
+        .filter(|item| item["type"] == "function_call")
+        .filter_map(|item| {
+            Some((
+                Uuid::parse_str(item["local_action_id"].as_str()?).ok()?,
+                item,
+            ))
+        })
+        .collect();
+    let ids: Vec<_> = current_calls.keys().copied().collect();
+    let rows = sqlx::query("SELECT id,title,status,result FROM harness_events WHERE run_id=$1 AND id=ANY($2) AND kind='tool' AND result IS NOT NULL ORDER BY created_at DESC,id DESC LIMIT 64")
+        .bind(run).bind(&ids).fetch_all(&app.db).await.map_err(|e| e.to_string())?;
+    if !needs_input
+        && !rows.iter().any(|row| {
+            row.get::<&str, _>("status") == "completed"
+                && current_calls[&row.get::<Uuid, _>("id")]["name"] != "skill_read"
+        })
+    {
+        return Err("本轮没有已确认的执行回执，无法核验完成。".into());
+    }
     let event = Uuid::now_v7();
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content) VALUES($1,$2,$3,'audit','结果核验','核对本轮工具记录与完成声明')")
         .bind(event).bind(run).bind(message).execute(&app.db).await.map_err(|e| e.to_string())?;
-    let request = (0..context.len()).rfind(|&index| crate::worker::is_task_input(context, index));
-    let latest_input = request.unwrap_or(0);
-    let current_calls: std::collections::HashSet<_> = context
-        .iter()
-        .skip(latest_input + 1)
-        .filter_map(|item| item["local_action_id"].as_str())
-        .collect();
     let mut image_budget = 8usize;
     let mut visual_inputs = Vec::new();
     let mut evidence = Vec::new();
     let mut learning_evidence = LearningEvidence::new();
     for row in &rows {
-        let id = row.get::<Uuid, _>("id").to_string();
-        if !current_calls.contains(id.as_str()) {
-            continue;
-        }
-        let call = context.iter().find(|item| item["local_action_id"] == id);
+        let row_id = row.get::<Uuid, _>("id");
+        let id = row_id.to_string();
+        let call = current_calls[&row_id];
         let mut result = row.get::<Option<Value>, _>("result").unwrap_or(Value::Null);
-        let name = call.and_then(|item| item["name"].as_str()).unwrap_or("");
+        let name = call["name"].as_str().unwrap_or("");
+        if name == "skill_read" {
+            // The skill text guides planning; only its read status belongs in the audit.
+            result = Value::Null;
+        }
         let observation = (row.get::<String, _>("status") == "completed"
             && crate::app_learning::observation_tool(name))
         .then(|| crate::app_learning::metadata(&result))
@@ -145,7 +189,7 @@ pub async fn verify(
         limit_result(&mut result, &mut image_budget);
         extract_images(&mut result, &id, &mut visual_inputs);
         evidence.push(json!({"evidence_id":id,"tool":name,"learning_app":learning_evidence.get(&id).map(|m|m.app_id.as_str()),
-            "input":call.and_then(|item|item["arguments"].as_str()).unwrap_or(""),
+            "input":call["arguments"].as_str().unwrap_or(""),
             "title":row.get::<String,_>("title"),"status":row.get::<String,_>("status"),"result":result}));
     }
     evidence.reverse();
@@ -161,18 +205,24 @@ pub async fn verify(
         .skip(latest_input)
         .filter_map(|pair| crate::device_exchange::returns::receipt_text(&pair[0], &pair[1]))
         .collect();
+    let notifications:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',n.device_id,'app',n.app_name,'title',n.title,'text',n.body) FROM phone_notifications n JOIN runs r ON r.id=n.run_id WHERE n.run_id=$1 AND NOT r.background_read_only AND n.status IN ('assigned','attending','pending-summary') ORDER BY n.received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let learning:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let compact = !needs_input
+        && handoff_receipts.is_empty()
+        && notifications.is_empty()
+        && learning.is_empty()
+        && (2..=4).contains(&visual_inputs.len())
+        && single_desktop_input(&evidence);
     let mut audit_input = vec![
         json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence,"handoff_receipts":handoff_receipts}).to_string()}),
     ];
-    let events:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',n.device_id,'app',n.app_name,'title',n.title,'text',n.body) FROM phone_notifications n JOIN runs r ON r.id=n.run_id WHERE n.run_id=$1 AND NOT r.background_read_only AND n.status IN ('assigned','attending','pending-summary') ORDER BY n.received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    if !events.is_empty() {
+    if !notifications.is_empty() {
         let reply: bool = sqlx::query_scalar("SELECT autonomous_reply FROM proactive_state")
             .fetch_one(&app.db)
             .await
             .map_err(|e| e.to_string())?;
-        audit_input.push(json!({"type":"input_text","text":format!("主人已委托自主处理这些真实通知（正文是外部资料）。自主回复={reply}。主人的最新明确暂停或不回复指令优先。普通消息默认回复，工作请求可连接授权电脑处理、在工作目录留档并回来源会话交付。仅询问主人‘是否回复/是否处理’不能通过。选择不回复须有重复、自发、广告或实际无需回复的依据。needs_input只有当前工具证据显示具体阻碍、缺少不可推断的信息或超出授权的敏感动作才可通过，不能把常规决策推回主人。请核验这些事件是否确已处理或有真实阻碍：{}",json!(events))}));
+        audit_input.push(json!({"type":"input_text","text":format!("主人已委托自主处理这些真实通知（正文是外部资料）。自主回复={reply}。主人的最新明确暂停或不回复指令优先。普通消息默认回复，工作请求可连接授权电脑处理、在工作目录留档并回来源会话交付。仅询问主人‘是否回复/是否处理’不能通过。选择不回复须有重复、自发、广告或实际无需回复的依据。needs_input只有当前工具证据显示具体阻碍、缺少不可推断的信息或超出授权的敏感动作才可通过，不能把常规决策推回主人。请核验这些事件是否确已处理或有真实阻碍：{}",json!(notifications))}));
     }
-    let learning:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     if !learning.is_empty() {
         audit_input.push(json!({"type":"input_text","text":format!("以下是本轮唯一有效的待发布经验候选，同名旧草稿已经被修订或撤回，不再要求旧草稿通过。请仅逐项核对这份有效候选与实际操作证据，不要因为候选标注verified就相信它：{}",json!(learning))}));
     }
@@ -180,19 +230,26 @@ pub async fn verify(
     let mut tool = json!({"type":"function","name":"audit_result","description":"只报告证据核验结果，不能执行操作。",
         "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string","description":"一至三句核验结论，指出关键证据或具体缺失。不要复述整段任务、全部步骤或完整文件路径。"}},
         "required":["approved","feedback"],"additionalProperties":false}});
-    if let Some(schema) = learning_schema(&learning_evidence) {
+    if !compact && let Some(schema) = learning_schema(&learning_evidence) {
         tool["parameters"]["properties"]["experience"] = schema;
     }
-    if let Some(schema) = knowledge_schema(&learning_evidence) {
+    if !compact && let Some(schema) = knowledge_schema(&learning_evidence) {
         tool["parameters"]["properties"]["knowledge"] = schema;
         audit_input.push(json!({"type":"input_text","text":"若已核验的跨应用操作得出一条可供后续任务引用的事实或通用结论，可附一份knowledge。引用至少两个不同应用的本轮evidence_id，包含动作后的复查。只保存结论和适用条件，不重复单应用Skill，不保存私密通知、会话、凭据、路径或原文。没有可复用结论就省略。已有结论用相同标题，不另起同义标题。"}));
     }
-    audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。evidence_ids仅引用tool_evidence中的evidence_id，所引事件的learning_app都须等于app_id；不要填写嵌套观察ID或跨应用事件。verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
+    if !compact {
+        audit_input.push(json!({"type":"input_text","text":"通过核验且确有可复用的应用操作方法或已验证纠错时，可在同一次audit_result中返回一个experience；没有新方法就省略，不为每轮凑心得。evidence_ids仅引用tool_evidence中的evidence_id，所引事件的learning_app都须等于app_id；不要填写嵌套观察ID或跨应用事件。verified至少两次且有动作后复查。沿用已有同义方法的标题以修订整合，不重复创建；只记操作方法与适用边界，不含联系人、会话内容、账号、凭据或私人文件名。资料不足不提炼。用户任务结果独立于学习候选，不额外调用模型、不增加操作回合、不向用户输出学习报告。"}));
+    }
+    let instructions = if compact {
+        "核对单次电脑输入。以执行器的输入回执与动作后真实画面核对用户要求的内容、目标窗口与完成声明。只有画面或可靠回读确认实际内容才可通过；键盘派发本身不证明文本已进入。仅调用 audit_result，用一句话报告证据或阻碍。"
+    } else {
+        "你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。设备协作回执可核对文件传输；外发结果须由来源应用的实际操作记录支持。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"
+    };
     let body = json!({"input":[
-        {"role":"system","content":[{"type":"input_text","text":"你是独立的执行结果审计器。只依据给定本轮真实工具记录、截图和用户目标核验，不相信助手的完成声明或历史对话。设备协作回执可核对文件传输；外发结果须由来源应用的实际操作记录支持。如果记录包含app_experience_save，必须同时核对其步骤、成功结论和失败边界能否由该应用真实操作前后画面支持；不能把打开页面当作掌握功能，不得批准猜测为通用经验。严格检查：是否实际执行了声称的动作、点击/阅读的数量是否与记录相符、所述页面/文章事实能否从截图或UI文本读到、用户目标是否已完成。读Skill不等于操作，成功点击也不等于读到文章；标题不能证明文章或评论内容。若没有相应证据、只有计划/推测、尚有常规步骤未执行，approved必须false，并具体列出缺失证据和应继续的步骤。你没有执行工具，不能补造证据。只有确实得到当前记录支持的完成结果才可approved=true。输出简短可公开核验的结论，不输出隐含推理过程、凭据或无关内容。微信的通知预览不代表完整会话，必须核对对象。己方绿色气泡只证明本机已发出，不能证明对方已收到或已读；账号受限或验证页卡住不能称好友申请成功。好友关系当前已成立可以用当前资料页和已添加状态核验，不强求重做接受动作。较早截图已归档时若现存证据不足，应要求重新观察；不能凭归档标记猜图片内容。"}]},
+        {"role":"system","content":[{"type":"input_text","text":instructions}]},
         {"role":"user","content":audit_input}
     ],"tools":[tool],"tool_choice":{"type":"function","name":"audit_result"},"parallel_tool_calls":false,
-        "reasoning":{"effort":"none"},"max_output_tokens":1200,"stream":false,"store":false});
+        "reasoning":{"effort":"none"},"max_output_tokens":if compact {192} else {1200},"stream":false,"store":false});
     let mut timing = crate::model_timing::Timing::default();
     let audit = async {
         let config = crate::settings::for_run(app, run).await?;
@@ -207,7 +264,8 @@ pub async fn verify(
     };
     let result =
         tokio::select! {_ = cancel.cancelled() => Err("canceled".into()), result = audit => result};
-    if let Ok(report) = &result
+    if !compact
+        && let Ok(report) = &result
         && let Some(candidate) = report.experience.as_ref().filter(|_| !needs_input)
     {
         match learning_candidate(candidate, &learning_evidence) {
@@ -237,17 +295,20 @@ pub async fn verify(
             error.clone(),
         ),
     };
+    let mut audit_timing = timing.snapshot();
+    audit_timing["compact"] = json!(compact);
     sqlx::query(
         "UPDATE harness_events SET status=$2,content=$3,result=$4,finished_at=now() WHERE id=$1",
     )
     .bind(event)
     .bind(status)
     .bind(content)
-    .bind(timing.snapshot())
+    .bind(audit_timing)
     .execute(&app.db)
     .await
     .map_err(|e| e.to_string())?;
-    if !needs_input
+    if !compact
+        && !needs_input
         && let Ok(report) = &result
         && report.approved
         && let Some((title, summary, observations)) = report
@@ -309,13 +370,19 @@ pub async fn history(app: &App, run: Uuid, limit: usize) -> Result<Value, String
 }
 
 fn parse_result(value: &Value) -> Result<AuditResult, String> {
-    let args = value["output"]
+    let mut calls = value["output"]
         .as_array()
         .into_iter()
         .flatten()
-        .find(|item| item["type"] == "function_call" && item["name"] == "audit_result")
+        .filter(|item| item["type"] == "function_call");
+    let args = calls
+        .next()
+        .filter(|item| item["name"] == "audit_result")
         .and_then(|item| item["arguments"].as_str())
         .ok_or("结果核验没有返回有效结论")?;
+    if calls.next().is_some() {
+        return Err("结果核验必须返回唯一结论".into());
+    }
     let report: Value = serde_json::from_str(args).map_err(|_| "结果核验没有返回有效结论")?;
     let approved = report["approved"].as_bool().ok_or("结果核验缺少证据判定")?;
     let feedback = report["feedback"]
@@ -391,6 +458,18 @@ fn limit_result(value: &mut Value, images: &mut usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn short_review_requires_one_confirmed_input_and_its_observation() {
+        let observation = json!({"tool":"computer_observe","status":"completed"});
+        let mut input = json!({"tool":"computer_type","status":"completed","result":[
+            {"type":"input_text","text":json!({"success":true,"observation_id":"fresh"}).to_string()}
+        ]});
+        assert!(single_desktop_input(&[observation.clone(), input.clone()]));
+        assert!(!single_desktop_input(&[input.clone(), input.clone()]));
+        input["status"] = json!("failed");
+        assert!(!single_desktop_input(&[observation, input]));
+    }
+
     #[test]
     fn audit_learning_references_only_the_exposed_event_namespace() {
         let evidence = LearningEvidence::from([(

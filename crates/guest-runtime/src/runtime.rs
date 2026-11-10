@@ -94,16 +94,23 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
 
     async fn perform_action(&self, args: Value) -> Result<Value> {
         let baseline = if args["wait_for_paint"] == true {
-            Some((
-                self.screen.capture()?,
-                self.screen.paint_focus().unwrap_or_default(),
-            ))
+            let image = self.screen.capture()?;
+            let focus = self.screen.paint_focus().unwrap_or_default();
+            let mousepad_text = matches!(args["kind"].as_str(), Some("text" | "replace_text"))
+                && self.screen.window().is_ok_and(|window| {
+                    window.window_id == focus.window_id
+                        && window.application_class.eq_ignore_ascii_case("mousepad")
+                });
+            Some((image, focus, mousepad_text))
         } else {
             None
         };
-        actions::execute(&self.screen, &self.runner, &self.settings, args).await?;
-        let mut observation = if let Some((before, focus)) = baseline {
-            let frame = paint::after(&self.screen, before, &focus).await?;
+        let input = actions::execute(&self.screen, &self.runner, &self.settings, args).await?;
+        let mut observation = if let Some((before, focus, mousepad_text)) = baseline {
+            let frame = paint::after(&self.screen, before, &focus, mousepad_text).await?;
+            if input == actions::InputEvidence::PasteDispatched && frame.state == "unchanged" {
+                return Err(actions::InputUnconfirmed.into());
+            }
             let mut value = self.frame(&frame.image)?;
             value["frame_state"] = json!(frame.state);
             value["frame_wait_ms"] = json!(frame.wait_ms);

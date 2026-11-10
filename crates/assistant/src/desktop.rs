@@ -343,8 +343,15 @@ fn action_value(r: &wire::DesktopActionRequest) -> Result<Value> {
 }
 fn input_rejection(error: &str) -> Option<Value> {
     let value: Value = serde_json::from_str(error).ok()?;
-    (value["success"] == false && value["not_executed"] == true && value["code"] == "field_focus")
-        .then_some(value)
+    (value["success"] == false
+        && match value["code"].as_str() {
+            Some("field_focus") => value["not_executed"] == true,
+            Some("input_unconfirmed") => {
+                value["result_unknown"] == true && value["not_executed"] != true
+            }
+            _ => false,
+        })
+    .then_some(value)
 }
 fn observation_meta(o: &wire::DesktopObservation) -> Value {
     let state = wire::DesktopFrameState::try_from(o.frame_state)
@@ -453,7 +460,7 @@ async fn recorded_action(
     }
     let status = old.get::<String, _>("status");
     let value: Option<Value> = old.get("result");
-    if status == "failed"
+    if matches!(status.as_str(), "failed" | "unknown")
         && let Some(value) = value
             .as_ref()
             .filter(|v| input_rejection(&v.to_string()).is_some())
@@ -524,7 +531,7 @@ pub async fn action(
     let Some((window_id, process_id)) = observed else {
         return Err("观察已过期或不属于该电脑，请先computer_observe".into());
     };
-    if r.replace {
+    if r.kind == "text" {
         input["window_id"] = json!(window_id);
         input["process_id"] = json!(process_id);
     }
@@ -591,7 +598,8 @@ async fn finish_action(
     let (status, value) = match result {
         Ok(observation) => ("completed", observation_meta(observation)),
         Err(error) => match input_rejection(error) {
-            Some(rejection) => ("failed", rejection),
+            Some(rejection) if rejection["not_executed"] == true => ("failed", rejection),
+            Some(rejection) => ("unknown", rejection),
             None => ("unknown", json!({"error":error})),
         },
     };
@@ -1324,13 +1332,13 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "device_file_list",
-            "列出手机/电脑根目录或共享工作文件。device_id为空表示harness工作文件；path为绝对路径，默认/。仅文件管理；应用操作仍须phone-use/computer-use。",
+            "列出本任务获准控制的设备目录或共享工作文件。device_id为空表示harness工作文件；path为绝对路径，默认/。另一Agent设备的共享目录用device_files；应用操作仍须phone-use/computer-use。",
             json!({"device_id":id,"path":id}),
             vec!["device_id", "path"],
         ),
         f(
             "device_file_manage",
-            "统一文件管理：批量copy/move/delete/mkdir/rename。sources和target含device_id/path；空device_id为工作文件。目标是目录，name为空沿用文件名。跨设备需device_link；不覆盖已有文件。复制到工作文件即可交给harness；文件到达不代表社交软件发送成功。",
+            "统一文件管理：批量copy/move/delete/mkdir/rename。sources和target含device_id/path；空device_id为工作文件，非空设备须有本任务的控制授权。目标是目录，name为空沿用文件名。跨设备需device_link；向另一Agent设备交接共享文件用device_transfer。不覆盖已有文件；文件到达不代表社交软件发送成功。",
             json!({"operation":{"type":"string","enum":["copy","move","delete","mkdir","rename"]},"sources":{"type":"array","items":location},"target":location,"name":id}),
             vec!["operation", "sources", "target", "name"],
         ),
@@ -1826,6 +1834,14 @@ mod tests {
             ),
             (
                 json!({"success":false,"not_executed":true,"code":"other"}),
+                false,
+            ),
+            (
+                json!({"success":false,"result_unknown":true,"code":"input_unconfirmed"}),
+                true,
+            ),
+            (
+                json!({"success":false,"not_executed":true,"result_unknown":true,"code":"input_unconfirmed"}),
                 false,
             ),
         ] {

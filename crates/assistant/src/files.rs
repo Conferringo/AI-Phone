@@ -656,7 +656,7 @@ pub async fn tool(
     }
     async fn authorize(app: &App, run: Uuid, location: &wire::FileLocation) -> Result<()> {
         if !location.device_id.is_empty() {
-            crate::desktop::file_authorized(app, run, &location.device_id).await?;
+            crate::desktop::authorized(app, run, &location.device_id).await?;
         }
         Ok(())
     }

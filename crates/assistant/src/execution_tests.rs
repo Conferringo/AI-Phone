@@ -594,6 +594,19 @@ async fn file_authorization_tracks_bindings_and_both_link_directions() {
             .bind(Uuid::now_v7()).bind(crate::registry::PHONE).bind(peer).execute(&app.db).await.unwrap();
         crate::desktop::file_authorized(&app, run, crate::registry::PHONE).await.unwrap();
         assert!(crate::desktop::authorized(&app, run, peer).await.is_err());
+        let peer_root = json!({"device_id":peer,"path":"/"});
+        let workspace = json!({"device_id":"","path":"/"});
+        for (tool, args) in [
+            ("device_file_list", peer_root.clone()),
+            ("device_file_manage", json!({"operation":"copy","sources":[peer_root],"target":workspace})),
+            ("device_file_manage", json!({"operation":"copy","sources":[workspace],"target":peer_root})),
+        ] {
+            assert_eq!(
+                crate::files::tool(&app, run, tool, &args).await.unwrap_err(),
+                "该任务没有此设备的授权",
+                "a cable must not grant {tool} on peer guest roots"
+            );
+        }
         sqlx::query("SELECT 'files-benchmark-start'").execute(&app.db).await.unwrap();
         let started = std::time::Instant::now();
         for _ in 0..100 {

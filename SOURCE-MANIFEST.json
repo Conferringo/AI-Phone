@@ -1695,8 +1695,8 @@
     },
     {
       "path": "crates/assistant/src/completion_audit.rs",
-      "size": 34880,
-      "sha256": "54808bf9e13edc51a29b09bd497d2f1c61b351fc189c6c5ef043c50fa5b96cee"
+      "size": 37991,
+      "sha256": "325591a57c53a1eeb83d0d6be1a496fd9ff7b1affb0e1cdb1535bd7afc0466c3"
     },
     {
       "path": "crates/assistant/src/database/bootstrap.rs",
@@ -1725,8 +1725,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 83979,
-      "sha256": "53ad5641620b69688830efef2c027fddb194c050dd8777890bc068d3be421d5a"
+      "size": 84728,
+      "sha256": "2f2aecf1471b33e2cfa1ae45801034e39358e57bf55da2df998b49f3dc181215"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -1785,8 +1785,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 33108,
-      "sha256": "d0332583a9d6326d01191dcaa8514ab0cf7cf85bb089be0bdba59697d1a108f6"
+      "size": 33786,
+      "sha256": "ab0b0d9815ac1091c5f92273e36d80c80fabb6de305f279b118fb35b10f929fb"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -1795,8 +1795,8 @@
     },
     {
       "path": "crates/assistant/src/files.rs",
-      "size": 35199,
-      "sha256": "d099aea3498fba3c45fe9eee7e7ba0e23594340dfb826559e440c5e5650aa559"
+      "size": 35194,
+      "sha256": "a91b2731d9b8865ef54665b545e2cb23c35dfaedba44e3696f0c856117c982ab"
     },
     {
       "path": "crates/assistant/src/handoff_returns.rs",
@@ -1845,8 +1845,8 @@
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
-      "size": 50027,
-      "sha256": "09d355f75f54f448a2c5c028c175ea9af5de4d3aa78b8a89eaef364e9b308c3c"
+      "size": 56001,
+      "sha256": "f3e9460e4462da8ceb277392f01c39f6c59ca037b6b66918e3e429ba51e6d567"
     },
     {
       "path": "crates/assistant/src/model_context.rs",
@@ -2000,8 +2000,8 @@
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 49837,
-      "sha256": "b11273bdb2d9ce8424a25cf7c082e3b56b11949d2464e95398a123bf858cdbcf"
+      "size": 51764,
+      "sha256": "1dddea6b1921b05c861e363c34a5480a3df068548c5c4fec9d7a4f88f44b3ec7"
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
@@ -2020,8 +2020,8 @@
     },
     {
       "path": "crates/assistant/src/worker/execution_policy.rs",
-      "size": 21714,
-      "sha256": "5816dd4bf5ed8449fddf332f92478ed1e7bd2ae47ecad240eed1d50de1546962"
+      "size": 22830,
+      "sha256": "67dc05cc1a28562bb0dfc546165640e9d74515ca59a937716ba5ace92884b4e6"
     },
     {
       "path": "crates/assistant/src/worker/model_trace.rs",
@@ -2035,8 +2035,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 225490,
-      "sha256": "1a9ab47748e2063a87d5004c9bfad086171873b35d4f89be27efcd2386bc12b8"
+      "size": 227237,
+      "sha256": "a1dc70d4fecf120654a58735ea380c6dd875a6bdb93a030d739f92febb3d288c"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -2059,9 +2059,14 @@
       "sha256": "fd387bad6c36a71526d45270d0a5a26294b97dc1dfa2fd7a17f8c5535d277500"
     },
     {
+      "path": "crates/guest-runtime/src/actions/terminal.rs",
+      "size": 4884,
+      "sha256": "7cfab52659b2f79f79d79bbb0e443310686dede7ffc8f7eb37b3d27cbec6ce14"
+    },
+    {
       "path": "crates/guest-runtime/src/actions.rs",
-      "size": 8949,
-      "sha256": "4e19a3d225ee7df415dd0197ea60be515dd8d7435a7d3be78f04c42d9d629b25"
+      "size": 13431,
+      "sha256": "1799c640ee8b51977b672c5a7d25afd8c7a12311eff26cee410589fef4b62e5b"
     },
     {
       "path": "crates/guest-runtime/src/audio.rs",
@@ -2125,8 +2130,8 @@
     },
     {
       "path": "crates/guest-runtime/src/main.rs",
-      "size": 4994,
-      "sha256": "1bf31bcb9ce7f6db2d0e49aa19675247572d60e209150f66d738432924dd2a76"
+      "size": 5197,
+      "sha256": "c50e8a3044bf93822d245d6c1a46930f2b8afc6ba29e22427ec4da9255dc0ea1"
     },
     {
       "path": "crates/guest-runtime/src/media.rs",
@@ -2140,8 +2145,8 @@
     },
     {
       "path": "crates/guest-runtime/src/paint.rs",
-      "size": 8585,
-      "sha256": "55a975b8ff3938f5b559efc07db89b3d9e140383f10b03f6f9e2748cf4abc383"
+      "size": 9721,
+      "sha256": "f1b6b7ab53e0f40c36c2f66fce483a827ca1e7584903fe27b5b8db86e9150924"
     },
     {
       "path": "crates/guest-runtime/src/process.rs",
@@ -2150,8 +2155,8 @@
     },
     {
       "path": "crates/guest-runtime/src/runtime.rs",
-      "size": 5736,
-      "sha256": "7c2a42253813d1e2e5f964d33d75a65da11e1953a5ea12fbdefbf00d0fcf25fb"
+      "size": 6297,
+      "sha256": "024dc940075032dc1c475ce85fb55db78ef990f99ce05ea421bf396caa72c1e8"
     },
     {
       "path": "crates/guest-runtime/src/screen.rs",
@@ -2175,8 +2180,8 @@
     },
     {
       "path": "crates/guest-runtime/tests/control_contract.rs",
-      "size": 16024,
-      "sha256": "595589716e91423c0716e1f1b06f1e91d2f33cb77f15dcbd434b9651d975137f"
+      "size": 16568,
+      "sha256": "9c98e2a7f35378aadab63049881c6e0eb547a1f26bf45ac610050ecef272f9e3"
     },
     {
       "path": "crates/guest-runtime/tests/location.rs",
@@ -3100,8 +3105,8 @@
     },
     {
       "path": "docs/public/file-management.md",
-      "size": 4214,
-      "sha256": "caf5cb22b5176bb9f51f49e58c3ef6ac524177c131fb6fe092eef775d1b0f384"
+      "size": 4304,
+      "sha256": "aef3996b28f7589212c898b45bfc6774ebb20eb8463d344dcb6ec5acfece375f"
     },
     {
       "path": "docs/public/getting-started.en.md",

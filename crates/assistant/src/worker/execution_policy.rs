@@ -1,10 +1,12 @@
 //! Device interaction policy. Arbitrary commands require a user-owned purpose.
 use super::{
     computer_task, evidence_start, explanatory_request, latest_request, maintenance_request,
-    phone_task, successful_call, tool_output, tool_value,
+    phone_task, resolved_request, successful_call, tool_output, tool_value,
 };
 use crate::tool_catalog::tools;
 use serde_json::{Value, json};
+use sqlx::PgPool;
+use uuid::Uuid;
 
 pub const GUI_GUIDANCE: &str = "需要设备操作或联网检索时，必须在真实设备中完成：手机用phone-use，电脑用computer-use；搜索资料应打开设备浏览器，应用内搜索使用对应应用。不得用模型内置搜索、命令抓取或工作容器替代。workspace_read/write/list、知识库和Skill管理仍可使用。直接执行下一步；工具已返回动作后的新画面时不重复观察，不输出冗长引导。普通聊天不做无关操作。最终只报告用户目标与实际限制；后台学习由验收阶段处理，不自行声明是否已更新经验。";
 
@@ -205,11 +207,43 @@ pub fn programming_request(request: &str) -> bool {
     })
 }
 
-pub(super) fn command_execution(context: &[Value]) -> bool {
-    let request = latest_request(context);
-    !explanatory_request(&request)
-        && !lookup_request(&request)
-        && (maintenance_request(context) || programming_request(&request))
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum CommandAuthority {
+    None,
+    Programming,
+    Maintenance,
+}
+
+fn command_intent(request: &str) -> CommandAuthority {
+    if explanatory_request(request) || lookup_request(request) {
+        CommandAuthority::None
+    } else if maintenance_request(request) {
+        CommandAuthority::Maintenance
+    } else if programming_request(request) {
+        CommandAuthority::Programming
+    } else {
+        CommandAuthority::None
+    }
+}
+
+pub(super) async fn owner_command(db: &PgPool, run: Uuid) -> Result<CommandAuthority, String> {
+    let texts = sqlx::query_scalar::<_, String>(
+        "SELECT m.text FROM runs r
+         JOIN LATERAL (
+           SELECT r.request_id
+           UNION ALL
+           SELECT i.request_id FROM run_inputs i WHERE i.run_id=r.id
+         ) accepted ON true
+         JOIN messages m ON m.request_id=accepted.request_id
+           AND m.conversation_id=r.conversation_id AND m.role='user'
+         WHERE r.id=$1 AND r.origin='user' AND r.steering='[]'::jsonb
+         ORDER BY m.ordinal DESC",
+    )
+    .bind(run)
+    .fetch_all(db)
+    .await
+    .map_err(|_| "无法核对本轮命令授权")?;
+    Ok(command_intent(&resolved_request(texts.into_iter())))
 }
 
 pub fn filter(mut tools: Value, restricted: bool) -> Value {
@@ -255,12 +289,12 @@ pub(super) fn lookup_evidence(context: &[Value]) -> bool {
 pub(super) fn gui_execution(context: &[Value]) -> bool {
     let request = latest_request(context);
     (!explanatory_request(&request) || lookup_request(&request))
-        && !command_execution(context)
+        && command_intent(&request) == CommandAuthority::None
         && (lookup_request(&request) || phone_task(context) || computer_task(context))
 }
 
-pub(super) fn execution_tools(context: &[Value]) -> Value {
-    filter(tools(), !command_execution(context))
+pub(super) fn execution_tools(authority: CommandAuthority) -> Value {
+    filter(tools(), authority == CommandAuthority::None)
 }
 
 pub(super) fn desktop_target(context: &[Value]) -> bool {
@@ -325,7 +359,7 @@ mod execution_policy_tests {
 
     #[test]
     fn ordinary_device_research_cannot_offer_a_command_shortcut() {
-        let catalog = execution_tools(&request("找园艺相关的企业，记到电脑的表格里"));
+        let catalog = execution_tools(command_intent("找园艺相关的企业，记到电脑的表格里"));
         let names: Vec<_> = catalog
             .as_array()
             .unwrap()
@@ -363,7 +397,7 @@ mod execution_policy_tests {
             "Do not use shell to check disk",
             "不要使用命令检查磁盘",
         ] {
-            let catalog = execution_tools(&request(text));
+            let catalog = execution_tools(command_intent(text));
             assert!(
                 catalog
                     .as_array()
@@ -403,7 +437,7 @@ mod execution_policy_tests {
             "不要删除原件，但用命令检查电脑磁盘",
         ] {
             assert!(
-                execution_tools(&request(text))
+                execution_tools(command_intent(text))
                     .as_array()
                     .unwrap()
                     .iter()
@@ -417,7 +451,7 @@ mod execution_policy_tests {
         for text in ["打开电脑上的文档", "搜索世界新闻"] {
             assert!(gui_execution(&request(text)));
             assert!(
-                !execution_tools(&request(text))
+                !execution_tools(command_intent(text))
                     .as_array()
                     .unwrap()
                     .iter()

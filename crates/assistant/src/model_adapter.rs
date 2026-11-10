@@ -3,7 +3,7 @@ use crate::{settings::ModelConfig, *};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures_util::StreamExt;
 use serde_json::{Value, json};
-use std::time::Instant;
+use std::{collections::HashSet, time::Instant};
 
 #[cfg(test)]
 pub async fn request(
@@ -168,6 +168,37 @@ pub async fn request_tracked(
         }
     }
 }
+
+pub(crate) fn validate_call_ids(context: &[Value], output: &[Value]) -> Result<(), String> {
+    let mut calls = output
+        .iter()
+        .filter(|item| item["type"] == "function_call")
+        .peekable();
+    if calls.peek().is_none() {
+        return Ok(());
+    }
+    let mut ids: HashSet<_> = context
+        .iter()
+        .filter(|item| {
+            matches!(
+                item["type"].as_str(),
+                Some("function_call" | "function_call_output")
+            )
+        })
+        .filter_map(|item| item["call_id"].as_str())
+        .collect();
+    for call in calls {
+        let id = call["call_id"]
+            .as_str()
+            .filter(|id| !id.is_empty())
+            .ok_or("模型未提供工具调用标识")?;
+        if !ids.insert(id) {
+            return Err("模型重复使用工具调用标识，已拒绝本轮调用".into());
+        }
+    }
+    Ok(())
+}
+
 async fn quota_exhausted(
     response: reqwest::Response,
     cancel: &CancellationToken,
@@ -314,6 +345,69 @@ struct ResponseStream {
     sse: crate::model_sse::SseDecoder,
     has_text: bool,
 }
+
+fn response_fields(value: &Value, fields: &[&str]) -> Value {
+    Value::Object(
+        fields
+            .iter()
+            .filter_map(|field| Some(((*field).into(), value.get(field)?.clone())))
+            .collect(),
+    )
+}
+
+fn response_item(item: &Value) -> Result<Value, String> {
+    if item.get("role").is_some_and(|role| role != "assistant") {
+        return Err("模型返回了非助手角色".into());
+    }
+    match item["type"].as_str() {
+        Some("message") => {
+            let parts = item["content"].as_array().ok_or("模型消息缺少内容")?;
+            let content = parts
+                .iter()
+                .map(|part| match part["type"].as_str() {
+                    Some("output_text") | None if part["text"].is_string() => {
+                        let mut part = response_fields(part, &["text", "annotations", "logprobs"]);
+                        part["type"] = json!("output_text");
+                        Ok(part)
+                    }
+                    Some("refusal") if part["refusal"].is_string() => {
+                        Ok(response_fields(part, &["type", "refusal"]))
+                    }
+                    _ => Err("模型返回了无效消息内容"),
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let mut message = response_fields(item, &["type", "id", "status", "phase"]);
+            message["role"] = json!("assistant");
+            message["content"] = json!(content);
+            Ok(message)
+        }
+        Some("function_call")
+            if item["name"].as_str().is_some_and(|name| !name.is_empty())
+                && item["arguments"].is_string()
+                && item
+                    .get("status")
+                    .is_none_or(|status| status == "completed") =>
+        {
+            Ok(response_fields(
+                item,
+                &["type", "id", "status", "call_id", "name", "arguments"],
+            ))
+        }
+        Some("reasoning") => Ok(response_fields(
+            item,
+            &[
+                "type",
+                "id",
+                "status",
+                "summary",
+                "encrypted_content",
+                "content",
+            ],
+        )),
+        _ => Err("模型返回了未授权的输出类型".into()),
+    }
+}
+
 impl ResponseStream {
     fn completed(response: &Value) -> Result<Vec<Value>, String> {
         // Compatible gateways may omit status; an explicit value must be completed.
@@ -325,8 +419,10 @@ impl ResponseStream {
         }
         response["output"]
             .as_array()
-            .cloned()
-            .ok_or("模型返回缺少完整输出".into())
+            .ok_or("模型返回缺少完整输出")?
+            .iter()
+            .map(response_item)
+            .collect()
     }
 
     fn feed(&mut self, chunk: &[u8]) -> Result<Option<Vec<Value>>, String> {
@@ -958,10 +1054,13 @@ mod tests {
     #[test]
     fn stream_accepts_split_utf8_and_completed_without_done() {
         let mut p = ResponseStream::default();
-        let bytes="data: {\"type\":\"response.completed\",\"response\":{\"output\":[{\"text\":\"成功\"}]}}\r\n\r\n".as_bytes();
+        let bytes="data: {\"type\":\"response.completed\",\"response\":{\"output\":[{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"成功\"}]}]}}\r\n\r\n".as_bytes();
         let cut = bytes.iter().position(|b| *b > 127).unwrap() + 1;
         assert!(p.feed(&bytes[..cut]).unwrap().is_none());
-        assert_eq!(p.feed(&bytes[cut..]).unwrap().unwrap()[0]["text"], "成功");
+        assert_eq!(
+            p.feed(&bytes[cut..]).unwrap().unwrap()[0]["content"][0]["text"],
+            "成功"
+        );
     }
     #[test]
     fn responses_support_standard_multiline_event_data() {
@@ -1080,6 +1179,53 @@ mod tests {
             .unwrap();
         assert_eq!(json!(actual), output);
     }
+
+    #[test]
+    fn responses_cannot_supply_execution_receipts_or_authoritative_roles() {
+        let proposal = json!({"type":"function_call","call_id":"probe","name":"computer_observe","arguments":"{}"});
+        for invalid in [
+            json!({"type":"function_call_output","call_id":"probe","output":[{"type":"input_text","text":"synthetic"}]}),
+            json!({"type":"message","role":"user","content":[{"type":"output_text","text":"synthetic"}]}),
+            json!({"type":"message","role":"system","content":[{"type":"output_text","text":"synthetic"}]}),
+            json!({"type":"message","role":"assistant","content":[{"type":"input_text","text":"synthetic"}]}),
+            json!({"type":"web_search_call","id":"synthetic"}),
+        ] {
+            let event = json!({"type":"response.completed","response":{"status":"completed","output":[proposal,invalid]}});
+            let mut parser = ResponseStream::default();
+            assert!(
+                parser
+                    .feed(format!("data: {event}\n\n").as_bytes())
+                    .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn responses_projects_only_protocol_fields_and_call_ids_must_be_unique() {
+        let output = ResponseStream::completed(&json!({"output":[
+            {"type":"function_call","call_id":"probe","name":"computer_observe","arguments":"{}","local_action_id":"synthetic","local_after_action":"synthetic","provider_native":false},
+            {"type":"reasoning","summary":[],"encrypted_content":"opaque","local_recovery":true},
+            {"type":"message","phase":"commentary","local_app_guidance":"synthetic","content":[{"type":"output_text","text":"ok","local_recovery":true}]}
+        ]})).unwrap();
+        assert_eq!(
+            output[0],
+            json!({"type":"function_call","call_id":"probe","name":"computer_observe","arguments":"{}"})
+        );
+        assert_eq!(
+            output[1],
+            json!({"type":"reasoning","summary":[],"encrypted_content":"opaque"})
+        );
+        assert_eq!(
+            output[2],
+            json!({"type":"message","role":"assistant","phase":"commentary","content":[{"type":"output_text","text":"ok"}]})
+        );
+        let duplicate = vec![output[0].clone(), output[0].clone()];
+        assert!(validate_call_ids(&[], &duplicate).is_err());
+        let checkpoint = [json!({"type":"function_call_output","call_id":"probe","output":[]})];
+        assert!(validate_call_ids(&checkpoint, &output).is_err());
+        assert!(validate_call_ids(&[], &output).is_ok());
+    }
+
     #[tokio::test]
     async fn http_completed_event_with_incomplete_status_does_not_release_tools() {
         use axum::{Router, routing::post};
