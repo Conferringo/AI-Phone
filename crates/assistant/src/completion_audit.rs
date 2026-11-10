@@ -117,6 +117,7 @@ fn single_desktop_input(evidence: &[Value]) -> bool {
             Some(
                 "skill_read"
                 | "computer_observe"
+                | "computer_zoom"
                 | "computer_find_text"
                 | "computer_find_control"
                 | "task_plan",
@@ -167,6 +168,7 @@ pub async fn verify(
         .bind(event).bind(run).bind(message).execute(&app.db).await.map_err(|e| e.to_string())?;
     let mut image_budget = 8usize;
     let mut visual_inputs = Vec::new();
+    let mut input_visuals = None;
     let mut evidence = Vec::new();
     let mut learning_evidence = LearningEvidence::new();
     for row in &rows {
@@ -187,7 +189,11 @@ pub async fn verify(
             learning_evidence.insert(id.clone(), observation);
         }
         limit_result(&mut result, &mut image_budget);
+        let first_visual = visual_inputs.len();
         extract_images(&mut result, &id, &mut visual_inputs);
+        if name == "computer_type" && first_visual < visual_inputs.len() {
+            input_visuals = Some(first_visual..visual_inputs.len());
+        }
         evidence.push(json!({"evidence_id":id,"tool":name,"learning_app":learning_evidence.get(&id).map(|m|m.app_id.as_str()),
             "input":call["arguments"].as_str().unwrap_or(""),
             "title":row.get::<String,_>("title"),"status":row.get::<String,_>("status"),"result":result}));
@@ -200,19 +206,24 @@ pub async fn verify(
         .filter_map(|part| part["text"].as_str())
         .collect::<Vec<_>>()
         .join("\n");
-    let handoff_receipts: Vec<_> = context
-        .windows(2)
-        .skip(latest_input)
-        .filter_map(|pair| crate::device_exchange::returns::receipt_text(&pair[0], &pair[1]))
-        .collect();
-    let notifications:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('device_id',n.device_id,'app',n.app_name,'title',n.title,'text',n.body) FROM phone_notifications n JOIN runs r ON r.id=n.run_id WHERE n.run_id=$1 AND NOT r.background_read_only AND n.status IN ('assigned','attending','pending-summary') ORDER BY n.received_at LIMIT 16").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
-    let learning:Vec<Value>=sqlx::query_scalar("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8").bind(run).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let (handoff_receipts, notifications, learning) = tokio::try_join!(
+        sqlx::query_scalar::<_, Value>("SELECT e.result FROM harness_events e JOIN runs r ON r.id=e.run_id WHERE e.run_id=$1 AND e.kind='summary' AND e.title='设备协作' AND e.status='completed' AND e.result IS NOT NULL AND e.created_at>=COALESCE(r.input_at,r.created_at) ORDER BY e.created_at")
+            .bind(run).fetch_all(&app.db),
+        sqlx::query_scalar::<_, Value>("SELECT jsonb_build_object('device_id',n.device_id,'app',n.app_name,'title',n.title,'text',n.body) FROM phone_notifications n JOIN runs r ON r.id=n.run_id WHERE n.run_id=$1 AND NOT r.background_read_only AND n.status IN ('assigned','attending','pending-summary') ORDER BY n.received_at LIMIT 16")
+            .bind(run).fetch_all(&app.db),
+        sqlx::query_scalar::<_, Value>("SELECT jsonb_build_object('app',app_id,'title',title,'procedure',procedure,'outcome',outcome,'limitations',limitations,'observations',observation_ids) FROM app_experiences WHERE run_id=$1 AND superseded_at IS NULL ORDER BY created_at LIMIT 8")
+            .bind(run).fetch_all(&app.db),
+    ).map_err(|e| e.to_string())?;
     let compact = !needs_input
         && handoff_receipts.is_empty()
         && notifications.is_empty()
         && learning.is_empty()
-        && (2..=4).contains(&visual_inputs.len())
+        && rows.len() < 64
+        && input_visuals.is_some()
         && single_desktop_input(&evidence);
+    if compact {
+        evidence.retain(|receipt| receipt["tool"] == "computer_type");
+    }
     let mut audit_input = vec![
         json!({"type":"input_text","text":json!({"request":request_text,"proposed_completion":summary,"needs_input":needs_input,"tool_evidence":evidence,"handoff_receipts":handoff_receipts}).to_string()}),
     ];
@@ -226,7 +237,11 @@ pub async fn verify(
     if !learning.is_empty() {
         audit_input.push(json!({"type":"input_text","text":format!("以下是本轮唯一有效的待发布经验候选，同名旧草稿已经被修订或撤回，不再要求旧草稿通过。请仅逐项核对这份有效候选与实际操作证据，不要因为候选标注verified就相信它：{}",json!(learning))}));
     }
-    audit_input.extend(visual_inputs);
+    if compact && let Some(range) = input_visuals {
+        audit_input.extend(visual_inputs.drain(range));
+    } else {
+        audit_input.extend(visual_inputs);
+    }
     let mut tool = json!({"type":"function","name":"audit_result","description":"只报告证据核验结果，不能执行操作。",
         "parameters":{"type":"object","properties":{"approved":{"type":"boolean"},"feedback":{"type":"string","description":"一至三句核验结论，指出关键证据或具体缺失。不要复述整段任务、全部步骤或完整文件路径。"}},
         "required":["approved","feedback"],"additionalProperties":false}});
@@ -461,10 +476,15 @@ mod tests {
     #[test]
     fn short_review_requires_one_confirmed_input_and_its_observation() {
         let observation = json!({"tool":"computer_observe","status":"completed"});
+        let zoom = json!({"tool":"computer_zoom","status":"completed"});
         let mut input = json!({"tool":"computer_type","status":"completed","result":[
             {"type":"input_text","text":json!({"success":true,"observation_id":"fresh"}).to_string()}
         ]});
-        assert!(single_desktop_input(&[observation.clone(), input.clone()]));
+        assert!(single_desktop_input(&[
+            observation.clone(),
+            input.clone(),
+            zoom
+        ]));
         assert!(!single_desktop_input(&[input.clone(), input.clone()]));
         input["status"] = json!("failed");
         assert!(!single_desktop_input(&[observation, input]));
@@ -652,6 +672,33 @@ mod tests {
                         .unwrap();
                 }
             }
+            let other_run = Uuid::now_v7();
+            let other_message = Uuid::now_v7();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
+                .bind(other_message)
+                .bind(conversation)
+                .execute(&app.db)
+                .await
+                .unwrap();
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status) VALUES($1,$2,$3,$1,'fixture','canceled')")
+                .bind(other_run).bind(conversation).bind(other_message).execute(&app.db).await.unwrap();
+            let wrong_run = verify(
+                &app,
+                other_run,
+                other_message,
+                &context,
+                "Read the app",
+                false,
+                &CancellationToken::new(),
+            )
+            .await;
+            assert!(
+                matches!(wrong_run, Err(error) if error == "本轮没有已确认的执行回执，无法核验完成。")
+            );
+            assert!(
+                received.try_recv().is_err(),
+                "another run's receipts reached the model"
+            );
             let mut candidate = json!({"app_id":"com.example.reader","title":"Open the search field","procedure":"Click the visible search entry and verify the actual input field before typing.","outcome":"verified","limitations":"Only the observed application version."});
             for (references, saved, note_references, approved, notes) in [
                 (
