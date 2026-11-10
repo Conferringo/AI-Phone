@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.9 Cock
+
+- Use the recorded post-action frame to verify desktop input and bind execution receipts to the owning task.
+- Shorten verified Android Settings navigation and wake Liberty as soon as it is enabled.
+- Route cross-Agent handoffs to the receiving Agent. Complete file transfers using the verified receipt.
+
+On the same real Android Settings task, across three runs per version, median time to the first device action went from 1,905 ms to 1,630 ms and independent verification went from 2,437 ms to 1,442 ms. Median task completion went from 6,584 ms to 6,981 ms as model decision times varied. One Liberty activation comparison went from 2,440 ms to 25 ms. A real cross-Agent file handoff took about 32 seconds in both versions, with matching file digests and a verified receipt.
+
 ## 0.1.8 Bibliography
 
 - Introduce AImanity and rename autonomous exploration to Liberty.

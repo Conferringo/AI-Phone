@@ -33,9 +33,9 @@ The client downloads the stable release for its platform and verifies its Ed2551
 After verifying both installers, sign the update manifest on the release maintainer's machine:
 
 ```sh
-./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.1.8-macos-arm64.dmg AImanity-0.1.8-windows-x64-setup.exe stable.json
+./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.1.9-macos-arm64.dmg AImanity-0.1.9-windows-x64-setup.exe stable.json
 ```
 
-Attach the DMG and EXE to the GitHub release. After publication, publish the signed `stable.json` on the `update-feed` branch. Clients from 0.1.8 use that feed. Install 0.1.8 manually once when upgrading from 0.1.7.
+Attach the DMG and EXE to the GitHub release. After publication, publish the signed `stable.json` on the `update-feed` branch. Clients from 0.1.8 use that feed. Install the current release manually once when upgrading from 0.1.7.
 
 Full packages must contain clean Android/Linux baselines, emulator, prebuilt services and matched runtime components, with provenance, notices and applicable corresponding source. See [distribution requirements](distribution-requirements.md), [release status](release-status.md), and [backup/recovery](backup-restore.en.md).
