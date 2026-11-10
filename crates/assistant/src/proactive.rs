@@ -448,11 +448,21 @@ pub async fn assigned_notifications(
 pub async fn should_yield(app: &App, run: Uuid) -> Result<bool, String> {
     sqlx::query_scalar("WITH owned AS (SELECT device_id FROM runs WHERE id=$1
         UNION SELECT device_id FROM device_execution_leases WHERE run_id=$1)
-        SELECT EXISTS(SELECT 1 FROM runs WHERE id=$1 AND origin IN ('exploration','desktop-exploration')) AND p.notifications_enabled AND (
-        EXISTS(SELECT 1 FROM phone_notifications n JOIN owned USING(device_id) WHERE n.status='pending' AND n.notification_key<>$2) OR
-        EXISTS(SELECT 1 FROM runs notice JOIN owned USING(device_id) WHERE notice.origin='notification'
-            AND notice.status='queued' AND (notice.next_wake_at IS NULL OR notice.next_wake_at<=now())
-            AND NOT EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=notice.id AND n.notification_key=$2))
+        SELECT EXISTS(SELECT 1 FROM runs WHERE id=$1 AND origin IN ('exploration','desktop-exploration')) AND (
+        (EXISTS(SELECT 1 FROM device_messages m JOIN owned o ON o.device_id=m.target_device_id
+            JOIN device_links l ON l.id=m.link_id AND l.connected AND l.revision=m.link_revision
+            LEFT JOIN runs parent ON parent.id=m.source_run_id
+            LEFT JOIN runs receiver ON m.status='running' AND receiver.id=m.target_run_id
+            WHERE (m.status='queued' OR (receiver.status='queued' AND (receiver.next_wake_at IS NULL OR receiver.next_wake_at<=now())))
+                AND (parent.id IS NULL OR parent.status<>'canceled'))
+         AND NOT EXISTS(SELECT 1 FROM runs r JOIN harness_events e ON e.run_id=r.id
+             JOIN jsonb_array_elements(r.pending_tools) pending ON e.id::text=pending->>'local_action_id'
+             WHERE r.id=$1 AND e.kind='tool' AND e.status<>'queued' AND e.result IS NULL)) OR
+        (p.notifications_enabled AND (
+            EXISTS(SELECT 1 FROM phone_notifications n JOIN owned USING(device_id) WHERE n.status='pending' AND n.notification_key<>$2) OR
+            EXISTS(SELECT 1 FROM runs notice JOIN owned USING(device_id) WHERE notice.origin='notification'
+                AND notice.status='queued' AND (notice.next_wake_at IS NULL OR notice.next_wake_at<=now())
+                AND NOT EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=notice.id AND n.notification_key=$2))))
         ) FROM proactive_state p")
         .bind(run).bind(screen_attention::KEY).fetch_one(&app.db).await.map_err(|e|e.to_string())
 }

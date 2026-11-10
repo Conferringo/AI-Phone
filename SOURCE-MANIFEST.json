@@ -1725,8 +1725,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 84728,
-      "sha256": "2f2aecf1471b33e2cfa1ae45801034e39358e57bf55da2df998b49f3dc181215"
+      "size": 85264,
+      "sha256": "787f2c39ba90ca037c2c5d7e54d0db3603b1a4c230de7b4d9a06617c1583e878"
     },
     {
       "path": "crates/assistant/src/desktop_explore.rs",
@@ -1745,8 +1745,8 @@
     },
     {
       "path": "crates/assistant/src/device_exchange.rs",
-      "size": 19819,
-      "sha256": "57b4bebab3006f2097bddfa040f594106daed5c1ba4704522771a7c4cfc50c2e"
+      "size": 20068,
+      "sha256": "db717c91cae5f2fad8c15ee623a4b54a064b2af3de1c41f01a4d75e7b866dea4"
     },
     {
       "path": "crates/assistant/src/device_network.rs",
@@ -1785,8 +1785,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 33786,
-      "sha256": "ab0b0d9815ac1091c5f92273e36d80c80fabb6de305f279b118fb35b10f929fb"
+      "size": 36395,
+      "sha256": "13bde25482ec89c0c6044920c09eeeb0c1511d07c26f341162470a2385c4a3cc"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -1885,8 +1885,8 @@
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
-      "size": 2227,
-      "sha256": "2c85590180991bbf173ef76bf7f6d666228b446afae72cff8f4efd4c3aec6cbf"
+      "size": 2358,
+      "sha256": "d571b0a8b588a7cb5ca7f1482040f6a521d88f62a889e95b9c285bc456c03e49"
     },
     {
       "path": "crates/assistant/src/private_file.rs",
@@ -1900,8 +1900,8 @@
     },
     {
       "path": "crates/assistant/src/proactive.rs",
-      "size": 78666,
-      "sha256": "4c0a0e74214d1dfe81dae6273412f42fe4dc025e543f8e4ef6000f040efde9d2"
+      "size": 79530,
+      "sha256": "a45cf40d19cf7343316fb5c6927516d1c47f696b4b570b5af2132d10428e7a27"
     },
     {
       "path": "crates/assistant/src/redis_events.rs",
@@ -2035,8 +2035,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 227237,
-      "sha256": "a1dc70d4fecf120654a58735ea380c6dd875a6bdb93a030d739f92febb3d288c"
+      "size": 229730,
+      "sha256": "06385f580498d487d50872a64aa6adc5382479ae3b52e8cfdfc415b41fef09e7"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",

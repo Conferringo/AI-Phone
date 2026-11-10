@@ -661,9 +661,15 @@ async fn desktop_path(app: &App, value: &str) -> Result<PathBuf> {
     }
     Ok(p)
 }
+fn in_phone_shared_storage(path: &str) -> bool {
+    path == "/sdcard"
+        || path.starts_with("/sdcard/")
+        || path == "/storage/emulated/0"
+        || path.starts_with("/storage/emulated/0/")
+}
+
 async fn phone_path(app: &App, device: &str, value: &str) -> Result<String> {
-    if (value != "/sdcard" && !value.starts_with("/sdcard/")) || value.chars().any(char::is_control)
-    {
+    if !in_phone_shared_storage(value) || value.chars().any(char::is_control) {
         return Err("手机文件必须位于/sdcard共享存储".into());
     }
     let out = adb(
@@ -674,11 +680,7 @@ async fn phone_path(app: &App, device: &str, value: &str) -> Result<String> {
     )
     .await?;
     let real = String::from_utf8_lossy(&out).trim().to_string();
-    if real != "/storage/emulated/0"
-        && real != "/sdcard"
-        && !real.starts_with("/storage/emulated/0/")
-        && !real.starts_with("/sdcard/")
-    {
+    if !in_phone_shared_storage(&real) {
         return Err("文件指向共享存储之外".into());
     }
     Ok(real)
@@ -1848,6 +1850,21 @@ mod tests {
             assert_eq!(input_rejection(&value.to_string()).is_some(), expected);
         }
         assert!(input_rejection("process timed out").is_none());
+    }
+
+    #[test]
+    fn accepts_only_the_two_android_shared_storage_roots() {
+        for path in [
+            "/sdcard",
+            "/sdcard/Download/report.xlsx",
+            "/storage/emulated/0",
+            "/storage/emulated/0/Download/report.xlsx",
+        ] {
+            assert!(in_phone_shared_storage(path));
+        }
+        for path in ["/sdcard-backup", "/storage/emulated/00", "/data/local/tmp"] {
+            assert!(!in_phone_shared_storage(path));
+        }
     }
 
     #[test]

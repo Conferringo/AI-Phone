@@ -53,6 +53,40 @@ async fn same_device_waits_until_the_attempt_result_is_committed() {
 }
 
 #[tokio::test]
+#[ignore = "real disposable PostgreSQL; an incoming handoff wakes on a safe exploration yield"]
+async fn incoming_handoff_interrupts_exploration_and_wakes_on_lease_release() {
+    database_case(|app| async move {
+        let desktop = "handoff-wake-desktop";
+        let phone = "handoff-wake-phone";
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture desktop','desktop','Linux','managed'),($2,'Fixture phone','phone','Android','managed')")
+            .bind(desktop).bind(phone).execute(&app.db).await.unwrap();
+        sqlx::query("UPDATE proactive_state SET notifications_enabled=false").execute(&app.db).await.unwrap();
+        let target = queued(&app, desktop, "desktop-exploration").await;
+        assert_eq!(claim_due_run(&app).await.unwrap(), Some(target));
+        assert!(!crate::proactive::should_yield(&app, target.0).await.unwrap());
+        let link = Uuid::now_v7();
+        sqlx::query("INSERT INTO device_links(id,source_device_id,target_device_id) VALUES($1,$2,$3)")
+            .bind(link).bind(desktop).bind(phone).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO device_messages(id,link_id,link_revision,source_device_id,target_device_id,text) VALUES($1,$2,1,$3,$4,'fixture handoff')")
+            .bind(Uuid::now_v7()).bind(link).bind(phone).bind(desktop).execute(&app.db).await.unwrap();
+        assert!(crate::proactive::should_yield(&app, target.0).await.unwrap());
+        let action = Uuid::now_v7();
+        sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status) VALUES($1,$2,$3,'tool','fixture action','running')")
+            .bind(action).bind(target.0).bind(target.1).execute(&app.db).await.unwrap();
+        sqlx::query("UPDATE runs SET pending_tools=$2 WHERE id=$1")
+            .bind(target.0).bind(json!([{"local_action_id":action}])).execute(&app.db).await.unwrap();
+        assert!(!crate::proactive::should_yield(&app, target.0).await.unwrap());
+        sqlx::query("UPDATE harness_events SET status='completed',result='{}' WHERE id=$1")
+            .bind(action).execute(&app.db).await.unwrap();
+        assert!(crate::proactive::should_yield(&app, target.0).await.unwrap());
+        sqlx::query("UPDATE runs SET status='queued',next_wake_at=now()+interval '5 seconds' WHERE id=$1")
+            .bind(target.0).execute(&app.db).await.unwrap();
+        finish_attempt(&app,target.0,target.1,&Ok(RunDisposition::Queued),false).await.unwrap();
+        tokio::time::timeout(Duration::from_millis(300), app.run_signals.handoff.notified()).await.unwrap();
+    }).await;
+}
+
+#[tokio::test]
 #[ignore = "real disposable PostgreSQL; simultaneous claim and borrowed device exclusion"]
 async fn distinct_devices_run_together_and_borrowed_devices_cannot_be_stolen() {
     database_case(|app| async move {

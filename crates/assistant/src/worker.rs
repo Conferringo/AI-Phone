@@ -31,12 +31,17 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, conversation, handoff): (String, Uuid, bool) = sqlx::query_as(
-        "SELECT status,conversation_id,origin='device-handoff' FROM runs WHERE id=$1 FOR UPDATE",
-    )
-    .bind(id)
-    .fetch_one(&mut *tx)
-    .await?;
+    let (status, conversation, handoff, queued_handoff): (String, Uuid, bool, bool) =
+        sqlx::query_as(
+            "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
+            SELECT 1 FROM device_messages m WHERE m.status='queued' AND (
+                m.target_device_id=r.device_id OR EXISTS(SELECT 1 FROM device_execution_leases l
+                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id)))
+         FROM runs r WHERE r.id=$1 FOR UPDATE",
+        )
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
         Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
@@ -92,9 +97,9 @@ async fn finish_attempt(
     }
     if trace != "waiting" {
         app.run_signals.channel_update.notify_one();
-        if handoff {
-            app.run_signals.handoff.notify_one();
-        }
+    }
+    if queued_handoff || (handoff && trace != "waiting") {
+        app.run_signals.handoff.notify_one();
     }
     Ok(())
 }
@@ -546,6 +551,9 @@ fn phone_acknowledgement(request: &str) -> bool {
             .any(|ending| text.ends_with(ending))
 }
 fn computer_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return true;
+    }
     let request = latest_request(context).to_lowercase();
     (!explanatory_request(&request) || execution_policy::lookup_request(&request))
         && (request
@@ -562,8 +570,14 @@ fn computer_task(context: &[Value]) -> bool {
 }
 fn desktop_focused(context: &[Value]) -> bool {
     context
-        .iter()
-        .any(|v| v["role"] == "system" && text_of(v).contains("[当前设备类型:desktop]"))
+        .first()
+        .filter(|item| item["role"] == "system")
+        .and_then(|item| item["content"][0]["text"].as_str())
+        .and_then(|text| text.rsplit_once("[当前设备类型:"))
+        .is_some_and(|(_, kind)| kind.starts_with("desktop]"))
+}
+fn desktop_handoff(context: &[Value]) -> bool {
+    desktop_focused(context) && crate::device_exchange::is_incoming_handoff(context)
 }
 fn desktop_focus_task(request: &str) -> bool {
     !work_intent::harness_resource_request(request)
@@ -576,6 +590,33 @@ fn desktop_focus_task(request: &str) -> bool {
 #[cfg(test)]
 mod target_wording_tests {
     use super::*;
+    #[test]
+    fn desktop_handoff_uses_its_bound_desktop_even_when_it_returns_a_file_to_a_phone() {
+        let text = "核对 Linux 桌面上的文件，再传回手机，别打开微信。";
+        let mut context = vec![
+            json!({"role":"system","content":[{"type":"input_text","text":"[当前设备类型:desktop]"}]}),
+        ];
+        context.extend(crate::device_exchange::context(json!({"text":text})));
+        assert!(computer_task(&context));
+        assert!(!phone_task(&context));
+        assert!(!wechat_task(&context));
+        assert_eq!(phone_claim(&context, "已传回手机。"), PhoneClaim::None);
+        assert_eq!(
+            initial_observation(&context, Some("desktop-test"))
+                .unwrap()
+                .0,
+            "computer_observe"
+        );
+        let error = recoverable_tool_failure(crate::phone_system::NO_PHONE_BINDING.into());
+        assert!(!observation_retry_needed(
+            &json!({"name":"phone_observe"}),
+            &tool_value(&error).unwrap()
+        ));
+        context[0]["content"][0]["text"] =
+            json!("记忆中提到[当前设备类型:desktop]。[当前设备类型:phone]");
+        assert!(!desktop_handoff(&context));
+    }
+
     #[test]
     fn excluded_computer_is_not_a_computer_goal() {
         let phone = vec![
@@ -609,6 +650,9 @@ mod target_wording_tests {
     }
 }
 fn phone_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let request = latest_request(context).to_lowercase();
     if computer_task(context) && !explicit_phone_target(&request) {
         return false;
@@ -694,6 +738,9 @@ fn phone_task(context: &[Value]) -> bool {
     (continuation || phone_acknowledgement(&request)) && recent_phone
 }
 fn phone_claim(context: &[Value], answer: &str) -> PhoneClaim {
+    if desktop_handoff(context) {
+        return PhoneClaim::None;
+    }
     if computer_task(context)
         && !phone_task(context)
         && !explicit_phone_target(&answer.to_lowercase())
@@ -908,6 +955,9 @@ fn guidance_read(name: &str) -> Value {
         "call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string(),"local_app_guidance":name})
 }
 fn wechat_task(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let request = latest_request(context)
         .to_lowercase()
         .replace("企业微信", "");
@@ -1738,6 +1788,11 @@ fn fatal_tool_error(error: &str) -> bool {
 fn recoverable_tool_failure(error: String) -> Value {
     let detail = if let Some(message) = error.strip_prefix("device_busy:") {
         json!({"success":false,"error":message,"code":"device_busy","recoverable":true,"not_executed":true,"next_tool":"task_wait"})
+    } else if matches!(
+        error.as_str(),
+        crate::phone_system::NO_PHONE_BINDING | crate::phone_system::PHONE_BINDING_REVOKED
+    ) {
+        json!({"success":false,"error":error,"code":"device_not_authorized","not_executed":true})
     } else {
         json!({"success":false,"error":error,"recoverable":true})
     };
@@ -1767,6 +1822,9 @@ fn verification_attempts(context: &[Value]) -> usize {
 }
 
 fn needs_verification_observation(context: &[Value]) -> bool {
+    if desktop_handoff(context) {
+        return false;
+    }
     let scope = &context[evidence_start(context)..];
     let Some(prompt) = scope
         .iter()
@@ -2632,7 +2690,9 @@ async fn execute(
             continue;
         }
         let effort = if screen_attention
-            || (verification_attempts(&context) > 0 && !has_current_observation(&context))
+            || (!desktop_handoff(&context)
+                && verification_attempts(&context) > 0
+                && !has_current_observation(&context))
         {
             "none"
         } else if (phone_task(&context) || action_task(&context))
