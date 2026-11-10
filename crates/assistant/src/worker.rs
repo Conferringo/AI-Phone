@@ -1545,7 +1545,12 @@ fn tool_outcome(value: Option<&Value>) -> ToolOutcome {
         {
             ToolOutcome::Blocked
         }
-        Some(value) if value["success"] == false || value["error"].is_string() => {
+        Some(value)
+            if value["success"] == false
+                || value["error"]
+                    .as_str()
+                    .is_some_and(|error| !error.is_empty()) =>
+        {
             ToolOutcome::Failed
         }
         _ => ToolOutcome::Completed,
@@ -3249,7 +3254,9 @@ async fn recorded_tool(
                     .any(|text| {
                         serde_json::from_str::<Value>(text)
                             .ok()
-                            .is_some_and(|value| value["success"] == false)
+                            .is_some_and(|value| {
+                                tool_outcome(Some(&value)) != ToolOutcome::Completed
+                            })
                     })
             }) {
                 "failed"
@@ -4953,6 +4960,27 @@ mod loop_persistence_tests {
             tool_value(&output).unwrap(),
             json!({"success":false,"error":"文件读取失败","recoverable":true})
         );
+    }
+
+    #[test]
+    fn completed_transfer_receipt_with_empty_error_resets_the_stall_budget() {
+        let receipt = json!({"success":true,"status":"completed","bytes":80,"error":""});
+        let output = json!([{"type":"input_text","text":receipt.to_string()}]);
+        assert!(output_success(&output));
+        assert!(!failed_output(&output));
+        let mut state = crate::agent_loop::LoopState {
+            stalls: 2,
+            ..Default::default()
+        };
+        assert!(!state.tool_result(
+            "device_transfer_status",
+            "{}",
+            &output,
+            tool_outcome(Some(&receipt))
+        ));
+        assert_eq!(state.stalls, 0);
+        let failure = json!({"success":true,"error":"copy failed"});
+        assert_eq!(tool_outcome(Some(&failure)), ToolOutcome::Failed);
     }
 
     #[test]
