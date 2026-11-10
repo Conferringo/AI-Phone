@@ -2,7 +2,7 @@
 
 English · [简体中文](#简体中文) · [繁體中文](docs/public/readme.zh-TW.md) · [日本語](docs/public/readme.ja.md) · [한국어](docs/public/readme.ko.md) · [Deutsch](docs/public/readme.de.md) · [Français](docs/public/readme.fr.md) · [Español](docs/public/readme.es.md) · [Русский](docs/public/readme.ru.md) · [العربية](docs/public/readme.ar.md)
 
-An agent that listens while it works, explores on its own, and learns from using your phone and computer. Formerly AI Phone.
+An agent that listens while it works, explores on its own, and learns from using your phone and computer.
 
 ## Download
 
@@ -39,11 +39,11 @@ See [model and channel setup](docs/public/model-and-channel-setup.md), [notifica
 
 Agents plan from current device observations and record their actions and results. Bun and Cargo build the project. Device disks, accounts and attachments stay in the local installation.
 
-[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/MrMilkDragon/AI-Phone/issues/new/choose)
 
 ## Roadmap
 
-Signed updates, voice Copilot, more app Skills and notification-driven office work. [Development roadmap](docs/public/release-roadmap.en.md)
+More voice providers, app Skills and notification-driven office workflows. [Development roadmap](docs/public/release-roadmap.en.md)
 
 ## License and use
 
@@ -85,11 +85,11 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 Agent 根据当前设备画面操作，动作账本保留执行过程和结果。设备盘、账号、聊天和附件保存在本地安装目录或数据库中。
 
-[架构与目录](docs/public/architecture.zh-CN.md) · [文档](docs/public/index.md) · [参与贡献](CONTRIBUTING.md) · [提交问题](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[架构与目录](docs/public/architecture.zh-CN.md) · [文档](docs/public/index.md) · [参与贡献](CONTRIBUTING.md) · [提交问题](https://github.com/MrMilkDragon/AI-Phone/issues/new/choose)
 
 ## 后续开发
 
-推进签名更新、语音 Copilot、应用专项 Skill 和通知触发的办公流程。[开发路线](docs/public/release-roadmap.zh-CN.md)
+扩展语音服务商、应用专项 Skill 和通知触发的办公流程。[开发路线](docs/public/release-roadmap.zh-CN.md)
 
 ## 许可与使用
 

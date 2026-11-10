@@ -60,8 +60,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7449,
-      "sha256": "d4cf935cf54e4ca1857d5fda30d1fc8b1bbad059681933a5d24c04e43056c777"
+      "size": 7467,
+      "sha256": "802dc45700852b8249a578f539cbf4d86a58e6f4116324f4db2f186eb68f751e"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -135,13 +135,13 @@
     },
     {
       "path": "README.en.md",
-      "size": 3334,
-      "sha256": "2bb8d955d0a70f894dce822b5744dcc82dc9c7207ad35384fa87c5cd18e51588"
+      "size": 3307,
+      "sha256": "c0b15fde610abd0b956d7d05fd74cdeac263959a73dd25e2e7e7ef6ab3beba1e"
     },
     {
       "path": "README.md",
-      "size": 6068,
-      "sha256": "55c4154d8f61715c7f6d7d9702b05d250747fdc269f8a2389a17ab42a5bea54f"
+      "size": 6028,
+      "sha256": "87a787a6c310c600b3a2e33e555413c5a1df3ac4ec0d4878e53f3a072aa58141"
     },
     {
       "path": "SECURITY.md",
@@ -3965,8 +3965,8 @@
     },
     {
       "path": "scripts/build-client.ts",
-      "size": 2018,
-      "sha256": "0ba949e3cf97c2cdb2e181339b1c2de752a9dc92373384b883eacfa1603b56da"
+      "size": 2188,
+      "sha256": "2f7f02cc3a0778ce0d447e3f9561687f7a9637a252e6a3729d33ab966117efa7"
     },
     {
       "path": "scripts/build-native.ts",
@@ -4175,8 +4175,8 @@
     },
     {
       "path": "scripts/tooling/client-build.ts",
-      "size": 11963,
-      "sha256": "97fb16b61aa9124985d8e7f7da304f448236895790178d4c2b1d8bc8ee0e79b8"
+      "size": 12088,
+      "sha256": "705c018aff2024fc6c21689d7678ece3a7fb17bf2a1ad720ba55ee9b1df86d67"
     },
     {
       "path": "scripts/tooling/client-payload.ts",

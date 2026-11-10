@@ -17,8 +17,11 @@ const platform = (option("--platform") || "macos") as Platform,
 if (!["macos", "windows"].includes(platform))
   throw Error("--platform macos|windows is required");
 const packageOnly = args.includes("--package-only");
+const developmentDmg = args.includes("--development-dmg");
 if (packageOnly && platform === "macos")
   throw Error("macOS requires a current application build");
+if (developmentDmg && platform !== "macos")
+  throw Error("--development-dmg requires macOS");
 checkSource(root);
 noticeManifest(root);
 if (!packageOnly) {
@@ -45,4 +48,4 @@ if (!packageOnly) {
   if (options.nativeServices) await buildNative(root);
   await preparePayload(root, options);
 }
-console.log(JSON.stringify(await buildClient(platform, root, packageOnly)));
+console.log(JSON.stringify(await buildClient(platform, root, packageOnly, developmentDmg)));

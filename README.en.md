@@ -2,7 +2,7 @@
 
 English · [简体中文](README.md#简体中文) · [繁體中文](docs/public/readme.zh-TW.md) · [日本語](docs/public/readme.ja.md) · [한국어](docs/public/readme.ko.md) · [Deutsch](docs/public/readme.de.md) · [Français](docs/public/readme.fr.md) · [Español](docs/public/readme.es.md) · [Русский](docs/public/readme.ru.md) · [العربية](docs/public/readme.ar.md)
 
-An agent that listens while it works, explores on its own, and learns across Android and Linux. Formerly AI Phone.
+An agent that listens while it works, explores on its own, and learns across Android and Linux.
 
 ## Download
 
@@ -37,11 +37,11 @@ See [model and channel setup](docs/public/model-and-channel-setup.md), [notifica
 
 Agents plan from current device observations and record their actions and results. Bun and Cargo build the project. Device disks, accounts and attachments stay in the local installation.
 
-[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/Conferringo/AI-Phone/issues/new/choose)
+[Architecture](docs/public/architecture.en.md) · [Documentation](docs/public/index.md) · [Contributing](CONTRIBUTING.md) · [Report an issue](https://github.com/MrMilkDragon/AI-Phone/issues/new/choose)
 
 ## Roadmap
 
-Signed updates, voice Copilot, more app Skills and notification-driven office work. [Development roadmap](docs/public/release-roadmap.en.md)
+More voice providers, app Skills and notification-driven office workflows. [Development roadmap](docs/public/release-roadmap.en.md)
 
 ## License and use
 
