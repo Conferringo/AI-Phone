@@ -1,0 +1,108 @@
+name: Source checks
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+concurrency:
+  group: source-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Pinned Rust with formatting
+        run: |
+          cmake --version
+          rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+          rustup default 1.96.0
+      - name: Fixed Bun and locked dependencies
+        run: |
+          ./scripts/bootstrap.sh
+          git diff --exit-code -- packages/protocol/src/gen
+      - name: Source privacy and licence metadata
+        run: |
+          ./scripts/bun scripts/source.ts check --repository --manifest
+          ./scripts/bun -e "import {noticeManifest} from './scripts/tooling/client-build'; noticeManifest()"
+      - name: protobuf, TypeScript and Rust
+        run: ./scripts/bun run check
+      - name: Build native test fixtures
+        run: |
+          cargo build -p ai-phone-host-runtime --bin host-resources --bin image-test-engine --locked
+      - name: Native interaction tools
+        run: |
+          for source in /etc/apt/apt-mirrors.txt /etc/apt/sources.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+            if [ -f "$source" ]; then
+              sudo sed -i 's@https\?://azure\.archive\.ubuntu\.com/ubuntu@https://archive.ubuntu.com/ubuntu@g' "$source"
+            fi
+          done
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y curl xvfb xauth openbox xterm x11-utils x11-xserver-utils xdotool xclip ffmpeg
+      - name: Rust tests
+        run: |
+          cargo fmt --all --check
+          cargo test --workspace --all-features --locked
+          cargo clippy --workspace --all-features --all-targets --locked -- -D warnings
+      - name: Native workspace lifecycle
+        run: |
+          fixture_image="ai-phone-workspace-ci:${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fixture_context=$(mktemp -d "$RUNNER_TEMP/aiphone-workspace.XXXXXX")
+          cleanup() {
+            rm -rf -- "$fixture_context"
+            docker image rm "$fixture_image" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          cp target/debug/desktop-bridge "$fixture_context/desktop-bridge"
+          docker build --tag "$fixture_image" --file scripts/fixtures/native-workspace.Dockerfile "$fixture_context"
+          cargo run --locked -p ai-phone-assistant --bin ai-phone-assistant -- --qualify-workspace-runtime "$fixture_image"
+      - name: Production web build
+        run: |
+          ./scripts/bun -e 'import {mkdirSync,writeFileSync} from "node:fs"; mkdirSync("data/assistant",{recursive:true}); writeFileSync("data/assistant/token","build-only-private-path-sentinel",{flag:"wx",mode:0o600})'
+          ./scripts/bun run build
+      - name: Prebuilt native services and OCR
+        run: |
+          sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          echo "AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract" >> "$GITHUB_ENV"
+          AI_PHONE_TEST_TESSERACT=/usr/bin/tesseract ./scripts/bun scripts/artifacts.ts native
+      - name: Disposable native-runtime database
+        run: |
+          docker run -d --name aiphone-native-ci --label dev.aiphone.test=native-runtime --memory 256m -p 127.0.0.1:55512:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-native-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+          ./scripts/bun -e 'import {waitDatabase} from "./scripts/tooling/native-check.ts"; await waitDatabase("aiphone-native-ci")'
+      - name: Isolated payload, cold start and prebuilt database roles
+        run: ./scripts/bun scripts/prepare-client.ts --with-web-runtime --with-service-runtime --verify-web-runtime --verify-service-runtime --pg-container aiphone-native-ci --pg-port 55512
+      - name: Remove native-runtime fixture
+        if: always()
+        run: |
+          ./scripts/bun -e 'import {spawnSync} from "node:child_process"; import {requireNativeDatabase} from "./scripts/tooling/native-check.ts"; import {run} from "./scripts/tooling/process.ts"; const name="aiphone-native-ci"; if(spawnSync("docker",["inspect",name],{stdio:"ignore"}).status===0){ requireNativeDatabase(name,55512); run(["docker","rm","-fv",name]); }'
+      - name: Remove build-only privacy sentinel
+        if: always()
+        run: |
+          ./scripts/bun -e 'import {existsSync,readFileSync,unlinkSync} from "node:fs"; const path="data/assistant/token"; if(existsSync(path)&&readFileSync(path,"utf8")==="build-only-private-path-sentinel")unlinkSync(path)'
+      - name: Isolated PostgreSQL, Redis and Kafka integration
+        env:
+          AI_PHONE_TEST_REDIS_PORT: "56383"
+          AI_PHONE_TEST_KAFKA_BROKER: "127.0.0.1:59092"
+        run: |
+          docker run -d --name aiphone-ci-redis --memory 128m -p 127.0.0.1:56383:6379 redis:8-alpine@sha256:becdda6c7f4b3fb42e42fd7f120bbf5c54c4caaaf16f26da24e4563d2c1f0576
+          docker compose -p aiphone-ci-events -f compose.kafka.yaml --profile events up -d --no-deps --wait kafka
+          docker run -d --name aiphone-ci-pg --label dev.aiphone.test=permissions --memory 512m -p 127.0.0.1:55500:5432 -e POSTGRES_USER=ai_phone -e POSTGRES_DB=ai_phone -e POSTGRES_PASSWORD=isolated-fixture-password postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
+          ./scripts/bun scripts/ci-integration.ts --container aiphone-ci-pg --port 55500
+      - name: Remove disposable event and database services
+        if: always()
+        run: |
+          docker rm -fv aiphone-ci-pg aiphone-ci-redis 2>/dev/null || true
+          docker compose -p aiphone-ci-events -f compose.kafka.yaml --profile events down -v

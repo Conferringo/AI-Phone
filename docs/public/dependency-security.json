@@ -1,0 +1,151 @@
+{
+  "format": 2,
+  "completed": true,
+  "javascript_passed": true,
+  "blocked_targets": {
+    "aarch64-apple-darwin": [],
+    "aarch64-unknown-linux-gnu": [],
+    "x86_64-unknown-linux-gnu": [],
+    "x86_64-pc-windows-msvc": []
+  },
+  "rust": {
+    "server": {
+      "lock_sha256": "ed41d3c0b988edce59bc65705a5830669e2ef292fdcb749184ea2381b609851a",
+      "database_commit": "309392b18f6b17022f82c701f300433126901068",
+      "findings": [
+        {
+          "package": "rsa@0.9.10",
+          "advisory": "RUSTSEC-2023-0071",
+          "category": "vulnerability",
+          "active_targets": [],
+          "blocking_when_active": true
+        },
+        {
+          "package": "zbus_names@4.3.5",
+          "advisory": "RUSTSEC-2026-0371",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "zvariant@5.15.1",
+          "advisory": "RUSTSEC-2026-0370",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "zvariant_derive@5.15.1",
+          "advisory": "RUSTSEC-2026-0372",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        }
+      ]
+    },
+    "client": {
+      "lock_sha256": "4735c5454571b3c134bd21d11725ff49bd4c46797d6ca45795a2dcab1c9198de",
+      "database_commit": "309392b18f6b17022f82c701f300433126901068",
+      "findings": [
+        {
+          "package": "proc-macro-error@1.0.4",
+          "advisory": "RUSTSEC-2024-0370",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-char-property@0.9.0",
+          "advisory": "RUSTSEC-2025-0081",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-char-range@0.9.0",
+          "advisory": "RUSTSEC-2025-0075",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-common@0.9.0",
+          "advisory": "RUSTSEC-2025-0080",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-ucd-ident@0.9.0",
+          "advisory": "RUSTSEC-2025-0100",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "unic-ucd-version@0.9.0",
+          "advisory": "RUSTSEC-2025-0098",
+          "category": "unmaintained",
+          "active_targets": [
+            "aarch64-apple-darwin",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu",
+            "x86_64-pc-windows-msvc"
+          ],
+          "blocking_when_active": false
+        },
+        {
+          "package": "glib@0.18.5",
+          "advisory": "RUSTSEC-2024-0429",
+          "category": "unsound",
+          "active_targets": [
+            "aarch64-unknown-linux-gnu",
+            "x86_64-unknown-linux-gnu"
+          ],
+          "blocking_when_active": false,
+          "mitigation": "verified-upstream-backport"
+        }
+      ]
+    }
+  },
+  "javascript": [],
+  "blanket_ignores": []
+}

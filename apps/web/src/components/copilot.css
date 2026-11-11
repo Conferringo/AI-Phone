@@ -1,0 +1,67 @@
+.copilot-toggle{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 11px;border:1px solid transparent;border-radius:var(--radius);background:transparent;color:var(--muted-foreground);font:inherit;font-size:12px;cursor:pointer;transition:background .18s,color .18s,border-color .18s}
+.copilot-toggle:hover{background:color-mix(in srgb,var(--background) 40%,transparent);color:inherit}
+.copilot-toggle[aria-pressed=true]{background:color-mix(in srgb,var(--background) 65%,transparent);border-color:var(--border);color:var(--foreground)}
+.copilot-toggle:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.copilot-toggle:disabled{opacity:.4;cursor:default}
+.copilot-wave {
+  --copilot-wave-height: .58;
+  --copilot-wave-opacity: .12;
+  --copilot-wave-duration: 8s;
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 10%;
+  width: 100%;
+  height: clamp(180px, 52dvh, 480px);
+  color: var(--foreground);
+  pointer-events: none;
+  mask-image: linear-gradient(to right, transparent, black 14%, black 86%, transparent);
+}
+.copilot-wave[data-activity=hearing] {
+  --copilot-wave-height: 1.25;
+  --copilot-wave-opacity: .2;
+  --copilot-wave-duration: 3s;
+}
+.copilot-wave[data-activity=speaking] {
+  --copilot-wave-height: 1.65;
+  --copilot-wave-opacity: .24;
+  --copilot-wave-duration: 2.2s;
+}
+.copilot-wave g, .copilot-wave path {
+  transform-box: view-box;
+  transform-origin: center;
+}
+.copilot-wave g {
+  opacity: var(--copilot-wave-opacity);
+  transform: scaleY(var(--copilot-wave-height));
+  transition: transform .28s ease-out, opacity .18s ease-out;
+}
+.copilot-wave path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+  animation: copilot-wave-drift var(--copilot-wave-duration) ease-in-out infinite alternate;
+}
+.copilot-wave path:nth-child(2) { opacity: .7; animation-delay: -.8s; animation-direction: alternate-reverse; }
+.copilot-wave path:nth-child(3) { opacity: .5; animation-delay: -1.6s; }
+@keyframes copilot-wave-drift {
+  from { transform: translateX(-1.5%) scaleY(.82); }
+  to { transform: translateX(1.5%) scaleY(1.14); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .copilot-wave g { transition: none; }
+  .copilot-wave path { animation: none; }
+}
+@media (forced-colors: active) { .copilot-wave { display: none; } }
+.copilot-draft{padding:9px 12px;margin:0 2px 6px;max-height:100px;overflow:auto;border-inline-start:2px solid var(--foreground);font-size:13px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--foreground)}
+.agent-voice{display:flex;flex-direction:column;gap:12px;min-height:0;height:100%}
+.agent-voice-fields{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;padding:2px 2px 12px}
+.agent-voice-fields label{display:flex;flex-direction:column;gap:6px;font-size:12px}
+.agent-voice-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.agent-voice-fields input{width:100%;min-width:0;box-sizing:border-box}
+.agent-voice-actions{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border)}
+@media(max-width:560px){.agent-voice-row{grid-template-columns:minmax(0,1fr)}.copilot-toggle{padding:0 8px}}
+@media(prefers-reduced-motion:reduce){.copilot-toggle{transition:none}}
+
+.registry-voice-panel{height:100%;min-height:0}.agent-voice .agent-voice-fields{border:0;margin:0;flex:1;min-width:0;gap:16px}.agent-voice-actions{flex-shrink:0}
+@media(max-width:600px){.copilot-toggle{min-height:44px}}

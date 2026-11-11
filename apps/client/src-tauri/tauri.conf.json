@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AImanity",
+  "version": "0.0.1",
+  "identifier": "dev.aiphone.client",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'",
+      "capabilities": [
+        {
+          "identifier": "local-setup",
+          "windows": [
+            "setup"
+          ],
+          "permissions": [
+            "allow-open-workbench",
+            "allow-deployment-status",
+            "allow-start-deployment",
+            "allow-cancel-deployment",
+            "allow-accept-deployment-license"
+          ]
+        },
+        {
+          "identifier": "local-workbench",
+          "local": false,
+          "windows": ["workbench"],
+          "remote": {
+            "urls": [
+              "http://127.0.0.1:17860/phone"
+            ]
+          },
+          "permissions": [
+            "allow-check-client-update",
+            "allow-install-client-update",
+            "allow-native-voice"
+          ]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "icon": [
+      "icons/icon.icns",
+      "icons/icon.ico",
+      "icons/128x128.png"
+    ],
+    "copyright": "Copyright 2026 AImanity contributors",
+    "category": "Productivity",
+    "shortDescription": "Your AI phone and computer",
+    "resources": {
+      "../../../LICENSE": "legal/LICENSE",
+      "../../../NOTICE": "legal/NOTICE",
+      "../../../PRIVACY.md": "legal/PRIVACY.md",
+      "../../../DISCLAIMER.md": "legal/DISCLAIMER.md",
+      "../../../THIRD_PARTY_NOTICES.md": "legal/THIRD_PARTY_NOTICES.md",
+      "../../../docs/public/licenses/guest-apps/GPL-3.0.txt": "legal/GPL-3.0.txt",
+      "../../../docs/public/native-client-licenses.txt": "legal/native-client-licenses.txt",
+      "../../../docs/public/licenses/whisper/LICENSE": "legal/whisper-LICENSE.txt",
+      "../../../docs/public/licenses/native/whisper-rs-LICENSE": "legal/whisper-rs-LICENSE.txt",
+      "../../../docs/public/licenses/native/whisper.cpp-LICENSE": "legal/whisper.cpp-LICENSE.txt",
+      "gen/host/speech/ggml-tiny-q5_1.bin": "host/speech/ggml-tiny-q5_1.bin",
+      "gen/host/source.payload": "host/source.payload"
+    },
+    "macOS": {
+      "minimumSystemVersion": "14.4"
+    }
+  }
+}

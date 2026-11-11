@@ -1,0 +1,105 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+enum DeviceBridgeRole {
+  DEVICE_BRIDGE_ROLE_UNSPECIFIED = 0;
+  DEVICE_BRIDGE_ROLE_HOST = 1;
+  DEVICE_BRIDGE_ROLE_GUEST = 2;
+}
+
+enum DeviceBridgeService {
+  DEVICE_BRIDGE_SERVICE_UNSPECIFIED = 0;
+  DEVICE_BRIDGE_SERVICE_ADB = 1;
+  DEVICE_BRIDGE_SERVICE_EMULATOR = 2;
+}
+
+// Installer-private input, supplied through stdin; never a model tool or argv.
+message DeviceBridgeConfig {
+  uint32 version = 1;
+  DeviceBridgeRole role = 2;
+  string bridge_id = 3;
+  bytes secret = 4;
+  // A selected private IP and port: host listen endpoint or guest peer endpoint.
+  string endpoint = 5;
+  // Guest-only loopback listeners. Zero selects the existing service ports.
+  uint32 adb_port = 6;
+  uint32 emulator_port = 7;
+}
+
+// One bounded admission per connection, followed by the original byte stream.
+message DeviceBridgeOpen {
+  uint32 version = 1;
+  string bridge_id = 2;
+  bytes secret = 3;
+  DeviceBridgeService service = 4;
+}
+
+message DeviceBridgeOpened {
+  bool accepted = 1;
+}
+
+// Transport availability only: this is not Android/root/frame readiness.
+message DeviceBridgeStarted {
+  uint32 version = 1;
+  DeviceBridgeRole role = 2;
+  string bridge_id = 3;
+  string endpoint = 4;
+  uint32 adb_port = 5;
+  uint32 emulator_port = 6;
+}
+
+// Installer-private guest startup. Token material stays on the private pipe/disk.
+message DeviceBridgePhone {
+  DeviceBridgeConfig transport = 1;
+  string runtime_directory = 2;
+  string serial = 3;
+  string grpc_token = 4;
+  // An owned native host keeps this Unix guest pipe open. EOF drains the peer;
+  // the default preserves detached component callers.
+  bool owner_pipe = 5;
+}
+
+// Private native installer observation, not a network or model-facing API.
+message DeviceBridgeGuestAddress {
+  string ipv4 = 1;
+}
+
+// Stable pairing identity; endpoint and emulator token may change on restart.
+message DeviceBridgePeerOwner {
+  uint32 version = 1;
+  string bridge_id = 2;
+  bytes secret = 3;
+}
+
+// Private QEMU bootstrap. First send a nonce, then a signed profile.
+message LinuxVmBootstrapRequest {
+  bytes nonce = 1;
+  bytes profile = 2;
+  bytes proof = 3;
+}
+
+message LinuxVmBootstrapReply {
+  bytes proof = 1;
+  string error = 2;
+}
+
+enum LinuxVmOperation {
+  LINUX_VM_OPERATION_UNSPECIFIED = 0;
+  LINUX_VM_OPERATION_PING = 1;
+  LINUX_VM_OPERATION_PHONE_PEER = 2;
+  LINUX_VM_OPERATION_PHONE_STATUS = 3;
+  LINUX_VM_OPERATION_SETUP_DEVICES = 4;
+  LINUX_VM_OPERATION_SHUTDOWN = 5;
+}
+
+message LinuxVmControlRequest {
+  LinuxVmOperation operation = 1;
+  bytes payload = 2;
+  bytes proof = 3;
+}
+
+message LinuxVmControlReply {
+  bytes payload = 1;
+  string error = 2;
+  bytes proof = 3;
+}

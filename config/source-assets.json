@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "scope": "source-preview; original code Apache-2.0, dependencies retain their own licences",
+  "assets": [
+    {
+      "id": "knowledge-motion",
+      "files": [
+        "apps/web/src/components/knowledge/knowledgeGraphMotion.ts"
+      ],
+      "origin": "original time-based canvas renderer for AI Phone",
+      "license": "Apache-2.0",
+      "visual_reference": "EPIC design interaction only",
+      "visual_acceptance": "pending-real-page",
+      "sha256": {
+        "apps/web/src/components/knowledge/knowledgeGraphMotion.ts": "49c656add119211e74487c9ee63093f43b2fa412d1891235810379b50bf86e96"
+      }
+    },
+    {
+      "id": "vision-probe",
+      "files": [
+        "crates/assistant/fixtures/vision-probe.png"
+      ],
+      "origin": "project-generated diagnostic digit fixture, not a user screenshot",
+      "license": "Apache-2.0",
+      "sha256": {
+        "crates/assistant/fixtures/vision-probe.png": "39f7a5f8f45c3d80c9bfb32fa7b38a54ea74b627f947882f5beaea607eb4d93e"
+      }
+    },
+    {
+      "id": "native-client-icon",
+      "origin": "original project SVG; platform icons generated with pinned Tauri CLI",
+      "license": "Apache-2.0",
+      "files": [
+        "apps/client/src-tauri/icons/source.svg"
+      ],
+      "sha256": {
+        "apps/client/src-tauri/icons/source.svg": "5588923eb2c77283a131ee68aa7dd538ab33f622e079eec959bd359109bfc3ea"
+      }
+    },
+    {
+      "id": "native-ocr-probe",
+      "files": [
+        "crates/phone-runner/fixtures/ocr-probe.png"
+      ],
+      "origin": "Generated diagnostic text 7319 using DejaVuSans.ttf",
+      "license": "Bitstream-Vera; DejaVu changes public domain; generator Apache-2.0",
+      "font_sha256": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e",
+      "references": [
+        {
+          "source": "https://dejavu-fonts.github.io/",
+          "license_file": "docs/public/licenses/fixtures/dejavu.txt",
+          "license_sha256": "a3429c4aad4d17e8292d02b7639178516fd3531ac56030082e52176a1253218c"
+        }
+      ],
+      "sha256": {
+        "crates/phone-runner/fixtures/ocr-probe.png": "7a5fb3b96b7b1c54054fbf2c40794c14fef708cb21aed3d773b39afd462de13e"
+      }
+    }
+  ]
+}

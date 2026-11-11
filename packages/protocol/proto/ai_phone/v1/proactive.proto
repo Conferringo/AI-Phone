@@ -1,0 +1,32 @@
+syntax = "proto3";
+package ai_phone.v1;
+message ProactiveRequest {}
+message ProactiveState {
+  uint64 revision = 1;
+  bool exploring = 2;
+  bool notifications_enabled = 3;
+  bool forward_notifications = 4;
+  bool autonomous_reply = 5;
+  bool autonomous_install = 6;
+  uint32 interval_seconds = 7;
+  uint64 next_wake_at_ms = 8;
+  string active_run_id = 9;
+  string status = 10;
+  string last_error = 11;
+  bool listener_connected = 12;
+  uint32 pending_notifications = 13;
+  string latest_summary = 14;
+  string delivery_status = 15;
+  bool wechat_watch = 16;
+  bool attention_connected = 17;
+}
+message ProactiveUpdateRequest {
+  uint64 expected_revision = 1;
+  bool exploring = 2;
+  bool notifications_enabled = 3;
+  bool forward_notifications = 4;
+  bool autonomous_reply = 5;
+  bool autonomous_install = 6;
+  uint32 interval_seconds = 7;
+  optional bool wechat_watch = 8;
+}

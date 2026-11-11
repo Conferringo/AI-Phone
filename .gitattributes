@@ -1,0 +1,3 @@
+# Source/provenance manifests pin exact bytes, including upstream licence files.
+# Do not let platform Git settings rewrite reviewed content during checkout.
+* -text

@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "compiler": {
+    "version": "7.1.1",
+    "url": "https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe",
+    "size_bytes": 14336568,
+    "sha256": "8a5a6711c3766a6e5fb74f280ba0e3551e719ce94538d901fdbd1f8f9920b3f0",
+    "source": "https://github.com/jrsoftware/issrc/tree/is-7_1_1"
+  },
+  "unpacker": {
+    "version": "2.71.3",
+    "url": "https://github.com/jrathlev/InnoUnpacker-Windows-GUI/releases/download/ui_2_2_13/innounp-2.zip",
+    "size_bytes": 620210,
+    "sha256": "f8e45c9676bebc7d7570108ab572673b541fcf7a7d3d24a04319ac6b5315b4e8",
+    "source": "https://github.com/jrathlev/InnoUnpacker-Windows-GUI/tree/ui_2_2_13/innounp-2"
+  }
+}

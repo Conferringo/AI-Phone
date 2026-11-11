@@ -1,0 +1,16 @@
+"use client";
+import {useI18n} from "./locale-provider";
+import {clientId} from '@/lib/client-id';
+import {useEffect,useState} from 'react';
+import type {MessageShape} from '@bufbuild/protobuf';
+import {WorkbenchRequestSchema,ModelMemorySchema,MemoryListSchema,MemorySaveRequestSchema,MemoryDeleteRequestSchema} from '@ai-phone/protocol/ai_phone/v1/workbench_pb';
+import {workbench} from '@/lib/workbench-client';
+import {Button} from './ui/button';import {Plus,Save,Trash2} from 'lucide-react';
+type Memory=MessageShape<typeof ModelMemorySchema>;
+export function AgentMemory({open,agentId}:{open:boolean;agentId:string}){const {t}=useI18n();const [items,setItems]=useState<Memory[]>([]),[draft,setDraft]=useState<Record<string,string>>({}),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ async function load(){try{const result=await workbench('memories',WorkbenchRequestSchema,{agentId},MemoryListSchema);setItems(v=>[...result.memories,...v.filter(m=>m.id.startsWith("draft-"))]);setDraft(v=>({...v,...Object.fromEntries(result.memories.map(m=>[m.id,v[m.id]??m.content]))}));}catch(e){setError(e instanceof Error?e.message:'读取失败');}}
+ useEffect(()=>{if(open)void load();},[open,agentId]);
+ async function save(m:Memory){if(busy||!(draft[m.id]??m.content).trim()||(!m.id.startsWith('draft-')&&(draft[m.id]??m.content)===m.content))return;setBusy(true);setError('');try{await workbench('memory-save',MemorySaveRequestSchema,{id:m.id.startsWith('draft-')?'':m.id,content:draft[m.id]??m.content,expectedRevision:m.revision,agentId},ModelMemorySchema);setItems(v=>v.filter(x=>x.id!==m.id));await load();}catch(e){setError(e instanceof Error?e.message:'保存失败');}finally{setBusy(false);}}
+ async function remove(m:Memory){if(m.id.startsWith('draft-')){setItems(v=>v.filter(x=>x.id!==m.id));return;}setBusy(true);try{await workbench('memory-delete',MemoryDeleteRequestSchema,{id:m.id,expectedRevision:m.revision,agentId},MemoryListSchema);await load();}catch(e){setError(e instanceof Error?e.message:'移除失败');}finally{setBusy(false);}}
+ return <section className="agent-memory"><div className="agent-section-actions"><Button variant="ghost" size="icon" aria-label={t("添加记忆")} disabled={busy} onClick={()=>{const id='draft-'+clientId();setItems(v=>[...v,{$typeName:'ai_phone.v1.ModelMemory',id,content:'',revision:0n}]);setDraft(v=>({...v,[id]:''}));}}><Plus size={17}/></Button></div>{error&&<p role="alert" className="workbench-error">{t(error)}</p>}{!items.length&&<div className="knowledge-empty">{t("暂无记忆")}</div>}<div className="memory-list">{items.map(m=><article key={m.id}><textarea disabled={busy} aria-label={t("记忆内容")} value={draft[m.id]??m.content} onChange={e=>setDraft(v=>({...v,[m.id]:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)&&!e.nativeEvent.isComposing){e.preventDefault();void save(m);}}}/><div><Button variant="ghost" size="icon" aria-label={t("保存记忆")} disabled={busy||!(draft[m.id]??m.content).trim()||(!m.id.startsWith('draft-')&&(draft[m.id]??m.content)===m.content)} onClick={()=>void save(m)}><Save size={16}/></Button><Button variant="ghost" size="icon" aria-label={t("移除记忆")} disabled={busy} onClick={()=>void remove(m)}><Trash2 size={16}/></Button></div></article>)}</div></section>;
+}
