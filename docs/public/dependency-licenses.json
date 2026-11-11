@@ -5,7 +5,7 @@
   "locks": {
     "Cargo.lock": "cd6d8fb096e4b02f070b9e5b88bd634f8e44614f107a8b55693ca193ed89f4a6",
     "bun.lock": "ac03ce66c53dee01fbe99345a701810695488acb144564c30bdadcc177012bb5",
-    "apps/client/src-tauri/Cargo.lock": "db66acf9ba419be58fb6b7d859b7ec6e5e5a0fdc34a3ba44ea3ce02decaecf2d"
+    "apps/client/src-tauri/Cargo.lock": "ca9151b32e077a53113bbea5405983e074e12053bc3ea4c0edb07e09281b9dc5"
   },
   "rust": [
     {

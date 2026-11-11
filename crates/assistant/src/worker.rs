@@ -187,7 +187,12 @@ async fn initial_context(
     system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
-    let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal").bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
+    let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
+        CASE WHEN recent.role='assistant' THEN ARRAY(SELECT a.name FROM unnest(recent.attachment_ids) WITH ORDINALITY f(id,position)
+          JOIN attachments a ON a.id=f.id AND a.owner_id='local-user' ORDER BY f.position) ELSE '{}'::text[] END output_names
+        FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent
+        LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal")
+        .bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     let task_start = rows
         .iter()
         .rposition(|row| row.get::<String, _>("role") == "user");
@@ -213,7 +218,13 @@ async fn initial_context(
             );
         }
         let ids: Vec<Uuid> = row.get("attachment_ids");
-        for id in ids {
+        if role == "assistant" && !ids.is_empty() {
+            let names: Vec<String> = row.get("output_names");
+            content.push(
+                json!({"type":"output_text","text":format!("已交付文件：{}",names.join("、"))}),
+            );
+        }
+        for id in ids.into_iter().filter(|_| role != "assistant") {
             let file=sqlx::query("SELECT name,media_type,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
             let bytes = tokio::fs::read(
                 app.root
@@ -2097,6 +2108,17 @@ async fn persist_disposition(
     disposition: RunDisposition,
     wake: Option<u64>,
 ) -> Result<bool, String> {
+    persist_with_outputs(app, id, message, checkpoint, disposition, wake, &[]).await
+}
+async fn persist_with_outputs(
+    app: &App,
+    id: Uuid,
+    message: Uuid,
+    checkpoint: Checkpoint<'_>,
+    disposition: RunDisposition,
+    wake: Option<u64>,
+    outputs: &[crate::files::PreparedOutput],
+) -> Result<bool, String> {
     let Checkpoint {
         context,
         pending,
@@ -2153,9 +2175,11 @@ async fn persist_disposition(
     sqlx::query("UPDATE runs SET status=$2,context=$3,pending_tools=$4,answer=CASE WHEN $10 THEN answer ELSE $5 END,step=$6,loop_state=$7,error=$8,next_wake_at=to_timestamp($9::double precision),heartbeat_at=now(),finished_at=CASE WHEN $2='succeeded' THEN now() ELSE NULL END WHERE id=$1")
         .bind(id).bind(status).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
     if dialogue {
-        sqlx::query("UPDATE messages SET text=$2 WHERE id=$1")
+        let attachments = crate::files::publish_outputs(app, &mut tx, outputs).await?;
+        sqlx::query("UPDATE messages SET text=$2,attachment_ids=attachment_ids || $3 WHERE id=$1")
             .bind(message)
             .bind(summary)
+            .bind(attachments)
             .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
@@ -2427,7 +2451,8 @@ async fn execute(
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"phone-use\"}","call_id":format!("phone-use-{}",Uuid::now_v7()),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
-            let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
+            let result =
+                recorded_tool(app, id, message, &call, &context, &mut epoch, cancel).await?;
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
             );
@@ -2440,7 +2465,8 @@ async fn execute(
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"computer-use\"}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
-            let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
+            let result =
+                recorded_tool(app, id, message, &call, &context, &mut epoch, cancel).await?;
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
             );
@@ -2462,7 +2488,8 @@ async fn execute(
             let call = json!({"type":"function_call","name":notification_tool,"arguments":"{}","call_id":Uuid::now_v7().to_string(),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
-            let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
+            let result =
+                recorded_tool(app, id, message, &call, &context, &mut epoch, cancel).await?;
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
             );
@@ -2472,7 +2499,8 @@ async fn execute(
             let call = json!({"type":"function_call","name":"skill_read","arguments":"{\"name\":\"wechat\"}","call_id":format!("wechat-{}",Uuid::now_v7()),"local_action_id":Uuid::now_v7().to_string()});
             context.push(call.clone());
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
-            let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
+            let result =
+                recorded_tool(app, id, message, &call, &context, &mut epoch, cancel).await?;
             context.push(
                 json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
             );
@@ -2504,7 +2532,8 @@ async fn execute(
             {
                 continue;
             }
-            let result = recorded_tool(app, id, message, &call, &mut epoch, cancel).await?;
+            let result =
+                recorded_tool(app, id, message, &call, &context, &mut epoch, cancel).await?;
             let name = call["name"].as_str().unwrap_or("");
             let value = tool_value(&result);
             let outcome = tool_outcome(value.as_ref());
@@ -2663,7 +2692,12 @@ async fn execute(
                 if !pending.is_empty() {
                     return Err("结束任务时仍有待执行操作，结果未知；请检查后继续。".into());
                 }
-                if persist_disposition(
+                let outputs = serde_json::from_value::<Option<Vec<crate::files::PreparedOutput>>>(
+                    finish["files"].clone(),
+                )
+                .map_err(|e| e.to_string())?
+                .unwrap_or_default();
+                if persist_with_outputs(
                     app,
                     id,
                     message,
@@ -2676,11 +2710,13 @@ async fn execute(
                     },
                     disposition,
                     None,
+                    &outputs,
                 )
                 .await?
                 {
                     return Ok(disposition);
                 }
+                crate::files::discard_outputs(app, &outputs).await;
                 continue;
             }
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
@@ -3154,6 +3190,7 @@ async fn recorded_tool(
     run: Uuid,
     message: Uuid,
     call: &Value,
+    context: &[Value],
     epoch: &mut u64,
     cancel: &CancellationToken,
 ) -> Result<Value, String> {
@@ -3258,26 +3295,18 @@ async fn recorded_tool(
             .ok()
             .and_then(|args| args["intent"].as_str().map(str::to_string))
         && !intent.trim().is_empty()
+        && progress_is_verified(context, &intent)
     {
-        let context: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        if let Ok(context) = serde_json::from_value::<Vec<Value>>(context)
-            && progress_is_verified(&context, &intent)
-        {
-            progress_event(
-                app,
-                run,
-                message,
-                "summary",
-                "下一步",
-                &intent.chars().take(1800).collect::<String>(),
-                "completed",
-            )
-            .await?;
-        }
+        progress_event(
+            app,
+            run,
+            message,
+            "summary",
+            "下一步",
+            &intent.chars().take(1800).collect::<String>(),
+            "completed",
+        )
+        .await?;
     }
     let admitted = sqlx::query(
         "INSERT INTO harness_events(id,run_id,message_id,kind,title,content)
@@ -3297,7 +3326,7 @@ async fn recorded_tool(
     if admitted == 0 {
         return Err("canceled".into());
     }
-    let result = match tool(app, run, message, call, epoch, cancel).await {
+    let result = match tool(app, run, message, call, context, epoch, cancel).await {
         Err(error) if !fatal_tool_error(&error) => Ok(recoverable_tool_failure(error)),
         other => other,
     };
@@ -3416,6 +3445,7 @@ async fn tool(
     run: Uuid,
     message: Uuid,
     call: &Value,
+    context: &[Value],
     epoch: &mut u64,
     cancel: &CancellationToken,
 ) -> Result<Value, String> {
@@ -3425,7 +3455,7 @@ async fn tool(
     let name = call["name"].as_str().unwrap_or("");
     let arguments: Value =
         serde_json::from_str(call["arguments"].as_str().unwrap_or("{}")).unwrap_or(json!({}));
-    crate::proactive::guard_tool(app, run, name).await?;
+    let read_only_notification = crate::proactive::guard_tool(app, run, name).await?;
     let command = execution_policy::command_tool(name);
     let authority = if command {
         execution_policy::owner_command(&app.db, run).await?
@@ -3465,16 +3495,8 @@ async fn tool(
         .await;
     }
     if name.starts_with("computer_") || name.starts_with("device_") {
-        if name.starts_with("computer_") {
-            let raw: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-                .bind(run)
-                .fetch_one(&app.db)
-                .await
-                .map_err(|e| e.to_string())?;
-            let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
-            if !builtin_skill_read(&current, "computer-use") {
-                return Err("请先skill_read computer-use，随后computer_observe观察真实桌面".into());
-            }
+        if name.starts_with("computer_") && !builtin_skill_read(context, "computer-use") {
+            return Err("请先skill_read computer-use，随后computer_observe观察真实桌面".into());
         }
         return crate::desktop::tool(app, run, call, &arguments).await;
     }
@@ -3580,7 +3602,7 @@ async fn tool(
             return Err("status必须是completed或needs_input".into());
         }
         let row = sqlx::query(
-            "SELECT r.context,r.pending_tools,r.origin='notification' AND r.background_read_only summary_only,
+            "SELECT r.context,r.pending_tools,r.background_read_only,r.origin='notification' AND r.background_read_only summary_only,
                 NOT r.background_read_only AND (r.origin='notification' OR EXISTS(
                     SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.status IN ('attending','pending-summary'))) audit_notification,
                 EXISTS(SELECT 1 FROM device_messages m WHERE m.source_run_id=r.id AND m.return_delivered_at IS NULL) handoffs_pending,
@@ -3597,6 +3619,14 @@ async fn tool(
             serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
         let pending: Value = row.get("pending_tools");
         let screen_attention: bool = row.get("screen_attention");
+        if row.get::<bool, _>("background_read_only")
+            && !arguments["files"].is_null()
+            && arguments["files"]
+                .as_array()
+                .is_none_or(|files| !files.is_empty())
+        {
+            return Err("只读任务不能交付文件".into());
+        }
         if pending.as_array().is_some_and(|calls| calls.len() > 1) {
             return Err("仍有待执行工具；请先完成这些步骤，再重新task_finish".into());
         }
@@ -3666,8 +3696,13 @@ async fn tool(
         if status == "completed" && !screen_attention {
             crate::app_learning::promote(app, run).await?;
         }
+        let files = if status == "completed" {
+            crate::files::prepare_outputs(app, run, arguments["files"].clone()).await?
+        } else {
+            Vec::new()
+        };
         return Ok(
-            json!([{"type":"input_text","text":json!({"success":true,"finish":{"status":status,"summary":summary}}).to_string()}]),
+            json!([{"type":"input_text","text":json!({"success":true,"finish":{"status":status,"summary":summary,"files":files}}).to_string()}]),
         );
     }
     if name == "skill_read" {
@@ -3701,15 +3736,7 @@ async fn tool(
         return Ok(json!([{"type":"input_text","text":"未知工具"}]));
     }
     let phone_id = crate::phone_system::for_run(app, run).await?;
-    let (stored, read_only_notification): (Value, bool) = sqlx::query_as(
-        "SELECT context,origin='notification' AND background_read_only FROM runs WHERE id=$1",
-    )
-    .bind(run)
-    .fetch_one(&app.db)
-    .await
-    .map_err(|e| e.to_string())?;
-    let current: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-    if latest_grounding(&current)
+    if latest_grounding(context)
         .is_some_and(|frame| wechat_friend_request_action(&frame, name, &arguments))
         && let Ok(bytes) = tokio::fs::read(app.root.join("data/assistant/wechat-policy.json")).await
     {
@@ -3729,10 +3756,10 @@ async fn tool(
             json!([{"type":"input_text","text":json!({"success":false,"not_executed":true,"error":"普通手机任务必须通过GUI操作，不能用shell启动应用、安装包或替代浏览。请phone_observe后用phone_tap/swipe/input/key等工具。","next_tool":"phone_observe"}).to_string()}]),
         );
     }
-    let next = if !phone_skill_read(&current) {
+    let next = if !phone_skill_read(context) {
         Some(("skill_read", "必须先读取phone-use技能"))
     } else if phone_mutation(call) {
-        phone_mutation_precondition(&current, call)
+        phone_mutation_precondition(context, call)
             .err()
             .map(|reason| ("phone_observe", reason))
     } else {
@@ -3842,12 +3869,12 @@ async fn tool(
         );
     }
     use wire::device_action_request::Action;
-    let observation_id = match coordinate_grounding(&current, name, &arguments) {
+    let observation_id = match coordinate_grounding(context, name, &arguments) {
         Ok(id) => id,
         Err(rejection) => return Ok(rejection),
     };
     if ["phone_tap_element", "phone_scroll"].contains(&name) {
-        let current_id = latest_grounding(&current).ok_or("请先观察当前控件")?;
+        let current_id = latest_grounding(context).ok_or("请先观察当前控件")?;
         if current_id["observation_id"] != arguments["observation_id"] {
             return Err("stale_target:必须使用最近观察返回的observation_id".into());
         }
@@ -5152,11 +5179,11 @@ mod loop_persistence_tests {
             assert_eq!(restored_pending.len(),1,"restart resumes the read; never the completed tap");
             checkpoint(&app,run,&mut context,&pending,&answer,0,&state).await.unwrap();
             let finish=call("task_finish",json!({"status":"completed","summary":"Skill已创建"}));
-            let invalid=recorded_tool(&app,run,message,&finish,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&invalid));assert_eq!(tool_value(&invalid).unwrap()["recoverable"],true);
+            let invalid=recorded_tool(&app,run,message,&finish,&context,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&invalid));assert_eq!(tool_value(&invalid).unwrap()["recoverable"],true);
             let status:String=sqlx::query_scalar("SELECT status FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(status,"running");
-            let missing=call("skill_read",json!({"name":"does-not-exist"}));let error=recorded_tool(&app,run,message,&missing,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&error));assert!(!fatal_tool_error(tool_value(&error).unwrap()["error"].as_str().unwrap()));
+            let missing=call("skill_read",json!({"name":"does-not-exist"}));let error=recorded_tool(&app,run,message,&missing,&context,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&error));assert!(!fatal_tool_error(tool_value(&error).unwrap()["error"].as_str().unwrap()));
             let wait=call("task_wait",json!({"seconds":120,"reason":"等待外部状态"}));context.push(wait.clone());pending.push(wait.clone());checkpoint(&app,run,&mut context,&pending,&answer,1,&state).await.unwrap();
-            let output=recorded_tool(&app,run,message,&wait,&mut epoch,&cancel).await.unwrap();let wake=tool_value(&output).unwrap()["wake_at_ms"].as_u64().unwrap();context.push(json!({"type":"function_call_output","call_id":wait["call_id"],"output":output}));pending.clear();
+            let output=recorded_tool(&app,run,message,&wait,&context,&mut epoch,&cancel).await.unwrap();let wake=tool_value(&output).unwrap()["wake_at_ms"].as_u64().unwrap();context.push(json!({"type":"function_call_output","call_id":wait["call_id"],"output":output}));pending.clear();
             assert!(persist_disposition(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: "", step: 1, state: &state }, RunDisposition::Queued, Some(wake)).await.unwrap());
             let saved_wake:i64=sqlx::query_scalar("SELECT floor(extract(epoch FROM next_wake_at)*1000)::bigint FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert!((saved_wake-wake as i64).abs()<=1);
             sqlx::query("UPDATE runs SET status='queued' WHERE status='running'").execute(&app.db).await.unwrap();
@@ -5169,10 +5196,10 @@ mod loop_persistence_tests {
             assert!(!consume_wait_completion(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: &answer, step: 1, state: &state }).await.unwrap());
             let resumed:i64=sqlx::query_scalar("SELECT count(*) FROM harness_events WHERE run_id=$1 AND title='等待结束'").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(resumed,1);
             assert!(context.iter().any(|item|item["role"]=="system"&&text_of(item).contains("AI_PHONE_WAIT_COMPLETED")));
-            let same=recorded_tool(&app,run,message,&wait,&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&same).unwrap()["wake_at_ms"],wake,"resuming a recorded wait must not extend its original deadline");
+            let same=recorded_tool(&app,run,message,&wait,&context,&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&same).unwrap()["wake_at_ms"],wake,"resuming a recorded wait must not extend its original deadline");
             sqlx::query("UPDATE runs SET status='running',next_wake_at=NULL WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             let obsolete=call("phone_tap",json!({"x":10,"y":20}));context.push(obsolete.clone());pending.push(obsolete.clone());checkpoint(&app,run,&mut context,&pending,&answer,2,&state).await.unwrap();
-            let steer=json!([{"id":Uuid::new_v4().to_string(),"input":input("改为读取Skill目录"),"created_at":"2026-10-26T12:00:00Z"}]);sqlx::query("UPDATE runs SET steering=$2 WHERE id=$1").bind(run).bind(steer).execute(&app.db).await.unwrap();
+            let steer=json!([{"id":Uuid::new_v4().to_string(),"input":input("改为读取Skill目录"),"created_at":"2026-10-26T12:00:00Z"}]);sqlx::query("UPDATE runs SET steering=$2 WHERE id=$1").bind(run).bind(&steer).execute(&app.db).await.unwrap();
             assert!(!persist_disposition(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: "过时的完成", step: 2, state: &state }, RunDisposition::Completed, None).await.unwrap(),"new steering wins a completion race");
             assert!(consume_steering(&app, run, &mut message, SteeringInput { context: &mut context, pending: &mut pending, answer: &mut answer, step: 2, state: &mut state, epoch: &mut epoch }).await.unwrap());assert!(pending.is_empty());assert_eq!(latest_request(&context),"改为读取Skill目录");assert_eq!(epoch,0);assert!(failed_output(tool_output(&context,&obsolete).unwrap()));
             let queued:Value=sqlx::query_scalar("SELECT steering FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(queued,json!([]));
@@ -5251,6 +5278,38 @@ mod loop_persistence_tests {
             assert_eq!(saved.get::<i32,_>("step"),140);
             let loaded:Value=saved.get("loop_state");assert_eq!(loaded["plan"],continuing_state["plan"]);assert_eq!(loaded["stalls"],2);assert_eq!(loaded["model_retries"],2);
 
+            let attachment = Uuid::now_v7();
+            let key = attachment.to_string();
+            let bytes = b"PK\x03\x04\xff\x00 test workbook";
+            let immutable = app.root.join("data/attachments").join(&key);
+            tokio::fs::create_dir_all(immutable.parent().unwrap()).await.unwrap();
+            tokio::fs::write(&immutable, bytes).await.unwrap();
+            let pending_copy = app.root.join("data/file-transfers").join(&key);
+            tokio::fs::create_dir_all(pending_copy.parent().unwrap()).await.unwrap();
+            tokio::fs::write(&pending_copy, bytes).await.unwrap();
+            let outputs: Vec<crate::files::PreparedOutput> = serde_json::from_value(json!([{
+                "id": attachment, "name": "结果.xlsx", "media_type": "application/octet-stream",
+                "size_bytes": bytes.len(),
+            }])).unwrap();
+            let work_file = app.root.join("data/workspaces/admin").join(format!("{}-结果.xlsx", &key[24..]));
+            sqlx::query("UPDATE runs SET status='running',steering=$2 WHERE id=$1")
+                .bind(run).bind(&steer).execute(&app.db).await.unwrap();
+            assert!(!persist_with_outputs(&app, run, message, Checkpoint {
+                context: &mut context, pending: &pending, answer: "表格已交付", step: 141, state: &state,
+            }, RunDisposition::Completed, None, &outputs).await.unwrap());
+            assert!(!work_file.exists());
+            sqlx::query("UPDATE runs SET steering='[]' WHERE id=$1")
+                .bind(run).execute(&app.db).await.unwrap();
+            assert!(persist_with_outputs(&app, run, message, Checkpoint {
+                context: &mut context, pending: &pending, answer: "表格已交付", step: 141, state: &state,
+            }, RunDisposition::Completed, None, &outputs).await.unwrap());
+            let snapshot = crate::http::state(&app, conversation).await.unwrap();
+            let delivered = snapshot.messages.iter().find(|m| m.id == message.to_string()).unwrap();
+            assert_eq!(delivered.attachments[0].id, key);
+            assert_eq!(delivered.attachments[0].name, "结果.xlsx");
+            assert_eq!(tokio::fs::read(&work_file).await.unwrap(), bytes);
+            tokio::fs::write(&work_file, b"edited").await.unwrap();
+            assert_eq!(tokio::fs::read(&immutable).await.unwrap(), bytes);
         }).catch_unwind().await;
         drop(app);
         test_db.close().await;
@@ -5371,7 +5430,7 @@ mod learning_entry_tests {
                 let output=json!([{"type":"input_text","text":json!({"success":status=="completed","device_id":device,"observation_id":observation,"application_id":"linux:libreoffice-writer"}).to_string()}]);
                 sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,status,result) VALUES($1,$2,$3,'tool','receipt fixture',$4,$5)").bind(event).bind(run).bind(message).bind(status).bind(&output).execute(&app.db).await.unwrap();
                 let call=json!({"type":"function_call","name":name,"local_action_id":event.to_string(),"arguments":"{}"});
-                for _ in 0..2 { assert_eq!(recorded_tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap(),output); }
+                for _ in 0..2 { assert_eq!(recorded_tool(&app,run,message,&call,&[],&mut epoch,&cancel).await.unwrap(),output); }
                 let retained:Option<bool>=sqlx::query_scalar("SELECT after_action FROM app_learning_observations WHERE observation_id=$1").bind(&observation).fetch_optional(&app.db).await.unwrap();
                 assert_eq!(retained,if status=="completed" && name!="computer_find_text" {Some(after)}else{None},"{name}/{status}");
             }

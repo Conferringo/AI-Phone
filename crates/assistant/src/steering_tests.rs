@@ -1100,10 +1100,10 @@ async fn completion_waits_for_owned_handoffs_but_does_not_block_ordinary_complet
         sqlx::query("INSERT INTO device_messages(id,link_id,link_revision,source_device_id,target_device_id,source_run_id,text) VALUES($1,$2,1,'phone-local-01','finish-fixture-computer',$3,'Fixture assignment')")
             .bind(handoff).bind(link).bind(run).execute(&app.db).await.unwrap();
         let call=json!({"name":"task_finish","arguments":"{\"status\":\"completed\",\"summary\":\"Done\"}"});let mut epoch=0;let cancel=CancellationToken::new();
-        let error=tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap_err();assert!(error.contains("task_wait"));
+        let error=tool(&app,run,message,&call,&[],&mut epoch,&cancel).await.unwrap_err();assert!(error.contains("task_wait"));
         sqlx::query("UPDATE device_messages SET status='completed' WHERE id=$1").bind(handoff).execute(&app.db).await.unwrap();
-        assert!(tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap_err().contains("task_wait"),"terminal status alone is not a consumed return receipt");
+        assert!(tool(&app,run,message,&call,&[],&mut epoch,&cancel).await.unwrap_err().contains("task_wait"),"terminal status alone is not a consumed return receipt");
         sqlx::query("UPDATE device_messages SET return_delivered_at=now() WHERE id=$1").bind(handoff).execute(&app.db).await.unwrap();
-        let result=tool(&app,run,message,&call,&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&result).unwrap()["finish"]["status"],"completed");
+        let result=tool(&app,run,message,&call,&[],&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&result).unwrap()["finish"]["status"],"completed");
     }).await;
 }

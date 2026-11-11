@@ -242,7 +242,7 @@ pub fn notification_read_only_tool(name: &str) -> bool {
             | "workspace_read"
     )
 }
-pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> {
+pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<bool, String> {
     let row = sqlx::query(
         "SELECT r.status,r.origin,r.background_read_only,p.exploring,p.notifications_enabled,p.autonomous_install,p.wechat_watch,
             r.background_read_only AND EXISTS(SELECT 1 FROM phone_notifications n WHERE n.run_id=r.id AND n.notification_key=$2) screen_change
@@ -258,7 +258,9 @@ pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> 
     }
     let origin: String = row.get("origin");
     if origin == "device-handoff" {
-        return crate::device_exchange::guard(app, run, name).await;
+        return crate::device_exchange::guard(app, run, name)
+            .await
+            .map(|()| false);
     }
     if origin == "desktop-exploration" {
         crate::desktop_explore::guard(app, run).await?;
@@ -266,6 +268,8 @@ pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> 
     if origin == "exploration" && !row.get::<bool, _>("exploring") {
         return Err("canceled".into());
     }
+    let read_only_notification =
+        origin == "notification" && row.get::<bool, _>("background_read_only");
     if origin == "notification" {
         if !row.get::<bool, _>("notifications_enabled") {
             return Err("canceled".into());
@@ -275,7 +279,7 @@ pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> 
         } else {
             notification_read_only_tool(name)
         };
-        if row.get::<bool, _>("background_read_only") && !can_read {
+        if read_only_notification && !can_read {
             return Err("该事件只允许观察与汇报，禁止操作设备、外发或修改资料。".into());
         }
     }
@@ -286,7 +290,7 @@ pub async fn guard_tool(app: &App, run: Uuid, name: &str) -> Result<(), String> 
     {
         return Err("用户已关闭自主安装。".into());
     }
-    Ok(())
+    Ok(read_only_notification)
 }
 pub async fn context(app: &App, message: Uuid) -> Result<Option<Vec<Value>>, String> {
     let row=sqlx::query("SELECT r.id,r.origin,r.trigger_input,r.background_read_only,p.exploring,p.autonomous_reply,p.autonomous_install,p.wechat_watch FROM runs r CROSS JOIN proactive_state p WHERE r.assistant_message_id=$1").bind(message).fetch_one(&app.db).await.map_err(|e|e.to_string())?;

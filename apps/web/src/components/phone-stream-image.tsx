@@ -2,6 +2,7 @@
 
 import {useEffect, useRef, useState, type ImgHTMLAttributes} from 'react';
 import {clientId} from '@/lib/client-id';
+import {ScreenFrames} from '@/lib/screen-frames';
 
 // Decode independently of the displayed <img>. A missed load event must never
 // leave the presentation queue locked while new network frames keep arriving.
@@ -41,7 +42,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
       while (live) {
         abort = new AbortController();
         let active = true;
-        let pending: Uint8Array | null = null;
+        let pending: Uint8Array<ArrayBuffer> | null = null;
         let decoding = false;
         let cancelDecode: (() => void) | undefined;
         let expectedUrl = '';
@@ -69,7 +70,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
             while (active && live && pending && presentationStarted === null) {
               const bytes = pending;
               pending = null;
-              const source = URL.createObjectURL(new Blob([new Uint8Array(bytes)], {type: 'image/jpeg'}));
+              const source = URL.createObjectURL(new Blob([bytes], {type: 'image/jpeg'}));
               owned.add(source);
               decodingUrl = source;
               const image = new Image();
@@ -122,28 +123,14 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
           const response = await fetch(endpoint + (endpoint.includes('?')?'&':'?')+'raw=1&v=' + clientId(), {cache: 'no-store', signal: abort.signal});
           if (!response.ok || !response.body) throw new Error('screen_http_'+response.status);
           const reader = response.body.getReader();
-          let data = new Uint8Array();
+          const frames = new ScreenFrames();
           while (active && live) {
             const next = await reader.read();
             if (!live || next.done) break;
-            const combined = new Uint8Array(data.length + next.value.length);
-            combined.set(data);
-            combined.set(next.value, data.length);
-            data = combined;
-            if (data.length > 2_000_000) throw new Error('frame_limit');
-            for (;;) {
-              let end = -1;
-              for (let i = 0; i + 3 < data.length; i++) {
-                if (data[i] === 13 && data[i + 1] === 10 && data[i + 2] === 13 && data[i + 3] === 10) { end = i; break; }
-              }
-              if (end < 0) break;
-              const header = new TextDecoder().decode(data.subarray(0, end));
-              const length = Number(header.match(/Content-Length:\s*(\d+)/i)?.[1]);
-              if (!length || length > 1_000_000) throw new Error('frame_header');
-              if (data.length < end + 4 + length) break;
+            const frame = frames.push(next.value);
+            if (frame) {
               lastFrame = performance.now();
-              pending = data.slice(end + 4, end + 4 + length);
-              data = data.slice(end + 4 + length);
+              pending = frame;
             }
             void pump();
           }

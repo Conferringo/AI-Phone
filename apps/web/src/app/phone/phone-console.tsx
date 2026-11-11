@@ -242,7 +242,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
   const received=new Set(chat?.messages.map(message=>message.requestId));
   const pendingMessages=outbox.entries.filter(item=>!received.has(item.id));
   const displayedMessages=[...visibleMessages,...pendingMessages.map(item=>create(ChatMessageSchema,{id:item.id,requestId:item.id,role:'user',text:item.text,attachments:item.attachments.map(file=>({...file,sizeBytes:BigInt(file.sizeBytes)}))}))]
-    .filter(message=>message.role!=='assistant'||message.text||message.hasActivity)
+    .filter(message=>message.role!=='assistant'||message.text||message.hasActivity||message.attachments.length>0)
     .map(message=>({...message,text:displayCut?.ids.includes(message.id)&&message.text===displayCut.text?'':message.text}));
   const observe = useCallback(async (signal?: AbortSignal) => {
     if (!focused || !phoneAvailable || observing.current) return;

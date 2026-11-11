@@ -4,7 +4,10 @@ use axum::extract::State;
 
 use ai_phone_adb::{Client, Limits};
 use std::path::{Component, Path};
-use tokio::{fs, io::AsyncWriteExt};
+use tokio::{
+    fs,
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 type Result<T> = std::result::Result<T, String>;
 const DESKTOP: &str = "ai-phone-desktop";
 const IO_TIME: Duration = Duration::from_secs(600);
@@ -290,11 +293,18 @@ impl Store {
         &'a self,
         source: &'a str,
         target: &'a Path,
+        regular_file: bool,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async move {
             match self {
                 Self::Workspace(_) => copy_local(&self.local(source).await?, target).await,
                 Self::Desktop => {
+                    if regular_file {
+                        let source = quote(source);
+                        self.shell(&format!("test -f {source} && test ! -L {source}"))
+                            .await
+                            .map_err(|_| "请选择实际生成的普通文件".to_string())?;
+                    }
                     let mut c = crate::desktop::docker();
                     c.args(["cp", &format!("{DESKTOP}:{source}")]).arg(target);
                     crate::desktop::process(c, vec![], 65536, 600).await?;
@@ -316,6 +326,9 @@ impl Store {
                         .into_iter()
                         .find(|e| e.name == leaf)
                         .ok_or("文件不存在")?;
+                    if regular_file && entry.mode & 0o170000 != 0o100000 {
+                        return Err("请选择实际生成的普通文件".into());
+                    }
                     pull_tree(client, source, target, entry.mode).await?;
                     Ok(())
                 }
@@ -534,7 +547,7 @@ pub async fn manage(app: &App, r: wire::FileManageRequest) -> Result<wire::FileM
             fs::create_dir_all(&staging).await.map_err(err)?;
             let payload = staging.join(leaf);
             let transfer: Result<()> = async {
-                store.export(&p, &payload).await?;
+                store.export(&p, &payload, false).await?;
                 if cable(app, &source.device_id, &target.device_id).await? != link {
                     return Err("数据线连接已变化，请重新选择文件".into());
                 }
@@ -709,6 +722,149 @@ pub async fn archive_attachment(app: &App, id: Uuid, name: &str, bytes: &[u8]) -
         .map_err(err)
 }
 
+pub(crate) fn image_type(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() > 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else {
+        None
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct OutputLocation {
+    device_id: String,
+    path: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub(crate) struct PreparedOutput {
+    id: Uuid,
+    name: String,
+    media_type: String,
+    size_bytes: i64,
+}
+
+pub(crate) async fn prepare_outputs(
+    app: &App,
+    run: Uuid,
+    value: serde_json::Value,
+) -> Result<Vec<PreparedOutput>> {
+    let locations = serde_json::from_value::<Option<Vec<OutputLocation>>>(value)
+        .map_err(err)?
+        .unwrap_or_default();
+    if locations.is_empty() {
+        return Ok(vec![]);
+    }
+    let folder = app.root.join("data/attachments");
+    let staging = app.root.join("data/file-transfers");
+    fs::create_dir_all(&folder).await.map_err(err)?;
+    fs::create_dir_all(&staging).await.map_err(err)?;
+    let mut prepared = Vec::with_capacity(locations.len());
+    for location in locations {
+        let id = Uuid::now_v7();
+        let key = id.to_string();
+        let file = folder.join(&key);
+        let editable = staging.join(&key);
+        let result: Result<PreparedOutput> = async {
+            crate::desktop::authorized(app, run, &location.device_id).await?;
+            if !location.path.starts_with('/') {
+                return Err("交付文件需要设备内的绝对路径".into());
+            }
+            let source = path(&location.path)?;
+            let leaf = Path::new(&source)
+                .file_name()
+                .and_then(|leaf| leaf.to_str())
+                .ok_or("请选择实际生成的普通文件")?;
+            let name = name(leaf)?.to_owned();
+            let store = Store::open(app, &location.device_id).await?;
+            store.export(&source, &file, true).await?;
+            let metadata = fs::symlink_metadata(&file).await.map_err(err)?;
+            if !metadata.is_file() {
+                return Err("请选择实际生成的普通文件".into());
+            }
+            let mut header = [0; 13];
+            let count = metadata.len().min(header.len() as u64) as usize;
+            fs::File::open(&file)
+                .await
+                .map_err(err)?
+                .read_exact(&mut header[..count])
+                .await
+                .map_err(err)?;
+            fs::copy(&file, &editable).await.map_err(err)?;
+            Ok(PreparedOutput {
+                id,
+                name,
+                media_type: image_type(&header[..count])
+                    .unwrap_or("application/octet-stream")
+                    .into(),
+                size_bytes: metadata.len() as i64,
+            })
+        }
+        .await;
+        match result {
+            Ok(output) => prepared.push(output),
+            Err(e) => {
+                let _ = fs::remove_file(file).await;
+                let _ = fs::remove_file(editable).await;
+                discard_outputs(app, &prepared).await;
+                return Err(e);
+            }
+        }
+    }
+    Ok(prepared)
+}
+
+pub(crate) async fn discard_outputs(app: &App, outputs: &[PreparedOutput]) {
+    let root = app.root.join("data");
+    for output in outputs {
+        let key = output.id.to_string();
+        let _ = fs::remove_file(root.join("attachments").join(&key)).await;
+        let _ = fs::remove_file(root.join("file-transfers").join(&key)).await;
+    }
+}
+
+pub(crate) async fn publish_outputs(
+    app: &App,
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    outputs: &[PreparedOutput],
+) -> Result<Vec<Uuid>> {
+    if outputs.is_empty() {
+        return Ok(vec![]);
+    }
+    let staging = app.root.join("data/file-transfers");
+    let workspace = app.root.join("data/workspaces/admin");
+    fs::create_dir_all(&workspace).await.map_err(err)?;
+    for output in outputs {
+        let key = output.id.to_string();
+        let pending = staging.join(&key);
+        let visible = workspace.join(format!("{}-{}", &key[24..], output.name));
+        if fs::try_exists(&pending).await.map_err(err)? {
+            fs::rename(pending, visible).await.map_err(err)?;
+        } else {
+            // The recorded finish can resume after rename and before the SQL commit.
+            fs::metadata(visible).await.map_err(err)?;
+        }
+        sqlx::query(
+            "INSERT INTO attachments(id,name,media_type,size_bytes,storage_key) VALUES($1,$2,$3,$4,$5)",
+        )
+        .bind(output.id)
+        .bind(&output.name)
+        .bind(&output.media_type)
+        .bind(output.size_bytes)
+        .bind(&key)
+        .execute(&mut **tx)
+        .await
+        .map_err(err)?;
+    }
+    Ok(outputs.iter().map(|output| output.id).collect())
+}
+
 #[cfg(debug_assertions)]
 pub async fn qualify_devices() {
     let root = std::env::temp_dir().join(format!("aiphone-files-{}", Uuid::now_v7()));
@@ -733,7 +889,7 @@ pub async fn qualify_devices() {
     let entries = phone.list(&join(&remote, "nested")).await.unwrap();
     assert_eq!(entries.entries[0].size_bytes, payload.len() as u64);
     phone
-        .export(&remote, &root.join("from-phone"))
+        .export(&remote, &root.join("from-phone"), false)
         .await
         .unwrap();
     desktop
@@ -741,7 +897,7 @@ pub async fn qualify_devices() {
         .await
         .unwrap();
     desktop
-        .export(&computer, &root.join("from-desktop"))
+        .export(&computer, &root.join("from-desktop"), false)
         .await
         .unwrap();
     assert_eq!(
@@ -779,7 +935,7 @@ pub async fn qualify_devices() {
         .await
         .unwrap();
     phone
-        .export(&back, &root.join("back-to-phone"))
+        .export(&back, &root.join("back-to-phone"), false)
         .await
         .unwrap();
     assert_eq!(

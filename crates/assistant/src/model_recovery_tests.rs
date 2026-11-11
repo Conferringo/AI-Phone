@@ -372,7 +372,7 @@ async fn model_recovery_preserves_unknown_action_and_never_replays_it() {
         assert_eq!(resume(&app,run.id).await.0,StatusCode::OK);
         let preserved:(Value,Value)=sqlx::query_as("SELECT context,pending_tools FROM runs WHERE id=$1").bind(run.id).fetch_one(&app.db).await.unwrap();
         assert_eq!(preserved,(json!(run.context),json!(run.pending)));
-        let error=recorded_tool(&app,run.id,run.message,&call,&mut run.epoch,&CancellationToken::new()).await.unwrap_err();
+        let error=recorded_tool(&app,run.id,run.message,&call,&run.context,&mut run.epoch,&CancellationToken::new()).await.unwrap_err();
         assert!(error.contains("结果未知"));
         assert_eq!(sqlx::query_scalar::<_,Value>("SELECT to_jsonb(e) FROM harness_events e WHERE id=$1").bind(action).fetch_one(&app.db).await.unwrap(),event);
         assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM harness_events WHERE run_id=$1").bind(run.id).fetch_one(&app.db).await.unwrap(),1);

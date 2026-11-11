@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 Fabric
+
+- Deliver files produced on Android and Linux as downloads in the assistant reply and editable copies in Work Files.
+- Reuse the worker's current context for device tool checks, avoiding repeated PostgreSQL reads of screenshot data.
+- Reuse the receive buffer for phone and desktop screen streams and copy only the newest complete frame per read.
+- Stream chat attachment downloads through the assistant and web client.
+
 ## 0.2.1 Eclipse Beta
 
 - Use a bundled multilingual Whisper model for desktop Copilot and read replies with an installed system voice.

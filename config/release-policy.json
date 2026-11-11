@@ -1,7 +1,7 @@
 {
-  "version": "0.2.1",
-  "release_name": "Eclipse",
-  "release_notes": "Eclipse Beta adds offline desktop Copilot, skips redundant speech drafts during pauses, removes duplicate model-request allocation, and reaps guest network commands before returning cancellation. The macOS and Windows installers carry temporary signatures.",
+  "version": "0.2.2",
+  "release_name": "Fabric",
+  "release_notes": "Fabric reduces repeated device context reads, speeds up phone and computer screen streams, and delivers device-generated files to the chat and Work Files.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

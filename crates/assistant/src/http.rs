@@ -725,14 +725,8 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
 }
 
 fn media_type(bytes: &[u8], name: &str) -> Option<&'static str> {
-    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some("image/png")
-    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
-        Some("image/jpeg")
-    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
-        Some("image/gif")
-    } else if bytes.len() > 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
-        Some("image/webp")
+    if let Some(media) = crate::files::image_type(bytes) {
+        Some(media)
     } else if ["txt", "md", "csv", "json", "log"]
         .iter()
         .any(|ext| name.to_lowercase().ends_with(&format!(".{ext}")))
@@ -828,7 +822,7 @@ pub async fn attachment(
         Err(_) => return error(StatusCode::NOT_FOUND, "not_found", "附件不存在"),
     };
     let row = match sqlx::query(
-        "SELECT media_type,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'",
+        "SELECT media_type,size_bytes,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'",
     )
     .bind(id)
     .fetch_optional(&app.db)
@@ -837,7 +831,7 @@ pub async fn attachment(
         Ok(Some(v)) => v,
         _ => return error(StatusCode::NOT_FOUND, "not_found", "附件不存在"),
     };
-    let bytes = match tokio::fs::read(
+    let file = match tokio::fs::File::open(
         app.root
             .join("data/attachments")
             .join(row.get::<String, _>("storage_key")),
@@ -850,11 +844,15 @@ pub async fn attachment(
     (
         [
             ("content-type", row.get::<String, _>("media_type")),
+            (
+                "content-length",
+                row.get::<i64, _>("size_bytes").to_string(),
+            ),
             ("x-content-type-options", "nosniff".into()),
             ("cross-origin-resource-policy", "same-origin".into()),
             ("cache-control", "private, no-store".into()),
         ],
-        bytes,
+        axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(file)),
     )
         .into_response()
 }

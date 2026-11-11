@@ -312,7 +312,7 @@ async fn ordinary_search_rejects_stored_command_calls_before_dispatch() {
             ]);
             sqlx::query("UPDATE runs SET context=$2 WHERE id=$1")
                 .bind(run)
-                .bind(context)
+                .bind(&context)
                 .execute(&app.db)
                 .await
                 .unwrap();
@@ -328,9 +328,17 @@ async fn ordinary_search_rejects_stored_command_calls_before_dispatch() {
                     "device_id":"unregistered-fixture","script":"x".repeat(16001),
                     "url":"invalid-fixture-url"
                 }).to_string()});
-                let output = tool(&app, run, message, &call, &mut 0, &CancellationToken::new())
-                    .await
-                    .unwrap();
+                let output = tool(
+                    &app,
+                    run,
+                    message,
+                    &call,
+                    context.as_array().unwrap(),
+                    &mut 0,
+                    &CancellationToken::new(),
+                )
+                .await
+                .unwrap();
                 let result = tool_value(&output).unwrap();
                 assert_eq!(
                     result["code"], "visible_device_required",
@@ -453,6 +461,7 @@ async fn phone_dispatch_preserves_skill_request_without_guest_side_effects() {
                 run,
                 message,
                 &call,
+                &[],
                 &mut epoch,
                 &CancellationToken::new(),
             )
@@ -534,7 +543,8 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
             {"type":"function_call_output","call_id":"skill","output":[{"type":"input_text","text":"Skill id=phone-use，name=phone-use，enabled=true\nBody"}]}
         ]);
         sqlx::query("UPDATE runs SET agent_id=$2,status='running',context=$3 WHERE id=$1")
-            .bind(run).bind(Uuid::from_u128(2)).bind(context).execute(&app.db).await.unwrap();
+            .bind(run).bind(Uuid::from_u128(2)).bind(&context).execute(&app.db).await.unwrap();
+        let context = context.as_array().unwrap();
         sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
             .bind(run).bind(crate::registry::PHONE).execute(&app.db).await.unwrap();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -578,7 +588,7 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
             .timeout(Duration::from_secs(4)).build().unwrap();
         let call = json!({"name":"phone_observe","arguments":"{}"});
         let mut epoch = 0;
-        let result = tool(&app, run, message, &call, &mut epoch, &CancellationToken::new()).await.unwrap();
+        let result = tool(&app, run, message, &call, context, &mut epoch, &CancellationToken::new()).await.unwrap();
         assert_eq!(epoch, 7);
         assert!(requests.recv().await.unwrap().metadata_only, "readiness must not capture a discarded screenshot");
         let observed = requests.recv().await.unwrap();
@@ -590,7 +600,7 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
         sqlx::query("UPDATE runs SET origin='notification',background_read_only=true WHERE id=$1")
             .bind(run).execute(&app.db).await.unwrap();
         epoch = 0;
-        let result = tool(&app, run, message, &call, &mut epoch, &CancellationToken::new()).await.unwrap();
+        let result = tool(&app, run, message, &call, context, &mut epoch, &CancellationToken::new()).await.unwrap();
         assert!(!requests.recv().await.unwrap().metadata_only);
         assert_eq!(epoch, 0, "read-only notification must not take control");
         assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 1);
@@ -599,7 +609,7 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
             .bind(run).execute(&app.db).await.unwrap();
         ready.store(false, std::sync::atomic::Ordering::Relaxed);
         let result = tokio::time::timeout(Duration::from_millis(700),
-            tool(&app, run, message, &call, &mut epoch, &CancellationToken::new())).await
+            tool(&app, run, message, &call, context, &mut epoch, &CancellationToken::new())).await
             .expect("an unready phone must return its status without a hidden retry loop");
         assert_eq!(result.unwrap_err(), "手机尚未就绪，请稍后继续。");
         assert!(requests.recv().await.unwrap().metadata_only);

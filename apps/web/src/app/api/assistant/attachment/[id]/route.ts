@@ -15,7 +15,7 @@ export async function GET(
       cache: "no-store",
       signal: request.signal,
     });
-    return new Response(await response.arrayBuffer(), {
+    return new Response(response.body, {
       status: response.status,
       headers: {
         "content-type":
