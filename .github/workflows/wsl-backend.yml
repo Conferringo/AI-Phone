@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: wsl-backend-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
@@ -52,10 +53,34 @@ jobs:
           cargo test --locked -p ai-phone-release-tools --bin release-tools wsl_qualification
           cargo test --locked -p ai-phone-release-tools --test wsl_qualification_cli
           cargo test --locked -p ai-phone-runner
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v4
+        if: vars.AIMANITY_CI_OCR_SOURCE != '' && fromJSON(vars.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
+        with:
+          run-id: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).run }}
+          artifact-ids: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).artifact }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-linux-runtime
+      - name: Read back the approved OCR capsule
+        if: vars.AIMANITY_CI_OCR_SOURCE != '' && fromJSON(vars.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
+        env:
+          SOURCE_COMMIT: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).commit }}
+          SOURCE_PAYLOAD_SHA: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).sha256 }}
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/verified-linux-runtime"
+          ocr="$RUNNER_TEMP/verified-linux-ocr"
+          test "$(cat "$runtime/source-commit.txt")" = "$SOURCE_COMMIT"
+          printf '%s  %s\n' "$SOURCE_PAYLOAD_SHA" "$runtime/source.payload" | sha256sum -c -
+          mkdir "$ocr"
+          tar --extract --xz --file "$runtime/source.payload" --directory "$ocr" --strip-components=3 --wildcards 'runtime/services/ocr/*'
+          printf 'AIMANITY_CI_OCR_DIRECTORY=%s\n' "$ocr" >> "$GITHUB_ENV"
       - name: Assemble, boot and restart the isolated Linux backend
         env:
           AI_PHONE_DISPOSABLE_QUALIFICATION: '1'
-        run: ./scripts/bun scripts/wsl-backend-qualification.ts
+        run: |
+          args=()
+          if [[ -n "${AIMANITY_CI_OCR_DIRECTORY:-}" ]]; then args+=(--linux-ocr "$AIMANITY_CI_OCR_DIRECTORY"); fi
+          ./scripts/bun scripts/wsl-backend-qualification.ts "${args[@]}"
       - name: Retain sanitized qualification receipt only
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

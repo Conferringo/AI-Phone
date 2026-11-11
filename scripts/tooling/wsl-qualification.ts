@@ -15,6 +15,7 @@ import { json, save } from "./inventory";
 import { releaseTools, buildReleaseTools } from "./archive";
 import { checkDocker, prepareApps, prepareImages, fetchPin } from "./factory";
 import { buildFactoryDependency } from "./factory-inputs";
+import { verifyDependency } from "./linux-dependencies";
 import { buildNative } from "./native-build";
 import { preparePayload } from "./client-payload";
 import { checkSource } from "./source";
@@ -308,23 +309,27 @@ function retireImageCache(root: string) {
     capacity_guard_changed: false,
   };
 }
-export async function buildWslBackend(root = ROOT, deviceApps = false) {
+export async function buildWslBackend(
+  root = ROOT,
+  deviceApps = false,
+  linuxOcr?: string,
+) {
   disposable(root);
   if (hostKey() !== "linux-x64" || free(root) < 4 * 1024 ** 3)
     throw Error("WSL assembly needs Linux x64 and free capacity");
   checkDocker();
   checkSource(root);
   const work = join(root, ".tools/wsl-backend-qualification");
+  const ocr =
+    linuxOcr === undefined
+      ? join(root, ".tools/linux-ocr-runtime")
+      : resolve(linuxOcr);
+  if (linuxOcr !== undefined) await verifyDependency(root, ocr, "linux-ocr");
   mkdirSync(work);
   if (deviceApps) prepareApps(root, { ...process.env });
-  const phone = await preparePhoneTools(root, join(work, "phone-tools")),
-    ocr = join(root, ".tools/linux-ocr-runtime");
-  await buildFactoryDependency(
-    root,
-    join(work, "ocr-context"),
-    ocr,
-    "linux-ocr",
-  );
+  const phone = await preparePhoneTools(root, join(work, "phone-tools"));
+  if (linuxOcr === undefined)
+    await buildFactoryDependency(root, join(work, "ocr-context"), ocr, "linux-ocr");
   buildReleaseTools(root);
   await buildNative(root);
   run([bunProgram(root), "run", "build"], { cwd: root });
@@ -374,8 +379,12 @@ export async function buildWslBackend(root = ROOT, deviceApps = false) {
   save(join(root, "dist/wsl-backend-build.json"), report);
   return { work, assembled, source, images, report };
 }
-export async function qualifyWsl(root = ROOT, deviceApps = false) {
-  const built = await buildWslBackend(root, deviceApps);
+export async function qualifyWsl(
+  root = ROOT,
+  deviceApps = false,
+  linuxOcr?: string,
+) {
+  const built = await buildWslBackend(root, deviceApps, linuxOcr);
   const { work, assembled, source, images } = built;
   const report: any = { ...built.report, stage: "runtime", passed: false };
   try {
