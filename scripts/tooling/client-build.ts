@@ -188,15 +188,21 @@ export async function inspectMacBundle(bundle: string, root = ROOT) {
   };
 }
 export function nativeEnvironment(): NodeJS.ProcessEnv {
+  const home = homedir();
+  const nativePrefixMap = `-ffile-prefix-map=${home}=/build-user`;
   return {
     ...process.env,
     CI: "true",
     CARGO_BUILD_JOBS: process.env.CARGO_BUILD_JOBS || "2",
     CARGO_INCREMENTAL: "0",
-    CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
+    CARGO_HOME: process.env.CARGO_HOME || join(home, ".cargo"),
+    ...(process.platform === "darwin" ? {
+      CFLAGS: [process.env.CFLAGS, nativePrefixMap].filter(Boolean).join(" "),
+      CXXFLAGS: [process.env.CXXFLAGS, nativePrefixMap].filter(Boolean).join(" "),
+    } : {}),
     CARGO_ENCODED_RUSTFLAGS: [
       process.env.CARGO_ENCODED_RUSTFLAGS,
-      "--remap-path-prefix=" + homedir() + "=/build-user",
+      `--remap-path-prefix=${home}=/build-user`,
     ]
       .filter(Boolean)
       .join("\x1f"),

@@ -4240,8 +4240,8 @@
     },
     {
       "path": "scripts/tooling/client-build.ts",
-      "size": 13259,
-      "sha256": "ba35ffeb5b8d6c6cf6598a731e192fbe8085633e714fa00095e73e112b4c7bc4"
+      "size": 13554,
+      "sha256": "924b3382560c37c0303905ff593b1de9d4fe9ef9698086f24b4c7443d73c1ada"
     },
     {
       "path": "scripts/tooling/client-payload.ts",
