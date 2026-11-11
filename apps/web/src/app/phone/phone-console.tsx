@@ -32,6 +32,7 @@ import {
 import { ApiErrorSchema } from "@ai-phone/protocol/ai_phone/v1/system_pb";
 import {
   ArrowUp,
+  Download,
   Paperclip,
   Square,
   Pause,
@@ -612,16 +613,27 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
                     <div className="message-attachments">
                       {message.attachments.map((file) =>
                         file.mediaType.startsWith("image/") ? (
-                          <button
-                            key={file.id}
-                            onClick={() => setPreview(file)}
-                            aria-label={t("查看") + file.name}
-                          >
-                            <img
-                              src={`/api/assistant/attachment/${file.id}`}
-                              alt={file.name}
-                            />
-                          </button>
+                          <div key={file.id} className="inline-flex items-start gap-1">
+                            <button
+                              onClick={() => setPreview(file)}
+                              aria-label={t("查看") + file.name}
+                            >
+                              <img
+                                src={`/api/assistant/attachment/${file.id}`}
+                                alt={file.name}
+                              />
+                            </button>
+                            <Button asChild variant="ghost" size="icon" className="size-11">
+                              <a
+                                href={`/api/assistant/attachment/${file.id}`}
+                                download={file.name}
+                                aria-label={`${t("下载")} ${file.name}`}
+                                title={t("下载")}
+                              >
+                                <Download aria-hidden="true" />
+                              </a>
+                            </Button>
+                          </div>
                         ) : (
                           <a
                             key={file.id}

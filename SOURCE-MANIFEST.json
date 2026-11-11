@@ -505,8 +505,8 @@
     },
     {
       "path": "apps/web/next-env.d.ts",
-      "size": 288,
-      "sha256": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+      "size": 296,
+      "sha256": "0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc"
     },
     {
       "path": "apps/web/next.config.ts",
@@ -655,8 +655,8 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 47411,
-      "sha256": "25dc23c27a654b33166b1c8733ed1dcfdaa4dd1b3df30c38b2d25fe8e81a88fa"
+      "size": 48073,
+      "sha256": "da419d0c01da93d347abbc8dd0a17cb2526d4afd0d3e1f35306ac57af2382573"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
