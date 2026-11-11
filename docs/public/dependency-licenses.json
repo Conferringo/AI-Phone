@@ -3,7 +3,7 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "cd6d8fb096e4b02f070b9e5b88bd634f8e44614f107a8b55693ca193ed89f4a6",
+    "Cargo.lock": "ef4248ccee38b6bf6b6e3c2a4c1376aa8ae24489dfec8a4c251cd7bb94aa3eca",
     "bun.lock": "ac03ce66c53dee01fbe99345a701810695488acb144564c30bdadcc177012bb5",
     "apps/client/src-tauri/Cargo.lock": "ca9151b32e077a53113bbea5405983e074e12053bc3ea4c0edb07e09281b9dc5"
   },
@@ -7641,33 +7641,6 @@
     },
     {
       "name": "rustix",
-      "version": "1.1.5",
-      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
-      "repository": "https://github.com/bytecodealliance/rustix",
-      "notices": [
-        {
-          "file": "COPYRIGHT",
-          "sha256": "377c2e7c53250cc5905c0b0532d35973392af16ffb9596a41d99d202cf3617c9"
-        },
-        {
-          "file": "LICENSE-APACHE",
-          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
-        },
-        {
-          "file": "LICENSE-Apache-2.0_WITH_LLVM-exception",
-          "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
-        },
-        {
-          "file": "LICENSE-MIT",
-          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-        }
-      ],
-      "workspaces": [
-        "Cargo.toml"
-      ]
-    },
-    {
-      "name": "rustix",
       "version": "1.1.6",
       "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
       "repository": "https://github.com/bytecodealliance/rustix",
@@ -7690,6 +7663,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },

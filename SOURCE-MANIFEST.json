@@ -111,7 +111,7 @@
     {
       "path": "Cargo.lock",
       "size": 118760,
-      "sha256": "cd6d8fb096e4b02f070b9e5b88bd634f8e44614f107a8b55693ca193ed89f4a6"
+      "sha256": "ef4248ccee38b6bf6b6e3c2a4c1376aa8ae24489dfec8a4c251cd7bb94aa3eca"
     },
     {
       "path": "Cargo.toml",
@@ -3030,8 +3030,8 @@
     },
     {
       "path": "docs/public/dependency-licenses.json",
-      "size": 434181,
-      "sha256": "475548d5e99463ef56d8811bf335c2f3d3e13ea321b138cd33710195e174db25"
+      "size": 433332,
+      "sha256": "a4e1081457d7619259d36897bd47599d10ccec7a8de50f754e5e09601420211a"
     },
     {
       "path": "docs/public/dependency-security.json",
@@ -3516,12 +3516,12 @@
     {
       "path": "docs/public/native-services-license-inventory.json",
       "size": 11939,
-      "sha256": "08d32c774c188195199b7a52866eeec1b8c4bad39d2fb9d7e4532bd6d8074498"
+      "sha256": "a406785973e8d368a9b53b8c9584e1fea143e782d6370f7a16a83c08ccae78da"
     },
     {
       "path": "docs/public/native-services-licenses.txt",
       "size": 4872219,
-      "sha256": "b52d189e1818a2245e5d5bfd6a27c787956533b81fd8d86a0ea007362a7b1d31"
+      "sha256": "2c09014a6980a810cc98d4a7ea483f86a806d58d884d2eb0255c607533b45a6d"
     },
     {
       "path": "docs/public/network.md",

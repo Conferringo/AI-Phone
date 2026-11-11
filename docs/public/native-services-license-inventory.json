@@ -2,7 +2,7 @@
   "format": 1,
   "kind": "native-service-licenses",
   "scope": "Locked native service build graph, including target and build dependencies",
-  "lock_sha256": "cd6d8fb096e4b02f070b9e5b88bd634f8e44614f107a8b55693ca193ed89f4a6",
+  "lock_sha256": "ef4248ccee38b6bf6b6e3c2a4c1376aa8ae24489dfec8a4c251cd7bb94aa3eca",
   "packages": [
     "adler2@2.0.1",
     "aes@0.9.4",
@@ -283,7 +283,7 @@
     "rskafka@0.6.0",
     "rustc_version@0.4.1",
     "rustc-hash@2.1.3",
-    "rustix@1.1.5",
+    "rustix@1.1.6",
     "rustls@0.23.46",
     "rustls-pki-types@1.15.1",
     "rustls-webpki@0.103.16",
@@ -465,6 +465,6 @@
     "zvariant_utils@4.2.0"
   ],
   "notices_file": "docs/public/native-services-licenses.txt",
-  "notices_sha256": "b52d189e1818a2245e5d5bfd6a27c787956533b81fd8d86a0ea007362a7b1d31",
+  "notices_sha256": "2c09014a6980a810cc98d4a7ea483f86a806d58d884d2eb0255c607533b45a6d",
   "missing_notice_files": []
 }
