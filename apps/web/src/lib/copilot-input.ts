@@ -177,6 +177,13 @@ export class CopilotInput {
     this.flush();
   }
 
+  finish(utteranceId: string) {
+    const slot = this.slots.find(item => item.id === utteranceId);
+    if (!slot) return;
+    slot.ended = true;
+    this.flush();
+  }
+
   retry() {
     if (!this.enabled) return;
     this.failure = '';
@@ -184,8 +191,8 @@ export class CopilotInput {
   }
   /** A lost audio stream cannot invent its missing final. Preserve its text for
    * manual editing; accepted receipts and failed durable handoffs stay owned. */
-  recoverIncomplete():string {
-    const incomplete=this.slots.filter(slot=>!slot.final&&!slot.accepted&&!slot.pending);
+  recoverIncomplete(utteranceId?:string):string {
+    const incomplete=this.slots.filter(slot=>!slot.final&&!slot.accepted&&!slot.pending&&(!utteranceId||slot.id===utteranceId));
     const ids=new Set(incomplete.map(slot=>slot.id));
     this.slots=this.slots.filter(slot=>!ids.has(slot.id));
     return incomplete.map(slot=>slot.text).filter(Boolean).join('\n');

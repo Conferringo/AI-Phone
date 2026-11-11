@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 Eclipse Beta
+
+- Use a bundled multilingual Whisper model for desktop Copilot and read replies with an installed system voice.
+- Skip redundant Copilot draft requests during pauses. The recorded scheduling test reduced 22 requests to 18 and preserved all final audio.
+- Reuse the existing model input when building a request. A 276 KB dual-image fixture used about 60% fewer allocated bytes during request assembly and produced identical request bodies.
+- Sign the macOS app and disk image ad hoc and the Windows installer with a temporary Authenticode certificate. Follow the [Beta installation guide](docs/public/release-status.md#install-the-beta).
+
 ## 0.2.0 Daemon
 
 - Route a completion draft from a single Android Settings action directly to independent verification. Six paired runs cut median planning calls from 3 to 2 and median completion time from 6.18 to 5.02 seconds.

@@ -53,9 +53,16 @@ jobs:
       - name: Locked build tools
         shell: bash
         run: |
+          cmake --version
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+      - name: Prepare Authenticode tools
+        shell: pwsh
+        run: |
+          & C:\msys64\usr\bin\bash.exe -lc 'pacman -Sy --needed --noconfirm mingw-w64-ucrt-x86_64-osslsigncode'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          'C:\msys64\ucrt64\bin' >> $env:GITHUB_PATH
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           github-token: ${{ github.token }}
@@ -164,6 +171,7 @@ jobs:
       - name: Disposable Mac factory toolchain
         run: |
           set -euo pipefail
+          cmake --version
           # This hosted job builds only macOS/ARM Linux, so no Android NDK is
           # consumed. Reclaim only this disposable runner's unused compiler SDKs.
           rm -rf "$ANDROID_HOME/ndk"

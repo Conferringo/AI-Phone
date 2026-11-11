@@ -1,12 +1,22 @@
 # Copilot voice
 
-Copilot adds continuous microphone input and interruptible spoken replies to the existing conversation. Enable it beside Liberty in the conversation composer. Both modes can remain active; spoken instructions have priority. Switching devices preserves a phrase's original destination; the next phrase follows the focused device. Already accepted tasks continue when capture stops or the view changes.
+Enable Copilot beside Liberty in the conversation composer. A background waveform shows when Copilot is listening, hearing speech, or reading a reply. You can keep both modes on. Voice instructions have priority.
 
-**Status.** Browser capture, Agent voice settings, Rust transcription, protobuf transport, durable corrections and interruptible playback are implemented. Real microphone and provider acceptance remains open.
+## Desktop speech
 
-## Configure an Agent
+The macOS and Windows clients bundle a 32 MB multilingual Whisper model. Turn on Copilot and allow microphone access. The client updates the draft about twice per second, closes the phrase after 650 ms of silence, and submits the final text to the same Agent conversation. The system voice reads replies. Speaking again interrupts playback. Desktop speech uses the installed model and system voice without a speech API key.
 
-Open **Configuration → Agent → Voice**. Enter the compatible API URL, API key, input protocol, recognition model, speech model and voice. The key is editable and can be shown in this form; it is stored in the private database and excluded from ordinary configuration projections. A local compatible service may leave the key empty. Voice configuration has its own revision and does not require a successful chat-model probe. The text/tool model remains independently configured.
+The client sends 16 kHz mono PCM to its Rust host over binary protobuf IPC. The host loads the model once per Copilot session and decodes locally. The Agent receives the final transcript, interprets corrections, and runs the usual tools.
+
+## Browser speech
+
+Copilot uses an installed on-device recognition pack where the browser supports it. If a pack is required, the workbench offers **Install language pack**. The selected interface language sets the recognition language and local voice. Browser recognition revises the draft as you speak and submits the final transcript when it detects a pause. Listening resumes for the next phrase in the same conversation. Start speaking to interrupt playback. A phrase follows the device it started on. The next phrase uses the currently focused device.
+
+Installed system voices read replies. Browsers without an on-device recognition pack can use configured Agent speech input.
+
+## Configure a speech provider
+
+Open **Configuration → Agent → Voice** and enter a compatible API URL, key, input protocol, and recognition model. A local compatible service can leave the key empty. The remote speech model and voice under **Advanced** are optional and used together when provider input is active and a matching system voice is unavailable.
 
 | Input protocol | Provider requests | Correction capability |
 |---|---|---|
@@ -14,18 +24,17 @@ Open **Configuration → Agent → Voice**. Enter the compatible API URL, API ke
 | Audio chat | `/chat/completions` with `input_audio` and text output | One request transcribes the phrase and interprets explicit spoken edits. The provider must support this audio-chat contract. |
 | Transcription | Multipart `/audio/transcriptions` | Literal transcription with draft updates at short pauses. |
 
-All input modes use `/audio/speech` with WAV output for replies. Select a model supported by the chosen protocol. Live transcription requires a provider model with the transcription-session schema. Other providers' streaming protocols need their own adapters.
+Remote playback uses `/audio/speech` with WAV output. Live transcription requires a model that supports the transcription-session schema.
 
-## Continuous conversation
+## Provider input and playback
 
 - AudioWorklet captures mono audio, locally resampled to 16 kHz PCM16. REST modes do not make a request per frame. Live transcription streams a confirmed utterance over one persistent connection, including its endpoint silence, instead of uploading a complete WAV after endpointing. Rust converts to the provider's 24 kHz PCM format while retaining interpolation state across frames.
-- **1,500 ms of microphone silence** seals a phrase. Only final recognized text is committed. Recognition and network time follow that interval.
+- **1,500 ms of microphone silence** seals a provider phrase. Final recognized text is then sent to the existing chat outbox.
 - Audio-chat interpretation runs once per completed phrase, with a hard 28-second chunk boundary. Transcription mode can send phrase chunks after a short pause. Both have bounded audio queues; overflow or a provider failure pauses capture with an explicit retry.
 - Live transcript deltas revise one draft. The local 1.5-second endpoint commits the provider turn; an interim result is never treated as final. Provider item IDs correlate results even when different turns finish out of order. Focus changes pin the current phrase to its original device. Connections are reused for that device, Agent and configuration revision.
 - A live connection failure pauses capture. Explicit retry retains the capture session and accepted chat receipts; unfinished transcript text returns to the editable composer. Unconfirmed audio is not replayed or represented as recognized speech.
 - The literal transcript and interpreted instruction remain separate. Audio-chat recognition receives up to four recent active instructions from the same capture session and conversation, within its 12 KB context budget. Superseded receipts are omitted, so another spoken correction references the current revision. An intervening phrase does not discard the earlier instruction from this window. Original messages and executed actions remain in history. Correction branches and foreign-session references are rejected in PostgreSQL.
 - The existing durable Outbox and protobuf chat API accept the instruction. Voice bypasses the typed-input quiet window.
-- Confirmed microphone activity in live transcription holds pending Agent actions for the same conversation. The final voice receipt releases the hold after commit so the worker can apply the correction. A lost connection or missing receipt expires five seconds after the last audio or commit frame. Device actions already dispatched finish through their existing receipt path.
 - New speech stops obsolete playback, closes the synthesis socket and cancels its upstream response. Later text from that interrupted reply remains silent; a new reply can speak. Reply text is synthesized in sentence-sized pieces, with one playback owner. A speech-output failure leaves input available and preserves the sentence for explicit retry; provider failures are not automatically retried.
 - Turning Copilot off stops microphone tracks, audio processing, pending recognition and playback. Unsent recognized text is restored to the text composer. Unrecognized buffered audio is discarded; already accepted Agent work continues.
 
@@ -34,6 +43,7 @@ All input modes use `/audio/speech` with WAV output for replies. Select a model 
 | Owner | Responsibility |
 |---|---|
 | `Microphone` / `SpeechSegments` | Capture resources, local voice activity, phrase boundary and device pinning |
+| `NativeRecognition` / `LocalSpeech` | Progressive transcription and one offline decoder per desktop Copilot session |
 | `CopilotSession` | One capture lifetime, per-conversation input cores and bounded recognition jobs |
 | `CopilotInput` / existing Outbox | Ordered final text, immutable submission receipts and recoverable drafts |
 | Rust `speech` module | Agent configuration, device binding and compatible provider requests |
@@ -50,24 +60,18 @@ Access is requested only when Copilot is enabled. The macOS bundle supplies a mi
 
 Guest voice messages, microphone injection and phone calls are planned separately.
 
-## Qualification and remaining work
-
-Rust and PostgreSQL checks cover audio containers, provider adapters, settings revisions, cancellation and correction chains. Browser capture, device switching, submission and playback interruption still need runtime verification. Configure a speech service and measure silence-to-text, text-to-acceptance, interruption-to-playback-stop, first spoken reply and first device action on a real microphone.
-
 ## References
 
-[OpenAI audio APIs](https://developers.openai.com/api/docs/guides/audio), [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription), [browser microphone requirements](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), [macOS application bundle permissions](https://v2.tauri.app/distribute/macos-application-bundle/).
+[Web Speech API](https://webaudio.github.io/web-speech-api/), [OpenAI audio APIs](https://developers.openai.com/api/docs/guides/audio), [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription), [macOS application bundle permissions](https://v2.tauri.app/distribute/macos-application-bundle/).
 
 ---
 
 # Copilot 语音
 
-在对话输入区的 Liberty 右侧开启 Copilot，持续说话即可；可与 Liberty 同时开启，语音指令优先。配置位于原有配置中心的 Agent → 语音，识别模型、合成模型、音色和密钥独立于聊天模型，不要求先通过聊天额度探测。
+在输入区开启 Copilot，可同时开启 Liberty，语音指令优先。工作台底层声波显示等待、收音和播报状态。macOS 和 Windows 客户端随包提供约 32 MB 的多语 Whisper 模型，播报使用系统音色。开启麦克风即可使用，无需填写语音 API。
 
-已实现浏览器采集、Rust REST 和实时转写、protobuf 音频、持久纠错和可打断播放。真实麦克风、服务商与端到端延迟待验证。实时转写显示增量草稿，只有最终转录进入聊天。回复按句合成，PCM16 分块播放。
+客户端约每半秒更新草稿，静音 650 毫秒后完成断句，最终文字立即进入原会话。说下一句会打断播报，Agent 继续理解补充和修正。音频在宿主端识别，聊天 Agent 接收最终文字并执行原有工具。
 
-停顿 1.5 秒后结束语句，必须得到完整转录才发送；网络和识别耗时另计。音频对话协议一次完成转录及明确的口误修正；识别上下文从同一采集会话的已接受记录提取，最多保留最近4条、合计12KB的有效指令，排除已被纠正的旧回执，连续补充不会只剩最后一句。普通转写协议提供原话。发送后的修正以新消息关联原回执，同一会话不中断，原话和已执行操作保留。关闭只停采集与播放，已接受任务继续，已识别但未发送的文字回到输入框。音频默认不落盘，错误不自动重复请求。
+浏览器支持本机识别时，Copilot 使用界面语言对应的本机语言包。需要下载时，在工作台提示中点击**安装本机语言包**。说话时显示草稿，识别器判定停顿并返回最终文本后立即发送。说下一句可以打断播报，原有对话继续。正在说的一句发给原设备，下一句发给当前设备。关闭后，未发送的转写回到输入框。
 
-实时转写显示原话增量。检测到说话后，当前设备对话里尚未派发的动作短暂等待。最终转录提交到数据库后，Agent 先读取新指令。连接断开或没有提交回执时，等待在最后一帧后五秒结束。连接按设备、Agent、配置版本复用，入口校验一次，不逐音频帧查询数据库或新增模型反思。断线后显式重试保持采集session及已接受回执，未确认的文字回到可编辑草稿，不重放未知音频。Rust局域网转发已支持WebSocket连接，但收音仍需要localhost或可信安全来源；局域网入口的真实收音尚未验收。
-
-切换设备不会把说到一半的内容发给另一设备，下一句跟随当前设备。新语音立即停止旧播放并关闭合成连接、取消上游响应；同一旧回复的迟到文字保持静音，新回复可以朗读。合成失败不会堵塞输入，保留原句供显式重试。服务和密钥由用户配置，不自带或自动购买。宿主麦克风不会自动传给手机或电脑客体；语音消息、设备内音频注入及电话能力仍是后续扩展。浏览器收音需要本机地址或可信 HTTPS。
+浏览器也可通过**配置中心 → Agent → 语音**使用已有服务，服务输入仍以 1.5 秒静音断句。服务输入下缺少本机音色时，可使用配置的远程合成模型和音色。浏览器收音需要本机地址或可信 HTTPS。

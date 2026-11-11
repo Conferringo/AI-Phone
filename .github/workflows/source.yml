@@ -27,6 +27,7 @@ jobs:
           node-version: '22'
       - name: Pinned Rust with formatting
         run: |
+          cmake --version
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
       - name: Fixed Bun and locked dependencies

@@ -35,7 +35,7 @@ export class SpeechSegments<T>{
   private segment:Segment<T>|null=null;
   private before:Frame[]=[];
   private floor=.002;
-  constructor(private events:SpeechEvents<T>,private id=()=>crypto.randomUUID(),private phraseDrafts:((target:T)=>boolean)=()=>true,private live:((target:T)=>boolean)=()=>!!events.stream){}
+  constructor(private events:SpeechEvents<T>,private id=()=>crypto.randomUUID(),private phraseDrafts:((target:T)=>boolean)=()=>true,private live:((target:T)=>boolean)=()=>!!events.stream,private silenceMs=1500){}
   push(samples:Int16Array,at:number){
     const frame={samples,at,ms:samples.length/16};
     const level=energy(samples),voiced=level>Math.max(.008,this.floor*3);
@@ -53,8 +53,9 @@ export class SpeechSegments<T>{
     if(!s.active){this.confirm(s,frame);return;}
     if(voiced)this.events.speech(s.id,s.target,frame.at);
     if(this.live(s.target)){
-      this.emitLive(s,frame.at-s.last>=1500);
-      if(frame.at-s.last>=1500){this.events.end(s.id,s.target,s.last+1500);this.segment=null;}
+      const ended=frame.at-s.last>=this.silenceMs||frame.at-s.started>=28000;
+      this.emitLive(s,ended);
+      if(ended){this.events.end(s.id,s.target,frame.at);this.segment=null;}
       return;
     }
     this.receiveChunked(s,frame.at);

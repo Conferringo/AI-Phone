@@ -1,6 +1,26 @@
 syntax = "proto3";
 package ai_phone.v1;
 
+message NativeVoiceStart {
+  string language = 1;
+}
+message NativeVoiceAudio {
+  // Full utterance, mono PCM16 at 16 kHz. Decoded by the client host.
+  bytes pcm16 = 1;
+}
+message NativeVoiceRequest {
+  string session_id = 1;
+  oneof action {
+    NativeVoiceStart start = 2;
+    NativeVoiceAudio audio = 3;
+    bool stop = 4;
+  }
+}
+message NativeVoiceResponse {
+  string text = 1;
+  uint32 inference_ms = 2;
+}
+
 enum VoiceInputProtocol {
   VOICE_INPUT_PROTOCOL_UNSPECIFIED = 0;
   VOICE_INPUT_PROTOCOL_TRANSCRIPTION = 1;

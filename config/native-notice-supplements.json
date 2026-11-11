@@ -1019,6 +1019,28 @@
       ]
     },
     {
+      "package": "whisper-rs-sys@0.15.0",
+      "repository": "https://codeberg.org/tazz4843/whisper-rs",
+      "commit": "7558e1b72f54f2f22a53589afb77e65681834c36",
+      "selected_license": "Unlicense",
+      "files": [
+        {
+          "file": "docs/public/licenses/native/whisper-rs-LICENSE",
+          "sha256": "f0510d3b9d1223c45e8fdd2b49270ec8734fff491c7f7d1b948ee70162e1ceff",
+          "url": "https://crates.io/api/v1/crates/whisper-rs/0.16.0/download",
+          "archive_member": "whisper-rs-0.16.0/LICENSE",
+          "kind": "shared-upstream-grant"
+        },
+        {
+          "file": "docs/public/licenses/native/whisper.cpp-LICENSE",
+          "sha256": "e562a2ddfaf8280537795ac5ecd34e3012b6582a147ef69ba6a6a5c08c84757d",
+          "url": "https://crates.io/api/v1/crates/whisper-rs-sys/0.15.0/download",
+          "archive_member": "whisper-rs-sys-0.15.0/whisper.cpp/LICENSE",
+          "kind": "embedded-source-notice"
+        }
+      ]
+    },
+    {
       "package": "winapi-i686-pc-windows-gnu@0.4.0",
       "repository": "https://github.com/retep998/winapi-rs",
       "files": [

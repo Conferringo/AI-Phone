@@ -11,7 +11,7 @@ An agent that listens while it works, explores on its own, and learns from using
 | macOS 14.4+ · Apple Silicon | [DMG 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-macos-arm64.dmg) |
 | Windows 11 · x64 | [EXE 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-windows-x64-setup.exe) |
 
-[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
+[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md) · [Beta installation and signatures](docs/public/release-status.md#install-the-beta)
 
 Upgrading from 0.1.7? Install 0.2.0 once from the table above. Your devices, models and chats stay in place.
 
@@ -64,7 +64,7 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 | macOS 14.4+ · Apple Silicon | [DMG 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-macos-arm64.dmg) |
 | Windows 11 · x64 | [EXE 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-windows-x64-setup.exe) |
 
-[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [构建和平台状态](docs/public/release-status.md)
+[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [构建和平台状态](docs/public/release-status.md) · [Beta 安装与签名](docs/public/release-status.md#安装-beta)
 
 从 0.1.7 升级时，下载上面的 0.2.0 安装包，手动覆盖安装一次。设备、模型配置和聊天记录保留。
 

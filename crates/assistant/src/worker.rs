@@ -3104,7 +3104,13 @@ async fn respond(
     if authority == execution_policy::CommandAuthority::None {
         input.push(json!({"role":"system","content":[{"type":"input_text","text":execution_policy::GUI_GUIDANCE}]}));
     }
-    let mut body = json!({"input":input,"tools":execution_tools(authority),"parallel_tool_calls":false,"reasoning":{"effort":effort},"max_output_tokens":8192});
+    let mut body = Value::Object(serde_json::Map::from_iter([
+        ("input".into(), Value::Array(input)),
+        ("tools".into(), execution_tools(authority)),
+        ("parallel_tool_calls".into(), Value::Bool(false)),
+        ("reasoning".into(), json!({"effort":effort})),
+        ("max_output_tokens".into(), Value::from(8192)),
+    ]));
     if effort == "none" {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }

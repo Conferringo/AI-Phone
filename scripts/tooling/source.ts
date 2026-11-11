@@ -33,6 +33,7 @@ const directories = [
   ".github",
 ];
 const files = [
+  ".cargo/config.toml",
   "ai-phone",
   "Start AI Phone.command",
   "README.md",
