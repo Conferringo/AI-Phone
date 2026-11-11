@@ -44,8 +44,13 @@ fn normalize(mut draft: wire::VoiceDraft) -> Result<wire::VoiceDraft> {
         settings::normalize_url(&draft.proxy_url, true)?
     };
     draft.recognition_model = field(&draft.recognition_model, "语音识别模型", 200)?;
-    draft.speech_model = field(&draft.speech_model, "语音合成模型", 200)?;
-    draft.voice = field(&draft.voice, "音色", 200)?;
+    if draft.speech_model.trim().is_empty() && draft.voice.trim().is_empty() {
+        draft.speech_model.clear();
+        draft.voice.clear();
+    } else {
+        draft.speech_model = field(&draft.speech_model, "语音合成模型", 200)?;
+        draft.voice = field(&draft.voice, "音色", 200)?;
+    }
     if !matches!(draft.input_protocol, 1..=3) {
         return Err("请选择语音输入协议".into());
     }

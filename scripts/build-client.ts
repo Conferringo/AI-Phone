@@ -48,4 +48,8 @@ if (!packageOnly) {
   if (options.nativeServices) await buildNative(root);
   await preparePayload(root, options);
 }
-console.log(JSON.stringify(await buildClient(platform, root, packageOnly, developmentDmg)));
+console.log(JSON.stringify(await buildClient(platform, root, {
+  packageOnly,
+  developmentDmg,
+  temporarySigning: args.includes("--sign-temporary"),
+})));

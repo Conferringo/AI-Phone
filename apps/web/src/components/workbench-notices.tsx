@@ -14,11 +14,11 @@ export function DeviceNoticeScope({id,name,children}:{id:string;name:string;chil
  return <DeviceScope.Provider value={{scope:id,label:name}}>{children}</DeviceScope.Provider>;
 }
 function useNoticeStore(){const store=useContext(Notices);if(!store)throw Error('WorkbenchNoticeProvider is required');return store;}
-export function useWorkbenchNotice(message:string,retry?:()=>void){
+export function useWorkbenchNotice(message:string,retry?:()=>void,retryLabel?:string){
  const store=useNoticeStore(),id=useId(),{scope,label}=useContext(DeviceScope),callback=useRef(retry);
  callback.current=retry;
  const invoke=useCallback(()=>callback.current?.(),[]),canRetry=!!retry;
- useEffect(()=>{store.set(id,message?{message,scope,label,retry:canRetry?invoke:undefined}:null);},[store,id,message,scope,label,canRetry,invoke]);
+ useEffect(()=>{store.set(id,message?{message,scope,label,retry:canRetry?invoke:undefined,retryLabel}:null);},[store,id,message,scope,label,canRetry,invoke,retryLabel]);
  useEffect(()=>()=>store.set(id,null),[store,id]);
 }
 export function WorkbenchNotices({activeFeature}:{activeFeature:string}){
@@ -44,7 +44,7 @@ export function WorkbenchNotices({activeFeature}:{activeFeature:string}){
   </summary>
   <div className="workbench-notice-details">{notices.map(notice=><div className="workbench-notice" key={notice.id}>
    <p dir="auto">{notice.label&&<span className="workbench-notice-device">{notice.label} · </span>}{t(notice.message)}</p>
-   {notice.retry&&<button type="button" className="notice-retry" onClick={notice.retry}>{t('重试')}</button>}
+   {notice.retry&&<button type="button" className="notice-retry" onClick={notice.retry}>{t(notice.retryLabel||'重试')}</button>}
    <button type="button" className="notice-dismiss" aria-label={t('关闭错误')} onClick={()=>store.dismiss(notice.id)}><X size={14}/></button>
   </div>)}</div>
  </details>}</div>;

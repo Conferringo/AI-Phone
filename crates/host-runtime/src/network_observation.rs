@@ -13,7 +13,8 @@ use std::{
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    process::Command,
+    process::{Child, Command},
+    sync::mpsc::UnboundedSender,
 };
 const LIMIT: usize = 2 * 1024 * 1024;
 pub struct Observer {
@@ -21,6 +22,7 @@ pub struct Observer {
     folder: PathBuf,
     phone: bool,
     id: String,
+    reap: Option<UnboundedSender<Child>>,
 }
 fn invalid(code: &'static str) -> Error {
     Error::Invalid(code)
@@ -47,8 +49,38 @@ fn now() -> u64 {
         .unwrap()
         .as_millis() as u64
 }
-async fn output(mut command: Command, input: Option<&[u8]>, seconds: u64) -> Result<String> {
-    let mut child = command
+struct CommandLease<'a> {
+    child: Option<Child>,
+    reap: Option<&'a UnboundedSender<Child>>,
+}
+impl Drop for CommandLease<'_> {
+    fn drop(&mut self) {
+        if let Some(reap) = self.reap
+            && let Some(mut child) = self.child.take()
+            && child.id().is_some()
+        {
+            let _ = child.start_kill();
+            let _ = reap.send(child);
+        }
+    }
+}
+fn with_cleanup<T>(outcome: Result<T>, cleanup: io::Result<()>) -> Result<T> {
+    match (outcome, cleanup) {
+        (outcome, Ok(())) => outcome,
+        (Ok(_), Err(cleanup)) => Err(cleanup.into()),
+        (Err(primary), Err(cleanup)) => Err(Error::Cleanup {
+            primary: Box::new(primary),
+            cleanup,
+        }),
+    }
+}
+async fn output(
+    mut command: Command,
+    input: Option<&[u8]>,
+    seconds: u64,
+    reap: Option<&UnboundedSender<Child>>,
+) -> Result<String> {
+    let child = command
         .stdin(if input.is_some() {
             Stdio::piped()
         } else {
@@ -58,7 +90,12 @@ async fn output(mut command: Command, input: Option<&[u8]>, seconds: u64) -> Res
         .stderr(Stdio::null())
         .kill_on_drop(true)
         .spawn()?;
-    tokio::time::timeout(Duration::from_secs(seconds), async {
+    let mut lease = CommandLease {
+        child: Some(child),
+        reap,
+    };
+    let child = lease.child.as_mut().unwrap();
+    let outcome = tokio::time::timeout(Duration::from_secs(seconds), async {
         if let Some(bytes) = input {
             let mut stdin = child.stdin.take().unwrap();
             stdin.write_all(bytes).await?;
@@ -88,7 +125,11 @@ async fn output(mut command: Command, input: Option<&[u8]>, seconds: u64) -> Res
             .map_err(|_| invalid("device_network_response"))
     })
     .await
-    .map_err(|_| invalid("device_network_timeout"))?
+    .unwrap_or_else(|_| Err(invalid("device_network_timeout")));
+    if outcome.is_err() && child.id().is_some() {
+        return with_cleanup(outcome, child.kill().await);
+    }
+    outcome
 }
 fn adb() -> Result<Client> {
     Client::new(15037, "emulator-5564".into()).map_err(|_| invalid("device_network_adb"))
@@ -122,6 +163,7 @@ impl Observer {
             folder,
             phone: kind == "phone",
             id: id.into(),
+            reap: None,
         })
     }
     pub fn application_owned(&self) -> Result<bool> {
@@ -134,7 +176,7 @@ impl Observer {
         let mut command =
             Command::new(std::env::var_os("AI_PHONE_DOCKER").unwrap_or_else(|| "docker".into()));
         command.args(args).current_dir(&self.root);
-        output(command, input, seconds).await
+        output(command, input, seconds, self.reap.as_ref()).await
     }
     async fn shell(&self, text: &str) -> Result<String> {
         if self.phone {

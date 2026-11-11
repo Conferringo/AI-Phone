@@ -1,5 +1,7 @@
 //! Existing core lifecycle. GUI application ownership and saved subscriptions remain intact.
-use super::{Client, LIMIT, Observer, Result, adb, invalid, metadata, now, phone_shell};
+use super::{
+    Client, LIMIT, Observer, Result, adb, invalid, metadata, now, phone_shell, with_cleanup,
+};
 use serde_json::{Value, json};
 use std::{ffi::OsString, fs, os::unix::fs::DirBuilderExt, path::Path, time::Duration};
 
@@ -172,10 +174,16 @@ pub async fn run(args: &[OsString]) -> Result<()> {
             .to_str()
             .ok_or_else(|| invalid("device_network_arguments"))
     };
-    let controller = Controller::new(Path::new(&fields[0]), text(1)?, text(2)?)?;
+    let mut controller = Controller::new(Path::new(&fields[0]), text(1)?, text(2)?)?;
     let operation = text(3)?.parse()?;
     let result = if owned {
-        crate::native_ipc::while_owned(controller.execute(operation)).await?
+        let (reap, mut pending) = tokio::sync::mpsc::unbounded_channel();
+        controller.0.reap = Some(reap);
+        let mut outcome = crate::native_ipc::while_owned(controller.execute(operation)).await;
+        while let Ok(mut child) = pending.try_recv() {
+            outcome = with_cleanup(outcome, child.kill().await);
+        }
+        outcome?
     } else {
         controller.execute(operation).await?
     };

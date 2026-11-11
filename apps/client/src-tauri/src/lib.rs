@@ -10,6 +10,7 @@ use std::{
 };
 use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
 mod bootstrap;
+mod copilot;
 mod updates;
 
 const DEFAULT_SERVER: &str = "http://127.0.0.1:17860";
@@ -444,6 +445,7 @@ pub fn run() {
         .manage(Connecting(AtomicBool::new(false)))
         .manage(Navigation::default())
         .manage(bootstrap::Bootstrap::default())
+        .manage(copilot::Voice::default())
         .invoke_handler(tauri::generate_handler![
             fit_setup,
             current_server,
@@ -453,7 +455,8 @@ pub fn run() {
             cancel_deployment,
             accept_deployment_license,
             check_client_update,
-            install_client_update
+            install_client_update,
+            copilot::native_voice
         ])
         .setup(|app| {
             updates::cleanup_current(app.handle());

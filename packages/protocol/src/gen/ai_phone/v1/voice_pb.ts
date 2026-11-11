@@ -10,7 +10,105 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/voice.proto.
  */
 export const file_ai_phone_v1_voice: GenFile = /*@__PURE__*/
-  fileDesc("ChdhaV9waG9uZS92MS92b2ljZS5wcm90bxILYWlfcGhvbmUudjEiuwEKClZvaWNlRHJhZnQSEAoIYmFzZV91cmwYASABKAkSDwoHYXBpX2tleRgCIAEoCRIZChFyZWNvZ25pdGlvbl9tb2RlbBgDIAEoCRIUCgxzcGVlY2hfbW9kZWwYBCABKAkSDQoFdm9pY2UYBSABKAkSEQoJcHJveHlfdXJsGAYgASgJEjcKDmlucHV0X3Byb3RvY29sGAcgASgOMh8uYWlfcGhvbmUudjEuVm9pY2VJbnB1dFByb3RvY29sIigKFFZvaWNlU2V0dGluZ3NSZXF1ZXN0EhAKCGFnZW50X2lkGAEgASgJIvoBCg1Wb2ljZVNldHRpbmdzEhAKCGFnZW50X2lkGAEgASgJEhAKCHJldmlzaW9uGAIgASgEEhIKCmNvbmZpZ3VyZWQYAyABKAgSEAoIYmFzZV91cmwYBCABKAkSGQoRcmVjb2duaXRpb25fbW9kZWwYBSABKAkSFAoMc3BlZWNoX21vZGVsGAYgASgJEg0KBXZvaWNlGAcgASgJEhEKCXByb3h5X3VybBgIIAEoCRI3Cg5pbnB1dF9wcm90b2NvbBgJIAEoDjIfLmFpX3Bob25lLnYxLlZvaWNlSW5wdXRQcm90b2NvbBITCgtoYXNfYXBpX2tleRgKIAEoCCJvChhWb2ljZVNldHRpbmdzU2F2ZVJlcXVlc3QSEAoIYWdlbnRfaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSJgoFZHJhZnQYAyABKAsyFy5haV9waG9uZS52MS5Wb2ljZURyYWZ0IkUKFlZvaWNlQ3JlZGVudGlhbFJlcXVlc3QSEAoIYWdlbnRfaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQiIgoPVm9pY2VDcmVkZW50aWFsEg8KB2FwaV9rZXkYASABKAkiQQoMVm9pY2VDb250ZXh0EhIKCnJlcXVlc3RfaWQYASABKAkSDwoHbGl0ZXJhbBgCIAEoCRIMCgR0ZXh0GAMgASgJItcBChZWb2ljZVRyYW5zY3JpYmVSZXF1ZXN0EhEKCWRldmljZV9pZBgBIAEoCRIQCghhZ2VudF9pZBgCIAEoCRIeChZjb25maWd1cmF0aW9uX3JldmlzaW9uGAMgASgEEhIKCnNlc3Npb25faWQYBCABKAkSFAoMdXR0ZXJhbmNlX2lkGAUgASgJEgsKA3dhdhgGIAEoDBIVCg1wcmV2aW91c190ZXh0GAcgASgJEioKB2NvbnRleHQYCCADKAsyGS5haV9waG9uZS52MS5Wb2ljZUNvbnRleHQiTQoPVm9pY2VUcmFuc2NyaXB0Eg8KB2xpdGVyYWwYASABKAkSDAoEdGV4dBgCIAEoCRIbChNjb3JyZWN0c19yZXF1ZXN0X2lkGAMgASgJImcKElZvaWNlU3BlZWNoUmVxdWVzdBIRCglkZXZpY2VfaWQYASABKAkSEAoIYWdlbnRfaWQYAiABKAkSHgoWY29uZmlndXJhdGlvbl9yZXZpc2lvbhgDIAEoBBIMCgR0ZXh0GAQgASgJIncKF1ZvaWNlU3BlZWNoU3RyZWFtT3V0cHV0EhMKCXdhdl9jaHVuaxgBIAEoDEgAEg4KBGRvbmUYAiABKAhIABIuCgVlcnJvchgDIAEoCzIdLmFpX3Bob25lLnYxLlZvaWNlU3RyZWFtRXJyb3JIAEIHCgVldmVudCJrChBWb2ljZVN0cmVhbVN0YXJ0EhEKCWRldmljZV9pZBgBIAEoCRIQCghhZ2VudF9pZBgCIAEoCRIeChZjb25maWd1cmF0aW9uX3JldmlzaW9uGAMgASgEEhIKCnNlc3Npb25faWQYBCABKAkiNwoQVm9pY2VTdHJlYW1BdWRpbxIUCgx1dHRlcmFuY2VfaWQYASABKAkSDQoFcGNtMTYYAiABKAwiKQoRVm9pY2VTdHJlYW1Db21taXQSFAoMdXR0ZXJhbmNlX2lkGAEgASgJIq0BChBWb2ljZVN0cmVhbUlucHV0Ei4KBXN0YXJ0GAEgASgLMh0uYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1TdGFydEgAEi4KBWF1ZGlvGAIgASgLMh0uYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1BdWRpb0gAEjAKBmNvbW1pdBgDIAEoCzIeLmFpX3Bob25lLnYxLlZvaWNlU3RyZWFtQ29tbWl0SABCBwoFZXZlbnQiXAoVVm9pY2VTdHJlYW1UcmFuc2NyaXB0EhQKDHV0dGVyYW5jZV9pZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoDRIMCgR0ZXh0GAMgASgJEg0KBWZpbmFsGAQgASgIIiMKEFZvaWNlU3RyZWFtRXJyb3ISDwoHbWVzc2FnZRgBIAEoCSKXAQoRVm9pY2VTdHJlYW1PdXRwdXQSDwoFcmVhZHkYASABKAhIABI4Cgp0cmFuc2NyaXB0GAIgASgLMiIuYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1UcmFuc2NyaXB0SAASLgoFZXJyb3IYAyABKAsyHS5haV9waG9uZS52MS5Wb2ljZVN0cmVhbUVycm9ySABCBwoFZXZlbnQquAEKElZvaWNlSW5wdXRQcm90b2NvbBIkCiBWT0lDRV9JTlBVVF9QUk9UT0NPTF9VTlNQRUNJRklFRBAAEiYKIlZPSUNFX0lOUFVUX1BST1RPQ09MX1RSQU5TQ1JJUFRJT04QARIjCh9WT0lDRV9JTlBVVF9QUk9UT0NPTF9BVURJT19DSEFUEAISLworVk9JQ0VfSU5QVVRfUFJPVE9DT0xfUkVBTFRJTUVfVFJBTlNDUklQVElPThADYgZwcm90bzM");
+  fileDesc("ChdhaV9waG9uZS92MS92b2ljZS5wcm90bxILYWlfcGhvbmUudjEiJAoQTmF0aXZlVm9pY2VTdGFydBIQCghsYW5ndWFnZRgBIAEoCSIhChBOYXRpdmVWb2ljZUF1ZGlvEg0KBXBjbTE2GAEgASgMIqIBChJOYXRpdmVWb2ljZVJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIuCgVzdGFydBgCIAEoCzIdLmFpX3Bob25lLnYxLk5hdGl2ZVZvaWNlU3RhcnRIABIuCgVhdWRpbxgDIAEoCzIdLmFpX3Bob25lLnYxLk5hdGl2ZVZvaWNlQXVkaW9IABIOCgRzdG9wGAQgASgISABCCAoGYWN0aW9uIjkKE05hdGl2ZVZvaWNlUmVzcG9uc2USDAoEdGV4dBgBIAEoCRIUCgxpbmZlcmVuY2VfbXMYAiABKA0iuwEKClZvaWNlRHJhZnQSEAoIYmFzZV91cmwYASABKAkSDwoHYXBpX2tleRgCIAEoCRIZChFyZWNvZ25pdGlvbl9tb2RlbBgDIAEoCRIUCgxzcGVlY2hfbW9kZWwYBCABKAkSDQoFdm9pY2UYBSABKAkSEQoJcHJveHlfdXJsGAYgASgJEjcKDmlucHV0X3Byb3RvY29sGAcgASgOMh8uYWlfcGhvbmUudjEuVm9pY2VJbnB1dFByb3RvY29sIigKFFZvaWNlU2V0dGluZ3NSZXF1ZXN0EhAKCGFnZW50X2lkGAEgASgJIvoBCg1Wb2ljZVNldHRpbmdzEhAKCGFnZW50X2lkGAEgASgJEhAKCHJldmlzaW9uGAIgASgEEhIKCmNvbmZpZ3VyZWQYAyABKAgSEAoIYmFzZV91cmwYBCABKAkSGQoRcmVjb2duaXRpb25fbW9kZWwYBSABKAkSFAoMc3BlZWNoX21vZGVsGAYgASgJEg0KBXZvaWNlGAcgASgJEhEKCXByb3h5X3VybBgIIAEoCRI3Cg5pbnB1dF9wcm90b2NvbBgJIAEoDjIfLmFpX3Bob25lLnYxLlZvaWNlSW5wdXRQcm90b2NvbBITCgtoYXNfYXBpX2tleRgKIAEoCCJvChhWb2ljZVNldHRpbmdzU2F2ZVJlcXVlc3QSEAoIYWdlbnRfaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSJgoFZHJhZnQYAyABKAsyFy5haV9waG9uZS52MS5Wb2ljZURyYWZ0IkUKFlZvaWNlQ3JlZGVudGlhbFJlcXVlc3QSEAoIYWdlbnRfaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQiIgoPVm9pY2VDcmVkZW50aWFsEg8KB2FwaV9rZXkYASABKAkiQQoMVm9pY2VDb250ZXh0EhIKCnJlcXVlc3RfaWQYASABKAkSDwoHbGl0ZXJhbBgCIAEoCRIMCgR0ZXh0GAMgASgJItcBChZWb2ljZVRyYW5zY3JpYmVSZXF1ZXN0EhEKCWRldmljZV9pZBgBIAEoCRIQCghhZ2VudF9pZBgCIAEoCRIeChZjb25maWd1cmF0aW9uX3JldmlzaW9uGAMgASgEEhIKCnNlc3Npb25faWQYBCABKAkSFAoMdXR0ZXJhbmNlX2lkGAUgASgJEgsKA3dhdhgGIAEoDBIVCg1wcmV2aW91c190ZXh0GAcgASgJEioKB2NvbnRleHQYCCADKAsyGS5haV9waG9uZS52MS5Wb2ljZUNvbnRleHQiTQoPVm9pY2VUcmFuc2NyaXB0Eg8KB2xpdGVyYWwYASABKAkSDAoEdGV4dBgCIAEoCRIbChNjb3JyZWN0c19yZXF1ZXN0X2lkGAMgASgJImcKElZvaWNlU3BlZWNoUmVxdWVzdBIRCglkZXZpY2VfaWQYASABKAkSEAoIYWdlbnRfaWQYAiABKAkSHgoWY29uZmlndXJhdGlvbl9yZXZpc2lvbhgDIAEoBBIMCgR0ZXh0GAQgASgJIncKF1ZvaWNlU3BlZWNoU3RyZWFtT3V0cHV0EhMKCXdhdl9jaHVuaxgBIAEoDEgAEg4KBGRvbmUYAiABKAhIABIuCgVlcnJvchgDIAEoCzIdLmFpX3Bob25lLnYxLlZvaWNlU3RyZWFtRXJyb3JIAEIHCgVldmVudCJrChBWb2ljZVN0cmVhbVN0YXJ0EhEKCWRldmljZV9pZBgBIAEoCRIQCghhZ2VudF9pZBgCIAEoCRIeChZjb25maWd1cmF0aW9uX3JldmlzaW9uGAMgASgEEhIKCnNlc3Npb25faWQYBCABKAkiNwoQVm9pY2VTdHJlYW1BdWRpbxIUCgx1dHRlcmFuY2VfaWQYASABKAkSDQoFcGNtMTYYAiABKAwiKQoRVm9pY2VTdHJlYW1Db21taXQSFAoMdXR0ZXJhbmNlX2lkGAEgASgJIq0BChBWb2ljZVN0cmVhbUlucHV0Ei4KBXN0YXJ0GAEgASgLMh0uYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1TdGFydEgAEi4KBWF1ZGlvGAIgASgLMh0uYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1BdWRpb0gAEjAKBmNvbW1pdBgDIAEoCzIeLmFpX3Bob25lLnYxLlZvaWNlU3RyZWFtQ29tbWl0SABCBwoFZXZlbnQiXAoVVm9pY2VTdHJlYW1UcmFuc2NyaXB0EhQKDHV0dGVyYW5jZV9pZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoDRIMCgR0ZXh0GAMgASgJEg0KBWZpbmFsGAQgASgIIiMKEFZvaWNlU3RyZWFtRXJyb3ISDwoHbWVzc2FnZRgBIAEoCSKXAQoRVm9pY2VTdHJlYW1PdXRwdXQSDwoFcmVhZHkYASABKAhIABI4Cgp0cmFuc2NyaXB0GAIgASgLMiIuYWlfcGhvbmUudjEuVm9pY2VTdHJlYW1UcmFuc2NyaXB0SAASLgoFZXJyb3IYAyABKAsyHS5haV9waG9uZS52MS5Wb2ljZVN0cmVhbUVycm9ySABCBwoFZXZlbnQquAEKElZvaWNlSW5wdXRQcm90b2NvbBIkCiBWT0lDRV9JTlBVVF9QUk9UT0NPTF9VTlNQRUNJRklFRBAAEiYKIlZPSUNFX0lOUFVUX1BST1RPQ09MX1RSQU5TQ1JJUFRJT04QARIjCh9WT0lDRV9JTlBVVF9QUk9UT0NPTF9BVURJT19DSEFUEAISLworVk9JQ0VfSU5QVVRfUFJPVE9DT0xfUkVBTFRJTUVfVFJBTlNDUklQVElPThADYgZwcm90bzM");
+
+/**
+ * @generated from message ai_phone.v1.NativeVoiceStart
+ */
+export type NativeVoiceStart = Message<"ai_phone.v1.NativeVoiceStart"> & {
+  /**
+   * @generated from field: string language = 1;
+   */
+  language: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeVoiceStart.
+ * Use `create(NativeVoiceStartSchema)` to create a new message.
+ */
+export const NativeVoiceStartSchema: GenMessage<NativeVoiceStart> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_voice, 0);
+
+/**
+ * @generated from message ai_phone.v1.NativeVoiceAudio
+ */
+export type NativeVoiceAudio = Message<"ai_phone.v1.NativeVoiceAudio"> & {
+  /**
+   * Full utterance, mono PCM16 at 16 kHz. Decoded by the client host.
+   *
+   * @generated from field: bytes pcm16 = 1;
+   */
+  pcm16: Uint8Array;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeVoiceAudio.
+ * Use `create(NativeVoiceAudioSchema)` to create a new message.
+ */
+export const NativeVoiceAudioSchema: GenMessage<NativeVoiceAudio> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_voice, 1);
+
+/**
+ * @generated from message ai_phone.v1.NativeVoiceRequest
+ */
+export type NativeVoiceRequest = Message<"ai_phone.v1.NativeVoiceRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+
+  /**
+   * @generated from oneof ai_phone.v1.NativeVoiceRequest.action
+   */
+  action: {
+    /**
+     * @generated from field: ai_phone.v1.NativeVoiceStart start = 2;
+     */
+    value: NativeVoiceStart;
+    case: "start";
+  } | {
+    /**
+     * @generated from field: ai_phone.v1.NativeVoiceAudio audio = 3;
+     */
+    value: NativeVoiceAudio;
+    case: "audio";
+  } | {
+    /**
+     * @generated from field: bool stop = 4;
+     */
+    value: boolean;
+    case: "stop";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeVoiceRequest.
+ * Use `create(NativeVoiceRequestSchema)` to create a new message.
+ */
+export const NativeVoiceRequestSchema: GenMessage<NativeVoiceRequest> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_voice, 2);
+
+/**
+ * @generated from message ai_phone.v1.NativeVoiceResponse
+ */
+export type NativeVoiceResponse = Message<"ai_phone.v1.NativeVoiceResponse"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: uint32 inference_ms = 2;
+   */
+  inferenceMs: number;
+};
+
+/**
+ * Describes the message ai_phone.v1.NativeVoiceResponse.
+ * Use `create(NativeVoiceResponseSchema)` to create a new message.
+ */
+export const NativeVoiceResponseSchema: GenMessage<NativeVoiceResponse> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_voice, 3);
 
 /**
  * @generated from message ai_phone.v1.VoiceDraft
@@ -57,7 +155,7 @@ export type VoiceDraft = Message<"ai_phone.v1.VoiceDraft"> & {
  * Use `create(VoiceDraftSchema)` to create a new message.
  */
 export const VoiceDraftSchema: GenMessage<VoiceDraft> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 0);
+  messageDesc(file_ai_phone_v1_voice, 4);
 
 /**
  * @generated from message ai_phone.v1.VoiceSettingsRequest
@@ -74,7 +172,7 @@ export type VoiceSettingsRequest = Message<"ai_phone.v1.VoiceSettingsRequest"> &
  * Use `create(VoiceSettingsRequestSchema)` to create a new message.
  */
 export const VoiceSettingsRequestSchema: GenMessage<VoiceSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 1);
+  messageDesc(file_ai_phone_v1_voice, 5);
 
 /**
  * @generated from message ai_phone.v1.VoiceSettings
@@ -136,7 +234,7 @@ export type VoiceSettings = Message<"ai_phone.v1.VoiceSettings"> & {
  * Use `create(VoiceSettingsSchema)` to create a new message.
  */
 export const VoiceSettingsSchema: GenMessage<VoiceSettings> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 2);
+  messageDesc(file_ai_phone_v1_voice, 6);
 
 /**
  * @generated from message ai_phone.v1.VoiceSettingsSaveRequest
@@ -165,7 +263,7 @@ export type VoiceSettingsSaveRequest = Message<"ai_phone.v1.VoiceSettingsSaveReq
  * Use `create(VoiceSettingsSaveRequestSchema)` to create a new message.
  */
 export const VoiceSettingsSaveRequestSchema: GenMessage<VoiceSettingsSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 3);
+  messageDesc(file_ai_phone_v1_voice, 7);
 
 /**
  * @generated from message ai_phone.v1.VoiceCredentialRequest
@@ -187,7 +285,7 @@ export type VoiceCredentialRequest = Message<"ai_phone.v1.VoiceCredentialRequest
  * Use `create(VoiceCredentialRequestSchema)` to create a new message.
  */
 export const VoiceCredentialRequestSchema: GenMessage<VoiceCredentialRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 4);
+  messageDesc(file_ai_phone_v1_voice, 8);
 
 /**
  * @generated from message ai_phone.v1.VoiceCredential
@@ -204,7 +302,7 @@ export type VoiceCredential = Message<"ai_phone.v1.VoiceCredential"> & {
  * Use `create(VoiceCredentialSchema)` to create a new message.
  */
 export const VoiceCredentialSchema: GenMessage<VoiceCredential> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 5);
+  messageDesc(file_ai_phone_v1_voice, 9);
 
 /**
  * @generated from message ai_phone.v1.VoiceContext
@@ -231,7 +329,7 @@ export type VoiceContext = Message<"ai_phone.v1.VoiceContext"> & {
  * Use `create(VoiceContextSchema)` to create a new message.
  */
 export const VoiceContextSchema: GenMessage<VoiceContext> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 6);
+  messageDesc(file_ai_phone_v1_voice, 10);
 
 /**
  * @generated from message ai_phone.v1.VoiceTranscribeRequest
@@ -285,7 +383,7 @@ export type VoiceTranscribeRequest = Message<"ai_phone.v1.VoiceTranscribeRequest
  * Use `create(VoiceTranscribeRequestSchema)` to create a new message.
  */
 export const VoiceTranscribeRequestSchema: GenMessage<VoiceTranscribeRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 7);
+  messageDesc(file_ai_phone_v1_voice, 11);
 
 /**
  * @generated from message ai_phone.v1.VoiceTranscript
@@ -316,7 +414,7 @@ export type VoiceTranscript = Message<"ai_phone.v1.VoiceTranscript"> & {
  * Use `create(VoiceTranscriptSchema)` to create a new message.
  */
 export const VoiceTranscriptSchema: GenMessage<VoiceTranscript> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 8);
+  messageDesc(file_ai_phone_v1_voice, 12);
 
 /**
  * @generated from message ai_phone.v1.VoiceSpeechRequest
@@ -348,7 +446,7 @@ export type VoiceSpeechRequest = Message<"ai_phone.v1.VoiceSpeechRequest"> & {
  * Use `create(VoiceSpeechRequestSchema)` to create a new message.
  */
 export const VoiceSpeechRequestSchema: GenMessage<VoiceSpeechRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 9);
+  messageDesc(file_ai_phone_v1_voice, 13);
 
 /**
  * One synthesis request per WebSocket. Closing it cancels generation and playback.
@@ -385,7 +483,7 @@ export type VoiceSpeechStreamOutput = Message<"ai_phone.v1.VoiceSpeechStreamOutp
  * Use `create(VoiceSpeechStreamOutputSchema)` to create a new message.
  */
 export const VoiceSpeechStreamOutputSchema: GenMessage<VoiceSpeechStreamOutput> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 10);
+  messageDesc(file_ai_phone_v1_voice, 14);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamStart
@@ -417,7 +515,7 @@ export type VoiceStreamStart = Message<"ai_phone.v1.VoiceStreamStart"> & {
  * Use `create(VoiceStreamStartSchema)` to create a new message.
  */
 export const VoiceStreamStartSchema: GenMessage<VoiceStreamStart> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 11);
+  messageDesc(file_ai_phone_v1_voice, 15);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamAudio
@@ -441,7 +539,7 @@ export type VoiceStreamAudio = Message<"ai_phone.v1.VoiceStreamAudio"> & {
  * Use `create(VoiceStreamAudioSchema)` to create a new message.
  */
 export const VoiceStreamAudioSchema: GenMessage<VoiceStreamAudio> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 12);
+  messageDesc(file_ai_phone_v1_voice, 16);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamCommit
@@ -458,7 +556,7 @@ export type VoiceStreamCommit = Message<"ai_phone.v1.VoiceStreamCommit"> & {
  * Use `create(VoiceStreamCommitSchema)` to create a new message.
  */
 export const VoiceStreamCommitSchema: GenMessage<VoiceStreamCommit> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 13);
+  messageDesc(file_ai_phone_v1_voice, 17);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamInput
@@ -493,7 +591,7 @@ export type VoiceStreamInput = Message<"ai_phone.v1.VoiceStreamInput"> & {
  * Use `create(VoiceStreamInputSchema)` to create a new message.
  */
 export const VoiceStreamInputSchema: GenMessage<VoiceStreamInput> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 14);
+  messageDesc(file_ai_phone_v1_voice, 18);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamTranscript
@@ -525,7 +623,7 @@ export type VoiceStreamTranscript = Message<"ai_phone.v1.VoiceStreamTranscript">
  * Use `create(VoiceStreamTranscriptSchema)` to create a new message.
  */
 export const VoiceStreamTranscriptSchema: GenMessage<VoiceStreamTranscript> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 15);
+  messageDesc(file_ai_phone_v1_voice, 19);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamError
@@ -542,7 +640,7 @@ export type VoiceStreamError = Message<"ai_phone.v1.VoiceStreamError"> & {
  * Use `create(VoiceStreamErrorSchema)` to create a new message.
  */
 export const VoiceStreamErrorSchema: GenMessage<VoiceStreamError> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 16);
+  messageDesc(file_ai_phone_v1_voice, 20);
 
 /**
  * @generated from message ai_phone.v1.VoiceStreamOutput
@@ -577,7 +675,7 @@ export type VoiceStreamOutput = Message<"ai_phone.v1.VoiceStreamOutput"> & {
  * Use `create(VoiceStreamOutputSchema)` to create a new message.
  */
 export const VoiceStreamOutputSchema: GenMessage<VoiceStreamOutput> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_voice, 17);
+  messageDesc(file_ai_phone_v1_voice, 21);
 
 /**
  * @generated from enum ai_phone.v1.VoiceInputProtocol

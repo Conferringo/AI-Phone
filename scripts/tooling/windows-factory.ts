@@ -156,6 +156,7 @@ export async function windowsFactory(
       root,
       "--platform",
       "windows",
+      "--sign-temporary",
       "--android-runtime",
       android.file,
       ...runtimeArgs,
@@ -168,6 +169,7 @@ export async function windowsFactory(
     delivery = deliveryMetadata(manifest.prebuilt_components, "windows-x64");
   if (
     !delivery.complete_device_bundle ||
+    manifest.signing !== "authenticode-self-signed" ||
     manifest.complete_device_bundle !== true ||
     manifest.sha256 !== (await digest(file))
   )

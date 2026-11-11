@@ -4,7 +4,7 @@ import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchN
 import {useI18n} from '@/components/locale-provider';
 import {DeviceDefaultsProvider,creationDefaults,type DeviceDefaults} from '@/components/device-defaults';
 import { useCallback, useEffect, useMemo, useRef, useState,type CSSProperties,type Dispatch,type SetStateAction } from "react";
-import {CopilotProvider,CopilotToggle,useCopilotBinding} from '@/components/copilot';
+import {CopilotProvider,CopilotToggle,CopilotWave,useCopilotBinding} from '@/components/copilot';
 import {
   create,
   fromBinary,
@@ -136,6 +136,7 @@ function DeviceWorkbench(){
  const voiceAgentId=feature.startsWith('settings:voice:')?feature.slice('settings:voice:'.length):'';
  const settingsOpen=feature==='settings'||!!voiceAgentId;
  return <CopilotProvider currentDeviceId={current} onConfigure={id=>setFeature('settings:voice:'+id)}><main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
+  <CopilotWave deviceId={current}/>
   <header className="workbench-navigation">
    <WorkbenchNotices activeFeature={feature}/>
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>

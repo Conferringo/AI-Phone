@@ -25,6 +25,7 @@ jobs:
       - name: Toolchain and locked dependencies
         run: |
           test "$(uname -m)" = arm64
+          cmake --version
           rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
           rustup default 1.96.0
           ./scripts/bootstrap.sh
@@ -104,6 +105,7 @@ jobs:
       - name: Locked client CLI
         shell: bash
         run: |
+          cmake --version
           ./scripts/bootstrap.sh
           ./scripts/bun -e "import {noticeManifest} from './scripts/tooling/client-build'; noticeManifest()"
       - name: Native host fixture executable

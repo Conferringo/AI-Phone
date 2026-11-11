@@ -1,12 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Phone",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "dev.aiphone.client",
   "build": {
     "frontendDist": "../ui"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [],
     "security": {
       "csp": "default-src 'self'; script-src 'self'; style-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'",
@@ -41,6 +42,13 @@
             "allow-check-client-update",
             "allow-install-client-update"
           ]
+        },
+        {
+          "identifier": "copilot-voice",
+          "local": false,
+          "windows": ["workbench"],
+          "remote": {"urls": ["http://*:*/*", "https://*:*/*"]},
+          "permissions": ["allow-native-voice"]
         }
       ]
     }
@@ -67,6 +75,10 @@
       "../../../THIRD_PARTY_NOTICES.md": "legal/THIRD_PARTY_NOTICES.md",
       "../../../docs/public/licenses/guest-apps/GPL-3.0.txt": "legal/GPL-3.0.txt",
       "../../../docs/public/native-client-licenses.txt": "legal/native-client-licenses.txt",
+      "../../../docs/public/licenses/whisper/LICENSE": "legal/whisper-LICENSE.txt",
+      "../../../docs/public/licenses/native/whisper-rs-LICENSE": "legal/whisper-rs-LICENSE.txt",
+      "../../../docs/public/licenses/native/whisper.cpp-LICENSE": "legal/whisper.cpp-LICENSE.txt",
+      "gen/host/speech/ggml-tiny-q5_1.bin": "host/speech/ggml-tiny-q5_1.bin",
       "gen/host/source.payload": "host/source.payload"
     },
     "macOS": {

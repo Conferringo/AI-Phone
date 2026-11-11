@@ -1,4 +1,4 @@
-export type WorkbenchNotice={message:string;scope:string;label:string;retry?:()=>void};
+export type WorkbenchNotice={message:string;scope:string;label:string;retry?:()=>void;retryLabel?:string};
 export type VisibleNotice=WorkbenchNotice&{id:string};
 const identity=(notice:WorkbenchNotice)=>JSON.stringify([notice.scope,notice.message]);
 
@@ -12,7 +12,7 @@ export class WorkbenchNoticeStore {
  subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
  set(source:string,notice:WorkbenchNotice|null){
   const old=this.sources.get(source);
-  if(notice&&old&&identity(old)===identity(notice)&&old.label===notice.label&&old.retry===notice.retry)return;
+  if(notice&&old&&identity(old)===identity(notice)&&old.label===notice.label&&old.retry===notice.retry&&old.retryLabel===notice.retryLabel)return;
   if(notice)this.sources.set(source,notice);else if(!this.sources.delete(source))return;
   this.publish();
  }
@@ -21,7 +21,7 @@ export class WorkbenchNoticeStore {
   const grouped=new Map<string,VisibleNotice>();
   for(const notice of this.sources.values()){
    const id=identity(notice),previous=grouped.get(id);
-   grouped.set(id,{...notice,id,retry:notice.retry||previous?.retry});
+   grouped.set(id,{...notice,id,retry:notice.retry||previous?.retry,retryLabel:notice.retry?notice.retryLabel:previous?.retryLabel});
   }
   for(const id of this.dismissed)if(!grouped.has(id))this.dismissed.delete(id);
   this.visible=[...grouped.values()].filter(notice=>!this.dismissed.has(notice.id));

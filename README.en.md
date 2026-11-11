@@ -11,7 +11,7 @@ An agent that listens while it works, explores on its own, and learns across And
 | macOS 14.4+ · Apple Silicon | [DMG 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-macos-arm64.dmg) |
 | Windows 11 · x64 | [EXE 0.2.0](https://github.com/MrMilkDragon/AI-Phone/releases/download/v0.2.0/AImanity-0.2.0-windows-x64-setup.exe) |
 
-[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md)
+[GitHub Releases](https://github.com/MrMilkDragon/AI-Phone/releases) · [Build and platform status](docs/public/release-status.md) · [Beta installation and signatures](docs/public/release-status.md#install-the-beta)
 
 Each installer includes the device images, emulator and local services. Configure devices and choose a model in the app. Setup and the workbench support ten [interface languages](docs/public/languages.md).
 

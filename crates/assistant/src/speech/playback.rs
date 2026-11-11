@@ -68,6 +68,9 @@ async fn serve(app: Shared, mut socket: WebSocket) {
         result = async {
             let request = request?;
             let draft = configured(&app, &request.agent_id, &request.device_id, request.configuration_revision).await?;
+            if draft.speech_model.is_empty() {
+                return Err("未配置远程播报".into());
+            }
             let client = app.settings.http_client(&draft.proxy_url)?;
             let response = provider::speech_response(&client, &draft, &request.text).await?;
             relay(&mut output, response).await

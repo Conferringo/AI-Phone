@@ -17,6 +17,13 @@ import { homedir, tmpdir } from "node:os";
 import { ROOT, run, output, digest, hash, bunProgram } from "./process";
 import { json, save } from "./inventory";
 import { buildWindowsInstaller, unpackWindowsInstaller } from "./windows-installer";
+import {
+  signMacArtifact,
+  signWindowsInstaller,
+  temporaryMacSignature,
+  verifyMacArtifact,
+  type InstallerSignature,
+} from "./installer-signing";
 import { resourceMap, fileReceipt, verifyCompiledInventory } from "./resources";
 import {
   payloadComponents,
@@ -181,15 +188,21 @@ export async function inspectMacBundle(bundle: string, root = ROOT) {
   };
 }
 export function nativeEnvironment(): NodeJS.ProcessEnv {
+  const home = homedir();
+  const nativePrefixMap = `-ffile-prefix-map=${home}=/build-user`;
   return {
     ...process.env,
     CI: "true",
     CARGO_BUILD_JOBS: process.env.CARGO_BUILD_JOBS || "2",
     CARGO_INCREMENTAL: "0",
-    CARGO_HOME: process.env.CARGO_HOME || join(homedir(), ".cargo"),
+    CARGO_HOME: process.env.CARGO_HOME || join(home, ".cargo"),
+    ...(process.platform === "darwin" ? {
+      CFLAGS: [process.env.CFLAGS, nativePrefixMap].filter(Boolean).join(" "),
+      CXXFLAGS: [process.env.CXXFLAGS, nativePrefixMap].filter(Boolean).join(" "),
+    } : {}),
     CARGO_ENCODED_RUSTFLAGS: [
       process.env.CARGO_ENCODED_RUSTFLAGS,
-      "--remap-path-prefix=" + homedir() + "=/build-user",
+      `--remap-path-prefix=${home}=/build-user`,
     ]
       .filter(Boolean)
       .join("\x1f"),
@@ -218,7 +231,11 @@ export function windowsCargo(operation: "build" | "test", root = ROOT) {
     { cwd: root, env },
   );
 }
-function buildDmg(application: string, destination: string, development: boolean) {
+function buildDmg(
+  application: string,
+  destination: string,
+  { developmentDmg, temporarySigning }: { developmentDmg: boolean; temporarySigning: boolean },
+) {
   const temporary = mkdtempSync(join(dirname(destination), ".dmg-"));
   try {
     const contents = join(temporary, "contents");
@@ -242,10 +259,27 @@ function buildDmg(application: string, destination: string, development: boolean
       "-volname",
       "AI Phone",
       "-format",
-      ...(development ? ["UDZO", "-imagekey", "zlib-level=1"] : ["ULMO"]),
+      ...(developmentDmg ? ["UDZO", "-imagekey", "zlib-level=1"] : ["ULMO"]),
       image,
     ]);
+    if (temporarySigning) {
+      signMacArtifact(image);
+      verifyMacArtifact(image);
+    }
     run(["hdiutil", "verify", image]);
+    if (temporarySigning) {
+      const mount = join(temporary, "readback");
+      mkdirSync(mount);
+      run([
+        "hdiutil", "attach", "-readonly", "-nobrowse", "-noverify",
+        "-owners", "off", "-mountpoint", mount, image,
+      ]);
+      try {
+        verifyMacArtifact(join(mount, "AI Phone.app"));
+      } finally {
+        run(["hdiutil", "detach", mount]);
+      }
+    }
     renameSync(image, destination);
   } finally {
     rmSync(temporary, { recursive: true, force: true });
@@ -257,6 +291,7 @@ export async function recordInstaller(
   arch: string,
   inspection: unknown,
   root = ROOT,
+  signature: InstallerSignature = { signing: "unsigned" },
 ) {
   const sha256 = await digest(file),
     host = platform + "-" + arch;
@@ -267,7 +302,7 @@ export async function recordInstaller(
     os: platform,
     arch,
     sha256,
-    signing: "unsigned",
+    ...signature,
     runtime_acceptance: "pending",
     dependencies_license_review_complete: false,
     remote_upload: false,
@@ -309,8 +344,7 @@ export async function recordInstaller(
 export async function buildClient(
   platform: Platform,
   root = ROOT,
-  packageOnly = false,
-  developmentDmg = false,
+  { packageOnly = false, developmentDmg = false, temporarySigning = false } = {},
 ) {
   const version = json(join(root, "config/release-policy.json")).version,
     native = join(root, "apps/client/src-tauri"),
@@ -335,9 +369,10 @@ export async function buildClient(
       { cwd: root, env },
     );
     source = join(native, "target/release/bundle/macos/AI Phone.app");
+    if (temporarySigning) signMacArtifact(source);
     const inspection = await inspectMacBundle(source, root);
     destination = join(dist, `AImanity-${version}-macos-arm64.dmg`);
-    buildDmg(source, destination, developmentDmg);
+    buildDmg(source, destination, { developmentDmg, temporarySigning });
     return {
       artifact: destination,
       ...(await recordInstaller(
@@ -346,6 +381,7 @@ export async function buildClient(
         "arm64",
         inspection,
         root,
+        temporarySigning ? temporaryMacSignature : undefined,
       )),
     };
   }
@@ -359,6 +395,7 @@ export async function buildClient(
   );
   destination = join(dist, `AImanity-${version}-windows-x64-setup.exe`);
   await buildWindowsInstaller(root, source, destination);
+  const signature = temporarySigning ? signWindowsInstaller(destination) : undefined;
   return {
     artifact: destination,
     ...(await recordInstaller(
@@ -367,6 +404,7 @@ export async function buildClient(
       arch,
       await inspectPackage(destination, root),
       root,
+      signature,
     )),
   };
 }

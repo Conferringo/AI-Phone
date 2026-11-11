@@ -131,6 +131,7 @@ export async function macosFactory(
       join(root, "scripts/build-client.ts"),
       "--platform",
       "macos",
+      "--sign-temporary",
       "--with-web-runtime",
       "--with-service-runtime",
       "--with-phone-apps",
@@ -149,6 +150,7 @@ export async function macosFactory(
     delivery = deliveryMetadata(manifest.prebuilt_components, "macos-arm64");
   if (
     !delivery.complete_device_bundle ||
+    manifest.signing !== "ad-hoc" ||
     manifest.sha256 !== (await digest(file)) ||
     !installerMetadata(file, "macos-arm64").github_asset_eligible
   )

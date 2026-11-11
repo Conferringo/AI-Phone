@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "release_name": "Daemon",
-  "release_notes": "Android Settings navigation can finish with one fewer planning call while keeping independent verification. In six paired runs, median completion fell from 6.18 to 5.02 seconds. The macOS app bundle and Windows installer carry temporary test signatures.",
+  "version": "0.2.1",
+  "release_name": "Eclipse",
+  "release_notes": "Eclipse Beta adds offline desktop Copilot, skips redundant speech drafts during pauses, removes duplicate model-request allocation, and reaps guest network commands before returning cancellation. The macOS and Windows installers carry temporary signatures.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

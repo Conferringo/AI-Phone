@@ -3,9 +3,9 @@
   "kind": "dependency-license-metadata",
   "scope": "locked-source-build-dependencies; server and native client installed metadata, not a redistribution clearance",
   "locks": {
-    "Cargo.lock": "47e23d80a29111d101d13e9f432073cd5b6d76d1a661d239e5dfe387ccf37a37",
+    "Cargo.lock": "cd6d8fb096e4b02f070b9e5b88bd634f8e44614f107a8b55693ca193ed89f4a6",
     "bun.lock": "ac03ce66c53dee01fbe99345a701810695488acb144564c30bdadcc177012bb5",
-    "apps/client/src-tauri/Cargo.lock": "630de2838b1963964b3e2d4bca5fb2a9dcee1f191aa5e6e7a06ffb9295259fe7"
+    "apps/client/src-tauri/Cargo.lock": "db66acf9ba419be58fb6b7d859b7ec6e5e5a0fdc34a3ba44ea3ce02decaecf2d"
   },
   "rust": [
     {
@@ -645,6 +645,22 @@
       ]
     },
     {
+      "name": "bindgen",
+      "version": "0.72.1",
+      "license": "BSD-3-Clause",
+      "repository": "https://github.com/rust-lang/rust-bindgen",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "c23953d9deb0a3312dbeaf6c128a657f3591acee45067612fa68405eaa4525db"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "bit-set",
       "version": "0.8.0",
       "license": "Apache-2.0 OR MIT",
@@ -1240,6 +1256,26 @@
       ]
     },
     {
+      "name": "cexpr",
+      "version": "0.6.0",
+      "license": "Apache-2.0/MIT",
+      "repository": "https://github.com/jethrogb/rust-cexpr",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "d9771b8c6cf4426d3846de54c1febe20907f1eeadf7adfb5ade89a83bd9ea77f"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "cfb",
       "version": "0.7.3",
       "license": "MIT",
@@ -1366,6 +1402,42 @@
       ],
       "workspaces": [
         "Cargo.toml"
+      ]
+    },
+    {
+      "name": "clang-sys",
+      "version": "1.9.1",
+      "license": "Apache-2.0",
+      "repository": "https://github.com/KyleMayes/clang-sys",
+      "notices": [
+        {
+          "file": "LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "cmake",
+      "version": "0.1.58",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-lang/cmake-rs",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {
@@ -2996,6 +3068,22 @@
       ]
     },
     {
+      "name": "fs_extra",
+      "version": "1.3.0",
+      "license": "MIT",
+      "repository": "https://github.com/webdesus/fs_extra",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "251ea8ccb1205ce5fa847d6e264d6b6753af62de2cecf2fd9abc0eb02c7c83fc"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "fs2",
       "version": "0.4.3",
       "license": "MIT/Apache-2.0",
@@ -3566,6 +3654,7 @@
         }
       ],
       "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -4476,6 +4565,26 @@
     },
     {
       "name": "itertools",
+      "version": "0.13.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-itertools/itertools",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "itertools",
       "version": "0.14.0",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/rust-itertools/itertools",
@@ -4886,6 +4995,22 @@
       ]
     },
     {
+      "name": "libloading",
+      "version": "0.8.9",
+      "license": "ISC",
+      "repository": "https://github.com/nagisa/rust_libloading/",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "b29f8b01452350c20dd1af16ef83b598fea3053578ccc1c7a0ef40e57be2620f"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "libm",
       "version": "0.2.16",
       "license": "MIT",
@@ -5203,6 +5328,30 @@
       ]
     },
     {
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/Alexhuszagh/minimal-lexical",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        },
+        {
+          "file": "LICENSE.md",
+          "sha256": "dbe1fff0fb1314b6af94f161511406275cf01c5a32441fbf24528a57a051d599"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
       "name": "miniz_oxide",
       "version": "0.8.9",
       "license": "MIT OR Zlib OR Apache-2.0",
@@ -5406,6 +5555,22 @@
         }
       ],
       "workspaces": [
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "nom",
+      "version": "7.1.3",
+      "license": "MIT",
+      "repository": "https://github.com/Geal/nom",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "4dbda04344456f09a7a588140455413a9ac59b6b26a1ef7cdf9c800c012d87f0"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
         "apps/client/src-tauri/Cargo.toml"
       ]
     },
@@ -8165,6 +8330,26 @@
     },
     {
       "name": "shlex",
+      "version": "1.3.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/comex/rust-shlex",
+      "notices": [
+        {
+          "file": "LICENSE-APACHE",
+          "sha256": "553fffcd9b1cb158bc3e9edc35da85ca5c3b3d7d2e61c883ebcfa8a65814b583"
+        },
+        {
+          "file": "LICENSE-MIT",
+          "sha256": "4455bf75a91154108304cb283e0fea9948c14f13e20d60887cf2552449dea3b1"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "shlex",
       "version": "2.0.1",
       "license": "MIT OR Apache-2.0",
       "repository": "https://github.com/comex/rust-shlex",
@@ -10724,6 +10909,33 @@
       ],
       "workspaces": [
         "Cargo.toml"
+      ]
+    },
+    {
+      "name": "whisper-rs",
+      "version": "0.16.0",
+      "license": "Unlicense",
+      "repository": "https://codeberg.org/tazz4843/whisper-rs",
+      "notices": [
+        {
+          "file": "LICENSE",
+          "sha256": "f0510d3b9d1223c45e8fdd2b49270ec8734fff491c7f7d1b948ee70162e1ceff"
+        }
+      ],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
+      ]
+    },
+    {
+      "name": "whisper-rs-sys",
+      "version": "0.15.0",
+      "license": "Unlicense",
+      "repository": "https://codeberg.org/tazz4843/whisper-rs",
+      "notices": [],
+      "workspaces": [
+        "Cargo.toml",
+        "apps/client/src-tauri/Cargo.toml"
       ]
     },
     {

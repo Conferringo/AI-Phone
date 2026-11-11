@@ -21,6 +21,7 @@ import { prepareContainerHost } from "./container-host";
 import { buildConfig } from "./resources";
 import { fetchPin } from "./factory";
 import { stageWindowsVm, type WindowsVmInputs } from "./windows-vm-payload";
+import { prepareSpeechModel } from "./speech-model";
 
 export const componentManifests = {
   web: "runtime/manifest.json",
@@ -49,6 +50,7 @@ export async function preparePayload(
     throw Error("Select one Windows backend");
   const folder = join(root, "apps/client/src-tauri/gen/host");
   mkdirSync(folder, { recursive: true });
+  const speech = await prepareSpeechModel(root);
   const selected: SourceFile[] = sourceFiles(root),
     components: string[] = [];
   const producers: [
@@ -94,6 +96,7 @@ export async function preparePayload(
   renameSync(temporary, payload);
   const integrity: Record<string, string> = {
     "source.payload": await digest(payload),
+    [speech.resource]: speech.sha256,
   };
   for (const [name, source] of [
     ["android.payload", options.androidRuntime],
