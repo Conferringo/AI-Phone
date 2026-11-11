@@ -100,8 +100,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 5263,
-      "sha256": "8601f2be27a6d552da3a1545401c9408b94bffb6a677929b29c4c98d69b2b827"
+      "size": 5355,
+      "sha256": "82c6f7de5975592cf3ce921c6eb349893f622df5ec117a9ff7c17c66890cf023"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -1295,8 +1295,8 @@
     },
     {
       "path": "config/release-policy.json",
-      "size": 2306,
-      "sha256": "f71e648ac0730ffc51b302ef26237c606d013aeea32ce8f412fe81bf3472755e"
+      "size": 2366,
+      "sha256": "4af18f11bead0da816f51598b586d7a4ec445024c8c00ef0b01e62b7dbf9664e"
     },
     {
       "path": "config/rust-runtime-notices.json",
@@ -2535,13 +2535,13 @@
     },
     {
       "path": "crates/host-runtime/src/network_observation/lifecycle.rs",
-      "size": 9426,
-      "sha256": "bfcc499edc43d06b30c1e8a4f01466748b65d5764a423a93502db21faa7c35f3"
+      "size": 9730,
+      "sha256": "f829356db2e197180a4aac23b86656f306ef3b6ed6ec2e4048924c57bbd8c35f"
     },
     {
       "path": "crates/host-runtime/src/network_observation.rs",
-      "size": 15859,
-      "sha256": "00ea3ba61dcfe38f6883ea1a2293a88411665f4b34d0f3a17fd26bb4a0dce158"
+      "size": 17061,
+      "sha256": "bfeeba2edfcf551287af825cca9d39c575c107db23bfc026538c5ef50892c877"
     },
     {
       "path": "crates/host-runtime/src/network_paths.rs",

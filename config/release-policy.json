@@ -1,7 +1,7 @@
 {
   "version": "0.2.1",
   "release_name": "Eclipse",
-  "release_notes": "Eclipse Beta adds offline desktop Copilot, skips redundant speech drafts during pauses, and removes duplicate model-request allocation. The macOS and Windows installers carry temporary signatures.",
+  "release_notes": "Eclipse Beta adds offline desktop Copilot, skips redundant speech drafts during pauses, removes duplicate model-request allocation, and reaps guest network commands before returning cancellation. The macOS and Windows installers carry temporary signatures.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,
