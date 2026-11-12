@@ -65,8 +65,8 @@
     },
     {
       "path": ".github/workflows/client.yml",
-      "size": 7519,
-      "sha256": "d6e0b6feab7c584b10aa50ef6c48c545a41e30d0b6a63ffd5cf54151955b85d5"
+      "size": 8163,
+      "sha256": "1940f95851ea800f2830965c3423f0064e800c0fc8223187e2131790c8ddd59e"
     },
     {
       "path": ".github/workflows/source.yml",
@@ -1710,8 +1710,8 @@
     },
     {
       "path": "crates/assistant/src/channels/mod.rs",
-      "size": 25806,
-      "sha256": "a568cf6d4a920166cfd6ce0e2596d5328450836434133e4bfbf1cd52d515d430"
+      "size": 26021,
+      "sha256": "02920f90064359c6ac17fc844f88d4e86cf0144f4e83aaa13466b85958bc0aaf"
     },
     {
       "path": "crates/assistant/src/channels/qq.rs",
@@ -1925,8 +1925,8 @@
     },
     {
       "path": "crates/assistant/src/model_adapter.rs",
-      "size": 56001,
-      "sha256": "f3e9460e4462da8ceb277392f01c39f6c59ca037b6b66918e3e429ba51e6d567"
+      "size": 56718,
+      "sha256": "61a72b1cd1f5da6052683530b2f35c090421670fc6388c6a4c527b8fd4965326"
     },
     {
       "path": "crates/assistant/src/model_context.rs",

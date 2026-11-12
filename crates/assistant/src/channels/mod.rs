@@ -76,23 +76,26 @@ impl State {
         }
         Ok(O::decode(response.bytes().await?)?)
     }
-    async fn agent(&self, id: &str) -> Result<String> {
+    async fn find_agent(&self, id: &str) -> Result<Option<String>> {
         let registry: wire::RegistryState =
             self.rpc("registry/state", wire::RegistryRequest {}).await?;
         let selected = if id.is_empty() {
-            registry
-                .devices
-                .iter()
-                .find(|d| d.id == registry.active_device_id)
-                .map(|d| d.default_agent_id.as_str())
-                .ok_or("agent_not_found")?
+            registry.active_agent_id
         } else {
-            id
+            id.to_owned()
         };
+        if selected.is_empty() {
+            return Ok(None);
+        }
         if !registry.agents.iter().any(|agent| agent.id == selected) {
             return Err("agent_not_found".into());
         }
-        Ok(selected.into())
+        Ok(Some(selected))
+    }
+    async fn agent(&self, id: &str) -> Result<String> {
+        self.find_agent(id)
+            .await?
+            .ok_or_else(|| "agent_not_found".into())
     }
     async fn device(&self, agent: &str) -> Result<String> {
         let registry: wire::RegistryState =
@@ -519,7 +522,11 @@ async fn dispatch(state: &Arc<State>, operation: &str, body: &[u8]) -> Result<Re
     }
     if operation == "list" {
         let input = wire::ChannelListRequest::decode(body)?;
-        return Ok(pb(state.list(&state.agent(&input.agent_id).await?).await));
+        let channels = match state.find_agent(&input.agent_id).await? {
+            Some(agent) => state.list(&agent).await,
+            None => wire::ChannelListResponse::default(),
+        };
+        return Ok(pb(channels));
     }
     let _mutation = state.mutation.lock().await;
     let (agent, provider, binding) = match operation {
