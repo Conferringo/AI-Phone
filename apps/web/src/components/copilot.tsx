@@ -43,11 +43,10 @@ export function CopilotWave({deviceId}:{deviceId:string}) {
     </svg>
   );
 }
-export function CopilotToggle({deviceId,ready,onActivate}:{deviceId:string;ready:boolean;onActivate:()=>void}){
+export function CopilotToggle({deviceId,ready}:{deviceId:string;ready:boolean}){
   const controller=useCopilot(),state=useSyncExternalStore(controller.subscribe,controller.snapshot,controller.snapshot),{t}=useI18n();
   const active=(state.enabled||state.opening)&&state.currentDeviceId===deviceId;
   return <button className="copilot-toggle" type="button" aria-pressed={active} disabled={!ready&&!active} title={t(active?'关闭 Copilot':'开启 Copilot')} onClick={()=>{
-    onActivate();
     if(active)controller.stop();else if(state.enabled)controller.select(deviceId);else void controller.start(deviceId);
   }}>{state.opening&&active?<LoadingOrb size={15} />:active?<Mic size={15}/>:<MicOff size={15}/>}<span>Copilot</span></button>;
 }

@@ -5,12 +5,12 @@ type Chat=MessageShape<typeof ChatStateSchema>;
 export type HistoryBoundary={beforeMessageId:string;ordinal:bigint;hasOlder:boolean;order:number};
 export type SnapshotVersion={revision:bigint;order:number};
 export type ChatSnapshot={chat:Chat|null;order:number;messageVersions?:ReadonlyMap<string,SnapshotVersion>;headerOrder?:number;history?:HistoryBoundary};
-export type AcceptedInput={conversationId:string;deviceId:string;message:ChatMessage};
+export type AcceptedInput={conversationId:string;message:ChatMessage};
 
 /** Project only the verified immutable user receipt, never the receipt's old run or assistant state. */
 export function acceptInputReceipt(previous:ChatSnapshot,receipt:AcceptedInput,order:number):ChatSnapshot{
   const chat=previous.chat,message=receipt.message;
-  if(!chat||chat.conversationId!==receipt.conversationId||chat.deviceId!==receipt.deviceId||message.role!=='user')return previous;
+  if(!chat||chat.conversationId!==receipt.conversationId||message.role!=='user')return previous;
   const watermark=Math.max(previous.order,order);
   if(chat.messages.some(item=>item.id===message.id||item.requestId===message.requestId))return{...previous,chat,order:watermark};
   const messages=[...chat.messages,structuredClone(message)].sort((a,b)=>Number(a.ordinal-b.ordinal));

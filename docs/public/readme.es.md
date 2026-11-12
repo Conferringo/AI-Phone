@@ -10,11 +10,11 @@ Requiere macOS 14.4 o posterior con Apple Silicon, o Windows 11 x64. Cada instal
 
 ## Funciones y escenarios
 
-AImanity combina Android invitado real, un escritorio Linux ligero y Agentes. Por defecto se ofrece un teléfono y un ordenador, cada uno con su conversación continua. Pueden compartir un Agente o usar modelos distintos.
+AImanity reúne un teléfono Android y un escritorio Linux con una sola conversación y un único agente activo. Guarda otros perfiles de modelo y elige cuál usar en Configuración.
 
 - Usar aplicaciones como WeChat mediante su pantalla y notificaciones reales, y responder según las instrucciones del usuario. Las restricciones de cuenta y aplicación siguen vigentes.
 - Recibir un archivo en el teléfono, transferirlo a Linux, procesar y comprobar una hoja de cálculo y devolver el resultado. Transferencia entre dispositivos y entrega a un contacto se verifican por separado.
-- Añadir instrucciones e interrumpir la generación sin perder mensajes ni acciones. Las notificaciones pueden despertar al Agente; Liberty se pausa por dispositivo.
+- Añadir instrucciones e interrumpir la generación sin perder mensajes ni acciones. Las notificaciones pueden despertar al Agente; Liberty funciona en ambos dispositivos.
 - Compartir Skills, documentos de conocimiento vinculados y archivos de trabajo. Modelos/API, memoria y conexiones externas pertenecen a los Agentes. Clash se ejecuta dentro de cada invitado; el host usa conexión directa por defecto.
 
 Las acciones se vinculan a observaciones, dispositivo, tarea, época de control e identificador único. Un resultado desconocido se observa antes de repetir.

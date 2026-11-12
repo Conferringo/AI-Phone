@@ -81,9 +81,7 @@ async fn bootstrap(
             .bind(MODEL)
             .execute(&mut **tx)
             .await?;
-        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state,default_agent_id) VALUES($1,'我的手机','phone','Android 15 · ARM64','managed',$2)").bind(PHONE).bind(AGENT).execute(&mut **tx).await?;
-        sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,$2)")
-            .bind(AGENT)
+        sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'我的手机','phone','Android 15 · ARM64','managed')")
             .bind(PHONE)
             .execute(&mut **tx)
             .await?;
@@ -94,12 +92,15 @@ async fn bootstrap(
             .await?;
     } else if legacy != Some(settings.current() as i64) {
         // Compatibility for setup and old settings clients. Never replace device/Agent bindings.
-        sqlx::query("UPDATE model_connections SET model_revision=$2,revision=revision+1,updated_at=now() WHERE id=$1 AND owner_id=$3").bind(MODEL).bind(settings.current() as i64).bind(OWNER).execute(&mut **tx).await?;
+        sqlx::query("UPDATE model_connections SET model_revision=$2,revision=revision+1,updated_at=now() WHERE id=$1 AND owner_id=$3 AND retired_at IS NULL").bind(MODEL).bind(settings.current() as i64).bind(OWNER).execute(&mut **tx).await?;
         sqlx::query("UPDATE registry_meta SET legacy_revision=$2 WHERE owner_id=$1")
             .bind(OWNER)
             .bind(settings.current() as i64)
             .execute(&mut **tx)
             .await?;
+    }
+    if legacy != Some(settings.current() as i64) {
+        select_first_if_missing(tx).await?;
     }
     Ok(())
 }
@@ -136,7 +137,10 @@ pub async fn pin_run_for(
     agent: &str,
 ) -> std::result::Result<(), sqlx::Error> {
     bootstrap(tx, settings).await?;
-    let device:String=sqlx::query_scalar("SELECT c.device_id FROM runs r JOIN conversations c ON c.id=r.conversation_id WHERE r.id=$1").bind(run).fetch_one(&mut **tx).await?;
+    let device: String = sqlx::query_scalar("SELECT device_id FROM runs WHERE id=$1")
+        .bind(run)
+        .fetch_one(&mut **tx)
+        .await?;
     if device != PHONE && !sqlx::query_scalar::<_,bool>("SELECT EXISTS(SELECT 1 FROM device_runtimes r JOIN devices d ON d.id=r.device_id WHERE d.id=$1 AND d.runtime_state='managed')").bind(&device).fetch_one(&mut **tx).await? {
         return Err(sqlx::Error::Protocol("device_unavailable".into()));
     }
@@ -145,9 +149,14 @@ pub async fn pin_run_for(
     } else {
         Some(Uuid::parse_str(agent).map_err(|_| sqlx::Error::Protocol("invalid_agent".into()))?)
     };
-    let row = sqlx::query("SELECT a.id,a.revision,a.name,a.instructions,a.model_connection_id,m.model_revision FROM devices d JOIN agent_device_bindings b ON b.device_id=d.id AND b.agent_id=COALESCE($3,d.default_agent_id) JOIN agents a ON a.id=b.agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE d.id=$1 AND d.owner_id=$2 AND a.owner_id=$2 AND m.owner_id=$2")
-        .bind(&device).bind(OWNER).bind(selected).fetch_optional(&mut **tx).await?
+    let row = sqlx::query("SELECT a.id,a.revision,a.name,a.instructions,a.model_connection_id,m.model_revision
+        FROM devices d JOIN agents a ON a.id=d.default_agent_id JOIN model_connections m ON m.id=a.model_connection_id
+        WHERE d.id=$1 AND d.owner_id=$2 AND a.owner_id=$2 AND m.owner_id=$2 AND a.retired_at IS NULL AND m.retired_at IS NULL")
+        .bind(&device).bind(OWNER).fetch_optional(&mut **tx).await?
         .ok_or_else(|| sqlx::Error::Protocol("model_missing".into()))?;
+    if selected.is_some_and(|id| id != row.get::<Uuid, _>("id")) {
+        return Err(sqlx::Error::Protocol("agent_not_selected".into()));
+    }
     let revision: i64 = row.get("model_revision");
     if revision == 0 || settings.get(revision as u64).is_err() {
         return Err(sqlx::Error::Protocol("model_missing".into()));
@@ -155,7 +164,10 @@ pub async fn pin_run_for(
     sqlx::query("UPDATE runs SET agent_id=$2,agent_revision=$3,agent_name=$4,agent_instructions=$5,model_connection_id=$6,model_revision=$7,device_id=$8 WHERE id=$1")
         .bind(run).bind(row.get::<Uuid,_>("id")).bind(row.get::<i64,_>("revision")).bind(row.get::<String,_>("name")).bind(row.get::<String,_>("instructions"))
         .bind(row.get::<Uuid,_>("model_connection_id")).bind(revision).bind(&device).execute(&mut **tx).await?;
-    sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) SELECT $1,b.device_id FROM agent_device_bindings b JOIN runs r ON r.agent_id=b.agent_id WHERE r.id=$1 ON CONFLICT DO NOTHING").bind(run).execute(&mut **tx).await?;
+    sqlx::query("INSERT INTO run_device_bindings(run_id,device_id)
+        SELECT $1,id FROM devices WHERE owner_id=$2 AND default_agent_id=$3 AND runtime_state<>'archived'
+        ON CONFLICT DO NOTHING")
+        .bind(run).bind(OWNER).bind(row.get::<Uuid,_>("id")).execute(&mut **tx).await?;
     Ok(())
 }
 
@@ -179,7 +191,10 @@ pub(crate) async fn refresh_paused_model(
         .bind(LOCK)
         .execute(&mut **tx)
         .await?;
-    let current = sqlx::query("SELECT m.id,m.model_revision FROM runs r JOIN agents a ON a.id=r.agent_id JOIN model_connections m ON m.id=a.model_connection_id WHERE r.id=$1 AND a.owner_id=$2 AND m.owner_id=$2")
+    let current = sqlx::query("SELECT m.id,m.model_revision FROM runs r
+        JOIN devices d ON d.id=r.device_id AND d.default_agent_id=r.agent_id
+        JOIN agents a ON a.id=r.agent_id JOIN model_connections m ON m.id=a.model_connection_id
+        WHERE r.id=$1 AND d.owner_id=$2 AND a.owner_id=$2 AND m.owner_id=$2 AND a.retired_at IS NULL AND m.retired_at IS NULL")
         .bind(run).bind(OWNER).fetch_optional(&mut **tx).await?
         .ok_or_else(|| sqlx::Error::Protocol("model_missing".into()))?;
     let revision: i64 = current.get("model_revision");
@@ -223,35 +238,106 @@ fn device_limit(kind: &str) -> u32 {
             .expect("valid bundled presets");
     presets["limits"][kind].as_u64().unwrap_or(1).clamp(1, 8) as u32
 }
+async fn active_agent(tx: &mut Transaction<'_, Postgres>) -> sqlx::Result<Option<Uuid>> {
+    sqlx::query_scalar("SELECT default_agent_id FROM devices WHERE id=$1 AND owner_id=$2")
+        .bind(PHONE)
+        .bind(OWNER)
+        .fetch_one(&mut **tx)
+        .await
+}
+async fn set_active_agent(
+    tx: &mut Transaction<'_, Postgres>,
+    id: Option<Uuid>,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "INSERT INTO agent_device_bindings(agent_id,device_id)
+        SELECT $1,id FROM devices WHERE owner_id=$2 AND runtime_state<>'archived' AND $1 IS NOT NULL
+        ON CONFLICT DO NOTHING",
+    )
+    .bind(id)
+    .bind(OWNER)
+    .execute(&mut **tx)
+    .await?;
+    sqlx::query(
+        "UPDATE devices SET default_agent_id=$1,revision=revision+1,updated_at=now()
+        WHERE owner_id=$2 AND runtime_state<>'archived' AND default_agent_id IS DISTINCT FROM $1",
+    )
+    .bind(id)
+    .bind(OWNER)
+    .execute(&mut **tx)
+    .await?;
+    sqlx::query(
+        "DELETE FROM agent_device_bindings b USING devices d
+        WHERE b.device_id=d.id AND d.owner_id=$1 AND d.runtime_state<>'archived'
+        AND b.agent_id IS DISTINCT FROM d.default_agent_id",
+    )
+    .bind(OWNER)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+async fn first_agent(
+    tx: &mut Transaction<'_, Postgres>,
+    excluded: Option<Uuid>,
+) -> sqlx::Result<Option<Uuid>> {
+    sqlx::query_scalar(
+        "SELECT a.id FROM agents a JOIN model_connections m ON m.id=a.model_connection_id
+        WHERE a.owner_id=$1 AND m.owner_id=$1 AND a.id IS DISTINCT FROM $2
+        AND a.retired_at IS NULL AND m.retired_at IS NULL AND m.model_revision>0
+        ORDER BY a.created_at,a.id LIMIT 1",
+    )
+    .bind(OWNER)
+    .bind(excluded)
+    .fetch_optional(&mut **tx)
+    .await
+}
+async fn select_first_if_missing(tx: &mut Transaction<'_, Postgres>) -> sqlx::Result<()> {
+    if active_agent(tx).await?.is_none()
+        && let Some(id) = first_agent(tx, None).await?
+    {
+        set_active_agent(tx, Some(id)).await?;
+    }
+    Ok(())
+}
+
 async fn state(app: &App) -> Result<wire::RegistryState> {
     let mut tx = app.db.begin().await.map_err(storage)?;
     bootstrap(&mut tx, &app.settings).await.map_err(storage)?;
     let devices = sqlx::query("SELECT id,revision,name,kind,system,runtime_state,default_agent_id FROM devices WHERE owner_id=$1 AND runtime_state<>'archived' ORDER BY created_at,id").bind(OWNER).fetch_all(&mut *tx).await.map_err(storage)?;
-    let agents = sqlx::query("SELECT id,revision,name,model_connection_id,instructions FROM agents WHERE owner_id=$1 ORDER BY created_at,id").bind(OWNER).fetch_all(&mut *tx).await.map_err(storage)?;
-    let bindings = sqlx::query("SELECT b.agent_id,b.device_id FROM agent_device_bindings b JOIN agents a ON a.id=b.agent_id WHERE a.owner_id=$1 ORDER BY b.device_id").bind(OWNER).fetch_all(&mut *tx).await.map_err(storage)?;
-    let rows = sqlx::query("SELECT id,revision,name,model_revision FROM model_connections WHERE owner_id=$1 ORDER BY created_at,id").bind(OWNER).fetch_all(&mut *tx).await.map_err(storage)?;
+    let agents = sqlx::query("SELECT a.id,a.revision,a.name,a.model_connection_id,a.instructions FROM agents a
+        JOIN model_connections m ON m.id=a.model_connection_id
+        WHERE a.owner_id=$1 AND a.retired_at IS NULL AND m.model_revision>0 ORDER BY a.created_at,a.id")
+        .bind(OWNER).fetch_all(&mut *tx).await.map_err(storage)?;
+    let rows = sqlx::query(
+        "SELECT id,revision,name,model_revision FROM model_connections
+        WHERE owner_id=$1 AND retired_at IS NULL AND model_revision>0 ORDER BY created_at,id",
+    )
+    .bind(OWNER)
+    .fetch_all(&mut *tx)
+    .await
+    .map_err(storage)?;
     let mut models = Vec::new();
     for row in rows {
         let version: i64 = row.get("model_revision");
-        let profile = if version == 0 {
-            None
-        } else {
-            Some(
-                app.settings
-                    .profile_at(version as u64)
-                    .map_err(|m| conflict(&m))?,
-            )
-        };
         models.push(wire::RegisteredModel {
             id: row.get::<Uuid, _>("id").to_string(),
             revision: row.get::<i64, _>("revision") as u64,
             name: row.get("name"),
-            profile,
+            profile: Some(
+                app.settings
+                    .profile_at(version as u64)
+                    .map_err(|m| conflict(&m))?,
+            ),
         });
     }
+    let active_agent_id = devices
+        .iter()
+        .find(|r| r.get::<String, _>("id") == PHONE)
+        .and_then(|r| r.get::<Option<Uuid>, _>("default_agent_id"));
     tx.commit().await.map_err(storage)?;
     Ok(wire::RegistryState {
         active_device_id: PHONE.into(),
+        active_agent_id: active_agent_id.map(|id| id.to_string()).unwrap_or_default(),
         phone_limit: device_limit("phone"),
         desktop_limit: device_limit("desktop"),
         models,
@@ -280,10 +366,12 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
                     name: r.get("name"),
                     model_connection_id: r.get::<Uuid, _>("model_connection_id").to_string(),
                     instructions: r.get("instructions"),
-                    device_ids: bindings
+                    device_ids: devices
                         .iter()
-                        .filter(|b| b.get::<Uuid, _>("agent_id") == id)
-                        .map(|b| b.get("device_id"))
+                        .filter(|device| {
+                            device.get::<Option<Uuid>, _>("default_agent_id") == Some(id)
+                        })
+                        .map(|device| device.get("id"))
                         .collect(),
                 }
             })
@@ -298,11 +386,6 @@ async fn save_device(app: &App, r: wire::DeviceSaveRequest) -> Result<()> {
     if !["phone", "desktop"].contains(&r.kind.as_str()) {
         return Err(invalid("设备类型无效"));
     }
-    let agent = if r.default_agent_id.is_empty() {
-        None
-    } else {
-        Some(uuid(&r.default_agent_id)?)
-    };
     let mut tx = app.db.begin().await.map_err(storage)?;
     bootstrap(&mut tx, &app.settings).await.map_err(storage)?;
     let old = sqlx::query("SELECT revision,kind FROM devices WHERE id=$1 AND owner_id=$2 AND runtime_state<>'archived'")
@@ -318,15 +401,6 @@ async fn save_device(app: &App, r: wire::DeviceSaveRequest) -> Result<()> {
     {
         return Err(invalid("已有设备不能变更系统类型"));
     }
-    if r.id == PHONE && agent.is_none() {
-        return Err(conflict("请为当前手机选择默认 Agent"));
-    }
-    if let Some(agent) = agent {
-        let row=sqlx::query("SELECT m.model_revision FROM agents a JOIN model_connections m ON m.id=a.model_connection_id WHERE a.id=$1 AND a.owner_id=$2 AND m.owner_id=$2").bind(agent).bind(OWNER).fetch_optional(&mut *tx).await.map_err(storage)?.ok_or_else(||invalid("Agent 不存在"))?;
-        if r.id == PHONE && row.get::<i64, _>("model_revision") == 0 {
-            return Err(conflict("请先为该 Agent 连接并验证模型"));
-        }
-    }
     if old.is_none() {
         let count: i64 =
             sqlx::query_scalar("SELECT count(*) FROM devices WHERE owner_id=$1 AND kind=$2 AND runtime_state<>'archived'")
@@ -338,85 +412,81 @@ async fn save_device(app: &App, r: wire::DeviceSaveRequest) -> Result<()> {
         if count >= device_limit(&r.kind) as i64 {
             return Err(conflict("已达到此类型设备的数量上限"));
         }
+        let agent = active_agent(&mut tx).await.map_err(storage)?;
         sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state,default_agent_id) VALUES($1,$2,$3,$4,'registered',$5)")
             .bind(&r.id).bind(label).bind(&r.kind).bind(if r.kind=="phone"{"Android · 待安装"}else{"Linux · 待安装"}).bind(agent).execute(&mut *tx).await.map_err(storage)?;
-    } else {
-        sqlx::query("UPDATE devices SET name=$2,default_agent_id=$3,revision=revision+1,updated_at=now() WHERE id=$1").bind(&r.id).bind(label).bind(agent).execute(&mut *tx).await.map_err(storage)?;
-    }
-    if let Some(agent) = agent {
-        let added=sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,$2) ON CONFLICT DO NOTHING").bind(agent).bind(&r.id).execute(&mut *tx).await.map_err(storage)?.rows_affected();
-        if added > 0 {
-            sqlx::query("UPDATE agents SET revision=revision+1,updated_at=now() WHERE id=$1")
+        if let Some(agent) = agent {
+            sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,$2)")
                 .bind(agent)
+                .bind(&r.id)
                 .execute(&mut *tx)
                 .await
                 .map_err(storage)?;
         }
+    } else {
+        sqlx::query("UPDATE devices SET name=$2,revision=revision+1,updated_at=now() WHERE id=$1")
+            .bind(&r.id)
+            .bind(label)
+            .execute(&mut *tx)
+            .await
+            .map_err(storage)?;
     }
     tx.commit().await.map_err(storage)
 }
+#[cfg(test)]
 async fn save_agent(app: &App, r: wire::AgentSaveRequest) -> Result<()> {
     let mut tx = app.db.begin().await.map_err(storage)?;
     bootstrap(&mut tx, &app.settings).await.map_err(storage)?;
-    save_agent_in(app, &mut tx, r).await?;
+    save_agent_in(&mut tx, r).await?;
     tx.commit().await.map_err(storage)
 }
 async fn save_agent_in(
-    _app: &App,
     tx: &mut Transaction<'_, Postgres>,
     r: wire::AgentSaveRequest,
 ) -> Result<()> {
     let id = uuid(&r.id)?;
     let model = uuid(&r.model_connection_id)?;
     let label = name(&r.name)?;
-    if r.instructions.len() > 8000 || r.instructions.contains('\0') || r.device_ids.len() > 64 {
+    if r.instructions.len() > 8000 || r.instructions.contains('\0') {
         return Err(invalid("Agent 配置过大"));
     }
-    let mut wanted = r.device_ids;
-    wanted.sort();
-    wanted.dedup();
-    let old: Option<i64> =
-        sqlx::query_scalar("SELECT revision FROM agents WHERE id=$1 AND owner_id=$2")
-            .bind(id)
-            .bind(OWNER)
-            .fetch_optional(&mut **tx)
-            .await
-            .map_err(storage)?;
-    expected(old, r.expected_revision)?;
+    let old = sqlx::query(
+        "SELECT revision,owner_id,retired_at IS NOT NULL AS retired FROM agents WHERE id=$1",
+    )
+    .bind(id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(storage)?;
+    if old
+        .as_ref()
+        .is_some_and(|r| r.get::<String, _>("owner_id") != OWNER || r.get::<bool, _>("retired"))
+    {
+        return Err(invalid("Agent 不存在"));
+    }
+    expected(old.as_ref().map(|r| r.get("revision")), r.expected_revision)?;
     let model_revision: Option<i64> = sqlx::query_scalar(
-        "SELECT model_revision FROM model_connections WHERE id=$1 AND owner_id=$2",
+        "SELECT m.model_revision FROM model_connections m
+         WHERE m.id=$1 AND m.owner_id=$2 AND m.retired_at IS NULL
+         AND NOT EXISTS(SELECT 1 FROM agents a WHERE a.model_connection_id=m.id AND a.id<>$3 AND a.retired_at IS NULL)",
     )
     .bind(model)
     .bind(OWNER)
+    .bind(id)
     .fetch_optional(&mut **tx)
     .await
     .map_err(storage)?;
     let model_revision = model_revision.ok_or_else(|| invalid("模型连接不存在"))?;
-    let devices: Vec<String> =
-        sqlx::query_scalar("SELECT id FROM devices WHERE id=ANY($1) AND owner_id=$2")
-            .bind(&wanted)
-            .bind(OWNER)
-            .fetch_all(&mut **tx)
-            .await
-            .map_err(storage)?;
-    if devices.len() != wanted.len() {
-        return Err(invalid("设备不存在"));
-    }
-    let current_default: Option<Uuid> =
-        sqlx::query_scalar("SELECT default_agent_id FROM devices WHERE id=$1")
-            .bind(PHONE)
-            .fetch_one(&mut **tx)
-            .await
-            .map_err(storage)?;
-    if current_default == Some(id) && (!wanted.iter().any(|d| d == PHONE) || model_revision == 0) {
-        return Err(conflict("请先为当前手机选择其他默认 Agent，并保留可用模型"));
+    if model_revision == 0 {
+        return Err(conflict("请先验证模型"));
     }
     if old.is_none() {
-        let count: i64 = sqlx::query_scalar("SELECT count(*) FROM agents WHERE owner_id=$1")
-            .bind(OWNER)
-            .fetch_one(&mut **tx)
-            .await
-            .map_err(storage)?;
+        let count: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM agents WHERE owner_id=$1 AND retired_at IS NULL",
+        )
+        .bind(OWNER)
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(storage)?;
         if count >= 64 {
             return Err(conflict("Agent 配置已达 64 个"));
         }
@@ -433,26 +503,18 @@ async fn save_agent_in(
     } else {
         sqlx::query("UPDATE agents SET name=$2,model_connection_id=$3,instructions=$4,revision=revision+1,updated_at=now() WHERE id=$1").bind(id).bind(label).bind(model).bind(&r.instructions).execute(&mut **tx).await.map_err(storage)?;
     }
-    sqlx::query("UPDATE devices SET default_agent_id=NULL,revision=revision+1,updated_at=now() WHERE default_agent_id=$1 AND NOT(id=ANY($2))").bind(id).bind(&wanted).execute(&mut **tx).await.map_err(storage)?;
-    sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1 AND NOT(device_id=ANY($2))")
-        .bind(id)
-        .bind(&wanted)
-        .execute(&mut **tx)
-        .await
-        .map_err(storage)?;
-    sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) SELECT $1,unnest($2::text[]) ON CONFLICT DO NOTHING").bind(id).bind(&wanted).execute(&mut **tx).await.map_err(storage)?;
     Ok(())
 }
 async fn model_version(app: &App, id: Uuid, revision: u64) -> Result<u64> {
     let row =
-        sqlx::query("SELECT revision,model_revision,owner_id FROM model_connections WHERE id=$1")
+        sqlx::query("SELECT revision,model_revision,owner_id,retired_at IS NOT NULL AS retired FROM model_connections WHERE id=$1")
             .bind(id)
             .fetch_optional(&app.db)
             .await
             .map_err(storage)?;
     if row
         .as_ref()
-        .is_some_and(|r| r.get::<String, _>("owner_id") != OWNER)
+        .is_some_and(|r| r.get::<String, _>("owner_id") != OWNER || r.get::<bool, _>("retired"))
     {
         return Err(invalid("模型连接不存在"));
     }
@@ -461,10 +523,12 @@ async fn model_version(app: &App, id: Uuid, revision: u64) -> Result<u64> {
         .map(|r| r.get::<i64, _>("model_revision") as u64)
         .unwrap_or(0))
 }
+#[cfg(test)]
 async fn save_model(app: &App, r: wire::ConnectionSaveRequest) -> Result<()> {
     let mut tx = app.db.begin().await.map_err(storage)?;
     bootstrap(&mut tx, &app.settings).await.map_err(storage)?;
     save_model_in(app, &mut tx, r).await?;
+    select_first_if_missing(&mut tx).await.map_err(storage)?;
     tx.commit().await.map_err(storage)
 }
 async fn save_model_in(
@@ -475,14 +539,14 @@ async fn save_model_in(
     let id = uuid(&r.id)?;
     let label = name(&r.name)?;
     let row =
-        sqlx::query("SELECT revision,model_revision,owner_id FROM model_connections WHERE id=$1")
+        sqlx::query("SELECT revision,model_revision,owner_id,retired_at IS NOT NULL AS retired FROM model_connections WHERE id=$1")
             .bind(id)
             .fetch_optional(&mut **tx)
             .await
             .map_err(storage)?;
     if row
         .as_ref()
-        .is_some_and(|r| r.get::<String, _>("owner_id") != OWNER)
+        .is_some_and(|r| r.get::<String, _>("owner_id") != OWNER || r.get::<bool, _>("retired"))
     {
         return Err(invalid("模型连接不存在"));
     }
@@ -492,12 +556,13 @@ async fn save_model_in(
         .map(|r| r.get::<i64, _>("model_revision") as u64)
         .unwrap_or(0);
     if row.is_none() {
-        let count: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM model_connections WHERE owner_id=$1")
-                .bind(OWNER)
-                .fetch_one(&mut **tx)
-                .await
-                .map_err(storage)?;
+        let count: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM model_connections WHERE owner_id=$1 AND retired_at IS NULL",
+        )
+        .bind(OWNER)
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(storage)?;
         if count >= 64 {
             return Err(conflict("模型连接已达 64 个"));
         }
@@ -539,22 +604,124 @@ async fn save_configuration(app: &App, input: wire::AgentConfigurationSaveReques
         if connection.id != agent.model_connection_id {
             return Err(invalid("模型归属不匹配"));
         }
-        let others: i64 = sqlx::query_scalar(
-            "SELECT count(*) FROM agents WHERE model_connection_id=$1 AND id<>$2 AND owner_id=$3",
-        )
-        .bind(uuid(&connection.id)?)
-        .bind(uuid(&agent.id)?)
-        .bind(OWNER)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(storage)?;
-        if others > 0 {
-            return Err(conflict("该连接正在被其他 Agent 使用，请复制连接后编辑"));
-        }
         save_model_in(app, &mut tx, connection).await?;
     }
-    save_agent_in(app, &mut tx, agent).await?;
+    save_agent_in(&mut tx, agent).await?;
+    select_first_if_missing(&mut tx).await.map_err(storage)?;
     tx.commit().await.map_err(storage)
+}
+
+async fn change_selection(
+    tx: &mut Transaction<'_, Postgres>,
+    conversation: Uuid,
+    next: Option<Uuid>,
+) -> Result<()> {
+    let busy = sqlx::query_scalar::<_, bool>("SELECT EXISTS(
+        SELECT 1 FROM runs WHERE conversation_id=$1
+        AND status IN ('queued','running','paused') AND origin NOT IN ('exploration','notification'))")
+        .bind(conversation).fetch_one(&mut **tx).await.map_err(storage)?;
+    if busy {
+        return Err(conflict("请先结束当前任务，再切换模型"));
+    }
+    sqlx::query("WITH stopped AS (
+        UPDATE runs SET status='canceled',error='已切换模型',finished_at=now(),next_wake_at=NULL
+        WHERE conversation_id=$1 AND origin IN ('exploration','notification')
+        AND status IN ('queued','running','paused') RETURNING id,finished_at
+    ), trace AS (
+        UPDATE harness_events e SET status='canceled',finished_at=s.finished_at FROM stopped s WHERE e.id=s.id
+    )
+    UPDATE phone_notifications n SET status='pending-summary'
+    FROM stopped s WHERE n.run_id=s.id AND n.status IN ('assigned','attending')")
+        .bind(conversation).execute(&mut **tx).await.map_err(storage)?;
+    set_active_agent(tx, next).await.map_err(storage)
+}
+
+async fn change_profile(app: &App, request: wire::AgentProfileRequest, delete: bool) -> Result<()> {
+    let id = uuid(&request.id)?;
+    let mut tx = app.db.begin().await.map_err(storage)?;
+    let conversation: Uuid =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id=$1 FOR NO KEY UPDATE")
+            .bind(OWNER)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(storage)?;
+    bootstrap(&mut tx, &app.settings).await.map_err(storage)?;
+    let (revision, model): (i64, Uuid) = sqlx::query_as(
+        "SELECT a.revision,a.model_connection_id
+        FROM agents a JOIN model_connections m ON m.id=a.model_connection_id
+        WHERE a.id=$1 AND a.owner_id=$2 AND m.owner_id=$2 AND a.retired_at IS NULL
+        AND m.retired_at IS NULL AND m.model_revision>0",
+    )
+    .bind(id)
+    .bind(OWNER)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(storage)?
+    .ok_or_else(|| invalid("模型不存在"))?;
+    expected(Some(revision), request.expected_revision)?;
+    let active = active_agent(&mut tx).await.map_err(storage)?;
+    let changed = if delete {
+        active == Some(id)
+    } else {
+        active != Some(id)
+    };
+    if changed {
+        let next = if delete {
+            first_agent(&mut tx, Some(id)).await.map_err(storage)?
+        } else {
+            Some(id)
+        };
+        change_selection(&mut tx, conversation, next).await?;
+    }
+    if delete {
+        delete_profile(&mut tx, id, model).await?;
+    }
+    tx.commit().await.map_err(storage)?;
+    if changed {
+        crate::proactive::cancel_stopped(app).await;
+        app.run_signals.chat_changed(conversation);
+        app.run_signals.phone_exploration.notify_one();
+    }
+    Ok(())
+}
+
+async fn delete_profile(tx: &mut Transaction<'_, Postgres>, id: Uuid, model: Uuid) -> Result<()> {
+    sqlx::query("UPDATE devices SET default_agent_id=NULL,revision=revision+1,updated_at=now() WHERE default_agent_id=$1")
+        .bind(id).execute(&mut **tx).await.map_err(storage)?;
+    sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1")
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(storage)?;
+    sqlx::query(
+        "WITH deleted AS (
+        DELETE FROM agents WHERE id=$1 AND id<>$2
+        AND NOT EXISTS(SELECT 1 FROM runs WHERE agent_id=$1)
+        AND NOT EXISTS(SELECT 1 FROM memories WHERE agent_id=$1)
+        RETURNING id
+    ) UPDATE agents SET retired_at=now() WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM deleted)",
+    )
+    .bind(id)
+    .bind(AGENT)
+    .execute(&mut **tx)
+    .await
+    .map_err(storage)?;
+    sqlx::query(
+        "WITH deleted AS (
+        DELETE FROM model_connections WHERE id=$1 AND id<>$2
+        AND NOT EXISTS(SELECT 1 FROM agents WHERE model_connection_id=$1)
+        AND NOT EXISTS(SELECT 1 FROM runs WHERE model_connection_id=$1)
+        RETURNING id
+    ) UPDATE model_connections SET retired_at=now()
+    WHERE id=$1 AND NOT EXISTS(SELECT 1 FROM deleted)
+    AND NOT EXISTS(SELECT 1 FROM agents WHERE model_connection_id=$1 AND retired_at IS NULL)",
+    )
+    .bind(model)
+    .bind(MODEL)
+    .execute(&mut **tx)
+    .await
+    .map_err(storage)?;
+    Ok(())
 }
 // Empty scope is only for older single-Agent clients.
 pub async fn memory_agent(app: &App, id: &str) -> std::result::Result<Uuid, String> {
@@ -572,13 +739,14 @@ pub async fn memory_agent(app: &App, id: &str) -> std::result::Result<Uuid, Stri
     } else {
         Uuid::parse_str(id).map_err(|_| "Agent 不存在")?
     };
-    let exists: bool =
-        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM agents WHERE id=$1 AND owner_id=$2)")
-            .bind(id)
-            .bind(OWNER)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
+    let exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM agents WHERE id=$1 AND owner_id=$2 AND retired_at IS NULL)",
+    )
+    .bind(id)
+    .bind(OWNER)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     if !exists {
         return Err("Agent 不存在".into());
     }
@@ -612,8 +780,8 @@ pub async fn route(
             "agent-config-save" => {
                 save_configuration(&app, read!(wire::AgentConfigurationSaveRequest)).await?
             }
-            "agent-save" => save_agent(&app, read!(wire::AgentSaveRequest)).await?,
-            "model-save" => save_model(&app, read!(wire::ConnectionSaveRequest)).await?,
+            "agent-select" => change_profile(&app, read!(wire::AgentProfileRequest), false).await?,
+            "agent-delete" => change_profile(&app, read!(wire::AgentProfileRequest), true).await?,
             "model-test" => {
                 let r = read!(wire::ConnectionTestRequest);
                 let id = uuid(&r.id)?;
@@ -802,31 +970,34 @@ mod tests {
             let model=Uuid::new_v4();let other=Uuid::new_v4();
             let draft=wire::ModelDraft{provider:"compatible".into(),protocol:"responses".into(),base_url:format!("http://{address}"),model:"alpha".into(),api_key:"key-alpha".into(),..Default::default()};
             let request=wire::ConnectionSaveRequest{id:model.to_string(),expected_revision:0,name:"办公模型".into(),draft:Some(draft.clone()),verification_id:String::new()};
-            assert_eq!(call(&app,"model-save",request.clone()).await.status(),StatusCode::CONFLICT);
+            assert_eq!(save_model(&app,request.clone()).await.unwrap_err().status,StatusCode::CONFLICT);
             let foreign = Uuid::new_v4();
             sqlx::query("INSERT INTO model_connections(id,owner_id,name,model_revision) VALUES($1,'other-owner','foreign',1)").bind(foreign).execute(&db).await.unwrap();
             assert!(model_version(&app,foreign,0).await.is_err(),"foreign connection cannot be treated as creation");
             assert!(save_model(&app,wire::ConnectionSaveRequest{id:foreign.to_string(),name:"attempt".into(),..Default::default()}).await.is_err());
             let checked=check_model(&app,model,0,draft.clone()).await;
-            let mut wrong=request.clone();wrong.id=other.to_string();wrong.verification_id=checked.verification_id.clone();assert_eq!(call(&app,"model-save",wrong).await.status(),StatusCode::CONFLICT,"test token is connection-scoped");
-            let mut wrong=request.clone();wrong.draft.as_mut().unwrap().api_key="different".into();wrong.verification_id=checked.verification_id.clone();assert_eq!(call(&app,"model-save",wrong).await.status(),StatusCode::CONFLICT,"changed draft invalidates test");
+            let mut wrong=request.clone();wrong.id=other.to_string();wrong.verification_id=checked.verification_id.clone();assert_eq!(save_model(&app,wrong).await.unwrap_err().status,StatusCode::CONFLICT,"test token is connection-scoped");
+            let mut wrong=request.clone();wrong.draft.as_mut().unwrap().api_key="different".into();wrong.verification_id=checked.verification_id.clone();assert_eq!(save_model(&app,wrong).await.unwrap_err().status,StatusCode::CONFLICT,"changed draft invalidates test");
             let mut request=request;request.verification_id=checked.verification_id;
-            let listed:wire::RegistryState=response(call(&app,"model-save",request).await).await;
+            save_model(&app,request).await.unwrap();let listed=state(&app).await.unwrap();
             assert!(!format!("{listed:?}").contains("key-alpha"),"list never contains secrets");
             let version=listed.models.iter().find(|m|m.id==model.to_string()).unwrap().profile.as_ref().unwrap().revision;
             let mut keep=draft.clone();keep.api_key.clear();keep.use_saved_key=true;assert_eq!(app.settings.resolve_at(keep.clone(),version).unwrap().api_key,"key-alpha");keep.base_url="https://example.invalid".into();assert!(app.settings.resolve_at(keep,version).is_err());
             let credential:wire::ModelCredential=response(call(&app,"credential",wire::ConnectionCredentialRequest{id:model.to_string(),expected_revision:1}).await).await;assert_eq!(credential.api_key,"key-alpha");
             assert_eq!(call(&app,"credential",wire::ConnectionCredentialRequest{id:model.to_string(),expected_revision:0}).await.status(),StatusCode::CONFLICT);
             let desktop=Uuid::new_v4().to_string();save_device(&app,wire::DeviceSaveRequest{id:desktop.clone(),name:"办公电脑".into(),kind:"desktop".into(),..Default::default()}).await.unwrap();
-            let agent=Uuid::new_v4();let agent_request=wire::AgentSaveRequest{id:agent.to_string(),name:"办公助手".into(),model_connection_id:model.to_string(),device_ids:vec![PHONE.into(),desktop.clone()],instructions:"报告进度".into(),..Default::default()};
+            let agent=Uuid::new_v4();let agent_request=wire::AgentSaveRequest{id:agent.to_string(),name:"办公助手".into(),model_connection_id:model.to_string(),instructions:"报告进度".into(),..Default::default()};
             save_agent(&app,agent_request.clone()).await.unwrap();
-            save_device(&app,wire::DeviceSaveRequest{id:PHONE.into(),expected_revision:1,name:"我的手机".into(),kind:"phone".into(),default_agent_id:agent.to_string()}).await.unwrap();
+            assert_eq!(state(&app).await.unwrap().active_agent_id, AGENT.to_string());
+            let selected:wire::RegistryState=response(call(&app,"agent-select",wire::AgentProfileRequest{id:agent.to_string(),expected_revision:1}).await).await;
+            assert_eq!(selected.active_agent_id,agent.to_string());
+            assert!(selected.devices.iter().all(|d|d.default_agent_id==selected.active_agent_id));
             let before=sqlx::query_scalar::<_,i64>("SELECT count(*) FROM messages").fetch_one(&db).await.unwrap();
             let run=send(&app,"first task").await;
             let pinned=sqlx::query("SELECT agent_id,agent_name,agent_instructions,device_id,model_revision FROM runs WHERE id=$1").bind(run).fetch_one(&db).await.unwrap();
             assert_eq!(pinned.get::<Uuid,_>("agent_id"),agent);assert_eq!(pinned.get::<String,_>("device_id"),PHONE);assert_eq!(pinned.get::<i64,_>("model_revision"),version as i64);
             let mut beta=draft.clone();beta.model="beta".into();beta.api_key="key-beta".into();let checked=check_model(&app,model,1,beta.clone()).await;
-            let _:wire::RegistryState=response(call(&app,"model-save",wire::ConnectionSaveRequest{id:model.to_string(),expected_revision:1,name:"办公模型".into(),draft:Some(beta),verification_id:checked.verification_id}).await).await;
+            save_model(&app,wire::ConnectionSaveRequest{id:model.to_string(),expected_revision:1,name:"办公模型".into(),draft:Some(beta),verification_id:checked.verification_id}).await.unwrap();
             let mut changed_agent=agent_request;changed_agent.expected_revision=1;changed_agent.name="新版助手".into();changed_agent.instructions="新的工作偏好".into();save_agent(&app,changed_agent.clone()).await.unwrap();
             assert_eq!(settings::for_run(&app,run).await.unwrap().model,"alpha");
             assert_eq!(sqlx::query_scalar::<_,String>("SELECT agent_name FROM runs WHERE id=$1").bind(run).fetch_one(&db).await.unwrap(),"办公助手");
@@ -835,8 +1006,7 @@ mod tests {
             let next=send(&app,"second task").await;let config=settings::for_run(&app,next).await.unwrap();assert_eq!(config.model,"beta");assert_eq!(config.api_key,"key-beta");
             crate::model_adapter::request(&config,json!({"input":[{"role":"user","content":[{"type":"input_text","text":"Reply exactly with this code: runtime-proof"}]}]}),&CancellationToken::new()).await.unwrap();
             assert_eq!(seen.lock().unwrap().last().unwrap(),"beta");
-            changed_agent.expected_revision=2;changed_agent.device_ids=vec![desktop.clone()];assert!(save_agent(&app,changed_agent).await.is_err(),"cannot remove active phone default binding");
-            let edit=wire::DeviceSaveRequest{id:desktop.clone(),expected_revision:1,name:"重命名电脑".into(),kind:"desktop".into(),..Default::default()};
+            let edit=wire::DeviceSaveRequest{id:desktop.clone(),expected_revision:2,name:"重命名电脑".into(),kind:"desktop".into()};
             let(a,b)=tokio::join!(save_device(&app,edit.clone()),save_device(&app,edit));assert_ne!(a.is_ok(),b.is_ok(),"one concurrent writer wins");
             let reloaded=settings::SettingsStore::open(&root).unwrap();initialize(&db,&reloaded).await.unwrap();assert_eq!(reloaded.get(version).unwrap().model,"alpha");
             assert_eq!(state(&app).await.unwrap().models.iter().find(|m|m.id==model.to_string()).unwrap().profile.as_ref().unwrap().model,"beta","legacy startup cannot overwrite new registry config");
@@ -847,16 +1017,18 @@ mod tests {
             // Inline Agent/model save is atomic even when Agent validation fails last.
             let inline_agent=Uuid::new_v4();let inline_model=Uuid::new_v4();
             let checked=check_model(&app,inline_model,0,draft.clone()).await;
-            let mut inline=wire::AgentConfigurationSaveRequest{agent:Some(wire::AgentSaveRequest{id:inline_agent.to_string(),name:"".into(),model_connection_id:inline_model.to_string(),device_ids:vec![PHONE.into()],..Default::default()}),connection:Some(wire::ConnectionSaveRequest{id:inline_model.to_string(),name:"独立模型".into(),draft:Some(draft.clone()),verification_id:checked.verification_id,..Default::default()})};
+            let mut inline=wire::AgentConfigurationSaveRequest{agent:Some(wire::AgentSaveRequest{id:inline_agent.to_string(),name:"".into(),model_connection_id:inline_model.to_string(),..Default::default()}),connection:Some(wire::ConnectionSaveRequest{id:inline_model.to_string(),name:"独立模型".into(),draft:Some(draft.clone()),verification_id:checked.verification_id,..Default::default()})};
             assert_eq!(call(&app,"agent-config-save",inline.clone()).await.status(),StatusCode::BAD_REQUEST);
             let absent:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM model_connections WHERE id=$1)").bind(inline_model).fetch_one(&db).await.unwrap();assert!(absent,"failed Agent save cannot leave a model row");
             inline.agent.as_mut().unwrap().name="独立助手".into();inline.connection.as_mut().unwrap().verification_id=check_model(&app,inline_model,0,draft.clone()).await.verification_id;
             let _:wire::RegistryState=response(call(&app,"agent-config-save",inline).await).await;
+            let select_inline=wire::AgentProfileRequest{id:inline_agent.to_string(),expected_revision:1};
+            assert_eq!(call(&app,"agent-select",select_inline.clone()).await.status(),StatusCode::CONFLICT);
             let mut headers=HeaderMap::new();headers.insert("authorization","Bearer registry-test".parse().unwrap());headers.insert("content-type",MEDIA.parse().unwrap());
             let scoped=wire::ChatHistoryRequest{device_id:desktop.clone(),..Default::default()};
             let desktop_chat:wire::ChatState=response(crate::http::history(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(scoped.encode_to_vec()))).await).await;
-            assert_ne!(desktop_chat.conversation_id,conversation.to_string());assert!(desktop_chat.messages.is_empty());
-            let wrong=wire::ChatHistoryRequest{device_id:desktop.clone(),conversation_id:conversation.to_string(),..Default::default()};
+            assert_eq!(desktop_chat,crate::http::state(&app,conversation).await.unwrap());
+            let wrong=wire::ChatHistoryRequest{device_id:desktop.clone(),conversation_id:Uuid::now_v7().to_string(),..Default::default()};
             assert_eq!(crate::http::history(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(wrong.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
             let pending=wire::ChatSendRequest{device_id:desktop.clone(),text:"must not touch phone".into(),request_id:Uuid::new_v4().to_string(),..Default::default()};
             assert_eq!(crate::http::send(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(pending.encode_to_vec()))).await.status(),StatusCode::CONFLICT);
@@ -876,8 +1048,14 @@ mod tests {
             let routed=wire::ChatSendRequest{device_id:PHONE.into(),agent_id:inline_agent.to_string(),text:"remote scoped request".into(),request_id:Uuid::new_v4().to_string(),..Default::default()};
             assert_eq!(crate::http::send(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(routed.encode_to_vec()))).await.status(),StatusCode::CONFLICT,"cannot steer another Agent's active run");
             sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1").bind(next).execute(&db).await.unwrap();
+            assert_eq!(crate::http::send(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(routed.encode_to_vec()))).await.status(),StatusCode::CONFLICT,"an inactive model cannot start a run");
+            let _:wire::RegistryState=response(call(&app,"agent-select",select_inline).await).await;
             let routed_chat:wire::ChatState=response(crate::http::send(axum::extract::State(app.clone()),headers.clone(),Ok(Bytes::from(routed.encode_to_vec()))).await).await;
             let pinned:Uuid=sqlx::query_scalar("SELECT agent_id FROM runs WHERE id=$1").bind(Uuid::parse_str(&routed_chat.run_id).unwrap()).fetch_one(&db).await.unwrap();assert_eq!(pinned,inline_agent);
+            let after_delete:wire::RegistryState=response(call(&app,"agent-delete",wire::AgentProfileRequest{id:agent.to_string(),expected_revision:2}).await).await;
+            assert!(!after_delete.agents.iter().any(|a|a.id==agent.to_string()));
+            assert!(!after_delete.models.iter().any(|m|m.id==model.to_string()));
+            assert_eq!(settings::for_run(&app,run).await.unwrap().model,"alpha");
             // A fresh install configured solely through the registry has no legacy pointer.
             // Its setup status and task execution must still resolve the registered model.
             sqlx::query("TRUNCATE runs,messages,agents,model_connections,devices,agent_device_bindings,registry_meta CASCADE").execute(&db).await.unwrap();
@@ -899,7 +1077,7 @@ mod tests {
             });
             initialize(&db,&fresh.settings).await.unwrap();assert!(!configured(&fresh).await);
             let checked=check_model(&fresh,MODEL,1,draft.clone()).await;
-            let _:wire::RegistryState=response(call(&fresh,"model-save",wire::ConnectionSaveRequest{id:MODEL.to_string(),expected_revision:1,name:"新实例模型".into(),draft:Some(draft),verification_id:checked.verification_id}).await).await;
+            save_model(&fresh,wire::ConnectionSaveRequest{id:MODEL.to_string(),expected_revision:1,name:"新实例模型".into(),draft:Some(draft),verification_id:checked.verification_id}).await.unwrap();
             assert_eq!(fresh.settings.current(),0);assert!(configured(&fresh).await);
             let fresh_run=send(&fresh,"new install task").await;assert_eq!(settings::for_run(&fresh,fresh_run).await.unwrap().model,"alpha");
             let mut headers=HeaderMap::new();headers.insert("authorization","Bearer registry-test".parse().unwrap());headers.insert("content-type",MEDIA.parse().unwrap());

@@ -96,17 +96,7 @@ async fn activate(store: &Store, rpc: &Rpc) -> Result<String> {
     }
     let intent = store.select(desktop.map(|device| device.id.as_str()), store.resources()?)?;
     if desktop.is_none() {
-        register(
-            rpc,
-            store,
-            &intent,
-            state
-                .agents
-                .first()
-                .map(|agent| agent.id.as_str())
-                .unwrap_or(""),
-        )
-        .await?;
+        register(rpc, store, &intent).await?;
     }
     provision(rpc, store, &intent).await?;
     verify_desktop(rpc, &intent.device_id).await?;
@@ -144,7 +134,7 @@ async fn verify_desktop(rpc: &Rpc, id: &str) -> Result<()> {
     }
     policy::desktop_frame(frame.width, frame.height, &frame.png).map_err(Error)
 }
-async fn register(rpc: &Rpc, store: &Store, intent: &Intent, agent: &str) -> Result<()> {
+async fn register(rpc: &Rpc, store: &Store, intent: &Intent) -> Result<()> {
     // The attempt marker is committed before dispatch. On retry, registry was already
     // observed above; an absent device after an attempted save is unknown, not replayable.
     if !store.begin(intent, "register")? {
@@ -157,7 +147,6 @@ async fn register(rpc: &Rpc, store: &Store, intent: &Intent, agent: &str) -> Res
                 id: intent.device_id.clone(),
                 name: "Linux".into(),
                 kind: "desktop".into(),
-                default_agent_id: agent.into(),
                 ..Default::default()
             },
         )

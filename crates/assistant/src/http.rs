@@ -6,53 +6,17 @@ use sha2::{Digest, Sha256};
 use sqlx::Row;
 use std::collections::HashMap;
 
-async fn resolve(app: &App, id: &str, device: &str) -> Result<Uuid, Response> {
-    let device = if device.is_empty() {
-        crate::registry::PHONE
-    } else {
-        device
-    };
-    if device != crate::registry::PHONE {
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM devices WHERE id=$1 AND owner_id='local-user')",
-        )
-        .bind(device)
-        .fetch_one(&app.db)
-        .await
-        .map_err(db_error)?;
-        if !exists {
-            return Err(error(
-                StatusCode::NOT_FOUND,
-                "device_not_found",
-                "设备不存在",
-            ));
-        }
-    }
-    let canonical: Uuid = match sqlx::query_scalar(
-        "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
-    )
-    .bind(device)
-    .fetch_optional(&app.db)
-    .await
-    .map_err(db_error)?
-    {
-        Some(id) => id,
-        None => {
-            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(device).execute(&app.db).await.map_err(db_error)?;
-            sqlx::query_scalar(
-                "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
-            )
-            .bind(device)
+async fn resolve(app: &App, id: &str) -> Result<Uuid, Response> {
+    let canonical: Uuid =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
             .fetch_one(&app.db)
             .await
-            .map_err(db_error)?
-        }
-    };
+            .map_err(db_error)?;
     if !id.is_empty() && id != canonical.to_string() {
         return Err(error(
             StatusCode::CONFLICT,
             "conversation_scope",
-            "对话不属于此设备，请重新载入",
+            "对话已更新，请重新载入",
         ));
     }
     Ok(canonical)
@@ -97,7 +61,7 @@ pub(crate) async fn current_run(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
 ) -> Result<Option<sqlx::postgres::PgRow>, sqlx::Error> {
-    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1")
+    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused') AND origin='user') DESC,(status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1")
         .bind(id).fetch_optional(&mut **tx).await
 }
 
@@ -188,14 +152,18 @@ pub(crate) async fn state_selected(
         selected.map_or(MessageSelection::All, MessageSelection::Ids),
     )
     .await?;
-    let (device_id, revision): (String, i64) = sqlx::query_as(
-        "SELECT c.device_id, COALESCE((
-            SELECT ordinal FROM messages WHERE conversation_id=c.id ORDER BY ordinal DESC LIMIT 1
-        ), 0) FROM conversations c WHERE c.id=$1",
+    let revision: i64 = sqlx::query_scalar(
+        "SELECT COALESCE((SELECT ordinal FROM messages WHERE conversation_id=$1 ORDER BY ordinal DESC LIMIT 1),0)",
     )
     .bind(id)
     .fetch_one(&mut **tx)
     .await?;
+    let device_id = run
+        .as_ref()
+        .map_or(crate::registry::PHONE, |row| {
+            row.get::<&str, _>("device_id")
+        })
+        .to_owned();
     let value = wire::ChatState {
         revision: revision as u64,
         message_window: window,
@@ -255,7 +223,7 @@ pub async fn history(
         Ok(value) => value,
         Err(code) => return error(StatusCode::BAD_REQUEST, code, "分页请求无效"),
     };
-    let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
+    let id = match resolve(&app, &request.conversation_id).await {
         Ok(v) => v,
         Err(e) => return e,
     };
@@ -338,9 +306,14 @@ async fn send_input(
     } else {
         700
     };
-    let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
+    let id = match resolve(&app, &request.conversation_id).await {
         Ok(v) => v,
         Err(e) => return e,
+    };
+    let device = if request.device_id.is_empty() {
+        crate::registry::PHONE
+    } else {
+        &request.device_id
     };
     if !request.device_id.is_empty()
         && request.device_id != crate::registry::PHONE
@@ -372,7 +345,7 @@ async fn send_input(
         // A receipt is unique across both initial runs and subsequent inputs, including devices.
         sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
             .bind(request_id.to_string()).execute(&mut *tx).await?;
-        sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
+        sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
             .bind(id).fetch_one(&mut *tx).await?;
         let goal_run = if let Some(revision) = goal_revision {
             let (current_revision, stored_run): (i64, Option<Uuid>) =
@@ -383,31 +356,14 @@ async fn send_input(
                 return Err(sqlx::Error::Protocol("stale_goal".into()));
             }
             if let Some(stored_run) = stored_run {
-                let conversation = sqlx::query_scalar::<_, Uuid>(
-                    "SELECT conversation_id FROM runs WHERE id=$1 AND status IN ('queued','running','paused','failed')",
-                ).bind(stored_run).fetch_optional(&mut *tx).await?;
-                if conversation.is_some_and(|conversation| conversation != id) {
-                    return Err(sqlx::Error::Protocol("goal_other_device".into()));
-                }
-                conversation.map(|_| stored_run)
+                sqlx::query_scalar::<_, Uuid>(
+                    "SELECT id FROM runs WHERE id=$1 AND status IN ('queued','running','paused')",
+                ).bind(stored_run).fetch_optional(&mut *tx).await?
             } else {
                 None
             }
         } else {
             None
-        };
-        let stopped_liberty: Vec<Uuid> = if goal_revision.is_some() && goal_run.is_none() {
-            sqlx::query("INSERT INTO desktop_exploration(device_id,enabled)
-                SELECT r.device_id,false FROM device_runtimes r JOIN devices d ON d.id=r.device_id
-                WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND d.id<>$1
-                ON CONFLICT(device_id) DO UPDATE SET enabled=false WHERE desktop_exploration.enabled")
-                .bind(crate::registry::PHONE).execute(&mut *tx).await?;
-            sqlx::query_scalar("UPDATE runs SET status='canceled',error='任务与目标模式已开启',finished_at=now(),next_wake_at=NULL,background_finalized=true
-                WHERE origin IN ('exploration','desktop-exploration') AND status IN ('queued','running','paused')
-                RETURNING conversation_id")
-                .fetch_all(&mut *tx).await?
-        } else {
-            Vec::new()
         };
         if let Some(old) = sqlx::query("SELECT id,conversation_id,request_fingerprint FROM runs WHERE request_id=$1")
             .bind(request_id).fetch_optional(&mut *tx).await? {
@@ -439,9 +395,9 @@ async fn send_input(
         if attachments.len() != files.len() || total > 12*1024*1024 || attachments.iter().any(|r|r.get::<i64,_>("size_bytes") < 0) {
             return Err(sqlx::Error::Protocol("invalid_attachments".into()));
         }
-        sqlx::query("UPDATE runs SET status='canceled',error='用户新指令优先',finished_at=now(),next_wake_at=NULL WHERE conversation_id=$1 AND origin<>'user' AND status IN ('queued','running','paused')").bind(id).execute(&mut *tx).await?;
+        sqlx::query("UPDATE runs SET status='canceled',error='用户新指令优先',finished_at=now(),next_wake_at=NULL WHERE conversation_id=$1 AND origin IN ('exploration','notification') AND status IN ('queued','running','paused')").bind(id).execute(&mut *tx).await?;
         sqlx::query("UPDATE phone_notifications SET status='pending-summary' WHERE status='assigned' AND run_id IN(SELECT id FROM runs WHERE conversation_id=$1 AND origin='notification' AND status='canceled' AND NOT background_finalized)").bind(id).execute(&mut *tx).await?;
-        let active = sqlx::query("SELECT id,status,agent_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') FOR UPDATE")
+        let active = sqlx::query("SELECT id,status,agent_id FROM runs WHERE conversation_id=$1 AND origin='user' AND status IN ('queued','running','paused') FOR UPDATE")
             .bind(id).fetch_optional(&mut *tx).await?;
         if goal_revision.is_some()
             && active.as_ref().is_some_and(|row| Some(row.get::<Uuid,_>("id")) != goal_run)
@@ -474,9 +430,9 @@ async fn send_input(
             let run = Uuid::now_v7();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
                 .bind(assistant).bind(id).execute(&mut *tx).await?;
-            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms,trigger_input) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0,$7)")
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms,trigger_input,device_id) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0,$7,$8)")
                 .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64)
-                .bind(if goal_revision.is_some() { "task-goal" } else { "" }).execute(&mut *tx).await?;
+                .bind(if goal_revision.is_some() { "task-goal" } else { "" }).bind(device).execute(&mut *tx).await?;
             sqlx::query("UPDATE messages SET run_id=$2 WHERE id=$1").bind(assistant).bind(run).execute(&mut *tx).await?;
             crate::registry::pin_run_for(&mut tx, &app.settings, run, &request.agent_id).await?;
             run
@@ -492,16 +448,13 @@ async fn send_input(
             voice.release_activity(&app.run_signals.speech, id);
         }
         app.run_signals.chat_changed(id);
-        for conversation in stopped_liberty.into_iter().filter(|conversation| *conversation != id) {
-            app.run_signals.chat_changed(conversation);
-        }
         Ok(run)
     }.await;
     let run_id = match result {
         Ok(id) => id,
         Err(e) => {
             return match e.to_string().as_str() {
-                s if s.contains("stale_goal") || s.contains("goal_other_device") => error(
+                s if s.contains("stale_goal") => error(
                     StatusCode::CONFLICT,
                     "stale_goal",
                     "目标已更新，请重新打开后再操作",
@@ -510,6 +463,11 @@ async fn send_input(
                     StatusCode::CONFLICT,
                     "goal_device_busy",
                     "此设备有未结束的任务，请先结束后再激活目标",
+                ),
+                s if s.contains("agent_not_selected") => error(
+                    StatusCode::CONFLICT,
+                    "agent_not_selected",
+                    "Agent 已切换，请重新发送",
                 ),
                 s if s.contains("agent_busy") => error(
                     StatusCode::CONFLICT,
@@ -742,31 +700,14 @@ async fn run_command(
         );
     };
     if !resume && !pause {
-        let background =
-            sqlx::query_scalar::<_, bool>("SELECT origin<>'user' FROM runs WHERE id=$1")
+        let exploration =
+            sqlx::query_scalar::<_, bool>("SELECT origin='exploration' FROM runs WHERE id=$1")
                 .bind(id)
                 .fetch_one(&app.db)
                 .await
                 .unwrap_or(false);
-        if background {
-            let info = sqlx::query("SELECT origin,device_id FROM runs WHERE id=$1")
-                .bind(id)
-                .fetch_one(&app.db)
-                .await;
-            if let Ok(info) = info {
-                if info.get::<String, _>("origin") == "desktop-exploration" {
-                    let _ = crate::desktop_explore::pause(
-                        &app,
-                        &info.get::<String, _>("device_id"),
-                        "已停止自主探索",
-                    )
-                    .await;
-                } else if ["notification", "exploration"]
-                    .contains(&info.get::<String, _>("origin").as_str())
-                {
-                    let _ = crate::proactive::stop_exploration(&app, "已停止自主探索").await;
-                }
-            }
+        if exploration {
+            let _ = crate::proactive::stop_exploration(&app, "已停止自主探索").await;
         }
         if let Err(e)=sqlx::query("UPDATE messages SET text='已停止。' WHERE id=(SELECT assistant_message_id FROM runs WHERE id=$1) AND text=''")
             .bind(id).execute(&app.db).await { return db_error(e); }
@@ -819,7 +760,7 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
     // Match send's conversation -> run -> registry order. Updating a run can
     // recheck its conversation FK, so holding only the run lock can deadlock
     // with a sender that already owns the conversation and is waiting on it.
-    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
+    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
         .bind(expected.0)
         .execute(&mut *tx)
         .await?;

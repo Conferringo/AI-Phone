@@ -103,8 +103,8 @@ const goalStatusLabels:Record<string,string>={
  failed:'执行失败',succeeded:'已完成',canceled:'已停止',
 };
 
-export function TaskGoal({open,deviceId,onOpen,onClose,onActivate}:{
- open:boolean;deviceId:string;onOpen:()=>void;onClose:()=>void;onActivate:(deviceId:string)=>void;
+export function TaskGoal({open,deviceId,onOpen,onClose}:{
+ open:boolean;deviceId:string;onOpen:()=>void;onClose:()=>void;
 }){
  const {t}=useI18n();
  const {state,goalError,saving,updateGoal}=useProactive();
@@ -121,7 +121,6 @@ export function TaskGoal({open,deviceId,onOpen,onClose,onActivate}:{
   const updated=await updateGoal(next,deviceId);
   if(!updated)return;
   setDraft(null);
-  if(next&&updated.goalDeviceId)onActivate(updated.goalDeviceId);
  }
 
  return <>

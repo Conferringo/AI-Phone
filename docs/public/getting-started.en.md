@@ -22,7 +22,7 @@ This source path uses macOS Apple Silicon, native Android Emulator (Android 15 A
 2. Run `./ai-phone install`. Configure SDK/JDK paths, optional host/container HTTP proxies, new-device resources and language. Empty means direct networking; `-` clears a saved value.
 3. Review the SDK's interactive licence prompt. The installer never automatically accepts it. It then downloads SDK packages/images, installs dependencies, builds workspace/desktop images and starts local services.
 4. Open the client or local URL directly into the workbench; there is no welcome screen. Existing owner credentials and sessions are preserved; no administrator account or password is shown. Configure the first Agent model in Configuration.
-5. In Configuration → Agent, enter a model ID, API URL and key. Changed settings require text, vision and tool round-trip probes. Authorize devices and assign each default Agent. Stored keys are visible/editable to the administrator.
+5. In Configuration → Agent, enter a model ID, API URL and key. Changed settings require text, vision and tool round-trip probes. Choose the profile that both devices will use. Stored keys are visible/editable to the administrator.
 6. Startup scripts create the primary phone. Create the computer in Configuration. Install extra Android apps in the phone.
 
 This is guided source setup with prerequisites. After resolving a reported download or build error, run `./ai-phone install` again. Existing AVDs and database passwords are preserved. Full installation rollback is not implemented.

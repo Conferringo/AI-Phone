@@ -805,7 +805,7 @@ mod tests {
                 .await
                 .unwrap();
             let conversation: Uuid =
-                sqlx::query_scalar("SELECT id FROM conversations WHERE device_id='phone-local-01'")
+                sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
                     .fetch_one(&app.db)
                     .await
                     .unwrap();

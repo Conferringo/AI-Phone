@@ -404,7 +404,7 @@ fn restore(
         container,
         admin,
         &env["POSTGRES_DB"],
-        "UPDATE runs SET status='paused',next_wake_at=NULL WHERE status IN ('queued','running'); UPDATE proactive_state SET exploring=false,notifications_enabled=false; UPDATE desktop_exploration SET enabled=false;",
+        "UPDATE runs SET status='paused',next_wake_at=NULL WHERE status IN ('queued','running'); UPDATE proactive_state SET exploring=false,notifications_enabled=false;",
     )?;
     save(
         &state.join("data/restore-quarantine.json"),

@@ -118,9 +118,9 @@ async fn heads(
     // union: only the one selected current header may add such a historical head.
     let mut ids: Vec<Uuid> = sqlx::query_scalar(
         "SELECT assistant_message_id FROM (
-          (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') AND origin NOT IN ('notification','exploration','desktop-exploration') ORDER BY created_at DESC,id DESC LIMIT 1)
+          (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') AND origin='user' ORDER BY created_at DESC,id DESC LIMIT 1)
           UNION
-          (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') AND origin IN ('exploration','desktop-exploration') ORDER BY created_at DESC,id DESC LIMIT 1)
+          (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') AND origin='exploration' ORDER BY created_at DESC,id DESC LIMIT 1)
           UNION
           (SELECT assistant_message_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running') AND origin='notification' ORDER BY created_at DESC,id DESC LIMIT 1)
         ) selected_heads"

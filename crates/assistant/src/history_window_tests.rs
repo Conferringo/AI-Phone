@@ -112,12 +112,10 @@ async fn database_case(test: impl for<'a> FnOnce(&'a PgPool) -> BoxFuture<'a, ()
 }
 
 async fn conversation(db: &PgPool) -> Uuid {
-    sqlx::query_scalar(
-        "SELECT id FROM conversations WHERE device_id='phone-local-01' AND owner_id='local-user'",
-    )
-    .fetch_one(db)
-    .await
-    .unwrap()
+    sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
+        .fetch_one(db)
+        .await
+        .unwrap()
 }
 
 async fn message(
@@ -304,19 +302,17 @@ async fn real_pg_older_pages_and_foreign_identifiers_preserve_canonical_scope() 
                 older.messages.last().unwrap().ordinal < latest.messages.first().unwrap().ordinal
             );
             let other = Uuid::new_v4();
-            sqlx::query(
-                "INSERT INTO conversations(id,device_id) VALUES($1,'desktop-history-fixture')",
-            )
-            .bind(other)
-            .execute(db)
-            .await
-            .unwrap();
+            sqlx::query("INSERT INTO conversations(id,owner_id) VALUES($1,'other-user')")
+                .bind(other)
+                .execute(db)
+                .await
+                .unwrap();
             let foreign_receipt = Uuid::new_v4();
             let foreign = message(
                 db,
                 other,
                 "user",
-                "must never cross device",
+                "must never cross owner",
                 Some(foreign_receipt),
             )
             .await;

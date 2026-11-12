@@ -4,7 +4,7 @@ import {LanguageWindow,LanguageTrigger} from '@/components/language-window';
 import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchNotice} from '@/components/workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import {DeviceDefaultsProvider,creationDefaults,type DeviceDefaults} from '@/components/device-defaults';
-import { useCallback, useEffect, useMemo, useRef, useState,type CSSProperties,type Dispatch,type SetStateAction } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,type CSSProperties,type Dispatch,type Ref,type SetStateAction } from "react";
 import {CopilotProvider,CopilotToggle,CopilotWave,useCopilotBinding} from '@/components/copilot';
 import {
   create,
@@ -55,7 +55,6 @@ import "./phone.css";
 import "./device-workbench.css";
 import {useWorkbenchMotion} from "@/components/workbench-motion";
 import {DeviceCableLine} from "@/components/device-cable-line";
-import {focusGroups} from "@/lib/device-focus";
 import { SkillsWindow } from "@/components/skills-window";
 import {MapPin} from "lucide-react";
 import {LocationWindow} from "@/components/location-window";
@@ -67,7 +66,6 @@ import { RegistryWindow,type Registry } from "@/components/registry-window";
 import { FloatingWindow, WindowTrigger } from "@/components/floating-window";
 import {DesktopRequestSchema,DesktopObservationSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
 import {DeviceCableToggle} from '@/components/device-cable';
-import {useDesktopExploration,DesktopExploreToggle} from '@/components/desktop-exploration';
 import {DesktopSurface} from '@/components/desktop-surface';
 import { PhoneStreamImage } from "@/components/phone-stream-image";
 import { PhoneToolbar,type RotationMode } from "@/components/phone-toolbar";
@@ -112,20 +110,22 @@ async function rpc<I extends DescMessage, O extends DescMessage>(
 export default function PhoneConsole({defaults=creationDefaults}:{defaults?:DeviceDefaults}) {
   return <DeviceDefaultsProvider value={defaults}><WorkbenchNoticeProvider><ProactiveProvider><DeviceWorkbench/></ProactiveProvider></WorkbenchNoticeProvider></DeviceDefaultsProvider>;
 }
-type SessionState={agentId:string;agentName:string;status:string;runId:string;reply:string;nextWakeAtMs:number};
+type ChatActions={refreshDisplay:()=>void;attach:(file:File)=>void};
+type Device=Registry['devices'][number];
 function DeviceWorkbench(){
  const {t}=useI18n();
 
  const [registry,setRegistry]=useState<Registry|null>(null),[focus,setFocus]=useState<string[]>(['phone-local-01']),[current,setCurrent]=useState('phone-local-01');
  const [cableError,setCableError]=useState('');useWorkbenchNotice(cableError);
  const [locationEnabled,setLocationEnabled]=useState(false);
- const [feature,setFeature]=useState(''),[states,setStates]=useState<Record<string,SessionState>>({}),[horizontal,setHorizontal]=useState<Record<string,boolean>>({}),[linked,setLinked]=useState<string[]>([]);
- const scene=useRef<HTMLElement>(null),refreshers=useRef<Record<string,()=>void>>({}),orientations=useRef<Record<string,boolean>>({});
- const devices=registry?.devices??[],groups=focusGroups(devices,focus,states),solo=focus.length===1,wide=!solo||!!horizontal[focus[0]]||devices.find(d=>d.id===focus[0])?.kind==='desktop';
- const receive=useCallback((id:string,value:SessionState)=>setStates(old=>JSON.stringify(old[id])===JSON.stringify(value)?old:{...old,[id]:value}),[]);
+ const [feature,setFeature]=useState(''),[horizontal,setHorizontal]=useState<Record<string,boolean>>({}),[linked,setLinked]=useState<string[]>([]);
+ const scene=useRef<HTMLElement>(null),chatActions=useRef<ChatActions>(null),orientations=useRef<Record<string,boolean>>({});
+ const devices=registry?.devices??[];
+ const selectedDevice=devices.find(device=>device.id===current)??devices[0];
+ const copilotDeviceId=devices.find(device=>device.runtimeState==='managed')?.id??'phone-local-01';
+ const solo=focus.length===1,wide=!solo||!!horizontal[focus[0]]||devices.find(device=>device.id===focus[0])?.kind==='desktop';
  const capture=useWorkbenchMotion(scene,`${focus.join('|')}:${wide}:${linked.join('|')}:${Object.entries(horizontal).map(([id,value])=>id+value).join('|')}`);
  const orientation=useCallback((id:string,value:boolean)=>{if(orientations.current[id]===value)return;orientations.current[id]=value;capture();setHorizontal(old=>({...old,[id]:value}));},[capture]);
- const register=useCallback((id:string,refresh:(()=>void)|null)=>{if(refresh)refreshers.current[id]=refresh;else delete refreshers.current[id];},[]);
  function move(update:()=>void){
   capture();
   setFeature('');update();
@@ -136,9 +136,9 @@ function DeviceWorkbench(){
  const close=(name:string)=>setFeature(old=>old===name?'':old);
  const voiceAgentId=feature.startsWith('settings:voice:')?feature.slice('settings:voice:'.length):'';
  const settingsOpen=feature==='settings'||!!voiceAgentId;
- return <CopilotProvider currentDeviceId={current} onConfigure={id=>setFeature('settings:voice:'+id)}><main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
+ return <CopilotProvider currentDeviceId={copilotDeviceId} onConfigure={id=>setFeature('settings:voice:'+id)}><main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
   <TaskGoalBackdrop/>
-  <CopilotWave deviceId={current}/>
+  <CopilotWave deviceId={copilotDeviceId}/>
   <header className="workbench-navigation">
    <WorkbenchNotices activeFeature={feature}/>
    <nav className="workbench-shared-tools" aria-label={t("工作工具")}>
@@ -148,14 +148,28 @@ function DeviceWorkbench(){
     <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("文件管理")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
-    <TaskGoal open={feature==='goal'} deviceId={current} onOpen={()=>setFeature('goal')} onClose={()=>close('goal')} onActivate={enter}/>
+    <TaskGoal open={feature==='goal'} deviceId={selectedDevice?.id??current} onOpen={()=>setFeature('goal')} onClose={()=>close('goal')}/>
     <WindowTrigger label={t("配置中心")} open={settingsOpen} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
     <ClientUpdate open={feature==='update'} onOpen={()=>setFeature('update')} onClose={()=>close('update')}/>
    </nav>
-   <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!states[current]} onClick={()=>refreshers.current[current]?.()}><RefreshCw size={18}/></Button>
+   <Button variant="ghost" size="icon" aria-label={t("刷新对话显示")} title={t("刷新对话显示")} disabled={!selectedDevice} onClick={()=>chatActions.current?.refreshDisplay()}><RefreshCw size={18}/></Button>
   </header>
-  <div className="device-focus-grid" data-stacked={solo} data-wide={wide} data-count={focus.length} data-mixed={focus.length>1&&focus.some(id=>devices.find(d=>d.id===id)?.kind==='phone'&&!horizontal[id])} style={{'--device-columns':solo?'minmax(360px,1.65fr)':focus.map(id=>devices.find(d=>d.id===id)?.kind==='desktop'?'minmax(220px,1.3fr)':'minmax(180px,.8fr)').join(' '),'--chat-column':focus.length+1,'--chat-rows':groups.map(()=> 'minmax(0,1fr)').join(' ')} as CSSProperties}>
-   {devices.map((d,position)=>{const index=focus.indexOf(d.id),group=groups.findIndex(g=>g.deviceIds.includes(d.id)),showChat=group>=0&&groups[group].chatDeviceId===d.id;return <DeviceNoticeScope key={d.id} id={d.id} name={d.name}><PhoneWorkspace deviceId={d.id} registry={registry!} focused={index>=0} onSelect={()=>enter(d.id)} stageStyle={{'--wide-screen-column':`${Math.max(0,index)*6/Math.max(1,focus.length)+1} / span ${6/Math.max(1,focus.length)}`,'--wide-chat-column':`${Math.max(0,group)*6/Math.max(1,groups.length)+1} / span ${6/Math.max(1,groups.length)}`,'--conversation-index':Math.max(0,group),'--stage-index':position,'--stage-side':index>=0?0:(devices.length===2?(d.kind==='desktop'?1:-1):((position-devices.findIndex(v=>v.id===current)+devices.length)%devices.length===1?1:-1)),'--stage-depth':index>=0?0:-180} as CSSProperties} showChat={showChat} screenColumn={Math.max(1,index+1)} chatColumn={focus.length+1} chatRow={group+1} onActivate={id=>setCurrent(id)} onState={receive} onOrientation={orientation} registerRefresh={register} feature={feature} setFeature={setFeature}/></DeviceNoticeScope>;})}
+  <div className="device-focus-grid" data-stacked={solo} data-wide={wide} data-mixed={focus.length>1&&focus.some(id=>devices.find(device=>device.id===id)?.kind==='phone'&&!horizontal[id])}>
+   {devices.map((device,position)=>{
+    const index=focus.indexOf(device.id);
+    const currentPosition=devices.findIndex(candidate=>candidate.id===current);
+    const side=index>=0?0:devices.length===2?(device.kind==='desktop'?1:-1):
+      ((position-currentPosition+devices.length)%devices.length===1?1:-1);
+    const span=6/Math.max(1,focus.length);
+    return <DeviceNoticeScope key={device.id} id={device.id} name={device.name}>
+     <PhoneWorkspace selectedDevice={device} focused={index>=0} onSelect={()=>enter(device.id)}
+      stageStyle={{"--wide-screen-column":(Math.max(0,index)*span+1)+" / span "+span,"--stage-side":side} as CSSProperties}
+      onActivate={setCurrent} onOrientation={orientation} feature={feature} setFeature={setFeature}
+      attachScreenshot={file=>chatActions.current?.attach(file)}/>
+    </DeviceNoticeScope>;
+   })}
+   {registry&&selectedDevice&&<SharedConversation actionsRef={chatActions} registry={registry} selectedDevice={selectedDevice}
+    copilotDeviceId={copilotDeviceId} onRefresh={()=>setFeature('')}/>}
   </div>
   <DeviceCableLine root={scene} devices={devices} linked={linked}/>
   <RegistryWindow open={settingsOpen} voiceAgentId={voiceAgentId} onClose={()=>setFeature(old=>old==='settings'||old.startsWith('settings:voice:')?'':old)} onNeedsSetup={()=>setFeature('settings')} onChange={setRegistry} activeDeviceId={current}/>
@@ -164,14 +178,16 @@ function DeviceWorkbench(){
   <SkillsWindow open={feature==='skills'} onClose={()=>close('skills')}/><KnowledgeWindow open={feature==='knowledge'} onClose={()=>close('knowledge')}/><WorkspaceWindow devices={devices} open={feature==='files'} onClose={()=>close('files')}/>
  </main></CopilotProvider>;
 }
-type SessionProps={stageStyle:CSSProperties;onSelect:()=>void;deviceId:string;registry:Registry;focused:boolean;showChat:boolean;screenColumn:number;chatColumn:number;chatRow:number;onActivate:(id:string)=>void;onState:(id:string,value:SessionState)=>void;onOrientation:(id:string,value:boolean)=>void;registerRefresh:(id:string,refresh:(()=>void)|null)=>void;feature:string;setFeature:Dispatch<SetStateAction<string>>};
-function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,screenColumn,chatColumn,chatRow,onActivate,onState,onOrientation,registerRefresh,feature,setFeature}:SessionProps) {
- const {t}=useI18n();
-
-  const selectedDevice=registry.devices.find(d=>d.id===deviceId)!;
+type SessionProps={
+ stageStyle:CSSProperties;onSelect:()=>void;selectedDevice:Device;focused:boolean;
+ onActivate:(id:string)=>void;onOrientation:(id:string,value:boolean)=>void;
+ feature:string;setFeature:Dispatch<SetStateAction<string>>;attachScreenshot:(file:File)=>void;
+};
+function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,onOrientation,feature,setFeature,attachScreenshot}:SessionProps) {
+  const {t}=useI18n();
+  const deviceId=selectedDevice.id;
   const phoneAvailable=selectedDevice.kind==='phone'&&selectedDevice.runtimeState==='managed',desktopAvailable=selectedDevice.kind==='desktop'&&selectedDevice.runtimeState==='managed',runtimeAvailable=phoneAvailable||desktopAvailable;
   const scope={phoneId:deviceId,ownerId:'local-user'};
-  const desktopExploration=useDesktopExploration(deviceId,runtimeAvailable&&deviceId!=='phone-local-01');
   const audio=useDeviceAudio(deviceId,selectedDevice.kind==='desktop'?`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}&kind=audio`:`/api/phone/media/audio?device=${encodeURIComponent(deviceId)}`);
   useWorkbenchNotice(audio.error);
 
@@ -185,43 +201,6 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
   const acting = useRef(false);
   const pointer = useRef<{ x: number; y: number; at: number; movedAt?: number; kind: string } | null>(null);
   const wheelAt = useRef(0);
-  const [chatSnapshot,setChatSnapshot]=useState<ChatSnapshot>({chat:null,order:0});
-  const chat=chatSnapshot.chat;
-  const historyChat=useRef<Chat|null>(null);historyChat.current=chat;
-  const historyWatchOffset=useRef(0);
-  const [displayCut,setDisplayCut]=useState<{ids:string[];runId:string;at:number;text:string}|null>(null);
-  useEffect(()=>{try{const value=JSON.parse((localStorage.getItem(`ai-phone:chat-display-cut:${deviceId}`)??(deviceId==='phone-local-01'?localStorage.getItem('ai-phone:chat-display-cut'):null))||'null');if(value&&Array.isArray(value.ids)&&value.ids.every((id:unknown)=>typeof id==='string')&&typeof value.at==='number'&&typeof value.runId==='string')setDisplayCut(value);}catch{}},[deviceId]);
-  function refreshChatDisplay(){
-    if(!chat)return;
-    const value={ids:chat.messages.map(m=>m.id),runId:['running','queued','paused'].includes(chat.runStatus)?chat.runId:'',at:Date.now(),text:chat.messages.find(m=>m.role==='assistant'&&m.runId===chat.runId)?.text||''};
-    setDisplayCut(value);try{localStorage.setItem(`ai-phone:chat-display-cut:${deviceId}`,JSON.stringify(value));}catch{}
-    setActiveFeature('');setError('');setHistoryError('');follow.current=true;
-  }
-  const conversation = useRef("");
-  const fetchingChat = useRef(false);
-  const [text, setText] = useState("");
-  const [error, setError] = useState("");
-  const [historyError, setHistoryError] = useState("");
-  const historyGeneration=useRef(0);
-  const beginHistory=useCallback(()=>++historyGeneration.current,[]);
-  const acceptChat=useCallback((next:Chat,order=++historyGeneration.current,beforeMessageId='')=>{
-    setChatSnapshot(previous=>acceptSnapshot(previous,next,order,beforeMessageId));
-  },[]);
-  const acknowledgeInput=useCallback((receipt:AcceptedInput,order:number)=>{
-    setChatSnapshot(previous=>acceptInputReceipt(previous,receipt,order));
-  },[]);
-  const outbox=useChatOutbox(chat?.conversationId||'',deviceId,acceptChat,beginHistory,acknowledgeInput);
-  const recoverVoice=useCallback((value:string)=>setText(old=>old?old+'\n'+value:value),[]);
-  const voiceBinding=useMemo(()=>({deviceId,conversationId:chat?.conversationId||'',agentId:(chat&&['queued','running','paused'].includes(chat.runStatus)&&chat.agentId)||selectedDevice.defaultAgentId,ready:runtimeAvailable&&outbox.ready,submit:outbox.submit,recover:recoverVoice,replies:chat?.messages.filter(m=>m.role==='assistant').map(m=>({id:m.id,text:m.text,ordinal:m.ordinal,complete:!m.active}))||[]}),[deviceId,chat,selectedDevice.defaultAgentId,runtimeAvailable,outbox.ready,outbox.submit,recoverVoice]);
-  const voiceDraft=useCopilotBinding(voiceBinding);
-  useWorkbenchNotice(error);
-  useWorkbenchNotice(historyError,()=>void fetchChat());
-  useWorkbenchNotice(outbox.error||outbox.entries.find(item=>item.error)?.error||'',outbox.retry);
-  useWorkbenchNotice(chat?.noticeKind===RunNoticeKind.NEEDS_INPUT?'':chat?.error||'');
-  useWorkbenchNotice(phoneError,()=>void observe());
-  const [files, setFiles] = useState<PendingFile[]>([]);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<Attachment | null>(null);
   const [captureFile,setCaptureFile]=useState<File|null>(null),[captureUrl,setCaptureUrl]=useState(''),[captureError,setCaptureError]=useState('');
   useEffect(()=>{if(!captureFile){setCaptureUrl('');return;}const url=URL.createObjectURL(captureFile);setCaptureUrl(url);return()=>URL.revokeObjectURL(url);},[captureFile]);
   const activeFeature=feature.endsWith(':'+deviceId)?feature.slice(0,-deviceId.length-1):'';
@@ -231,22 +210,8 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
   const phoneInput=useRef<HTMLTextAreaElement>(null),phoneComposing=useRef(false),inputQueue=useRef<Promise<void>>(Promise.resolve()),inputBuffer=useRef(""),inputTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const [landscape,setLandscape]=useState(false),[size,setSize]=useState({width:720,height:1440});
   const orientation=useRef(false),container=useRef<HTMLDivElement>(null);
-  const scroll = useRef<HTMLDivElement>(null);
-  const follow = useRef(true);
-
-  const active =
-    !!chat && ["queued", "running", "paused"].includes(chat.runStatus);
-  const paused = chat?.runStatus === "paused";
-  useEffect(()=>{onState(deviceId,{agentId:(active&&chat?.agentId)||selectedDevice.defaultAgentId,agentName:(active&&chat?.agentName)||registry.agents.find(a=>a.id===selectedDevice.defaultAgentId)?.name||t("未分配 Agent"),status:chat?.runStatus||'',runId:chat?.runId||'',reply:chat?.messages.filter(m=>m.role==='assistant'&&m.runId===chat.runId).at(-1)?.text||'',nextWakeAtMs:Number(chat?.nextWakeAtMs||0)});},[chat,active,deviceId,selectedDevice.defaultAgentId,registry.agents,onState]);
-  useEffect(()=>{registerRefresh(deviceId,refreshChatDisplay);return()=>registerRefresh(deviceId,null);},[chat,deviceId,registerRefresh]);
-  useEffect(()=>{if(!focused){setPreview(null);pointer.current=null;}},[focused]);
-
-  const visibleMessages=chat?.messages.filter(message=>!displayCut?.ids.includes(message.id)||(message.role==='assistant'&&message.runId===displayCut.runId))??[];
-  const received=new Set(chat?.messages.map(message=>message.requestId));
-  const pendingMessages=outbox.entries.filter(item=>!received.has(item.id));
-  const displayedMessages=[...visibleMessages,...pendingMessages.map(item=>create(ChatMessageSchema,{id:item.id,requestId:item.id,role:'user',text:item.text,attachments:item.attachments.map(file=>({...file,sizeBytes:BigInt(file.sizeBytes)}))}))]
-    .filter(message=>message.role!=='assistant'||message.text||message.hasActivity||message.attachments.length>0)
-    .map(message=>({...message,text:displayCut?.ids.includes(message.id)&&message.text===displayCut.text?'':message.text}));
+  useEffect(()=>{if(!focused)pointer.current=null;},[focused]);
+  useWorkbenchNotice(phoneError,()=>void observe());
   const observe = useCallback(async (signal?: AbortSignal) => {
     if (!focused || !phoneAvailable || observing.current) return;
     observing.current = true;
@@ -280,11 +245,6 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
       observing.current = false;
     }
   }, [deviceId,phoneAvailable,focused]);
-  const fetchChat=useCallback((signal?:AbortSignal,beforeMessageId='')=>readChatHistory(
-    {conversation,fetching:fetchingChat,latest:historyChat,watchOffset:historyWatchOffset},deviceId,
-    {begin:beginHistory,accept:acceptChat,error:setHistoryError},signal,beforeMessageId,
-  ),[deviceId,acceptChat,beginHistory]);
-  const historyPages=useChatHistoryPages(fetchChat,chatSnapshot);
   useEffect(() => {
     const abort=new AbortController();let phoneTimer:ReturnType<typeof setTimeout>;
     const phone=async()=>{if(focused&&document.visibilityState==="visible")await observe(abort.signal);if(!abort.signal.aborted)phoneTimer=setTimeout(phone,streamHealthy.current?500:250);};
@@ -292,65 +252,12 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
     void phone();document.addEventListener("visibilitychange",visibility);
     return()=>{abort.abort();clearTimeout(phoneTimer);document.removeEventListener("visibilitychange",visibility);};
   },[observe,focused]);
-  useEffect(() => {
-    const abort = new AbortController();
-    const url = new URL('/api/chat/events', location.href);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    const updates = new WebSocket(url);
-    updates.binaryType = 'arraybuffer';
-    let chatTimer: ReturnType<typeof setTimeout>;
-    let reading = false;
-    let changed = false;
-    const visible = () => document.visibilityState === 'visible';
-    const messages = async () => {
-      if (abort.signal.aborted || !visible() || reading) return;
-      clearTimeout(chatTimer);
-      reading = true;
-      let latest: Chat | undefined;
-      do {
-        changed = false;
-        latest = await fetchChat(abort.signal);
-      } while (changed && !abort.signal.aborted && visible());
-      reading = false;
-      if (abort.signal.aborted || !visible()) return;
-      const idle = latest && !['queued', 'running', 'paused'].includes(latest.runStatus)
-        && !latest.messages.some(message => message.active);
-      // An idle connection gets a slower backstop for changes without a socket event.
-      chatTimer = setTimeout(messages, idle && updates.readyState === WebSocket.OPEN ? 5000 : 700);
-    };
-    const refresh = () => {
-      changed = true;
-      void messages();
-    };
-    updates.onopen = refresh;
-    updates.onclose = refresh;
-    updates.onmessage = ({data}) => {
-      const {conversationId} = fromBinary(ChatChangedSchema, new Uint8Array(data));
-      if (!conversationId || !conversation.current || conversation.current === conversationId) refresh();
-    };
-    const visibility = () => {
-      if (visible()) refresh();
-      else clearTimeout(chatTimer);
-    };
-    void messages();
-    document.addEventListener('visibilitychange', visibility);
-    return () => {
-      abort.abort();
-      updates.close();
-      clearTimeout(chatTimer);
-      document.removeEventListener('visibilitychange', visibility);
-    };
-  }, [fetchChat]);
   useEffect(
     () => () => {
       if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
     },
     [],
   );
-  useEffect(() => {
-    if (follow.current && scroll.current)
-      scroll.current.scrollTop = scroll.current.scrollHeight;
-  }, [chat,outbox.entries,focused,showChat]);
   const act = async (
     action: MessageInitShape<typeof DeviceActionRequestSchema>["action"],
   ) => {
@@ -430,71 +337,10 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
       ),
     };
   }
-  const upload = async (selected: File[]) => {
-    if (files.length + selected.length > 8) {
-      setError(t("每条消息最多8个附件"));
-      return;
-    }
-    for (const file of selected) {
-      const key = clientId(),
-        preview = file.type.startsWith("image/")
-          ? URL.createObjectURL(file)
-          : "";
-      setFiles((old) => [...old, { key, name: file.name, preview }]);
-      try {
-        const body = new FormData();
-        body.append("file", file);
-        const response = await fetch("/api/assistant/upload", {
-          method: "POST",
-          body,
-        });
-        const bytes = new Uint8Array(await response.arrayBuffer());
-        if (!response.ok)
-          throw new Error(fromBinary(ApiErrorSchema, bytes).message);
-        const uploaded = fromBinary(ChatAttachmentSchema, bytes);
-        setFiles((old) =>
-          old.map((f) => (f.key === key ? { ...f, file: uploaded } : f)),
-        );
-      } catch (e) {
-        setFiles((old) =>
-          old.map((f) =>
-            f.key === key
-              ? { ...f, error: e instanceof Error ? e.message : t("上传失败") }
-              : f,
-          ),
-        );
-      }
-    }
-  };
-  const send = () => {
-    if(!runtimeAvailable||!chat||(!text.trim()&&!files.length)||files.some(file=>!file.file))return;
-    try{
-      outbox.submit({id:clientId(),conversationId:chat.conversationId,deviceId,text,attachments:files.map(item=>({...item.file!,sizeBytes:item.file!.sizeBytes.toString()}))});
-      // Only the submitted snapshot is cleared, synchronously; acknowledgements never touch drafts.
-      setText('');setFiles([]);setError('');follow.current=true;
-      files.forEach(file=>{if(file.preview)URL.revokeObjectURL(file.preview);});
-    }catch(value){setError(value instanceof Error?value.message:t('发送失败'));}
-  };
-  const runCommand = async (operation: "pause" | "cancel" | "resume") => {
-    if (!chat?.runId) return;
-    try {
-      const next = await rpc(
-        "assistant",
-        operation === "resume" ? "resume" : "cancel",
-        ChatRunRequestSchema,
-        create(ChatRunRequestSchema, { runId: chat.runId, pause: operation === "pause" }),
-        ChatStateSchema,
-      );
-      acceptChat(next);
-      setError("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("操作失败"));
-    }
-  };
   return (
     <div ref={container} className="device-session" data-landscape={landscape} onPointerDownCapture={()=>{if(focused)onActivate(deviceId);}} onFocusCapture={()=>{if(focused)onActivate(deviceId);}}>
       <div className="workspace-panes">
-        <section className="device-pane" onClick={()=>{if(!focused)onSelect();}} data-focused={focused} data-kind={selectedDevice.kind} aria-label={selectedDevice.name} style={{...stageStyle,'--device-aspect':desktopAvailable?1.6:size.width/size.height,gridColumn:screenColumn,gridRow:'1 / -1'} as CSSProperties}>
+        <section className="device-pane" onClick={()=>{if(!focused)onSelect();}} data-focused={focused} data-kind={selectedDevice.kind} aria-label={selectedDevice.name} style={{...stageStyle,'--device-aspect':desktopAvailable?1.6:size.width/size.height} as CSSProperties}>
           <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} audio={audio} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/></div>}</header>
         {!focused&&<button className="device-front" aria-label={`转到${selectedDevice.name}`} onClick={onSelect}/> }
         {desktopAvailable?<DesktopSurface deviceId={deviceId} active={focused}/>:phoneAvailable?<>
@@ -585,8 +431,208 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
             onKeyDown={e=>{if(e.nativeEvent.isComposing||phoneComposing.current||e.keyCode===229)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="a"){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:"SELECT_ALL"}});return;}if(e.metaKey||e.ctrlKey||e.altKey)return;const keys:Record<string,string>={Backspace:"DEL",Delete:"FORWARD_DEL",Enter:"ENTER",Tab:"TAB",Escape:"BACK",ArrowLeft:"DPAD_LEFT",ArrowRight:"DPAD_RIGHT",ArrowUp:"DPAD_UP",ArrowDown:"DPAD_DOWN"};if(keys[e.key]){e.preventDefault();flushPhone();queuePhone({case:"key",value:{key:keys[e.key]}});}}}/>
         </>:<div className="device-pending" data-scene-device={deviceId}>{selectedDevice?.kind==='desktop'?<Monitor size={32}/>:<Smartphone size={32}/>}<h2>{selectedDevice?.name||t("设备")}</h2><p>{t("尚未安装系统")}</p></div>}
         </div></section>
-        <section data-flip-id={showChat?`chat-slot-${chatRow}`:undefined} data-scene-device={`chat:${deviceId}`} className="conversation-pane" aria-label={`${selectedDevice.name}对话`} data-chat-visible={showChat} aria-hidden={!showChat} inert={!showChat} style={{...stageStyle,display:showChat?undefined:'none',gridColumn:chatColumn,gridRow:chatRow}}>
-          <div className="conversation-device-label"><span>{selectedDevice.name}</span><small>{(active&&chat?.agentName)||registry.agents.find(a=>a.id===selectedDevice.defaultAgentId)?.name||t("未分配 Agent")}</small></div>
+      </div>
+      <FloatingWindow id={`phone-capture-${deviceId}`} title={t("截图")} open={activeFeature==='phone-capture'} onClose={()=>closeFeature('phone-capture')} width={desktopAvailable?700:360} height={580} fitContent>
+        <div className="phone-capture-preview">
+          {captureUrl?<img src={captureUrl} alt={t("设备截图预览")}/>:captureError?<p role="alert" className="workbench-error">{captureError}</p>:<LoadingOrb size={20} label={t("正在截图")} />}
+          {captureFile&&captureUrl&&<div className="phone-capture-actions"><a href={captureUrl} download={captureFile.name}>{t("保存图片")}</a><Button variant="secondary" onClick={()=>{attachScreenshot(captureFile);closeFeature('phone-capture');}}>{t("附到对话")}</Button></div>}
+        </div>
+      </FloatingWindow>
+    </div>
+  );
+}
+
+function SharedConversation({actionsRef,registry,selectedDevice,copilotDeviceId,onRefresh}:{
+  actionsRef:Ref<ChatActions>;registry:Registry;selectedDevice:Device;
+  copilotDeviceId:string;onRefresh:()=>void;
+}) {
+  const {t}=useI18n();
+  const deviceId=selectedDevice.id;
+  const scroll=useRef<HTMLDivElement>(null);
+  const follow=useRef(true);
+  const [chatSnapshot,setChatSnapshot]=useState<ChatSnapshot>({chat:null,order:0});
+  const chat=chatSnapshot.chat;
+  const historyChat=useRef<Chat|null>(null);historyChat.current=chat;
+  const historyWatchOffset=useRef(0);
+  const [displayCut,setDisplayCut]=useState<{ids:string[];runId:string;at:number;text:string}|null>(null);
+  useEffect(()=>{try{const value=JSON.parse((localStorage.getItem('ai-phone:chat-display-cut:phone-local-01')??localStorage.getItem('ai-phone:chat-display-cut'))||'null');if(value&&Array.isArray(value.ids)&&value.ids.every((id:unknown)=>typeof id==='string')&&typeof value.at==='number'&&typeof value.runId==='string')setDisplayCut(value);}catch{}},[]);
+  function refreshChatDisplay(){
+    if(!chat)return;
+    const value={ids:chat.messages.map(m=>m.id),runId:['running','queued','paused'].includes(chat.runStatus)?chat.runId:'',at:Date.now(),text:chat.messages.find(m=>m.role==='assistant'&&m.runId===chat.runId)?.text||''};
+    setDisplayCut(value);try{localStorage.setItem('ai-phone:chat-display-cut:phone-local-01',JSON.stringify(value));}catch{}
+    onRefresh();setError('');setHistoryError('');follow.current=true;
+  }
+  const conversation = useRef("");
+  const fetchingChat = useRef(false);
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [historyError, setHistoryError] = useState("");
+  const historyGeneration=useRef(0);
+  const beginHistory=useCallback(()=>++historyGeneration.current,[]);
+  const acceptChat=useCallback((next:Chat,order=++historyGeneration.current,beforeMessageId='')=>{
+    setChatSnapshot(previous=>acceptSnapshot(previous,next,order,beforeMessageId));
+  },[]);
+  const acknowledgeInput=useCallback((receipt:AcceptedInput,order:number)=>{
+    setChatSnapshot(previous=>acceptInputReceipt(previous,receipt,order));
+  },[]);
+  const outbox=useChatOutbox(chat?.conversationId||'',acceptChat,beginHistory,acknowledgeInput);
+  const recoverVoice=useCallback((value:string)=>setText(old=>old?old+'\n'+value:value),[]);
+  const active=!!chat&&['queued','running','paused'].includes(chat.runStatus);
+  const paused=chat?.runStatus==='paused';
+  const runtimeAvailable=active||selectedDevice.runtimeState==='managed';
+  const targetDevice=useRef(deviceId);
+  targetDevice.current=deviceId;
+  const submitVoice=useCallback((input:Parameters<typeof outbox.submit>[0])=>{
+    outbox.submit({...input,deviceId:targetDevice.current});
+  },[outbox.submit]);
+  const agentId=registry.activeAgentId;
+  const voiceBinding=useMemo(()=>({
+    deviceId:copilotDeviceId,conversationId:chat?.conversationId||'',agentId,
+    ready:runtimeAvailable&&outbox.ready,submit:submitVoice,recover:recoverVoice,
+    replies:chat?.messages.filter(message=>message.role==='assistant').map(message=>({
+      id:message.id,text:message.text,ordinal:message.ordinal,complete:!message.active
+    }))||[]
+  }),[copilotDeviceId,chat,agentId,runtimeAvailable,outbox.ready,submitVoice,recoverVoice]);
+  const voiceDraft=useCopilotBinding(voiceBinding);
+  useWorkbenchNotice(error);
+  useWorkbenchNotice(historyError,()=>void fetchChat());
+  useWorkbenchNotice(outbox.error||outbox.entries.find(item=>item.error)?.error||'',outbox.retry);
+  useWorkbenchNotice(chat?.noticeKind===RunNoticeKind.NEEDS_INPUT?'':chat?.error||'');
+  const [files, setFiles] = useState<PendingFile[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<Attachment | null>(null);
+  const visibleMessages=chat?.messages.filter(message=>!displayCut?.ids.includes(message.id)||(message.role==='assistant'&&message.runId===displayCut.runId))??[];
+  const received=new Set(chat?.messages.map(message=>message.requestId));
+  const pendingMessages=outbox.entries.filter(item=>!received.has(item.id));
+  const displayedMessages=[...visibleMessages,...pendingMessages.map(item=>create(ChatMessageSchema,{id:item.id,requestId:item.id,role:'user',text:item.text,attachments:item.attachments.map(file=>({...file,sizeBytes:BigInt(file.sizeBytes)}))}))]
+    .filter(message=>message.role!=='assistant'||message.text||message.hasActivity||message.attachments.length>0)
+    .map(message=>({...message,text:displayCut?.ids.includes(message.id)&&message.text===displayCut.text?'':message.text}));
+  const fetchChat=useCallback((signal?:AbortSignal,beforeMessageId='')=>readChatHistory(
+    {conversation,fetching:fetchingChat,latest:historyChat,watchOffset:historyWatchOffset},
+    {begin:beginHistory,accept:acceptChat,error:setHistoryError},signal,beforeMessageId,
+  ),[acceptChat,beginHistory]);
+  const historyPages=useChatHistoryPages(fetchChat,chatSnapshot);
+  useEffect(() => {
+    const abort = new AbortController();
+    const url = new URL('/api/chat/events', location.href);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    const updates = new WebSocket(url);
+    updates.binaryType = 'arraybuffer';
+    let chatTimer: ReturnType<typeof setTimeout>;
+    let reading = false;
+    let changed = false;
+    const visible = () => document.visibilityState === 'visible';
+    const messages = async () => {
+      if (abort.signal.aborted || !visible() || reading) return;
+      clearTimeout(chatTimer);
+      reading = true;
+      let latest: Chat | undefined;
+      do {
+        changed = false;
+        latest = await fetchChat(abort.signal);
+      } while (changed && !abort.signal.aborted && visible());
+      reading = false;
+      if (abort.signal.aborted || !visible()) return;
+      const idle = latest && !['queued', 'running', 'paused'].includes(latest.runStatus)
+        && !latest.messages.some(message => message.active);
+      // An idle connection gets a slower backstop for changes without a socket event.
+      chatTimer = setTimeout(messages, idle && updates.readyState === WebSocket.OPEN ? 5000 : 700);
+    };
+    const refresh = () => {
+      changed = true;
+      void messages();
+    };
+    updates.onopen = refresh;
+    updates.onclose = refresh;
+    updates.onmessage = ({data}) => {
+      const {conversationId} = fromBinary(ChatChangedSchema, new Uint8Array(data));
+      if (!conversationId || !conversation.current || conversation.current === conversationId) refresh();
+    };
+    const visibility = () => {
+      if (visible()) refresh();
+      else clearTimeout(chatTimer);
+    };
+    void messages();
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      abort.abort();
+      updates.close();
+      clearTimeout(chatTimer);
+      document.removeEventListener('visibilitychange', visibility);
+    };
+  }, [fetchChat]);
+  useEffect(() => {
+    if (follow.current && scroll.current)
+      scroll.current.scrollTop = scroll.current.scrollHeight;
+  }, [chat,outbox.entries]);
+  const upload = async (selected: File[]) => {
+    if (files.length + selected.length > 8) {
+      setError(t("每条消息最多8个附件"));
+      return;
+    }
+    for (const file of selected) {
+      const key = clientId(),
+        preview = file.type.startsWith("image/")
+          ? URL.createObjectURL(file)
+          : "";
+      setFiles((old) => [...old, { key, name: file.name, preview }]);
+      try {
+        const body = new FormData();
+        body.append("file", file);
+        const response = await fetch("/api/assistant/upload", {
+          method: "POST",
+          body,
+        });
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        if (!response.ok)
+          throw new Error(fromBinary(ApiErrorSchema, bytes).message);
+        const uploaded = fromBinary(ChatAttachmentSchema, bytes);
+        setFiles((old) =>
+          old.map((f) => (f.key === key ? { ...f, file: uploaded } : f)),
+        );
+      } catch (e) {
+        setFiles((old) =>
+          old.map((f) =>
+            f.key === key
+              ? { ...f, error: e instanceof Error ? e.message : t("上传失败") }
+              : f,
+          ),
+        );
+      }
+    }
+  };
+  const send = () => {
+    if(!runtimeAvailable||!chat||(!text.trim()&&!files.length)||files.some(file=>!file.file))return;
+    try{
+      outbox.submit({id:clientId(),conversationId:chat.conversationId,deviceId,text,attachments:files.map(item=>({...item.file!,sizeBytes:item.file!.sizeBytes.toString()}))});
+      // Only the submitted snapshot is cleared, synchronously; acknowledgements never touch drafts.
+      setText('');setFiles([]);setError('');follow.current=true;
+      files.forEach(file=>{if(file.preview)URL.revokeObjectURL(file.preview);});
+    }catch(value){setError(value instanceof Error?value.message:t('发送失败'));}
+  };
+  const runCommand = async (operation: "pause" | "cancel" | "resume") => {
+    if (!chat?.runId) return;
+    try {
+      const next = await rpc(
+        "assistant",
+        operation === "resume" ? "resume" : "cancel",
+        ChatRunRequestSchema,
+        create(ChatRunRequestSchema, { runId: chat.runId, pause: operation === "pause" }),
+        ChatStateSchema,
+      );
+      acceptChat(next);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("操作失败"));
+    }
+  };
+  useImperativeHandle(actionsRef,()=>({
+    refreshDisplay:refreshChatDisplay,
+    attach:file=>{void upload([file]);},
+  }));
+  return <>
+        <section data-flip-id="shared-chat" className="conversation-pane" aria-labelledby="shared-chat-agent">
+          <div className="conversation-device-label"><span>{selectedDevice.name}</span><small id="shared-chat-agent">{(active&&chat?.agentName)||registry.agents.find(a=>a.id===agentId)?.name||t("未分配 Agent")}</small></div>
           <div
             className="message-scroll"
             ref={scroll}
@@ -750,8 +796,8 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
               >
                 <Paperclip size={19} />
               </Button>
-              {phoneAvailable&&deviceId==='phone-local-01'&&<ExplorationToggle/>}{runtimeAvailable&&deviceId!=='phone-local-01'&&<DesktopExploreToggle control={desktopExploration} focused={focused}/>}
-              {runtimeAvailable&&<CopilotToggle deviceId={deviceId} ready={outbox.ready} onActivate={()=>onActivate(deviceId)}/>}
+              {runtimeAvailable&&<ExplorationToggle/>}
+              <CopilotToggle deviceId={copilotDeviceId} ready={runtimeAvailable&&outbox.ready}/>
               <div className="composer-submit">
                 {active&&!paused&&<span className="composer-progress" role="status"><LoadingOrb size={14} />{t(chat?.runStatus==='queued'?'待继续':'正在处理')}</span>}
                 {paused && (
@@ -783,7 +829,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
                     type="submit"
                     aria-label={active?t("补充任务指令"):t("发送")}
                     disabled={
-                      !outbox.ready ||
+                      !runtimeAvailable || !outbox.ready ||
                       !chat ||
                       (!text.trim() && !files.length) ||
                       files.some((f) => !f.file)
@@ -796,13 +842,6 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
             </div>
           </form>
         </section>
-      </div>
-      <FloatingWindow id={`phone-capture-${deviceId}`} title={t("截图")} open={activeFeature==='phone-capture'} onClose={()=>closeFeature('phone-capture')} width={desktopAvailable?700:360} height={580} fitContent>
-        <div className="phone-capture-preview">
-          {captureUrl?<img src={captureUrl} alt={t("设备截图预览")}/>:captureError?<p role="alert" className="workbench-error">{captureError}</p>:<LoadingOrb size={20} label={t("正在截图")} />}
-          {captureFile&&captureUrl&&<div className="phone-capture-actions"><a href={captureUrl} download={captureFile.name}>{t("保存图片")}</a><Button variant="secondary" onClick={()=>{void upload([captureFile]);closeFeature('phone-capture');}}>{t("附到对话")}</Button></div>}
-        </div>
-      </FloatingWindow>
       <Dialog
         open={!!preview}
         onOpenChange={(open) => {
@@ -819,6 +858,5 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  );
+  </>;
 }

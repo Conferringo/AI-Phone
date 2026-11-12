@@ -6,8 +6,7 @@ use sqlx::Row;
 #[ignore = "real disposable PostgreSQL; resumed conversation status selection"]
 async fn latest_conversation_status_tracks_resumed_activity_and_keeps_active_priority() {
     worker::steering_regressions::database_case(|app| async move {
-        let conversation=Uuid::now_v7();
-        sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,'activity-fixture')").bind(conversation).execute(&app.db).await.unwrap();
+        let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&app.db).await.unwrap();
         let mut ids=vec![];
         for (origin,age,finished) in [("user",10,0),("exploration",1,60)] {
             let run=Uuid::now_v7();let message=Uuid::now_v7();ids.push(run);

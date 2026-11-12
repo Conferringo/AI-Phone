@@ -2331,10 +2331,7 @@ async fn execute(
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
     let task_goal = !background && row.get::<&str, _>("trigger_input") == "task-goal";
-    let exploration = matches!(
-        row.get::<String, _>("origin").as_str(),
-        "exploration" | "desktop-exploration"
-    );
+    let exploration = row.get::<&str, _>("origin") == "exploration";
     let notification_run = row.get::<String, _>("origin") == "notification";
     let screen_attention: bool = row.get("screen_attention");
     let desktop = row.get::<Option<&str>, _>("device_kind") == Some("desktop");
@@ -2364,7 +2361,11 @@ async fn execute(
         let input_changed = app.run_signals.input.notified();
         app.run_signals.speech.wait(conversation, cancel).await?;
         if exploration && state.exploration_yield_due(now_ms(), step) {
-            let interval: i64 = sqlx::query_scalar("SELECT CASE WHEN r.origin='desktop-exploration' THEN (SELECT interval_seconds FROM desktop_exploration WHERE device_id=r.device_id) ELSE (SELECT interval_seconds FROM proactive_state) END::bigint FROM runs r WHERE r.id=$1").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+            let interval: i64 =
+                sqlx::query_scalar("SELECT interval_seconds::bigint FROM proactive_state")
+                    .fetch_one(&app.db)
+                    .await
+                    .map_err(|e| e.to_string())?;
             if persist_disposition(
                 app,
                 id,
@@ -5432,9 +5433,8 @@ mod learning_entry_tests {
     #[ignore = "real disposable PostgreSQL; recorded tool learning and receipt replay"]
     async fn completed_desktop_tool_receipts_enter_learning_without_repeating_actions() {
         steering_regressions::database_case(|app|async move{
-            let device="recorded-learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
+            let device="recorded-learning-desktop";let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&app.db).await.unwrap();let message=Uuid::now_v7();let run=Uuid::now_v7();
             sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
-            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')").bind(message).bind(conversation).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,device_id) VALUES($1,$2,$3,$1,'fixture','running',$4)").bind(run).bind(conversation).bind(message).bind(device).execute(&app.db).await.unwrap();
             let cancel=CancellationToken::new();let mut epoch=0;

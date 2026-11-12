@@ -116,7 +116,7 @@ pub async fn background_error(
     {
         return Ok(String::new());
     }
-    let run = sqlx::query("SELECT status,loop_state FROM runs WHERE device_id=$1 AND origin IN ('exploration','desktop-exploration','notification') AND error=$2 ORDER BY created_at DESC,id DESC LIMIT 1")
+    let run = sqlx::query("SELECT status,loop_state FROM runs WHERE device_id=$1 AND origin IN ('exploration','notification') AND error=$2 ORDER BY created_at DESC,id DESC LIMIT 1")
         .bind(device).bind(error).fetch_optional(db).await?;
     if run.as_ref().is_some_and(|run| {
         kind(run.get("status"), error, &run.get::<Value, _>("loop_state"))

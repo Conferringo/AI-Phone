@@ -37,10 +37,16 @@ async fn goal_state(response: Response) -> wire::ProactiveState {
     wire::ProactiveState::decode(body).unwrap()
 }
 
-async fn chat(app: &Shared, device: &str, text: &str) -> wire::ChatState {
+async fn chat(
+    app: &Shared,
+    device: &str,
+    text: &str,
+    voice: Option<wire::ChatVoiceInput>,
+) -> wire::ChatState {
     let request = wire::ChatSendRequest {
         device_id: device.into(),
         text: text.into(),
+        voice,
         request_id: Uuid::now_v7().to_string(),
         ..Default::default()
     };
@@ -90,15 +96,6 @@ async fn goal_steers_one_run_and_blocks_liberty_until_stopped_or_completed() {
         .unwrap();
         sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')")
             .bind(DESKTOP).execute(&app.db).await.unwrap();
-        let desktop_liberty = wire::DesktopExploreUpdate {
-            device_id: DESKTOP.into(),
-            enabled: true,
-            interval_seconds: 45,
-        };
-        crate::desktop_explore::update(&app, desktop_liberty.clone())
-            .await
-            .unwrap();
-        let unrelated = chat(&app, DESKTOP, "保留电脑任务").await;
         schedule(&app, &["phone"]).await.unwrap();
         let before = state(&app).await.unwrap();
         assert!(before.exploring);
@@ -108,15 +105,19 @@ async fn goal_steers_one_run_and_blocks_liberty_until_stopped_or_completed() {
         assert!(started.goal_active && !started.exploring);
         assert_eq!(started.goal_device_id, registry::PHONE);
         assert_ne!(started.active_run_id, before.active_run_id);
-        assert!(
-            !crate::desktop_explore::state(&app, DESKTOP)
-                .await
-                .unwrap()
-                .enabled
-        );
 
-        let manual = chat(&app, registry::PHONE, "只看今天的消息").await;
-        assert_eq!(manual.run_id, started.active_run_id);
+        let mobile = chat(&app, registry::PHONE, "只看今天的消息", None).await;
+        let desktop = chat(&app, DESKTOP, "也检查电脑消息", Some(wire::ChatVoiceInput {
+    session_id: Uuid::now_v7().to_string(), utterance_id: "first".into(),
+    revision: 1, literal: "也检查电脑消息".into(), ..Default::default()
+})).await;
+        assert_eq!(desktop.conversation_id, mobile.conversation_id);
+        assert_eq!(desktop.run_id, started.active_run_id);
+        assert_eq!(mobile.run_id, started.active_run_id);
+        let conversation = Uuid::parse_str(&mobile.conversation_id).unwrap();
+        let history = crate::http::state(&app, conversation).await.unwrap();
+        assert!(history.messages.iter().any(|message| message.text == "也检查电脑消息" && message.voice.is_some()));
+        assert_eq!(history.device_id, registry::PHONE);
         let edited = goal_state(goal(&app, started.revision, "检查今天的工作消息").await).await;
         assert_eq!(edited.active_run_id, started.active_run_id);
         assert_eq!(edited.goal, "检查今天的工作消息");
@@ -139,12 +140,6 @@ async fn goal_steers_one_run_and_blocks_liberty_until_stopped_or_completed() {
         let error = axum::body::to_bytes(phone_liberty.into_body(), 1024).await.unwrap();
         assert_eq!(wire::ApiError::decode(error).unwrap().code, "goal_active");
         assert_eq!(
-            crate::desktop_explore::update(&app, desktop_liberty.clone())
-                .await
-                .unwrap_err(),
-            "请先关闭当前目标"
-        );
-        assert_eq!(
             goal(&app, started.revision, "").await.status(),
             StatusCode::CONFLICT
         );
@@ -156,9 +151,7 @@ async fn goal_steers_one_run_and_blocks_liberty_until_stopped_or_completed() {
             sqlx::query_scalar::<_, String>("SELECT status FROM runs WHERE id=$1").bind(run)
         };
         let goal_run = Uuid::parse_str(&edited.active_run_id).unwrap();
-        let unrelated_run = Uuid::parse_str(&unrelated.run_id).unwrap();
         assert_eq!(run_status(goal_run).fetch_one(&app.db).await.unwrap(), "canceled");
-        assert_eq!(run_status(unrelated_run).fetch_one(&app.db).await.unwrap(), "queued");
 
         let again = goal_state(goal(&app, stopped.revision, "复核消息").await).await;
         let run = Uuid::parse_str(&again.active_run_id).unwrap();
@@ -170,12 +163,14 @@ async fn goal_steers_one_run_and_blocks_liberty_until_stopped_or_completed() {
         let finished = state(&app).await.unwrap();
         assert!(!finished.goal_active);
         assert_eq!(finished.goal_status, "succeeded");
-        assert!(
-            crate::desktop_explore::update(&app, desktop_liberty)
-                .await
-                .unwrap()
-                .enabled
-        );
+        let liberty = route(
+            State(app.clone()), Path("update".into()), headers(&app),
+            Ok(wire::ProactiveUpdateRequest {
+                expected_revision: finished.revision, exploring: true,
+                interval_seconds: 45, ..Default::default()
+            }.encode_to_vec().into()),
+        ).await;
+        assert_eq!(liberty.status(), StatusCode::OK);
     })
     .await;
 }
