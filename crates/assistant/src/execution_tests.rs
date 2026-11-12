@@ -216,7 +216,7 @@ async fn stalled_phone_model_does_not_block_desktop_and_cancel_is_per_run() {
             verified_at_ms: 1,
         });
         let phone = queued(&app, "fixture-phone", "user").await;
-        let desktop = queued(&app, "fixture-desktop", "user").await;
+        let desktop = queued(&app, "fixture-desktop", "device-handoff").await;
         let worker = FixtureTask(tokio::spawn(work(app.clone())));
         let (first, second) = tokio::time::timeout(Duration::from_secs(10), async {
             (

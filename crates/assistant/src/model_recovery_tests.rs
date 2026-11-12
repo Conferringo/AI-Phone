@@ -260,7 +260,7 @@ async fn wait_for_run_waiters(app: &App, count: i64) {
 async fn wait_for_conversation_waiters(app: &App, count: i64) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
-            let waiting:i64=sqlx::query_scalar("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND query='SELECT id FROM conversations WHERE id=$1 FOR UPDATE'")
+            let waiting:i64=sqlx::query_scalar("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND query='SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE'")
                 .fetch_one(&app.db).await.unwrap();
             if waiting>=count {return;}
             tokio::time::sleep(Duration::from_millis(10)).await;

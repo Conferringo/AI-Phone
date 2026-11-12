@@ -77,7 +77,6 @@ import {readChatHistory} from "@/lib/chat-history-reader";
 import {useChatHistoryPages} from "@/components/use-chat-history-pages";
 import {ClientUpdate} from "@/components/client-update";
 
-type Screen = MessageShape<typeof DeviceObservationSchema>;
 type Chat = MessageShape<typeof ChatStateSchema>;
 type Attachment = MessageShape<typeof ChatAttachmentSchema>;
 type PendingFile = {
@@ -193,10 +192,12 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
 
   const [image, setImage] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const screen = useRef<Screen | null>(null);
+  const screen = useRef<{width:number;height:number} | null>(null);
   const imageUrl = useRef("");
   const observing = useRef(false);
   const streamHealthy=useRef(false);
+  const presentedLandscape=useRef<boolean|null>(null);
+  const refreshObservation=useRef<()=>void>(()=>{});
   const [visible,setVisible]=useState(true);
   const acting = useRef(false);
   const pointer = useRef<{ x: number; y: number; at: number; movedAt?: number; kind: string } | null>(null);
@@ -208,8 +209,8 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
   function closeFeature(name:string){setFeature(value=>value===name+':'+deviceId?'':value);}
   function setActiveFeature(name:string){setFeature(name?name+':'+deviceId:'');}
   const phoneInput=useRef<HTMLTextAreaElement>(null),phoneComposing=useRef(false),inputQueue=useRef<Promise<void>>(Promise.resolve()),inputBuffer=useRef(""),inputTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const [landscape,setLandscape]=useState(false),[size,setSize]=useState({width:720,height:1440});
-  const orientation=useRef(false),container=useRef<HTMLDivElement>(null);
+  const [size,setSize]=useState({width:720,height:1440});
+  const landscape=size.width>size.height;
   useEffect(()=>{if(!focused)pointer.current=null;},[focused]);
   useWorkbenchNotice(phoneError,()=>void observe());
   const observe = useCallback(async (signal?: AbortSignal) => {
@@ -220,38 +221,71 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
         "phone",
         "observe",
         DeviceRequestSchema,
-        create(DeviceRequestSchema, {...scope,metadataOnly:streamHealthy.current}),
+        create(DeviceRequestSchema, {phoneId:deviceId,ownerId:'local-user',metadataOnly:streamHealthy.current}),
         DeviceObservationSchema,
         signal,
       );
       if (signal?.aborted) return;
-      const horizontal=next.width>next.height;
-      if(horizontal!==orientation.current){onOrientation(deviceId,horizontal);orientation.current=horizontal;setLandscape(horizontal);}
-      setSize(previous=>previous.width===next.width&&previous.height===next.height?previous:{width:next.width,height:next.height});
-      if(!next.png.length){screen.current=next;setPhoneError("");return;}
-      const url = URL.createObjectURL(
-        new Blob([new Uint8Array(next.png)], { type: "image/png" }),
-      );
-      const previous = imageUrl.current;
-      imageUrl.current = url;
-      screen.current = next;
-      setImage(url);
+      const previous=screen.current;
+      const {width,height}=next;
+      if(previous?.width!==width||previous.height!==height){
+        const horizontal=width>height;
+        if(horizontal!==(previous?previous.width>previous.height:false))onOrientation(deviceId,horizontal);
+        screen.current={width,height};
+        setSize(screen.current);
+      }
+      if(next.png.length){
+        const url=URL.createObjectURL(new Blob([new Uint8Array(next.png)],{type:'image/png'}));
+        if(imageUrl.current)URL.revokeObjectURL(imageUrl.current);
+        imageUrl.current=url;
+        setImage(url);
+      }
       setPhoneError("");
-      if (previous) URL.revokeObjectURL(previous);
     } catch (e) {
       if (!signal?.aborted)
         setPhoneError(e instanceof Error ? e.message : t("手机连接中断"));
     } finally {
       observing.current = false;
     }
-  }, [deviceId,phoneAvailable,focused]);
+  }, [deviceId,phoneAvailable,focused,onOrientation,t]);
   useEffect(() => {
-    const abort=new AbortController();let phoneTimer:ReturnType<typeof setTimeout>;
-    const phone=async()=>{if(focused&&document.visibilityState==="visible")await observe(abort.signal);if(!abort.signal.aborted)phoneTimer=setTimeout(phone,streamHealthy.current?500:250);};
-    const visibility=()=>{const shown=document.visibilityState==="visible";setVisible(shown);if(!shown)streamHealthy.current=false;else void observe(abort.signal);};
-    void phone();document.addEventListener("visibilitychange",visibility);
-    return()=>{abort.abort();clearTimeout(phoneTimer);document.removeEventListener("visibilitychange",visibility);};
-  },[observe,focused]);
+    const visibility=()=>setVisible(!document.hidden);
+    visibility();
+    document.addEventListener('visibilitychange',visibility);
+    return()=>document.removeEventListener('visibilitychange',visibility);
+  },[]);
+  useEffect(() => {
+    if(!focused||!phoneAvailable||!visible)return;
+    const abort=new AbortController();
+    let timer:ReturnType<typeof setTimeout>,running=false;
+    async function poll(){
+      if(running||abort.signal.aborted||document.hidden)return;
+      clearTimeout(timer);
+      running=true;
+      await observe(abort.signal);
+      running=false;
+      if(abort.signal.aborted)return;
+      const dimensions=screen.current;
+      const matches=dimensions&&(presentedLandscape.current===null||presentedLandscape.current===(dimensions.width>dimensions.height));
+      timer=setTimeout(poll,streamHealthy.current&&matches?5000:250);
+    }
+    refreshObservation.current=()=>void poll();
+    void poll();
+    return()=>{abort.abort();clearTimeout(timer);refreshObservation.current=()=>{};};
+  },[observe,focused,phoneAvailable,visible]);
+  function streamConnection(online:boolean){
+    const disconnected=streamHealthy.current&&!online;
+    streamHealthy.current=online;
+    if(disconnected){presentedLandscape.current=null;refreshObservation.current();}
+  }
+  function streamDimensions(frame:HTMLImageElement){
+    if(!streamHealthy.current)return;
+    const horizontal=frame.naturalWidth>frame.naturalHeight;
+    if(horizontal===presentedLandscape.current)return;
+    presentedLandscape.current=horizontal;
+    const dimensions=screen.current;
+    if(!dimensions||horizontal!==(dimensions.width>dimensions.height))refreshObservation.current();
+  }
   useEffect(
     () => () => {
       if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
@@ -264,22 +298,13 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
     if (!focused || !phoneAvailable || acting.current || !screen.current) return false;
     acting.current = true;
     try {
-      let current = screen.current;
-      {
-        const control = await rpc(
-          "phone",
-          "control",
-          TakeControlRequestSchema,
-          create(TakeControlRequestSchema, { ...scope, controller: "manual" }),
-          ControlStateSchema,
-        );
-        current = {
-          ...current,
-          controlEpoch: control.controlEpoch,
-          controller: control.controller,
-        };
-        screen.current = current;
-      }
+      const control = await rpc(
+        "phone",
+        "control",
+        TakeControlRequestSchema,
+        create(TakeControlRequestSchema, { ...scope, controller: "manual" }),
+        ControlStateSchema,
+      );
       const result = await rpc(
         "phone",
         "action",
@@ -288,7 +313,7 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
           ...scope,
           runId: "manual",
           actionId: clientId(),
-          controlEpoch: current.controlEpoch,
+          controlEpoch: control.controlEpoch,
           controller: "manual",
           action,
         }),
@@ -300,7 +325,7 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
             ? t("操作结果未知，请先检查画面")
             : result.output || t("操作未完成"),
         );
-      await observe();
+      if(!streamHealthy.current||action?.case==='orientation')await observe();
       return true;
     } catch (e) {
       setPhoneError(e instanceof Error ? e.message : t("操作失败"));
@@ -338,19 +363,20 @@ function PhoneWorkspace({stageStyle,onSelect,selectedDevice,focused,onActivate,o
     };
   }
   return (
-    <div ref={container} className="device-session" data-landscape={landscape} onPointerDownCapture={()=>{if(focused)onActivate(deviceId);}} onFocusCapture={()=>{if(focused)onActivate(deviceId);}}>
+    <div className="device-session" data-landscape={landscape} onPointerDownCapture={()=>{if(focused)onActivate(deviceId);}} onFocusCapture={()=>{if(focused)onActivate(deviceId);}}>
       <div className="workspace-panes">
         <section className="device-pane" onClick={()=>{if(!focused)onSelect();}} data-focused={focused} data-kind={selectedDevice.kind} aria-label={selectedDevice.name} style={{...stageStyle,'--device-aspect':desktopAvailable?1.6:size.width/size.height} as CSSProperties}>
           <div className="device-visual"><header className="session-device-header" data-scene-device={`header:${deviceId}`}><span>{selectedDevice.name}</span>{runtimeAvailable&&<div className="session-device-tools" style={focused?undefined:{display:"none"}}><PhoneToolbar kind={desktopAvailable?"desktop":"phone"} audio={audio} rotate={rotatePhone} capture={capturePhone} landscape={landscape} onInteract={()=>setActiveFeature('')}/></div>}</header>
         {!focused&&<button className="device-front" aria-label={`转到${selectedDevice.name}`} onClick={onSelect}/> }
-        {desktopAvailable?<DesktopSurface deviceId={deviceId} active={focused}/>:phoneAvailable?<>
+        {desktopAvailable?<DesktopSurface deviceId={deviceId} active={focused} visible={visible}/>:phoneAvailable?<>
           <div className="device-screen" data-scene-device={deviceId} style={{aspectRatio:`${size.width}/${size.height}`,'--device-aspect':size.width/size.height} as CSSProperties}>
             {image || visible ? (
               <PhoneStreamImage
                 endpoint={`/api/phone/media/screen?device=${encodeURIComponent(deviceId)}`}
                 fallback={image}
                 enabled={visible}
-                onConnectionState={online=>{streamHealthy.current=online;}}
+                onConnectionState={streamConnection}
+                onLoad={event=>streamDimensions(event.currentTarget)}
                 alt={t("Android实时屏幕")}
                 draggable={false}
                 onPointerDown={(e) => {

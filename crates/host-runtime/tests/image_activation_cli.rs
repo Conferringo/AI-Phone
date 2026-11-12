@@ -62,7 +62,9 @@ fn native_import_streams_each_codec_and_resumes_without_loading_again_or_replaci
             serde_json::from_slice::<Value>(&fs::read(&record).unwrap()).unwrap(),
             manifest
         );
+        assert_eq!(inspection_count(home), 2 * capsule::ROLES.len());
         fs::remove_file(home.join("imported")).unwrap();
+        fs::write(home.join("events"), "").unwrap();
         let output = invoke(home, &payload);
         assert!(
             output.status.success(),
@@ -70,8 +72,17 @@ fn native_import_streams_each_codec_and_resumes_without_loading_again_or_replaci
             String::from_utf8_lossy(&output.stderr)
         );
         assert!(!home.join("imported").exists());
+        assert_eq!(inspection_count(home), capsule::ROLES.len());
         assert_eq!(fs::read(home.join("data/chat")).unwrap(), b"original chat");
     }
+}
+
+fn inspection_count(home: &Path) -> usize {
+    fs::read_to_string(home.join("events"))
+        .unwrap()
+        .lines()
+        .filter(|event| event.starts_with("inspect "))
+        .count()
 }
 #[test]
 fn native_wsl_image_import_uses_the_selected_socket_and_preserves_graph_and_chat() {

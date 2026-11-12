@@ -330,6 +330,25 @@ pub fn pixels(data: &[u8], width: u32, height: u32, format: PixelFormat) -> Resu
         return Err("X11画面长度无效".into());
     }
     let mut image = RgbImage::new(width, height);
+    if (
+        bytes,
+        format.little_endian,
+        format.red,
+        format.green,
+        format.blue,
+    ) == (4, true, 0xff0000, 0xff00, 0xff)
+    {
+        let output: &mut [u8] = image.as_mut();
+        for ([blue, green, red, _], rgb) in data
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(output.as_chunks_mut::<3>().0)
+        {
+            *rgb = [*red, *green, *blue];
+        }
+        return Ok(image);
+    }
     for (y, row) in data.chunks_exact(stride).enumerate() {
         for (x, value) in row.chunks_exact(bytes).take(width as usize).enumerate() {
             let pixel = integer(value, format.little_endian);

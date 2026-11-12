@@ -1,9 +1,10 @@
-import {toBinary,type MessageShape} from '@bufbuild/protobuf';
+import {createRegistry,equals,type MessageShape} from '@bufbuild/protobuf';
 import {ChatMessageSchema,ChatWindowKind,type ChatStateSchema} from '@ai-phone/protocol/ai_phone/v1/assistant_pb';
 import type {ChatSnapshot,HistoryBoundary,SnapshotVersion} from './chat-snapshot';
 type Chat=MessageShape<typeof ChatStateSchema>;
 type Message=Chat['messages'][number];
 export const HISTORY_LIMIT=40;
+export const chatEquality={registry:createRegistry(),unknown:true};
 
 export function historyRequest(conversationId:string,chat:Chat|null=null,receiptRequestIds:string[]=[],beforeMessageId='',watchOffset=0){
  const active=[...new Set(chat?.messages.filter(message=>message.role==='assistant'&&message.active).map(message=>message.id)??[])],count=Math.min(8,active.length);
@@ -19,11 +20,6 @@ export function receiptBatch(entries:ReadonlyArray<{id:string;status:string}>,of
  return{ids:Array.from({length:count},(_,index)=>ids[(start+index)%ids.length]),next:(start+count)%ids.length};
 }
 
-function sameMessage(a:Message,b:Message){
- const left=toBinary(ChatMessageSchema,a),right=toBinary(ChatMessageSchema,b);
- return left.length===right.length&&left.every((byte,index)=>byte===right[index]);
-}
-
 function messageVersions(previous:ChatSnapshot){
  if(previous.messageVersions)return new Map(previous.messageVersions);
  return new Map(previous.chat?.messages.map(message=>[message.id,{revision:previous.chat!.revision,order:previous.order}] as const)??[]);
@@ -34,7 +30,7 @@ function isOlder(next:SnapshotVersion,known:SnapshotVersion){return next.revisio
 function upsert(messages:Map<string,Message>,versions:Map<string,SnapshotVersion>,incoming:Message,version:SnapshotVersion,minimumRevision:bigint){
  const known=messages.get(incoming.id);
  if(known&&(version.revision<minimumRevision||isOlder(version,versions.get(incoming.id)!)))return;
- messages.set(incoming.id,known&&sameMessage(known,incoming)?known:incoming);
+ messages.set(incoming.id,known&&equals(ChatMessageSchema,known,incoming,chatEquality)?known:incoming);
  versions.set(incoming.id,version);
 }
 

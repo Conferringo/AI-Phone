@@ -180,6 +180,7 @@ async fn real_pg_row_bound_receipts_and_lane_heads_do_not_scan_into_the_response
             for _ in 0..100 {
                 (_, paused_head) = run(db, conversation, "notification", "paused").await;
             }
+            let (_, handoff_head) = run(db, conversation, "device-handoff", "running").await;
             let receipt = Uuid::new_v4();
             let received = message(
                 db,
@@ -189,6 +190,27 @@ async fn real_pg_row_bound_receipts_and_lane_heads_do_not_scan_into_the_response
                 Some(receipt),
             )
             .await;
+            let first = Uuid::new_v4();
+            let second = Uuid::new_v4();
+            let foreign = Uuid::new_v4();
+            sqlx::query(
+                "INSERT INTO attachments(id,owner_id,name,media_type,size_bytes,storage_key)
+                         VALUES($1,'local-user','first','text/plain',1,'one'),
+                               ($2,'local-user','second','text/plain',2,'two'),
+                               ($3,'another-owner','private','text/plain',3,'three')",
+            )
+            .bind(first)
+            .bind(second)
+            .bind(foreign)
+            .execute(db)
+            .await
+            .unwrap();
+            sqlx::query("UPDATE messages SET attachment_ids=$2 WHERE id=$1")
+                .bind(received)
+                .bind(vec![second, foreign, first])
+                .execute(db)
+                .await
+                .unwrap();
             let watched =
                 message(db, conversation, "assistant", "watched previous head", None).await;
             bulk(db, conversation, 400).await;
@@ -217,7 +239,7 @@ async fn real_pg_row_bound_receipts_and_lane_heads_do_not_scan_into_the_response
                 user_head,
                 exploration_head,
                 notification_head,
-                paused_head,
+                handoff_head,
                 received,
                 watched,
             ] {
@@ -228,6 +250,12 @@ async fn real_pg_row_bound_receipts_and_lane_heads_do_not_scan_into_the_response
                         .any(|message| message.id == id.to_string())
                 );
             }
+            assert!(
+                !state
+                    .messages
+                    .iter()
+                    .any(|message| message.id == paused_head.to_string())
+            );
             assert!(state.message_window.as_ref().unwrap().has_older);
             assert!(
                 state
@@ -242,6 +270,14 @@ async fn real_pg_row_bound_receipts_and_lane_heads_do_not_scan_into_the_response
                 .collect();
             assert_eq!(receipt_rows.len(), 1);
             assert_eq!(receipt_rows[0].role, "user");
+            assert_eq!(
+                receipt_rows[0]
+                    .attachments
+                    .iter()
+                    .map(|file| (file.name.as_str(), file.size_bytes))
+                    .collect::<Vec<_>>(),
+                [("second", 2), ("first", 1)]
+            );
             assert_eq!(
                 state.revision,
                 ordinal(
@@ -344,14 +380,7 @@ async fn real_pg_older_pages_and_foreign_identifiers_preserve_canonical_scope() 
             .await
             .unwrap_err();
             assert!(matches!(error,sqlx::Error::Protocol(code) if code == "history_anchor_scope"));
-            let mut tx = transaction(db).await.unwrap();
-            let run = crate::http::current_run(&mut tx, conversation)
-                .await
-                .unwrap();
-            let legacy = crate::http::state_selected(&mut tx, conversation, None, None, run)
-                .await
-                .unwrap();
-            tx.commit().await.unwrap();
+            let legacy = crate::http::full_state(db, conversation).await.unwrap();
             assert_eq!(legacy.messages.len(), 120);
             assert!(legacy.message_window.is_none());
         })
@@ -368,12 +397,11 @@ async fn real_pg_same_ordinal_updates_and_rr_snapshot_are_authoritative() {
         bulk(db,conversation,60).await;
         let first = read(db,conversation,parsed(&request(1))).await.unwrap();
         let mut tx = transaction(db).await.unwrap();
-        let run_row = crate::http::current_run(&mut tx, conversation).await.unwrap();
-        let current_head = run_row.as_ref().map(|row| row.get("assistant_message_id"));
-        let (ids,window) = selection(&mut tx,conversation,&parsed(&request(1)),current_head).await.unwrap();
+        let baseline = snapshot(&mut tx,conversation,parsed(&request(1))).await.unwrap();
         sqlx::query("UPDATE messages SET text='final reply\n第二行' WHERE id=$1").bind(head).execute(db).await.unwrap();
         sqlx::query("UPDATE runs SET status='succeeded',error='',next_wake_at=NULL WHERE id=$1").bind(run_id).execute(db).await.unwrap();
-        let prior = crate::http::state_selected(&mut tx,conversation,Some(&ids),Some(window),run_row).await.unwrap();
+        let prior = snapshot(&mut tx,conversation,parsed(&request(1))).await.unwrap();
+        assert_eq!(prior,baseline);
         tx.commit().await.unwrap();
         assert_eq!(prior.messages.iter().find(|m|m.id==head.to_string()).unwrap().text,"outside-tail head");
         let next = read(db,conversation,parsed(&wire::ChatHistoryRequest {watch_message_ids:vec![head.to_string()],..request(1)})).await.unwrap();

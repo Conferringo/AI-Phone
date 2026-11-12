@@ -3,7 +3,7 @@ use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures_util::FutureExt;
 use serde_json::{Value, json};
-use sqlx::Row;
+use sqlx::{Row, types::Json};
 
 mod execution_policy;
 use execution_policy::{execution_tools, gui_execution, initial_observation, lookup_evidence};
@@ -161,6 +161,13 @@ async fn attempt(app: Shared, id: Uuid, message: Uuid, cancel: CancellationToken
     id
 }
 
+#[derive(serde::Deserialize)]
+struct HistoryAttachment {
+    name: String,
+    media_type: String,
+    storage_key: String,
+}
+
 async fn initial_context(
     app: &App,
     conversation: Uuid,
@@ -198,20 +205,22 @@ async fn initial_context(
     system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
-    let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
-        CASE WHEN recent.role='assistant' THEN ARRAY(SELECT a.name FROM unnest(recent.attachment_ids) WITH ORDINALITY f(id,position)
-          JOIN attachments a ON a.id=f.id AND a.owner_id='local-user' ORDER BY f.position) ELSE '{}'::text[] END output_names
+    let rows=sqlx::query("SELECT recent.role,recent.text,recent.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
+        COALESCE((SELECT jsonb_agg(CASE WHEN a.id IS NOT NULL THEN
+          jsonb_build_object('name',a.name,'media_type',a.media_type,'storage_key',a.storage_key)
+          END ORDER BY f.position) FROM unnest(recent.attachment_ids) WITH ORDINALITY f(id,position)
+          LEFT JOIN attachments a ON a.id=f.id AND a.owner_id='local-user'), '[]'::jsonb) files
         FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent
         LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal")
         .bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     let task_start = rows
         .iter()
-        .rposition(|row| row.get::<String, _>("role") == "user");
+        .rposition(|row| row.get::<&str, _>("role") == "user");
     for (index, row) in rows.into_iter().enumerate() {
         if Some(index) == task_start {
             context.push(json!({"role":"system","content":[{"type":"input_text","text":"AI_PHONE_CURRENT_TASK：以下为本次用户任务。后续连续补充均属于同一任务，保留原目标及仍适用的约束；明确的更正优先，已完成操作不重复。用户可能连续说多条，不需要每条都单独抢答，整合后自然回应。"}]}));
         }
-        let role: String = row.get("role");
+        let role: &str = row.get("role");
         let text: String = row.get("text");
         let request = row
             .get::<Option<Uuid>, _>("request_id")
@@ -228,31 +237,33 @@ async fn initial_context(
                 json!({"type":if role=="assistant"{"output_text"}else{"input_text"},"text":text}),
             );
         }
-        let ids: Vec<Uuid> = row.get("attachment_ids");
-        if role == "assistant" && !ids.is_empty() {
-            let names: Vec<String> = row.get("output_names");
-            content.push(
-                json!({"type":"output_text","text":format!("已交付文件：{}",names.join("、"))}),
-            );
-        }
-        for id in ids.into_iter().filter(|_| role != "assistant") {
-            let file=sqlx::query("SELECT name,media_type,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-            let bytes = tokio::fs::read(
-                app.root
-                    .join("data/attachments")
-                    .join(file.get::<String, _>("storage_key")),
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-            let media: String = file.get("media_type");
-            if media.starts_with("image/") {
-                content.push(json!({"type":"input_image","image_url":format!("data:{media};base64,{}",STANDARD.encode(bytes))}));
-            } else {
-                let text = String::from_utf8_lossy(&bytes)
-                    .chars()
-                    .take(24000)
-                    .collect::<String>();
-                content.push(json!({"type":"input_text","text":format!("附件 {}：\n{}",file.get::<String,_>("name"),text)}));
+        let Json(files): Json<Vec<Option<HistoryAttachment>>> = row.get("files");
+        if role == "assistant" {
+            if !files.is_empty() {
+                let names: Vec<_> = files.into_iter().flatten().map(|file| file.name).collect();
+                content.push(
+                    json!({"type":"output_text","text":format!("已交付文件：{}",names.join("、"))}),
+                );
+            }
+        } else {
+            for file in files {
+                let file = file.ok_or_else(|| sqlx::Error::RowNotFound.to_string())?;
+                let bytes =
+                    tokio::fs::read(app.root.join("data/attachments").join(file.storage_key))
+                        .await
+                        .map_err(|e| e.to_string())?;
+                let media = file.media_type;
+                if media.starts_with("image/") {
+                    content.push(json!({"type":"input_image","image_url":format!("data:{media};base64,{}",STANDARD.encode(bytes))}));
+                } else {
+                    let text = String::from_utf8_lossy(&bytes)
+                        .chars()
+                        .take(24000)
+                        .collect::<String>();
+                    content.push(
+                        json!({"type":"input_text","text":format!("附件 {}：\n{text}",file.name)}),
+                    );
+                }
             }
         }
         if !content.is_empty() {
@@ -1932,7 +1943,7 @@ async fn checkpoint(
 ) -> Result<(), String> {
     crate::agent_loop::compact_observations(context);
     let result=sqlx::query("UPDATE runs SET context=$2,pending_tools=$3,answer=$4,step=$5,loop_state=$6,heartbeat_at=now() WHERE id=$1 AND status='running'")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(json!(state)).execute(&app.db).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(Json(&state)).execute(&app.db).await.map_err(|e|e.to_string())?;
     if result.rows_affected() == 0 {
         return Err("canceled".into());
     }
@@ -2005,7 +2016,7 @@ async fn consume_wait_completion(
     context.push(json!({"role":"system","content":[{"type":"input_text","text":format!("AI_PHONE_WAIT_COMPLETED：上一次持久等待已真实结束。等待截止Unix毫秒={deadline}，当前Unix毫秒={}。继续检查当前实际状态并执行未完成的后续步骤，不要把已结束的等待重新排队；如果状态仍未就绪，先取得新的检查结果再决定是否再次等待。",now_ms())}]}));
     crate::agent_loop::compact_observations(context);
     sqlx::query("UPDATE runs SET context=$2,pending_tools=$3,answer=$4,step=$5,loop_state=$6,heartbeat_at=now() WHERE id=$1")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(json!(state)).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(Json(&state)).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,'summary','等待结束','等待已结束，继续检查当前状态与后续步骤。','completed',now())")
         .bind(Uuid::now_v7()).bind(id).bind(message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
@@ -2104,7 +2115,7 @@ async fn consume_steering(
     sqlx::query("INSERT INTO messages(id,conversation_id,role,run_id) SELECT $2,conversation_id,'assistant',id FROM runs WHERE id=$1")
         .bind(id).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("UPDATE runs SET assistant_message_id=$6,steering='[]',context=$2,pending_tools=$3,answer='',step=$4,loop_state=$5,control_epoch=0,next_wake_at=NULL,heartbeat_at=now(),error='' WHERE id=$1")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(step).bind(json!(state)).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(step).bind(Json(&state)).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,'summary','补充指令',$4,'completed',now())")
         .bind(Uuid::now_v7()).bind(id).bind(next_message).bind(format!("已收到 {} 条补充，继续处理。",entries.len())).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
@@ -2184,7 +2195,7 @@ async fn persist_with_outputs(
     };
     crate::agent_loop::compact_observations(context);
     sqlx::query("UPDATE runs SET status=$2,context=$3,pending_tools=$4,answer=CASE WHEN $10 THEN answer ELSE $5 END,step=$6,loop_state=$7,error=$8,next_wake_at=to_timestamp($9::double precision),heartbeat_at=now(),finished_at=CASE WHEN $2='succeeded' THEN now() ELSE NULL END WHERE id=$1")
-        .bind(id).bind(status).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(status).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
     if dialogue {
         let attachments = crate::files::publish_outputs(app, &mut tx, outputs).await?;
         sqlx::query("UPDATE messages SET text=$2,attachment_ids=attachment_ids || $3 WHERE id=$1")
@@ -2291,9 +2302,9 @@ async fn resolve_pending_resume(
         WHERE id=$1 AND status='running'",
     )
     .bind(run)
-    .bind(json!(context))
-    .bind(json!(pending))
-    .bind(json!(state))
+    .bind(Json(context.as_slice()))
+    .bind(Json(&pending))
+    .bind(Json(&state))
     .execute(&mut *tx)
     .await
     .map_err(|error| error.to_string())?
@@ -2732,7 +2743,6 @@ async fn execute(
                 crate::files::discard_outputs(app, &outputs).await;
                 continue;
             }
-            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if stalled {
                 let reason = if state.observation_recoveries >= 4 {
                     format!(
@@ -2760,12 +2770,11 @@ async fn execute(
                 {
                     return Ok(RunDisposition::Paused);
                 }
-                continue;
             }
+            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             continue;
         }
         if crate::agent_loop::slice_due(start_step, step) {
-            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if persist_disposition(
                 app,
                 id,
@@ -3002,7 +3011,6 @@ async fn execute(
             }
             answer.push_str(&new_text);
         }
-        checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         if pending.is_empty() {
             if answer.trim().is_empty() {
                 let stalled = state.no_progress("模型未返回有效结果");
@@ -3026,17 +3034,12 @@ async fn execute(
                 {
                     return Ok(RunDisposition::Paused);
                 }
-                continue;
-            }
-            let claim = phone_claim(&context, &answer);
-            if !fresh_phone_evidence(&context, claim) {
+            } else if !fresh_phone_evidence(&context, phone_claim(&context, &answer)) {
                 context.push(
                     json!({"role":"system","content":[{"type":"input_text","text":VERIFY_PHONE}]}),
                 );
                 answer.clear();
-                continue;
-            }
-            if persist_disposition(
+            } else if persist_disposition(
                 app,
                 id,
                 message,
@@ -3055,6 +3058,7 @@ async fn execute(
                 return Ok(RunDisposition::Completed);
             }
         }
+        checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
 }
 
@@ -3066,19 +3070,24 @@ async fn has_steering(app: &App, run: Uuid) -> Result<bool, String> {
         .map_err(|e| e.to_string())
 }
 
-async fn wait_for_steering(app: &App, run: Uuid) -> Result<(), String> {
+async fn wait_for_steering(
+    app: &App,
+    run: Uuid,
+    mut changed: tokio::sync::futures::Notified<'_>,
+) -> Result<(), String> {
     loop {
-        let changed = app.run_signals.input.notified();
+        changed.await;
+        changed = app.run_signals.input.notified();
         if has_steering(app, run).await? {
             return Ok(());
         }
-        changed.await;
     }
 }
 
 // Text bursts settle briefly. Voice was already endpointed by the capture owner.
 async fn input_ready(app: &App, run: Uuid, cancel: &CancellationToken) -> Result<bool, String> {
     loop {
+        let changed = app.run_signals.input.notified();
         let (remaining, steering):(f64,bool)=sqlx::query_as("SELECT COALESCE(GREATEST(0,input_quiet_ms-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision,jsonb_array_length(steering)>0 FROM runs WHERE id=$1")
             .bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
         if steering {
@@ -3089,7 +3098,7 @@ async fn input_ready(app: &App, run: Uuid, cancel: &CancellationToken) -> Result
         }
         tokio::select! {
             _=cancel.cancelled()=>return Err("canceled".into()),
-            changed=wait_for_steering(app,run)=>{changed?;return Ok(false);},
+            _=changed=>{},
             _=tokio::time::sleep(Duration::from_millis(remaining.ceil() as u64))=>{}
         }
     }
@@ -3104,6 +3113,9 @@ async fn respond_to_current_input(
     effort: &str,
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
+    // Subscribe before reading the queue, so an input committed during admission
+    // cannot be lost and an unchanged queue needs no second read.
+    let changed = app.run_signals.input.notified();
     if !input_ready(app, run, cancel).await? {
         return Ok(None);
     }
@@ -3112,7 +3124,7 @@ async fn respond_to_current_input(
     let mut result = tokio::select! {
         biased;
         _=cancel.cancelled()=>Err("canceled".into()),
-        changed=wait_for_steering(app,run)=>changed.map(|()|None),
+        changed=wait_for_steering(app,run,changed)=>changed.map(|()|None),
         result=respond(app,run,context,cancel,effort,model_replay_boundary,&mut timing)=>result.map(Some),
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.

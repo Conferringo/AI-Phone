@@ -17,7 +17,7 @@ const DESKTOP_KEYS:Partial<Record<string,string>>={
  ArrowLeft:'Left',ArrowRight:'Right',ArrowUp:'Up',ArrowDown:'Down',
  Tab:'Tab',Home:'Home',End:'End',PageUp:'Prior',PageDown:'Next',
 };
-export function DesktopSurface({deviceId,active}:{deviceId:string;active:boolean}){
+export function DesktopSurface({deviceId,active,visible}:{deviceId:string;active:boolean;visible:boolean}){
  const frame=useRef<Frame|null>(null),input=useRef<HTMLTextAreaElement>(null),pointer=useRef<Point|null>(null),composing=useRef(false),wheel=useRef(0);
  const click=useRef<PendingClick|null>(null);
  const activeRef=useRef(active),generation=useRef(0),receivedAt=useRef(0);
@@ -62,7 +62,7 @@ export function DesktopSurface({deviceId,active}:{deviceId:string;active:boolean
  }
  const point=(e:React.PointerEvent<HTMLImageElement>|React.MouseEvent<HTMLImageElement>|React.WheelEvent<HTMLImageElement>)=>{const r=e.currentTarget.getBoundingClientRect();return{x:Math.max(0,Math.min(1279,Math.round((e.clientX-r.left)/r.width*1280))),y:Math.max(0,Math.min(799,Math.round((e.clientY-r.top)/r.height*800)))};};
  return <div className="desktop-screen" data-scene-device={deviceId}>
-  <PhoneStreamImage endpoint={`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}`} fallback="" enabled onConnectionState={setOnline} alt="Linux实时桌面" draggable={false}
+  <PhoneStreamImage endpoint={`/api/desktop/media?device_id=${encodeURIComponent(deviceId)}`} fallback="" enabled={visible} onConnectionState={setOnline} alt="Linux实时桌面" draggable={false}
    onPointerDown={e=>{if(!active||e.button!==0)return;queue.barrier();e.preventDefault();input.current?.focus({preventScroll:true});e.currentTarget.setPointerCapture(e.pointerId);pointer.current=point(e);}}
    onPointerUp={e=>{
     if(!active||!pointer.current)return;
