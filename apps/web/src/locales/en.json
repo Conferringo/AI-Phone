@@ -1,4 +1,11 @@
 {
+  "目标与要求": "Goal and requirements",
+  "填入你的目标与要求": "Enter your goal and requirements",
+  "激活": "Activate",
+  "更新目标": "Update goal",
+  "关闭目标": "Stop goal",
+  "目标运行中": "Goal is active",
+  "目标内容不能超过 12 KB": "The goal must be 12 KB or less",
   "系统更新": "System Update",
   "确认更新": "Confirm update",
   "正在更新…": "Updating…",

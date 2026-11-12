@@ -1,4 +1,11 @@
 {
+  "目标与要求": "Objectif et exigences",
+  "填入你的目标与要求": "Saisissez votre objectif et vos exigences",
+  "激活": "Activer",
+  "更新目标": "Mettre à jour l’objectif",
+  "关闭目标": "Arrêter l’objectif",
+  "目标运行中": "Objectif en cours",
+  "目标内容不能超过 12 KB": "L’objectif doit faire 12 Ko ou moins",
   "系统更新": "Mise à jour du système",
   "确认更新": "Confirmer la mise à jour",
   "正在更新…": "Mise à jour en cours…",

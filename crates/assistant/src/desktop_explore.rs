@@ -18,19 +18,26 @@ async fn ready(app: &App, device: &str) -> Result<(), String> {
 }
 pub async fn state(app: &App, device: &str) -> Result<wire::DesktopExploreState, String> {
     ready(app, device).await?;
-    sqlx::query("INSERT INTO desktop_exploration(device_id) VALUES($1) ON CONFLICT DO NOTHING")
-        .bind(device)
-        .execute(&app.db)
-        .await
-        .map_err(|e| e.to_string())?;
-    let r=sqlx::query("SELECT *, (extract(epoch FROM next_cycle_at)*1000)::bigint wake FROM desktop_exploration WHERE device_id=$1").bind(device).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+    let r = sqlx::query(
+        "SELECT COALESCE(e.enabled,true) enabled,COALESCE(e.interval_seconds,45) interval_seconds,
+                COALESCE(e.last_error,'') last_error,
+                (extract(epoch FROM COALESCE(e.next_cycle_at,now()))*1000)::bigint wake,
+                g.status goal_status
+         FROM proactive_state p LEFT JOIN runs g ON g.id=p.goal_run_id
+         LEFT JOIN desktop_exploration e ON e.device_id=$1 WHERE p.owner_id='local-user'",
+    )
+    .bind(device)
+    .fetch_one(&app.db)
+    .await
+    .map_err(|e| e.to_string())?;
     let run:Option<Uuid>=sqlx::query_scalar("SELECT id FROM runs WHERE device_id=$1 AND origin='desktop-exploration' AND status IN ('queued','running','paused') ORDER BY created_at DESC LIMIT 1").bind(device).fetch_optional(&app.db).await.map_err(|e|e.to_string())?;
     let last_error = crate::run_notice::background_error(&app.db, device, r.get("last_error"))
         .await
         .map_err(|e| e.to_string())?;
     Ok(wire::DesktopExploreState {
         device_id: device.into(),
-        enabled: r.get("enabled"),
+        enabled: r.get::<bool, _>("enabled")
+            && !crate::proactive::goal_status_is_active(r.get("goal_status")),
         interval_seconds: r.get::<i32, _>("interval_seconds") as u32,
         last_error,
         next_wake_at_ms: r.get::<i64, _>("wake") as u64,
@@ -59,17 +66,22 @@ pub async fn pause(app: &App, device: &str, reason: &str) -> Result<(), String> 
     change_mode(app, device, false, None, reason).await
 }
 // Every scheduler/configuration mutation takes conversation, mode, then run locks.
-async fn lock_device(
+async fn lock_conversation(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     device: &str,
 ) -> Result<Uuid, sqlx::Error> {
     sqlx::query("INSERT INTO conversations(id,owner_id,device_id) VALUES($1,'local-user',$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(device).execute(&mut **tx).await?;
-    let conversation: Uuid = sqlx::query_scalar(
+    sqlx::query_scalar(
         "SELECT id FROM conversations WHERE device_id=$1 AND owner_id='local-user' FOR UPDATE",
     )
     .bind(device)
     .fetch_one(&mut **tx)
-    .await?;
+    .await
+}
+async fn lock_settings(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    device: &str,
+) -> Result<(), sqlx::Error> {
     sqlx::query("INSERT INTO desktop_exploration(device_id) VALUES($1) ON CONFLICT DO NOTHING")
         .bind(device)
         .execute(&mut **tx)
@@ -78,7 +90,15 @@ async fn lock_device(
         .bind(device)
         .fetch_one(&mut **tx)
         .await?;
-    Ok(conversation)
+    Ok(())
+}
+async fn lock_goal_active(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query("SELECT owner_id FROM proactive_state WHERE owner_id='local-user' FOR SHARE")
+        .fetch_one(&mut **tx)
+        .await?;
+    crate::proactive::goal_active(&mut **tx).await
 }
 async fn change_mode(
     app: &App,
@@ -88,7 +108,13 @@ async fn change_mode(
     reason: &str,
 ) -> Result<(), String> {
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
-    lock_device(&mut tx, device)
+    lock_conversation(&mut tx, device)
+        .await
+        .map_err(|e| e.to_string())?;
+    if enabled && lock_goal_active(&mut tx).await.map_err(|e| e.to_string())? {
+        return Err("请先关闭当前目标".into());
+    }
+    lock_settings(&mut tx, device)
         .await
         .map_err(|e| e.to_string())?;
     sqlx::query("UPDATE desktop_exploration SET enabled=$2,interval_seconds=COALESCE($3,interval_seconds),next_cycle_at=CASE WHEN $2 THEN now() ELSE next_cycle_at END,last_error='' WHERE device_id=$1").bind(device).bind(enabled).bind(interval).execute(&mut *tx).await.map_err(|e|e.to_string())?;
@@ -120,7 +146,17 @@ pub async fn guard(app: &App, run: Uuid) -> Result<(), String> {
 pub(crate) async fn tick(app: &App) -> Result<(), sqlx::Error> {
     // Discover newly provisioned devices without requiring a browser/settings visit.
     // Unconfigured or archived devices never enqueue model work.
-    sqlx::query("INSERT INTO desktop_exploration(device_id) SELECT r.device_id FROM device_runtimes r JOIN devices d ON d.id=r.device_id WHERE d.runtime_state='managed' AND d.id<>'phone-local-01' ON CONFLICT DO NOTHING").execute(&app.db).await?;
+    sqlx::query(
+        "INSERT INTO desktop_exploration(device_id,enabled)
+         SELECT r.device_id,COALESCE(g.status NOT IN ('queued','running','paused','failed'),true)
+         FROM device_runtimes r JOIN devices d ON d.id=r.device_id
+         JOIN proactive_state p ON p.owner_id=d.owner_id LEFT JOIN runs g ON g.id=p.goal_run_id
+         WHERE d.runtime_state='managed' AND d.id<>'phone-local-01'
+           AND NOT EXISTS(SELECT 1 FROM desktop_exploration e WHERE e.device_id=d.id)
+         ON CONFLICT DO NOTHING",
+    )
+    .execute(&app.db)
+    .await?;
     let devices: Vec<String> =
         sqlx::query_scalar("SELECT e.device_id FROM desktop_exploration e JOIN devices d ON d.id=e.device_id JOIN agents a ON a.id=d.default_agent_id JOIN agent_device_bindings b ON b.agent_id=a.id AND b.device_id=d.id JOIN model_connections m ON m.id=a.model_connection_id WHERE d.runtime_state='managed' AND d.owner_id='local-user' AND a.owner_id=d.owner_id AND m.owner_id=d.owner_id AND m.model_revision>0 ORDER BY e.device_id")
             .fetch_all(&app.db)
@@ -132,8 +168,14 @@ pub(crate) async fn tick(app: &App) -> Result<(), sqlx::Error> {
 }
 async fn tick_device(app: &App, device: &str) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let conversation = lock_device(&mut tx, device).await?;
+    let conversation = lock_conversation(&mut tx, device).await?;
+    let goal_active = lock_goal_active(&mut tx).await?;
+    lock_settings(&mut tx, device).await?;
     reconcile_cycles(&mut tx, device).await?;
+    if goal_active {
+        tx.commit().await?;
+        return Ok(());
+    }
     let due: bool = sqlx::query_scalar(
         "SELECT enabled AND next_cycle_at<=now() FROM desktop_exploration WHERE device_id=$1",
     )

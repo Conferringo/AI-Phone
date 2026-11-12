@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/proactive.proto.
  */
 export const file_ai_phone_v1_proactive: GenFile = /*@__PURE__*/
-  fileDesc("ChthaV9waG9uZS92MS9wcm9hY3RpdmUucHJvdG8SC2FpX3Bob25lLnYxIhIKEFByb2FjdGl2ZVJlcXVlc3QitgMKDlByb2FjdGl2ZVN0YXRlEhAKCHJldmlzaW9uGAEgASgEEhEKCWV4cGxvcmluZxgCIAEoCBIdChVub3RpZmljYXRpb25zX2VuYWJsZWQYAyABKAgSHQoVZm9yd2FyZF9ub3RpZmljYXRpb25zGAQgASgIEhgKEGF1dG9ub21vdXNfcmVwbHkYBSABKAgSGgoSYXV0b25vbW91c19pbnN0YWxsGAYgASgIEhgKEGludGVydmFsX3NlY29uZHMYByABKA0SFwoPbmV4dF93YWtlX2F0X21zGAggASgEEhUKDWFjdGl2ZV9ydW5faWQYCSABKAkSDgoGc3RhdHVzGAogASgJEhIKCmxhc3RfZXJyb3IYCyABKAkSGgoSbGlzdGVuZXJfY29ubmVjdGVkGAwgASgIEh0KFXBlbmRpbmdfbm90aWZpY2F0aW9ucxgNIAEoDRIWCg5sYXRlc3Rfc3VtbWFyeRgOIAEoCRIXCg9kZWxpdmVyeV9zdGF0dXMYDyABKAkSFAoMd2VjaGF0X3dhdGNoGBAgASgIEhsKE2F0dGVudGlvbl9jb25uZWN0ZWQYESABKAgigAIKFlByb2FjdGl2ZVVwZGF0ZVJlcXVlc3QSGQoRZXhwZWN0ZWRfcmV2aXNpb24YASABKAQSEQoJZXhwbG9yaW5nGAIgASgIEh0KFW5vdGlmaWNhdGlvbnNfZW5hYmxlZBgDIAEoCBIdChVmb3J3YXJkX25vdGlmaWNhdGlvbnMYBCABKAgSGAoQYXV0b25vbW91c19yZXBseRgFIAEoCBIaChJhdXRvbm9tb3VzX2luc3RhbGwYBiABKAgSGAoQaW50ZXJ2YWxfc2Vjb25kcxgHIAEoDRIZCgx3ZWNoYXRfd2F0Y2gYCCABKAhIAIgBAUIPCg1fd2VjaGF0X3dhdGNoYgZwcm90bzM");
+  fileDesc("ChthaV9waG9uZS92MS9wcm9hY3RpdmUucHJvdG8SC2FpX3Bob25lLnYxIhIKEFByb2FjdGl2ZVJlcXVlc3QihgQKDlByb2FjdGl2ZVN0YXRlEhAKCHJldmlzaW9uGAEgASgEEhEKCWV4cGxvcmluZxgCIAEoCBIdChVub3RpZmljYXRpb25zX2VuYWJsZWQYAyABKAgSHQoVZm9yd2FyZF9ub3RpZmljYXRpb25zGAQgASgIEhgKEGF1dG9ub21vdXNfcmVwbHkYBSABKAgSGgoSYXV0b25vbW91c19pbnN0YWxsGAYgASgIEhgKEGludGVydmFsX3NlY29uZHMYByABKA0SFwoPbmV4dF93YWtlX2F0X21zGAggASgEEhUKDWFjdGl2ZV9ydW5faWQYCSABKAkSDgoGc3RhdHVzGAogASgJEhIKCmxhc3RfZXJyb3IYCyABKAkSGgoSbGlzdGVuZXJfY29ubmVjdGVkGAwgASgIEh0KFXBlbmRpbmdfbm90aWZpY2F0aW9ucxgNIAEoDRIWCg5sYXRlc3Rfc3VtbWFyeRgOIAEoCRIXCg9kZWxpdmVyeV9zdGF0dXMYDyABKAkSFAoMd2VjaGF0X3dhdGNoGBAgASgIEhsKE2F0dGVudGlvbl9jb25uZWN0ZWQYESABKAgSDAoEZ29hbBgSIAEoCRITCgtnb2FsX2FjdGl2ZRgTIAEoCBITCgtnb2FsX3N0YXR1cxgUIAEoCRIWCg5nb2FsX2RldmljZV9pZBgVIAEoCSKAAgoWUHJvYWN0aXZlVXBkYXRlUmVxdWVzdBIZChFleHBlY3RlZF9yZXZpc2lvbhgBIAEoBBIRCglleHBsb3JpbmcYAiABKAgSHQoVbm90aWZpY2F0aW9uc19lbmFibGVkGAMgASgIEh0KFWZvcndhcmRfbm90aWZpY2F0aW9ucxgEIAEoCBIYChBhdXRvbm9tb3VzX3JlcGx5GAUgASgIEhoKEmF1dG9ub21vdXNfaW5zdGFsbBgGIAEoCBIYChBpbnRlcnZhbF9zZWNvbmRzGAcgASgNEhkKDHdlY2hhdF93YXRjaBgIIAEoCEgAiAEBQg8KDV93ZWNoYXRfd2F0Y2giTwoRR29hbFVwZGF0ZVJlcXVlc3QSGQoRZXhwZWN0ZWRfcmV2aXNpb24YASABKAQSDAoEZ29hbBgCIAEoCRIRCglkZXZpY2VfaWQYAyABKAliBnByb3RvMw");
 
 /**
  * @generated from message ai_phone.v1.ProactiveRequest
@@ -113,6 +113,26 @@ export type ProactiveState = Message<"ai_phone.v1.ProactiveState"> & {
    * @generated from field: bool attention_connected = 17;
    */
   attentionConnected: boolean;
+
+  /**
+   * @generated from field: string goal = 18;
+   */
+  goal: string;
+
+  /**
+   * @generated from field: bool goal_active = 19;
+   */
+  goalActive: boolean;
+
+  /**
+   * @generated from field: string goal_status = 20;
+   */
+  goalStatus: string;
+
+  /**
+   * @generated from field: string goal_device_id = 21;
+   */
+  goalDeviceId: string;
 };
 
 /**
@@ -173,4 +193,31 @@ export type ProactiveUpdateRequest = Message<"ai_phone.v1.ProactiveUpdateRequest
  */
 export const ProactiveUpdateRequestSchema: GenMessage<ProactiveUpdateRequest> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_proactive, 2);
+
+/**
+ * @generated from message ai_phone.v1.GoalUpdateRequest
+ */
+export type GoalUpdateRequest = Message<"ai_phone.v1.GoalUpdateRequest"> & {
+  /**
+   * @generated from field: uint64 expected_revision = 1;
+   */
+  expectedRevision: bigint;
+
+  /**
+   * @generated from field: string goal = 2;
+   */
+  goal: string;
+
+  /**
+   * @generated from field: string device_id = 3;
+   */
+  deviceId: string;
+};
+
+/**
+ * Describes the message ai_phone.v1.GoalUpdateRequest.
+ * Use `create(GoalUpdateRequestSchema)` to create a new message.
+ */
+export const GoalUpdateRequestSchema: GenMessage<GoalUpdateRequest> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_proactive, 3);
 

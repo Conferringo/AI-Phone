@@ -1,4 +1,11 @@
 {
+  "目标与要求": "Ziel und Anforderungen",
+  "填入你的目标与要求": "Ziel und Anforderungen eingeben",
+  "激活": "Aktivieren",
+  "更新目标": "Ziel aktualisieren",
+  "关闭目标": "Ziel stoppen",
+  "目标运行中": "Ziel ist aktiv",
+  "目标内容不能超过 12 KB": "Das Ziel darf höchstens 12 KB groß sein",
   "系统更新": "Systemupdate",
   "确认更新": "Update bestätigen",
   "正在更新…": "Update läuft…",

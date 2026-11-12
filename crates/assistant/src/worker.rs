@@ -31,17 +31,23 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, conversation, handoff, queued_handoff): (String, Uuid, bool, bool) =
-        sqlx::query_as(
-            "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
+    let (status, conversation, handoff, queued_handoff, task_goal): (
+        String,
+        Uuid,
+        bool,
+        bool,
+        bool,
+    ) = sqlx::query_as(
+        "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
             SELECT 1 FROM device_messages m WHERE m.status='queued' AND (
                 m.target_device_id=r.device_id OR EXISTS(SELECT 1 FROM device_execution_leases l
-                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id)))
+                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id))),
+            r.origin='user' AND r.trigger_input='task-goal'
          FROM runs r WHERE r.id=$1 FOR UPDATE",
-        )
-        .bind(id)
-        .fetch_one(&mut *tx)
-        .await?;
+    )
+    .bind(id)
+    .fetch_one(&mut *tx)
+    .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
         Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
@@ -77,6 +83,8 @@ async fn finish_attempt(
                     )
                 },
             )
+        } else if task_goal {
+            ("paused", error.clone())
         } else {
             ("failed", error.clone())
         };
@@ -159,7 +167,7 @@ async fn initial_context(
     message: Uuid,
 ) -> Result<Vec<Value>, String> {
     let identity = sqlx::query(
-        "SELECT r.agent_name,r.device_id,r.origin,d.kind,
+        "SELECT r.agent_name,r.device_id,r.origin,d.kind,r.origin='user' AND r.trigger_input='task-goal' task_goal,
             ARRAY(SELECT content FROM memories WHERE owner_id='local-user' AND agent_id=r.agent_id ORDER BY created_at DESC LIMIT 30) memories,
             ARRAY(SELECT name||': '||description FROM runtime_skills WHERE enabled=true AND deleted_at IS NULL ORDER BY builtin DESC,created_at) skills
          FROM runs r JOIN devices d ON d.id=r.device_id WHERE r.assistant_message_id=$1",
@@ -184,6 +192,9 @@ async fn initial_context(
         identity.get::<&str, _>("device_id"),
     ));
     let kind: &str = identity.get("kind");
+    if identity.get::<bool, _>("task_goal") {
+        system.push_str("当前为任务与目标模式。把本轮用户内容作为持续目标，后续文字、语音和目标更新可以修订它。主动规划并执行，先用 device_list 找出可控制的设备，按需切换、同时使用或交接；无需请求用户替你选设备。用 task_wait 等待外部状态，保留进度。核实全部要求已经达到后才调用 task_finish(completed)，真实阻碍则记录并等待补充。");
+    }
     system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
@@ -2319,6 +2330,7 @@ async fn execute(
     let mut handoffs_pending: bool = row.get("handoffs_pending");
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
+    let task_goal = !background && row.get::<&str, _>("trigger_input") == "task-goal";
     let exploration = matches!(
         row.get::<String, _>("origin").as_str(),
         "exploration" | "desktop-exploration"
@@ -2911,6 +2923,7 @@ async fn execute(
             continue;
         }
         if !background
+            && !task_goal
             && !handoffs_pending
             && let Some(proposal) = phone_completion_proposal(&context, &output, &new_text)
         {
@@ -2924,7 +2937,7 @@ async fn execute(
             }
             context.push(item);
         }
-        if screen_attention || action_task(&context) || phone_task(&context) {
+        if task_goal || screen_attention || action_task(&context) || phone_task(&context) {
             answer.clear();
             if !new_text.trim().is_empty() {
                 if progress_is_verified(&context, &new_text) {

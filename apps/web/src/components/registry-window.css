@@ -136,7 +136,7 @@
 .floating-window[data-window-id=configuration-center] {
  --control-height:var(--setup-control);
  --radius:var(--setup-radius);
- background:var(--setup-surface);color:var(--setup-ink);font-family:var(--setup-font);backdrop-filter:none
+ color:var(--setup-ink);font-family:var(--setup-font)
 }
 .registry-steps {
  display:flex;flex-wrap:wrap;gap:0 clamp(12px,3.5vw,22px);margin:0;padding:0;list-style:none
@@ -194,7 +194,7 @@
  position:absolute;inset-inline-end:2px;inline-size:40px;block-size:40px;min-height:0
 }
 .registry-center .setup-footer {
- flex-shrink:0;margin:0 var(--setup-inset) var(--setup-bottom);background:var(--setup-surface)
+ flex-shrink:0;margin:0 var(--setup-inset) var(--setup-bottom)
 }
 .registry-center .setup-footer>nav {margin-inline-end:auto
 }

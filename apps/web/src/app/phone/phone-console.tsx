@@ -62,7 +62,7 @@ import {LocationWindow} from "@/components/location-window";
 import { KnowledgeWindow } from "@/components/knowledge-window";
 import { WorkspaceWindow } from "@/components/workspace-window";
 import { ExecutionTrace } from "@/components/execution-trace";
-import {ProactiveProvider,ExplorationToggle} from "@/components/proactive-controls";
+import {ProactiveProvider,ExplorationToggle,TaskGoal,TaskGoalBackdrop} from "@/components/proactive-controls";
 import { RegistryWindow,type Registry } from "@/components/registry-window";
 import { FloatingWindow, WindowTrigger } from "@/components/floating-window";
 import {DesktopRequestSchema,DesktopObservationSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
@@ -137,6 +137,7 @@ function DeviceWorkbench(){
  const voiceAgentId=feature.startsWith('settings:voice:')?feature.slice('settings:voice:'.length):'';
  const settingsOpen=feature==='settings'||!!voiceAgentId;
  return <CopilotProvider currentDeviceId={current} onConfigure={id=>setFeature('settings:voice:'+id)}><main ref={scene} className="device-workbench" data-runtime={focus.includes('phone-local-01')}>
+  <TaskGoalBackdrop/>
   <CopilotWave deviceId={current}/>
   <header className="workbench-navigation">
    <WorkbenchNotices activeFeature={feature}/>
@@ -147,6 +148,7 @@ function DeviceWorkbench(){
     <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("文件管理")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
+    <TaskGoal open={feature==='goal'} deviceId={current} onOpen={()=>setFeature('goal')} onClose={()=>close('goal')} onActivate={enter}/>
     <WindowTrigger label={t("配置中心")} open={settingsOpen} onOpen={()=>setFeature('settings')}><Settings size={18}/></WindowTrigger>
     <ClientUpdate open={feature==='update'} onOpen={()=>setFeature('update')} onClose={()=>close('update')}/>
    </nav>

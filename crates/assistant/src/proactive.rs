@@ -82,7 +82,15 @@ pub async fn delivery(
 }
 pub async fn state(app: &App) -> Result<wire::ProactiveState, sqlx::Error> {
     // Explicit columns keep prepared result types stable when a migration adds settings.
-    let row=sqlx::query("SELECT revision,exploring,attention_connected,wechat_watch,notifications_enabled,forward_notifications,autonomous_reply,autonomous_install,interval_seconds,last_error,listener_connected,(extract(epoch FROM next_cycle_at)*1000)::bigint wake_ms FROM proactive_state WHERE owner_id='local-user'").fetch_one(&app.db).await?;
+    let row = sqlx::query(
+        "SELECT p.revision,p.exploring,p.attention_connected,p.wechat_watch,p.notifications_enabled,
+                p.forward_notifications,p.autonomous_reply,p.autonomous_install,p.interval_seconds,
+                p.last_error,p.listener_connected,(extract(epoch FROM p.next_cycle_at)*1000)::bigint wake_ms,
+                p.goal,r.status goal_status,r.device_id goal_device_id
+         FROM proactive_state p LEFT JOIN runs r ON r.id=p.goal_run_id WHERE p.owner_id='local-user'",
+    )
+    .fetch_one(&app.db)
+    .await?;
     let active = sqlx::query(
         "SELECT id,origin,status FROM runs WHERE device_id='phone-local-01' AND (status IN ('queued','running') OR (status='paused' AND NOT $1)) ORDER BY (status IN ('queued','running')) DESC,created_at DESC,id DESC LIMIT 1",
     )
@@ -98,6 +106,7 @@ pub async fn state(app: &App) -> Result<wire::ProactiveState, sqlx::Error> {
     let last_error =
         crate::run_notice::background_error(&app.db, crate::registry::PHONE, row.get("last_error"))
             .await?;
+    let goal_status: Option<String> = row.get("goal_status");
     Ok(wire::ProactiveState {
         revision: row.get::<i64,_>("revision") as u64, exploring,
         attention_connected:row.get("attention_connected"), wechat_watch:row.get("wechat_watch"), notifications_enabled:row.get("notifications_enabled"), forward_notifications:row.get("forward_notifications"), autonomous_reply:row.get("autonomous_reply"), autonomous_install:row.get("autonomous_install"), interval_seconds:row.get::<i32,_>("interval_seconds") as u32,
@@ -107,8 +116,81 @@ pub async fn state(app: &App) -> Result<wire::ProactiveState, sqlx::Error> {
         last_error,listener_connected:row.get("listener_connected"),
         pending_notifications:sqlx::query_scalar::<_,i64>("SELECT count(*) FROM phone_notifications WHERE status IN ('pending','pending-summary')").fetch_one(&app.db).await? as u32,
         latest_summary:latest.unwrap_or_default(),delivery_status:delivery.unwrap_or_default(),
+        goal: row.get("goal"),
+        goal_active: goal_status_is_active(goal_status.as_deref()),
+        goal_status: goal_status.unwrap_or_default(),
+        goal_device_id: row.get::<Option<String>, _>("goal_device_id").unwrap_or_default(),
     })
 }
+
+pub(crate) fn goal_status_is_active(status: Option<&str>) -> bool {
+    matches!(status, Some("queued" | "running" | "paused" | "failed"))
+}
+
+pub(crate) async fn goal_active<'a>(
+    db: impl sqlx::Executor<'a, Database = sqlx::Postgres>,
+) -> Result<bool, sqlx::Error> {
+    let status: Option<String> = sqlx::query_scalar(
+        "SELECT r.status FROM proactive_state p LEFT JOIN runs r ON r.id=p.goal_run_id
+         WHERE p.owner_id='local-user'",
+    )
+    .fetch_one(db)
+    .await?;
+    Ok(goal_status_is_active(status.as_deref()))
+}
+
+async fn stop_goal(app: &App, expected_revision: u64) -> Result<bool, sqlx::Error> {
+    let mut tx = app.db.begin().await?;
+    let current: Option<Option<Uuid>> = sqlx::query_scalar(
+        "SELECT goal_run_id FROM proactive_state
+         WHERE owner_id='local-user' AND revision=$1 FOR UPDATE",
+    )
+    .bind(expected_revision as i64)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some(run) = current else {
+        return Ok(false);
+    };
+    let stopped = if let Some(run) = run {
+        sqlx::query_scalar::<_, Uuid>(
+            "WITH stopped AS (
+                 UPDATE runs SET status='canceled',finished_at=now(),next_wake_at=NULL
+                 WHERE id=$1 AND status IN ('queued','running','paused')
+                 RETURNING id,conversation_id,assistant_message_id,finished_at
+             ), trace AS (
+                 UPDATE harness_events e SET status='canceled',finished_at=s.finished_at
+                 FROM stopped s WHERE e.id=s.id
+             ), message AS (
+                 UPDATE messages m SET text='已停止。' FROM stopped s
+                 WHERE m.id=s.assistant_message_id AND m.text=''
+             )
+             SELECT conversation_id FROM stopped",
+        )
+        .bind(run)
+        .fetch_optional(&mut *tx)
+        .await?
+        .map(|conversation| (run, conversation))
+    } else {
+        None
+    };
+    sqlx::query(
+        "UPDATE proactive_state SET goal='',goal_run_id=NULL,revision=revision+1
+         WHERE owner_id='local-user'",
+    )
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    if let Some((run, conversation)) = stopped {
+        if let Some(token) = app.active.lock().await.get(&run) {
+            token.cancel();
+        }
+        app.run_signals.chat_changed(conversation);
+        app.run_signals.channel_update.notify_one();
+        app.run_signals.handoff.notify_one();
+    }
+    Ok(true)
+}
+
 pub async fn route(
     State(app): State<Shared>,
     Path(operation): Path<String>,
@@ -120,6 +202,21 @@ pub async fn route(
             Ok(v) => v,
             Err(e) => return e.into(),
         };
+    } else if operation == "goal" {
+        let input: wire::GoalUpdateRequest = match decode(&app, &headers, body) {
+            Ok(v) => v,
+            Err(e) => return e.into(),
+        };
+        if !input.goal.trim().is_empty() {
+            return crate::http::send_goal(app, input).await;
+        }
+        match stop_goal(&app, input.expected_revision).await {
+            Ok(true) => {}
+            Ok(false) => {
+                return error(StatusCode::CONFLICT, "stale_revision", "配置已更新，请重试");
+            }
+            Err(e) => return db_error(e),
+        }
     } else if operation == "update" {
         let input: wire::ProactiveUpdateRequest = match decode(&app, &headers, body) {
             Ok(v) => v,
@@ -132,10 +229,15 @@ pub async fn route(
                 "探索间隔须为15–3600秒",
             );
         }
-        if input.exploring && !crate::registry::configured(&app).await {
-            return error(StatusCode::CONFLICT, "model_missing", "请先连接模型");
-        }
         let observed = if input.exploring {
+            match goal_active(&app.db).await {
+                Ok(true) => return error(StatusCode::CONFLICT, "goal_active", "请先关闭当前目标"),
+                Err(e) => return db_error(e),
+                Ok(false) => {}
+            }
+            if !crate::registry::configured(&app).await {
+                return error(StatusCode::CONFLICT, "model_missing", "请先连接模型");
+            }
             match crate::worker::phone::<_, wire::DeviceObservation>(&app, "observe", device(true))
                 .await
             {
@@ -156,6 +258,9 @@ pub async fn route(
             // Lock ordering matches send/scheduler: conversation, then proactive configuration.
             sqlx::query("SELECT id FROM conversations WHERE owner_id='local-user' AND device_id='phone-local-01' FOR UPDATE").fetch_one(&mut *tx).await?;
             let old=sqlx::query("SELECT exploring,autonomous_reply,autonomous_install,wechat_watch FROM proactive_state FOR UPDATE").fetch_one(&mut *tx).await?;
+            if input.exploring && goal_active(&mut *tx).await? {
+                return Err(sqlx::Error::Protocol("goal_active".into()));
+            }
             let watch=input.wechat_watch.unwrap_or_else(||old.get("wechat_watch"));
             let exploration_changed=old.get::<bool,_>("exploring")!=input.exploring;
             let permissions_changed=old.get::<bool,_>("autonomous_reply")!=input.autonomous_reply||old.get::<bool,_>("autonomous_install")!=input.autonomous_install;
@@ -180,6 +285,9 @@ pub async fn route(
             Ok(true) => cancel_stopped(&app).await,
             Ok(false) => {
                 return error(StatusCode::CONFLICT, "stale_revision", "配置已更新，请重试");
+            }
+            Err(sqlx::Error::Protocol(code)) if code == "goal_active" => {
+                return error(StatusCode::CONFLICT, &code, "请先关闭当前目标");
             }
             Err(e) => return db_error(e),
         };
@@ -995,6 +1103,10 @@ pub async fn work(app: Shared) {
         forward_reports(&app)
     );
 }
+
+#[cfg(test)]
+#[path = "task_goal_tests.rs"]
+mod task_goal_tests;
 
 #[cfg(test)]
 mod tests {

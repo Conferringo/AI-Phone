@@ -19,6 +19,10 @@ message ProactiveState {
   string delivery_status = 15;
   bool wechat_watch = 16;
   bool attention_connected = 17;
+  string goal = 18;
+  bool goal_active = 19;
+  string goal_status = 20;
+  string goal_device_id = 21;
 }
 message ProactiveUpdateRequest {
   uint64 expected_revision = 1;
@@ -29,4 +33,9 @@ message ProactiveUpdateRequest {
   bool autonomous_install = 6;
   uint32 interval_seconds = 7;
   optional bool wechat_watch = 8;
+}
+message GoalUpdateRequest {
+  uint64 expected_revision = 1;
+  string goal = 2;
+  string device_id = 3;
 }
