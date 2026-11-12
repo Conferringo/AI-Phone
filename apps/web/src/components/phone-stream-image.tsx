@@ -92,10 +92,6 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
                 expectedUrl = source;
                 presentationStarted = performance.now();
                 setUrl(source);
-                // Keep the current and previous URLs until the new image is
-                // actually presented. Bound memory even if the browser stalls.
-                const previous = [...owned];
-                for (const old of previous.slice(0, -2)) release(old);
               } catch (error) {
                 diagnose(error instanceof Error?error.message:'frame_decode_failed');
                 release(source);
@@ -131,8 +127,8 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
             if (frame) {
               lastFrame = performance.now();
               pending = frame;
+              void pump();
             }
-            void pump();
           }
         } catch (error) {
           if(error instanceof Error&&error.name!=='AbortError')diagnose(error.message);

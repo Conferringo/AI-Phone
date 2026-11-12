@@ -127,7 +127,22 @@ impl Installation {
             available,
             cancelled,
         };
-        staging::stage(payload, &self.home, expected_sha256, &control)
+        staging::stage(payload, &self.home, expected_sha256, &control, false)
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn recover_source(
+        &mut self,
+        payload: &Path,
+        expected_sha256: &str,
+        available: &dyn Fn(&Path) -> u64,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<StagedSource> {
+        let control = control::Control {
+            available,
+            cancelled,
+        };
+        staging::stage(payload, &self.home, expected_sha256, &control, true)
     }
 }
 

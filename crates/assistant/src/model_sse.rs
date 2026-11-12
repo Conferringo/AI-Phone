@@ -18,19 +18,26 @@ impl SseDecoder {
             return Err("模型输出超过限制".into());
         }
         let mut events = Vec::new();
-        for &byte in chunk {
-            if std::mem::take(&mut self.skip_lf) && byte == b'\n' {
+        let mut pending = chunk;
+        while !pending.is_empty() {
+            if std::mem::take(&mut self.skip_lf) && pending[0] == b'\n' {
+                pending = &pending[1..];
                 continue;
             }
-            if matches!(byte, b'\r' | b'\n') {
-                self.finish_line(&mut events)?;
-                self.skip_lf = byte == b'\r';
-            } else {
-                self.line.push(byte);
-                if self.line.len() > MAX_EVENT {
-                    return Err("模型流单帧超过限制".into());
-                }
+            let end = pending
+                .iter()
+                .position(|byte| matches!(byte, b'\r' | b'\n'))
+                .unwrap_or(pending.len());
+            if self.line.len() + end > MAX_EVENT {
+                return Err("模型流单帧超过限制".into());
             }
+            self.line.extend_from_slice(&pending[..end]);
+            let Some((&newline, rest)) = pending[end..].split_first() else {
+                break;
+            };
+            self.finish_line(&mut events)?;
+            self.skip_lf = newline == b'\r';
+            pending = rest;
         }
         Ok(events)
     }

@@ -20,6 +20,7 @@
           "permissions": [
             "allow-open-workbench",
             "allow-deployment-status",
+            "allow-retry-startup",
             "allow-start-deployment",
             "allow-cancel-deployment",
             "allow-accept-deployment-license"

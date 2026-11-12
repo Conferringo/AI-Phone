@@ -15,10 +15,10 @@ export function bindSpringRange(input, thumb) {
     press?.abort();
     press = null;
     play([
-      { transform: 'translateY(2.5px) scale(.95, .96)', offset: .46, easing: 'ease-out' },
-      { transform: 'translateY(-1.25px) scale(1.08, 1.06)', offset: .72, easing: 'ease-in-out' },
+      { transform: 'scale(.94, .96)', offset: .48, easing: 'ease-out' },
+      { transform: 'scale(1.04, 1.03)', offset: .75, easing: 'ease-in-out' },
       { transform: 'none', offset: 1 },
-    ], 320);
+    ], 260);
   }
 
   input.addEventListener('pointerdown', event => {
@@ -29,7 +29,7 @@ export function bindSpringRange(input, thumb) {
     window.addEventListener('pointerup', releasePointer, options);
     window.addEventListener('pointercancel', releasePointer, options);
     window.addEventListener('blur', release, { signal: press.signal });
-    play([{ transform: 'translateY(-7px) scale(1.43, 1.28)', offset: 1 }], 135, 'forwards');
+    play([{ transform: 'scale(1.28, 1.16)', offset: 1 }], 120, 'forwards');
   }, { signal: lifetime.signal });
 
   preference.addEventListener('change', () => animation?.cancel(), { signal: lifetime.signal });

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AImanity</title>
+  <link rel="stylesheet" href="setup-frame.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="range.css">
   <link rel="stylesheet" href="onboarding.css">
@@ -11,22 +12,19 @@
 </head>
 <body>
 <main class="setup">
-  <section id="language-screen" class="language-screen" aria-labelledby="language-heading">
+  <section id="language-screen" class="language-screen" aria-labelledby="language-heading" hidden>
     <header class="language-heading">
-      <h1 id="language-heading" data-i18n="languageTitle">Choose your language</h1>
+      <h1 id="language-heading" class="setup-title" data-i18n="languageTitle">Choose your language</h1>
     </header>
     <div id="language-wall" role="radiogroup" aria-labelledby="language-heading"></div>
-    <footer class="actions language-actions">
+    <footer class="setup-footer language-actions">
       <button id="language-continue" class="primary" type="button"><span data-i18n="continue">Continue</span><span class="continue-arrow" aria-hidden="true">→</span></button>
     </footer>
   </section>
 
   <div id="setup-flow" hidden>
-    <nav class="setup-nav">
-      <button id="change-language" type="button" class="back"><span aria-hidden="true">←</span><span data-i18n="language">Language</span></button>
-    </nav>
     <section id="local-panel" class="pane" aria-labelledby="title">
-      <h1 id="title" tabindex="-1" data-i18n="title">Set up your devices</h1>
+      <h1 id="title" class="setup-title" tabindex="-1" data-i18n="title">Set up your devices</h1>
       <form id="local-setup">
         <div class="pane-body">
           <p id="host-error" class="error" role="alert" hidden></p>
@@ -41,17 +39,20 @@
             </section>
           </div>
         </div>
-        <footer class="actions resource-actions">
+        <footer class="setup-footer resource-actions">
           <div class="host"><span id="host-name"></span><div id="checks" class="checks" role="status"></div></div>
           <button id="install" class="primary" type="submit" data-i18n="install" disabled>Start installation</button>
         </footer>
       </form>
     </section>
     <section id="progress" class="pane" aria-labelledby="progress-title" hidden>
-      <h1 id="progress-title" tabindex="-1">Installation</h1>
+      <h1 id="progress-title" class="setup-title" tabindex="-1">Installation</h1>
       <div class="pane-body progress-body">
         <div class="progress-detail" id="progress-detail">
-          <div class="progress-mark" aria-hidden="true"><span></span></div>
+          <div class="progress-visual" aria-hidden="true">
+            <canvas id="install-orb"></canvas>
+            <span class="progress-complete"></span>
+          </div>
           <div class="progress-heading">
             <h2 id="phase" aria-live="polite"></h2>
           </div>
@@ -59,7 +60,7 @@
           <pre id="license" tabindex="0" hidden></pre>
         </div>
       </div>
-      <footer class="actions progress-actions">
+      <footer class="setup-footer progress-actions">
         <button id="cancel" class="secondary" type="button" data-i18n="cancel">Stop</button>
         <button id="retry" class="primary" type="button" data-i18n="retry" hidden>Retry</button>
         <button id="accept" class="primary" type="button" data-i18n="accept" hidden>Accept and continue</button>

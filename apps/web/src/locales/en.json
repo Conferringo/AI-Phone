@@ -477,5 +477,12 @@
   "选择 {name}": "Select {name}",
   "取消选择": "Clear selection",
   "尚未安装设备": "Device not installed",
-  "修改时间": "Modified"
+  "修改时间": "Modified",
+  "添加模型": "Add model",
+  "编辑模型": "Edit model",
+  "暂无模型": "No models yet",
+  "为 {0} 选择模型": "Choose a model for {0}",
+  "管理": "Manage",
+  "取消": "Cancel",
+  "配置": "Configuration"
 }

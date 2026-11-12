@@ -1,20 +1,21 @@
 export function playbackVolume(value:number){return Number.isFinite(value)?Math.max(0,Math.min(1,value)):0;}
-export function applyPlaybackVolume(gain:Pick<GainNode,'gain'>|null,value:number,time:number){
- const volume=playbackVolume(value);gain?.gain.setTargetAtTime(volume,time,.02);return volume;
-}
+const NO_PCM_CARRY=new Uint8Array();
 
 /** Raw S16LE stereo packets need not end on a sample or frame boundary. */
 export class PcmDecoder {
- private carry=new Uint8Array();
- reset(){this.carry=new Uint8Array();}
+ private carry=NO_PCM_CARRY;
+ reset(){this.carry=NO_PCM_CARRY;}
  decode(part:Uint8Array):[Float32Array<ArrayBuffer>,Float32Array<ArrayBuffer>]|null {
-  const bytes=new Uint8Array(this.carry.length+part.length);
-  bytes.set(this.carry);bytes.set(part,this.carry.length);
+  let bytes=part;
+  if(this.carry.length){
+   bytes=new Uint8Array(this.carry.length+part.length);
+   bytes.set(this.carry);bytes.set(part,this.carry.length);
+  }
   const complete=bytes.length-bytes.length%4;
-  this.carry=bytes.slice(complete);
+  this.carry=complete===bytes.length?NO_PCM_CARRY:bytes.slice(complete);
   if(!complete)return null;
   // Live playback catches up after a stalled transport instead of playing old audio.
-  const start=Math.max(0,complete-38400),view=new DataView(bytes.buffer);
+  const start=Math.max(0,complete-38400),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
   const channels:[Float32Array<ArrayBuffer>,Float32Array<ArrayBuffer>]=[new Float32Array((complete-start)/4),new Float32Array((complete-start)/4)];
   for(let i=0;i<channels[0].length;i++){
    channels[0][i]=view.getInt16(start+i*4,true)/32768;
@@ -26,8 +27,7 @@ export class PcmDecoder {
 
 /** One device owns one audio graph; network connections never own/suspend it. */
 export class AudioPlayback {
- private context:AudioContext|null=null;
- private gain:GainNode|null=null;
+ private graph:{context:AudioContext;gain:GainNode}|null=null;
  private decoder=new PcmDecoder();
  private sources=new Set<AudioBufferSourceNode>();
  private nextAt=0;
@@ -37,13 +37,13 @@ export class AudioPlayback {
   private readonly onRunningChange?:(running:boolean)=>void,
  ){}
  async resume(){
-  if(!this.context){
-   const context=this.context=this.create();
+  if(!this.graph){
+   const context=this.create(),gain=context.createGain();
    context.onstatechange=()=>this.onRunningChange?.(context.state==='running');
-   this.gain=context.createGain();
-   this.gain.gain.value=this.volume;this.gain.connect(context.destination);
+   gain.gain.value=this.volume;gain.connect(context.destination);
+   this.graph={context,gain};
   }
-  const context=this.context;
+  const {context}=this.graph;
   await context.resume();
   const running=context.state==='running';
   this.onRunningChange?.(running);
@@ -51,7 +51,8 @@ export class AudioPlayback {
  }
  setVolume(value:number){
   this.volume=playbackVolume(value);
-  applyPlaybackVolume(this.gain,this.volume,this.context?.currentTime||0);
+  const graph=this.graph;
+  if(graph)graph.gain.gain.setTargetAtTime(this.volume,graph.context.currentTime,.02);
  }
  reset(){
   this.decoder.reset();this.clearScheduled();
@@ -62,23 +63,24 @@ export class AudioPlayback {
   this.sources.clear();
  }
  push(part:Uint8Array){
-  const audio=this.context,channels=this.decoder.decode(part);
-  if(!audio||audio.state!=='running'||!channels)return false;
+  const graph=this.graph,channels=this.decoder.decode(part);
+  if(!graph||graph.context.state!=='running'||!channels)return false;
+  const {context:audio,gain}=graph;
   const buffer=audio.createBuffer(2,channels[0].length,48000);
   buffer.copyToChannel(channels[0],0);buffer.copyToChannel(channels[1],1);
   if(this.nextAt<audio.currentTime||this.nextAt-audio.currentTime>.35){
    this.clearScheduled();this.nextAt=audio.currentTime+.06;
   }
-  const source=audio.createBufferSource();source.buffer=buffer;source.connect(this.gain!);
+  const source=audio.createBufferSource();source.buffer=buffer;source.connect(gain);
   this.sources.add(source);
   source.onended=()=>{this.sources.delete(source);source.disconnect();};
   source.start(this.nextAt);this.nextAt+=buffer.duration;
   return true;
  }
- suspend(){this.reset();void this.context?.suspend();}
+ suspend(){this.reset();void this.graph?.context.suspend();}
  close(){
-  this.reset();this.gain?.disconnect();this.gain=null;
-  const context=this.context;this.context=null;
-  if(context){context.onstatechange=null;void context.close();}
+  this.reset();
+  const graph=this.graph;this.graph=null;
+  if(graph){graph.gain.disconnect();graph.context.onstatechange=null;void graph.context.close();}
  }
 }

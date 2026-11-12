@@ -1,0 +1,40 @@
+:root {
+  --setup-surface: #fafafa;
+  --setup-ink: #171717;
+  --setup-muted: #595959;
+  --setup-line: #dedede;
+  --setup-radius: 8px;
+  --setup-control: 44px;
+  --setup-inset: 44px;
+  --setup-top: 46px;
+  --setup-bottom: 26px;
+  --setup-title-gap: 28px;
+  --setup-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.setup-title {
+  margin: 0;
+  font: 670 clamp(27px, 5vw, 34px)/1.2 var(--setup-font);
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.setup-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-block-size: 58px;
+  padding-block-start: 14px;
+  border-block-start: 1px solid var(--setup-line);
+}
+
+@media (max-width: 540px) {
+  :root {
+    --setup-inset: 20px;
+    --setup-top: 32px;
+    --setup-bottom: 14px;
+    --setup-title-gap: 18px;
+  }
+}

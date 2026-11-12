@@ -49,8 +49,9 @@ pub(crate) fn prepare() -> Result<i32, String> {
         .parent()
         .ok_or("windows_resource_path")?
         .join("host");
-    let integrity: BTreeMap<String, String> =
-        serde_json::from_str(super::INTEGRITY).map_err(|error| error.to_string())?;
+    let integrity = super::INTEGRITY
+        .as_ref()
+        .map_err(|error| error.to_string())?;
     let system = PathBuf::from(std::env::var_os("SystemRoot").ok_or("windows_system_path")?)
         .join("System32");
     if integrity.contains_key("qemu/manifest.json") {
@@ -91,7 +92,7 @@ pub(crate) fn prepare() -> Result<i32, String> {
         Err(error) => return Err(format!("WSL: {error}")),
     };
     if !installed {
-        let resource = resource(&folder.join("windows"), &integrity, "wsl.msi")?;
+        let resource = resource(&folder.join("windows"), integrity, "wsl.msi")?;
         reboot |= execute(
             "WSL installation",
             command(system.join("msiexec.exe"))

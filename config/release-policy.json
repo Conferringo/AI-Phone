@@ -1,7 +1,7 @@
 {
   "version": "0.0.1",
-  "release_name": "AImanity",
-  "release_notes": "Initial AImanity source baseline, with updated onboarding and shared range controls.",
+  "release_name": "Aluminum",
+  "release_notes": "Initial AImanity release with guided setup, runtime recovery, and lighter startup, chat, and device streams.",
   "publication_gates": {
     "ui_acceptance": false,
     "asset_and_source_license_review": false,

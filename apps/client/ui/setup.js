@@ -1,4 +1,5 @@
 import { languageWall } from './language-wall.js';
+import { installOrb } from './install-orb.js';
 import { bindSpringRange } from './range-motion.js';
 import { languageNames, localeFor, locales, setupLabels } from './setup-i18n.js';
 
@@ -8,10 +9,12 @@ const languageKey = 'setup-language';
 const savedLanguage = localStorage.getItem(languageKey);
 let choosingLanguage = !locales.includes(savedLanguage);
 let locale = choosingLanguage ? localeFor(navigator.language) : savedLanguage;
+let startup = { phase: window.__AIMANITY_STARTUP__ === true ? 'checking' : '', error: '' };
 let polling = false;
 let snapshot, actionError = '', statusError = '', pending = false, pollTimer, previousView, stopped = false;
 const resources = { phone: { cpus: 2, memory_mb: 2048, storage_gb: 16 }, desktop: { cpus: 2, memory_mb: 2560 } };
 const sliders = [];
+const startupLabels = { checking: 'startupChecking', repairing: 'startupRepairing', opening: 'startupOpening', failed: 'startupFailed' };
 const errorLabels = {
   host_resources: 'hostResources', host_backend_pending: 'hostPending', installation_cancelled: 'cancelled',
   command_line_tools: 'commandLineTools', payload_unreadable: 'payloadUnreadable', invalid_payload: 'invalidPayload', download_failed: 'downloadFailed',
@@ -25,33 +28,41 @@ const showError = (node, code) => {
   node.textContent = code ? label(errorLabels[code] || 'failed') : '';
 };
 
-function render() {
+function translate() {
   document.documentElement.lang = locale;
   document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = label(node.dataset.i18n);
-  $('language-screen').hidden = !choosingLanguage;
-  $('setup-flow').hidden = choosingLanguage;
-  languages.update(locale, choosingLanguage);
-  const { host, checks = [], progress } = snapshot || {};
+}
+
+function render() {
+  const startupPhase = startup.phase && statusError ? 'failed' : startup.phase;
+  const selectingLanguage = choosingLanguage && !startupPhase;
+  $('language-screen').hidden = !selectingLanguage;
+  $('setup-flow').hidden = selectingLanguage;
+  languages.update(locale, selectingLanguage);
+  const progress = snapshot?.progress;
   const state = progress?.state;
   const active = state === 'running' || state === 'license';
   const ready = state === 'ready';
   const installed = state === 'installed';
-  $('host-name').textContent = host ? (host.platform === 'macos' ? 'macOS · Apple Silicon' : host.platform === 'windows' ? 'Windows 11' : host.platform) : '';
-  const capacity = new Intl.NumberFormat(locale, { style: 'unit', unit: 'gigabyte', unitDisplay: 'short' });
-  $('checks').replaceChildren(...checks.map(({ name, passed, value, required }) => {
-    const node = document.createElement('span');
-    node.classList.toggle('failed', !passed);
-    const title = label(name === 'memory' ? 'memoryCheck' : 'storageCheck');
-    node.textContent = `${title} ${capacity.format(value)}${passed ? '' : ` / ${capacity.format(required)}`}`;
-    return node;
-  }));
-  const insufficient = checks.some(check => !check.passed);
-  showError($('host-error'), actionError || statusError || (host && (!host.implemented ? 'host_backend_pending' : insufficient ? 'host_resources' : '')));
-  $('install').disabled = !host?.implemented || insufficient || pending;
-  $('local-panel').hidden = !!state;
-  $('progress').hidden = !state;
-  if (state) {
+  const showingProgress = !!(startupPhase || state);
+  const starting = !!startupPhase && startupPhase !== 'failed';
+  orb(!selectingLanguage && (!!startupPhase || active || ready), !selectingLanguage && (starting || (!startupPhase && state === 'running')));
+  $('local-panel').hidden = showingProgress;
+  $('progress').hidden = !showingProgress;
+  $('progress').dataset.startup = String(!!startupPhase);
+  if (startupPhase) {
+    $('progress-detail').dataset.state = starting ? 'running' : 'startup-failed';
+    $('progress-title').textContent = label('start');
+    $('phase').textContent = label(startupLabels[startupPhase]);
+    showError($('progress-error'), actionError || statusError || startup.error);
+    $('license').hidden = true;
+    $('retry').hidden = starting;
+    $('retry').textContent = label('retry');
+    $('cancel').hidden = true;
+    $('accept').hidden = true;
+    $('enter').hidden = true;
+  } else if (state) {
     $('progress-detail').dataset.state = state;
     $('progress-title').textContent = label(ready ? 'ready' : 'installStep');
     $('phase').textContent = label(ready ? 'readyDevices' : progress.phase === 'failed' ? (state === 'cancelled' ? 'stopped' : 'installFailed') : progress.phase) || label('busy');
@@ -63,15 +74,32 @@ function render() {
     $('cancel').hidden = !active;
     $('accept').hidden = state !== 'license';
     $('enter').hidden = !ready;
-    for (const button of $('progress').querySelectorAll('button')) button.disabled = pending;
+  } else if (!selectingLanguage) {
+    const host = snapshot?.host;
+    const checks = snapshot?.checks ?? [];
+    $('host-name').textContent = host ? (host.platform === 'macos' ? 'macOS · Apple Silicon' : host.platform === 'windows' ? 'Windows 11' : host.platform) : '';
+    const capacity = new Intl.NumberFormat(locale, { style: 'unit', unit: 'gigabyte', unitDisplay: 'short' });
+    $('checks').replaceChildren(...checks.map(({ name, passed, value, required }) => {
+      const node = document.createElement('span');
+      node.classList.toggle('failed', !passed);
+      const title = label(name === 'memory' ? 'memoryCheck' : 'storageCheck');
+      node.textContent = `${title} ${capacity.format(value)}${passed ? '' : ` / ${capacity.format(required)}`}`;
+      return node;
+    }));
+    const insufficient = checks.some(check => !check.passed);
+    showError($('host-error'), actionError || statusError || (host && (!host.implemented ? 'host_backend_pending' : insufficient ? 'host_resources' : '')));
+    $('install').disabled = !host?.implemented || insufficient || pending;
   }
+  for (const button of $('progress').querySelectorAll('button')) button.disabled = pending;
   for (const { input } of sliders) input.disabled = pending;
-  const view = choosingLanguage ? $('language-screen') : state ? $('progress') : $('local-panel');
+  const view = selectingLanguage ? $('language-screen') : showingProgress ? $('progress') : $('local-panel');
   if (view !== previousView && previousView) {
-    if (choosingLanguage) languages.focus();
-    else view.querySelector('h1').focus({ preventScroll: true });
+    view.querySelector('h1').focus({ preventScroll: true });
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      view.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
+      view.animate([
+        { opacity: .35, transform: 'translateY(12px) scale(.96)' },
+        { opacity: 1, transform: 'none' },
+      ], { duration: 480, easing: 'cubic-bezier(.2, 1.12, .35, 1)' });
     }
   }
   previousView = view;
@@ -79,9 +107,11 @@ function render() {
 
 const languages = languageWall($('language-wall'), locales, languageNames, value => {
   locale = value;
+  translate();
   render();
   languages.focus();
 });
+const orb = installOrb($('install-orb'));
 
 $('language-continue').addEventListener('click', () => {
   localStorage.setItem(languageKey, locale);
@@ -89,11 +119,6 @@ $('language-continue').addEventListener('click', () => {
   render();
   beginPolling();
 });
-$('change-language').addEventListener('click', () => {
-  choosingLanguage = true;
-  render();
-});
-
 function resourceSlider(device, key, values) {
   const field = document.createElement('div');
   field.className = 'resource-slider';
@@ -149,13 +174,16 @@ resourceSlider('desktop', 'memory_mb', [2048, 2560, 3072, 4096]);
 async function refresh() {
   try {
     const next = await invoke('deployment_status');
-    if (!snapshot && next.previous_request) {
-      for (const { update, device, key } of sliders) {
-        resources[device][key] = next.previous_request[device][key];
-        update(resources[device][key]);
+    startup = next.startup;
+    if (!startup.phase) {
+      if (!snapshot && next.previous_request) {
+        for (const { update, device, key } of sliders) {
+          resources[device][key] = next.previous_request[device][key];
+          update(resources[device][key]);
+        }
       }
+      snapshot = next;
     }
-    snapshot = next;
     statusError = '';
   } catch (error) {
     statusError = String(error);
@@ -164,12 +192,15 @@ async function refresh() {
 }
 
 function scheduleRefresh() {
-  if (stopped) return;
+  if (stopped || (choosingLanguage && !startup.phase)) {
+    polling = false;
+    return;
+  }
   const state = snapshot?.progress.state;
   pollTimer = setTimeout(async () => {
     if (!pending) await refresh();
     scheduleRefresh();
-  }, state === 'running' || state === 'license' ? 800 : 3000);
+  }, startup.phase && startup.phase !== 'failed' ? 300 : state === 'running' || state === 'license' ? 800 : 3000);
 }
 
 function beginPolling() {
@@ -194,7 +225,7 @@ async function run(command, args) {
 }
 const start = () => run('start_deployment', { request: { locale, ...resources } });
 $('local-setup').addEventListener('submit', event => { event.preventDefault(); void start(); });
-$('retry').addEventListener('click', start);
+$('retry').addEventListener('click', () => startup.phase ? void run('retry_startup') : void start());
 $('cancel').addEventListener('click', () => void run('cancel_deployment'));
 $('accept').addEventListener('click', () => void run('accept_deployment_license'));
 $('enter').addEventListener('click', () => void run('open_workbench', { locale }));
@@ -203,5 +234,6 @@ window.addEventListener('pagehide', () => {
   stopped = true;
   clearTimeout(pollTimer);
 });
+translate();
 render();
-if (!choosingLanguage) beginPolling();
+if (startup.phase || !choosingLanguage) beginPolling();

@@ -134,21 +134,19 @@ async fn chat_messages(
     Ok(rows
         .iter()
         .map(|r| {
-            let notice = crate::run_notice::kind(
-                r.get("source_status"),
-                r.get("source_error"),
-                &r.get::<Value, _>("source_state"),
-            );
+            let role: String = r.get("role");
+            let original_text: &str = r.get("text");
+            let source_error: &str = r.get("source_error");
+            let source_state: Value = r.get("source_state");
+            let notice =
+                crate::run_notice::kind(r.get("source_status"), source_error, &source_state);
             let (text, system_notice) = crate::run_notice::message(
-                r.get("role"),
-                r.get("text"),
-                r.get("source_error"),
+                &role,
+                original_text,
+                source_error,
                 notice,
                 r.get::<bool, _>("recorded_retry")
-                    || crate::run_notice::legacy_pause(
-                        r.get("text"),
-                        &r.get::<Value, _>("source_state"),
-                    ),
+                    || crate::run_notice::legacy_pause(original_text, &source_state),
             );
             wire::ChatMessage {
                 id: r.get::<Uuid, _>("id").to_string(),
@@ -164,7 +162,7 @@ async fn chat_messages(
                 active: r.get("active"),
                 has_activity: r.get("has_activity"),
                 voice: crate::voice_input::from_row(r),
-                role: r.get("role"),
+                role,
                 text,
                 system_notice,
                 attachments: r
@@ -190,20 +188,19 @@ pub(crate) async fn state_selected(
         selected.map_or(MessageSelection::All, MessageSelection::Ids),
     )
     .await?;
+    let (device_id, revision): (String, i64) = sqlx::query_as(
+        "SELECT c.device_id, COALESCE((
+            SELECT ordinal FROM messages WHERE conversation_id=c.id ORDER BY ordinal DESC LIMIT 1
+        ), 0) FROM conversations c WHERE c.id=$1",
+    )
+    .bind(id)
+    .fetch_one(&mut **tx)
+    .await?;
     let value = wire::ChatState {
-        revision: sqlx::query_scalar::<_, i64>(
-            "SELECT ordinal FROM messages WHERE conversation_id=$1 ORDER BY ordinal DESC LIMIT 1",
-        )
-        .bind(id)
-        .fetch_optional(&mut **tx)
-        .await?
-        .unwrap_or(0) as u64,
+        revision: revision as u64,
         message_window: window,
         conversation_id: id.to_string(),
-        device_id: sqlx::query_scalar("SELECT device_id FROM conversations WHERE id=$1")
-            .bind(id)
-            .fetch_one(&mut **tx)
-            .await?,
+        device_id,
         agent_id: run
             .as_ref()
             .and_then(|r| r.get::<Option<Uuid>, _>("agent_id"))
@@ -367,8 +364,12 @@ pub async fn send(
         }
         let files: Vec<Uuid> = request.attachment_ids.iter().map(|s|Uuid::parse_str(s))
             .collect::<Result<_,_>>().map_err(|_|sqlx::Error::Protocol("invalid_attachments".into()))?;
-        let attachments = sqlx::query("SELECT id,name,media_type,size_bytes,storage_key FROM attachments WHERE id=ANY($1) AND owner_id='local-user'")
-            .bind(&files).fetch_all(&mut *tx).await?;
+        let attachments = if files.is_empty() {
+            Vec::new()
+        } else {
+            sqlx::query("SELECT id,name,media_type,size_bytes,storage_key FROM attachments WHERE id=ANY($1) AND owner_id='local-user'")
+                .bind(&files).fetch_all(&mut *tx).await?
+        };
         let total: i64 = attachments.iter().map(|r|r.get::<i64,_>("size_bytes")).sum();
         if attachments.len() != files.len() || total > 12*1024*1024 || attachments.iter().any(|r|r.get::<i64,_>("size_bytes") < 0) {
             return Err(sqlx::Error::Protocol("invalid_attachments".into()));
@@ -390,7 +391,7 @@ pub async fn send(
             if active.get::<String,_>("status") == "paused" {
                 crate::registry::refresh_paused_model(&mut tx, &app.settings, run, (id, active.get("agent_id"))).await?;
             }
-            let input = steering_input(&app, &request, &attachments).await?;
+            let input = steering_input(&app, &request, &files, &attachments).await?;
             let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, loop_state=CASE WHEN status='paused' THEN jsonb_set(loop_state,'{resume_requested}','true'::jsonb) ELSE loop_state END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
                 .bind(run).bind(request_id.to_string()).bind(input).bind(steering_quiet_ms).execute(&mut *tx).await?;
             if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
@@ -520,6 +521,7 @@ async fn send_receipt(
 async fn steering_input(
     app: &App,
     request: &wire::ChatSendRequest,
+    files: &[Uuid],
     attachments: &[sqlx::postgres::PgRow],
 ) -> Result<Value, sqlx::Error> {
     let invalid = || sqlx::Error::Protocol("invalid_attachments".into());
@@ -529,11 +531,10 @@ async fn steering_input(
     }
     let base = app.root.join("data/attachments");
     let mut actual_total = 0u64;
-    for id in &request.attachment_ids {
-        let attachment_id = Uuid::parse_str(id).map_err(|_| invalid())?;
+    for attachment_id in files {
         let row = attachments
             .iter()
-            .find(|r| r.get::<Uuid, _>("id") == attachment_id)
+            .find(|r| r.get::<Uuid, _>("id") == *attachment_id)
             .ok_or_else(invalid)?;
         let key: String = row.get("storage_key");
         let relative = std::path::Path::new(&key);
