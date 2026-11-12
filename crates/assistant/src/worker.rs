@@ -1027,16 +1027,21 @@ fn phone_observation(call: &Value, context: &[Value]) -> bool {
         && tool_output(context, call)
             .and_then(Value::as_array)
             .is_some_and(|parts| {
-                parts.iter().any(|p| {
-                    (p["type"] == "input_image"
-                        && p["image_url"].as_str().is_some_and(|image| {
-                            image.starts_with("data:image/png;base64,") && image.len() > 30
-                        }))
-                        || p["text"].as_str().is_some_and(|text| {
+                has_live_png(parts)
+                    || parts.iter().any(|p| {
+                        p["text"].as_str().is_some_and(|text| {
                             text.starts_with(crate::agent_loop::ARCHIVED_OBSERVATION)
                         })
-                })
+                    })
             })
+}
+fn has_live_png(parts: &[Value]) -> bool {
+    parts.iter().any(|part| {
+        part["type"] == "input_image"
+            && part["image_url"]
+                .as_str()
+                .is_some_and(|url| url.starts_with("data:image/png;base64,") && url.len() > 30)
+    })
 }
 #[cfg(test)]
 fn has_phone_observation(context: &[Value]) -> bool {
@@ -1061,6 +1066,34 @@ fn has_current_observation(context: &[Value]) -> bool {
         .iter()
         .skip(evidence_start(context).max(after_wait))
         .any(|call| phone_observation(call, context))
+}
+
+fn has_grounded_initial_desktop_frame(context: &[Value]) -> bool {
+    let mut grounded = false;
+    for call in context[evidence_start(context)..]
+        .iter()
+        .filter(|item| item["type"] == "function_call")
+    {
+        let Some(output) = tool_output(context, call) else {
+            return false;
+        };
+        let metadata = tool_value(output);
+        if tool_outcome(metadata.as_ref()) != ToolOutcome::Completed {
+            return false;
+        }
+        match call["name"].as_str() {
+            Some("skill_read" | "device_list") => {}
+            Some("computer_observe") => {
+                grounded = metadata.is_some_and(|value| {
+                    value["observation_id"]
+                        .as_str()
+                        .is_some_and(|id| !id.is_empty())
+                }) && output.as_array().is_some_and(|parts| has_live_png(parts));
+            }
+            _ => return false,
+        }
+    }
+    grounded
 }
 fn output_position(context: &[Value], call: &Value) -> Option<usize> {
     context.iter().position(|item| {
@@ -1778,6 +1811,11 @@ fn phone_completion_proposal(context: &[Value], output: &[Value], summary: &str)
     {
         return None;
     }
+    completed_settings_tap(context)?;
+    Some(completion_proposal(summary))
+}
+
+fn completed_settings_tap(context: &[Value]) -> Option<&Value> {
     let recent = &context[evidence_start(context)..];
     let frame = recent.last()?;
     if frame["type"] != "function_call_output" {
@@ -1805,10 +1843,50 @@ fn phone_completion_proposal(context: &[Value], output: &[Value], summary: &str)
     {
         return None;
     }
-    Some(
-        json!({"type":"function_call","name":"task_finish","call_id":Uuid::now_v7().to_string(),
-        "arguments":json!({"status":"completed","summary":summary}).to_string()}),
-    )
+    Some(action)
+}
+
+fn completion_proposal(summary: &str) -> Value {
+    json!({"type":"function_call","name":"task_finish","call_id":Uuid::now_v7().to_string(),
+        "arguments":json!({"status":"completed","summary":summary}).to_string()})
+}
+
+fn hinted_device_completion(context: &[Value]) -> Option<Value> {
+    let recent = &context[evidence_start(context)..];
+    let receipt = recent
+        .last()
+        .filter(|item| item["type"] == "function_call_output")?;
+    let id = receipt["call_id"].as_str()?;
+    let call = recent
+        .iter()
+        .rev()
+        .find(|item| item["type"] == "function_call" && item["call_id"] == id)?;
+    let action = match call["name"].as_str()? {
+        "phone_observe" => completed_settings_tap(context)?,
+        "computer_type"
+            if tool_value(&receipt["output"]).is_some_and(|value| {
+                value["success"] == true && value["observation_id"].is_string()
+            }) && recent.iter().all(|item| {
+                item["type"] != "function_call"
+                    || matches!(
+                        item["name"].as_str(),
+                        Some("skill_read" | "device_list" | "computer_observe")
+                    )
+                    || item["call_id"] == id
+            }) =>
+        {
+            call
+        }
+        _ => return None,
+    };
+    let arguments: Value = serde_json::from_str(action["arguments"].as_str()?).ok()?;
+    let summary = arguments["completion_summary"].as_str()?.trim();
+    if summary.is_empty() || summary.chars().count() > 400 {
+        return None;
+    }
+    let mut proposal = completion_proposal(summary);
+    proposal["local_action_id"] = json!(Uuid::now_v7().to_string());
+    Some(proposal)
 }
 
 fn progress_is_verified(context: &[Value], text: &str) -> bool {
@@ -2550,6 +2628,16 @@ async fn execute(
             pending.push(call);
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
+        if pending.is_empty()
+            && !background
+            && !task_goal
+            && !handoffs_pending
+            && let Some(finish) = hinted_device_completion(&context)
+        {
+            context.push(finish.clone());
+            pending.push(finish);
+            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
+        }
         if let Some(call) = pending.first().cloned() {
             if app.run_signals.speech.wait(conversation, cancel).await?
                 || (input_changed.now_or_never().is_some() && has_steering(app, id).await?)
@@ -2795,18 +2883,26 @@ async fn execute(
             }
             continue;
         }
-        let effort = if screen_attention
+        let gui = gui_execution(&context);
+        let decision = if screen_attention
             || (!desktop_handoff(&context)
                 && verification_attempts(&context) > 0
                 && !has_current_observation(&context))
         {
-            "none"
-        } else if (phone_task(&context) || action_task(&context))
-            && (state.stalls > 0 || !gui_execution(&context))
+            ("none", true)
+        } else if (state.stalls > 0 || !gui) && (phone_task(&context) || action_task(&context)) {
+            ("high", false)
+        } else if step == 0
+            && !background
+            && !task_goal
+            && gui
+            && state.model_retries == 0
+            && execution_policy::desktop_target(&context)
+            && has_grounded_initial_desktop_frame(&context)
         {
-            "high"
+            ("none", false)
         } else {
-            "low"
+            ("low", false)
         };
         let response = respond_to_current_input(
             app,
@@ -2814,7 +2910,7 @@ async fn execute(
             message,
             &context,
             cancel,
-            effort,
+            decision,
             state.model_replay_boundary,
         )
         .await;
@@ -3110,7 +3206,7 @@ async fn respond_to_current_input(
     message: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    effort: &str,
+    decision: (&str, bool),
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
     // Subscribe before reading the queue, so an input committed during admission
@@ -3125,7 +3221,7 @@ async fn respond_to_current_input(
         biased;
         _=cancel.cancelled()=>Err("canceled".into()),
         changed=wait_for_steering(app,run,changed)=>changed.map(|()|None),
-        result=respond(app,run,context,cancel,effort,model_replay_boundary,&mut timing)=>result.map(Some),
+        result=respond(app,run,context,cancel,decision,model_replay_boundary,&mut timing)=>result.map(Some),
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.
     if result.is_ok() {
@@ -3150,7 +3246,7 @@ async fn respond(
     run: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    effort: &str,
+    (effort, force_phone_observe): (&str, bool),
     model_replay_boundary: usize,
     timing: &mut crate::model_timing::Timing,
 ) -> Result<Vec<Value>, String> {
@@ -3173,7 +3269,7 @@ async fn respond(
         ("reasoning".into(), json!({"effort":effort})),
         ("max_output_tokens".into(), Value::from(8192)),
     ]));
-    if effort == "none" {
+    if force_phone_observe {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }
     let client = app.settings.http_client(&config.proxy_url)?;
@@ -4137,6 +4233,31 @@ mod verification_tests {
         ]
     }
     #[test]
+    fn fast_initial_decision_requires_live_desktop_observation_before_any_action() {
+        let mut context = request("在真实安卓手机的系统设置中点击进入电池页面。");
+        context.extend(read_skill());
+        let mut frame = observe("initial");
+        frame[1]["output"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"type":"input_text", "text":"{\"observation_id\":\"initial\"}"}));
+        context.extend(frame);
+        assert!(!has_grounded_initial_desktop_frame(&context));
+
+        let mut context = request("在电脑输入一行文字。");
+        context.extend([json!({"type":"function_call","name":"computer_observe","call_id":"desktop"}),
+            json!({"type":"function_call_output","call_id":"desktop","output":[{"type":"input_text","text":"{\"success\":true,\"observation_id\":\"desktop\"}"}]})]);
+        assert!(!has_grounded_initial_desktop_frame(&context));
+        context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_image","image_url":"data:image/png;base64,real-desktop-frame-test"}));
+        assert!(has_grounded_initial_desktop_frame(&context));
+        let mut executed = context.clone();
+        executed.extend(action("type", "computer_type", json!({})));
+        assert!(!has_grounded_initial_desktop_frame(&executed));
+        context.last_mut().unwrap()["output"][0]["text"] =
+            json!("{\"success\":false,\"observation_id\":\"desktop\"}");
+        assert!(!has_grounded_initial_desktop_frame(&context));
+    }
+    #[test]
     fn text_completion_after_a_settings_tap_queues_normal_finish_only_once() {
         let mut context = request("在真实安卓手机的系统设置中点击进入电池页面，再简短回复。");
         context.extend(read_skill());
@@ -4172,6 +4293,54 @@ mod verification_tests {
         assert!(phone_completion_proposal(&context, &[], summary).is_none());
         context.extend(request("改为打开显示页面"));
         assert!(phone_completion_proposal(&context, &[], summary).is_none());
+    }
+
+    #[test]
+    fn device_completion_hint_requires_the_current_action_receipt() {
+        let summary = "已进入电池页面。";
+        let mut context = request("在手机系统设置中点击进入电池页面。");
+        context.extend(read_skill());
+        context.extend(observe("before"));
+        context.extend(action(
+            "tap",
+            "phone_tap_element",
+            json!({
+                "element_id":"battery", "completion_summary":summary
+            }),
+        ));
+        let mut after = observe("after");
+        after[0]["local_after_action"] = json!("tap");
+        assert!(hinted_device_completion(&context).is_none());
+        after[1]["output"].as_array_mut().unwrap().push(json!({"type":"input_text",
+            "text":"{\"device_id\":\"phone\",\"observation_id\":\"battery\",\"foreground_app\":\"com.android.settings/.BatterySettings\"}"}));
+        context.extend(after);
+        let finish = hinted_device_completion(&context).unwrap();
+        assert_eq!(finish["name"], "task_finish");
+        assert!(finish["local_action_id"].is_string());
+        let args: Value = serde_json::from_str(finish["arguments"].as_str().unwrap()).unwrap();
+        assert_eq!(args, json!({"status":"completed","summary":summary}));
+        context.extend(action("notification", "phone_notifications", json!({})));
+        assert!(hinted_device_completion(&context).is_none());
+
+        let mut context = request("在电脑的当前输入框输入样本文字。");
+        let mut typed = action(
+            "type",
+            "computer_type",
+            json!({
+                "text":"样本文字", "completion_summary":"已输入样本文字。"
+            }),
+        );
+        context.push(typed.remove(0));
+        let mut receipt = typed.remove(0);
+        let unconfirmed = json!({"success":false,"result_unknown":true,"code":"input_unconfirmed"});
+        receipt["output"][0]["text"] = json!(unconfirmed.to_string());
+        context.push(receipt);
+        assert!(hinted_device_completion(&context).is_none());
+        let confirmed = json!({"success":true,"observation_id":"new-frame"});
+        context.last_mut().unwrap()["output"][0]["text"] = json!(confirmed.to_string());
+        assert!(hinted_device_completion(&context).is_some());
+        context.extend(action("another", "computer_click", json!({})));
+        assert!(hinted_device_completion(&context).is_none());
     }
     #[test]
     fn wechat_routing_uses_current_request_actual_app_or_notification_source() {

@@ -2080,8 +2080,8 @@
     },
     {
       "path": "crates/assistant/src/steering_tests.rs",
-      "size": 51776,
-      "sha256": "964e8888587ee3be7d1468e714cfb584d4c0a29a4f35f642d019e58ca10dcb39"
+      "size": 51785,
+      "sha256": "b045def2e4df17c859f9bdda6a1d13d39686008a48a3550336eb676459d2ba38"
     },
     {
       "path": "crates/assistant/src/task_goal_tests.rs",
@@ -2090,8 +2090,8 @@
     },
     {
       "path": "crates/assistant/src/tool_catalog.rs",
-      "size": 17069,
-      "sha256": "fd6c3b9265ab7dc1fbf72f50903744cdda5889abb171439e0a9b046e5032fe9d"
+      "size": 17841,
+      "sha256": "1e9d7b5e341f80e22ef95af8df742b3d19a681517ee83764750704aa41e26350"
     },
     {
       "path": "crates/assistant/src/voice_input.rs",
@@ -2120,8 +2120,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 239239,
-      "sha256": "3f13081499e161439102d57e6b4ddbd260f0741a7dfd865120b581fa7dc7c533"
+      "size": 246685,
+      "sha256": "4f8ef96f4cf103c8bfac5f16a0c1103672140179e46f56c5f1ca4ff56ec52595"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -4520,8 +4520,8 @@
     },
     {
       "path": "skills/builtin/computer-use/SKILL.md",
-      "size": 7428,
-      "sha256": "75d2cc507e6a595a5e49fabfc1606448a6d4ed18f27bd454176d839290105db2"
+      "size": 7612,
+      "sha256": "10c4df71bf2365702c460163773553ac0eed3a42217361cc1a256b42a80a0487"
     },
     {
       "path": "skills/builtin/device-transfer/SKILL.md",
@@ -4545,8 +4545,8 @@
     },
     {
       "path": "skills/builtin/phone-use/SKILL.md",
-      "size": 9485,
-      "sha256": "87b8d6dcb6044b617fffed6dcd4556a4f64aa70bdcc79a95674586fef93f16e0"
+      "size": 9611,
+      "sha256": "0f6fb4a767b9a1a3a7d5cc4bfca606a613eadc20e1e16f20c4aa762d1fe817ba"
     },
     {
       "path": "skills/builtin/wechat/SKILL.md",
