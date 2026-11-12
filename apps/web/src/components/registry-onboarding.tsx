@@ -1,5 +1,6 @@
 'use client';
-import {LoaderCircle, Monitor, Smartphone} from 'lucide-react';
+import { LoadingOrb } from "@/components/ui/loading-orb";
+import {Monitor, Smartphone} from 'lucide-react';
 import type {ReactNode} from 'react';
 import {setupProgress, verifiedModels} from '@/lib/registry-setup';
 import {useI18n} from './locale-provider';
@@ -51,7 +52,7 @@ export function SetupReview({state, busy, error, steps, onFinish}: {
       {error && <p role="alert" className="registry-setup-error">{error}</p>}
     </div>
     <footer className="registry-save setup-footer">{steps}<Button disabled={busy || !progress.ready} onClick={onFinish}>
-      {busy && <LoaderCircle className="spinning" size={15}/>} {t(busy ? '检查设备…' : '检查并进入')}
+      {busy && <LoadingOrb size={15} />} {t(busy ? '检查设备…' : '检查并进入')}
     </Button></footer>
   </section>;
 }

@@ -478,7 +478,7 @@ fn malformed_manifest_body_and_archive_tail_do_not_publish_resources() {
 }
 #[test]
 fn windows_inventory_rejects_reserved_names_and_case_collisions_on_every_test_host() {
-    fn raw(extra: Option<&str>) -> crate::archive::RawInventory {
+    fn raw(extra: Option<&str>) -> Vec<u8> {
         let mut names = vec![
             "sdk/emulator/emulator.exe".to_string(),
             "sdk/platform-tools/adb.exe".to_string(),
@@ -498,11 +498,7 @@ fn windows_inventory_rejects_reserved_names_and_case_collisions_on_every_test_ho
             names.push(name.to_string());
         }
         let files:Vec<_>=names.iter().map(|name|json!({"path":name,"size":0,"sha256":"0".repeat(64),"mode":if name.ends_with(".exe"){493}else{420}})).collect();
-        let raw=serde_json::to_vec(&json!({"format":1,"host":"windows-x64","api":35,"abi":"x86_64","redistribution":"review-pending","files":files})).unwrap();
-        let mut headers: std::collections::BTreeMap<_, _> =
-            names.into_iter().map(|n| (n, 0)).collect();
-        headers.insert("ANDROID-MANIFEST.json".into(), raw.len() as u64);
-        crate::archive::RawInventory { raw, headers }
+        serde_json::to_vec(&json!({"format":1,"host":"windows-x64","api":35,"abi":"x86_64","redistribution":"review-pending","files":files})).unwrap()
     }
     assert!(manifest::parse(&raw(None), manifest::Platform::WindowsX64).is_ok());
     for path in [

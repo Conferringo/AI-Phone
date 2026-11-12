@@ -1,8 +1,9 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {create, type MessageShape} from '@bufbuild/protobuf';
 import {ModelDraftSchema, ModelCredentialSchema} from '@ai-phone/protocol/ai_phone/v1/settings_pb';
 import {ConnectionCredentialRequestSchema, type RegisteredModelSchema} from '@ai-phone/protocol/ai_phone/v1/registry_pb';
-import {ChevronDown, Eye, EyeOff, LoaderCircle, Plus} from 'lucide-react';
+import {ChevronDown, Eye, EyeOff, Plus} from 'lucide-react';
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {clientId} from '@/lib/client-id';
 import {modelPreset, modelPresets, presetDraft} from '@/lib/registry-setup';
@@ -170,7 +171,7 @@ export function RegistryModels({models, busy, error, footer, next, onSave, onCle
     <footer className="registry-save setup-footer">
       <Button variant="ghost" type="button" disabled={!!busy || keyBusy} onClick={closeEditor}>{t('取消')}</Button>
       <Button type="submit" disabled={!!busy || keyBusy}>
-        {busy && <LoaderCircle className="spinning" size={15}/>}
+        {busy && <LoadingOrb size={15} />}
         {t(busy === 'test' ? '验证连接…' : busy ? '保存中…' : '保存')}
       </Button>
     </footer>

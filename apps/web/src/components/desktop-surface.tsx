@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useWorkbenchNotice} from './workbench-notices';
 import {clientId} from '@/lib/client-id';
 import {useLayoutEffect,useRef,useState} from 'react';
@@ -112,6 +113,11 @@ export function DesktopSurface({deviceId,active}:{deviceId:string;active:boolean
      sendKeyboard({kind:'key',key:[control?'ctrl':'',e.altKey?'alt':'',e.shiftKey?'shift':'',key||e.key].filter(Boolean).join('+')});
     }
    }}/>}
-  {!online&&<span className="desktop-connecting">连接桌面…</span>}
+  {!online&&<span className="desktop-connecting" role="status">
+   <span className="desktop-connecting-status">
+    {active&&!error&&<LoadingOrb size={20} />}
+    连接桌面…
+   </span>
+  </span>}
  </div>;
 }

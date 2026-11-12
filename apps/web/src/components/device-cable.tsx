@@ -1,6 +1,7 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {Cable,LoaderCircle} from 'lucide-react';
+import {Cable} from 'lucide-react';
 import {RegistryRequestSchema} from '@ai-phone/protocol/ai_phone/v1/registry_pb';
 import {DeviceLinkRequestSchema,DeviceLinkStateSchema} from '@ai-phone/protocol/ai_phone/v1/desktop_pb';
 import {settingsRpc} from '@/lib/settings-client';
@@ -32,5 +33,5 @@ export function DeviceCableToggle({devices,linked,onLinks,onError}:{devices:Regi
   }catch(error){callbacks.current.onError(error instanceof Error?error.message:String(error));}
   finally{mutating.current=false;setBusy(false);}
  }
- return <Button variant="ghost" size="icon" className="device-cable-toggle" data-connected={connected} aria-label={t(connected?'断开数据线':'连接数据线')} title={t(connected?'断开数据线':'连接数据线')} aria-pressed={connected} aria-busy={busy} disabled={!phone||!computer||busy} onClick={()=>void toggle()}>{busy?<LoaderCircle size={18} className="spinning"/>:<Cable size={18}/>}</Button>;
+ return <Button variant="ghost" size="icon" className="device-cable-toggle" data-connected={connected} aria-label={t(connected?'断开数据线':'连接数据线')} title={t(connected?'断开数据线':'连接数据线')} aria-pressed={connected} aria-busy={busy} disabled={!phone||!computer||busy} onClick={()=>void toggle()}>{busy?<LoadingOrb size={18} />:<Cable size={18}/>}</Button>;
 }

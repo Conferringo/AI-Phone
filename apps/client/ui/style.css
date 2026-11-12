@@ -9,8 +9,21 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; }
-.setup { block-size: 100dvh; max-inline-size: 760px; margin-inline: auto; padding: calc(var(--setup-top) - 16px) var(--setup-inset) var(--setup-bottom); }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 15% 5%, #fff, transparent 68%), #e9ecee;
+}
+.setup {
+  block-size: 100dvh;
+  max-inline-size: 760px;
+  margin-inline: auto;
+  padding: calc(var(--setup-top) - 16px) var(--setup-inset) var(--setup-bottom);
+  background: var(--glass-fill);
+  backdrop-filter: blur(18px) saturate(1.05);
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .setup { backdrop-filter: none; }
+}
 .language-screen, #setup-flow { block-size: 100%; min-block-size: 0; display: grid; }
 .language-screen { grid-template-rows: auto minmax(0, 1fr) auto; }
 .language-heading h1 { text-align: center; }

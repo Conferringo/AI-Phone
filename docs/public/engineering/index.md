@@ -11,6 +11,7 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 - [Android distribution review](android-distribution.md)
 - [Windows Android runtime](windows-android-runtime.md)
 - [Windows Linux guest](../windows-backend-runtime.md)
+- [Device resource changes](device-resources.md)
 
 ## Services and applications
 

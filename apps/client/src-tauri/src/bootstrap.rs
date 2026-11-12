@@ -126,11 +126,8 @@ fn capability_from_resources(
 ) -> Capability {
     // Native WSL owns its runtime; it never uses the source installer's SDK/Lima
     // host table. Resource bytes and actual device readiness are checked on start.
-    let native_windows = os == "windows"
-        && arch == "x86_64"
-        && resources.contains_key("android.payload")
-        && (resources.contains_key("wsl/manifest.json")
-            || resources.contains_key("qemu/manifest.json"));
+    let has_device_bundle =
+        resources.contains_key("source.payload") && resources.contains_key("android.payload");
     Capability {
         platform: os.into(),
         arch: arch.into(),
@@ -141,10 +138,18 @@ fn capability_from_resources(
             _ => "unsupported",
         }
         .into(),
-        implemented: (os == "macos"
-            && arch == "aarch64"
-            && POLICY.hosts.contains_key("macos-arm64"))
-            || native_windows,
+        implemented: has_device_bundle
+            && match (os, arch) {
+                ("macos", "aarch64") => {
+                    POLICY.hosts.contains_key("macos-arm64")
+                        && resources.contains_key("images.payload")
+                }
+                ("windows", "x86_64") => {
+                    resources.contains_key("wsl/manifest.json")
+                        || resources.contains_key("qemu/manifest.json")
+                }
+                _ => false,
+            },
     }
 }
 
@@ -417,7 +422,9 @@ fn start_windows_backend(
                 guest: &bundle.join("guest"),
                 home: &home,
                 cpu: request.desktop.cpus.into(),
-                memory_mib: request.desktop.memory_mb,
+                memory_mib: ai_phone_host_runtime::desktop_host_memory_mib(
+                    request.desktop.memory_mb,
+                ),
                 web_port: 17860,
                 control_port: control,
                 base_sha256: &base,
@@ -754,21 +761,26 @@ mod tests {
         fs::remove_dir_all(folder).unwrap();
     }
     #[test]
-    fn arbitrary_os_images_and_unimplemented_hosts_are_not_claimed_available() {
-        assert!(capability("macos", "aarch64").implemented);
+    fn only_the_complete_native_mac_bundle_can_enter_device_configuration() {
+        let mut resources = BTreeMap::from([("source.payload".into(), "a".repeat(64))]);
+        assert!(!capability_from_resources("macos", "aarch64", &resources).implemented);
+        resources.insert("android.payload".into(), "b".repeat(64));
+        assert!(!capability_from_resources("macos", "aarch64", &resources).implemented);
+        resources.insert("images.payload".into(), "c".repeat(64));
+        assert!(capability_from_resources("macos", "aarch64", &resources).implemented);
         for (os, arch) in [
             ("macos", "x86_64"),
             ("windows", "x86_64"),
             ("linux", "aarch64"),
             ("linux", "x86_64"),
         ] {
-            assert!(!capability_from_resources(os, arch, &Default::default()).implemented);
+            assert!(!capability_from_resources(os, arch, &resources).implemented);
         }
     }
     #[test]
     fn only_the_complete_native_windows_pair_can_enter_device_configuration() {
         use std::collections::BTreeMap;
-        let mut resources = BTreeMap::new();
+        let mut resources = BTreeMap::from([("source.payload".into(), "c".repeat(64))]);
         assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);
         resources.insert("wsl/manifest.json".into(), "a".repeat(64));
         assert!(!capability_from_resources("windows", "x86_64", &resources).implemented);

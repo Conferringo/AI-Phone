@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {
   AgentSaveRequestSchema, ConnectionSaveRequestSchema, ConnectionTestRequestSchema,
@@ -194,7 +195,9 @@ export function RegistryWindow({open, onClose, onNeedsSetup, onChange, activeDev
   return <FloatingWindow id="configuration-center" title={t(onboarding ? '初次配置' : '配置中心')}
     open={open} onClose={onClose} centered={onboarding} focusPanel hideClose width={680} height={600}>
     <div className="registry-center" aria-busy={!!busy}>
-      {!state ? <div className="registry-loading" role="status">{error || t('正在读取配置…')}</div> :
+      {!state ? <div className="registry-loading" role={error ? 'alert' : 'status'}>
+        <span>{!error && <LoadingOrb size={20} />}{error || t('正在读取配置…')}</span>
+      </div> :
         <div className="registry-content" ref={body}>
           {screen === 'models' && <RegistryModels models={models} busy={busy} error={error} footer={footer}
             next={onboarding && <Button disabled={!models.length || !!busy} onClick={() => go('devices')}>{t('下一步')}</Button>}

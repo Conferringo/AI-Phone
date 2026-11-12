@@ -88,6 +88,7 @@
 }
 .registry-alert {margin:12px 20px 0;padding:10px 12px;border-radius:var(--radius);background:color-mix(in srgb,var(--destructive) 6%,transparent);color:var(--destructive);font-size:12px;line-height:1.5;flex-shrink:0;max-height:90px;overflow:auto
 }
+.registry-loading>span{display:flex;align-items:center;gap:8px}
 .registry-loading {flex:1;display:grid;place-items:center;color:var(--muted-foreground)
 }
 .registry-center button:disabled {opacity:.45;cursor:default

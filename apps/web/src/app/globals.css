@@ -3,6 +3,7 @@
 @import "../styles/entry.css";
 @import "../../../client/ui/range.css";
 @import "../../../client/ui/setup-frame.css";
+@import "../../../client/ui/glass.css";
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-body);line-height:1.6}

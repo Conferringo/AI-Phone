@@ -1,7 +1,8 @@
 'use client';
 
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useEffect, useId, useState, type ReactNode} from 'react';
-import {LoaderCircle, Monitor, Plus, RefreshCw, Smartphone, Sparkles} from 'lucide-react';
+import {Monitor, Plus, RefreshCw, Smartphone, Sparkles} from 'lucide-react';
 import {clientId} from '@/lib/client-id';
 import {useI18n} from './locale-provider';
 import type {Registry} from './registry-window';
@@ -200,7 +201,7 @@ export function RegistryAdministration({registry, busy, error, footer, open, voi
       {footer}
       {showDetails && form && <div className="registry-admin-actions">
         {dirty && <Button type="button" variant="ghost" disabled={!!busy} onClick={discard}>{t('撤销')}</Button>}
-        <Button type="submit" form={formId} disabled={!!busy || !canSave}>{busy === 'save' && <LoaderCircle aria-hidden size={15} className="spinning"/>}{t(busy === 'save' ? '保存中…' : '保存')}</Button>
+        <Button type="submit" form={formId} disabled={!!busy || !canSave}>{busy === 'save' && <LoadingOrb size={15} />}{t(busy === 'save' ? '保存中…' : '保存')}</Button>
       </div>}
     </footer>
   </section>;

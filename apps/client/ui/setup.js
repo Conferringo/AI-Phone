@@ -1,5 +1,5 @@
 import { languageWall } from './language-wall.js';
-import { installOrb } from './install-orb.js';
+import { mountLoadingOrb } from './loading-orb.js';
 import { bindSpringRange } from './range-motion.js';
 import { languageNames, localeFor, locales, setupLabels } from './setup-i18n.js';
 
@@ -47,7 +47,7 @@ function render() {
   const installed = state === 'installed';
   const showingProgress = !!(startupPhase || state);
   const starting = !!startupPhase && startupPhase !== 'failed';
-  orb(!selectingLanguage && (!!startupPhase || active || ready), !selectingLanguage && (starting || (!startupPhase && state === 'running')));
+  orb.setRunning(!selectingLanguage && (starting || (!startupPhase && state === 'running')));
   $('local-panel').hidden = showingProgress;
   $('progress').hidden = !showingProgress;
   $('progress').dataset.startup = String(!!startupPhase);
@@ -111,7 +111,8 @@ const languages = languageWall($('language-wall'), locales, languageNames, value
   render();
   languages.focus();
 });
-const orb = installOrb($('install-orb'));
+const orb = mountLoadingOrb($('install-orb'));
+window.addEventListener('pagehide', orb.dispose, { once: true });
 
 $('language-continue').addEventListener('click', () => {
   localStorage.setItem(languageKey, locale);

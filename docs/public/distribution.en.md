@@ -36,6 +36,6 @@ After verifying both installers, sign the update manifest on the release maintai
 ./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.0.1-macos-arm64.dmg AImanity-0.0.1-windows-x64-setup.exe stable.json
 ```
 
-Attach the DMG and EXE to the GitHub release. After publication, publish the signed `stable.json` on the `update-feed` branch. Clients from 0.1.8 use that feed. Install the current release manually once when upgrading from 0.1.7.
+Attach the DMG and EXE to the GitHub release and verify both public downloads. Publish the signed `stable.json` on the `update-feed` branch. The client offers releases newer than the installed version. Install 0.0.1 manually once when moving from the earlier version sequence.
 
 Full packages must contain clean Android/Linux baselines, emulator, prebuilt services and matched runtime components, with provenance, notices and applicable corresponding source. See [distribution requirements](distribution-requirements.md), [release status](release-status.md), and [backup/recovery](backup-restore.en.md).

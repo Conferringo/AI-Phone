@@ -1,5 +1,6 @@
 'use client';
-import {GripVertical, LoaderCircle, Monitor, Smartphone} from 'lucide-react';
+import { LoadingOrb } from "@/components/ui/loading-orb";
+import {GripVertical, Monitor, Smartphone} from 'lucide-react';
 import {useRef, useState, type ReactNode} from 'react';
 import {useI18n} from './locale-provider';
 import {ModelLabel, type RegisteredModel} from './registry-models';
@@ -77,7 +78,7 @@ export function DeviceModelMatching({registry, models, busy, error, footer, next
                 className="registry-drop-slot" data-targeted={targeted}
                 data-awaiting={selection?.kind === 'model'} data-filled={!!model}
                 data-settled={settled === device.id} onClick={() => select('device', device.id)}>
-                {busy === device.id ? <LoaderCircle className="spinning" size={16}/> :
+                {busy === device.id ? <LoadingOrb size={16} /> :
                   model ? <ModelLabel model={model}/> : <span>{t('未分配')}</span>}
               </button>
             </div>

@@ -8,7 +8,7 @@ fn quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
 }
 
-fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u64) -> Result<Value> {
+fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u32) -> Result<Value> {
     let arch = policy["arch"]
         .as_str()
         .ok_or(Error::Invalid("container_host_policy"))?;
@@ -18,7 +18,7 @@ fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u64) -> Res
     let packages = quote(&text(&folder.join("packages"))?);
     Ok(json!({
         "minimumLimaVersion":"2.2.1", "vmType":"vz", "arch":arch,
-        "cpus":4, "memory":format!("{}GiB", (memory_mb+2048).div_ceil(1024).max(4)), "disk":"64GiB",
+        "cpus":4, "memory":format!("{}GiB", crate::desktop_host_memory_mib(memory_mb) / 1024), "disk":"64GiB",
         "images":[{"location":folder.join("image.iso"),"arch":arch,"digest":format!("sha256:{image}")}],
         "mountType":"virtiofs", "mounts":[{"location":home,"writable":true}],
         "containerd":{"system":false,"user":false}, "propagateProxyEnv":false,
@@ -100,9 +100,8 @@ pub(super) async fn start<E: Execute>(
             let profile: Value =
                 serde_json::from_slice(&fs::read(root.join("data/deployment/profile.json"))?)
                     .map_err(|_| Error::Invalid("host_profile"))?;
-            let memory = profile["desktop"]["memory_mb"]
-                .as_u64()
-                .ok_or(Error::Invalid("host_profile"))?;
+            let memory = serde_json::from_value(profile["desktop"]["memory_mb"].clone())
+                .map_err(|_| Error::Invalid("host_profile"))?;
             let file = home.join("container-host.yaml");
             filesystem::publish_private(
                 home,

@@ -1,4 +1,5 @@
 "use client";
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {LanguageWindow,LanguageTrigger} from '@/components/language-window';
 import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchNotice} from '@/components/workbench-notices';
 import {useI18n} from '@/components/locale-provider';
@@ -38,7 +39,6 @@ import {
   Pause,
   Play,
   X,
-  LoaderCircle,
   Smartphone,
   Monitor,
   Wrench,
@@ -561,11 +561,8 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
                 }}
               />
             ) : (
-              <LoaderCircle
-                className="spinning"
-                size={22}
-                aria-label={t("连接手机")}
-              />
+              <LoadingOrb size={22}
+                label={t("连接手机")} />
             )}
           </div>
           <textarea ref={phoneInput} className="phone-keyboard-proxy" aria-label={t("手机键盘输入")} autoComplete="off" autoCapitalize="off" spellCheck={false} tabIndex={-1}
@@ -600,7 +597,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
             }}
           >
             <div className="message-list">
-              {chatSnapshot.history?.hasOlder&&<Button className="self-center" variant="ghost" size="sm" type="button" disabled={historyPages.loading} onClick={historyPages.more}>{historyPages.loading&&<LoaderCircle size={14} className="spinning"/>}{t("较早消息")}</Button>}
+              {chatSnapshot.history?.hasOlder&&<Button className="self-center" variant="ghost" size="sm" type="button" disabled={historyPages.loading} onClick={historyPages.more}>{historyPages.loading&&<LoadingOrb size={14} />}{t("较早消息")}</Button>}
               {displayedMessages.map((message) => (
                 <article
                   key={message.requestId||message.id}
@@ -684,7 +681,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
                     {file.preview && <img src={file.preview} alt="" />}
                     <span>{file.name}</span>
                     {!file.file && !file.error && (
-                      <LoaderCircle className="spinning" size={14} />
+                      <LoadingOrb size={14} />
                     )}
                     <Button
                       variant="ghost"
@@ -754,7 +751,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
               {phoneAvailable&&deviceId==='phone-local-01'&&<ExplorationToggle/>}{runtimeAvailable&&deviceId!=='phone-local-01'&&<DesktopExploreToggle control={desktopExploration} focused={focused}/>}
               {runtimeAvailable&&<CopilotToggle deviceId={deviceId} ready={outbox.ready} onActivate={()=>onActivate(deviceId)}/>}
               <div className="composer-submit">
-                {active&&!paused&&<span className="composer-progress" role="status"><span className="composer-pulse"/>{t(chat?.runStatus==='queued'?'待继续':'正在处理')}</span>}
+                {active&&!paused&&<span className="composer-progress" role="status"><LoadingOrb size={14} />{t(chat?.runStatus==='queued'?'待继续':'正在处理')}</span>}
                 {paused && (
                   <Button
                     variant="ghost"
@@ -800,7 +797,7 @@ function PhoneWorkspace({stageStyle,onSelect,deviceId,registry,focused,showChat,
       </div>
       <FloatingWindow id={`phone-capture-${deviceId}`} title={t("截图")} open={activeFeature==='phone-capture'} onClose={()=>closeFeature('phone-capture')} width={desktopAvailable?700:360} height={580} fitContent>
         <div className="phone-capture-preview">
-          {captureUrl?<img src={captureUrl} alt={t("设备截图预览")}/>:captureError?<p role="alert" className="workbench-error">{captureError}</p>:<LoaderCircle className="spinning" size={20} aria-label={t("正在截图")}/>}
+          {captureUrl?<img src={captureUrl} alt={t("设备截图预览")}/>:captureError?<p role="alert" className="workbench-error">{captureError}</p>:<LoadingOrb size={20} label={t("正在截图")} />}
           {captureFile&&captureUrl&&<div className="phone-capture-actions"><a href={captureUrl} download={captureFile.name}>{t("保存图片")}</a><Button variant="secondary" onClick={()=>{void upload([captureFile]);closeFeature('phone-capture');}}>{t("附到对话")}</Button></div>}
         </div>
       </FloatingWindow>

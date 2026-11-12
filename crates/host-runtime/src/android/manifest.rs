@@ -113,13 +113,9 @@ fn private_name(part: &str) -> Result<()> {
     }
     Ok(())
 }
-fn record(row: &Record, raw: &archive::RawInventory, platform: Platform) -> Result<String> {
+fn record(row: &Record, platform: Platform) -> Result<String> {
     name(&row.path, platform)?;
-    if !identity(&row.sha256)
-        || row.size > LIMITS.file
-        || ![0o644, 0o755].contains(&row.mode)
-        || raw.headers.get(&row.path) != Some(&row.size)
-    {
+    if !identity(&row.sha256) || row.size > LIMITS.file || ![0o644, 0o755].contains(&row.mode) {
         return Err(Error::Invalid("android_resource_inventory"));
     }
     Ok(if matches!(platform, Platform::WindowsX64) {
@@ -128,17 +124,14 @@ fn record(row: &Record, raw: &archive::RawInventory, platform: Platform) -> Resu
         row.path.clone()
     })
 }
-fn records(value: &Manifest, raw: &archive::RawInventory, platform: Platform) -> Result<()> {
-    if value.files.is_empty()
-        || value.files.len() >= crate::manifest::MAX_FILES
-        || raw.headers.len() != value.files.len() + 1
-    {
+fn records(value: &Manifest, platform: Platform) -> Result<()> {
+    if value.files.is_empty() || value.files.len() >= crate::manifest::MAX_FILES {
         return Err(Error::Invalid("android_resource_inventory"));
     }
     let mut names = BTreeSet::new();
     let mut total = 0u64;
     for row in &value.files {
-        if !names.insert(record(row, raw, platform)?) {
+        if !names.insert(record(row, platform)?) {
             return Err(Error::Invalid("android_resource_inventory"));
         }
         total = total
@@ -183,9 +176,9 @@ fn programs(value: &Manifest, platform: Platform) -> Result<()> {
     }
     Ok(())
 }
-pub(super) fn parse(raw: &archive::RawInventory, platform: Platform) -> Result<Manifest> {
-    let value: Manifest = serde_json::from_slice(&raw.raw)
-        .map_err(|_| Error::Invalid("android_resource_manifest"))?;
+pub(super) fn parse(raw: &[u8], platform: Platform) -> Result<Manifest> {
+    let value: Manifest =
+        serde_json::from_slice(raw).map_err(|_| Error::Invalid("android_resource_manifest"))?;
     if value.format != 1
         || value.host != platform.spec().host
         || value.api != 35
@@ -194,6 +187,6 @@ pub(super) fn parse(raw: &archive::RawInventory, platform: Platform) -> Result<M
     {
         return Err(Error::Invalid("android_resource_manifest"));
     }
-    records(&value, raw, platform)?;
+    records(&value, platform)?;
     Ok(value)
 }

@@ -1,16 +1,24 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
-use reqwest::Client;
+use reqwest::{Client, Response};
 use ring::signature::{ED25519, UnparsedPublicKey};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{error::Error, ffi::OsString, path::PathBuf, time::Duration};
+use std::{
+    error::Error,
+    ffi::OsString,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 use tauri::{
     AppHandle, Manager, Wry,
     menu::MenuItem,
     window::{ProgressBarState, ProgressBarStatus},
 };
-use tokio::{io::AsyncWriteExt, sync::Mutex};
+use tokio::{
+    io::{AsyncWriteExt, BufWriter},
+    sync::Mutex,
+};
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -209,34 +217,55 @@ async fn check(current: &Version, platform: Platform) -> Result<Option<Offer>> {
 
 async fn download(app: &AppHandle, offer: &Offer, platform: Platform) -> Result<PathBuf> {
     let folder = app.path().app_cache_dir()?.join("client-updates");
-    std::fs::create_dir_all(&folder)?;
     let name = platform.installer(&offer.version);
-    let mut response = client()?
+    let response = client()?
         .get(asset_url(&offer.version, &name))
         .send()
         .await?
         .error_for_status()?;
-    let temporary = tempfile::NamedTempFile::new_in(&folder)?;
-    let mut file = tokio::fs::File::from_std(temporary.reopen()?);
+    stage_installer(response, &folder, &name, &offer.artifact, |percent| {
+        progress(app, ProgressBarStatus::Normal, Some(percent));
+    })
+    .await
+}
+
+async fn stage_installer(
+    mut response: Response,
+    folder: &Path,
+    name: &str,
+    artifact: &Artifact,
+    mut show_progress: impl FnMut(u64),
+) -> Result<PathBuf> {
+    if response
+        .content_length()
+        .is_some_and(|size| size != artifact.size)
+    {
+        return Err("Installer did not match the signed size".into());
+    }
+    tokio::fs::create_dir_all(folder).await?;
+    let (file, temporary) = tempfile::NamedTempFile::new_in(folder)?.into_parts();
+    let mut file = BufWriter::with_capacity(1024 * 1024, tokio::fs::File::from_std(file));
     let mut hash = Sha256::new();
     let mut size = 0;
     let mut shown = 0;
     while let Some(chunk) = response.chunk().await? {
         size += chunk.len() as u64;
-        if size > offer.artifact.size {
+        if size > artifact.size {
             return Err("Installer exceeded the signed size".into());
         }
         hash.update(&chunk);
         file.write_all(&chunk).await?;
-        let percent = size * 100 / offer.artifact.size;
+        let percent = size * 100 / artifact.size;
         if percent != shown {
             shown = percent;
-            progress(app, ProgressBarStatus::Normal, Some(percent));
+            show_progress(percent);
         }
     }
-    if size != offer.artifact.size || format!("{:x}", hash.finalize()) != offer.artifact.sha256 {
+    if size != artifact.size || format!("{:x}", hash.finalize()) != artifact.sha256 {
         return Err("Installer did not match the signed release".into());
     }
+    file.flush().await?;
+    let file = file.into_inner();
     file.sync_all().await?;
     drop(file);
     let path = folder.join(name);
@@ -382,6 +411,69 @@ mod tests {
         rand::SystemRandom,
         signature::{Ed25519KeyPair, KeyPair},
     };
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::TcpListener,
+        thread,
+    };
+
+    #[test]
+    fn installer_is_published_only_after_the_signed_size_and_digest_match() {
+        let folder = tempfile::tempdir().unwrap();
+        let name = "update.dmg";
+        let path = folder.path().join(name);
+        let body = b"complete installer";
+        let artifact = Artifact {
+            size: body.len() as u64,
+            sha256: format!("{:x}", Sha256::digest(body)),
+        };
+        tauri::async_runtime::block_on(async {
+            let client = Client::builder().no_proxy().build().unwrap();
+            for (body, expected_error) in [
+                (body.as_slice(), None),
+                (
+                    b"short".as_slice(),
+                    Some("Installer did not match the signed size"),
+                ),
+                (
+                    b"untrusted content!".as_slice(),
+                    Some("Installer did not match the signed release"),
+                ),
+            ] {
+                let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+                let address = listener.local_addr().unwrap();
+                let server = thread::spawn(move || {
+                    let (mut stream, _) = listener.accept().unwrap();
+                    let mut reader = BufReader::new(&mut stream);
+                    let mut line = String::new();
+                    while reader.read_line(&mut line).unwrap() != 0 && line != "\r\n" {
+                        line.clear();
+                    }
+                    write!(
+                        stream,
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    )
+                    .unwrap();
+                    let _ = stream.write_all(body);
+                });
+                let response = client
+                    .get(format!("http://{address}"))
+                    .send()
+                    .await
+                    .unwrap();
+                let result =
+                    stage_installer(response, folder.path(), name, &artifact, |_| {}).await;
+                server.join().unwrap();
+                match expected_error {
+                    Some(expected) => assert_eq!(result.unwrap_err().to_string(), expected),
+                    None => assert_eq!(result.unwrap(), path),
+                }
+                assert_eq!(std::fs::read(&path).unwrap(), b"complete installer");
+                assert_eq!(folder.path().read_dir().unwrap().count(), 1);
+            }
+        });
+    }
 
     #[test]
     fn stable_alias_offers_only_a_newer_signed_release_and_its_platform_installer() {

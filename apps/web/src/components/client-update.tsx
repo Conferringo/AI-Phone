@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { FloatingWindow, WindowTrigger } from "./floating-window";
 import { useI18n } from "./locale-provider";
 import { Button } from "./ui/button";
+import { LoadingOrb } from "./ui/loading-orb";
 
 type Update = { version: string; name: string; notes: string };
 type Native = { invoke<T>(command: string, args?: Record<string, string>): Promise<T> };
@@ -79,6 +80,7 @@ export function ClientUpdate({ open, onOpen, onClose }: {
         <p className="client-update-notes" dir="auto">{offer.notes}</p>
         {error && <p className="client-update-error" role="alert">{error}</p>}
         <Button type="button" disabled={installing} onClick={() => void install(offer.version)}>
+          {installing && <LoadingOrb />}
           {t(installing ? "正在更新…" : "确认更新")}
         </Button>
       </div>

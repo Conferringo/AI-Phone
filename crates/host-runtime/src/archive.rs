@@ -266,6 +266,24 @@ pub(crate) fn visit_component(
     inventory.finish()
 }
 
+pub(crate) fn first_manifest(
+    file: &mut File,
+    control: &Control<'_>,
+    limits: &Limits,
+) -> Result<Vec<u8>> {
+    let mut archive = tar::Archive::new(Reader::with_limit(file, control, limits.metadata + 512)?);
+    let mut entry = archive
+        .entries()?
+        .raw(true)
+        .next()
+        .ok_or(Error::Invalid("source_resource_manifest_missing"))??;
+    if Extensions::default().name(entry.header())? != limits.manifest {
+        return Err(Error::Invalid("source_resource_manifest_missing"));
+    }
+    let size = entry.size();
+    limited(&mut entry, size, limits.metadata)
+}
+
 pub(crate) fn drain(source: &mut dyn Read) -> Result<()> {
     let mut bytes = [0; CHUNK];
     while source.read(&mut bytes)? != 0 {}

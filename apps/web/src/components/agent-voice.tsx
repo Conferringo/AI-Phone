@@ -1,7 +1,8 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {create,type MessageShape} from '@bufbuild/protobuf';
 import {useEffect,useRef,useState} from 'react';
-import {Check,LoaderCircle,Eye,EyeOff} from 'lucide-react';
+import {Check,Eye,EyeOff} from 'lucide-react';
 import {VoiceSettingsRequestSchema,VoiceSettingsSchema,VoiceSettingsSaveRequestSchema,VoiceCredentialRequestSchema,VoiceCredentialSchema,VoiceDraftSchema,VoiceInputProtocol} from '@ai-phone/protocol/ai_phone/v1/voice_pb';
 import {settingsRpc} from '@/lib/settings-client';
 import {SelectField} from './ui/select';
@@ -54,6 +55,6 @@ export function AgentVoice({agentId,open}:{agentId:string;open:boolean}){
         <label>{t('代理地址')}<input dir="ltr" type="url" value={draft.proxyUrl} placeholder={t('直连')} onChange={e=>edit({proxyUrl:e.target.value})}/></label>
       </details>
     </fieldset>
-    <footer className="agent-voice-actions"><Button type="submit" disabled={busy||!loaded||!dirty}>{busy&&<LoaderCircle size={15} className="spinning"/>}{t('保存')}</Button>{dirty&&<Button type="button" variant="ghost" disabled={busy} onClick={()=>{setDirty(false);setError('');}}>{t('撤销')}</Button>}{revision>0n&&!!draft.recognitionModel&&<Button type="button" variant="ghost" disabled={busy} onClick={()=>void save(true)}>{t('移除配置')}</Button>}{saved&&<span role="status"><Check size={14}/>{t('已保存')}</span>}</footer>
+    <footer className="agent-voice-actions"><Button type="submit" disabled={busy||!loaded||!dirty}>{busy&&<LoadingOrb size={15} />}{t('保存')}</Button>{dirty&&<Button type="button" variant="ghost" disabled={busy} onClick={()=>{setDirty(false);setError('');}}>{t('撤销')}</Button>}{revision>0n&&!!draft.recognitionModel&&<Button type="button" variant="ghost" disabled={busy} onClick={()=>void save(true)}>{t('移除配置')}</Button>}{saved&&<span role="status"><Check size={14}/>{t('已保存')}</span>}</footer>
   </form>;
 }

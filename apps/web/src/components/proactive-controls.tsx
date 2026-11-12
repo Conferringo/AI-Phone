@@ -1,4 +1,5 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from "./locale-provider";
 import {createContext,useContext,useCallback,useEffect,useRef,useState,type ReactNode} from 'react';
@@ -6,7 +7,7 @@ import {createPortal} from 'react-dom';
 import {create,fromBinary,toBinary,type MessageShape} from '@bufbuild/protobuf';
 import {ProactiveRequestSchema,ProactiveStateSchema,ProactiveUpdateRequestSchema} from '@ai-phone/protocol/ai_phone/v1/proactive_pb';
 import {ApiErrorSchema} from '@ai-phone/protocol/ai_phone/v1/system_pb';
-import {Compass,Pause,LoaderCircle} from 'lucide-react';
+import {Compass,Pause} from 'lucide-react';
 import './proactive-controls.css';
 type State=MessageShape<typeof ProactiveStateSchema>;
 type Options=Pick<State,'exploring'>;
@@ -53,7 +54,7 @@ export function ProactiveProvider({children}:{children:ReactNode}){
 export function ExplorationControl({active,ready,saving,error,status,onToggle}:{active:boolean;ready:boolean;saving:boolean;error:string;status:string;onToggle:()=>void}){
  const {t}=useI18n();
  useWorkbenchNotice(error);
- return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoaderCircle size={16} className="spinning"/>:active?<Pause size={15}/>:<Compass size={16}/>}<span>Liberty</span></button></div></div>;
+ return <div className="exploration-control"><div className="proactive-dock" data-exploring={active}><button className="exploration-toggle" type="button" aria-pressed={active} disabled={!ready||saving} onClick={onToggle} title={t(status)}>{saving?<LoadingOrb size={16} />:active?<Pause size={15}/>:<Compass size={16}/>}<span>Liberty</span></button></div></div>;
 }
 export function ExplorationToggle(){
  const {state,saving,error,update}=useProactive();

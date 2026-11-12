@@ -8,6 +8,10 @@ pub(crate) const CONTRACT: &str = "ai-phone-host-profile-v1";
 const LOCALES: [&str; 10] = [
     "zh-CN", "en", "zh-TW", "ja", "ko", "de", "fr", "es", "ru", "ar",
 ];
+
+pub fn desktop_host_memory_mib(desktop_mib: u32) -> u32 {
+    (desktop_mib.div_ceil(1024) + 2).max(4) * 1024
+}
 pub(crate) fn checked_launch_path(value: Option<&str>) -> Result<&str> {
     value
         .filter(|path| !path.trim().is_empty() && !path.chars().any(char::is_control))
@@ -310,6 +314,12 @@ pub(crate) fn run(arguments: &[OsString]) -> Result<()> {
 #[cfg(all(test, unix))]
 mod resume_resources_tests {
     use super::*;
+    #[test]
+    fn desktop_host_has_room_for_the_container_and_system_services() {
+        for desktop_mib in [2048, 2560, 3072, 4096] {
+            assert!(desktop_host_memory_mib(desktop_mib) >= desktop_mib + 2048);
+        }
+    }
     fn request(cpus: u32, memory: u32) -> Request {
         parse_request(&serde_json::to_vec(&json!({"locale":"en","phone":{"cpus":cpus,"memory_mb":memory,"storage_gb":16},"desktop":{"cpus":2,"memory_mb":2048}})).unwrap()).unwrap()
     }

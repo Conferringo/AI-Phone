@@ -1,18 +1,19 @@
 "use client";
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from "./locale-provider";
 import {memo,useEffect,useId,useMemo,useRef,useState} from 'react';
 import {create,fromBinary,toBinary,type MessageShape} from '@bufbuild/protobuf';
 import {HarnessEventRequestSchema,HarnessEventListSchema} from '@ai-phone/protocol/ai_phone/v1/workbench_pb';
 import {ApiErrorSchema} from '@ai-phone/protocol/ai_phone/v1/system_pb';
-import {ChevronRight,Check,LoaderCircle,AlertCircle,Terminal,Pause,Square,Clock3} from 'lucide-react';
+import {ChevronRight,Check,AlertCircle,Terminal,Pause,Square,Clock3} from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {createTraceLoader,mergeTimeline,timelineEntries,splitToolRecord,traceWaitingSeconds,tracePerformance,waitingForModel,type TimelineEvent} from './execution-timeline';
 import './execution-trace.css';
 type HarnessEvent=MessageShape<typeof HarnessEventListSchema>['events'][number];
 const labels:Record<string,string>={queued:'排队中',running:'正在工作',paused:'已暂停',failed:'执行失败',canceled:'已停止',succeeded:'已完成',completed:'已完成'};
-function StatusIcon({status}:{status:string}){const {t}=useI18n();return status==='running'||status==='queued'?<LoaderCircle size={14} className="spinning" aria-label={t(labels[status])}/>:status==='completed'||status==='succeeded'?<Check size={14} aria-label={t("已完成")}/>:status==='paused'?<Pause size={14} aria-label={t("已暂停")}/>:status==='canceled'?<Square size={12} aria-label={t("已停止")}/>:status==='failed'?<AlertCircle size={14} aria-label={t("执行失败")}/>:<Terminal size={14} aria-label={status||t("执行记录")}/>;}
+function StatusIcon({status}:{status:string}){const {t}=useI18n();return status==='running'||status==='queued'?<LoadingOrb size={14} label={t(labels[status])} />:status==='completed'||status==='succeeded'?<Check size={14} aria-label={t("已完成")}/>:status==='paused'?<Pause size={14} aria-label={t("已暂停")}/>:status==='canceled'?<Square size={12} aria-label={t("已停止")}/>:status==='failed'?<AlertCircle size={14} aria-label={t("执行失败")}/>:<Terminal size={14} aria-label={status||t("执行记录")}/>;}
 function formatted(value:string){if(!value.trim())return value;try{return JSON.stringify(JSON.parse(value),null,2);}catch{return value;}}
 async function fetchEvents(runId:string,messageId:string|undefined,afterMs:number,signal:AbortSignal){
  const response=await fetch('/api/workbench/events',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:toBinary(HarnessEventRequestSchema,create(HarnessEventRequestSchema,{runId,messageId,afterMs:BigInt(Number.isFinite(afterMs)?Math.max(0,Math.trunc(afterMs)):0)})),cache:'no-store',signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});
@@ -40,4 +41,4 @@ export const ExecutionTrace=memo(function ExecutionTrace({runId,messageId,active
  if(!runId||(afterMs>0&&!steps.length))return null;
  const scoped=events.filter(event=>(!messageId||event.messageId===messageId)&&(Number(event.createdAtMs)>afterMs||Number(event.finishedAtMs)>afterMs));
  const title=waiting?t("等待 {seconds}s",{seconds:waiting}):active&&waitingForModel(scoped)?t('等待模型'):active?t(labels[state]||"正在工作"):labels[state]?t(labels[state]):steps.length?t("{count} 条执行记录",{count:steps.length}):t("执行记录");
- return <div ref={root} className="execution-trace execution-timeline" data-status={state}><button type="button" className="trace-trigger" aria-expanded={expanded} aria-controls={contentId} onClick={()=>setExpanded(value=>!value)}><ChevronRight size={14} className={expanded?'rotated':''}/>{waiting?<Clock3 size={14}/>:active?<StatusIcon status={state}/>:<Terminal size={14}/>}<span>{title}</span></button>{expanded&&<div className="trace-timeline-content" id={contentId}><Performance events={scoped}/><ol className="trace-timeline" aria-label={t("执行时间线")}>{steps.map(event=><li key={event.id} className={event.kind==='summary'?'timeline-summary':'timeline-operation'}>{event.kind==='summary'?<PublicSummary content={event.content}/>:<ToolStep event={event} now={event.status==='running'?now:0}/>}</li>)}</ol>{!steps.length&&!error&&(!loaded?<div className="trace-loading" role="status"><LoaderCircle className="spinning" size={14}/><span>{t("读取过程…")}</span></div>:!active?<p className="trace-empty">{t("没有操作记录")}</p>:null)}</div>}</div>;});
+ return <div ref={root} className="execution-trace execution-timeline" data-status={state}><button type="button" className="trace-trigger" aria-expanded={expanded} aria-controls={contentId} onClick={()=>setExpanded(value=>!value)}><ChevronRight size={14} className={expanded?'rotated':''}/>{waiting?<Clock3 size={14}/>:active?<StatusIcon status={state}/>:<Terminal size={14}/>}<span>{title}</span></button>{expanded&&<div className="trace-timeline-content" id={contentId}><Performance events={scoped}/><ol className="trace-timeline" aria-label={t("执行时间线")}>{steps.map(event=><li key={event.id} className={event.kind==='summary'?'timeline-summary':'timeline-operation'}>{event.kind==='summary'?<PublicSummary content={event.content}/>:<ToolStep event={event} now={event.status==='running'?now:0}/>}</li>)}</ol>{!steps.length&&!error&&(!loaded?<div className="trace-loading" role="status"><LoadingOrb size={14} /><span>{t("读取过程…")}</span></div>:!active?<p className="trace-empty">{t("没有操作记录")}</p>:null)}</div>}</div>;});

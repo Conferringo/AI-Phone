@@ -36,6 +36,6 @@ PostgreSQL使用Docker命名卷。备份恢复覆盖数据库、Android状态、
 ./scripts/bun scripts/sign-client-update.ts /path/to/offline-key AImanity-0.0.1-macos-arm64.dmg AImanity-0.0.1-windows-x64-setup.exe stable.json
 ```
 
-GitHub 发行页附 DMG 和 EXE。发布后将签名的 `stable.json` 提交到 `update-feed` 分支。0.1.8 起客户端读取这个地址。从 0.1.7 升级时，手动安装一次当前版本即可。
+在 GitHub 发行页附上 DMG 和 EXE，并核对两份公开下载。然后将签名的 `stable.json` 提交到 `update-feed` 分支。客户端只提示高于已安装版本的发行。从旧版本编号迁移时，手动安装一次 0.0.1。
 
 完整包必须包含干净Android/Linux基础、模拟器、预编译服务与匹配运行环境，并附来源、声明和适用对应源码。详见[发行要求](distribution-requirements.md)、[当前状态](release-status.md)和[备份恢复](backup-restore.zh-CN.md)。
