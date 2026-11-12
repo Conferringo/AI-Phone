@@ -326,6 +326,10 @@ export async function buildWslBackend(
       : resolve(linuxOcr);
   if (linuxOcr !== undefined) await verifyDependency(root, ocr, "linux-ocr");
   mkdirSync(work);
+  const packages = join(work, "packages");
+  mkdirSync(packages);
+  for (const pin of wslPlan(root).engine_packages)
+    await fetchPin(packages, pin.file, pin);
   if (deviceApps) prepareApps(root, { ...process.env });
   const phone = await preparePhoneTools(root, join(work, "phone-tools"));
   if (linuxOcr === undefined)
@@ -352,10 +356,6 @@ export async function buildWslBackend(
   ).file;
   retired.image_build_cache = retireImageCache(root);
   save(join(work, "cache-retirement.json"), retired);
-  const packages = join(work, "packages");
-  mkdirSync(packages);
-  for (const pin of wslPlan(root).engine_packages)
-    await fetchPin(packages, pin.file, pin);
   const assembled = join(work, "assembled");
   const component = await buildWsl(
     root,

@@ -6,7 +6,7 @@
       "arch": "aarch64",
       "alpine": "3.24.1",
       "lima": "2.2.1",
-      "docker": "29.9.2",
+      "docker": "29.9.3",
       "compose": "5.6.1",
       "builder_image": "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b",
       "image": {
@@ -40,16 +40,16 @@
           "sha256": "6ec45c52859e40f2b2ecf23a9be1d45d2199a86a5caa00f31586a29a53725646"
         },
         {
-          "file": "docker-29.9.2-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-29.9.2-r0.apk",
-          "size_bytes": 1302,
-          "sha256": "b89aacef0f6d18c2e88c6c192943895d65aed39d6768a5784d458d033b968ea2"
+          "file": "docker-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-29.9.3-r1.apk",
+          "size_bytes": 1304,
+          "sha256": "146c4522c23850423c9221c3a201411879a24173a65b07db5fb37061b43bed13"
         },
         {
-          "file": "docker-cli-29.9.2-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-cli-29.9.2-r0.apk",
-          "size_bytes": 9791628,
-          "sha256": "67f49fea692e1a4d9c8b8ce4cd166d9d826c6348d8e6b2c1c0d0aa8087497aa5"
+          "file": "docker-cli-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-cli-29.9.3-r1.apk",
+          "size_bytes": 9784254,
+          "sha256": "6d943bbbb45c9fce457caffe1effa9cce001dff4f6ef2241bcb6d6392e5d092e"
         },
         {
           "file": "docker-cli-buildx-0.38.1-r0.apk",
@@ -64,16 +64,16 @@
           "sha256": "63acd9a396cce6d967c024fe4d8caf27689d3ddaa849b4b6e5aaa220373d1115"
         },
         {
-          "file": "docker-engine-29.9.2-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-engine-29.9.2-r0.apk",
-          "size_bytes": 29341846,
-          "sha256": "54020dff7d00fc5b165a37029ff23233af981bdd022ce4d15d13e2eb7e4195db"
+          "file": "docker-engine-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-engine-29.9.3-r1.apk",
+          "size_bytes": 29348806,
+          "sha256": "c1e681aa91897bf2cabb6d2f5d32a206623100724f2d3c8d89b5451cb33a5478"
         },
         {
-          "file": "docker-openrc-29.9.2-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-openrc-29.9.2-r0.apk",
-          "size_bytes": 2915,
-          "sha256": "c61e1d419ed08e2a794e27e8ee97502046cdcda2031e6cd12c518cb34c2601c4"
+          "file": "docker-openrc-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/aarch64/docker-openrc-29.9.3-r1.apk",
+          "size_bytes": 2916,
+          "sha256": "8dc2346b7c227c7d78376181bf000718980230e338e1e8621b88a7144481a011"
         },
         {
           "file": "glib-2.88.1-r1.apk",
@@ -252,16 +252,16 @@
           "size_bytes": 18062085
         },
         {
-          "file": "docker-29.9.3-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-29.9.3-r0.apk",
-          "sha256": "2b3bb6e46b8169601536293682dc2d91aa08ae2fdaf53cd171d2f08111bb470b",
+          "file": "docker-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-29.9.3-r1.apk",
+          "sha256": "5a200862fe42ea2e56bf7785d674e1ed477c32ab08f5b6915c55b1ac7a6ab22f",
           "size_bytes": 1332
         },
         {
-          "file": "docker-cli-29.9.3-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-cli-29.9.3-r0.apk",
-          "sha256": "c7eb075bc2d0affb0fe8c5938d1507d27f219a28de99c5a1180ae879f17d2368",
-          "size_bytes": 10869632
+          "file": "docker-cli-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-cli-29.9.3-r1.apk",
+          "sha256": "e221915ddf252d2b1dcdbae17a5fb5c42fe4a5ec3be9da03c316d068f76c037c",
+          "size_bytes": 10869641
         },
         {
           "file": "docker-cli-buildx-0.38.1-r0.apk",
@@ -276,16 +276,16 @@
           "size_bytes": 11152289
         },
         {
-          "file": "docker-engine-29.9.3-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-engine-29.9.3-r0.apk",
-          "sha256": "ae90ab2cb0ee776b6995b5aaf850bd5e2c9fec5a96e17d0a9a6da4ac7259bb91",
-          "size_bytes": 32585072
+          "file": "docker-engine-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-engine-29.9.3-r1.apk",
+          "sha256": "419852709705a0ec10d71bfd6a041be05d5de7ea128dcab161b5616e5d6fa7ce",
+          "size_bytes": 32585347
         },
         {
-          "file": "docker-openrc-29.9.3-r0.apk",
-          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-openrc-29.9.3-r0.apk",
-          "sha256": "ffc125267de923d7bb47fe47b14c10740e5372f9542e9084282754c20c2ba72e",
-          "size_bytes": 2932
+          "file": "docker-openrc-29.9.3-r1.apk",
+          "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/community/x86_64/docker-openrc-29.9.3-r1.apk",
+          "sha256": "b422364cbb35585282ad639d2ecf01b4211d99719b09df9e7dfa3a3ee205edca",
+          "size_bytes": 2940
         },
         {
           "file": "glib-2.88.1-r1.apk",

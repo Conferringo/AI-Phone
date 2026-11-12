@@ -3,12 +3,13 @@ use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use std::process::Command;
 use std::{
+    collections::BTreeMap,
     fs,
     io::Write,
     path::{Path, PathBuf},
     process::ChildStdin,
     sync::{
-        Arc, Mutex,
+        Arc, LazyLock, Mutex,
         atomic::{AtomicBool, Ordering},
     },
     time::Duration,
@@ -28,8 +29,20 @@ use resources::{available_bytes, hash};
 #[cfg(windows)]
 pub(crate) use windows_host::prepare as prepare_windows_host;
 
-const INTEGRITY: &str = include_str!("../gen/host/integrity.json");
-const POLICY: &str = include_str!("../../../../config/host-bootstrap.json");
+static INTEGRITY: LazyLock<Result<BTreeMap<String, String>, serde_json::Error>> =
+    LazyLock::new(|| serde_json::from_str(include_str!("../gen/host/integrity.json")));
+static POLICY: LazyLock<HostPolicy> = LazyLock::new(|| {
+    serde_json::from_str(include_str!("../../../../config/host-bootstrap.json"))
+        .expect("bundled host policy")
+});
+
+#[derive(Deserialize)]
+struct HostPolicy {
+    minimum_ram_gb: u64,
+    minimum_free_gb: u64,
+    minimum_resume_free_gb: u64,
+    hosts: BTreeMap<String, serde_json::Map<String, serde_json::Value>>,
+}
 
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -53,7 +66,7 @@ pub struct Request {
 }
 impl Request {
     fn validate(&self) -> Result<(), String> {
-        super::checked_locale(Some(self.locale.clone()))?;
+        super::validate_locale(&self.locale)?;
         if ![1, 2, 4].contains(&self.phone.cpus)
             || ![1, 2, 4].contains(&self.desktop.cpus)
             || ![1536, 2048, 3072, 4096].contains(&self.phone.memory_mb)
@@ -98,26 +111,19 @@ pub struct Snapshot {
     pub previous_request: Option<Request>,
 }
 
-fn platform_key(os: &str, arch: &str) -> String {
-    let arch = match arch {
-        "aarch64" => "arm64",
-        "x86_64" => "x64",
-        other => other,
-    };
-    format!("{os}-{arch}")
-}
 pub fn capability(os: &str, arch: &str) -> Capability {
-    let resources = serde_json::from_str(INTEGRITY).expect("bundled resource inventory");
-    capability_from_resources(os, arch, &resources)
+    capability_from_resources(
+        os,
+        arch,
+        INTEGRITY.as_ref().expect("bundled resource inventory"),
+    )
 }
 
 fn capability_from_resources(
     os: &str,
     arch: &str,
-    resources: &std::collections::BTreeMap<String, String>,
+    resources: &BTreeMap<String, String>,
 ) -> Capability {
-    let key = platform_key(os, arch);
-    let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
     // Native WSL owns its runtime; it never uses the source installer's SDK/Lima
     // host table. Resource bytes and actual device readiness are checked on start.
     let native_windows = os == "windows"
@@ -135,7 +141,9 @@ fn capability_from_resources(
             _ => "unsupported",
         }
         .into(),
-        implemented: (os == "macos" && arch == "aarch64" && policy["hosts"][&key].is_object())
+        implemented: (os == "macos"
+            && arch == "aarch64"
+            && POLICY.hosts.contains_key("macos-arm64"))
             || native_windows,
     }
 }
@@ -232,12 +240,11 @@ struct Components {
 }
 
 fn verify_resources(folder: &Path) -> Result<Components, String> {
-    let expected: std::collections::BTreeMap<String, String> =
-        serde_json::from_str(INTEGRITY).map_err(|e| e.to_string())?;
+    let expected = INTEGRITY.as_ref().map_err(|e| e.to_string())?;
     if !expected.contains_key("source.payload") {
         return Err("invalid_payload".into());
     }
-    for (name, digest) in &expected {
+    for (name, digest) in expected {
         match name.as_str() {
             // These files are authenticated where they are staged or installed.
             "source.payload" | "android.payload" | "windows/wsl.msi" => continue,
@@ -270,22 +277,18 @@ pub(super) fn verify_bundled_host(folder: &Path) -> Result<(), String> {
 fn checks(path: &Path) -> Vec<Check> {
     let ram = resources::total_memory_bytes() / 1024_u64.pow(3);
     let disk = available_bytes(path) / 1024_u64.pow(3);
-    let policy: serde_json::Value = serde_json::from_str(POLICY).expect("bundled host policy");
-    let disk_required = policy[if path.join("user/data/deployment/profile.json").is_file()
-        || checkpoint::admitted(path)
-    {
-        "minimum_resume_free_gb"
-    } else {
-        "minimum_free_gb"
-    }]
-    .as_u64()
-    .unwrap();
+    let disk_required =
+        if path.join("user/data/deployment/profile.json").is_file() || checkpoint::admitted(path) {
+            POLICY.minimum_resume_free_gb
+        } else {
+            POLICY.minimum_free_gb
+        };
     vec![
         Check {
             name: "memory".into(),
-            passed: ram >= policy["minimum_ram_gb"].as_u64().unwrap(),
+            passed: ram >= POLICY.minimum_ram_gb,
             value: ram,
-            required: policy["minimum_ram_gb"].as_u64().unwrap(),
+            required: POLICY.minimum_ram_gb,
         },
         Check {
             name: "storage".into(),
@@ -331,10 +334,9 @@ fn prepare_folder(folder: &Path) -> Result<(), String> {
 fn run(
     app: &tauri::AppHandle,
     manager: &Arc<ManagerState>,
+    folder: &Path,
     request: Request,
 ) -> Result<(), String> {
-    let folder = home(app)?;
-    prepare_folder(&folder)?;
     let resource = app
         .path()
         .resource_dir()
@@ -349,14 +351,14 @@ fn run(
     .map_err(|e| e.to_string())?;
     #[cfg(target_os = "windows")]
     if components.wsl.is_some() || components.qemu {
-        return start_windows_backend(manager, &folder, &resource, components, &request);
+        return start_windows_backend(manager, folder, &resource, components, &request);
     }
     #[cfg(not(target_os = "windows"))]
     if components.wsl.is_some() || components.qemu {
         return Err("windows_backend_host".into());
     }
     #[cfg(unix)]
-    return run_native_installer(manager, &folder, &resource, &request_path, components);
+    return run_native_installer(manager, folder, &resource, &request_path, components);
     #[cfg(not(unix))]
     Err("wsl_backend_missing".into())
 }
@@ -519,7 +521,7 @@ pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {
         return Err(error);
     }
     std::thread::spawn(move || {
-        if let Err(error) = run(&app, &manager, request) {
+        if let Err(error) = run(&app, &manager, &path, request) {
             manager.failed(&path, &error);
         }
         manager.running.store(false, Ordering::SeqCst);
@@ -527,29 +529,19 @@ pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {
     Ok(())
 }
 
-#[cfg(any(target_os = "macos", windows))]
+#[cfg(target_os = "macos")]
 pub fn upgrade_needed(app: &tauri::AppHandle) -> Result<bool, String> {
-    #[cfg(windows)]
-    if !app
-        .path()
-        .resource_dir()
-        .map_err(|error| error.to_string())?
-        .join("host/qemu/guest/release.ext4")
-        .is_file()
-    {
-        return Ok(false);
-    }
     checkpoint::upgrade_needed(&home(app)?)
 }
 
 pub fn installed(app: &tauri::AppHandle) -> Result<bool, String> {
-    checkpoint::completed(&home(app)?)
+    checkpoint::installed(&home(app)?)
 }
 
-pub fn resume_installed(app: &tauri::AppHandle, upgrade: bool) -> Result<bool, String> {
+pub fn resume_installed(app: &tauri::AppHandle) -> Result<(), String> {
     let folder = home(app)?;
-    if !upgrade && !checkpoint::completed(&folder)? {
-        return Ok(false);
+    if !checkpoint::installed(&folder)? {
+        return Err("invalid_install_checkpoint".into());
     }
     let request: Request = serde_json::from_slice(
         &fs::read(folder.join("request.json")).map_err(|_| "invalid_install_checkpoint")?,
@@ -559,7 +551,100 @@ pub fn resume_installed(app: &tauri::AppHandle, upgrade: bool) -> Result<bool, S
         app.state::<Bootstrap>().0.failed(&folder, &error);
         return Err(error);
     }
-    Ok(true)
+    Ok(())
+}
+
+pub fn startup_result(app: &tauri::AppHandle) -> Result<(), String> {
+    let manager = app.state::<Bootstrap>();
+    let progress = manager.0.progress.lock().map_err(|_| "installer_state")?;
+    match progress.state.as_str() {
+        "ready" => Ok(()),
+        _ if !progress.error.is_empty() => Err(progress.error.clone()),
+        _ => Err("workbench_unavailable".into()),
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub async fn installed_services_ready(app: &tauri::AppHandle, client: &reqwest::Client) -> bool {
+    use ai_phone_api::wire::DeviceRequest;
+    use prost::Message;
+
+    async fn protobuf(request: reqwest::RequestBuilder) -> bool {
+        request
+            .header("Content-Type", "application/x-protobuf")
+            .send()
+            .await
+            .is_ok_and(|response| {
+                response.status().is_success()
+                    && response.headers().get("content-type").is_some_and(|value| {
+                        value.as_bytes().starts_with(b"application/x-protobuf")
+                    })
+            })
+    }
+
+    async fn desktop(client: &reqwest::Client, token: &str) -> bool {
+        let Ok(mut response) = client
+            .get("http://127.0.0.1:17865/desktop/screen")
+            .bearer_auth(token)
+            .send()
+            .await
+        else {
+            return false;
+        };
+        response.status().is_success()
+            && response
+                .headers()
+                .get("content-type")
+                .is_some_and(|value| value.as_bytes().starts_with(b"multipart/x-mixed-replace"))
+            && matches!(response.chunk().await, Ok(Some(_)))
+    }
+
+    let (Ok(home), Ok(payload)) = (home(app), checkpoint::payload()) else {
+        return false;
+    };
+    let release = home.join("releases").join(payload);
+    if checks(&home).iter().any(|check| !check.passed)
+        || release.join("data/restore-quarantine.json").exists()
+        || ![
+            "HOST-MANIFEST.json",
+            "runtime/bin/bun",
+            "runtime/web/apps/web/server.js",
+            "runtime/services/bin/assistant",
+            "runtime/services/bin/runner",
+            "data/deployment/profile.json",
+        ]
+        .iter()
+        .all(|path| release.join(path).is_file())
+    {
+        return false;
+    }
+    let (Ok(assistant), Ok(runner)) = (
+        fs::read_to_string(release.join("data/assistant/token")),
+        fs::read_to_string(release.join("data/phone-runner/token")),
+    ) else {
+        return false;
+    };
+    let phone = DeviceRequest {
+        phone_id: "phone-local-01".into(),
+        owner_id: "local-user".into(),
+        ..Default::default()
+    };
+    let (database, phone, desktop) = tokio::join!(
+        protobuf(
+            client
+                .post("http://127.0.0.1:17863/v1/setup/status")
+                .bearer_auth(assistant.trim())
+                .body(Vec::new()),
+        ),
+        protobuf(
+            client
+                .post("http://127.0.0.1:17862/v1/orientation")
+                .bearer_auth(runner.trim())
+                .body(phone.encode_to_vec()),
+        ),
+        desktop(client, runner.trim()),
+    );
+    database && phone && desktop
 }
 
 pub fn ready(app: &tauri::AppHandle) -> bool {
@@ -592,11 +677,10 @@ pub fn accept_license(app: &tauri::AppHandle) -> Result<(), String> {
         return Err("no_pending_license".into());
     }
     let mut input = state.0.input.lock().map_err(|_| "installer_state")?;
+    let input = input.as_mut().ok_or("no_pending_license")?;
     input
-        .as_mut()
-        .ok_or("no_pending_license")?
         .write_all(b"{\"accept\":true}\n")
-        .and_then(|_| input.as_mut().unwrap().flush())
+        .and_then(|_| input.flush())
         .map_err(|_| "license_response_failed")?;
     progress.state = "running".into();
     progress.license.clear();

@@ -1,11 +1,18 @@
 "use client";
 import "@/styles/window.css";
 import {useI18n} from "./locale-provider";
-import {useEffect,useLayoutEffect,useId,useRef,useState,type ReactNode,type CSSProperties} from 'react';
+import {useEffect,useLayoutEffect,useId,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {Button} from './ui/button';
 import {X} from 'lucide-react';
 type Anchor={element:HTMLElement|null;mode:string};
+declare global {
+ interface WindowEventMap {
+  'phone:window-source': CustomEvent<{element:HTMLElement;mode:string}>;
+  'phone:window-focus': CustomEvent<string>;
+  'phone:window-closed': CustomEvent<string>;
+ }
+}
 let remembered:Anchor={element:null,mode:'keyboard'};
 let activeWindow="";
 const surfaces=new Map<string,{panel:HTMLElement;anchor:HTMLElement|null;parent?:string}>();
@@ -15,14 +22,14 @@ export function WindowTrigger({onOpen,children,label,open=false,openOnFocus=fals
  const show=(element:HTMLElement,mode:string)=>{rememberAnchor(element,mode);window.dispatchEvent(new CustomEvent("phone:window-source",{detail:{element,mode}}));onOpen();};
  return <Button variant="ghost" size="icon" aria-label={label} title={label} aria-expanded={open} onPointerEnter={e=>{if(e.pointerType!=='mouse'||e.buttons)return;const element=e.currentTarget;cancel();timer.current=setTimeout(()=>show(element,'mouse'),240);}} onPointerLeave={cancel} onPointerDown={cancel} onBlur={cancel} onFocus={openOnFocus?e=>{if(!open&&e.currentTarget.matches(':focus-visible'))show(e.currentTarget,'keyboard');}:undefined} onKeyDown={e=>{if(e.key==='ArrowDown'){e.preventDefault();cancel();show(e.currentTarget,'keyboard');}}} onClick={e=>{cancel();show(e.currentTarget,e.detail===0?'keyboard':'click');}}>{children}</Button>;
 }
-function related(id:string){const ids=new Set([id]);let changed=true;while(changed){changed=false;for(const [key,value] of surfaces)if(value.parent&&ids.has(value.parent)&&!ids.has(key)){ids.add(key);changed=true;}}return [...ids].map(key=>surfaces.get(key)).filter(Boolean) as NonNullable<ReturnType<typeof surfaces.get>>[];}
-export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false,centered=false,focusPanel=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean;centered?:boolean;focusPanel?:boolean}){const {t}=useI18n();
+function related(id:string){const ids=new Set([id]);let changed=true;while(changed){changed=false;for(const [key,value] of surfaces)if(value.parent&&ids.has(value.parent)&&!ids.has(key)){ids.add(key);changed=true;}}return [...ids].map(key=>surfaces.get(key)).filter(surface=>surface!==undefined);}
+export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false,centered=false,focusPanel=false,hideClose=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean;centered?:boolean;focusPanel?:boolean;hideClose?:boolean}){const {t}=useI18n();
  const label=useId(),element=useRef<HTMLElement>(null),anchor=useRef<Anchor>({element:null,mode:'click'}),latest=useRef(onClose),motion=useRef<Animation|null>(null),composing=useRef(false);
  const interrupted=useRef<Keyframe|null>(null);
  const centeredOnOpen=useRef(centered);
  latest.current=onClose;
  const [mounted,setMounted]=useState(false),[active,setActive]=useState(false);const [geometry,setGeometry]=useState({left:16,top:60,width,height});
- useEffect(()=>{const capture=(e:PointerEvent)=>{const button=(e.target as Element)?.closest<HTMLElement>('button,a,[data-window-trigger]');if(button)rememberAnchor(button,e.pointerType==='touch'?'touch':'click');};document.addEventListener('pointerdown',capture,true);return()=>document.removeEventListener('pointerdown',capture,true);},[]);
+ useEffect(()=>{const capture=(e:PointerEvent)=>{if(!(e.target instanceof Element))return;const button=e.target.closest<HTMLElement>('button,a,[data-window-trigger]');if(button)rememberAnchor(button,e.pointerType==='touch'?'touch':'click');};document.addEventListener('pointerdown',capture,true);return()=>document.removeEventListener('pointerdown',capture,true);},[]);
  useLayoutEffect(()=>{if(open){anchor.current={...remembered};setMounted(true);}},[open,anchorKey]);
  useLayoutEffect(()=>{
   const panel=element.current;if(!open||!mounted||!panel)return;
@@ -44,8 +51,8 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
    setGeometry(old=>old.left===left&&old.top===top&&old.width===pw&&old.height===ph?old:{left,top,width:pw,height:ph});
   };
   place();surfaces.set(id,{panel,anchor:trigger,parent});setActive(true);activeWindow=id;
-  const focus=(e:Event)=>{activeWindow=(e as CustomEvent).detail;setActive(activeWindow===id);};
-  const source=(e:Event)=>{const value=(e as CustomEvent).detail;if(value.element===trigger)anchor.current.mode=value.mode;};
+  const focus=(e:WindowEventMap['phone:window-focus'])=>{activeWindow=e.detail;setActive(activeWindow===id);};
+  const source=(e:WindowEventMap['phone:window-source'])=>{if(e.detail.element===trigger)anchor.current.mode=e.detail.mode;};
   window.addEventListener("phone:window-source",source);window.dispatchEvent(new CustomEvent('phone:window-focus',{detail:id}));window.addEventListener('phone:window-focus',focus);
   let closeTimer:ReturnType<typeof setTimeout>|null=null,visited=anchor.current.mode==='mouse';const cancel=()=>{if(closeTimer)clearTimeout(closeTimer);closeTimer=null;};
   const inside=(target:EventTarget|null)=>{const owner=target instanceof Element?target.closest('[data-window-owner]')?.getAttribute('data-window-owner'):null;return target instanceof Node&&related(id).some(s=>s.panel.contains(target)||s.anchor?.contains(target)||!!owner&&s.panel.dataset.windowId===owner);};
@@ -53,7 +60,7 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
   const move=(e:PointerEvent)=>{if(e.pointerType!=='mouse'||e.buttons||anchor.current.mode!=='mouse')return;let within=inside(e.target);if(!within&&trigger?.isConnected){const a=trigger.getBoundingClientRect(),b=panel.getBoundingClientRect();const corridor={left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),top:Math.min(a.top,b.top),bottom:Math.max(a.bottom,b.bottom)};within=e.clientX>=corridor.left&&e.clientX<=corridor.right&&e.clientY>=corridor.top&&e.clientY<=corridor.bottom;}if(within){visited=true;cancel();}else if(visited&&!protectedInput()&&!closeTimer){closeTimer=setTimeout(()=>{closeTimer=null;if(anchor.current.mode==='mouse'&&!protectedInput())latest.current();},280);}};
   const down=(e:PointerEvent)=>{if(!inside(e.target))latest.current();};
   const key=(e:KeyboardEvent)=>{const top=activeWindow;if(e.key==='Escape'&&top===id&&!e.defaultPrevented){e.preventDefault();latest.current();trigger?.focus({preventScroll:true});}};
-  const parentClosed=(e:Event)=>{if((e as CustomEvent).detail===parent)latest.current();};
+  const parentClosed=(e:WindowEventMap['phone:window-closed'])=>{if(e.detail===parent)latest.current();};
   document.addEventListener('pointermove',move);document.addEventListener('pointerdown',down);document.addEventListener('keydown',key);window.addEventListener('phone:window-closed',parentClosed);window.addEventListener('resize',place);window.visualViewport?.addEventListener('resize',place);
   return()=>{cancel();surfaces.delete(id);if(activeWindow===id){activeWindow=parent&&surfaces.has(parent)?parent:[...surfaces.keys()].at(-1)||"";window.dispatchEvent(new CustomEvent("phone:window-focus",{detail:activeWindow}));}window.removeEventListener("phone:window-source",source);window.removeEventListener('phone:window-focus',focus);document.removeEventListener('pointermove',move);document.removeEventListener('pointerdown',down);document.removeEventListener('keydown',key);window.removeEventListener('phone:window-closed',parentClosed);window.removeEventListener('resize',place);window.visualViewport?.removeEventListener('resize',place);};
  },[open,mounted,id,width,height,anchorKey,parentId,centered]);
@@ -97,5 +104,5 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
   };
  },[open,mounted,id,focusPanel,centered]);
  if(!mounted)return null;
- return createPortal(<section ref={element} role="dialog" aria-labelledby={label} tabIndex={-1} className="floating-window" data-window-id={id} data-active={active} style={{...geometry,...(fitContent?{height:"auto",maxHeight:geometry.height}:{})} as CSSProperties} onPointerDown={()=>{anchor.current.mode='click';window.dispatchEvent(new CustomEvent('phone:window-focus',{detail:id}));}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}}><header className="floating-header"><h2 id={label}>{title}</h2><div className="floating-actions">{actions}<Button variant="ghost" size="icon" aria-label={t("关闭{0}", {"0":title})} onClick={onClose}><X size={17}/></Button></div></header><div className="floating-body">{children}</div></section>,document.body);
+ return createPortal(<section ref={element} role="dialog" aria-labelledby={label} tabIndex={-1} className="floating-window" data-window-id={id} data-active={active} style={{...geometry,...(fitContent?{height:"auto",maxHeight:geometry.height}:{})}} onPointerDown={()=>{anchor.current.mode='click';window.dispatchEvent(new CustomEvent('phone:window-focus',{detail:id}));}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}}><header className="floating-header" hidden={hideClose&&!actions}><h2 id={label}>{title}</h2><div className="floating-actions">{actions}{!hideClose&&<Button variant="ghost" size="icon" aria-label={t("关闭{0}", {"0":title})} onClick={onClose}><X size={17}/></Button>}</div></header><div className="floating-body">{children}</div></section>,document.body);
 }

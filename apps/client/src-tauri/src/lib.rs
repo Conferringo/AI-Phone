@@ -1,11 +1,9 @@
+use serde::Serialize;
 use std::{
-    sync::{
-        LazyLock,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::{LazyLock, Mutex},
     time::Duration,
 };
-use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder, webview::PageLoadEvent};
 mod bootstrap;
 mod copilot;
 mod updates;
@@ -15,7 +13,20 @@ static WORKBENCH_URL: LazyLock<Url> = LazyLock::new(|| {
 });
 
 #[derive(Default)]
-struct Startup(AtomicBool);
+struct Startup(Mutex<StartupProgress>);
+
+#[derive(Clone, Default, Serialize)]
+struct StartupProgress {
+    phase: &'static str,
+    error: String,
+}
+
+#[derive(Serialize)]
+struct DeploymentStatus {
+    #[serde(flatten)]
+    deployment: Option<bootstrap::Snapshot>,
+    startup: StartupProgress,
+}
 
 fn is_setup_url(url: &Url) -> bool {
     let origin = (url.scheme(), url.host_str(), url.port());
@@ -30,12 +41,24 @@ fn is_setup_url(url: &Url) -> bool {
 }
 
 impl Startup {
-    fn cancel(&self) {
-        self.0.store(true, Ordering::SeqCst);
+    fn progress(&self) -> StartupProgress {
+        self.0.lock().unwrap().clone()
     }
 
-    fn cancelled(&self) -> bool {
-        self.0.load(Ordering::SeqCst)
+    fn set(&self, phase: &'static str, error: String) {
+        *self.0.lock().unwrap() = StartupProgress { phase, error };
+    }
+
+    fn begin(&self) -> Result<(), String> {
+        let mut progress = self.0.lock().unwrap();
+        if !matches!(progress.phase, "" | "failed") {
+            return Err("startup_in_progress".into());
+        }
+        *progress = StartupProgress {
+            phase: "checking",
+            error: String::new(),
+        };
+        Ok(())
     }
 }
 
@@ -47,15 +70,22 @@ fn is_workbench_origin(url: &Url) -> bool {
         && url.password().is_none()
 }
 
-async fn probe_workbench(url: Url) -> bool {
-    let Ok(client) = reqwest::Client::builder()
+fn workbench_client() -> Result<reqwest::Client, reqwest::Error> {
+    reqwest::Client::builder()
         .no_proxy()
         .redirect(reqwest::redirect::Policy::none())
-        .timeout(Duration::from_secs(6))
+        .timeout(Duration::from_secs(4))
         .build()
-    else {
+}
+
+async fn probe_workbench(url: Url) -> bool {
+    let Ok(client) = workbench_client() else {
         return false;
     };
+    probe_workbench_with(&client, url).await
+}
+
+async fn probe_workbench_with(client: &reqwest::Client, url: Url) -> bool {
     client.head(url).send().await.is_ok_and(|response| {
         response.status().is_success()
             && response
@@ -70,23 +100,26 @@ fn show_setup(app: &tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("setup") {
         return window.set_focus().map_err(|e| e.to_string());
     }
+    let startup = !app.state::<Startup>().progress().phase.is_empty();
     WebviewWindowBuilder::new(app, "setup", WebviewUrl::App("index.html".into()))
         .title("")
         .inner_size(680., 600.)
         .resizable(false)
         .on_navigation(is_setup_url)
+        .initialization_script(if startup {
+            "window.__AIMANITY_STARTUP__ = true;"
+        } else {
+            ""
+        })
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()
         .map(|_| ())
         .map_err(|e| e.to_string())
 }
 
-fn checked_locale(locale: Option<String>) -> Result<Option<String>, String> {
-    match locale.as_deref() {
-        None => Ok(None),
-        Some("zh-CN" | "en" | "zh-TW" | "ja" | "ko" | "de" | "fr" | "es" | "ru" | "ar") => {
-            Ok(locale)
-        }
+fn validate_locale(locale: &str) -> Result<(), String> {
+    match locale {
+        "zh-CN" | "en" | "zh-TW" | "ja" | "ko" | "de" | "fr" | "es" | "ru" | "ar" => Ok(()),
         _ => Err("Unsupported interface language".into()),
     }
 }
@@ -116,24 +149,60 @@ fn show_workbench(app: &tauri::AppHandle, locale: Option<&str>) -> Result<(), St
                 let area = monitor.work_area();
                 let scale = monitor.scale_factor();
                 (
-                    (area.size.width as f64 / scale - 48.).clamp(700., 1440.),
-                    (area.size.height as f64 / scale - 64.).clamp(600., 980.),
+                    (f64::from(area.size.width) / scale - 48.).clamp(700., 1440.),
+                    (f64::from(area.size.height) / scale - 64.).clamp(600., 980.),
                 )
             })
             .unwrap_or((1440., 980.));
-        WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
+        let builder = WebviewWindowBuilder::new(app, label, WebviewUrl::External(url))
             .title("AImanity")
             .inner_size(width, height)
             .min_inner_size(700., 600.)
             .on_navigation(is_workbench_origin)
-            .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
-            .build()
-            .map_err(|e| e.to_string())?;
+            .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny);
+        if app.state::<Startup>().progress().phase == "opening" {
+            let (loaded, receiver) = tokio::sync::oneshot::channel();
+            let loaded = Mutex::new(Some(loaded));
+            let window = builder
+                .visible(false)
+                .on_page_load(move |_, page| {
+                    if page.event() == PageLoadEvent::Finished
+                        && is_workbench_origin(page.url())
+                        && page.url().path() == WORKBENCH_URL.path()
+                        && let Some(loaded) = loaded.lock().unwrap().take()
+                    {
+                        let _ = loaded.send(());
+                    }
+                })
+                .build()
+                .map_err(|e| e.to_string())?;
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let loaded = tokio::time::timeout(Duration::from_secs(15), receiver)
+                    .await
+                    .is_ok_and(|value| value.is_ok());
+                if loaded && window.show().is_ok() {
+                    let _ = window.set_focus();
+                    app.state::<Startup>().set("", String::new());
+                    close_setup(&app);
+                } else {
+                    let _ = window.destroy();
+                    app.state::<Startup>()
+                        .set("failed", "workbench_unavailable".into());
+                }
+            });
+            return Ok(());
+        }
+        builder.build().map_err(|e| e.to_string())?;
     }
+    close_setup(app);
+    Ok(())
+}
+
+fn close_setup(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("setup") {
         let _ = window.close();
     }
-    Ok(())
 }
 
 fn require_setup_window(window: &tauri::WebviewWindow) -> Result<(), String> {
@@ -181,9 +250,26 @@ async fn install_client_update(
 fn deployment_status(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
-) -> Result<bootstrap::Snapshot, String> {
+) -> Result<DeploymentStatus, String> {
     require_setup_window(&window)?;
-    bootstrap::snapshot(&app)
+    let startup = app.state::<Startup>().progress();
+    let deployment = if startup.phase.is_empty() {
+        Some(bootstrap::snapshot(&app)?)
+    } else {
+        None
+    };
+    Ok(DeploymentStatus {
+        deployment,
+        startup,
+    })
+}
+#[tauri::command]
+async fn retry_startup(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
+    require_setup_window(&window)?;
+    if !bootstrap::installed(&app)? {
+        return Err("invalid_install_checkpoint".into());
+    }
+    start_startup(&app)
 }
 #[tauri::command]
 fn start_deployment(
@@ -192,13 +278,11 @@ fn start_deployment(
     request: bootstrap::Request,
 ) -> Result<(), String> {
     require_setup_window(&window)?;
-    app.state::<Startup>().cancel();
     bootstrap::start(app, request)
 }
 #[tauri::command]
 fn cancel_deployment(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<(), String> {
     require_setup_window(&window)?;
-    app.state::<Startup>().cancel();
     bootstrap::cancel(&app);
     Ok(())
 }
@@ -218,30 +302,66 @@ async fn open_workbench(
     locale: Option<String>,
 ) -> Result<(), String> {
     require_setup_window(&window)?;
-    let locale = checked_locale(locale)?;
-    app.state::<Startup>().cancel();
+    let locale = locale.as_deref();
+    if let Some(locale) = locale {
+        validate_locale(locale)?;
+    }
     if !bootstrap::ready(&app) || !probe_workbench(workbench_url(None)).await {
         return Err("workbench_unavailable".into());
     }
-    show_workbench(&app, locale.as_deref())
+    show_workbench(&app, locale)
 }
 
-async fn resume_local_host(app: &tauri::AppHandle, upgrade: bool) -> bool {
-    if app.state::<Startup>().cancelled()
-        || !bootstrap::resume_installed(app, upgrade).unwrap_or(false)
-    {
-        return false;
+async fn validate_or_repair(app: &tauri::AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    if !bootstrap::upgrade_needed(app)? {
+        let client = workbench_client().map_err(|_| "workbench_unavailable")?;
+        let (workbench, services) = tokio::join!(
+            probe_workbench_with(&client, workbench_url(None)),
+            bootstrap::installed_services_ready(app, &client),
+        );
+        if workbench && services {
+            return Ok(());
+        }
     }
-    let setup = app.clone();
-    let _ = app.run_on_main_thread(move || {
-        let _ = show_setup(&setup);
-    });
+    app.state::<Startup>().set("repairing", String::new());
+    bootstrap::resume_installed(app)?;
     let waiting = app.clone();
     tauri::async_runtime::spawn_blocking(move || bootstrap::wait_until_idle(&waiting))
         .await
-        .is_ok()
-        && bootstrap::ready(app)
-        && probe_workbench(workbench_url(None)).await
+        .map_err(|_| "installer_state")?;
+    bootstrap::startup_result(app)?;
+    probe_workbench(workbench_url(None))
+        .await
+        .then_some(())
+        .ok_or_else(|| "workbench_unavailable".into())
+}
+
+fn start_startup(app: &tauri::AppHandle) -> Result<(), String> {
+    app.state::<Startup>().begin()?;
+    show_setup(app)?;
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(error) = validate_or_repair(&handle).await {
+            handle.state::<Startup>().set("failed", error);
+            return;
+        }
+        handle.state::<Startup>().set("opening", String::new());
+        let ui = handle.clone();
+        if handle
+            .run_on_main_thread(move || {
+                if let Err(error) = show_workbench(&ui, None) {
+                    ui.state::<Startup>().set("failed", error);
+                }
+            })
+            .is_err()
+        {
+            handle
+                .state::<Startup>()
+                .set("failed", "workbench_unavailable".into());
+        }
+    });
+    Ok(())
 }
 
 pub fn run() {
@@ -300,6 +420,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             open_workbench,
             deployment_status,
+            retry_startup,
             start_deployment,
             cancel_deployment,
             accept_deployment_license,
@@ -347,33 +468,19 @@ pub fn run() {
                 )?;
                 app.set_menu(Menu::with_items(app, &[&app_menu, &edit])?)?;
             }
-            let handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                #[cfg(any(target_os = "macos", windows))]
-                let upgrade = bootstrap::upgrade_needed(&handle).unwrap_or(false);
-                #[cfg(not(any(target_os = "macos", windows)))]
-                let upgrade = false;
-                let reachable = !upgrade
-                    && bootstrap::installed(&handle).unwrap_or(false)
-                    && probe_workbench(workbench_url(None)).await
-                    || resume_local_host(&handle, upgrade).await;
-                let ui = handle.clone();
-                // Opening Setup while probing takes precedence over auto-open.
-                let _ = handle.run_on_main_thread(move || {
-                    if ui.state::<Startup>().cancelled() {
-                        return;
-                    }
-                    // A normal restart must preserve the language chosen later in the workbench.
-                    if !reachable || show_workbench(&ui, None).is_err() {
-                        let _ = show_setup(&ui);
-                    }
-                });
-            });
+            let handle = app.handle();
+            match bootstrap::installed(handle) {
+                Ok(true) => start_startup(handle)?,
+                Ok(false) => show_setup(handle)?,
+                Err(error) => {
+                    handle.state::<Startup>().set("failed", error);
+                    show_setup(handle)?;
+                }
+            }
             Ok(())
         });
     let builder = builder.on_menu_event(|app, event| match event.id().as_ref() {
         "setup" => {
-            app.state::<Startup>().cancel();
             let _ = show_setup(app);
         }
         updates::ID => updates::select(app),
@@ -401,15 +508,28 @@ pub fn run() {
 mod tests {
     use super::*;
     use std::io::{Read, Write};
+
+    #[test]
+    fn startup_status_omits_setup_data() {
+        let status = DeploymentStatus {
+            deployment: None,
+            startup: StartupProgress {
+                phase: "checking",
+                error: String::new(),
+            },
+        };
+        assert_eq!(
+            serde_json::to_value(status).unwrap(),
+            serde_json::json!({"startup":{"phase":"checking","error":""}})
+        );
+    }
+
     #[test]
     fn language_handoff_is_bounded_and_preserves_local_workbench() {
         for locale in [
             "zh-CN", "en", "zh-TW", "ja", "ko", "de", "fr", "es", "ru", "ar",
         ] {
-            assert_eq!(
-                checked_locale(Some(locale.into())).unwrap().as_deref(),
-                Some(locale)
-            );
+            validate_locale(locale).unwrap();
             let url = workbench_url(Some(locale));
             assert!(is_workbench_origin(&url));
             assert_eq!(url.path(), "/phone");
@@ -418,9 +538,8 @@ mod tests {
                 vec![("language".into(), locale.into())]
             );
         }
-        assert!(checked_locale(None).unwrap().is_none());
         for invalid in ["", "de-DE", "en; Path=/", "../../en"] {
-            assert!(checked_locale(Some(invalid.into())).is_err());
+            assert!(validate_locale(invalid).is_err());
         }
         assert!(workbench_url(None).query().is_none());
     }

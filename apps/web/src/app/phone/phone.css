@@ -374,7 +374,7 @@
 @media(prefers-reduced-motion:reduce){.floating-window input[role=switch],.floating-window input[role=switch]::after{transition:none}}
 .phone-toolbar{display:flex;align-items:center;gap:2px;position:relative;margin-left:auto}
 .phone-toolbar-volume{display:flex;align-items:center;gap:2px;margin-right:6px}
-.phone-toolbar-volume .spring-range{inline-size:64px;--range-thumb-width:18px;--range-thumb-height:16px}
+.phone-toolbar-volume .spring-range{inline-size:64px}
 .phone-rotation-landscape{transform:rotate(90deg)}
 .workspace-tools{margin-left:12px}
 

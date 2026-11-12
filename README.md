@@ -4,9 +4,9 @@ English · [简体中文](#简体中文) · [繁體中文](docs/public/readme.zh
 
 An agent that listens while it works, explores on its own, and learns from using your phone and computer.
 
-## Source preview
+## 0.0.1 Aluminum
 
-Version 0.0.1 is the initial source baseline. [Build for macOS or Windows](docs/public/release-status.md).
+Get the source for the first AImanity release. [Releases](https://github.com/MrMilkDragon/AImanity/releases) · [macOS and Windows build instructions](docs/public/release-status.md)
 
 ## What it does
 
@@ -48,9 +48,9 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 [Back to English](#aimanity)
 
-## 源码预览
+## 0.0.1 Aluminum
 
-0.0.1 是首个源码基线。[macOS 与 Windows 构建](docs/public/release-status.md)。
+获取 AImanity 首发源码。[发行页](https://github.com/MrMilkDragon/AImanity/releases) · [macOS 与 Windows 构建](docs/public/release-status.md)
 
 ## 功能
 

@@ -39,7 +39,11 @@ impl Request {
         let watch = identifiers(&value.watch_message_ids, MAX_WATCH)?;
         let receipts = identifiers(&value.receipt_request_ids, MAX_RECEIPTS)?;
         if value.limit == 0 {
-            return legacy(before, &watch, &receipts).map(|_| None);
+            return if before.is_some() || !watch.is_empty() || !receipts.is_empty() {
+                Err("history_window_limit")
+            } else {
+                Ok(None)
+            };
         }
         if value.limit > MAX_PAGE {
             return Err("history_window_limit");
@@ -53,19 +57,9 @@ impl Request {
     }
 }
 
-fn legacy(before: Option<Uuid>, watch: &[Uuid], receipts: &[Uuid]) -> Result<(), &'static str> {
-    if before.is_some() || !watch.is_empty() || !receipts.is_empty() {
-        return Err("history_window_limit");
-    }
-    Ok(())
-}
-
 pub(crate) async fn transaction(pool: &PgPool) -> Result<Transaction<'_, Postgres>, sqlx::Error> {
-    let mut tx = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-        .execute(&mut *tx)
-        .await?;
-    Ok(tx)
+    pool.begin_with("BEGIN ISOLATION LEVEL REPEATABLE READ, READ ONLY")
+        .await
 }
 
 async fn anchor(
@@ -108,8 +102,9 @@ async fn page(
         None => query,
     };
     let mut rows: Vec<Uuid> = query.fetch_all(&mut **tx).await?;
-    let has_older = rows.len() > input.limit as usize;
-    rows.truncate(input.limit as usize);
+    let limit = input.limit as usize;
+    let has_older = rows.len() > limit;
+    rows.truncate(limit);
     rows.reverse();
     Ok((rows, has_older))
 }

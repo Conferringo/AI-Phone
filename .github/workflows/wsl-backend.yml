@@ -19,6 +19,7 @@ jobs:
       CARGO_HTTP_MULTIPLEXING: 'false'
       NEXT_TELEMETRY_DISABLED: '1'
       AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
+      AIMANITY_CI_OCR_SOURCE: ${{ vars.AIMANITY_CI_OCR_SOURCE || '{}' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -54,17 +55,17 @@ jobs:
           cargo test --locked -p ai-phone-release-tools --test wsl_qualification_cli
           cargo test --locked -p ai-phone-runner
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v4
-        if: vars.AIMANITY_CI_OCR_SOURCE != '' && fromJSON(vars.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
+        if: github.head_ref != '' && fromJSON(env.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
         with:
-          run-id: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).run }}
-          artifact-ids: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).artifact }}
+          run-id: ${{ fromJSON(env.AIMANITY_CI_OCR_SOURCE).run }}
+          artifact-ids: ${{ fromJSON(env.AIMANITY_CI_OCR_SOURCE).artifact }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/verified-linux-runtime
       - name: Read back the approved OCR capsule
-        if: vars.AIMANITY_CI_OCR_SOURCE != '' && fromJSON(vars.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
+        if: github.head_ref != '' && fromJSON(env.AIMANITY_CI_OCR_SOURCE).branch == github.head_ref
         env:
-          SOURCE_COMMIT: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).commit }}
-          SOURCE_PAYLOAD_SHA: ${{ fromJSON(vars.AIMANITY_CI_OCR_SOURCE).sha256 }}
+          SOURCE_COMMIT: ${{ fromJSON(env.AIMANITY_CI_OCR_SOURCE).commit }}
+          SOURCE_PAYLOAD_SHA: ${{ fromJSON(env.AIMANITY_CI_OCR_SOURCE).sha256 }}
         run: |
           set -euo pipefail
           runtime="$RUNNER_TEMP/verified-linux-runtime"

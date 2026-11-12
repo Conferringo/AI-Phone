@@ -459,5 +459,12 @@
   "选择 {name}": "Seleccionar {name}",
   "取消选择": "Borrar selección",
   "尚未安装设备": "Dispositivo no instalado",
-  "修改时间": "Modificado"
+  "修改时间": "Modificado",
+  "添加模型": "Añadir modelo",
+  "编辑模型": "Editar modelo",
+  "暂无模型": "Sin modelos",
+  "为 {0} 选择模型": "Elegir modelo para {0}",
+  "管理": "Gestionar",
+  "取消": "Cancelar",
+  "配置": "Configuración"
 }

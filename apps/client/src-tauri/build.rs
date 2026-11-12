@@ -7,6 +7,7 @@ fn main() {
     let manifest = tauri_build::AppManifest::new().commands(&[
         "open_workbench",
         "deployment_status",
+        "retry_startup",
         "start_deployment",
         "cancel_deployment",
         "accept_deployment_license",

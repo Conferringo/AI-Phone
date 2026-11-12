@@ -4,16 +4,14 @@ import {ModelDraftSchema} from '@ai-phone/protocol/ai_phone/v1/settings_pb';
 import {RegistryStateSchema} from '@ai-phone/protocol/ai_phone/v1/registry_pb';
 
 type Draft=MessageShape<typeof ModelDraftSchema>;
-export type ModelPreset=string;
-export type SetupStep='agents'|'devices'|'review';
 export const modelPresets=presets;
 
 // Explicit selection creates a fresh connection; existing secrets/profiles are never overwritten.
-export function presetDraft(preset:ModelPreset):Draft {
- const p=presets.find(p=>p.id===preset)||presets.find(p=>p.id==='custom')!;
- return create(ModelDraftSchema,{provider:p.provider,protocol:p.protocol,baseUrl:p.baseUrl,model:p.model});
+export function presetDraft(preset:string):Draft {
+ const profile=presets.find(p=>p.id===preset)??presets.find(p=>p.id==='custom');
+ return create(ModelDraftSchema,profile);
 }
-export function modelPreset(draft:Draft):ModelPreset {
+export function modelPreset(draft:Pick<Draft,'baseUrl'|'provider'>):string {
  const base=draft.baseUrl.replace(/\/+$/,'');
  return presets.find(p=>p.id!=='custom'&&p.baseUrl===base&&p.provider===draft.provider)?.id||'custom';
 }
@@ -26,12 +24,15 @@ export function modelIssue(draft:Draft):string {
  if(!['responses','chat-completions','anthropic-messages'].includes(draft.protocol))return '请选择 API 协议';
  return '';
 }
+export function verifiedModels(state:MessageShape<typeof RegistryStateSchema>) {
+ return state.models.filter(model=>model.profile?.model&&model.profile.baseUrl&&model.profile.verifiedAtMs>0n);
+}
 export function setupProgress(state:MessageShape<typeof RegistryStateSchema>) {
- const models=new Set(state.models.filter(m=>m.profile?.model&&m.profile.baseUrl&&m.profile.verifiedAtMs>0n).map(m=>m.id));
+ const models=new Set(verifiedModels(state).map(model=>model.id));
  const agents=state.agents.filter(a=>models.has(a.modelConnectionId));
- const devices=state.devices.filter(d=>d.runtimeState==='managed'&&agents.some(a=>a.id===d.defaultAgentId&&a.deviceIds.includes(d.id)));
- const modelReady=agents.length>0,ready=devices.length>0;
- return {modelReady,ready,agentIds:agents.map(a=>a.id),deviceIds:devices.map(d=>d.id)};
+ const managed=state.devices.filter(device=>device.runtimeState==='managed');
+ const deviceIds=managed.filter(device=>agents.some(agent=>agent.id===device.defaultAgentId&&agent.deviceIds.includes(device.id))).map(device=>device.id);
+ return {modelReady:models.size>0,ready:managed.length>0&&deviceIds.length===managed.length,deviceIds};
 }
 type Frame={phoneId?:string;deviceId?:string;width:number;height:number;png:Uint8Array;observationId:string};
 export function hasDeviceFrame(id:string,frame:Frame):boolean {

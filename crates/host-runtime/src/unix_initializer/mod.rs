@@ -98,7 +98,7 @@ async fn initialize(
     let cancelled = cancel.clone();
     let (installation, staged) = tokio::task::spawn_blocking(move || {
         let mut installation = Installation::lock(&task_home)?;
-        let staged = installation.stage_source(
+        let staged = installation.recover_source(
             &payload,
             &source,
             &|path| fs2::available_space(path).unwrap_or(0),

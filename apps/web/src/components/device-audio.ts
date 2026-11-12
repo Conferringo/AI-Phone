@@ -44,18 +44,15 @@ async function readAudio(endpoint:string,signal:AbortSignal,output:AudioPlayback
  }finally{void reader.cancel().catch(()=>{});}
 }
 
-function playbackFailure(issue:unknown){
- const message=issue instanceof Error?issue.message:'声音连接失败';
- return {message,terminal:message==='请重新登录'};
-}
-
-async function streamAudio(endpoint:string,signal:AbortSignal,output:AudioPlayback,onFrame:()=>void,onFailure:(failure:ReturnType<typeof playbackFailure>)=>void){
+async function streamAudio(endpoint:string,signal:AbortSignal,output:AudioPlayback,onFrame:()=>void,onFailure:(message:string,terminal:boolean)=>void){
  while(!signal.aborted){
   try{await readAudio(endpoint,signal,output,onFrame);}
   catch(issue){
    if(signal.aborted)return;
-   const failure=playbackFailure(issue);output.reset();onFailure(failure);
-   if(failure.terminal)return;
+   const message=issue instanceof Error?issue.message:'声音连接失败';
+   const terminal=message==='请重新登录';
+   output.reset();onFailure(message,terminal);
+   if(terminal)return;
   }
   if(!signal.aborted)await reconnectDelay(signal);
  }
@@ -65,25 +62,24 @@ async function streamAudio(endpoint:string,signal:AbortSignal,output:AudioPlayba
 export function useDeviceAudio(deviceId:string,endpoint:string){
  const [enabled,setEnabled]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [running,setRunning]=useState(false);
- const player=useRef<AudioPlayback|null>(null),starting=useRef(false);
- if(!player.current)player.current=new AudioPlayback(undefined,setRunning);
- const {volume,setVolume,level,audibleLevel}=usePlaybackVolume(deviceId,player.current);
- useEffect(()=>{if(!enabled)player.current!.suspend();},[enabled]);
+ const [player]=useState(()=>new AudioPlayback(undefined,setRunning));
+ const starting=useRef(false);
+ const {volume,setVolume,level,audibleLevel}=usePlaybackVolume(deviceId,player);
+ useEffect(()=>{if(!enabled)player.suspend();},[enabled,player]);
  useEffect(()=>{
-  const output=player.current!;
   if(!enabled||!running)return;
   const abort=new AbortController();
-  void streamAudio(endpoint,abort.signal,output,()=>setError(''),failure=>{setError(failure.message);if(failure.terminal)setEnabled(false);});
+  void streamAudio(endpoint,abort.signal,player,()=>setError(''),(message,terminal)=>{setError(message);if(terminal)setEnabled(false);});
   // Switching endpoints clears old samples, but must not suspend the shared graph.
-  return()=>{abort.abort();output.reset();};
- },[enabled,running,endpoint]);
- useEffect(()=>()=>{player.current!.close();},[]);
+  return()=>{abort.abort();player.reset();};
+ },[enabled,running,endpoint,player]);
+ useEffect(()=>()=>{player.close();},[player]);
  const toggle=async()=>{
   if(starting.current)return;
   if(enabled&&running&&level.current>0){setEnabled(false);setError('');return;}
   if(level.current===0)setVolume(audibleLevel.current);
   starting.current=true;setBusy(true);
-  try{await player.current!.resume();setError('');setEnabled(true);}
+  try{await player.resume();setError('');setEnabled(true);}
   catch{setError('声音未开启，请再次点击');}
   finally{starting.current=false;setBusy(false);}
  };

@@ -1,37 +1,26 @@
 .language-heading h1 {
   margin-block: 16px 0;
-  font-size: var(--title-size);
   letter-spacing: -.035em;
-}
-#language-wall {
-  background: radial-gradient(ellipse at 50% 50%, #e5e5e5aa 0, transparent 66%);
 }
 #language-wall [role=radio] {
   min-inline-size: 44px;
   padding: 0;
-  color: var(--muted);
+  color: var(--setup-muted);
   font-size: clamp(12px, 2.9vw, 17px);
   opacity: var(--depth, .8);
   transition: opacity 200ms, color 200ms;
 }
 #language-wall [role=radio] span {
-  background: #fafafae0;
-  border-radius: var(--radius);
   padding: 4px 8px;
   line-height: 1.3;
 }
+#language-wall [aria-checked=false] span { background: #fafafae0; }
 #language-wall [role=radio]:hover,
-#language-wall [role=radio]:focus-visible { color: var(--ink); opacity: 1; }
+#language-wall [role=radio]:focus-visible { color: var(--setup-ink); opacity: 1; }
 #language-wall [aria-checked=true] {
-  color: var(--ink);
+  color: var(--setup-ink);
   opacity: 1;
   font-weight: 720;
-}
-#language-wall [aria-checked=true] span {
-  border: .5px solid #fff;
-  padding: 8px clamp(12px, 2.5vw, 18px);
-  background: #ffffffeb;
-  box-shadow: 0 5px 20px #17171712;
 }
 .language-actions .primary {
   display: inline-flex;
@@ -56,7 +45,7 @@
   justify-self: center;
   display: block;
   position: relative;
-  color: var(--muted);
+  color: var(--setup-muted);
   border: 1.5px solid currentColor;
 }
 .phone-glyph { inline-size: 10px; block-size: 17px; border-radius: 3px; }
@@ -70,45 +59,44 @@
 }
 .progress-detail { justify-items: center; text-align: center; gap: 20px; }
 .progress-heading h2 { font-size: clamp(18px, 3.2vw, 22px); font-weight: 620; }
-.progress-mark {
-  display: grid;
+.progress-visual {
+  display: none;
   place-items: center;
-  inline-size: 88px;
+  inline-size: clamp(112px, min(28vw, 34dvh), 180px);
   aspect-ratio: 1;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 30%, #fff, #eee);
-  color: var(--muted);
 }
-.progress-mark span {
-  inline-size: 32px;
-  block-size: 32px;
-  border: 2px solid currentColor;
-  border-radius: 50%;
+:is([data-state=running], [data-state=license], [data-state=ready], [data-state=startup-failed]) .progress-visual { display: grid; }
+.progress-visual > * {
+  grid-area: 1 / 1;
+  transition: opacity 260ms ease, scale 440ms cubic-bezier(.2, 1.12, .35, 1);
 }
-[data-state=running] .progress-mark span {
-  border-color: var(--line);
-  border-block-start-color: currentColor;
-  animation: spin 950ms linear infinite;
+.progress-visual canvas {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 1;
 }
-[data-state=ready] .progress-mark { color: #28704b; background: #e5f2eb; border-color: #cce2d4; }
-[data-state=ready] .progress-mark span {
-  inline-size: 27px;
-  block-size: 15px;
+.progress-complete {
+  inline-size: 35px;
+  block-size: 20px;
+  border: solid var(--setup-ink);
   border-width: 0 0 3px 3px;
   border-radius: 2px;
-  transform: translateY(-4px) rotate(-45deg);
+  opacity: 0;
+  scale: .8;
+  rotate: -45deg;
 }
+[data-state=ready] .progress-visual canvas { opacity: 0; scale: .84; }
+[data-state=ready] .progress-complete { opacity: 1; scale: 1; }
+#progress[data-startup=true] { grid-template-rows: minmax(0, 1fr) auto; }
+#progress[data-startup=true] > h1 { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+#progress[data-startup=true] .progress-actions:not(:has(button:not([hidden]))) { display: none; }
 #license { justify-self: stretch; text-align: start; }
-@media (max-width: 540px), (max-height: 460px) {
-  .setup { padding-block: 16px 14px; }
-  .pane { gap: 18px; }
+@media (max-height: 460px) {
+  :root { --setup-top: 32px; --setup-bottom: 14px; --setup-title-gap: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .continue-arrow, #language-wall [role=radio] { transition: none; }
-  [data-state=running] .progress-mark span { animation: none; }
+  .continue-arrow, #language-wall [role=radio], .progress-visual > * { transition: none; }
 }
 @media (forced-colors: active) {
   #language-wall [role=radio] { opacity: 1; }
-  #language-wall [aria-checked=true] span { color: HighlightText; background: Highlight; }
 }

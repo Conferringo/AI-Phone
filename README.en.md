@@ -4,9 +4,9 @@ English · [简体中文](README.md#简体中文) · [繁體中文](docs/public/
 
 An agent that listens while it works, explores on its own, and learns across Android and Linux.
 
-## Source preview
+## 0.0.1 Aluminum
 
-Version 0.0.1 is the initial source baseline. [Build for macOS or Windows](docs/public/release-status.md).
+Get the source for the first AImanity release. [Releases](https://github.com/MrMilkDragon/AImanity/releases) · [macOS and Windows build instructions](docs/public/release-status.md)
 
 ## What it does
 

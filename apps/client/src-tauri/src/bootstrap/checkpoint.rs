@@ -13,17 +13,17 @@ struct Checkpoint {
     installed_payload: Option<String>,
 }
 
-fn payload() -> Result<String, String> {
-    let integrity: serde_json::Value =
-        serde_json::from_str(INTEGRITY).map_err(|_| "invalid_payload")?;
-    integrity["source.payload"]
-        .as_str()
-        .map(str::to_owned)
+pub(super) fn payload() -> Result<&'static str, String> {
+    INTEGRITY
+        .as_ref()
+        .map_err(|_| "invalid_payload")?
+        .get("source.payload")
+        .map(String::as_str)
         .ok_or_else(|| "invalid_payload".into())
 }
 
 pub(super) fn save(folder: &Path, progress: &Progress) -> Result<(), String> {
-    let payload = payload()?;
+    let payload = payload()?.to_owned();
     #[cfg(any(target_os = "macos", windows))]
     let installed_payload = if progress.state == "ready" {
         Some(payload.clone())
@@ -107,7 +107,7 @@ fn read(folder: &Path) -> Result<Option<Progress>, String> {
         .map(|checkpoint| checkpoint.progress))
 }
 
-#[cfg(any(target_os = "macos", windows))]
+#[cfg(target_os = "macos")]
 pub(super) fn upgrade_needed(folder: &Path) -> Result<bool, String> {
     let payload = payload()?;
     Ok(read_record(folder)?
@@ -115,7 +115,17 @@ pub(super) fn upgrade_needed(folder: &Path) -> Result<bool, String> {
         .is_some_and(|installed| installed != payload))
 }
 
+#[cfg(test)]
 pub(super) fn completed(folder: &Path) -> Result<bool, String> {
+    Ok(read(folder)?.is_some_and(|progress| progress.state == "ready"))
+}
+
+pub(super) fn installed(folder: &Path) -> Result<bool, String> {
+    #[cfg(any(target_os = "macos", windows))]
+    return Ok(read_record(folder)?
+        .and_then(Checkpoint::installed_payload)
+        .is_some());
+    #[cfg(not(any(target_os = "macos", windows)))]
     Ok(read(folder)?.is_some_and(|progress| progress.state == "ready"))
 }
 pub(super) fn admitted(folder: &Path) -> bool {
@@ -184,6 +194,29 @@ mod tests {
             "installed",
             "a saved receipt is not a fresh service probe"
         );
+        #[cfg(any(target_os = "macos", windows))]
+        {
+            for state in ["failed", "cancelled"] {
+                save(
+                    &folder,
+                    &Progress {
+                        state: state.into(),
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                assert!(installed(&folder).unwrap());
+                assert!(!completed(&folder).unwrap());
+            }
+            save(
+                &folder,
+                &Progress {
+                    state: "ready".into(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        }
         let file = folder.join("deployment.json");
         let mut record: serde_json::Value =
             serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();

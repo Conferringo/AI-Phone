@@ -172,6 +172,27 @@ fn full_gzip_and_xz_source_chain_preserves_users_and_reuses_exact_release() {
                 .stage_source(&path, &identity, &free, &|| false)
                 .is_err()
         );
+        #[cfg(unix)]
+        {
+            assert!(
+                install
+                    .recover_source(&path, &identity, &free, &|| false)
+                    .unwrap()
+                    .reused
+            );
+            assert_eq!(
+                fs::read(source.directory.join("scripts/main.rs")).unwrap(),
+                b"actual Rust staging"
+            );
+            fs::remove_file(source.directory.join("scripts/main.rs")).unwrap();
+            install
+                .recover_source(&path, &identity, &free, &|| false)
+                .unwrap();
+            assert_eq!(
+                fs::read(source.directory.join("scripts/main.rs")).unwrap(),
+                b"actual Rust staging"
+            );
+        }
         assert_eq!(
             fs::read(home.join("user/data/chat")).unwrap(),
             b"retained chat"
@@ -395,17 +416,36 @@ fn component_links_are_created_verified_and_cannot_escape_or_replace_files() {
     assert_eq!(source.components, vec!["web"]);
     let alias = source.directory.join("runtime/web/node_modules/library");
     assert_eq!(fs::read(alias.join("index.js")).unwrap(), b"module");
+    #[cfg(unix)]
+    crate::capsule::HASHED_BYTES.with(|bytes| bytes.set(0));
     assert!(
         install
             .stage_source(&path, &identity, &free, &|| false)
             .unwrap()
             .reused
     );
+    #[cfg(unix)]
+    {
+        let healthy_bytes = crate::capsule::HASHED_BYTES.with(|bytes| bytes.replace(0));
+        fs::remove_file(&alias).unwrap();
+        install
+            .recover_source(&path, &identity, &free, &|| false)
+            .unwrap();
+        assert_eq!(fs::read(alias.join("index.js")).unwrap(), b"module");
+        let repaired_bytes = crate::capsule::HASHED_BYTES.with(Cell::get);
+        assert_eq!(repaired_bytes, healthy_bytes);
+    }
     fs::remove_file(&alias).unwrap();
     fs::create_dir(&alias).unwrap();
     assert!(
         install
             .stage_source(&path, &identity, &free, &|| false)
+            .is_err()
+    );
+    #[cfg(unix)]
+    assert!(
+        install
+            .recover_source(&path, &identity, &free, &|| false)
             .is_err()
     );
     let (bad, identity) = payload(root, &runtime_tar(true), false);

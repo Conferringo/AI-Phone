@@ -154,8 +154,8 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
     let native_calls = completed_native_calls(context);
     let mut result = Vec::with_capacity(context.len());
     let mut response_has_reasoning = false;
-    let mut preserved_ids = HashSet::<String>::new();
-    let mut legacy_calls = HashMap::<String, Value>::new();
+    let mut preserved_ids = HashSet::new();
+    let mut legacy_calls = HashMap::new();
     let mut pending_order = Vec::new();
     for item in context {
         let kind = item["type"].as_str().unwrap_or("");
@@ -167,9 +167,9 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
             response_has_reasoning = true;
             result.push(item.clone());
         } else if kind == "function_call" {
-            let id = item["call_id"].as_str().unwrap_or("").to_string();
+            let id = item["call_id"].as_str().unwrap_or("");
             if (response_has_reasoning || item["provider_native"] == true)
-                && native_calls.contains(id.as_str())
+                && native_calls.contains(id)
             {
                 preserved_ids.insert(id);
                 let mut call = item.clone();
@@ -178,16 +178,15 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
                 fields.remove("local_action_id");
                 result.push(call);
             } else {
-                pending_order.push(id.clone());
-                legacy_calls.insert(id, item.clone());
+                pending_order.push(id);
+                legacy_calls.insert(id, item);
             }
         } else if kind == "function_call_output" {
             let id = item["call_id"].as_str().unwrap_or("");
             if preserved_ids.remove(id) {
                 result.push(item.clone());
             } else {
-                let call = legacy_calls.remove(id);
-                result.push(tool_record(call.as_ref(), item.get("output")));
+                result.push(tool_record(legacy_calls.remove(id), item.get("output")));
             }
         } else if role == "assistant" && !response_has_reasoning {
             let mut content = vec![
@@ -200,8 +199,8 @@ pub fn for_api(context: &[Value]) -> Vec<Value> {
         }
     }
     for id in pending_order {
-        if let Some(call) = legacy_calls.remove(&id) {
-            result.push(tool_record(Some(&call), None));
+        if let Some(call) = legacy_calls.remove(id) {
+            result.push(tool_record(Some(call), None));
         }
     }
     result
