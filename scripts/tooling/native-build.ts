@@ -31,7 +31,6 @@ export function sourceFingerprint(root = ROOT) {
           (f) =>
             f.path.startsWith("crates/") ||
             f.path.startsWith("packages/protocol/proto/") ||
-            f.path.startsWith("scripts/phone-vision/") ||
             [
               "Cargo.toml",
               "Cargo.lock",

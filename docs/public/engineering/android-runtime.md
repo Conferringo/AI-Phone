@@ -14,7 +14,7 @@ Initialization uses the selected CPU, memory and storage presets to create an AV
 
 ## Engineering workflow
 
-Factory inputs are recorded in [android-factory-images.json](../../../config/android-factory-images.json). Runtime construction is a maintainer operation; users of a complete distribution should not need this workflow.
+The [Android factory configuration](../../../config/android-factory.json) lists the emulator, platform tools and system image for each host.
 
 ```sh
 ./scripts/bun scripts/android-component.ts --work /path/to/new-android-component

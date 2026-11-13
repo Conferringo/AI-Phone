@@ -1227,11 +1227,6 @@
       "sha256": "5f62527815ec96f10cfd8896f8340338579f75394cb71511035d842402ece354"
     },
     {
-      "path": "config/android-factory-images.json",
-      "size": 535,
-      "sha256": "d422bdc308deba43573ad6d46b60b38c8ed4bcb47461962cbd2cc28caa7721b8"
-    },
-    {
       "path": "config/android-factory.json",
       "size": 3870,
       "sha256": "7109a7849a0a2e3da850d642da62228992ae9163525eaab95f32d877f601d3f0"
@@ -3083,8 +3078,8 @@
     },
     {
       "path": "docs/public/engineering/android-runtime.md",
-      "size": 4179,
-      "sha256": "5561f798c0b9d7d49106550fcb71961cd3e83f22bb7d0483361675ba384186c0"
+      "size": 4101,
+      "sha256": "926c0f5925a56b5e3fa6cef1f417431470bf5c2c9c6362c7d7444d5dadb15f9d"
     },
     {
       "path": "docs/public/engineering/app-guides.md",
@@ -3128,8 +3123,8 @@
     },
     {
       "path": "docs/public/engineering/linux-offline-ocr.md",
-      "size": 2238,
-      "sha256": "5288fc240188d555dfc310a7c6dbc9a91ac19e81127f14e1be24c6e425c4e1c6"
+      "size": 2545,
+      "sha256": "3428c149a625fbc4d4ea000461f66455c548523e29b8308c08a9d1be93583290"
     },
     {
       "path": "docs/public/engineering/macos-full-runtime.md",
@@ -3927,41 +3922,6 @@
       "sha256": "3d8b7f6c63508bbf75d31c95d734502863852167c5a5bd61db2229217392be9d"
     },
     {
-      "path": "scripts/android-diagnostics/AndroidManifest.xml",
-      "size": 1024,
-      "sha256": "de6a819b393a940b4ca93528bdea8c287aeac8dcf22f0b0997c44afee9732668"
-    },
-    {
-      "path": "scripts/android-diagnostics/build.ts",
-      "size": 121,
-      "sha256": "7c0dc139b121eaf950fe3ee3ec85badc1b63266ae99994711d11a06cca2e848c"
-    },
-    {
-      "path": "scripts/android-diagnostics/res/values/styles.xml",
-      "size": 105,
-      "sha256": "fbed549113e4225bbe3111c8d68b57f19adad906e93379c793f8fe223c7b10d2"
-    },
-    {
-      "path": "scripts/android-diagnostics/src/dev/aiphone/diagnostics/AudioProof.java",
-      "size": 977,
-      "sha256": "1c25c438b1d693e60de4adf2bfa85502b01edd715cb3d35f5fd0cbfd9996a41a"
-    },
-    {
-      "path": "scripts/android-diagnostics/src/dev/aiphone/diagnostics/GestureProof.java",
-      "size": 2759,
-      "sha256": "8b7a1814aea80890ce8c6a3515e7d0c35d9b0e6ca3be7d6bd9392f47175f420d"
-    },
-    {
-      "path": "scripts/android-diagnostics/src/dev/aiphone/diagnostics/NetworkProof.java",
-      "size": 2584,
-      "sha256": "f0b8edc09ba180d9850fb4c59fe590789c824764565b559b373c8b0fa907089c"
-    },
-    {
-      "path": "scripts/android-diagnostics/src/dev/aiphone/diagnostics/OrientationProof.java",
-      "size": 447,
-      "sha256": "04d3d9f9bad1ad7a6062e684536baa9f3c8d9ee895408893ed4e2d18e96c56db"
-    },
-    {
       "path": "scripts/android-emulator.sh",
       "size": 1041,
       "sha256": "295329ad98844b2d4b964080c283ffda51c3f63f16a545cecae42afd3cff30ac"
@@ -4042,16 +4002,6 @@
       "sha256": "4d2956ec23fc0fa8648d0f9588221d817880010fa57861fba652ecfd3fdafcec"
     },
     {
-      "path": "scripts/backup.ts",
-      "size": 219,
-      "sha256": "af82dec5f5317a67859796472bacac8a86f241cdd357fb3a39e45ee0f28be93f"
-    },
-    {
-      "path": "scripts/bench-phone.ts",
-      "size": 1940,
-      "sha256": "ad6d296941df656f9d44bbeee8762e47aa200670e42f7f9446b8f83d004d5434"
-    },
-    {
       "path": "scripts/bootstrap.sh",
       "size": 1376,
       "sha256": "1199a98c566199f932ac6f0d28041a7db77996ac8ab5eaa745486da56c2ed211"
@@ -4060,16 +4010,6 @@
       "path": "scripts/build-client.ts",
       "size": 2647,
       "sha256": "a189131d9afe00fe107e60075b0271021cff49ac047a64f7975eb0d2c765f27e"
-    },
-    {
-      "path": "scripts/build-native.ts",
-      "size": 104,
-      "sha256": "d1ddbdd9e6b548179cd0589d258f891a22c129422e93b5183fc16086b49b4ed3"
-    },
-    {
-      "path": "scripts/build-vision.sh",
-      "size": 108,
-      "sha256": "57f16e1002e0c4787c65d23f0e83c1553851f494e1a350d73120e092a5344102"
     },
     {
       "path": "scripts/bun",
@@ -4182,11 +4122,6 @@
       "sha256": "78057b852f0e9182440bf7daa6ed898f2ac041f55d071f8bfa32721f917697f8"
     },
     {
-      "path": "scripts/native.ts",
-      "size": 1107,
-      "sha256": "e57b86b9387898276de60260f4eb06f68be608ae55f3ecda183e882c91df02c8"
-    },
-    {
       "path": "scripts/package-delivery.ts",
       "size": 596,
       "sha256": "fd42e47fa3071194da3db5e28b961c757fc136948d6615aa82675fc984fbb12b"
@@ -4205,16 +4140,6 @@
       "path": "scripts/phone-runner-start.sh",
       "size": 168,
       "sha256": "eac07a45f93381040f1fc445281ef52ef7b465e69f19c47e79a5c32be2ce7b8e"
-    },
-    {
-      "path": "scripts/phone-second-start.sh",
-      "size": 658,
-      "sha256": "d22eb65e69ad153f24d50ecf7f957a023af394c90f7d9e10dfb32665f3ff2bff"
-    },
-    {
-      "path": "scripts/phone-vision/README.md",
-      "size": 1032,
-      "sha256": "7c63b3822b6672458e2ba6ea1f07fc9357a5a175bf32c04354f746ce01401620"
     },
     {
       "path": "scripts/phone-web-start.sh",
@@ -4338,8 +4263,8 @@
     },
     {
       "path": "scripts/tooling/native-build.ts",
-      "size": 7697,
-      "sha256": "06c7abb748f31c3a4afab944ef7736d11e4d251387be4e5525cd7d1cb75bff81"
+      "size": 7639,
+      "sha256": "8d957f5dfbd2effca12482847a6949783df3cb28f3570a7e2c85e04cef741bf5"
     },
     {
       "path": "scripts/tooling/native-check.ts",
@@ -4348,8 +4273,8 @@
     },
     {
       "path": "scripts/tooling/native.ts",
-      "size": 2880,
-      "sha256": "fbcfb480caa82dcb6c9c46c43cfff146e1ed8c7bdb0ba82b79136c569fb07407"
+      "size": 1246,
+      "sha256": "bd8f5be11780044dad3ef60abc22d3062fbef793719270d3b0f151431b1f4d6d"
     },
     {
       "path": "scripts/tooling/package-delivery.ts",

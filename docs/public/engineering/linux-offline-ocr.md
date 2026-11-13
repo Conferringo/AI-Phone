@@ -8,6 +8,8 @@ The phone and desktop use the same Rust PNG-to-regions pipeline. Rust owns image
 
 The component manifest records the factory recipe, archive digest, file hashes and permissions. The archive includes `tessdata/configs/tsv`. The Rust helper selects TSV output with `tessedit_create_tsv=1` and checks its header.
 
+The [native OCR fixture](../../../crates/phone-runner/fixtures/ocr-probe.png) renders `7319`. The [source asset inventory](../../../config/source-assets.json) records its font and provenance. The separate [provider fixture](../../../crates/assistant/fixtures/vision-probe.png) exercises model image input.
+
 ## Maintainer build
 
 The OCR and QEMU factories use a pinned Ubuntu base image, CA package and [archive snapshot](https://snapshot.ubuntu.com/). The collector records package versions and native file hashes, and includes each package's copyright file.
