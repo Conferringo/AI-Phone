@@ -262,7 +262,8 @@ impl State {
         {
             return Ok(());
         }
-        let event = event_id(provider, &config.app_id, &id);
+        let app_id = config.app_id.clone();
+        let event = event_id(provider, &app_id, &id);
         let legacy = std::cell::OnceCell::new();
         if store.vault.jobs.len() >= 10_000
             || store.vault.jobs.iter().any(|job| {
@@ -270,9 +271,7 @@ impl State {
                     && (job.id == event
                         || (job.id.as_bytes().get(14) == Some(&b'5')
                             && job.id
-                                == *legacy.get_or_init(|| {
-                                    legacy_event_id(provider, &config.app_id, &id)
-                                })))
+                                == *legacy.get_or_init(|| legacy_event_id(provider, &app_id, &id))))
             })
             || store
                 .vault

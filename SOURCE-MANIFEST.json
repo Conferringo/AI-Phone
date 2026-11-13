@@ -1698,8 +1698,8 @@
     },
     {
       "path": "crates/assistant/src/channels/mod.rs",
-      "size": 26971,
-      "sha256": "bac422d70e6e82cd1a57a4aa8cc5b776eea33d9822d87d479016645a4c19e24e"
+      "size": 26929,
+      "sha256": "8ee286c372a1b173ba7c46054e3e67bd9c927784f26ff8bccd5f2320af229619"
     },
     {
       "path": "crates/assistant/src/channels/qq.rs",
@@ -2218,8 +2218,8 @@
     },
     {
       "path": "crates/guest-runtime/src/notifications.rs",
-      "size": 15567,
-      "sha256": "1b9a3afbb8cd0f7d635048c2f36443f69b7804380f2fcbe48856086507cbeb16"
+      "size": 15575,
+      "sha256": "0a25ca2dff2960ad2039051fa8aa7ebc42f04fae0c473dd5cbb66e7235395246"
     },
     {
       "path": "crates/guest-runtime/src/paint.rs",

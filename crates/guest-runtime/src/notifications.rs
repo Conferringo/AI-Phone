@@ -394,7 +394,7 @@ mod tests {
             ("DUNST_BODY", &body),
             ("DUNST_SUMMARY", &"🐳".repeat(1100)),
         ]);
-        let item = event(&values, &[0; 16], 1);
+        let item = event(&values, &[], Uuid::nil(), 1);
         assert_eq!(item["text"].as_str().unwrap().chars().count(), 12000);
         assert_eq!(item["title"].as_str().unwrap().chars().count(), 1000);
         assert_eq!(
