@@ -24,7 +24,7 @@ cargo run --locked -p ai-phone-host-runtime --bin package-volumes -- \
 
 ## Candidate retention
 
-Private Actions storage retains the installer, manifest and checksum. The maintainer checks the receipt and redistribution terms before uploading the complete installer to Releases.
+Private Actions storage retains the installer and its build receipt. The maintainer checks the receipt and redistribution terms before uploading the complete installer to Releases.
 
 ## 中文
 

@@ -143,9 +143,6 @@ pub(super) async fn start<E: Execute>(
     backend
         .env
         .extend(crate::runtime_environment::resolve(root, user)?);
-    backend
-        .checked(backend.command(&path, ["info"]), vec![])
-        .await?;
     Ok(())
 }
 

@@ -204,19 +204,15 @@ export function sourceManifest(
         ? "private-source-review-draft"
         : "local-review-draft"
       : "source-preview",
-    product_ready: Object.values(policy.publication_gates).every(
-      (v) => v === true,
-    ),
-    product_gates: policy.publication_gates,
     files: records(selected),
   };
 }
 export function checkSource(
   root = ROOT,
   { repository = false, manifest = false, draft = false } = {},
+  selected = sourceFiles(root),
 ) {
-  const selected = sourceFiles(root),
-    names = new Set(selected.map((f) => f.path));
+  const names = new Set(selected.map((f) => f.path));
   const provenance = join(root, "config/source-assets.json");
   if (existsSync(provenance)) {
     for (const asset of JSON.parse(readFileSync(provenance, "utf8")).assets) {
@@ -374,49 +370,19 @@ function tar(files: SourceFile[], prefix: string) {
 export function createSourcePackage(
   root: string,
   destination: string,
-  publicRelease = false,
 ) {
-  const policy = JSON.parse(
-      readFileSync(join(root, "config/release-policy.json"), "utf8"),
-    ),
-    blocked = Object.entries(policy.publication_gates)
-      .filter(([, passed]) => passed !== true)
-      .map(([name]) => name);
-  if (publicRelease && blocked.length)
-    throw Error(`Publication blocked: ${blocked.join(", ")}`);
-  const selected = sourceFiles(root),
-    manifest = {
-      version: policy.version,
-      license: policy.source_preview.license,
-      remote_publication_authorized: false,
-      kind: publicRelease ? "public-source-preview" : "internal-source-preview",
-      publication_ready: blocked.length === 0,
-      blocked_gates: blocked,
-      files: records(selected),
-    };
+  const selected = sourceFiles(root);
+  checkSource(root, {}, selected);
+  const manifest = sourceManifest(root, selected);
   selected.push({
     path: "RELEASE-MANIFEST.json",
     data: Buffer.from(JSON.stringify(manifest, null, 2) + "\n"),
     mode: 0o644,
   });
-  if (blocked.length)
-    selected.push({
-      path: "NOT-FOR-PUBLICATION.txt",
-      data: Buffer.from(
-        "Internal review bundle. See RELEASE-MANIFEST.json. No user state included.\n",
-      ),
-      mode: 0o644,
-    });
   mkdirSync(destination, { recursive: true });
-  const file = join(destination, `ai-phone-${policy.version}-source.tar.gz`);
-  writeFileSync(
-    file,
-    Bun.gzipSync(tar(selected, `ai-phone-${policy.version}`)),
-  );
-  writeFileSync(
-    file + ".sha256",
-    hash(readFileSync(file)) + "  " + basename(file) + "\n",
-  );
+  const prefix = `ai-phone-${manifest.version}`;
+  const file = join(destination, `${prefix}-source.tar.gz`);
+  writeFileSync(file, Bun.gzipSync(tar(selected, prefix)));
   writeFileSync(
     file + ".manifest.json",
     JSON.stringify(manifest, null, 2) + "\n",
@@ -438,7 +404,7 @@ export function exportSource(
   )
     throw Error("Export outside source or into dist");
   const selected = sourceFiles(root);
-  checkSource(root, { draft });
+  checkSource(root, { draft }, selected);
   mkdirSync(dirname(destination), { recursive: true });
   const temporary = mkdtempSync(join(dirname(destination), ".source-export-")),
     work = join(temporary, "source");

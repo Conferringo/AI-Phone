@@ -50,7 +50,7 @@ LAN地址见私有 `data/deployment.json`，只选私有网络接口。后端、
 ./ai-phone stage --archive /path/to/generated-source-bundle.tar.gz --destination /path/to/AIPhone
 ```
 
-打包采用源码白名单、排除私有数据、检查明显凭据，生成清单与SHA256；默认生成内部审阅包；发行门槛未满足时附带 `NOT-FOR-PUBLICATION.txt` 标记。stage验证内容后放入版本目录，第一次创建current入口；后续版本只暂存，不热切换。user目录跨版本复用。SHA256不是发布者签名。见[发行设计](distribution.zh-CN.md)。
+源码包附带文件清单和 SHA-256 校验值。暂存时校验文件，用户数据放在独立目录。首装创建 current 链接，后续版本暂存后等待启用。见[发行与更新](distribution.zh-CN.md)。
 
 默认 `local_entry: true` 是同一可信局域网内的个人部署模式：能够访问网页的人可作为本机所有者进入。不要把这个入口作为多用户权限隔离；需要密码认证的既有部署可在私有配置中关闭本地入口，旧认证端点保留。
 

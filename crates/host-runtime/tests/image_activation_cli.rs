@@ -18,10 +18,14 @@ fn fixture(home: &Path, xz: bool) -> (PathBuf, Value, Vec<u8>) {
     result
 }
 fn invoke(home: &Path, payload: &Path) -> Output {
+    invoke_with_digest(home, payload, None)
+}
+fn invoke_with_digest(home: &Path, payload: &Path, digest: Option<&str>) -> Output {
     Command::new(env!("CARGO_BIN_EXE_host-resources"))
         .args(["--activate-images"])
         .arg(home)
         .arg(payload)
+        .args(digest)
         .env_clear()
         .env("PATH", home.join("bin"))
         .env("AI_PHONE_IMAGE_TEST_STATE", home)
@@ -36,7 +40,14 @@ fn native_import_streams_each_codec_and_resumes_without_loading_again_or_replaci
         let (payload, manifest, raw) = fixture(home, xz);
         fs::create_dir_all(home.join("data")).unwrap();
         fs::write(home.join("data/chat"), "original chat").unwrap();
-        let output = invoke(home, &payload);
+        let bytes = fs::read(&payload).unwrap();
+        let digest = capsule::hash(&bytes);
+        fs::write(&payload, [&bytes[..], &[1]].concat()).unwrap();
+        let rejected = invoke_with_digest(home, &payload, Some(&digest));
+        assert!(!rejected.status.success());
+        assert!(!home.join("queried").exists());
+        fs::write(&payload, bytes).unwrap();
+        let output = invoke_with_digest(home, &payload, Some(&digest));
         assert!(
             output.status.success(),
             "{}",

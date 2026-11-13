@@ -56,7 +56,11 @@ impl<R: Read> Read for Cancelled<R> {
         self.input.read(&mut bytes[..limit])
     }
 }
-fn prepare(path: &Path, cancel: watch::Receiver<bool>) -> Result<Prepared> {
+fn prepare(
+    path: &Path,
+    outer_digest: Option<&str>,
+    cancel: watch::Receiver<bool>,
+) -> Result<Prepared> {
     let mut file = File::open(path)?;
     let before = file.metadata()?;
     let mut entries = BTreeMap::new();
@@ -94,10 +98,22 @@ fn prepare(path: &Path, cancel: watch::Receiver<bool>) -> Result<Prepared> {
     if entries.len() != 2 || size != manifest.archive.size {
         return Err(Error::Invalid("image_capsule_archive"));
     }
-    file.seek(SeekFrom::Start(offset))?;
+    let mut hash = Sha256::new();
+    if outer_digest.is_some() {
+        file.rewind()?;
+        io::copy(
+            &mut Cancelled {
+                input: (&mut file).take(offset),
+                cancel: cancel.clone(),
+            },
+            &mut hash,
+        )?;
+    } else {
+        file.seek(SeekFrom::Start(offset))?;
+    }
     let mut compressed = Hashed {
         input: (&mut file).take(size),
-        hash: Sha256::new(),
+        hash,
     };
     let layout = {
         let decoder = inventory::decoder(&mut compressed, manifest.xz())?;
@@ -112,11 +128,24 @@ fn prepare(path: &Path, cancel: watch::Receiver<bool>) -> Result<Prepared> {
     io::copy(
         &mut Cancelled {
             input: &mut compressed,
-            cancel,
+            cancel: cancel.clone(),
         },
         &mut io::sink(),
     )?;
-    if format!("{:x}", compressed.hash.finalize()) != manifest.archive.sha256 {
+    let mut hash = compressed.hash;
+    let expected = if let Some(expected) = outer_digest {
+        io::copy(
+            &mut Cancelled {
+                input: &mut file,
+                cancel,
+            },
+            &mut hash,
+        )?;
+        expected
+    } else {
+        &manifest.archive.sha256
+    };
+    if format!("{:x}", hash.finalize()) != expected {
         return Err(Error::Invalid("image_archive_digest"));
     }
     Ok(Prepared {
@@ -175,8 +204,19 @@ async fn activate(
 }
 
 pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
-    let [root, payload] = arguments else {
+    let [root, payload, digest @ ..] = arguments else {
         return Err(Error::Invalid("image_activation_arguments"));
+    };
+    let digest = match digest {
+        [] => None,
+        [value] => Some(
+            value
+                .to_str()
+                .filter(|value| crate::manifest::identity(value))
+                .ok_or(Error::Invalid("image_activation_arguments"))?
+                .to_owned(),
+        ),
+        _ => return Err(Error::Invalid("image_activation_arguments")),
     };
     let root = Path::new(root);
     let payload = Path::new(payload).to_owned();
@@ -184,7 +224,8 @@ pub(crate) async fn run(arguments: &[OsString]) -> Result<()> {
     let input_cancel = cancel.clone();
     let interrupt = crate::component::interrupt();
     tokio::pin!(interrupt);
-    let mut worker = tokio::task::spawn_blocking(move || prepare(&payload, input_cancel));
+    let mut worker =
+        tokio::task::spawn_blocking(move || prepare(&payload, digest.as_deref(), input_cancel));
     let prepared = tokio::select! {
         result=&mut worker=>result.map_err(|_|Error::Invalid("image_worker"))??,
         result=&mut interrupt=>{signal.send_replace(true);let _=worker.await;result?;return Err(Error::Cancelled);}

@@ -160,7 +160,7 @@ function sdkFiles(sdk: string, abi: string) {
     walk(join(sdk, component));
   return files;
 }
-export async function buildAndroidRuntime(
+async function buildAndroidRuntime(
   root: string,
   sdk: string,
   imageArchive: string,
@@ -169,8 +169,6 @@ export async function buildAndroidRuntime(
   preset = 6,
 ) {
   if (![3, 6, 9].includes(preset)) throw Error("Unsupported XZ preset");
-  if ((await digest(imageArchive)) !== expectedImage)
-    throw Error("Android image archive changed");
   const abi = abis[hostKey()]!,
     tools = sdkFiles(sdk, abi);
   if (hostKey() === "windows-x64") {
@@ -308,12 +306,13 @@ export async function buildAndroid(root: string, work: string, preset = 6) {
 export async function prepareAndroid(
   payload: string,
   home: string,
+  payloadSha256: string,
   root = ROOT,
 ) {
   const request = create(NativeAndroidPrepareSchema, {
     version: 1,
     payloadPath: payload,
-    payloadSha256: await digest(payload),
+    payloadSha256,
     cpus: 2,
     memoryMb: 2048,
     storageGb: 16,

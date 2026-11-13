@@ -1,7 +1,8 @@
-import { createPrivateKey, createPublicKey, sign } from "node:crypto";
+import { createHash, createPrivateKey, createPublicKey, sign } from "node:crypto";
+import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { ROOT, digest } from "./tooling/process";
+import { ROOT } from "./tooling/process";
 
 const [keyFile, macFile, windowsFile, output] = process.argv.slice(2);
 if (!keyFile || !macFile || !windowsFile || !output || process.argv.length !== 6) {
@@ -51,16 +52,25 @@ async function artifact(path: string, os: "macos" | "windows", arch: string, suf
   }
   const { size } = await stat(path);
   if (size < 1 || size >= 2 ** 31) throw Error("Installer exceeds the release asset limit");
-  const sha256 = await digest(path);
-  if (sha256 !== report.sha256) throw Error("Installer differs from its build receipt");
-  return { size, sha256 };
+  const hash = createHash("sha512");
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  const sha512 = hash.digest("base64");
+  if (sha512 !== report.sha512) throw Error("Installer differs from its build receipt");
+  return { size, sha512 };
 }
 
 const [macos_arm64, windows_x64] = await Promise.all([
   artifact(macFile, "macos", "arm64", "macos-arm64.dmg"),
   artifact(windowsFile, "windows", "x64", "windows-x64-setup.exe"),
 ]);
-const manifest = JSON.stringify({ version, name: name.trim(), notes: notes.trim(), macos_arm64, windows_x64 });
+const manifest = JSON.stringify({
+  format: 2,
+  version,
+  name: name.trim(),
+  notes: notes.trim(),
+  macos_arm64,
+  windows_x64,
+});
 const signature = sign(null, Buffer.from(manifest), privateKey).toString("base64");
 const envelope = JSON.stringify({ manifest, signature }) + "\n";
 if (Buffer.byteLength(envelope) > 16 * 1024) throw Error("Update manifest exceeds the client limit");

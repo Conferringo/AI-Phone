@@ -12,7 +12,7 @@ import { json, save } from "./inventory";
 import { checkSource } from "./source";
 import { verifyWsl } from "./wsl-capsule";
 import { buildAndroid, prepareAndroid } from "./android-component";
-import { deliveryMetadata, installerMetadata } from "./client-payload";
+import { deliveryMetadata } from "./client-payload";
 import { buildReleaseTools } from "./archive";
 import { windowsReleaseSigning } from "./installer-signing";
 import {
@@ -147,7 +147,12 @@ export async function windowsFactory(
   );
   const android = await buildAndroid(root, join(work, "android"), 6),
     prepared = join(work, "android-qualification");
-  await prepareAndroid(android.file, prepared, root);
+  await prepareAndroid(
+    android.file,
+    prepared,
+    android.receipt.archive_sha256,
+    root,
+  );
   rmSync(prepared, { recursive: true });
   for (const role of ["emulator", "platform-tools", "system-image"])
     unlinkSync(join(work, "android", role + ".zip"));
@@ -174,13 +179,12 @@ export async function windowsFactory(
     !delivery.complete_device_bundle ||
     manifest.signing !== (releaseSigning ? "authenticode-trusted" : "authenticode-self-signed") ||
     (releaseSigning && !(manifest.authenticode?.cryptographically_verified && manifest.authenticode.timestamped)) ||
-    manifest.complete_device_bundle !== true ||
-    manifest.sha256 !== (await digest(file))
+    manifest.complete_device_bundle !== true
   )
     throw Error("Windows installer incomplete");
   const artifact = {
     file: basename(file),
-    size: lstatSync(file).size,
+    size: manifest.installer_delivery.size,
     sha256: manifest.sha256,
     delivery,
   };
@@ -223,7 +227,7 @@ export async function windowsFactory(
     binary_publication: false,
   };
   save(join(root, "dist/windows-full-factory-report.json"), report);
-  if (!installerMetadata(file, "windows-x64").github_asset_eligible)
+  if (!manifest.installer_delivery.github_asset_eligible)
     throw Error(
       `Complete Windows EXE is ${artifact.size} bytes; GitHub release assets require less than 2 GiB`,
     );

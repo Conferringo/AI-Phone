@@ -1,9 +1,9 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
 use reqwest::{Client, Response};
+use ring::digest::{Context, SHA512, SHA512_OUTPUT_LEN};
 use ring::signature::{ED25519, UnparsedPublicKey};
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::{
     error::Error,
     ffi::OsString,
@@ -94,6 +94,7 @@ struct SignedManifest {
 
 #[derive(Deserialize)]
 struct Manifest {
+    format: u8,
     version: String,
     name: String,
     notes: String,
@@ -104,7 +105,7 @@ struct Manifest {
 #[derive(Deserialize)]
 struct Artifact {
     size: u64,
-    sha256: String,
+    sha512: String,
 }
 
 struct Offer {
@@ -147,6 +148,9 @@ fn verify_manifest(
         .verify(signed.manifest.as_bytes(), &signature)
         .map_err(|_| "Update signature did not verify")?;
     let manifest: Manifest = serde_json::from_str(&signed.manifest)?;
+    if manifest.format != 2 {
+        return Err("Unsupported update manifest format".into());
+    }
     let version = Version::parse(&manifest.version)?;
     if !version.pre.is_empty() || !version.build.is_empty() || &version <= current {
         return Ok(None);
@@ -158,11 +162,7 @@ fn verify_manifest(
     }
     let artifact = platform.artifact(manifest);
     if !(1..MAX_INSTALLER).contains(&artifact.size)
-        || artifact.sha256.len() != 64
-        || !artifact
-            .sha256
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        || STANDARD.decode(&artifact.sha512)?.len() != SHA512_OUTPUT_LEN
     {
         return Err("Invalid installer metadata".into());
     }
@@ -245,7 +245,7 @@ async fn stage_installer(
     tokio::fs::create_dir_all(folder).await?;
     let (file, temporary) = tempfile::NamedTempFile::new_in(folder)?.into_parts();
     let mut file = BufWriter::with_capacity(1024 * 1024, tokio::fs::File::from_std(file));
-    let mut hash = Sha256::new();
+    let mut hash = Context::new(&SHA512);
     let mut size = 0;
     let mut shown = 0;
     while let Some(chunk) = response.chunk().await? {
@@ -261,7 +261,7 @@ async fn stage_installer(
             show_progress(percent);
         }
     }
-    if size != artifact.size || format!("{:x}", hash.finalize()) != artifact.sha256 {
+    if size != artifact.size || STANDARD.encode(hash.finish().as_ref()) != artifact.sha512 {
         return Err("Installer did not match the signed release".into());
     }
     file.flush().await?;
@@ -425,7 +425,7 @@ mod tests {
         let body = b"complete installer";
         let artifact = Artifact {
             size: body.len() as u64,
-            sha256: format!("{:x}", Sha256::digest(body)),
+            sha512: STANDARD.encode(ring::digest::digest(&SHA512, body).as_ref()),
         };
         tauri::async_runtime::block_on(async {
             let client = Client::builder().no_proxy().build().unwrap();
@@ -481,9 +481,11 @@ mod tests {
         let version = Version::new(0, 1, 7);
         let document = Ed25519KeyPair::generate_pkcs8(&SystemRandom::new()).unwrap();
         let key = Ed25519KeyPair::from_pkcs8(document.as_ref()).unwrap();
-        let mac = serde_json::json!({"size":17,"sha256":"a".repeat(64)});
-        let windows = serde_json::json!({"size":29,"sha256":"b".repeat(64)});
+        let mac = serde_json::json!({"size":17,"sha512":STANDARD.encode([1; SHA512_OUTPUT_LEN])});
+        let windows =
+            serde_json::json!({"size":29,"sha512":STANDARD.encode([2; SHA512_OUTPUT_LEN])});
         let manifest = serde_json::json!({
+            "format": 2,
             "version":version.to_string(),
             "name":"Release name",
             "notes":"Signed release notes",

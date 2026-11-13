@@ -3590,13 +3590,7 @@ async fn tool(
         execution_policy::CommandAuthority::None
     };
     if command && authority == execution_policy::CommandAuthority::None {
-        let raw: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
-        let next = if execution_policy::desktop_target(&current) {
+        let next = if execution_policy::desktop_target(context) {
             "computer_observe"
         } else {
             "phone_observe"
@@ -3641,13 +3635,7 @@ async fn tool(
     if name == "channel_notify" {
         let mut png = vec![];
         if arguments["screenshot"].as_bool().unwrap_or(false) {
-            let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-                .bind(run)
-                .fetch_one(&app.db)
-                .await
-                .map_err(|e| e.to_string())?;
-            let context: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-            if !phone_skill_read(&context) {
+            if !phone_skill_read(context) {
                 return Err("请先读取phone-use，再发送真实截图".into());
             }
             let observation: wire::DeviceObservation = phone(
@@ -3700,13 +3688,8 @@ async fn tool(
         );
     }
     if name == "task_wait" {
-        let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        let current: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-        if let Some(reason) = wait_reentry_rejection(&current, call, now_ms()) {
+        let now = now_ms();
+        if let Some(reason) = wait_reentry_rejection(context, call, now) {
             return Err(reason.into());
         }
         let seconds = arguments["seconds"].as_u64().ok_or("seconds必须是整数")?;
@@ -3714,7 +3697,7 @@ async fn tool(
         if reason.trim().is_empty() || reason.len() > 2000 {
             return Err("等待需要具体原因".into());
         }
-        let wake = crate::agent_loop::wake_at(now_ms(), seconds)?;
+        let wake = crate::agent_loop::wake_at(now, seconds)?;
         return Ok(
             json!([{"type":"input_text","text":json!({"success":true,"wake_at_ms":wake,"reason":reason,"seconds":seconds}).to_string()}]),
         );

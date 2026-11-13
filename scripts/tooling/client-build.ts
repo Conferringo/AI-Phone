@@ -1,6 +1,6 @@
 import {
   readFileSync,
-  writeFileSync,
+  createReadStream,
   mkdirSync,
   readdirSync,
   lstatSync,
@@ -12,6 +12,7 @@ import {
   renameSync,
   existsSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, relative, resolve, basename, dirname, sep } from "node:path";
 import { homedir, tmpdir } from "node:os";
 import { ROOT, run, output, digest, hash, bunProgram } from "./process";
@@ -76,6 +77,7 @@ export function noticeManifest(root = ROOT) {
 async function inspectPayload(files: Record<string, string>, root: string) {
   const native = join(root, "apps/client/src-tauri"),
     resources = resourceMap(root),
+    integrity = json<Record<string, string>>(join(native, "gen/host/integrity.json")),
     vmManifest = "gen/host/qemu/manifest.json",
     vmFiles = new Map<string, Receipt>(
       vmManifest in resources
@@ -84,12 +86,14 @@ async function inspectPayload(files: Record<string, string>, root: string) {
           )
         : [],
     );
-  const expected = new Map<string, Awaited<ReturnType<typeof fileReceipt>>>();
-  for (const [source, destination] of Object.entries(resources))
-    expected.set(
-      destination,
-      vmFiles.get(destination) ?? await fileReceipt(join(native, source), root),
-    );
+  const expected = new Map<string, Omit<Receipt, "path">>();
+  for (const [source, destination] of Object.entries(resources)) {
+    const path = join(native, source);
+    const digest = integrity[destination.slice("host/".length)];
+    expected.set(destination, vmFiles.get(destination) ?? (digest
+      ? { size: lstatSync(path).size, sha256: digest }
+      : await fileReceipt(path, root)));
+  }
   const seen = new Set<string>(),
     result: Receipt[] = [];
   for (const [name, file] of Object.entries(files).sort(([a], [b]) =>
@@ -305,15 +309,21 @@ export async function recordInstaller(
   root = ROOT,
   signature: InstallerSignature = { signing: "unsigned" },
 ) {
-  const sha256 = await digest(file),
-    host = platform + "-" + arch;
+  const githubHash = createHash("sha256"),
+    updateHash = createHash("sha512");
+  for await (const chunk of createReadStream(file)) {
+    githubHash.update(chunk);
+    updateHash.update(chunk);
+  }
+  const host = platform + "-" + arch;
   const delivery = deliveryMetadata(await payloadComponents(root), host);
   const manifest = {
     version: json(join(root, "config/release-policy.json")).version,
     kind: "native-client",
     os: platform,
     arch,
-    sha256,
+    sha256: githubHash.digest("hex"),
+    sha512: updateHash.digest("base64"),
     ...signature,
     runtime_acceptance: "pending",
     dependencies_license_review_complete: false,
@@ -349,7 +359,6 @@ export async function recordInstaller(
       ? { developer_id_signed: false, notarized: false }
       : {}),
   };
-  writeFileSync(file + ".sha256", sha256 + "  " + basename(file) + "\n");
   save(file + ".manifest.json", manifest);
   return manifest;
 }

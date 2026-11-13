@@ -6,9 +6,8 @@ use std::{
 
 const MAX_TARGETS: usize = 160;
 const MAX_AGE: Duration = Duration::from_secs(60);
-#[derive(Clone)]
-pub struct Target {
-    pub element: wire::PhoneElement,
+struct Target {
+    element: wire::PhoneElement,
     key: String,
 }
 struct Snapshot {
@@ -19,12 +18,11 @@ struct Snapshot {
     width: u32,
     height: u32,
     created: Instant,
-    targets: Vec<Target>,
-    native_hash: String,
+    targets: Arc<Vec<Target>>,
     ocr: Option<OcrEvidence>,
 }
 struct OcrEvidence {
-    png_sha256: [u8; 32],
+    png: Vec<u8>,
     grid: Vec<u8>,
 }
 pub struct ResolvedAction {
@@ -35,7 +33,7 @@ pub struct ResolvedAction {
 #[derive(Clone)]
 pub struct ScrollAttempt {
     app: String,
-    hash: String,
+    targets: Arc<Vec<Target>>,
     container: String,
     direction: String,
     revision: u64,
@@ -45,9 +43,6 @@ pub struct GroundingState {
     snapshots: VecDeque<Arc<Snapshot>>,
     pending_scroll: Option<ScrollAttempt>,
     blocked: Option<ScrollAttempt>,
-}
-fn digest(text: &str) -> String {
-    format!("{:x}", Sha256::digest(text.as_bytes()))
 }
 fn bounds(text: &str, width: u32, height: u32) -> Option<wire::PhoneBounds> {
     let values: Vec<_> = text
@@ -78,15 +73,14 @@ fn container_key(e: &wire::PhoneElement) -> String {
         rect_key(e.bounds.as_ref().unwrap())
     )
 }
-fn native_hash(targets: &[Target]) -> String {
-    digest(
-        &targets
+fn same_native_targets(a: &[Target], b: &[Target]) -> bool {
+    fn keys(targets: &[Target]) -> impl Iterator<Item = &str> {
+        targets
             .iter()
             .filter(|t| t.element.source == "native")
-            .map(|t| t.key.clone())
-            .collect::<Vec<_>>()
-            .join("\n"),
-    )
+            .map(|t| t.key.as_str())
+    }
+    keys(a).eq(keys(b))
 }
 fn has_native_targets(targets: &[Target]) -> bool {
     targets
@@ -252,13 +246,15 @@ fn similar_grid(a: &[u8], b: &[u8]) -> bool {
         return false;
     }
     // Ignore status/navigation bars; preserve the rest of the screen as a coarse guard.
-    let differences: Vec<_> = a[128..1920]
+    let a = &a[128..1920];
+    let (sum, large) = a
         .iter()
         .zip(&b[128..1920])
-        .map(|(a, b)| a.abs_diff(*b) as usize)
-        .collect();
-    differences.iter().sum::<usize>() < differences.len() * 7
-        && differences.iter().filter(|d| **d > 24).count() * 100 < differences.len() * 8
+        .fold((0, 0), |(sum, large), (a, b)| {
+            let diff = usize::from(a.abs_diff(*b));
+            (sum + diff, large + usize::from(diff > 24))
+        });
+    sum < a.len() * 7 && large * 100 < a.len() * 8
 }
 fn foreground_from_dump(output: &str) -> Option<String> {
     let mut primary = !output.contains("Display: mDisplayId=");
@@ -401,7 +397,6 @@ pub async fn observe(
     };
     let (png, width, height) = capture_frame(runner).await?;
     let mut targets = parse_native(&xml, &app, width, height);
-    let hash = native_hash(&targets);
     let mut ocr_evidence = None;
     let mut note = String::new();
     if !native_content_available(&targets, height)
@@ -410,7 +405,7 @@ pub async fn observe(
         match ocr(runner, &png, width, height).await {
             Ok((mut recognized, visual)) => {
                 ocr_evidence = Some(OcrEvidence {
-                    png_sha256: Sha256::digest(&png).into(),
+                    png: png.clone(),
                     grid: visual,
                 });
                 targets.append(&mut recognized);
@@ -434,7 +429,7 @@ pub async fn observe(
         && previous.app == app
         && previous.revision == revision
     {
-        if previous.hash == hash && has_native_targets(&targets) {
+        if same_native_targets(&previous.targets, &targets) && has_native_targets(&targets) {
             feedback = format!(
                 "上次向{}滚动后未观察到内容变化；同一区域的重复同向滚动已阻止，请检查边界、等待加载或换方向。",
                 previous.direction
@@ -449,13 +444,14 @@ pub async fn observe(
         && let Some(blocked) = cache
             .blocked
             .as_ref()
-            .filter(|v| v.app == app && v.hash == hash)
+            .filter(|v| v.app == app && same_native_targets(&v.targets, &targets))
     {
         feedback = format!(
             "此页面向{}滚动已验证未观察到内容变化；不要重复同向滚动，请换方向或等待内容改变。",
             blocked.direction
         );
     }
+    let elements = targets.iter().map(|t| t.element.clone()).collect();
     cache.snapshots.push_back(Arc::new(Snapshot {
         id: id.clone(),
         epoch,
@@ -464,8 +460,7 @@ pub async fn observe(
         width,
         height,
         created: Instant::now(),
-        targets: targets.clone(),
-        native_hash: hash,
+        targets: Arc::new(targets),
         ocr: ocr_evidence,
     }));
     while cache.snapshots.len() > 4 {
@@ -490,7 +485,7 @@ pub async fn observe(
             String::new()
         },
         observation_id: id,
-        elements: targets.into_iter().map(|t| t.element).collect(),
+        elements,
         foreground_app: app,
         grounding_note: note,
         scroll_feedback: feedback,
@@ -598,7 +593,7 @@ pub async fn resolve(
             if fresh.iter().filter(|v| v.key == target.key).count() != 1 {
                 return Err("stale_target:控件内容、位置或状态已变化，未执行".into());
             }
-        } else if native_hash(&fresh) != snapshot.native_hash {
+        } else if !same_native_targets(&fresh, &snapshot.targets) {
             return Err("stale_target:坐标所依据的界面已变化，未执行".into());
         }
     }
@@ -625,7 +620,7 @@ pub async fn resolve(
                 .as_ref()
                 .is_some_and(|v| {
                     v.app == snapshot.app
-                        && v.hash == snapshot.native_hash
+                        && same_native_targets(&v.targets, &snapshot.targets)
                         && v.container == container
                         && v.direction == direction
                 })
@@ -634,7 +629,7 @@ pub async fn resolve(
             }
             let attempt = ScrollAttempt {
                 app: snapshot.app.clone(),
-                hash: snapshot.native_hash.clone(),
+                targets: Arc::clone(&snapshot.targets),
                 container,
                 direction: direction.into(),
                 revision: revision + 1,
@@ -701,10 +696,8 @@ async fn validate_ocr(
     if (width, height) != (snapshot.width, snapshot.height) {
         return Err("stale_target:画面已变化，请重新观察".into());
     }
-    let current_sha256: [u8; 32] = Sha256::digest(&png).into();
     let recognized;
-    let candidates = if current_sha256 == previous.png_sha256 {
-        // The freshly captured PNG is identical, so its OCR result still applies.
+    let candidates: &[Target] = if png == previous.png {
         &snapshot.targets
     } else {
         let (fresh, grid) = ocr(runner, &png, width, height).await?;
@@ -943,8 +936,7 @@ mod tests {
             width: 720,
             height: 1440,
             created: Instant::now(),
-            targets: vec![],
-            native_hash: String::new(),
+            targets: Arc::new(vec![]),
             ocr: None,
         };
         assert!(validate_snapshot(&s, 3, 4).is_ok());

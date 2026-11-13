@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
+use xxhash_rust::xxh3::Xxh3;
 
 pub const SLICE_TURNS: i32 = 8;
 pub const ARCHIVED_OBSERVATION: &str = "AI_PHONE_VALIDATED_OBSERVATION_ARCHIVED:";
@@ -91,10 +91,12 @@ impl LoopState {
                 || result.to_string(),
                 |(device, observation)| format!("{device}\n{observation}"),
             );
-        let signature = format!(
-            "{:x}",
-            Sha256::digest(format!("{name}\n{arguments}\n{identity}"))
-        );
+        let mut fingerprint = Xxh3::new();
+        for value in [name, arguments, identity.as_str()] {
+            fingerprint.update(value.as_bytes());
+            fingerprint.update(b"\n");
+        }
+        let signature = format!("{:032x}", fingerprint.digest128());
         if self.recent_results.contains(&signature) {
             self.no_progress("重复取得相同工具结果，没有观察到新进展")
         } else {

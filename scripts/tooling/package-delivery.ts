@@ -118,10 +118,6 @@ export async function uploadPlan(report: any, source: string, root = ROOT) {
         throw Error("Candidate installer changed");
       files.push(record);
     } else throw Error("Unknown candidate delivery format");
-    files.push(
-      await fileRecord(root, metadata),
-      await fileRecord(root, join(root, "dist", artifact.file + ".sha256")),
-    );
   }
   if (new Set(files.map((f) => f.name)).size !== files.length)
     throw Error("Candidate asset names are duplicated");

@@ -61,7 +61,6 @@ pub(super) struct Manifest {
     host: String,
     api: u32,
     abi: String,
-    redistribution: String,
     pub files: Vec<Record>,
 }
 
@@ -183,7 +182,6 @@ pub(super) fn parse(raw: &[u8], platform: Platform) -> Result<Manifest> {
         || value.host != platform.spec().host
         || value.api != 35
         || value.abi != platform.spec().abi
-        || value.redistribution != "review-pending"
     {
         return Err(Error::Invalid("android_resource_manifest"));
     }

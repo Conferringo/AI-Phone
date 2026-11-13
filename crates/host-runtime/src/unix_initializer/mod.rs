@@ -42,21 +42,27 @@ struct Arguments {
     request: profile::Request,
     source: String,
     android: String,
+    images: Option<String>,
 }
 impl Arguments {
     fn parse(values: &[OsString]) -> Result<Self> {
-        let [resource, home, request, source, android] = values else {
+        let [resource, home, request, source, android, images @ ..] = values else {
             return Err(Error::Invalid("unix_host_arguments"));
         };
-        let ids = [source, android].map(|value| {
+        let digest = |value: &OsString| {
             value
                 .to_str()
                 .filter(|value| crate::manifest::identity(value))
                 .map(str::to_owned)
-        });
-        let [Some(source), Some(android)] = ids else {
-            return Err(Error::Invalid("unix_host_arguments"));
+                .ok_or(Error::Invalid("unix_host_arguments"))
         };
+        let images = match images {
+            [] => None,
+            [value] => Some(digest(value)?),
+            _ => return Err(Error::Invalid("unix_host_arguments")),
+        };
+        let source = digest(source)?;
+        let android = digest(android)?;
         let resource = PathBuf::from(resource);
         // All three sealed inputs must exist before installation or persistent user state is created.
         for name in ["source.payload", "android.payload", "images.payload"] {
@@ -72,6 +78,7 @@ impl Arguments {
             request,
             source,
             android,
+            images,
         })
     }
 }
@@ -176,7 +183,12 @@ async fn initialize(
             engine::start(&mut backend, &home, &user).await?;
             progress("services", "running", "")?;
             backend
-                .start(&args.resource.join("images.payload"), &user, "127.0.0.1")
+                .start(
+                    &args.resource.join("images.payload"),
+                    args.images.as_deref(),
+                    &user,
+                    "127.0.0.1",
+                )
                 .await
         };
         let android = async {

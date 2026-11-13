@@ -679,16 +679,17 @@ async fn action(
             "Control was transferred; reacquire before acting",
         );
     }
+    use wire::device_action_request::Action;
     let (scroll_attempt, (width, height)) =
         match grounding::resolve(&runner, &request, ledger.epoch, ledger.revision).await {
             Ok(Some(resolved)) => {
                 request.action = Some(resolved.action);
                 (resolved.scroll, resolved.dimensions)
             }
+            Ok(None) if matches!(request.action, Some(Action::Location(_))) => (None, (0, 0)),
             Ok(None) => (None, dimensions(&runner).await),
             Err(message) => return err(StatusCode::CONFLICT, "target_rejected", &message),
         };
-    use wire::device_action_request::Action;
     let (kind, gesture) = match request.action.as_ref() {
         Some(Action::Tap(v)) => ("tap", vec![v.x, v.y]),
         Some(Action::Swipe(v)) => ("swipe", vec![v.x1, v.y1, v.x2, v.y2, v.duration_ms]),
@@ -718,20 +719,20 @@ async fn action(
         Some(Action::Orientation(value)) => Some(*value),
         _ => None,
     };
-    let cursor_state = cursor::accepted(&request, width, height);
+    let cursor_state = (kind != "location").then(|| cursor::accepted(&request, width, height));
     let mut is_input = false;
     let command = match request.action {
-        Some(Action::Location(v)) if location::command(&v).is_some() => {
-            location::command(&v).unwrap()
-        }
-        Some(Action::Gesture(v)) if gestures::valid(&v, width, height) => vec![],
-        Some(Action::Motion(v)) if gestures::motion(&v) => vec![],
-        Some(Action::Orientation(value)) if value.rotation <= 3 => {
-            orientation_command(&value).expect("bounded rotation checked")
-        }
-        Some(Action::Tap(v)) if v.x < width && v.y < height => {
-            args(&["shell", "input", "tap", &v.x.to_string(), &v.y.to_string()])
-        }
+        Some(Action::Location(v)) => location::command(&v),
+        Some(Action::Gesture(v)) if gestures::valid(&v, width, height) => Some(vec![]),
+        Some(Action::Motion(v)) if gestures::motion(&v) => Some(vec![]),
+        Some(Action::Orientation(value)) => orientation_command(&value),
+        Some(Action::Tap(v)) if v.x < width && v.y < height => Some(args(&[
+            "shell",
+            "input",
+            "tap",
+            &v.x.to_string(),
+            &v.y.to_string(),
+        ])),
         Some(Action::Swipe(v))
             if v.x1 < width
                 && v.x2 < width
@@ -739,7 +740,7 @@ async fn action(
                 && v.y2 < height
                 && (50..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "swipe",
@@ -748,12 +749,12 @@ async fn action(
                 &v.x2.to_string(),
                 &v.y2.to_string(),
                 &v.duration_ms.to_string(),
-            ])
+            ]))
         }
         Some(Action::LongPress(v))
             if v.x < width && v.y < height && (500..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "swipe",
@@ -762,7 +763,7 @@ async fn action(
                 &v.x.to_string(),
                 &v.y.to_string(),
                 &v.duration_ms.to_string(),
-            ])
+            ]))
         }
         Some(Action::Drag(v))
             if v.x1 < width
@@ -771,7 +772,7 @@ async fn action(
                 && v.y2 < height
                 && (100..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "draganddrop",
@@ -780,15 +781,15 @@ async fn action(
                 &v.x2.to_string(),
                 &v.y2.to_string(),
                 &v.duration_ms.max(1000).to_string(),
-            ])
+            ]))
         }
-        Some(Action::Key(v)) if v.key == "SELECT_ALL" => args(&[
+        Some(Action::Key(v)) if v.key == "SELECT_ALL" => Some(args(&[
             "shell",
             "input",
             "keycombination",
             "KEYCODE_CTRL_LEFT",
             "KEYCODE_A",
-        ]),
+        ])),
         Some(Action::Key(v))
             if [
                 "HOME",
@@ -806,11 +807,16 @@ async fn action(
             ]
             .contains(&v.key.as_str()) =>
         {
-            args(&["shell", "input", "keyevent", &format!("KEYCODE_{}", v.key)])
+            Some(args(&[
+                "shell",
+                "input",
+                "keyevent",
+                &format!("KEYCODE_{}", v.key),
+            ]))
         }
         Some(Action::Input(v)) if !v.text.is_empty() && v.text.len() <= 16000 => {
             is_input = true;
-            args(&[
+            Some(args(&[
                 "shell",
                 "am",
                 "broadcast",
@@ -825,19 +831,20 @@ async fn action(
                 "--es",
                 "action_id",
                 &request.action_id,
-            ])
+            ]))
         }
-        Some(Action::Shell(v)) if !v.script.is_empty() && v.script.len() <= 4096 => args(&[
+        Some(Action::Shell(v)) if !v.script.is_empty() && v.script.len() <= 4096 => Some(args(&[
             "shell",
             &format!("timeout 12 sh -c {}", guest_quote(&v.script)),
-        ]),
-        _ => {
-            return err(
-                StatusCode::BAD_REQUEST,
-                "invalid_action",
-                "Invalid action, coordinates or limit",
-            );
-        }
+        ])),
+        _ => None,
+    };
+    let Some(command) = command else {
+        return err(
+            StatusCode::BAD_REQUEST,
+            "invalid_action",
+            "Invalid action, coordinates or limit",
+        );
     };
     if kind != "location" {
         ledger.revision = ledger.revision.saturating_add(1);
@@ -861,7 +868,7 @@ async fn action(
     if let Err(e) = save(&runner, &ledger) {
         return err(StatusCode::INTERNAL_SERVER_ERROR, "persistence_failed", &e);
     }
-    if kind != "location" {
+    if let Some(cursor_state) = cursor_state {
         *runner.cursor.lock().await = cursor_state;
     }
     let execution = async {
