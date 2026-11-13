@@ -2005,8 +2005,8 @@
     },
     {
       "path": "crates/assistant/src/run_queue.rs",
-      "size": 3768,
-      "sha256": "4bae2ac3989507205c6be7b32b16fc984b01f82a627ad310e92f88a574129169"
+      "size": 3524,
+      "sha256": "08ccac4f660fab466013c47824a707972192ea9e9030eacb7141afc8e7e512aa"
     },
     {
       "path": "crates/assistant/src/run_signals.rs",
