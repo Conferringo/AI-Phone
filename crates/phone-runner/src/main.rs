@@ -333,6 +333,10 @@ async fn dimensions(runner: &Runner) -> (u32, u32) {
         runner.width.store(width as u32, Ordering::Release);
         runner.height.store(height as u32, Ordering::Release);
     }
+    observed_dimensions(runner)
+}
+
+fn observed_dimensions(runner: &Runner) -> (u32, u32) {
     (
         runner.width.load(Ordering::Acquire),
         runner.height.load(Ordering::Acquire),
@@ -690,8 +694,20 @@ async fn action(
                 request.action = Some(resolved.action);
                 (resolved.scroll, resolved.dimensions)
             }
-            Ok(None) if matches!(request.action, Some(Action::Location(_))) => (None, (0, 0)),
-            Ok(None) => (None, dimensions(&runner).await),
+            Ok(None) => {
+                let dimensions = match request.action.as_ref() {
+                    Some(
+                        Action::Tap(_)
+                        | Action::Swipe(_)
+                        | Action::Drag(_)
+                        | Action::LongPress(_)
+                        | Action::Gesture(_),
+                    ) => dimensions(&runner).await,
+                    Some(Action::Location(_)) => (0, 0),
+                    _ => observed_dimensions(&runner),
+                };
+                (None, dimensions)
+            }
             Err(message) => return err(StatusCode::CONFLICT, "target_rejected", &message),
         };
     let (kind, gesture) = match request.action.as_ref() {
@@ -1371,6 +1387,55 @@ mod observation_tests {
             std::fs::read_to_string(fixture.0.join("calls")).unwrap(),
             "HOME\n"
         );
+    }
+
+    #[tokio::test]
+    async fn key_uses_observed_dimensions_and_tap_checks_current_orientation() {
+        let (fixture, runner, mut request) =
+            persistence_fixture("screen-check-key", CompletionFault::None);
+        let mut runner = Arc::try_unwrap(runner).ok().unwrap();
+        let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+            .await
+            .unwrap();
+        runner.media_url = format!("http://{}", listener.local_addr().unwrap());
+        let probes = Arc::new(AtomicU32::new(0));
+        let media = Router::new().route(
+            "/status",
+            axum::routing::get({
+                let probes = probes.clone();
+                move || async move {
+                    probes.fetch_add(1, Ordering::Relaxed);
+                    axum::Json(serde_json::json!({"width": 1440, "height": 720}))
+                }
+            }),
+        );
+        fixture.1.lock().unwrap().push(tokio::spawn(async move {
+            axum::serve(listener, media).await.unwrap();
+        }));
+        let runner = Arc::new(runner);
+
+        assert!(
+            persistence_result(persistence_request(&runner, &request).await)
+                .await
+                .success
+        );
+        assert_eq!(probes.load(Ordering::Relaxed), 0);
+        {
+            let cursor = runner.cursor.lock().await;
+            assert_eq!((cursor.width, cursor.height), (720, 1440));
+            assert!(cursor.paths.is_empty());
+        }
+
+        request.action_id = "screen-check-tap".into();
+        request.action = Some(wire::device_action_request::Action::Tap(wire::TapAction {
+            x: 100,
+            y: 1000,
+        }));
+        assert_eq!(
+            persistence_request(&runner, &request).await.status(),
+            StatusCode::BAD_REQUEST,
+        );
+        assert_eq!(probes.load(Ordering::Relaxed), 1);
     }
 
     enum CompletionFault {

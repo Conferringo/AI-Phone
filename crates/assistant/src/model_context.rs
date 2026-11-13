@@ -302,18 +302,24 @@ fn archive_boundary(context: &[Value]) -> Option<usize> {
     {
         cut -= 1;
     }
-    // Never split a function-call / output pair across the archive boundary.
-    while let Some(earlier) = context[cut..]
-        .iter()
-        .filter(|item| item["type"] == "function_call_output")
-        .filter_map(|output| {
-            context[..cut].iter().position(|call| {
-                call["type"] == "function_call" && call["call_id"] == output["call_id"]
-            })
-        })
-        .min()
-    {
-        cut = earlier;
+    let mut positions = HashMap::new();
+    for (index, call) in context[..cut].iter().enumerate() {
+        if call["type"] == "function_call"
+            && let Some(id) = call["call_id"].as_str()
+        {
+            positions.entry(id).or_insert(index);
+        }
+    }
+    // Walk any newly included prefix as the boundary moves toward older calls.
+    let mut end = context.len();
+    while end > cut {
+        end -= 1;
+        let output = &context[end];
+        if output["type"] == "function_call_output"
+            && let Some(call) = output["call_id"].as_str().and_then(|id| positions.get(id))
+        {
+            cut = cut.min(*call);
+        }
     }
     (cut > 0).then_some(cut)
 }
@@ -360,7 +366,13 @@ fn archived_item(call: Option<&Value>, item: &Value) -> Option<Value> {
 // Run only at the next model decision (after tool outputs are checkpointed).
 // Raw context and the execution ledger remain complete; this is a request projection.
 fn bounded_history(context: &[Value]) -> Cow<'_, [Value]> {
-    if context.iter().map(text_size).sum::<usize>() <= 96000 {
+    if context
+        .iter()
+        .try_fold(96_000usize, |remaining, item| {
+            remaining.checked_sub(text_size(item))
+        })
+        .is_some()
+    {
         return Cow::Borrowed(context);
     }
     let Some(cut) = archive_boundary(context) else {

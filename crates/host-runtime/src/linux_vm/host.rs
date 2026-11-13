@@ -24,16 +24,31 @@ const PROFILE_FRAME: usize = 8192 + 8;
 const HIDDEN: u32 = 0x08000000;
 const GUEST_WEB_PORT: u16 = 17860;
 
-pub struct QemuVmConfig<'a> {
-    pub runtime: &'a Path,
-    pub guest: &'a Path,
-    pub home: &'a Path,
-    pub cpu: u16,
-    pub memory_mib: u32,
-    pub web_port: u16,
-    pub control_port: u16,
-    pub base_sha256: &'a str,
-    pub release_sha256: Option<&'a str>,
+struct QemuVmConfig<'a> {
+    runtime: &'a Path,
+    guest: &'a Path,
+    home: &'a Path,
+    cpu: u16,
+    memory_mib: u32,
+    web_port: u16,
+    control_port: u16,
+    base_sha256: &'a str,
+    release_sha256: Option<&'a str>,
+}
+
+#[derive(serde::Deserialize)]
+struct VmManifest {
+    format: u8,
+    runtime: String,
+    files: Vec<VmFile>,
+    release_sha256: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct VmFile {
+    path: String,
+    size: u64,
+    sha256: String,
 }
 
 pub fn key_path(home: &Path) -> PathBuf {
@@ -386,19 +401,51 @@ async fn wait_for_stop(lock: &Path) -> Result<()> {
 }
 
 pub async fn ensure(
-    config: QemuVmConfig<'_>,
+    bundle: &Path,
+    home: &Path,
+    cpu: u16,
+    memory_mib: u32,
     profile: &[u8],
     cancel: &dyn Fn() -> bool,
 ) -> Result<()> {
+    let manifest: VmManifest = serde_json::from_reader(File::open(bundle.join("manifest.json"))?)
+        .map_err(|_| Error::Invalid("vm_bundle_invalid"))?;
+    if manifest.format != 1 || manifest.runtime != "qemu-whpx-backend" {
+        return Err(Error::Invalid("vm_bundle_invalid"));
+    }
+    let file = |name: &str| {
+        let record = manifest
+            .files
+            .iter()
+            .find(|file| file.path == name)
+            .ok_or(Error::Invalid("vm_bundle_invalid"))?;
+        let path = bundle.join(name);
+        if fs::metadata(&path)?.len() != record.size {
+            return Err(Error::Invalid("vm_bundle_changed"));
+        }
+        Ok((path, &record.sha256))
+    };
+    let (_, base_sha256) = file("guest/guest.qcow2")?;
+    let config = QemuVmConfig {
+        runtime: &bundle.join("runtime"),
+        guest: &bundle.join("guest"),
+        home,
+        cpu,
+        memory_mib,
+        web_port: GUEST_WEB_PORT,
+        control_port: vm_control::GUEST_PORT,
+        base_sha256,
+        release_sha256: manifest.release_sha256.as_deref(),
+    };
     config.validate(profile)?;
     let key = key_path(config.home);
     let deadline = Instant::now() + START_LIMIT;
-    loop {
+    let replace = loop {
         if cancel() {
             return Err(Error::Cancelled);
         }
         if config.lease()?.is_some() {
-            break;
+            break false;
         }
         if let Ok(active) = vm_control::version(config.control_port, &key).await {
             config.existing_disk()?;
@@ -408,13 +455,27 @@ pub async fn ensure(
             {
                 return Ok(());
             }
-            stop_running(config.home, config.control_port).await?;
-            break;
+            break true;
         }
         if Instant::now() >= deadline {
             return Err(Error::Invalid("vm_owner_start_timeout"));
         }
         sleep(Duration::from_millis(500)).await;
+    };
+    if config.release_sha256.is_some() {
+        let control = crate::control::Control {
+            available: &|_| 0,
+            cancelled: cancel,
+        };
+        for name in ["guest/release-init.cpio.gz", "guest/release.ext4"] {
+            let (path, expected) = file(name)?;
+            if crate::capsule::hash(&mut File::open(path)?, &control)? != *expected {
+                return Err(Error::Invalid("vm_bundle_changed"));
+            }
+        }
+    }
+    if replace {
+        stop_running(config.home, config.control_port).await?;
     }
     let mut child = config.worker_command()?.spawn()?;
     let mut input = child.stdin.take().ok_or(Error::Invalid("vm_owner_pipe"))?;

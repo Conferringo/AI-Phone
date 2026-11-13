@@ -664,12 +664,10 @@ function SharedConversation({actionsRef,registry,selectedDevice,copilotDeviceId,
           <div
             className="message-scroll"
             ref={scroll}
-            onScroll={() => {
-              const e = scroll.current;
-              if (e)
-                follow.current =
-                  e.scrollHeight - e.scrollTop - e.clientHeight < 80;
-              if(e)historyPages.revalidate(e);
+            onScroll={({currentTarget: element}) => {
+              follow.current =
+                element.scrollHeight - element.scrollTop - element.clientHeight < 80;
+              if (!follow.current) historyPages.revalidate(element);
             }}
           >
             <div className="message-list">

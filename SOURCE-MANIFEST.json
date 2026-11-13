@@ -403,13 +403,13 @@
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap/windows_host.rs",
-      "size": 5006,
-      "sha256": "2dbc0f1e6a9034c8fbadbec1f159375b28213963761353d11332cd992fc363ca"
+      "size": 3275,
+      "sha256": "bb5ceb9b510d332bc8c31d8b2591c2b4e4b65fae55fb8765e24713cfa0bf29a7"
     },
     {
       "path": "apps/client/src-tauri/src/bootstrap.rs",
-      "size": 32639,
-      "sha256": "20bc9db9f1d80af9c1107641d5ed720f1e25b52f8aedb392eb9e76beca5160b8"
+      "size": 32199,
+      "sha256": "16b3381677889caf5dc1a27bbec8939650f3b42caf33e2bbb1b43f766f78d3ab"
     },
     {
       "path": "apps/client/src-tauri/src/copilot.rs",
@@ -673,8 +673,8 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 47643,
-      "sha256": "fd5685d3899697cbda627530b480b3cf9c3c3cf8521b392490eb888386ffc962"
+      "size": 47642,
+      "sha256": "e6bf27f4613c4be0c9e2ac9a1ee8cdcf901962f2589b768f7f29794d59a833d1"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
@@ -1918,8 +1918,8 @@
     },
     {
       "path": "crates/assistant/src/model_context.rs",
-      "size": 38657,
-      "sha256": "74e78d88447e9471a2bf9c8cad7e233bed1fbc55bcbfe4afd5cbe3f2955b745f"
+      "size": 38982,
+      "sha256": "e753897e100fc90feb8b01c3fb44379e59eba43cad6d72906ee901c30f4d2220"
     },
     {
       "path": "crates/assistant/src/model_recovery_tests.rs",
@@ -2113,8 +2113,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 246201,
-      "sha256": "fc396db0236d73c331c2e7853c43f36f6262569010c1224baf25160116c517c5"
+      "size": 247043,
+      "sha256": "61b554a47cd557517b271178971a6e805fb6ae4b897cf0c2789c378c9709c463"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -2548,8 +2548,8 @@
     },
     {
       "path": "crates/host-runtime/src/linux_vm/host.rs",
-      "size": 16986,
-      "sha256": "087d4d46170936afd24fe40dd4a84854a0b4e2c9aff3826ce5859a5fc024d8f3"
+      "size": 18833,
+      "sha256": "704d894f8893d989476b407a3fef5fdaaae1be13587463d3f3a053f4c3f6b811"
     },
     {
       "path": "crates/host-runtime/src/linux_vm.rs",
@@ -2873,8 +2873,8 @@
     },
     {
       "path": "crates/phone-runner/src/main.rs",
-      "size": 65155,
-      "sha256": "acb0d16e2db2ed5b6e1fedf22d0cf1b09816919730ffc4c4c1a13915a1db8745"
+      "size": 67537,
+      "sha256": "fca3900c6f6a414fa2825787d471db96898c3e49e970baac0606af80580798ee"
     },
     {
       "path": "crates/phone-runner/src/media/actions.rs",

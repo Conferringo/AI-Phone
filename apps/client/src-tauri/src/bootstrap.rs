@@ -422,24 +422,14 @@ fn start_windows_backend(
     let profile = serde_json::to_vec(request).map_err(|_| "invalid_device_resources")?;
     if components.qemu {
         let bundle = resource.join("qemu");
-        let (base, release) = windows_host::VmManifest::identities(&bundle)?;
         let home = folder.join("user/qemu");
         let control = vm_control::GUEST_PORT;
         manager.set(folder, "backend", "running", "")?;
         tauri::async_runtime::block_on(qemu_host::ensure(
-            qemu_host::QemuVmConfig {
-                runtime: &bundle.join("runtime"),
-                guest: &bundle.join("guest"),
-                home: &home,
-                cpu: request.desktop.cpus.into(),
-                memory_mib: ai_phone_host_runtime::desktop_host_memory_mib(
-                    request.desktop.memory_mb,
-                ),
-                web_port: 17860,
-                control_port: control,
-                base_sha256: &base,
-                release_sha256: release.as_deref(),
-            },
+            &bundle,
+            &home,
+            request.desktop.cpus.into(),
+            ai_phone_host_runtime::desktop_host_memory_mib(request.desktop.memory_mb),
             &profile,
             &cancelled,
         ))

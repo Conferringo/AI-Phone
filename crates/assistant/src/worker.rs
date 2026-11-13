@@ -2043,10 +2043,30 @@ struct SteeringInput<'a> {
     state: &'a mut crate::agent_loop::LoopState,
     epoch: &'a mut u64,
 }
+fn unreported_wait_deadline(context: &[Value]) -> Option<u64> {
+    context
+        .iter()
+        .skip(evidence_start(context))
+        .filter(|call| call["type"] == "function_call" && call["name"] == "task_wait")
+        .filter_map(|call| {
+            tool_output(context, call)
+                .and_then(tool_value)
+                .and_then(|value| value["wake_at_ms"].as_u64())
+        })
+        .next_back()
+        .filter(|deadline| {
+            let marker = format!("等待截止Unix毫秒={deadline}，");
+            !context
+                .iter()
+                .any(|item| item["role"] == "system" && text_of(item).contains(&marker))
+        })
+}
+
 async fn consume_wait_completion(
     app: &App,
     id: Uuid,
     message: Uuid,
+    deadline: u64,
     checkpoint: Checkpoint<'_>,
 ) -> Result<bool, String> {
     let Checkpoint {
@@ -2057,38 +2077,18 @@ async fn consume_wait_completion(
         state,
     } = checkpoint;
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
-    let row = sqlx::query("SELECT loop_state,steering,status FROM runs WHERE id=$1 FOR UPDATE")
-        .bind(id)
-        .fetch_one(&mut *tx)
-        .await
-        .map_err(|e| e.to_string())?;
-    if row.get::<String, _>("status") != "running" {
+    let (running, steered): (bool, bool) = sqlx::query_as(
+        "SELECT status='running',jsonb_array_length(steering)>0 FROM runs WHERE id=$1 FOR UPDATE",
+    )
+    .bind(id)
+    .fetch_one(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
+    if !running {
         return Err("canceled".into());
     }
-    let stored: Value = row.get("loop_state");
-    let fallback = context
-        .iter()
-        .skip(evidence_start(context))
-        .filter(|call| call["type"] == "function_call" && call["name"] == "task_wait")
-        .filter_map(|call| {
-            tool_output(context, call)
-                .and_then(tool_value)
-                .and_then(|value| value["wake_at_ms"].as_u64())
-        })
-        .next_back()
-        .filter(|deadline| *deadline <= now_ms())
-        .filter(|deadline| {
-            !context.iter().any(|item| {
-                item["role"] == "system"
-                    && text_of(item).contains(&format!("等待截止Unix毫秒={deadline}，"))
-            })
-        });
-    let Some(deadline) = stored["wait_completed_at_ms"].as_u64().or(fallback) else {
+    if steered {
         return Ok(false);
-    };
-    let steering: Value = row.get("steering");
-    if steering.as_array().is_some_and(|items| !items.is_empty()) {
-        return Ok(true);
     }
     context.push(json!({"role":"system","content":[{"type":"input_text","text":format!("AI_PHONE_WAIT_COMPLETED：上一次持久等待已真实结束。等待截止Unix毫秒={deadline}，当前Unix毫秒={}。继续检查当前实际状态并执行未完成的后续步骤，不要把已结束的等待重新排队；如果状态仍未就绪，先取得新的检查结果再决定是否再次等待。",now_ms())}]}));
     crate::agent_loop::compact_observations(context);
@@ -2428,10 +2428,7 @@ async fn execute(
     let slice_started = std::time::Instant::now();
     let mut epoch = row.get::<i64, _>("control_epoch") as u64;
     let stored_state: Value = row.get("loop_state");
-    let check_wait_completion = stored_state["wait_completed_at_ms"].is_u64()
-        || context
-            .iter()
-            .any(|item| item["type"] == "function_call" && item["name"] == "task_wait");
+    let mut wait_deadline = stored_state["wait_completed_at_ms"].as_u64();
     let mut state: crate::agent_loop::LoopState =
         serde_json::from_value(stored_state).map_err(|e| e.to_string())?;
     let reconciled = state.resume_requested
@@ -2441,6 +2438,7 @@ async fn execute(
     {
         checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
+    wait_deadline = wait_deadline.or_else(|| unreported_wait_deadline(&context));
     loop {
         if cancel.is_cancelled() {
             return Err("canceled".into());
@@ -2483,7 +2481,7 @@ async fn execute(
             sqlx::query("UPDATE messages SET text='本轮后台探索已保存过程并停止；尚未验证完成的目标将留待后续处理。' WHERE id=$1 AND text=''").bind(message).execute(&app.db).await.map_err(|e|e.to_string())?;
             return Err("canceled".into());
         }
-        consume_steering(
+        if consume_steering(
             app,
             id,
             &mut message,
@@ -2496,7 +2494,10 @@ async fn execute(
                 epoch: &mut epoch,
             },
         )
-        .await?;
+        .await?
+        {
+            wait_deadline = None;
+        }
         if exploration
             && crate::proactive::should_yield(app, id).await?
             && persist_disposition(
@@ -2525,11 +2526,12 @@ async fn execute(
         {
             handoffs_pending = crate::device_exchange::returns::pending(app, id).await?;
         }
-        if check_wait_completion
-            && consume_wait_completion(
+        if let Some(deadline) = wait_deadline.filter(|deadline| *deadline <= now_ms()) {
+            if consume_wait_completion(
                 app,
                 id,
                 message,
+                deadline,
                 Checkpoint {
                     context: &mut context,
                     pending: &pending,
@@ -2539,7 +2541,9 @@ async fn execute(
                 },
             )
             .await?
-        {
+            {
+                wait_deadline = None;
+            }
             continue;
         }
         if (phone_task(&context)
@@ -3324,38 +3328,6 @@ async fn recorded_tool(
     let id = Uuid::parse_str(call["local_action_id"].as_str().ok_or("工具调用ID无效")?)
         .map_err(|e| e.to_string())?;
     let name = call["name"].as_str().unwrap_or("");
-    let existing = sqlx::query(
-        "SELECT status,result FROM harness_events WHERE id=$1 AND run_id=$2 AND kind='tool'",
-    )
-    .bind(id)
-    .bind(run)
-    .fetch_optional(&app.db)
-    .await
-    .map_err(|e| e.to_string())?;
-    if let Some(row) = &existing {
-        if let Some(result) = row.get::<Option<Value>, _>("result") {
-            if row.get::<String, _>("status") == "completed" {
-                retain_tool_observation(app, run, id, call, &result).await?;
-            }
-            return Ok(result);
-        }
-        if name == "channel_notify" {
-            let delivery =
-                crate::proactive::delivery(app, &id.to_string(), run_agent(app, run).await?)
-                    .await
-                    .map_err(|_| {
-                        "paused:unknown_outcome:远端推送结果尚不能核对，未重发".to_string()
-                    })?;
-            let value = json!([{"type":"input_text","text":json!({"request_id":id.to_string(),"deliveries":delivery.deliveries.iter().map(|d|json!({"provider":d.provider,"status":d.status,"error":d.error})).collect::<Vec<_>>(),"note":"这是原推送的状态查询，没有重新发送。not_found只表示没有可核对的队列记录，不能声称送达。"}).to_string()}]);
-            sqlx::query("UPDATE harness_events SET status='completed',result=$2,finished_at=now() WHERE id=$1 AND run_id=$3 AND kind='tool'").bind(id).bind(&value).bind(run).execute(&app.db).await.map_err(|e|e.to_string())?;
-            return Ok(value);
-        }
-        if !can_restart_tool(call) && row.get::<String, _>("status") != "queued" {
-            return Err(
-                "paused:unknown_outcome:上一条操作结果未知，请先检查当前状态后继续。".into(),
-            );
-        }
-    }
     let title = match name {
         "computer_observe" => "观察电脑",
         "computer_find_text" => "定位电脑文字",
@@ -3417,41 +3389,77 @@ async fn recorded_tool(
         _ => name,
     };
     let input = call["arguments"].as_str().unwrap_or("{}");
-    if existing.is_none()
-        && let Some(intent) = serde_json::from_str::<Value>(input)
-            .ok()
-            .and_then(|args| args["intent"].as_str().map(str::to_string))
-        && !intent.trim().is_empty()
-        && progress_is_verified(context, &intent)
-    {
-        progress_event(
-            app,
-            run,
-            message,
-            "summary",
-            "下一步",
-            &intent.chars().take(1800).collect::<String>(),
-            "completed",
-        )
-        .await?;
-    }
-    let admitted = sqlx::query(
-        "INSERT INTO harness_events(id,run_id,message_id,kind,title,content)
-        SELECT $1,id,$3,'tool',$4,$5 FROM runs WHERE id=$2 AND status='running'
-        ON CONFLICT(id) DO UPDATE SET status='running'
-        WHERE harness_events.run_id=EXCLUDED.run_id AND harness_events.kind='tool'",
+    let intent = serde_json::from_str::<Value>(input).ok().and_then(|args| {
+        args["intent"]
+            .as_str()
+            .filter(|intent| !intent.trim().is_empty() && progress_is_verified(context, intent))
+            .map(|intent| intent.chars().take(1800).collect::<String>())
+    });
+    let admitted = sqlx::query_scalar::<_, bool>(
+        "WITH admitted AS (
+            INSERT INTO harness_events(id,run_id,message_id,kind,title,content)
+            SELECT $1,id,$3,'tool',$4,$5 FROM runs WHERE id=$2 AND status='running'
+            ON CONFLICT(id) DO NOTHING RETURNING run_id,message_id,created_at
+        ), summary AS (
+            INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,created_at,finished_at)
+            SELECT $6,run_id,message_id,'summary','下一步',$7,'completed',created_at-interval '1 microsecond',created_at
+            FROM admitted WHERE $7::text IS NOT NULL
+        ) SELECT EXISTS(SELECT 1 FROM admitted)",
     )
     .bind(id)
     .bind(run)
     .bind(message)
     .bind(title)
     .bind(format!("输入\n{input}"))
-    .execute(&app.db)
+    .bind(intent.as_ref().map(|_| Uuid::now_v7()))
+    .bind(intent)
+    .fetch_one(&app.db)
     .await
-    .map_err(|error| error.to_string())?
-    .rows_affected();
-    if admitted == 0 {
-        return Err("canceled".into());
+    .map_err(|error| error.to_string())?;
+    if !admitted {
+        let (status, result) = sqlx::query_as::<_, (String, Option<Value>)>(
+            "SELECT status,result FROM harness_events WHERE id=$1 AND run_id=$2 AND kind='tool'",
+        )
+        .bind(id)
+        .bind(run)
+        .fetch_optional(&app.db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("canceled")?;
+        if let Some(result) = result {
+            if status == "completed" {
+                retain_tool_observation(app, run, id, call, &result).await?;
+            }
+            return Ok(result);
+        }
+        if name == "channel_notify" {
+            let delivery =
+                crate::proactive::delivery(app, &id.to_string(), run_agent(app, run).await?)
+                    .await
+                    .map_err(|_| {
+                        "paused:unknown_outcome:远端推送结果尚不能核对，未重发".to_string()
+                    })?;
+            let value = json!([{"type":"input_text","text":json!({"request_id":id.to_string(),"deliveries":delivery.deliveries.iter().map(|d|json!({"provider":d.provider,"status":d.status,"error":d.error})).collect::<Vec<_>>(),"note":"这是原推送的状态查询，没有重新发送。not_found只表示没有可核对的队列记录，不能声称送达。"}).to_string()}]);
+            sqlx::query("UPDATE harness_events SET status='completed',result=$2,finished_at=now() WHERE id=$1 AND run_id=$3 AND kind='tool'").bind(id).bind(&value).bind(run).execute(&app.db).await.map_err(|e|e.to_string())?;
+            return Ok(value);
+        }
+        if !can_restart_tool(call) && status != "queued" {
+            return Err(
+                "paused:unknown_outcome:上一条操作结果未知，请先检查当前状态后继续。".into(),
+            );
+        }
+        let updated = sqlx::query(
+            "UPDATE harness_events e SET status='running' FROM runs r
+             WHERE e.id=$1 AND e.run_id=r.id AND e.kind='tool' AND r.id=$2 AND r.status='running'",
+        )
+        .bind(id)
+        .bind(run)
+        .execute(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+        if updated.rows_affected() == 0 {
+            return Err("canceled".into());
+        }
     }
     let result = match tool(app, run, message, call, context, epoch, cancel).await {
         Err(error) if !fatal_tool_error(&error) => Ok(recoverable_tool_failure(error)),
@@ -5386,7 +5394,7 @@ mod loop_persistence_tests {
             let invalid=recorded_tool(&app,run,message,&finish,&context,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&invalid));assert_eq!(tool_value(&invalid).unwrap()["recoverable"],true);
             let status:String=sqlx::query_scalar("SELECT status FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(status,"running");
             let missing=call("skill_read",json!({"name":"does-not-exist"}));let error=recorded_tool(&app,run,message,&missing,&context,&mut epoch,&cancel).await.unwrap();assert!(failed_output(&error));assert!(!fatal_tool_error(tool_value(&error).unwrap()["error"].as_str().unwrap()));
-            let wait=call("task_wait",json!({"seconds":120,"reason":"等待外部状态"}));context.push(wait.clone());pending.push(wait.clone());checkpoint(&app,run,&mut context,&pending,&answer,1,&state).await.unwrap();
+            let wait=call("task_wait",json!({"seconds":120,"reason":"等待外部状态","intent":"先等待外部状态"}));context.push(wait.clone());pending.push(wait.clone());checkpoint(&app,run,&mut context,&pending,&answer,1,&state).await.unwrap();
             let output=recorded_tool(&app,run,message,&wait,&context,&mut epoch,&cancel).await.unwrap();let wake=tool_value(&output).unwrap()["wake_at_ms"].as_u64().unwrap();context.push(json!({"type":"function_call_output","call_id":wait["call_id"],"output":output}));pending.clear();
             assert!(persist_disposition(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: "", step: 1, state: &state }, RunDisposition::Queued, Some(wake)).await.unwrap());
             let saved_wake:i64=sqlx::query_scalar("SELECT floor(extract(epoch FROM next_wake_at)*1000)::bigint FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert!((saved_wake-wake as i64).abs()<=1);
@@ -5396,11 +5404,14 @@ mod loop_persistence_tests {
             sqlx::query("UPDATE runs SET next_wake_at=now()-interval '1 second' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             assert_eq!(claim_due_run(&app).await.unwrap().map(|(id,_)|id),Some(run));
             let marked:Value=sqlx::query_scalar("SELECT loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();assert!(marked["wait_completed_at_ms"].as_u64().is_some());
-            assert!(consume_wait_completion(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: &answer, step: 1, state: &state }).await.unwrap());
-            assert!(!consume_wait_completion(&app, run, message, Checkpoint { context: &mut context, pending: &pending, answer: &answer, step: 1, state: &state }).await.unwrap());
+            assert_eq!(unreported_wait_deadline(&context),Some(wake));
+            assert!(consume_wait_completion(&app, run, message, wake, Checkpoint { context: &mut context, pending: &pending, answer: &answer, step: 1, state: &state }).await.unwrap());
+            assert_eq!(unreported_wait_deadline(&context),None);
             let resumed:i64=sqlx::query_scalar("SELECT count(*) FROM harness_events WHERE run_id=$1 AND title='等待结束'").bind(run).fetch_one(&app.db).await.unwrap();assert_eq!(resumed,1);
             assert!(context.iter().any(|item|item["role"]=="system"&&text_of(item).contains("AI_PHONE_WAIT_COMPLETED")));
             let same=recorded_tool(&app,run,message,&wait,&context,&mut epoch,&cancel).await.unwrap();assert_eq!(tool_value(&same).unwrap()["wake_at_ms"],wake,"resuming a recorded wait must not extend its original deadline");
+            let wait_timeline:Vec<String>=sqlx::query_scalar("SELECT title FROM harness_events WHERE run_id=$1 AND title IN ('下一步','等待后继续') ORDER BY created_at,id").bind(run).fetch_all(&app.db).await.unwrap();
+            assert_eq!(wait_timeline,["下一步","等待后继续"],"admission records intent first and receipt replay leaves it unchanged");
             sqlx::query("UPDATE runs SET status='running',next_wake_at=NULL WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
             let obsolete=call("phone_tap",json!({"x":10,"y":20}));context.push(obsolete.clone());pending.push(obsolete.clone());checkpoint(&app,run,&mut context,&pending,&answer,2,&state).await.unwrap();
             let steer=json!([{"id":Uuid::new_v4().to_string(),"input":input("改为读取Skill目录"),"created_at":"2026-10-26T12:00:00Z"}]);sqlx::query("UPDATE runs SET steering=$2 WHERE id=$1").bind(run).bind(&steer).execute(&app.db).await.unwrap();
