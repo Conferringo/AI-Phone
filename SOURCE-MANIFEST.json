@@ -2665,8 +2665,8 @@
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/mod.rs",
-      "size": 9309,
-      "sha256": "e0059f38484520795160d3976dc72fecd1967e1fa98c07cc6648f7a8d0ba3bd1"
+      "size": 9293,
+      "sha256": "82d37922b14eae701c0bc7eaa5e132acf429e7c78864aa13b23f7704e754136e"
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/phone.rs",
@@ -2675,8 +2675,8 @@
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/readiness.rs",
-      "size": 6114,
-      "sha256": "132bef672859636a31cf28eed5b4b8d3af4c921c8d44ea1faf0dc0097f8a59fc"
+      "size": 7606,
+      "sha256": "fe5e9d1263f601ea20951691091057b193d3514a3e1ffc3e11aeca3837718261"
     },
     {
       "path": "crates/host-runtime/src/vm_control/guest.rs",

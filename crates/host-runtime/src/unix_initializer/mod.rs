@@ -177,8 +177,7 @@ async fn initialize(
             progress("services", "running", "")?;
             backend
                 .start(&args.resource.join("images.payload"), &user, "127.0.0.1")
-                .await?;
-            readiness::wait(&root, stop.clone()).await
+                .await
         };
         let android = async {
             progress("android", "running", "")?;
@@ -226,6 +225,7 @@ async fn initialize(
         };
         first.and(second)?;
     }
+    readiness::wait(&root, stop).await?;
     progress("devices", "running", "")?;
     backend
         .checked(
