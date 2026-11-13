@@ -529,7 +529,7 @@ async fn phone_target_keeps_primary_order_and_current_binding_decisions() {
 
 #[tokio::test]
 #[ignore = "real disposable PostgreSQL and loopback protobuf guest; readiness and observation"]
-async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
+async fn phone_dispatch_uses_one_grounded_observation_after_control() {
     use axum::{Router, body::Bytes, routing::post};
     database_case(|mut app| async move {
         crate::registry::initialize(&app.db, &app.settings).await.unwrap();
@@ -554,7 +554,6 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
         let router = Router::new()
             .route("/v1/observe", post(move |body: Bytes| {
                 let sender = sender.clone();
-                let root_ready = root_ready.clone();
                 async move {
                     let request = wire::DeviceRequest::decode(body).unwrap();
                     assert_eq!(request.phone_id, crate::registry::PHONE);
@@ -562,7 +561,7 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
                     sender.send(request.clone()).await.unwrap();
                     pb(StatusCode::OK, wire::DeviceObservation {
                         phone_id: request.phone_id, width: 720, height: 1440,
-                        root_identity: if root_ready.load(std::sync::atomic::Ordering::Relaxed) { "0".into() } else { String::new() }, control_epoch: 7, controller: "agent".into(),
+                        control_epoch: 7, controller: "agent".into(),
                         png: if request.metadata_only { vec![] } else { frame.to_vec() },
                         ..Default::default()
                     })
@@ -570,9 +569,16 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
             }))
             .route("/v1/control", post(move |body: Bytes| {
                 control_calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let root_ready = root_ready.clone();
                 async move {
                     let request = wire::TakeControlRequest::decode(body).unwrap();
                     assert_eq!(request.controller, "agent");
+                    if !root_ready.load(std::sync::atomic::Ordering::Relaxed) {
+                        return pb(StatusCode::SERVICE_UNAVAILABLE, wire::ApiError {
+                            code: "device_unavailable".into(),
+                            message: "手机尚未就绪，请稍后继续。".into(),
+                        });
+                    }
                     pb(StatusCode::OK, wire::ControlState {
                         phone_id: request.phone_id, control_epoch: 7, controller: "agent".into(),
                     })
@@ -586,10 +592,10 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
         let mut epoch = 0;
         let result = tool(&app, run, message, &call, context, &mut epoch, &CancellationToken::new()).await.unwrap();
         assert_eq!(epoch, 7);
-        assert!(requests.recv().await.unwrap().metadata_only, "readiness must not capture a discarded screenshot");
         let observed = requests.recv().await.unwrap();
         assert!(!observed.metadata_only);
         assert!(observed.include_elements);
+        assert!(requests.try_recv().is_err(), "control owns readiness; only the grounded frame is requested");
         let image = format!("data:image/png;base64,{}", STANDARD.encode(frame));
         assert!(result.as_array().unwrap().iter().any(|part| part["image_url"] == image));
 
@@ -608,9 +614,8 @@ async fn phone_dispatch_reads_status_before_control_and_keeps_the_real_frame() {
             tool(&app, run, message, &call, context, &mut epoch, &CancellationToken::new())).await
             .expect("an unready phone must return its status without a hidden retry loop");
         assert_eq!(result.unwrap_err(), "手机尚未就绪，请稍后继续。");
-        assert!(requests.recv().await.unwrap().metadata_only);
         assert!(requests.try_recv().is_err());
-        assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(controls.load(std::sync::atomic::Ordering::Relaxed), 2);
         assert_eq!(epoch, 0);
         drop(server);
     }).await;

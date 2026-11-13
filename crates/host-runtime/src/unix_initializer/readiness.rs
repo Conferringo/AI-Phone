@@ -1,56 +1,67 @@
 //! Startup waits for actual local service responses, not successful process spawning.
 use crate::{Error, Result};
-use ai_phone_api::wire::DeviceRequest;
+use ai_phone_api::wire::{DeviceObservation, DeviceRequest};
 use prost::Message;
+use reqwest::{Client, header::CONTENT_TYPE};
 use std::{fs, path::Path, time::Duration};
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpStream,
-    sync::watch,
-    time::Instant,
-};
+use tokio::{sync::watch, time::Instant};
 
 async fn probe(
+    client: &Client,
     port: u16,
     path: &str,
     token: &str,
     body: Option<&[u8]>,
     content: &str,
 ) -> Result<()> {
-    let mut stream = TcpStream::connect((std::net::Ipv4Addr::LOCALHOST, port)).await?;
-    let method = if body.is_some() { "POST" } else { "GET" };
-    let body = body.unwrap_or_default();
-    let head = format!(
-        "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {token}\r\nContent-Type: application/x-protobuf\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-        body.len()
-    );
-    stream.write_all(head.as_bytes()).await?;
-    stream.write_all(body).await?;
-    let mut bytes = vec![];
-    loop {
-        let mut chunk = [0; 1024];
-        let count = stream.read(&mut chunk).await?;
-        bytes.extend_from_slice(&chunk[..count]);
-        if count == 0 || bytes.windows(4).any(|value| value == b"\r\n\r\n") {
-            break;
-        }
-        if bytes.len() > 8192 {
-            return Err(Error::Invalid("unix_host_service_response"));
-        }
-    }
-    let header = String::from_utf8_lossy(&bytes).to_ascii_lowercase();
-    if !header.starts_with("http/1.1 200 ") || !header.contains(&format!("content-type: {content}"))
+    let url = format!("http://127.0.0.1:{port}{path}");
+    let request = match body {
+        Some(bytes) => client
+            .post(url)
+            .header(CONTENT_TYPE, "application/x-protobuf")
+            .body(bytes.to_vec()),
+        None => client.get(url),
+    };
+    let pending = || Error::Invalid("unix_host_service_not_ready");
+    let response = request
+        .bearer_auth(token)
+        .send()
+        .await
+        .map_err(|_| pending())?;
+    if response.status() != 200
+        || response
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.split(';').next())
+            != Some(content)
     {
-        return Err(Error::Invalid("unix_host_service_not_ready"));
+        return Err(pending());
+    }
+    if path == "/v1/observe" {
+        let body = response.bytes().await.map_err(|_| pending())?;
+        if DeviceObservation::decode(body)
+            .map_err(|_| pending())?
+            .root_identity
+            != "0"
+        {
+            return Err(pending());
+        }
     }
     Ok(())
 }
 pub(super) async fn wait(root: &Path, mut stop: watch::Receiver<bool>) -> Result<()> {
+    let client = Client::builder()
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|_| Error::Invalid("unix_host_service_not_ready"))?;
     let token = fs::read_to_string(root.join("data/assistant/token"))?;
     let runner = fs::read_to_string(root.join("data/phone-runner/token"))?;
-    let cursor = DeviceRequest {
+    let observation = DeviceRequest {
         phone_id: "phone-local-01".into(),
         owner_id: "local-user".into(),
+        metadata_only: true,
         ..Default::default()
     }
     .encode_to_vec();
@@ -73,9 +84,9 @@ pub(super) async fn wait(root: &Path, mut stop: watch::Receiver<bool>) -> Result
         ),
         (
             17862,
-            "/v1/cursor",
+            "/v1/observe",
             runner.trim(),
-            Some(cursor.as_slice()),
+            Some(observation.as_slice()),
             "application/x-protobuf",
         ),
     ] {
@@ -84,7 +95,7 @@ pub(super) async fn wait(root: &Path, mut stop: watch::Receiver<bool>) -> Result
                 return Err(Error::Cancelled);
             }
             let result = tokio::select! {
-                result=tokio::time::timeout_at(deadline,probe(port,path,auth,body,content))=>result,
+                result=tokio::time::timeout_at(deadline,probe(&client,port,path,auth,body,content))=>result,
                 _=stop.changed()=>return Err(Error::Cancelled),
             };
             match result {
@@ -104,8 +115,12 @@ pub(super) async fn wait(root: &Path, mut stop: watch::Receiver<bool>) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
-    async fn response(header: &'static [u8]) -> u16 {
-        let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+    };
+    async fn response(path: &'static str, reply: &'static [u8]) -> u16 {
+        let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
             .await
             .unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -114,19 +129,28 @@ mod tests {
             let mut bytes = [0; 4096];
             let count = stream.read(&mut bytes).await.unwrap();
             let request = String::from_utf8_lossy(&bytes[..count]);
-            assert!(request.starts_with("POST /v1/setup/status HTTP/1.1"));
-            assert!(request.contains("Authorization: Bearer fixture-token"));
-            stream.write_all(header).await.unwrap();
+            assert!(request.starts_with(&format!("POST {path} HTTP/1.1")));
+            assert!(
+                request
+                    .to_ascii_lowercase()
+                    .contains("authorization: bearer fixture-token")
+            );
+            stream.write_all(reply).await.unwrap();
         });
         port
     }
     #[tokio::test]
     async fn a_process_or_unrelated_response_cannot_claim_service_readiness() {
-        let port =
-            response(b"HTTP/1.1 503 Unavailable\r\nContent-Type: application/x-protobuf\r\n\r\n")
-                .await;
+        let client = Client::builder().no_proxy().build().unwrap();
+        let path = "/v1/setup/status";
+        let port = response(
+            path,
+            b"HTTP/1.1 503 Unavailable\r\nContent-Type: application/x-protobuf\r\n\r\n",
+        )
+        .await;
         assert!(
             probe(
+                &client,
                 port,
                 "/v1/setup/status",
                 "fixture-token",
@@ -136,9 +160,10 @@ mod tests {
             .await
             .is_err()
         );
-        let port = response(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n").await;
+        let port = response(path, b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n").await;
         assert!(
             probe(
+                &client,
                 port,
                 "/v1/setup/status",
                 "fixture-token",
@@ -148,9 +173,13 @@ mod tests {
             .await
             .is_err()
         );
-        let port =
-            response(b"HTTP/1.1 200 OK\r\nContent-Type: application/x-protobuf\r\n\r\n").await;
+        let port = response(
+            path,
+            b"HTTP/1.1 200 OK\r\nContent-Type: application/x-protobuf\r\n\r\n",
+        )
+        .await;
         probe(
+            &client,
             port,
             "/v1/setup/status",
             "fixture-token",
@@ -159,6 +188,32 @@ mod tests {
         )
         .await
         .unwrap();
+    }
+    #[tokio::test]
+    async fn phone_observation_must_report_root() {
+        let client = Client::builder().no_proxy().build().unwrap();
+        let path = "/v1/observe";
+        let pending = response(
+            path,
+            b"HTTP/1.1 200 OK\r\nContent-Type: application/x-protobuf\r\nContent-Length: 0\r\n\r\n",
+        )
+        .await;
+        let rooted = response(path, b"HTTP/1.1 200 OK\r\nContent-Type: application/x-protobuf\r\nContent-Length: 3\r\n\r\n\x4a\x010").await;
+        for (port, expected) in [(pending, false), (rooted, true)] {
+            assert_eq!(
+                probe(
+                    &client,
+                    port,
+                    path,
+                    "fixture-token",
+                    Some(&[]),
+                    "application/x-protobuf"
+                )
+                .await
+                .is_ok(),
+                expected
+            );
+        }
     }
     #[tokio::test]
     async fn cancelled_start_does_not_probe_live_application_ports() {

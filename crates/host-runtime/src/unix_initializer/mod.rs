@@ -78,6 +78,7 @@ impl Arguments {
 async fn initialize(
     args: Arguments,
     cancel: Arc<AtomicBool>,
+    end: watch::Sender<bool>,
     stop: watch::Receiver<bool>,
 ) -> Result<()> {
     let user = std::env::var_os("HOME")
@@ -169,39 +170,62 @@ async fn initialize(
         env: environment,
         execute: Process(stop.clone()),
     };
-    progress("engine", "running", "")?;
-    engine::start(&mut backend, &home, &user).await?;
-    progress("services", "running", "")?;
-    backend
-        .start(&args.resource.join("images.payload"), &user, "127.0.0.1")
-        .await?;
-    readiness::wait(&root, stop.clone()).await?;
-    progress("android", "running", "")?;
-    phone::start(
-        NativeAndroidStart {
-            phone: Some(prepared.wire()?),
-            ..Default::default()
-        },
-        stop.clone(),
-    )
-    .await?;
-    progress("input", "running", "")?;
-    crate::android::input::setup(
-        NativeAndroidInputSetup {
-            version: 1,
-            project_root: text(&root)?,
-            adb_program: text(&prepared.sdk_root.join("platform-tools/adb"))?,
-            serial: "emulator-5564".into(),
-            apk_path: text(&root.join("runtime/phone-apps/input.apk"))?,
-            notification_probe_path: text(
-                &root.join("runtime/phone-apps/notification-access.jar"),
-            )?,
-            offline_apps: true,
-            ..Default::default()
-        },
-        stop,
-    )
-    .await?;
+    {
+        let linux = async {
+            progress("engine", "running", "")?;
+            engine::start(&mut backend, &home, &user).await?;
+            progress("services", "running", "")?;
+            backend
+                .start(&args.resource.join("images.payload"), &user, "127.0.0.1")
+                .await
+        };
+        let android = async {
+            progress("android", "running", "")?;
+            phone::start(
+                NativeAndroidStart {
+                    phone: Some(prepared.wire()?),
+                    ..Default::default()
+                },
+                stop.clone(),
+            )
+            .await?;
+            progress("input", "running", "")?;
+            crate::android::input::setup(
+                NativeAndroidInputSetup {
+                    version: 1,
+                    project_root: text(&root)?,
+                    adb_program: text(&prepared.sdk_root.join("platform-tools/adb"))?,
+                    serial: "emulator-5564".into(),
+                    apk_path: text(&root.join("runtime/phone-apps/input.apk"))?,
+                    notification_probe_path: text(
+                        &root.join("runtime/phone-apps/notification-access.jar"),
+                    )?,
+                    offline_apps: true,
+                    ..Default::default()
+                },
+                stop.clone(),
+            )
+            .await?;
+            Ok(())
+        };
+        tokio::pin!(linux, android);
+        let (first, second) = tokio::select! {
+            result = &mut linux => {
+                if result.is_err() {
+                    end.send_replace(true);
+                }
+                (result, android.await)
+            }
+            result = &mut android => {
+                if result.is_err() {
+                    end.send_replace(true);
+                }
+                (result, linux.await)
+            }
+        };
+        first.and(second)?;
+    }
+    readiness::wait(&root, stop).await?;
     progress("devices", "running", "")?;
     backend
         .checked(
@@ -231,15 +255,16 @@ pub(crate) async fn run(values: &[OsString]) -> Result<()> {
     let cancel = Arc::new(AtomicBool::new(false));
     let signal_cancel = cancel.clone();
     let (end, stop) = watch::channel(false);
+    let signal_end = end.clone();
     let signal = tokio::spawn(async move {
         let result = crate::component::interrupt().await;
         if result.is_ok() {
             signal_cancel.store(true, Ordering::Relaxed);
-            end.send_replace(true);
+            signal_end.send_replace(true);
         }
         result
     });
-    let result = initialize(args, cancel, stop).await;
+    let result = initialize(args, cancel, end, stop).await;
     signal.abort();
     let _ = signal.await;
     if let Err(error) = &result {

@@ -3929,23 +3929,8 @@ async fn tool(
     }
     crate::run_queue::reserve(&app.db, run, &phone_id).await?;
     if *epoch == 0 {
-        let probe = phone::<_, wire::DeviceObservation>(
-            app,
-            "observe",
-            wire::DeviceRequest {
-                phone_id: phone_id.clone(),
-                owner_id: "local-user".into(),
-                metadata_only: true,
-                ..Default::default()
-            },
-        );
-        let screen = tokio::select! {
-            _ = cancel.cancelled() => return Err("canceled".into()),
-            result = tokio::time::timeout(Duration::from_secs(4), probe) =>
-                result.map_err(|_| "手机状态读取超时".to_string())??,
-        };
-        if screen.root_identity != "0" {
-            return Err("手机尚未就绪，请稍后继续。".into());
+        if cancel.is_cancelled() {
+            return Err("canceled".into());
         }
         let control: wire::ControlState = phone(
             app,
