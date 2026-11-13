@@ -100,23 +100,14 @@ impl State {
     async fn device(&self, agent: &str) -> Result<String> {
         let registry: wire::RegistryState =
             self.rpc("registry/state", wire::RegistryRequest {}).await?;
-        let owner = registry
-            .agents
-            .iter()
-            .find(|a| a.id == agent)
-            .ok_or("agent_not_found")?;
-        let devices: Vec<_> = registry
+        if registry.active_agent_id != agent {
+            return Err("device_unavailable".into());
+        }
+        registry
             .devices
-            .iter()
-            .filter(|device| {
-                device.runtime_state == "managed" && owner.device_ids.contains(&device.id)
-            })
-            .collect();
-        devices
-            .iter()
-            .find(|device| device.default_agent_id == agent)
-            .or(devices.first())
-            .map(|device| device.id.clone())
+            .into_iter()
+            .find(|device| device.runtime_state == "managed")
+            .map(|device| device.id)
             .ok_or_else(|| "device_unavailable".into())
     }
     async fn restart(self: &Arc<Self>, key: String, config: Config) -> Result<()> {

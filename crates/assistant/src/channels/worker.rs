@@ -44,11 +44,7 @@ async fn screenshot(state: &State, agent: &str, device: &str) -> Result<String> 
     let registry: wire::RegistryState = state
         .rpc("registry/state", wire::RegistryRequest {})
         .await?;
-    if !registry
-        .agents
-        .iter()
-        .any(|owner| owner.id == agent && owner.device_ids.iter().any(|id| id == device))
-    {
+    if registry.active_agent_id != agent {
         return Err("screenshot_device_unavailable".into());
     }
     let selected = registry

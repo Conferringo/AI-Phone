@@ -31,6 +31,7 @@ import {
 import { admitImages } from "./image-handoff";
 import { deliveryMetadata, installerMetadata } from "./client-payload";
 import { checkSource } from "./source";
+import { macReleaseSigning } from "./installer-signing";
 
 async function host(root: string, work: string) {
   const policy = containerPolicy(root),
@@ -82,9 +83,11 @@ export async function macosFactory(
   sdk: string,
   candidate?: string,
   identity?: string,
+  releaseSigning = false,
 ) {
   if (hostKey() !== "macos-arm64")
     throw Error("Complete Mac assembly requires Apple Silicon");
+  if (releaseSigning) macReleaseSigning();
   capacity(root);
   checkSource(root);
   const env = compilerEnvironment(sdk),
@@ -131,7 +134,7 @@ export async function macosFactory(
       join(root, "scripts/build-client.ts"),
       "--platform",
       "macos",
-      "--sign-temporary",
+      releaseSigning ? "--sign-release" : "--sign-temporary",
       "--with-web-runtime",
       "--with-service-runtime",
       "--with-phone-apps",
@@ -150,7 +153,8 @@ export async function macosFactory(
     delivery = deliveryMetadata(manifest.prebuilt_components, "macos-arm64");
   if (
     !delivery.complete_device_bundle ||
-    manifest.signing !== "ad-hoc" ||
+    manifest.signing !== (releaseSigning ? "developer-id" : "ad-hoc") ||
+    (releaseSigning && !(manifest.developer_id_signed && manifest.notarized)) ||
     manifest.sha256 !== (await digest(file)) ||
     !installerMetadata(file, "macos-arm64").github_asset_eligible
   )

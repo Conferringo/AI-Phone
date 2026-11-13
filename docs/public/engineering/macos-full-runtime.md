@@ -32,6 +32,8 @@ The factory collects the pinned ARM Android baseline, prepares a fresh matching 
 
 Run **Desktop installer factory** with `platform=macos` in the private build repository. A native ARM64 Linux job builds the image capsule. The Apple Silicon job verifies its source, architecture and inventory, assembles the DMG and retires the temporary handoff.
 
+For distribution, run the factory with `--sign-release` on a Mac with the Developer ID Application identity and the `notarytool` profile already in Keychain. Set `AIMANITY_MAC_SIGNING_IDENTITY` to the certificate name and `AIMANITY_MAC_NOTARY_PROFILE` to the profile name. The factory signs the app and DMG, submits the DMG to Apple, then staples and validates the ticket.
+
 Private Actions storage retains the DMG, inventory and receipt. The maintainer publishes the reviewed installer to Releases as one asset under 2 GiB.
 
 Use a reviewed source checkout and architecture-matched factory resources. The distribution command is:

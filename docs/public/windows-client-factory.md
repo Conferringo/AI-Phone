@@ -14,6 +14,8 @@ Prepare the [QEMU host and Linux guest](windows-backend-runtime.md#qemu-build-in
 
 In a private build repository, run **Desktop installer factory** with `platform=windows`. The workflow builds QEMU and the sealed Linux guest in parallel, assembles the EXE with Inno Setup and stores the installer and receipts as private artifacts.
 
+For distribution, add `--sign-release` on a Windows builder with SignTool and a trusted code-signing certificate in the current user’s certificate store. Set `AIMANITY_WINDOWS_CERT_THUMBPRINT` to the certificate thumbprint and `AIMANITY_WINDOWS_TIMESTAMP_URL` to its RFC 3161 timestamp service. The factory signs, timestamps and verifies both the client and the installer.
+
 The inspector checks the x64 executable and installed-file inventory. Setup enables Windows Hypervisor Platform and initializes a persistent QCOW2 overlay over the packaged Linux disk. The Android disk and application data have separate storage. [Build and installation status](release-status.md)
 
 ## 中文

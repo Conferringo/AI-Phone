@@ -10,14 +10,16 @@ message RegisteredDevice {
   string kind = 4;
   string system = 5;
   string runtime_state = 6;
-  string default_agent_id = 7;
+  reserved 7;
+  reserved "default_agent_id";
 }
 message RegisteredAgent {
   string id = 1;
   uint64 revision = 2;
   string name = 3;
   string model_connection_id = 4;
-  repeated string device_ids = 5;
+  reserved 5;
+  reserved "device_ids";
   string instructions = 6;
 }
 message RegisteredModel {

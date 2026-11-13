@@ -22,7 +22,7 @@ const result =
           folder: option("--backend"),
           identity: option("--identity"),
           backendSource: args.includes("--backend-source") ? option("--backend-source") : root,
-        })
+        }, args.includes("--sign-release"))
       : args[0] === "build-qemu"
         ? await windowsFactory(root, {
             runtime: "qemu",
@@ -32,7 +32,7 @@ const result =
               guest: option("--guest"),
               guestIdentity: option("--guest-identity"),
             },
-          })
+          }, args.includes("--sign-release"))
         : (() => {
             throw Error("Expected stage-backend, build or build-qemu");
           })();

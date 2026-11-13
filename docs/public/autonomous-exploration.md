@@ -14,7 +14,7 @@ One Liberty control applies to both devices. An active Task & Goal pauses Libert
 
 ## Harness collaboration
 
-When a direction benefits from another device, the Agent can check its device bindings and connect the data cable. The selected Agent can operate either device, transfer files and delegate a step to the other device. The returned result wakes the original task.
+When a direction benefits from another device, the Agent can connect the data cable, use either device and transfer files. It can delegate a step to the other device and resume the original task when the result returns.
 
 The Agent can organize shared work files, search the knowledge base, and save reusable knowledge from its work. It can set a simulated point or route when the owner has enabled simulated location and the current task controls every affected guest.
 

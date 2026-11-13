@@ -5,7 +5,7 @@ import { ROOT, digest } from "./tooling/process";
 
 const [keyFile, macFile, windowsFile, output] = process.argv.slice(2);
 if (!keyFile || !macFile || !windowsFile || !output || process.argv.length !== 6) {
-  throw Error("Usage: sign-client-update.ts <private-key> <mac.dmg> <windows.exe> <update.json>");
+  throw Error("Usage: sign-client-update.ts <private-key> <mac.dmg> <windows.exe> <stable.json>");
 }
 const policy = await Bun.file(join(ROOT, "config/client-update.json")).json();
 const { version, release_name: name, release_notes: notes } =
@@ -31,7 +31,15 @@ async function artifact(path: string, os: "macos" | "windows", arch: string, suf
       !report.complete_device_bundle || !report.runtime_payload_complete) {
     throw Error("Installer receipt does not match this release");
   }
-  if (os === "windows") {
+  if (os === "macos") {
+    if (report.signing !== "developer-id" || !report.developer_id_signed || !report.notarized) {
+      throw Error("The macOS update requires a notarized Developer ID installer");
+    }
+  } else {
+    if (report.signing !== "authenticode-trusted" ||
+        !report.authenticode?.cryptographically_verified || !report.authenticode.timestamped) {
+      throw Error("The Windows update requires a trusted, timestamped Authenticode installer");
+    }
     const files = new Map<string, string>(report.payload.files.map((file: {path: string; sha256: string}) => [file.path, file.sha256]));
     if (files.get("host/qemu/guest/guest.qcow2") !== policy.windows_base_sha256 ||
         !files.has("host/qemu/guest/release-init.cpio.gz") ||

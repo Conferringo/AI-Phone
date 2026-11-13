@@ -2,7 +2,7 @@
 
 [简体中文](source-release.zh-CN.md) · [Repository](https://github.com/MrMilkDragon/AImanity)
 
-The source contains the Next.js workbench, Rust execution services, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and CI workflows. The default workspace has one phone and one computer, each bound to an Agent. PostgreSQL persists task checkpoints; Redis is optional caching.
+The source contains the Next.js workbench, Rust execution services, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and CI workflows. The phone and computer share the selected Agent. PostgreSQL persists task checkpoints; Redis provides caching.
 
 Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest applications retain their own terms; see [third-party notices](../../THIRD_PARTY_NOTICES.md). [Download the macOS or Windows client](release-status.md).
 
@@ -15,7 +15,7 @@ The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinn
 ./ai-phone install
 ```
 
-The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Configure models and device bindings in Configuration → Agent. No developer credentials or accounts are supplied. Repeated startup restores missing services while retaining existing state.
+The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Save model profiles and select the active Agent in Configuration → Agent. Repeated startup restores missing services while retaining existing state.
 
 See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md), [backup and recovery](backup-restore.en.md) and [release status](release-status.md).
 

@@ -8,6 +8,7 @@ import {
   noticeManifest,
   type Platform,
 } from "./tooling/client-build";
+import { macReleaseSigning, windowsReleaseSigning } from "./tooling/installer-signing";
 
 const args = process.argv.slice(2),
   option = (name: string) =>
@@ -18,10 +19,17 @@ if (!["macos", "windows"].includes(platform))
   throw Error("--platform macos|windows is required");
 const packageOnly = args.includes("--package-only");
 const developmentDmg = args.includes("--development-dmg");
+const releaseSigning = args.includes("--sign-release");
+const temporarySigning = args.includes("--sign-temporary");
 if (packageOnly && platform === "macos")
   throw Error("macOS requires a current application build");
 if (developmentDmg && platform !== "macos")
   throw Error("--development-dmg requires macOS");
+if (releaseSigning) {
+  if (temporarySigning || developmentDmg) throw Error("Select release signing or a local test build");
+  if (platform === "macos") macReleaseSigning();
+  else windowsReleaseSigning();
+}
 checkSource(root);
 noticeManifest(root);
 if (!packageOnly) {
@@ -51,5 +59,6 @@ if (!packageOnly) {
 console.log(JSON.stringify(await buildClient(platform, root, {
   packageOnly,
   developmentDmg,
-  temporarySigning: args.includes("--sign-temporary"),
+  temporarySigning,
+  releaseSigning,
 })));
