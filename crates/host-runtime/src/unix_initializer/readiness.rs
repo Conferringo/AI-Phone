@@ -119,7 +119,7 @@ mod tests {
         io::{AsyncReadExt, AsyncWriteExt},
         net::TcpListener,
     };
-    async fn response(path: &'static str, bytes: &'static [u8]) -> u16 {
+    async fn response(path: &'static str, reply: &'static [u8]) -> u16 {
         let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
             .await
             .unwrap();
@@ -135,7 +135,7 @@ mod tests {
                     .to_ascii_lowercase()
                     .contains("authorization: bearer fixture-token")
             );
-            stream.write_all(bytes).await.unwrap();
+            stream.write_all(reply).await.unwrap();
         });
         port
     }

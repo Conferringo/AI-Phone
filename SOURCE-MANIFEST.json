@@ -2676,7 +2676,7 @@
     {
       "path": "crates/host-runtime/src/unix_initializer/readiness.rs",
       "size": 7606,
-      "sha256": "fe5e9d1263f601ea20951691091057b193d3514a3e1ffc3e11aeca3837718261"
+      "sha256": "02f3aa6066d0355290980e4cc279f959741e110c2917b87d33c654040b50025a"
     },
     {
       "path": "crates/host-runtime/src/vm_control/guest.rs",
