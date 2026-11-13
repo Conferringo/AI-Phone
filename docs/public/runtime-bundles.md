@@ -33,7 +33,7 @@ Service launchers verify installed native components before choosing their comma
 
 Image activation runs in Rust and keeps one open capsule through validation and import. Explicit OCI layouts retain their declared identities. Legacy Docker archives are streamed into an explicit OCI layout with content-addressed config/layer blobs and target names derived from the exact generated manifests. This avoids relying on a daemon-generated legacy manifest ID. The private `data/deployment/image-runtime.json` record retains the source archive metadata and records the selected targets; normalized selections carry `import_layout: "oci-v1"`. Old aliases, running containers and volumes are preserved. Factory/export tooling uses TypeScript and the native Rust encoder.
 
-Each platform ships one complete installer under the GitHub asset limit. Maintainers can use the [delivery-volume format](engineering/package-delivery.md) for internal transport.
+Each platform ships one complete installer under the GitHub asset limit.
 
 ## Component build and verification
 

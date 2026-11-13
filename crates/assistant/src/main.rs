@@ -48,6 +48,7 @@ mod private_file;
 mod proactive;
 mod redis_events;
 mod registry;
+mod request_digest;
 mod run_notice;
 mod run_queue;
 mod run_signals;

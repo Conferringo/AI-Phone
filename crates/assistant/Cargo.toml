@@ -30,6 +30,7 @@ uuid = { version = "1", features = ["v4", "v7", "serde"] }
 futures-util = "0.3"
 getrandom = "=0.4.3"
 sha2 = "0.10"
+subtle = "=2.6.1"
 xxhash-rust = { version = "=0.8.19", features = ["xxh3"] }
 argon2 = "0.5"
 ring = "=0.17.14"

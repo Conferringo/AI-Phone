@@ -8,16 +8,31 @@ use sqlx::Row;
 fn experience_name(app_id: &str) -> String {
     format!(
         "app-experience-{}",
-        &format!("{:x}", Sha256::digest(app_id))[..12]
+        &crate::request_digest::encode(app_id.as_bytes())[..20]
     )
 }
 
 const RECALL_SQL: &str =
     "SELECT name FROM runtime_skills WHERE lower(name)=$1 AND enabled AND deleted_at IS NULL";
 
+fn legacy_experience_name(app_id: &str) -> String {
+    format!(
+        "app-experience-{}",
+        &format!("{:x}", Sha256::digest(app_id))[..12]
+    )
+}
+
 pub(crate) async fn recall(app: &App, app_id: &str) -> Result<Option<String>, String> {
-    sqlx::query_scalar(RECALL_SQL)
+    let current: Option<String> = sqlx::query_scalar(RECALL_SQL)
         .bind(experience_name(app_id))
+        .fetch_optional(&app.db)
+        .await
+        .map_err(|e| e.to_string())?;
+    if current.is_some() {
+        return Ok(current);
+    }
+    sqlx::query_scalar(RECALL_SQL)
+        .bind(legacy_experience_name(app_id))
         .fetch_optional(&app.db)
         .await
         .map_err(|e| e.to_string())
@@ -136,11 +151,8 @@ pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
     {
         return Err("同一心得不能混用不同设备的观察证据".into());
     }
-    let fingerprint = format!(
-        "{:x}",
-        Sha256::digest(format!(
-            "{app_id}\n{title}\n{procedure}\n{outcome}\n{limitations}"
-        ))
+    let fingerprint = crate::request_digest::encode(
+        format!("{app_id}\n{title}\n{procedure}\n{outcome}\n{limitations}").as_bytes(),
     );
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
     sqlx::query("SELECT id FROM runs WHERE id=$1 FOR UPDATE")
@@ -148,6 +160,9 @@ pub async fn save(app: &App, run: Uuid, args: &Value) -> Result<Value, String> {
         .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
+    let existing: Option<String> = sqlx::query_scalar("SELECT fingerprint FROM app_experiences WHERE run_id=$1 AND app_id=$2 AND title=$3 AND procedure=$4 AND outcome=$5 AND limitations=$6 ORDER BY created_at DESC LIMIT 1")
+        .bind(run).bind(&app_id).bind(&title).bind(&procedure).bind(&outcome).bind(&limitations).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+    let fingerprint = existing.unwrap_or(fingerprint);
     sqlx::query("UPDATE app_experiences SET superseded_at=now() WHERE run_id=$1 AND app_id=$2 AND title=$3 AND fingerprint<>$4 AND superseded_at IS NULL").bind(run).bind(&app_id).bind(&title).bind(&fingerprint).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     let id:Uuid=sqlx::query_scalar("INSERT INTO app_experiences(id,run_id,device_id,app_id,title,procedure,outcome,limitations,observation_ids,fingerprint) SELECT $1,id,$10,$3,$4,$5,$6,$7,$8,$9 FROM runs WHERE id=$2 ON CONFLICT(run_id,fingerprint) DO UPDATE SET superseded_at=NULL RETURNING id")
  .bind(Uuid::now_v7()).bind(run).bind(&app_id).bind(&title).bind(&procedure).bind(&outcome).bind(&limitations).bind(&ids).bind(fingerprint).bind(device_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
@@ -194,7 +209,10 @@ pub async fn promote(app: &App, run: Uuid) -> Result<(), String> {
                 row.get::<Vec<String>, _>("observation_ids").join(", ")
             ));
         }
-        let name = experience_name(&app_id);
+        let current = experience_name(&app_id);
+        let legacy = legacy_experience_name(&app_id);
+        let name: String = sqlx::query_scalar("SELECT COALESCE((SELECT name FROM runtime_skills WHERE lower(name) IN ($1,$2) ORDER BY (lower(name)=$1) DESC,created_at LIMIT 1),$1)")
+            .bind(current).bind(legacy).fetch_one(&app.db).await.map_err(|e| e.to_string())?;
         crate::workbench::publish_learning(app, &name, &app_id, &body).await?;
     }
     Ok(())

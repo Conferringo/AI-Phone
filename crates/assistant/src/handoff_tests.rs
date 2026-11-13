@@ -449,7 +449,7 @@ async fn return_receipt_keeps_the_original_task_and_transfer_evidence_exactly_on
         assert!(returns::pending(&f.app,f.source_run).await.unwrap());
         let target=finish_receiving(&f,&sent,"succeeded").await;
         let transfer=Uuid::new_v4();
-        sqlx::query("INSERT INTO device_transfers(id,link_id,link_revision,run_id,source_device_id,target_device_id,source_path,target_path,name,bytes,sha256,status) SELECT $1,link_id,link_revision,$2,target_device_id,source_device_id,'output/report.xlsx','Download/report.xlsx','report.xlsx',42,repeat('a',64),'completed' FROM device_messages WHERE id=$3")
+        sqlx::query("INSERT INTO device_transfers(id,link_id,link_revision,run_id,source_device_id,target_device_id,source_path,target_path,name,bytes,checksum,status) SELECT $1,link_id,link_revision,$2,target_device_id,source_device_id,'output/report.xlsx','Download/report.xlsx','report.xlsx',42,'sha512:'||repeat('a',128),'completed' FROM device_messages WHERE id=$3")
             .bind(transfer).bind(target).bind(Uuid::parse_str(&sent.id).unwrap()).execute(&f.app.db).await.unwrap();
         let mut context=vec![json!({"role":"user","content":[{"type":"input_text","text":"Keep the original social conversation and requested edits"}]})];
         let original=context.clone();
@@ -459,7 +459,7 @@ async fn return_receipt_keeps_the_original_task_and_transfer_evidence_exactly_on
             .bind(f.source_run).fetch_one(&f.app.db).await.unwrap();
         assert_eq!(event[0]["handoff_id"],sent.id);assert_eq!(event[0]["target_run_id"],target.to_string());
         assert_eq!(event[0]["status"],"completed");assert_eq!(event[0]["transfers"][0]["id"],transfer.to_string());
-        assert_eq!(event[0]["transfers"][0]["sha256"],"a".repeat(64));assert_eq!(event[0]["transfers"][0]["target_path"],"Download/report.xlsx");
+        assert_eq!(event[0]["transfers"][0]["checksum"],format!("sha512:{}","a".repeat(128)));assert_eq!(event[0]["transfers"][0]["target_path"],"Download/report.xlsx");
         let saved:Value=sqlx::query_scalar("SELECT context FROM runs WHERE id=$1").bind(f.source_run).fetch_one(&f.app.db).await.unwrap();assert_eq!(saved,json!(context));
         assert!(!returns::pending(&f.app,f.source_run).await.unwrap());
         assert!(!returns::receive(&f.app,f.source_run,&mut context).await.unwrap());

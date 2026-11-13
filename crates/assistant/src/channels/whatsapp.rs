@@ -8,7 +8,7 @@ use async_trait::async_trait;
 use futures_util::{SinkExt, StreamExt, future::BoxFuture, stream::SplitSink};
 use image::{ImageFormat, Luma};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{io::Cursor, sync::Arc, time::Duration};
 use tokio::sync::{Mutex, RwLock, watch};
 use tokio_tungstenite::tungstenite::Message;
@@ -277,7 +277,13 @@ impl WhatsApp {
                     )
                 }
             };
-            let identity = format!("{:X}", Sha256::digest(format!("{id}/{kind}")))[..32].to_owned();
+            let key = format!("{id}/{kind}");
+            let hash = if id.as_bytes().get(14) == Some(&b'5') {
+                format!("{:X}", Sha256::digest(&key))
+            } else {
+                format!("{:X}", Sha512::digest(&key))
+            };
+            let identity = hash[..32].to_owned();
             tokio::select! {_ = self.context.cancel.cancelled()=>return Err("channel_stopped".into()),result=client.send_message_with_options(to,message,SendOptions::default().with_message_id(identity))=>{result?;}}
             Ok(())
         })

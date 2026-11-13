@@ -1,7 +1,15 @@
 use crate::*;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
 use axum::extract::State;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
+
+pub(crate) fn session_digest(token: &str) -> String {
+    if token.starts_with("v2.") {
+        format!("{:x}", Sha512::digest(token.as_bytes()))
+    } else {
+        format!("{:x}", Sha256::digest(token.as_bytes()))
+    }
+}
 
 pub async fn set_admin(db: &PgPool, password: &str) -> Result<(), Box<dyn std::error::Error>> {
     if password.is_empty() || password.len() > 128 {
@@ -83,8 +91,8 @@ pub async fn login(
     issue_session(&app).await
 }
 async fn issue_session(app: &App) -> Response {
-    let token = format!("{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple());
-    let hash = format!("{:x}", Sha256::digest(token.as_bytes()));
+    let token = format!("v2.{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple());
+    let hash = session_digest(&token);
     if let Err(e) = sqlx::query("INSERT INTO admin_sessions(token_hash) VALUES($1)")
         .bind(hash)
         .execute(&app.db)
@@ -190,14 +198,15 @@ pub async fn session(
     )
 }
 pub(crate) async fn valid_session(db: &PgPool, token: &str) -> Result<bool, sqlx::Error> {
-    if token.len() != 64
-        || !token
+    let payload = token.strip_prefix("v2.").unwrap_or(token);
+    if payload.len() != 64
+        || !payload
             .bytes()
             .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
     {
         return Ok(false);
     }
-    let hash = format!("{:x}", Sha256::digest(token.as_bytes()));
+    let hash = session_digest(token);
     sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM admin_sessions WHERE token_hash=$1 AND expires_at>now())",
     )
@@ -214,7 +223,7 @@ pub async fn logout(
         Ok(v) => v,
         Err(e) => return e.into(),
     };
-    let hash = format!("{:x}", Sha256::digest(request.token.as_bytes()));
+    let hash = session_digest(&request.token);
     if let Err(e) = sqlx::query("DELETE FROM admin_sessions WHERE token_hash=$1")
         .bind(hash)
         .execute(&app.db)

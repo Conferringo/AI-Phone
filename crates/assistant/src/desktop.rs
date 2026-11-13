@@ -2,7 +2,7 @@ mod grounding;
 use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 use sqlx::Row;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -12,7 +12,7 @@ type Result<T> = std::result::Result<T, String>;
 const CONTAINER: &str = "ai-phone-desktop";
 const LIMIT: usize = 64 * 1024 * 1024;
 fn hash(data: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(data))
+    format!("{:x}", Sha512::digest(data))
 }
 fn uuid(s: &str) -> Result<Uuid> {
     Uuid::parse_str(s).map_err(|_| "无效操作编号".into())
@@ -244,7 +244,7 @@ async fn save_observation(
         .as_u64()
         .and_then(|v| u32::try_from(v).ok())
         .unwrap_or_default();
-    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256,application_id,window_id,process_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(hash(&png)).bind(&application_id).bind(window_id as i64).bind(i64::from(process_id)).execute(&app.db).await.map_err(|e|e.to_string())?;
+    sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,application_id,window_id,process_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8)").bind(id).bind(device).bind(epoch).bind(title).bind(path.to_string_lossy().to_string()).bind(&application_id).bind(window_id as i64).bind(i64::from(process_id)).execute(&app.db).await.map_err(|e|e.to_string())?;
     Ok(wire::DesktopObservation {
         device_id: device.into(),
         observation_id: id.to_string(),
@@ -454,6 +454,7 @@ async fn recorded_action(
     connection: &mut sqlx::PgConnection,
     id: Uuid,
     fingerprint: &str,
+    request: &[u8],
 ) -> Result<Option<wire::DesktopObservation>> {
     let Some(old) = sqlx::query("SELECT input_hash,status,result FROM desktop_actions WHERE id=$1")
         .bind(id)
@@ -463,7 +464,7 @@ async fn recorded_action(
     else {
         return Ok(None);
     };
-    if old.get::<String, _>("input_hash") != fingerprint {
+    if !crate::request_digest::matches(old.get("input_hash"), fingerprint, request) {
         return Err("操作编号已用于不同请求".into());
     }
     let status = old.get::<String, _>("status");
@@ -505,7 +506,8 @@ pub async fn action(
     }
     let mut input = action_value(&r)?;
     let id = uuid(&r.action_id)?;
-    let fingerprint = hash(&r.encode_to_vec());
+    let request = r.encode_to_vec();
+    let fingerprint = crate::request_digest::encode(&request);
     input["action_id"] = json!(r.action_id);
     let mut tx = app.db.begin().await.map_err(|e| e.to_string())?;
     let lock =
@@ -514,7 +516,7 @@ pub async fn action(
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
-    if let Some(observation) = recorded_action(&mut tx, id, &fingerprint).await? {
+    if let Some(observation) = recorded_action(&mut tx, id, &fingerprint, &request).await? {
         return Ok(observation);
     }
     let expected = run
@@ -770,7 +772,7 @@ fn transfer_row(r: &sqlx::postgres::PgRow) -> wire::DeviceTransfer {
         target_path: r.get("target_path"),
         name: r.get("name"),
         bytes: r.get::<i64, _>("bytes") as u64,
-        sha256: r.get("sha256"),
+        checksum: r.get("checksum"),
         status: r.get("status"),
         error: r.get("error"),
         created_at_ms: r.get::<i64, _>("ms") as u64,
@@ -901,7 +903,7 @@ async fn perform_transfer(app: &App, id: Uuid) -> Result<()> {
         let out = adb(
             app,
             &target,
-            &["shell", &format!("sha256sum {}", quote(&temp))],
+            &["shell", &format!("sha512sum {}", quote(&temp))],
             1024,
         )
         .await?;
@@ -965,7 +967,7 @@ async fn perform_transfer(app: &App, id: Uuid) -> Result<()> {
             .map_err(|e| e.to_string())?;
         (found, publication)
     };
-    sqlx::query("UPDATE device_transfers SET status='completed',bytes=$2,sha256=$3,error='',finished_at=now() WHERE id=$1").bind(id).bind(bytes.len()as i64).bind(verified).execute(&mut *publication).await.map_err(|e|e.to_string())?;
+    sqlx::query("UPDATE device_transfers SET status='completed',bytes=$2,checksum=$3,error='',finished_at=now() WHERE id=$1").bind(id).bind(bytes.len()as i64).bind(format!("sha512:{verified}")).execute(&mut *publication).await.map_err(|e|e.to_string())?;
     publication.commit().await.map_err(|e| e.to_string())?;
     // Media indexing is optional and runs after the durable completion receipt.
     if phone_target {
@@ -1295,7 +1297,7 @@ async fn tool_action(
 
 fn transfer_value(t: wire::DeviceTransfer) -> Value {
     plain(
-        json!({"success":t.status=="completed","request_id":t.id,"status":t.status,"source_device_id":t.source_device_id,"target_device_id":t.target_device_id,"source_path":t.source_path,"target_path":t.target_path,"bytes":t.bytes,"sha256":t.sha256,"error":t.error}),
+        json!({"success":t.status=="completed","request_id":t.id,"status":t.status,"source_device_id":t.source_device_id,"target_device_id":t.target_device_id,"source_path":t.source_path,"target_path":t.target_path,"bytes":t.bytes,"checksum":t.checksum,"error":t.error}),
     )
 }
 
@@ -1430,7 +1432,7 @@ pub fn catalog() -> Vec<Value> {
         ),
         f(
             "device_transfer",
-            "沿已连接的数据线传文件，最高64MiB，双端SHA256验证。返回request_id和实际目标路径；completed仅表示文件到达目标设备，绝不代表微信发送或对方收到。",
+            "沿已连接的数据线传文件，最高64MiB，双端内容校验。返回request_id和实际目标路径；completed仅表示文件到达目标设备，绝不代表微信发送或对方收到。",
             json!({"source_device_id":id,"target_device_id":id,"source_path":id,"target_name":id}),
             vec!["source_device_id", "target_device_id", "source_path"],
         ),
@@ -1906,19 +1908,19 @@ mod tests {
             sqlx::query("INSERT INTO desktop_actions(id,device_id,input_hash,status,result) VALUES($1,$2,'same-input','completed',$3)").bind(id).bind(device).bind(observation_meta(&observation)).execute(&app.db).await.unwrap();
             let mut connection=app.db.acquire().await.unwrap();
             for _ in 0..2 {
-                let cached=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
+                let cached=recorded_action(&mut connection,id,"same-input",b"").await.unwrap().unwrap();
                 assert_eq!(cached.observation_id,observation.observation_id);assert_eq!(cached.png,png);
                 assert_eq!(cached.frame_state,wire::DesktopFrameState::Stable as i32);assert_eq!(cached.frame_wait_ms,320);
                 assert_eq!(cached.application_id,"linux:libreoffice-writer");
                 assert_eq!(cached.window_id,424242);assert_eq!(cached.process_id,99);
             }
-            assert!(recorded_action(&mut connection,id,"different-input").await.is_err());
+            assert!(recorded_action(&mut connection,id,"different-input",b"").await.is_err());
             for status in ["running","unknown","failed"] {
                 sqlx::query("UPDATE desktop_actions SET status=$2 WHERE id=$1").bind(id).bind(status).execute(&mut *connection).await.unwrap();
-                assert!(recorded_action(&mut connection,id,"same-input").await.is_err());
+                assert!(recorded_action(&mut connection,id,"same-input",b"").await.is_err());
             }
             sqlx::query("UPDATE desktop_actions SET status='unknown',result=NULL WHERE id=$1").bind(id).execute(&mut *connection).await.unwrap();
-            assert!(recorded_action(&mut connection,id,"same-input").await.unwrap_err().contains("结果未知"));
+            assert!(recorded_action(&mut connection,id,"same-input",b"").await.unwrap_err().contains("结果未知"));
             let rejection=json!({"success":false,"not_executed":true,"code":"field_focus","error":"未确认字段"});
             let mut cursor=wire::DeviceCursor {device_id:device.into(),action_id:id.to_string(),..Default::default()};
             finish_action(&app,id,&mut cursor,&Err(rejection.to_string())).await.unwrap();
@@ -1926,11 +1928,11 @@ mod tests {
             let row=sqlx::query("SELECT status,result FROM desktop_actions WHERE id=$1").bind(id).fetch_one(&mut *connection).await.unwrap();
             assert_eq!(row.get::<String,_>("status"),"failed");
             assert_eq!(row.get::<Value,_>("result"),rejection);
-            let replay=recorded_action(&mut connection,id,"same-input").await.unwrap_err();
+            let replay=recorded_action(&mut connection,id,"same-input",b"").await.unwrap_err();
             assert_eq!(input_rejection(&replay).unwrap(),rejection);
-            assert!(recorded_action(&mut connection,Uuid::now_v7(),"new-input").await.unwrap().is_none());
+            assert!(recorded_action(&mut connection,Uuid::now_v7(),"new-input",b"").await.unwrap().is_none());
             sqlx::query("UPDATE desktop_actions SET status='completed',result=jsonb_build_object('observation_id',$2::text) WHERE id=$1").bind(id).bind(&observation.observation_id).execute(&mut *connection).await.unwrap();
-            let legacy=recorded_action(&mut connection,id,"same-input").await.unwrap().unwrap();
+            let legacy=recorded_action(&mut connection,id,"same-input",b"").await.unwrap().unwrap();
             assert_eq!(legacy.frame_state,wire::DesktopFrameState::Unspecified as i32);assert_eq!(legacy.frame_wait_ms,0);
             connection.close().await.unwrap();
         }).await;

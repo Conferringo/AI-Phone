@@ -3,7 +3,7 @@ use crate::{Error, Result, process};
 use fs2::FileExt;
 use serde::Serialize;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     fs::{self, DirBuilder, File, OpenOptions},
@@ -12,6 +12,7 @@ use std::{
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
+use uuid::Uuid;
 
 const MAX_EVENTS: usize = 256;
 const MAX_BYTES: usize = 2_000_000;
@@ -65,11 +66,8 @@ pub fn record(folder: &Path, env: &BTreeMap<String, String>) -> Result<()> {
     let path = folder.join("notifications.json");
     let mut events = read_events(&path)?;
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
-    events.push(event(
-        env,
-        uuid::Uuid::new_v4().as_bytes(),
-        u64::try_from(timestamp)?,
-    ));
+    let event = event(env, &events, Uuid::new_v4(), u64::try_from(timestamp)?);
+    events.push(event);
     let bytes = encode_events(events)?;
     replace_inbox(folder, &path, &bytes)
 }
@@ -100,19 +98,39 @@ fn field(env: &BTreeMap<String, String>, key: &str, limit: usize) -> String {
         .collect()
 }
 
-fn event(env: &BTreeMap<String, String>, uuid: &[u8], timestamp: u64) -> Value {
+fn event(env: &BTreeMap<String, String>, previous: &[Value], id: Uuid, timestamp: u64) -> Value {
     let session = env
         .get("DBUS_SESSION_BUS_ADDRESS")
         .map(String::as_str)
         .unwrap_or("");
-    let session_hash = format!("{:x}", Sha256::digest(session.as_bytes()));
+    let notification_id = field(env, "DUNST_ID", 80);
+    let mut previous_keys = previous
+        .iter()
+        .filter_map(|event| {
+            let key = event["notification_key"].as_str()?;
+            let (session, id) = key.strip_prefix("desktop:")?.split_once(':')?;
+            (session != "v2" && id == notification_id).then_some(key)
+        })
+        .peekable();
+    let retained_key = previous_keys
+        .peek()
+        .is_some()
+        .then(|| {
+            let hash = format!("{:x}", Sha256::digest(session.as_bytes()));
+            format!("desktop:{}:{notification_id}", &hash[..12])
+        })
+        .filter(|old| previous_keys.any(|key| key == old));
+    let notification_key = retained_key.unwrap_or_else(|| {
+        let hash = format!("{:x}", Sha512::digest(session.as_bytes()));
+        format!("desktop:v2:{}:{notification_id}", &hash[..12])
+    });
     let package = env
         .get("DUNST_DESKTOP_ENTRY")
         .filter(|value| !value.is_empty())
         .or_else(|| env.get("DUNST_APP_NAME"));
     json!({
-        "event_id": format!("{:x}", Sha256::digest(uuid)),
-        "notification_key": format!("desktop:{}:{}", &session_hash[..12], field(env, "DUNST_ID", 80)),
+        "event_id": format!("00000000000000000000000000000000{}", id.simple()),
+        "notification_key": notification_key,
         "package_name": package.into_iter().flat_map(|value| value.chars()).take(240).collect::<String>(),
         "app_name": field(env, "DUNST_APP_NAME", 240),
         "title": field(env, "DUNST_SUMMARY", 1000),
@@ -227,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn deterministic_event_matches_original_hook_unicode_contract() {
+    fn deterministic_event_preserves_unicode_and_stable_identifiers() {
         let values = env(&[
             ("DBUS_SESSION_BUS_ADDRESS", "fixture-session"),
             ("DUNST_ID", "通知"),
@@ -235,21 +253,34 @@ mod tests {
             ("DUNST_DESKTOP_ENTRY", ""),
             ("DUNST_BODY", "$(touch never)🐳"),
         ]);
-        let output = event(&values, &[0; 16], 123);
-        assert_eq!(
-            output["event_id"],
-            "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
-        );
+        let output = event(&values, &[], Uuid::nil(), 123);
+        assert_eq!(output["event_id"], "0".repeat(64));
         assert_eq!(output["package_name"], "微信");
         assert_eq!(
             output["notification_key"],
             format!(
-                "desktop:{}:通知",
-                &format!("{:x}", Sha256::digest(b"fixture-session"))[..12]
+                "desktop:v2:{}:通知",
+                &format!("{:x}", Sha512::digest(b"fixture-session"))[..12]
             )
         );
         assert_eq!(output["text"], "$(touch never)🐳");
         assert_eq!(output["posted_at_ms"], 123);
+        let previous = [json!({
+            "notification_key": format!("desktop:{}:通知",
+                &format!("{:x}", Sha256::digest(b"fixture-session"))[..12])
+        })];
+        let repeated = event(&values, &previous, Uuid::from_u128(1), 124);
+        assert_eq!(
+            repeated["notification_key"],
+            previous[0]["notification_key"]
+        );
+        assert_ne!(repeated["event_id"], output["event_id"]);
+        let mut other_session = values;
+        other_session.insert("DBUS_SESSION_BUS_ADDRESS".into(), "new-session".into());
+        assert_ne!(
+            event(&other_session, &previous, Uuid::from_u128(2), 125)["notification_key"],
+            previous[0]["notification_key"]
+        );
     }
 
     #[test]

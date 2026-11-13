@@ -10,7 +10,7 @@ use axum::{
 use base64::{Engine, engine::general_purpose::STANDARD};
 use prost::Message;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     io::Write,
@@ -65,7 +65,7 @@ struct Ledger {
 impl Default for Ledger {
     fn default() -> Self {
         Self {
-            archive_version: 1,
+            archive_version: action_store::ARCHIVE_VERSION,
             epoch: 1,
             controller: "manual".into(),
             sequence: 0,
@@ -634,7 +634,7 @@ async fn action(
             "run_id and action_id must be bounded identifiers",
         );
     }
-    let hash = format!("{:x}", Sha256::digest(request.encode_to_vec()));
+    let encoded = request.encode_to_vec();
     let mut ledger = runner.ledger.lock().await;
     let old = match ledger.actions.get(&request.action_id).cloned() {
         Some(value) => Some(value),
@@ -650,7 +650,11 @@ async fn action(
         },
     };
     if let Some(old) = old {
-        if old.hash != hash {
+        let matches = match old.hash.strip_prefix("sha512:") {
+            Some(digest) => digest == format!("{:x}", Sha512::digest(&encoded)),
+            None => old.hash == format!("{:x}", Sha256::digest(&encoded)),
+        };
+        if !matches {
             return err(
                 StatusCode::CONFLICT,
                 "action_id_conflict",
@@ -852,7 +856,7 @@ async fn action(
     ledger.actions.insert(
         request.action_id.clone(),
         Record {
-            hash,
+            hash: format!("sha512:{:x}", Sha512::digest(&encoded)),
             kind: kind.into(),
             gesture,
             ..Default::default()
@@ -1301,12 +1305,8 @@ mod observation_tests {
     #[tokio::test]
     async fn action_persistence_initial_failure_does_not_execute() {
         let (fixture, runner, request) = persistence_fixture("initial", CompletionFault::None);
-        let hash = format!("{:x}", Sha256::digest(request.action_id.as_bytes()));
-        let blocked = runner
-            .ledger_path
-            .with_extension("actions")
-            .join(&hash[..2])
-            .join(format!("{hash}.tmp"));
+        let blocked =
+            action_store::path(&runner.ledger_path, &request.action_id).with_extension("tmp");
         std::fs::create_dir_all(blocked).unwrap();
         persistence_failure(persistence_request(&runner, &request).await).await;
         let replay = persistence_result(persistence_request(&runner, &request).await).await;
@@ -1384,11 +1384,13 @@ mod observation_tests {
         fault: CompletionFault,
     ) -> (Fixture, Arc<Runner>, wire::DeviceActionRequest) {
         let fixture = Fixture::new();
-        let hash = format!("{:x}", Sha256::digest(id.as_bytes()));
         let injection = match fault {
             CompletionFault::None => String::new(),
             CompletionFault::Archive => {
-                format!("mkdir \"$base/ledger.actions/{}/{hash}.tmp\"", &hash[..2])
+                let path =
+                    action_store::path(&fixture.0.join("ledger.json"), id).with_extension("tmp");
+                let relative = path.strip_prefix(&fixture.0).unwrap().display();
+                format!("mkdir \"$base/{relative}\"")
             }
             CompletionFault::Snapshot => "mkdir \"$base/ledger.tmp\"".into(),
         };
@@ -1483,7 +1485,7 @@ printf 'home-completed'
         headers.insert("authorization", "Bearer test-only".parse().unwrap());
         headers.insert("content-type", MEDIA.parse().unwrap());
         for completed in [true, false] {
-            action_store::write(
+            action_store::write_legacy_fixture(
                 &runner.ledger_path,
                 &request.action_id,
                 &Record {

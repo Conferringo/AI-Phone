@@ -2,7 +2,6 @@ use crate::*;
 use axum::extract::{Multipart, Path, State};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sqlx::Row;
 
 async fn resolve(app: &App, id: &str) -> Result<Uuid, Response> {
@@ -331,7 +330,8 @@ async fn send_input(
     };
     // Response shape does not participate in the durable input identity.
     let receipt_only = std::mem::take(&mut request.receipt_only);
-    let fingerprint = format!("{:x}", Sha256::digest(request.encode_to_vec()));
+    let request_bytes = request.encode_to_vec();
+    let fingerprint = crate::request_digest::encode(&request_bytes);
     let result: Result<Uuid, sqlx::Error> = async {
         let mut tx = app.db.begin().await?;
         // A receipt is unique across both initial runs and subsequent inputs, including devices.
@@ -359,7 +359,7 @@ async fn send_input(
         };
         if let Some(old) = sqlx::query("SELECT id,conversation_id,request_fingerprint FROM runs WHERE request_id=$1")
             .bind(request_id).fetch_optional(&mut *tx).await? {
-            if old.get::<Uuid,_>("conversation_id") != id || old.get::<String,_>("request_fingerprint") != fingerprint {
+            if old.get::<Uuid,_>("conversation_id") != id || !crate::request_digest::matches(old.get("request_fingerprint"), &fingerprint, &request_bytes) {
                 return Err(sqlx::Error::Protocol("request_conflict".into()));
             }
             let run = old.get::<Uuid,_>("id");
@@ -368,7 +368,7 @@ async fn send_input(
         }
         if let Some(old) = sqlx::query("SELECT i.run_id,i.fingerprint,r.conversation_id FROM run_inputs i JOIN runs r ON r.id=i.run_id WHERE i.request_id=$1")
             .bind(request_id).fetch_optional(&mut *tx).await? {
-            if old.get::<Uuid,_>("conversation_id") != id || old.get::<String,_>("fingerprint") != fingerprint {
+            if old.get::<Uuid,_>("conversation_id") != id || !crate::request_digest::matches(old.get("fingerprint"), &fingerprint, &request_bytes) {
                 return Err(sqlx::Error::Protocol("request_conflict".into()));
             }
             let run = old.get::<Uuid,_>("run_id");

@@ -6,7 +6,7 @@ The Rust `assistant --state-backup` command owns backup and restore.
 
 Run `./ai-phone backup --output data/backups/my-backup.backup` from the installation. The tool verifies service ownership, quiesces this installation's services and guests, dumps PostgreSQL, exports the Linux root filesystem and archives private user state, then resumes the original services. Failure also attempts to resume them and reports restart failures.
 
-The recommended `.backup` directory envelope avoids a second full-size copy during sealing. Optional `.tar` envelopes require extra temporary disk space. Keep the entire envelope and its SHA256 sidecar.
+The recommended `.backup` directory envelope avoids a second full-size copy during sealing. Optional `.tar` envelopes require extra temporary disk space. Keep the complete backup, including its internal file inventory.
 
 Backups contain accounts, messages, keys, attachments, knowledge, Skills, complete action records, preserved Android disks and Linux files. They are private, mode 0600, and must never enter public release archives. Use private encrypted storage.
 

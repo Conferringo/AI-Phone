@@ -68,9 +68,9 @@ if (args[0] === "push") {
     case "mkdir":
       mkdirSync(guest(last), { recursive: true });
       break;
-    case "sha256sum":
+    case "sha512sum":
       console.log(
-        createHash("sha256")
+        createHash("sha512")
           .update(readFileSync(guest(last)))
           .digest("hex"),
       );

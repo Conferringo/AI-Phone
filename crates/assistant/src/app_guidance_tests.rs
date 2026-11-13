@@ -83,7 +83,7 @@ async fn office_guides_install_and_follow_the_observed_application_once() {
         let original = "---\nname: office-notes\ndescription: Personal Office notes.\n---\n\nOriginal notes\n";
         let item = crate::workbench::invoke(&app, "skill_create", &json!({"content":original}), &cancel).await.unwrap();
         let updated = original.replace("Original notes", "Manual Office guide");
-        crate::workbench::invoke(&app, "skill_edit", &json!({"id":item["id"],"content":updated,"expected_content_sha256":item["content_sha256"]}), &cancel).await.unwrap();
+        crate::workbench::invoke(&app, "skill_edit", &json!({"id":item["id"],"content":updated,"expected_content_version":item["content_version"]}), &cancel).await.unwrap();
         crate::workbench::invoke(&app, "skill_set_enabled", &json!({"id":item["id"],"enabled":false}), &cancel).await.unwrap();
         crate::workbench::initialize(&app.db, &app.root).await.unwrap();
         let (body, enabled): (String, bool) = sqlx::query_as("SELECT content,enabled FROM runtime_skills WHERE id=$1")

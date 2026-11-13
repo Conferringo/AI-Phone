@@ -48,12 +48,13 @@ message NativeAndroidVmEndpoint {
 
 // Live OS/transport evidence only; provisioning and complete-host readiness differ.
 message NativeAndroidBooted {
+  reserved 6;
+  reserved "frame_sha256";
   uint32 version = 1;
   string serial = 2;
   bool root_verified = 3;
   uint32 width = 4;
   uint32 height = 5;
-  string frame_sha256 = 6;
   bool reused_session = 7;
   // Transport pairing differs from device provisioning and complete install.
   bool backend_paired = 8;
@@ -110,10 +111,11 @@ message NativeAndroidInputReady {
 
 // Private install intent, persisted before a bundled application's only attempt.
 message NativeAndroidApplicationIntent {
+  reserved 4;
+  reserved "apk_sha256";
   uint32 version = 1;
   string serial = 2;
   string package_name = 3;
-  string apk_sha256 = 4;
 }
 
 message NativeWslDeviceSetupRequest {

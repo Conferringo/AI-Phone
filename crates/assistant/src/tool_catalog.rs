@@ -36,7 +36,7 @@ pub(crate) fn tools() -> Value {
         ),
         function(
             "skill_read",
-            "读取Skill完整正文、启用状态和content_sha256。每个手机任务必须先读phone-use；停用Skill可读取供编辑。",
+            "读取Skill完整正文、启用状态和content_version。每个手机任务必须先读phone-use；停用Skill可读取供编辑。",
             json!({"name":{"type":"string"}}),
             vec!["name"]
         ),
@@ -127,7 +127,7 @@ pub(crate) fn tools() -> Value {
         json!({"type":"function","name":"app_experience_save","description":"保存/修订本轮应用使用心得候选。同一应用标识+标题替代旧草稿，原稿保留。提供可复现方法、真实边界与本轮观察ID；verified至少2次同应用观察且有动作后复查。结束审计通过后汇入Skill。","parameters":experience_schema()}),
         function(
             "skill_list",
-            "列出Skill、启用状态、内置标记和content_sha256；先检查避免重复创建。",
+            "列出Skill、启用状态、内置标记和content_version；先检查避免重复创建。",
             json!({}),
             vec![]
         ),
@@ -145,9 +145,9 @@ pub(crate) fn tools() -> Value {
         ),
         function(
             "skill_edit",
-            "编辑已有自定义Skill的完整SKILL.md；先skill_read，传回content_sha256防止覆盖新修改。保留YAML name。内置Skill不可改。",
-            json!({"id":{"type":"string"},"content":{"type":"string"},"expected_content_sha256":{"type":"string"}}),
-            vec!["id", "content", "expected_content_sha256"]
+            "编辑已有自定义Skill的完整SKILL.md；先skill_read，传回content_version防止覆盖新修改。保留YAML name。内置Skill不可改。",
+            json!({"id":{"type":"string"},"content":{"type":"string"},"expected_content_version":{"type":"string"}}),
+            vec!["id", "content", "expected_content_version"]
         ),
         function(
             "skill_set_enabled",

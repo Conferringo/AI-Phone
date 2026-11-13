@@ -5,7 +5,7 @@ use crate::*;
 use axum::extract::{Path, State};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 pub(super) fn now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -141,11 +141,14 @@ fn repeated(
     s: &wire::LocationState,
     r: &wire::LocationUpdate,
     fingerprint: &[u8],
+    request: &[u8],
 ) -> Result<bool, String> {
     if s.request_id != r.request_id {
         return Ok(false);
     }
-    if s.request_hash != fingerprint {
+    if s.request_hash != fingerprint
+        && !(s.request_hash.len() == 32 && s.request_hash == Sha256::digest(request)[..])
+    {
         return Err("操作编号已用于其他位置请求".into());
     }
     Ok(true)
@@ -161,8 +164,9 @@ async fn update_locked(
     r: wire::LocationUpdate,
 ) -> Result<wire::LocationState, String> {
     validate(&r)?;
-    let fingerprint = Sha256::digest(r.encode_to_vec()).to_vec();
-    if repeated(&current, &r, &fingerprint)? {
+    let request = r.encode_to_vec();
+    let fingerprint = Sha512::digest(&request).to_vec();
+    if repeated(&current, &r, &fingerprint, &request)? {
         return Ok(current);
     }
     if current.revision != r.expected_revision {

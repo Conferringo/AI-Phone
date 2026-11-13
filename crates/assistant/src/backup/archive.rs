@@ -1,7 +1,7 @@
-use super::{Result, digest, new_file};
+use super::{BackupDigest, Result, new_file};
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use serde_json::{Map, Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 use std::{
     collections::BTreeSet,
     fs::{self, File},
@@ -12,7 +12,7 @@ use std::{
 
 struct Measured<R> {
     inner: R,
-    hash: Sha256,
+    hash: Sha512,
 }
 impl<R: Read> Read for Measured<R> {
     fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
@@ -40,14 +40,14 @@ fn regular<W: Write>(
     let info = fs::metadata(file)?;
     let mut measured = Measured {
         inner: File::open(file)?,
-        hash: Sha256::new(),
+        hash: Sha512::new(),
     };
     let mut header = tar::Header::new_gnu();
     header.set_size(info.len());
     header.set_mode(info.permissions().mode() & 0o777);
     header.set_cksum();
     archive.append_data(&mut header, path, &mut measured)?;
-    records.insert(path.into(),json!({"type":"file","size":info.len(),"allocated_bytes":info.blocks()*512,"sha256":format!("{:x}",measured.hash.finalize())}));
+    records.insert(path.into(),json!({"type":"file","size":info.len(),"allocated_bytes":info.blocks()*512,"sha512":format!("{:x}",measured.hash.finalize())}));
     Ok(())
 }
 fn omit(name: &str, dependencies: &Value) -> bool {
@@ -177,9 +177,9 @@ pub(super) fn read_backup(archive: &Path, work: &Path) -> Result<(std::path::Pat
         folder
     };
     let manifest = super::read_json(&folder.join("manifest.json"))?;
+    let digest = BackupDigest::from_manifest(&manifest)?;
     let id = manifest["id"].as_str().ok_or("Backup identity missing")?;
-    if manifest["format"] != 1 || id.len() != 32 || !id.bytes().all(|byte| byte.is_ascii_hexdigit())
-    {
+    if id.len() != 32 || !id.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return Err("Unsupported backup format".into());
     }
     let files = manifest["files"]
@@ -197,7 +197,7 @@ pub(super) fn read_backup(archive: &Path, work: &Path) -> Result<(std::path::Pat
         let info = fs::symlink_metadata(&file)?;
         if !info.is_file()
             || info.len() != row["size"].as_u64().ok_or("Payload size missing")?
-            || digest(&file)? != row["sha256"]
+            || digest.file(&file)? != row[digest.key()]
         {
             return Err("Backup payload changed".into());
         }
@@ -213,6 +213,7 @@ pub(super) fn read_backup(archive: &Path, work: &Path) -> Result<(std::path::Pat
     Ok((folder, manifest))
 }
 pub(super) fn restore_state(payload: &Path, destination: &Path, manifest: &Value) -> Result<()> {
+    let digest = BackupDigest::from_manifest(manifest)?;
     let records = manifest["records"]
         .as_object()
         .ok_or("Backup records missing")?;
@@ -256,7 +257,7 @@ pub(super) fn restore_state(payload: &Path, destination: &Path, manifest: &Value
             &file,
             fs::Permissions::from_mode(entry.header().mode()? & 0o777),
         )?;
-        let mut hash = Sha256::new();
+        let mut hash = digest.hasher();
         let mut total = 0;
         loop {
             let count = entry.read(&mut bytes)?;
@@ -272,7 +273,7 @@ pub(super) fn restore_state(payload: &Path, destination: &Path, manifest: &Value
             total += count as u64;
         }
         output.set_len(total)?;
-        if format!("{:x}", hash.finalize()) != record["sha256"] {
+        if hash.finish() != record[digest.key()] {
             return Err("Restored file checksum differs".into());
         }
     }
@@ -284,4 +285,55 @@ pub(super) fn restore_state(payload: &Path, destination: &Path, manifest: &Value
         symlink(target, file)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn restores_both_manifest_versions_and_rejects_changed_payload() {
+        let fixture = tempfile::tempdir().unwrap();
+        let source = fixture.path().join("source");
+        let folder = fixture.path().join("backup");
+        let output = fixture.path().join("output");
+        fs::create_dir_all(source.join("data")).unwrap();
+        fs::create_dir(&folder).unwrap();
+        fs::create_dir(&output).unwrap();
+        fs::write(source.join(".env"), "fixture").unwrap();
+        let payload = folder.join("state.tar.gz");
+        let (records, _) = write_state(&source, &payload, &json!({})).unwrap();
+        let current = json!({
+            "format": super::super::BACKUP_FORMAT,
+            "id": uuid::Uuid::nil().simple().to_string(),
+            "files": [super::super::receipt(&payload).unwrap()],
+            "records": records,
+        });
+        assert_eq!(
+            current["records"][".env"]["sha512"].as_str().unwrap().len(),
+            128
+        );
+        let mut legacy = current.clone();
+        legacy["format"] = json!(1);
+        legacy["files"][0] = json!({"path":"state.tar.gz","size":fs::metadata(&payload).unwrap().len(),
+            "sha256":BackupDigest::Legacy.file(&payload).unwrap()});
+        let entry = legacy["records"][".env"].as_object_mut().unwrap();
+        entry.remove("sha512");
+        entry.insert(
+            "sha256".into(),
+            json!(BackupDigest::Legacy.file(&source.join(".env")).unwrap()),
+        );
+        for manifest in [&current, &legacy] {
+            fs::write(folder.join("manifest.json"), manifest.to_string()).unwrap();
+            let (_, verified) = read_backup(&folder, fixture.path()).unwrap();
+            restore_state(&payload, &output, &verified).unwrap();
+            assert_eq!(fs::read_to_string(output.join(".env")).unwrap(), "fixture");
+            fs::remove_file(output.join(".env")).unwrap();
+        }
+        fs::write(folder.join("manifest.json"), current.to_string()).unwrap();
+        let mut changed = fs::read(&payload).unwrap();
+        changed[0] ^= 1;
+        fs::write(&payload, changed).unwrap();
+        assert!(read_backup(&folder, fixture.path()).is_err());
+    }
 }

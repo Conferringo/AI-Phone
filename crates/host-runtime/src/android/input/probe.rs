@@ -1,6 +1,6 @@
 use super::{Device, REMOTE_PROBE};
 use crate::{Error, Result, filesystem};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 use std::path::Path;
 
 pub(super) struct Probe<'a> {
@@ -18,7 +18,7 @@ impl<'a> Probe<'a> {
             path: path
                 .to_str()
                 .ok_or(Error::Invalid("phone_input_resource"))?,
-            digest: format!("{:x}", Sha256::digest(&bytes)),
+            digest: format!("{:x}", Sha512::digest(&bytes)),
         })
     }
 
@@ -31,7 +31,7 @@ impl<'a> Probe<'a> {
                     "shell",
                     "sh",
                     "-c",
-                    "if [ -f \"$1\" ]; then sha256sum \"$1\"; else printf missing; fi",
+                    "if [ -f \"$1\" ]; then toybox sha512sum \"$1\"; else printf missing; fi",
                     "sh",
                     REMOTE_PROBE,
                 ],
@@ -45,7 +45,7 @@ impl<'a> Probe<'a> {
             .split_once("  ")
             .ok_or(Error::Invalid("phone_input_probe_unknown"))?;
         if name != REMOTE_PROBE
-            || digest.len() != 64
+            || digest.len() != 128
             || !digest.bytes().all(|b| b.is_ascii_hexdigit())
         {
             return Err(Error::Invalid("phone_input_probe_unknown"));

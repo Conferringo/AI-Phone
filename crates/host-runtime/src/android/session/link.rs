@@ -216,8 +216,6 @@ async fn observe_owner(
         || ![value.width, value.height]
             .into_iter()
             .all(|n| (1..=8192).contains(&n))
-        || value.frame_sha256.len() != 64
-        || !value.frame_sha256.bytes().all(|b| b.is_ascii_hexdigit())
     {
         return Err(Error::Invalid("phone_link_observation"));
     }

@@ -139,10 +139,12 @@ pub(super) async fn start<E: Execute>(
     }
     filesystem::publish_private(&bin, "docker", body.as_bytes(), false)?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
-    managed_engine::save(root, user, home, &state, &command, &bin)?;
+    let managed = managed_engine::save(root, user, home, &state, &command, &bin)?;
     backend
         .env
-        .extend(crate::runtime_environment::resolve(root, user)?);
+        .extend(crate::runtime_environment::resolve_with_engine(
+            root, user, managed,
+        )?);
     Ok(())
 }
 

@@ -132,7 +132,7 @@ impl Device for Phone {
             use sha2::Digest;
             self.probe_hash = Some(format!(
                 "{:x}",
-                sha2::Sha256::digest(std::fs::read(args[1]).unwrap())
+                sha2::Sha512::digest(std::fs::read(args[1]).unwrap())
             ));
             String::new()
         } else if args.starts_with(&["shell", "sh", "-c"]) {

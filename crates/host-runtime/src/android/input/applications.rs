@@ -3,18 +3,13 @@ use super::{Device, State, policy};
 use crate::{Error, Result, filesystem};
 use ai_phone_api::wire::NativeAndroidApplicationIntent;
 use prost::Message;
-use sha2::{Digest, Sha256};
-use std::{
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 const HOME: &str = "dev.aiphone.home/.HomeActivity";
 pub(super) struct Application {
     package: &'static str,
     journal: &'static str,
     path: PathBuf,
-    maximum: u64,
     pending: bool,
 }
 impl Application {
@@ -39,11 +34,9 @@ impl Application {
                     filesystem::bounded_file_with_limit(&pending_path, 512)?.as_slice(),
                 )
                 .map_err(|_| Error::Invalid("phone_application_pending_owner"))?;
-                if value.version != 1
+                if !matches!(value.version, 1 | 2)
                     || value.serial != state.serial
                     || value.package_name != package
-                    || value.apk_sha256.len() != 64
-                    || !value.apk_sha256.bytes().all(|b| b.is_ascii_hexdigit())
                 {
                     return Err(Error::Invalid("phone_application_pending_owner"));
                 }
@@ -57,33 +50,8 @@ impl Application {
             package,
             journal,
             path,
-            maximum,
             pending,
         })
-    }
-    fn digest(&self) -> Result<String> {
-        // Source admission owns the sealed inventory. Hash the APK only when a
-        // new install needs a durable intent, never for an already installed app.
-        let mut input = filesystem::regular(&self.path)?;
-        let size = input.metadata()?.len();
-        if size == 0 || size > self.maximum {
-            return Err(Error::Invalid("phone_application_resource"));
-        }
-        let mut hash = Sha256::new();
-        let mut buffer = [0u8; 65536];
-        let mut read = 0u64;
-        loop {
-            let count = input.read(&mut buffer)?;
-            if count == 0 {
-                break;
-            }
-            read += count as u64;
-            if read > self.maximum {
-                return Err(Error::Invalid("phone_application_resource"));
-            }
-            hash.update(&buffer[..count]);
-        }
-        Ok(format!("{:x}", hash.finalize()))
     }
     async fn present(&self, adb: &mut impl Device) -> Result<bool> {
         policy::package(
@@ -119,10 +87,9 @@ impl Application {
         }
         if !present {
             let intent = NativeAndroidApplicationIntent {
-                version: 1,
+                version: 2,
                 serial: state.serial.clone(),
                 package_name: self.package.into(),
-                apk_sha256: self.digest()?,
             };
             state.persist(self.journal, &intent.encode_to_vec())?;
             let path = self
@@ -316,15 +283,9 @@ mod tests {
                     std::fs::read(&path).unwrap().as_slice(),
                 )
                 .unwrap();
+                assert_eq!(intent.version, 2);
                 assert_eq!(intent.serial, "emulator-fixture");
                 assert_eq!(intent.package_name, package);
-                assert_eq!(
-                    intent.apk_sha256,
-                    format!(
-                        "{:x}",
-                        Sha256::digest(std::fs::read(args.last().unwrap()).unwrap())
-                    )
-                );
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
@@ -479,7 +440,6 @@ mod tests {
             version: 1,
             serial: "another".into(),
             package_name: "dev.aiphone.home".into(),
-            apk_sha256: "a".repeat(64),
         };
         state
             .persist("application-home.pending.pb", &value.encode_to_vec())

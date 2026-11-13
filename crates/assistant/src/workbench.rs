@@ -8,7 +8,6 @@ mod skill_resources;
 pub(crate) mod persistence_tests;
 use axum::extract::{Multipart, Path, Query, State};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sqlx::Row;
 use std::{
     collections::HashMap,
@@ -149,8 +148,8 @@ fn metadata(content: &str, fallback: &str) -> (String, String) {
         description.chars().take(600).collect(),
     )
 }
-fn content_hash(content: &str) -> String {
-    format!("{:x}", Sha256::digest(content.as_bytes()))
+fn content_version(content: &str) -> String {
+    crate::request_digest::encode(content.as_bytes())
 }
 fn validate_skill(content: &str, fallback: &str) -> Result<(String, String), String> {
     if content.trim().is_empty() || content.len() > 1_048_576 || content.contains('\0') {
@@ -198,7 +197,11 @@ async fn skill_edit(
     if previous.builtin {
         return Err("内置Skill不可修改".into());
     }
-    if previous.content_sha256 != input.expected_content_sha256 {
+    if !crate::request_digest::matches(
+        &input.expected_content_version,
+        &previous.content_version,
+        previous.content.as_bytes(),
+    ) {
         return Err("版本冲突：Skill已更新，请重新读取后编辑".into());
     }
     if previous.name.to_lowercase() != name.to_lowercase() {
@@ -386,7 +389,7 @@ fn skill(row: &sqlx::postgres::PgRow) -> wire::RuntimeSkill {
         content: row.get("content"),
         enabled: row.get("enabled"),
         builtin: row.get("builtin"),
-        content_sha256: content_hash(&row.get::<String, _>("content")),
+        content_version: content_version(&row.get::<String, _>("content")),
     }
 }
 fn document(row: &sqlx::postgres::PgRow) -> wire::KnowledgeDocument {
@@ -948,8 +951,8 @@ pub async fn skill_text(app: &App, name: &str) -> Result<String, String> {
     let row = skill_resources::publish(&app.db, &app.root, &row.get::<String, _>("id")).await?;
     let item = skill(&row);
     Ok(format!(
-        "Skill id={}，name={}，enabled={}，content_sha256={}\n\n{}\n\n资源目录：/skills/{}（只读，可通过workspace_run读取或在隔离环境执行；停用的Skill仅供管理，不应作为当前任务指令）。",
-        item.id, item.name, item.enabled, item.content_sha256, item.content, item.id
+        "Skill id={}，name={}，enabled={}，content_version={}\n\n{}\n\n资源目录：/skills/{}（只读，可通过workspace_run读取或在隔离环境执行；停用的Skill仅供管理，不应作为当前任务指令）。",
+        item.id, item.name, item.enabled, item.content_version, item.content, item.id
     ))
 }
 pub async fn invoke(
@@ -965,14 +968,14 @@ pub async fn invoke(
             Ok(json!(
                 list.skills
                     .iter()
-                    .map(|s| json!({"id":s.id,"name":s.name,"description":s.description,"enabled":s.enabled,"builtin":s.builtin,"content_sha256":s.content_sha256}))
+                    .map(|s| json!({"id":s.id,"name":s.name,"description":s.description,"enabled":s.enabled,"builtin":s.builtin,"content_version":s.content_version}))
                     .collect::<Vec<_>>()
             ))
         }
         "skill_install" => {
             let item = skill_import(app, &string("source"), "", "").await?;
             Ok(
-                json!({"id":item.id,"name":item.name,"source":item.source,"installed":true,"enabled":item.enabled,"content_sha256":item.content_sha256}),
+                json!({"id":item.id,"name":item.name,"source":item.source,"installed":true,"enabled":item.enabled,"content_version":item.content_version}),
             )
         }
         "skill_create" => {
@@ -987,7 +990,7 @@ pub async fn invoke(
             }
             let item = skill_import(app, "", &content, &string("name")).await?;
             Ok(
-                json!({"id":item.id,"name":item.name,"saved":true,"enabled":item.enabled,"content_sha256":item.content_sha256}),
+                json!({"id":item.id,"name":item.name,"saved":true,"enabled":item.enabled,"content_version":item.content_version}),
             )
         }
         "skill_edit" => {
@@ -996,19 +999,19 @@ pub async fn invoke(
                 wire::SkillEditRequest {
                     id: string("id"),
                     content: string("content"),
-                    expected_content_sha256: string("expected_content_sha256"),
+                    expected_content_version: string("expected_content_version"),
                 },
             )
             .await?;
             Ok(
-                json!({"id":item.id,"name":item.name,"updated":true,"enabled":item.enabled,"content_sha256":item.content_sha256}),
+                json!({"id":item.id,"name":item.name,"updated":true,"enabled":item.enabled,"content_version":item.content_version}),
             )
         }
         "skill_set_enabled" => {
             let enabled = args["enabled"].as_bool().ok_or("enabled必须为布尔值")?;
             let item = skill_set_enabled(app, &string("id"), enabled, false).await?;
             Ok(
-                json!({"id":item.id,"name":item.name,"enabled":item.enabled,"content_sha256":item.content_sha256}),
+                json!({"id":item.id,"name":item.name,"enabled":item.enabled,"content_version":item.content_version}),
             )
         }
         "knowledge_search" => {
@@ -1177,7 +1180,7 @@ pub(crate) async fn publish_learning(
             wire::SkillEditRequest {
                 id: previous.id,
                 content,
-                expected_content_sha256: previous.content_sha256,
+                expected_content_version: previous.content_version,
             },
         )
         .await?;
