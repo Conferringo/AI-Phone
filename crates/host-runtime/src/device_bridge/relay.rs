@@ -1,12 +1,12 @@
 use super::{config::Config, transport};
 use ai_phone_api::wire::{DeviceBridgeOpen, DeviceBridgeOpened, DeviceBridgeService};
-use sha2::{Digest, Sha256};
 use std::{
     io,
     net::{Ipv4Addr, SocketAddr},
     sync::Arc,
     time::Duration,
 };
+use subtle::ConstantTimeEq;
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
@@ -21,7 +21,6 @@ pub(super) enum Route {
     Host {
         config: Arc<Config>,
         targets: [SocketAddr; 2],
-        key_hash: [u8; 32],
     },
     Guest {
         config: Arc<Config>,
@@ -30,24 +29,18 @@ pub(super) enum Route {
 }
 impl Route {
     pub fn host(config: Arc<Config>) -> Self {
-        let key_hash = Sha256::digest(&config.secret).into();
         Self::Host {
             config,
             targets: [
                 SocketAddr::from((Ipv4Addr::LOCALHOST, 15037)),
                 SocketAddr::from((Ipv4Addr::LOCALHOST, 8558)),
             ],
-            key_hash,
         }
     }
     async fn open(&self, client: &mut TcpStream) -> io::Result<TcpStream> {
         match self {
-            Self::Host {
-                config,
-                targets,
-                key_hash,
-            } => {
-                let result = authorize(client, config, key_hash, targets).await;
+            Self::Host { config, targets } => {
+                let result = authorize(client, config, targets).await;
                 transport::write(
                     client,
                     &DeviceBridgeOpened {
@@ -64,12 +57,13 @@ impl Route {
 async fn authorize(
     client: &mut TcpStream,
     config: &Config,
-    key_hash: &[u8; 32],
     targets: &[SocketAddr; 2],
 ) -> io::Result<TcpStream> {
     let request: DeviceBridgeOpen = transport::read(client).await?;
-    let presented: [u8; 32] = Sha256::digest(&request.secret).into();
-    if request.version != 1 || request.bridge_id != config.id || presented != *key_hash {
+    if request.version != 1
+        || request.bridge_id != config.id
+        || !bool::from(request.secret.ct_eq(&config.secret))
+    {
         return Err(transport::invalid());
     }
     let index = match DeviceBridgeService::try_from(request.service) {

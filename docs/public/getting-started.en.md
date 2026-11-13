@@ -44,7 +44,7 @@ Use the archive path printed by `package` in the `stage` command.
 ./ai-phone stage --archive /path/to/generated-source-bundle.tar.gz --destination /path/to/AIPhone
 ```
 
-Bundles contain allowlisted source, a manifest and SHA256, excluding private state. By default, `./ai-phone package` creates an internal review bundle. It includes `NOT-FOR-PUBLICATION.txt` while publication gates remain incomplete. User data and private evidence remain excluded. Staging verifies files and keeps persistent user data separate. Only the first installation receives a current link; subsequent versions are staged without live activation. Checksums are not publisher signatures. See [distribution and updates](distribution.en.md).
+The source archive includes a file manifest and SHA-256 checksum. Staging verifies the files and keeps user data in a separate directory. The first installation creates the current link. Later versions are staged for activation. See [distribution and updates](distribution.en.md).
 
 ## Personal entry and guest apps
 

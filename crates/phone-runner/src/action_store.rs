@@ -17,8 +17,22 @@ struct Entry {
 }
 const MAX_RECORD_BYTES: u64 = 1024 * 1024;
 pub const CACHE_SIZE: usize = 128;
+pub const ARCHIVE_VERSION: u32 = 2;
 
-fn path(ledger: &Path, id: &str) -> PathBuf {
+pub fn path(ledger: &Path, id: &str) -> PathBuf {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::with_capacity(id.len() * 2);
+    for byte in id.bytes() {
+        encoded.push(HEX[usize::from(byte >> 4)] as char);
+        encoded.push(HEX[usize::from(byte & 15)] as char);
+    }
+    let shard = &encoded[encoded.len().saturating_sub(2)..];
+    ledger
+        .with_extension("actions-v2")
+        .join(shard)
+        .join(format!("{encoded}.json"))
+}
+fn legacy_path(ledger: &Path, id: &str) -> PathBuf {
     let hash = format!("{:x}", Sha256::digest(id.as_bytes()));
     ledger
         .with_extension("actions")
@@ -47,8 +61,17 @@ pub fn lock(ledger: &Path) -> Result<File, String> {
     Ok(file)
 }
 pub fn read(ledger: &Path, id: &str) -> Result<Option<Record>, String> {
-    let file = path(ledger, id);
-    let meta = match fs::symlink_metadata(&file) {
+    if let Some(record) = read_at(&path(ledger, id), id)? {
+        return Ok(Some(record));
+    }
+    match fs::symlink_metadata(ledger.with_extension("actions")) {
+        Ok(_) => read_at(&legacy_path(ledger, id), id),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+fn read_at(file: &Path, id: &str) -> Result<Option<Record>, String> {
+    let meta = match fs::symlink_metadata(file) {
         Ok(value) => value,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(e) => return Err(e.to_string()),
@@ -64,10 +87,17 @@ pub fn read(ledger: &Path, id: &str) -> Result<Option<Record>, String> {
     Ok(Some(value.record))
 }
 pub fn write(ledger: &Path, id: &str, record: &Record) -> Result<(), String> {
-    let file = path(ledger, id);
-    let base = ledger.with_extension("actions");
-    directory(&base)?;
-    directory(file.parent().ok_or("Missing action directory")?)?;
+    write_at(&path(ledger, id), id, record)
+}
+#[cfg(test)]
+pub fn write_legacy_fixture(ledger: &Path, id: &str, record: &Record) -> Result<(), String> {
+    write_at(&legacy_path(ledger, id), id, record)
+}
+fn write_at(file: &Path, id: &str, record: &Record) -> Result<(), String> {
+    let parent = file.parent().ok_or("Missing action directory")?;
+    let base = parent.parent().ok_or("Missing action archive")?;
+    directory(base)?;
+    directory(parent)?;
     let bytes = serde_json::to_vec(&Entry {
         id: id.into(),
         record: record.clone(),
@@ -87,20 +117,20 @@ pub fn write(ledger: &Path, id: &str, record: &Record) -> Result<(), String> {
     out.write_all(&bytes)
         .and_then(|_| out.sync_all())
         .map_err(|e| e.to_string())?;
-    fs::rename(temp, &file).map_err(|e| e.to_string())?;
+    fs::rename(temp, file).map_err(|e| e.to_string())?;
     // Also persist directory entries: a crash must retain the initial unknown record.
-    File::open(file.parent().unwrap())
+    File::open(parent)
         .and_then(|d| d.sync_all())
         .map_err(|e| e.to_string())?;
     File::open(base)
         .and_then(|d| d.sync_all())
         .map_err(|e| e.to_string())?;
-    File::open(ledger.parent().ok_or("Missing ledger directory")?)
+    File::open(base.parent().ok_or("Missing ledger directory")?)
         .and_then(|d| d.sync_all())
         .map_err(|e| e.to_string())
 }
 pub fn migrate(ledger_path: &Path, ledger: &mut Ledger) -> Result<(), String> {
-    if ledger.archive_version > 1 {
+    if ledger.archive_version > ARCHIVE_VERSION {
         return Err("Unsupported action archive version".into());
     }
     if ledger.archive_version == 0 {
@@ -114,15 +144,15 @@ pub fn migrate(ledger_path: &Path, ledger: &mut Ledger) -> Result<(), String> {
                 .map_err(|e| e.to_string())?;
         }
         for (id, record) in &ledger.actions {
-            match read(ledger_path, id)? {
+            let file = legacy_path(ledger_path, id);
+            match read_at(&file, id)? {
                 Some(old) if old != *record => {
                     return Err("Legacy action conflicts with archive; migration stopped".into());
                 }
                 Some(_) => {}
-                None => write(ledger_path, id, record)?,
+                None => write_at(&file, id, record)?,
             }
         }
-        ledger.archive_version = 1;
     } else {
         // Canonical archive wins over stale cache snapshots after a crash.
         for (id, record) in &ledger.actions {
@@ -136,6 +166,7 @@ pub fn migrate(ledger_path: &Path, ledger: &mut Ledger) -> Result<(), String> {
             }
         }
     }
+    ledger.archive_version = ARCHIVE_VERSION;
     ledger.actions.clear();
     Ok(())
 }
@@ -236,7 +267,7 @@ mod tests {
             success: true,
             ..pending.clone()
         };
-        write(&path, "a", &pending).unwrap();
+        write_legacy_fixture(&path, "a", &pending).unwrap();
         let mut old = Ledger {
             archive_version: 0,
             ..Default::default()

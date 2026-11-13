@@ -246,10 +246,17 @@ pub(crate) fn profile_environment(root: &Path, user: &Path) -> Result<Environmen
     Profile::load(root)?.environment(root, user)
 }
 pub(crate) fn resolve(root: &Path, user: &Path) -> Result<Environment> {
+    resolve_with_engine(root, user, managed_engine::environment(root, user)?)
+}
+
+pub(crate) fn resolve_with_engine(
+    root: &Path,
+    user: &Path,
+    managed: Environment,
+) -> Result<Environment> {
     let profile = Profile::load(root)?;
     let base = profile.base_path(root)?;
     let mut env = Environment::new();
-    let managed = managed_engine::environment(root, user)?;
     let prefix = managed
         .get("AI_PHONE_MANAGED_BIN")
         .cloned()

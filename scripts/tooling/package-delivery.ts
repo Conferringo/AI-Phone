@@ -1,28 +1,9 @@
-import { lstatSync, readFileSync, realpathSync } from "node:fs";
-import { join, relative, basename, resolve, sep } from "node:path";
-import { ROOT, digest, output } from "./process";
+import { lstatSync, realpathSync } from "node:fs";
+import { join, relative, basename, sep } from "node:path";
+import { ROOT, digest } from "./process";
 import { json } from "./inventory";
 
 const assetLimit = 2 * 1024 ** 3;
-function native(root: string, ...args: string[]) {
-  return JSON.parse(
-    output(
-      [
-        "cargo",
-        "run",
-        "--release",
-        "--locked",
-        "-p",
-        "ai-phone-host-runtime",
-        "--bin",
-        "package-volumes",
-        "--",
-        ...args,
-      ],
-      { cwd: root },
-    ),
-  );
-}
 async function fileRecord(root: string, path: string) {
   const base = realpathSync(join(root, "dist")),
     name = relative(base, realpathSync(path)).split(sep).join("/"),
@@ -88,40 +69,12 @@ export async function uploadPlan(report: any, source: string, root = ROOT) {
       value.local_bootstrap?.user_state_bundled !== false
     )
       throw Error("Candidate metadata differs");
-    if (delivery.format === "volumes") {
-      const manifest = join(root, "dist", delivery.manifest),
-        record = await fileRecord(root, manifest);
-      if (record.sha256 !== delivery.manifest_sha256)
-        throw Error("Volume inventory changed");
-      const verified = native(
-        root,
-        "verify",
-        manifest,
-        delivery.manifest_sha256,
-      );
-      if (
-        !verified.verified ||
-        verified.sha256 !== artifact.sha256 ||
-        verified.size !== artifact.size
-      )
-        throw Error("Volume receipt differs");
-      files.push(record);
-      for (const part of json(manifest).parts) {
-        const row = await fileRecord(root, resolve(manifest, "..", part.name));
-        if (row.size !== part.size || row.sha256 !== part.sha256)
-          throw Error("Candidate volume changed");
-        files.push(row);
-      }
-    } else if (delivery.format === "single") {
-      const record = await fileRecord(root, join(root, "dist", artifact.file));
-      if (record.sha256 !== artifact.sha256 || record.size !== artifact.size)
-        throw Error("Candidate installer changed");
-      files.push(record);
-    } else throw Error("Unknown candidate delivery format");
-    files.push(
-      await fileRecord(root, metadata),
-      await fileRecord(root, join(root, "dist", artifact.file + ".sha256")),
-    );
+    if (delivery.format !== "single")
+      throw Error("Expected a single installer file");
+    const record = await fileRecord(root, join(root, "dist", artifact.file));
+    if (record.sha256 !== artifact.sha256 || record.size !== artifact.size)
+      throw Error("Candidate installer changed");
+    files.push(record);
   }
   if (new Set(files.map((f) => f.name)).size !== files.length)
     throw Error("Candidate asset names are duplicated");

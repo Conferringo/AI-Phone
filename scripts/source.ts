@@ -21,7 +21,7 @@ switch (operation) {
     console.log(JSON.stringify(refreshManifest()));
     break;
   case "package":
-    console.log(createSourcePackage(ROOT, args[0]!, args.includes("--public")));
+    console.log(createSourcePackage(ROOT, args[0]!));
     break;
   case "export":
     console.log(

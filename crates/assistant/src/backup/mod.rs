@@ -4,12 +4,12 @@ mod phone;
 
 use flate2::{Compression, write::GzEncoder};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     ffi::OsString,
     fs::{self, File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Write},
     os::unix::fs::{OpenOptionsExt, PermissionsExt},
     path::{Path, PathBuf},
     process::{Command, Stdio},
@@ -68,22 +68,80 @@ fn new_file(path: &Path) -> Result<File> {
         .mode(0o600)
         .open(path)?)
 }
-fn digest(path: &Path) -> Result<String> {
-    let mut hash = Sha256::new();
-    let mut file = File::open(path)?;
-    let mut bytes = [0u8; 128 * 1024];
-    loop {
-        let size = file.read(&mut bytes)?;
-        if size == 0 {
-            break;
+const BACKUP_FORMAT: u64 = 2;
+
+#[derive(Clone, Copy)]
+enum BackupDigest {
+    Legacy,
+    Current,
+}
+impl BackupDigest {
+    fn from_manifest(manifest: &Value) -> Result<Self> {
+        match manifest["format"].as_u64() {
+            Some(1) => Ok(Self::Legacy),
+            Some(BACKUP_FORMAT) => Ok(Self::Current),
+            _ => Err("Unsupported backup format".into()),
         }
-        hash.update(&bytes[..size]);
     }
-    Ok(format!("{:x}", hash.finalize()))
+
+    fn key(self) -> &'static str {
+        match self {
+            Self::Legacy => "sha256",
+            Self::Current => "sha512",
+        }
+    }
+
+    fn hasher(self) -> BackupHasher {
+        match self {
+            Self::Legacy => BackupHasher::Legacy(Sha256::new()),
+            Self::Current => BackupHasher::Current(Sha512::new()),
+        }
+    }
+
+    fn file(self, path: &Path) -> Result<String> {
+        let mut input = File::open(path)?;
+        let mut hash = self.hasher();
+        io::copy(&mut input, &mut hash)?;
+        Ok(hash.finish())
+    }
+}
+
+enum BackupHasher {
+    Legacy(Sha256),
+    Current(Sha512),
+}
+impl BackupHasher {
+    fn update(&mut self, bytes: &[u8]) {
+        match self {
+            Self::Legacy(hash) => hash.update(bytes),
+            Self::Current(hash) => hash.update(bytes),
+        }
+    }
+
+    fn finish(self) -> String {
+        match self {
+            Self::Legacy(hash) => format!("{:x}", hash.finalize()),
+            Self::Current(hash) => format!("{:x}", hash.finalize()),
+        }
+    }
+}
+impl Write for BackupHasher {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.update(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 fn receipt(path: &Path) -> Result<Value> {
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or("Payload name missing")?;
     Ok(
-        json!({"path":path.file_name().ok_or("Payload name missing")?,"size":fs::metadata(path)?.len(),"sha256":digest(path)?}),
+        json!({"path":name,"size":fs::metadata(path)?.len(),"sha512":BackupDigest::Current.file(path)?}),
     )
 }
 fn environment(root: &Path) -> Result<BTreeMap<String, String>> {
@@ -289,7 +347,7 @@ fn create(
         let (records, excluded) =
             archive::write_state(&root, &temporary.path().join("state.tar.gz"), &dependencies)?;
         Ok(
-            json!({"format":1,"id":uuid::Uuid::new_v4().simple().to_string(),"created_at":time::OffsetDateTime::now_utc().format(&time::format_description::well_known::Rfc3339)?,"consistency":if quiesce{"quiesced"}else{"offline-fixture"},"source_root":root,"source_data":data,"records":records,"excluded":excluded,"database":database,"desktop":desktop_metadata,"disk_dependencies":dependencies,"disk_chains":chains,"files":[]}),
+            json!({"format":BACKUP_FORMAT,"id":uuid::Uuid::new_v4().simple().to_string(),"created_at":time::OffsetDateTime::now_utc().format(&time::format_description::well_known::Rfc3339)?,"consistency":if quiesce{"quiesced"}else{"offline-fixture"},"source_root":root,"source_data":data,"records":records,"excluded":excluded,"database":database,"desktop":desktop_metadata,"disk_dependencies":dependencies,"disk_chains":chains,"files":[]}),
         )
     })?;
     let mut entries = fs::read_dir(temporary.path())?
@@ -319,10 +377,6 @@ fn create(
         archive::write_envelope(temporary.path(), &destination)?;
         fs::metadata(&destination)?.len()
     };
-    save(
-        &PathBuf::from(format!("{}.sha256.json", destination.display())),
-        &json!({"sha256":digest(&if directory{destination.join("manifest.json")}else{destination.clone()})?,"size":size,"format":1,"envelope":if directory{"directory"}else{"tar"}}),
-    )?;
     Ok(
         json!({"id":manifest["id"],"path":destination,"size":size,"records":manifest["records"].as_object().ok_or("Backup records missing")?.len(),"consistent":quiesce}),
     )
@@ -422,13 +476,14 @@ fn restore(
     }
     let mut report = json!({"backup_id":manifest["id"],"database_verified":true,"tables":restored.as_object().ok_or("Table fingerprints missing")?.len(),"state_entries":manifest["records"].as_object().ok_or("State records missing")?.len(),"relocations":changes,"quarantined":true,"desktop_rootfs_saved":has_desktop});
     if has_desktop {
-        report["linux_rootfs_sha256"] = manifest["files"]
+        let digest = BackupDigest::from_manifest(&manifest)?;
+        report[format!("linux_rootfs_{}", digest.key())] = manifest["files"]
             .as_array()
             .ok_or("Backup files missing")?
             .iter()
             .find(|row| row["path"] == "desktop-rootfs.tar.gz")
-            .ok_or("Desktop payload missing")?["sha256"]
-            .clone();
+            .ok_or("Desktop payload missing")?[digest.key()]
+        .clone();
     }
     save(&state.join("data/restore-report.json"), &report)?;
     if destination.try_exists()? {
@@ -461,7 +516,15 @@ fn recover_desktop(destination: &Path, name: &str) -> Result<Value> {
     let metadata = read_json(&recovery.join("container.json"))?;
     let config = &metadata["config"];
     let archive = recovery.join("rootfs.tar.gz");
-    if digest(&archive)? != report["linux_rootfs_sha256"] {
+    let (digest, expected) = match (
+        report["linux_rootfs_sha512"].as_str(),
+        report["linux_rootfs_sha256"].as_str(),
+    ) {
+        (Some(expected), None) => (BackupDigest::Current, expected),
+        (None, Some(expected)) => (BackupDigest::Legacy, expected),
+        _ => return Err("Recovered desktop rootfs checksum missing or ambiguous".into()),
+    };
+    if digest.file(&archive)? != expected {
         return Err("Recovered desktop rootfs changed".into());
     }
     let image = format!("{name}:verified");

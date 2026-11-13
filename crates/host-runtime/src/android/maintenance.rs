@@ -1,6 +1,5 @@
 use crate::{Error, Result, filesystem};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     ffi::OsString,
@@ -311,7 +310,6 @@ async fn profile(root: &Path, phone: &Phone, id: &str) -> Result<Value> {
         .join(format!("identity-{}-{stamp}", phone.serial));
     filesystem::directory(&backup, true)?;
     let mut original = BTreeMap::new();
-    let mut hashes = BTreeMap::new();
     for path in PROPERTIES {
         let content = phone.command(&["exec-out", "cat", path]).await?;
         let target = backup.join(path.trim_start_matches('/'));
@@ -322,7 +320,6 @@ async fn profile(root: &Path, phone: &Phone, id: &str) -> Result<Value> {
             true,
         )?;
         std::fs::write(target, &content)?;
-        hashes.insert(*path, format!("{:x}", Sha256::digest(&content)));
         original.insert(*path, content);
     }
     let mut names = BTreeMap::new();
@@ -336,7 +333,7 @@ async fn profile(root: &Path, phone: &Phone, id: &str) -> Result<Value> {
     }
     std::fs::write(
         backup.join("manifest.json"),
-        json!({"files": hashes, "names": names}).to_string(),
+        json!({"version": 2, "files": PROPERTIES, "names": names}).to_string(),
     )?;
     phone.command(&["remount"]).await?;
     let temporary = backup.join("next.prop");

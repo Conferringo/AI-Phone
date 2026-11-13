@@ -8,7 +8,7 @@ Applications run inside the guest operating systems. Proxy subscriptions and app
 
 The desktop image includes LibreOffice Writer, Calc, Impress and Draw. The built-in `computer-use` Skill covers opening applications, Unicode input, spreadsheet formulas, presentation placeholders, shape dragging and saving the correct document format. Ordinary office tasks use the visible desktop and input tools. Command execution remains available for explicit programming or system-maintenance requests.
 
-Keep source files and a local deliverable in the task directory. Check saved content in the application; naming a file `.xlsx` or `.pptx` does not select that format. Connected-device transfers carry file size and SHA-256 receipts. Check delivery in the source conversation.
+Keep source files and a local deliverable in the task directory. Check saved content in the application; naming a file `.xlsx` or `.pptx` does not select that format. Connected-device transfers carry file size and integrity receipts. Check delivery in the source conversation.
 
 ## Component contract
 

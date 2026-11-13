@@ -10,7 +10,7 @@ use axum::{
 use base64::{Engine, engine::general_purpose::STANDARD};
 use prost::Message;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     io::Write,
@@ -65,7 +65,7 @@ struct Ledger {
 impl Default for Ledger {
     fn default() -> Self {
         Self {
-            archive_version: 1,
+            archive_version: action_store::ARCHIVE_VERSION,
             epoch: 1,
             controller: "manual".into(),
             sequence: 0,
@@ -634,7 +634,7 @@ async fn action(
             "run_id and action_id must be bounded identifiers",
         );
     }
-    let hash = format!("{:x}", Sha256::digest(request.encode_to_vec()));
+    let encoded = request.encode_to_vec();
     let mut ledger = runner.ledger.lock().await;
     let old = match ledger.actions.get(&request.action_id).cloned() {
         Some(value) => Some(value),
@@ -650,7 +650,11 @@ async fn action(
         },
     };
     if let Some(old) = old {
-        if old.hash != hash {
+        let matches = match old.hash.strip_prefix("sha512:") {
+            Some(digest) => digest == format!("{:x}", Sha512::digest(&encoded)),
+            None => old.hash == format!("{:x}", Sha256::digest(&encoded)),
+        };
+        if !matches {
             return err(
                 StatusCode::CONFLICT,
                 "action_id_conflict",
@@ -679,16 +683,17 @@ async fn action(
             "Control was transferred; reacquire before acting",
         );
     }
+    use wire::device_action_request::Action;
     let (scroll_attempt, (width, height)) =
         match grounding::resolve(&runner, &request, ledger.epoch, ledger.revision).await {
             Ok(Some(resolved)) => {
                 request.action = Some(resolved.action);
                 (resolved.scroll, resolved.dimensions)
             }
+            Ok(None) if matches!(request.action, Some(Action::Location(_))) => (None, (0, 0)),
             Ok(None) => (None, dimensions(&runner).await),
             Err(message) => return err(StatusCode::CONFLICT, "target_rejected", &message),
         };
-    use wire::device_action_request::Action;
     let (kind, gesture) = match request.action.as_ref() {
         Some(Action::Tap(v)) => ("tap", vec![v.x, v.y]),
         Some(Action::Swipe(v)) => ("swipe", vec![v.x1, v.y1, v.x2, v.y2, v.duration_ms]),
@@ -718,20 +723,20 @@ async fn action(
         Some(Action::Orientation(value)) => Some(*value),
         _ => None,
     };
-    let cursor_state = cursor::accepted(&request, width, height);
+    let cursor_state = (kind != "location").then(|| cursor::accepted(&request, width, height));
     let mut is_input = false;
     let command = match request.action {
-        Some(Action::Location(v)) if location::command(&v).is_some() => {
-            location::command(&v).unwrap()
-        }
-        Some(Action::Gesture(v)) if gestures::valid(&v, width, height) => vec![],
-        Some(Action::Motion(v)) if gestures::motion(&v) => vec![],
-        Some(Action::Orientation(value)) if value.rotation <= 3 => {
-            orientation_command(&value).expect("bounded rotation checked")
-        }
-        Some(Action::Tap(v)) if v.x < width && v.y < height => {
-            args(&["shell", "input", "tap", &v.x.to_string(), &v.y.to_string()])
-        }
+        Some(Action::Location(v)) => location::command(&v),
+        Some(Action::Gesture(v)) if gestures::valid(&v, width, height) => Some(vec![]),
+        Some(Action::Motion(v)) if gestures::motion(&v) => Some(vec![]),
+        Some(Action::Orientation(value)) => orientation_command(&value),
+        Some(Action::Tap(v)) if v.x < width && v.y < height => Some(args(&[
+            "shell",
+            "input",
+            "tap",
+            &v.x.to_string(),
+            &v.y.to_string(),
+        ])),
         Some(Action::Swipe(v))
             if v.x1 < width
                 && v.x2 < width
@@ -739,7 +744,7 @@ async fn action(
                 && v.y2 < height
                 && (50..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "swipe",
@@ -748,12 +753,12 @@ async fn action(
                 &v.x2.to_string(),
                 &v.y2.to_string(),
                 &v.duration_ms.to_string(),
-            ])
+            ]))
         }
         Some(Action::LongPress(v))
             if v.x < width && v.y < height && (500..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "swipe",
@@ -762,7 +767,7 @@ async fn action(
                 &v.x.to_string(),
                 &v.y.to_string(),
                 &v.duration_ms.to_string(),
-            ])
+            ]))
         }
         Some(Action::Drag(v))
             if v.x1 < width
@@ -771,7 +776,7 @@ async fn action(
                 && v.y2 < height
                 && (100..=2000).contains(&v.duration_ms) =>
         {
-            args(&[
+            Some(args(&[
                 "shell",
                 "input",
                 "draganddrop",
@@ -780,15 +785,15 @@ async fn action(
                 &v.x2.to_string(),
                 &v.y2.to_string(),
                 &v.duration_ms.max(1000).to_string(),
-            ])
+            ]))
         }
-        Some(Action::Key(v)) if v.key == "SELECT_ALL" => args(&[
+        Some(Action::Key(v)) if v.key == "SELECT_ALL" => Some(args(&[
             "shell",
             "input",
             "keycombination",
             "KEYCODE_CTRL_LEFT",
             "KEYCODE_A",
-        ]),
+        ])),
         Some(Action::Key(v))
             if [
                 "HOME",
@@ -806,11 +811,16 @@ async fn action(
             ]
             .contains(&v.key.as_str()) =>
         {
-            args(&["shell", "input", "keyevent", &format!("KEYCODE_{}", v.key)])
+            Some(args(&[
+                "shell",
+                "input",
+                "keyevent",
+                &format!("KEYCODE_{}", v.key),
+            ]))
         }
         Some(Action::Input(v)) if !v.text.is_empty() && v.text.len() <= 16000 => {
             is_input = true;
-            args(&[
+            Some(args(&[
                 "shell",
                 "am",
                 "broadcast",
@@ -825,19 +835,20 @@ async fn action(
                 "--es",
                 "action_id",
                 &request.action_id,
-            ])
+            ]))
         }
-        Some(Action::Shell(v)) if !v.script.is_empty() && v.script.len() <= 4096 => args(&[
+        Some(Action::Shell(v)) if !v.script.is_empty() && v.script.len() <= 4096 => Some(args(&[
             "shell",
             &format!("timeout 12 sh -c {}", guest_quote(&v.script)),
-        ]),
-        _ => {
-            return err(
-                StatusCode::BAD_REQUEST,
-                "invalid_action",
-                "Invalid action, coordinates or limit",
-            );
-        }
+        ])),
+        _ => None,
+    };
+    let Some(command) = command else {
+        return err(
+            StatusCode::BAD_REQUEST,
+            "invalid_action",
+            "Invalid action, coordinates or limit",
+        );
     };
     if kind != "location" {
         ledger.revision = ledger.revision.saturating_add(1);
@@ -845,7 +856,7 @@ async fn action(
     ledger.actions.insert(
         request.action_id.clone(),
         Record {
-            hash,
+            hash: format!("sha512:{:x}", Sha512::digest(&encoded)),
             kind: kind.into(),
             gesture,
             ..Default::default()
@@ -861,7 +872,7 @@ async fn action(
     if let Err(e) = save(&runner, &ledger) {
         return err(StatusCode::INTERNAL_SERVER_ERROR, "persistence_failed", &e);
     }
-    if kind != "location" {
+    if let Some(cursor_state) = cursor_state {
         *runner.cursor.lock().await = cursor_state;
     }
     let execution = async {
@@ -1294,12 +1305,8 @@ mod observation_tests {
     #[tokio::test]
     async fn action_persistence_initial_failure_does_not_execute() {
         let (fixture, runner, request) = persistence_fixture("initial", CompletionFault::None);
-        let hash = format!("{:x}", Sha256::digest(request.action_id.as_bytes()));
-        let blocked = runner
-            .ledger_path
-            .with_extension("actions")
-            .join(&hash[..2])
-            .join(format!("{hash}.tmp"));
+        let blocked =
+            action_store::path(&runner.ledger_path, &request.action_id).with_extension("tmp");
         std::fs::create_dir_all(blocked).unwrap();
         persistence_failure(persistence_request(&runner, &request).await).await;
         let replay = persistence_result(persistence_request(&runner, &request).await).await;
@@ -1377,11 +1384,13 @@ mod observation_tests {
         fault: CompletionFault,
     ) -> (Fixture, Arc<Runner>, wire::DeviceActionRequest) {
         let fixture = Fixture::new();
-        let hash = format!("{:x}", Sha256::digest(id.as_bytes()));
         let injection = match fault {
             CompletionFault::None => String::new(),
             CompletionFault::Archive => {
-                format!("mkdir \"$base/ledger.actions/{}/{hash}.tmp\"", &hash[..2])
+                let path =
+                    action_store::path(&fixture.0.join("ledger.json"), id).with_extension("tmp");
+                let relative = path.strip_prefix(&fixture.0).unwrap().display();
+                format!("mkdir \"$base/{relative}\"")
             }
             CompletionFault::Snapshot => "mkdir \"$base/ledger.tmp\"".into(),
         };
@@ -1476,7 +1485,7 @@ printf 'home-completed'
         headers.insert("authorization", "Bearer test-only".parse().unwrap());
         headers.insert("content-type", MEDIA.parse().unwrap());
         for completed in [true, false] {
-            action_store::write(
+            action_store::write_legacy_fixture(
                 &runner.ledger_path,
                 &request.action_id,
                 &Record {

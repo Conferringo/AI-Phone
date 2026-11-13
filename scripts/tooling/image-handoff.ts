@@ -100,15 +100,17 @@ export async function imageUploadPlan(
   source: string,
 ) {
   report = resolve(root, report);
-  await admitImages(root, dirname(report), await digest(report), source);
-  const files = [];
-  for (const file of [report, join(dirname(report), body)])
-    files.push({
-      path: relative(join(root, "dist"), file).split("\\").join("/"),
-      name: basename(file),
-      size: lstatSync(file).size,
-      sha256: await digest(file),
-    });
+  const identity = await digest(report);
+  const admitted = await admitImages(root, dirname(report), identity, source);
+  const files = [
+    { file: report, sha256: identity },
+    { file: admitted.file, sha256: admitted.sha256 },
+  ].map(({ file, sha256 }) => ({
+    path: relative(join(root, "dist"), file).split("\\").join("/"),
+    name: basename(file),
+    size: lstatSync(file).size,
+    sha256,
+  }));
   return {
     format: 1,
     kind,

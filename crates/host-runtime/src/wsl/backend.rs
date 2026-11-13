@@ -232,20 +232,23 @@ impl<E: Execute> Backend<'_, E> {
             tokio::time::sleep(Duration::from_millis(250)).await;
         }
     }
-    pub(crate) async fn start(&mut self, images: &Path, user: &Path, web_bind: &str) -> Result<()> {
+    pub(crate) async fn start(
+        &mut self,
+        images: &Path,
+        digest: Option<&str>,
+        user: &Path,
+        web_bind: &str,
+    ) -> Result<()> {
         phase("container_ownership");
         let existing = self.containers().await?;
         phase("images");
-        let bytes = self
-            .native(
-                &[
-                    "--activate-images".into(),
-                    self.root.as_os_str().into(),
-                    images.as_os_str().into(),
-                ],
-                Vec::new(),
-            )
-            .await?;
+        let mut args = vec![
+            "--activate-images".into(),
+            self.root.as_os_str().into(),
+            images.as_os_str().into(),
+        ];
+        args.extend(digest.map(OsString::from));
+        let bytes = self.native(&args, Vec::new()).await?;
         let selected: BTreeMap<String, String> =
             serde_json::from_slice(&bytes).map_err(|_| Error::Invalid("image_manifest"))?;
         self.env.extend(selected);
@@ -494,7 +497,12 @@ async fn initialize<E: Execute>(
     )?;
     backend.start_engine(home, run).await?;
     backend
-        .start(&bundle.join("images.payload"), Path::new("/root"), web_bind)
+        .start(
+            &bundle.join("images.payload"),
+            None,
+            Path::new("/root"),
+            web_bind,
+        )
         .await
 }
 

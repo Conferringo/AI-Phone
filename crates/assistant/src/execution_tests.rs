@@ -695,7 +695,7 @@ async fn desktop_dispatch_checks_authority_once_at_the_execution_boundary() {
         sqlx::query("INSERT INTO run_device_bindings(run_id,device_id) VALUES($1,$2)")
             .bind(run).bind(device).execute(&app.db).await.unwrap();
         let observation = Uuid::now_v7();
-        sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path,sha256) VALUES($1,$2,7,'Fixture','unused','unused')")
+        sqlx::query("INSERT INTO desktop_observations(id,device_id,epoch,title,png_path) VALUES($1,$2,7,'Fixture','unused')")
             .bind(observation).bind(device).execute(&app.db).await.unwrap();
         let call = json!({"name":"computer_click","local_action_id":Uuid::now_v7().to_string()});
         let args = json!({"device_id":device,"observation_id":observation.to_string(),"x":-1,"y":100});

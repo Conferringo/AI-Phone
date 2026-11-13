@@ -418,7 +418,6 @@ fn malformed_manifest_body_and_archive_tail_do_not_publish_resources() {
         "abi",
         "format",
         "revision",
-        "review",
         "path",
         "hash",
         "missing",
@@ -433,7 +432,6 @@ fn malformed_manifest_body_and_archive_tail_do_not_publish_resources() {
             "abi" => manifest["abi"] = "foreign".into(),
             "format" => manifest["format"] = true.into(),
             "revision" => manifest["api"] = 36.into(),
-            "review" => manifest["redistribution"] = "cleared".into(),
             "path" => {
                 manifest["files"][0]["path"] = "sdk/../outside".into();
             }

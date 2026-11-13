@@ -15,7 +15,7 @@ async fn skill_edit_never_publishes_uncommitted_text() {
         let destination = app.root.join("data/runtime-skills").join(&item.id).join("SKILL.md");
         sqlx::raw_sql("CREATE FUNCTION reject_skill_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(0.35); RAISE EXCEPTION 'isolated rejected commit'; END $$; CREATE CONSTRAINT TRIGGER reject_skill_commit AFTER UPDATE ON runtime_skills DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION reject_skill_commit();")
             .execute(&app.db).await.unwrap();
-        let edit = skill_edit(app, wire::SkillEditRequest { id: item.id.clone(), content: text("uncommitted draft"), expected_content_sha256: item.content_sha256 });
+        let edit = skill_edit(app, wire::SkillEditRequest { id: item.id.clone(), content: text("uncommitted draft"), expected_content_version: item.content_version });
         let observe = async {
             tokio::time::sleep(Duration::from_millis(150)).await;
             std::fs::read_to_string(&destination).unwrap()
@@ -78,7 +78,7 @@ async fn skill_materialization_failure_retains_committed_edit_and_repairs_on_rea
                 wire::SkillEditRequest {
                     id: item.id.clone(),
                     content: latest.clone(),
-                    expected_content_sha256: item.content_sha256,
+                    expected_content_version: item.content_version,
                 },
             )
             .await;
@@ -336,7 +336,7 @@ async fn committed_skill_survives_lost_commit_acknowledgement() {
                 wire::SkillEditRequest {
                     id: original.id.clone(),
                     content: latest.clone(),
-                    expected_content_sha256: original.content_sha256,
+                    expected_content_version: original.content_version,
                 },
             )
             .await;

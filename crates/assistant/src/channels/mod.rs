@@ -22,7 +22,7 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use prost::Message;
 use reqwest::Client;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     fs,
@@ -30,7 +30,9 @@ use std::{
     sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
-use store::{Config, Job, PROVIDERS, Pairing, Result, Stage, Store, event_id, now, scope};
+use store::{
+    Config, Job, PROVIDERS, Pairing, Result, Stage, Store, event_id, legacy_event_id, now, scope,
+};
 use tokio::sync::{Mutex, Notify, RwLock};
 use tokio_util::sync::CancellationToken;
 use transport::{Connection, Context, Payload};
@@ -260,13 +262,17 @@ impl State {
         {
             return Ok(());
         }
-        let event = event_id(provider, &config.app_id, &id);
+        let app_id = config.app_id.clone();
+        let event = event_id(provider, &app_id, &id);
+        let legacy = std::cell::OnceCell::new();
         if store.vault.jobs.len() >= 10_000
-            || store
-                .vault
-                .jobs
-                .iter()
-                .any(|job| job.agent_id == agent && job.id == event)
+            || store.vault.jobs.iter().any(|job| {
+                job.agent_id == agent
+                    && (job.id == event
+                        || (job.id.as_bytes().get(14) == Some(&b'5')
+                            && job.id
+                                == *legacy.get_or_init(|| legacy_event_id(provider, &app_id, &id))))
+            })
             || store
                 .vault
                 .jobs
@@ -329,7 +335,7 @@ impl State {
         };
         let mut selected = std::collections::BTreeSet::new();
         providers.retain(|provider| selected.insert(provider.clone()));
-        let mut hash = Sha256::new();
+        let mut hash = Sha512::new();
         hash.update(input.text.as_bytes());
         hash.update([0]);
         hash.update(&input.png);
@@ -349,13 +355,28 @@ impl State {
                 continue;
             };
             let id = event_id(&provider, &config.app_id, &input.request_id);
-            if let Some(job) = store
-                .vault
-                .jobs
-                .iter()
-                .find(|job| job.agent_id == agent && job.id == id)
-            {
-                if job.fingerprint.as_ref() != Some(&fingerprint) {
+            let legacy = std::cell::OnceCell::new();
+            if let Some(job) = store.vault.jobs.iter().find(|job| {
+                job.agent_id == agent
+                    && job.provider == provider
+                    && (job.id == id
+                        || (job.id.as_bytes().get(14) == Some(&b'5')
+                            && job.push_id.as_deref() == Some(input.request_id.as_str())
+                            && job.id
+                                == *legacy.get_or_init(|| {
+                                    legacy_event_id(&provider, &config.app_id, &input.request_id)
+                                })))
+            }) {
+                let stored = job.fingerprint.as_deref().unwrap_or_default();
+                if stored != fingerprint
+                    && !(stored.len() == 64 && {
+                        let mut legacy = Sha256::new();
+                        legacy.update(input.text.as_bytes());
+                        legacy.update([0]);
+                        legacy.update(&input.png);
+                        stored == format!("{:x}", legacy.finalize())
+                    })
+                {
                     return Err("request_conflict".into());
                 }
                 deliveries.push(delivery(&provider, job.stage.name(), &job.error));

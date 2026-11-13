@@ -67,7 +67,12 @@ jobs:
           wait "$audit_pid" || audit_result=$?
           cat "$RUNNER_TEMP/aiphone-native-audit.log"
           test "$native_result" -eq 0 && test "$android_result" -eq 0 && test "$audit_result" -eq 0 || exit 1
-          ./scripts/bun -e 'import {prepareAndroid} from "./scripts/tooling/android-component"; const work = process.argv[1]; await prepareAndroid(work + "/android.payload", work + "/installation");' "$stock"
+          ./scripts/bun -e '
+            import {prepareAndroid} from "./scripts/tooling/android-component";
+            const [work, receiptPath] = process.argv.slice(1);
+            const {archive_sha256} = await Bun.file(receiptPath).json();
+            await prepareAndroid(work + "/android.payload", work + "/installation", archive_sha256);
+          ' "$stock" "$RUNNER_TEMP/android-stock-receipt.json"
           # Retain the verified capsule and remove only this job's extraction scratch.
           rm -rf "$stock/installation"
           rm "$stock/emulator.zip" "$stock/platform-tools.zip" "$stock/system-image.zip"

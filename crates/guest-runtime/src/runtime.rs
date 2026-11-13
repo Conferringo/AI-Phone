@@ -7,7 +7,7 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use image::RgbImage;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 use std::time::Duration;
 
 pub enum Response {
@@ -141,7 +141,7 @@ impl<S: Screen, R: Runner> DesktopRuntime<S, R> {
                 window.window_id,
                 window.process_id,
                 window.application_class,
-                format!("{:x}", Sha256::digest(window.title.trim().as_bytes())),
+                format!("{:x}", Sha512::digest(window.title.trim().as_bytes())),
             ]);
         }
         Ok(feed)

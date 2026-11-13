@@ -29,7 +29,7 @@ import {
   prepareImages,
 } from "./factory";
 import { admitImages } from "./image-handoff";
-import { deliveryMetadata, installerMetadata } from "./client-payload";
+import { deliveryMetadata } from "./client-payload";
 import { checkSource } from "./source";
 import { macReleaseSigning } from "./installer-signing";
 
@@ -120,7 +120,12 @@ export async function macosFactory(
   const engine = await host(root, work),
     android = await buildAndroid(root, join(work, "android"), 9),
     qualification = join(work, "android-qualification");
-  await prepareAndroid(android.file, qualification, root);
+  await prepareAndroid(
+    android.file,
+    qualification,
+    android.receipt.archive_sha256,
+    root,
+  );
   rmSync(qualification, { recursive: true });
   for (const role of ["emulator", "platform-tools", "system-image"])
     unlinkSync(join(work, "android", role + ".zip"));
@@ -155,13 +160,12 @@ export async function macosFactory(
     !delivery.complete_device_bundle ||
     manifest.signing !== (releaseSigning ? "developer-id" : "ad-hoc") ||
     (releaseSigning && !(manifest.developer_id_signed && manifest.notarized)) ||
-    manifest.sha256 !== (await digest(file)) ||
-    !installerMetadata(file, "macos-arm64").github_asset_eligible
+    !manifest.installer_delivery.github_asset_eligible
   )
     throw Error("Mac installer incomplete or over delivery limit");
   const artifact = {
     file: file.split("/").at(-1)!,
-    size: lstatSync(file).size,
+    size: manifest.installer_delivery.size,
     sha256: manifest.sha256,
     delivery,
   };

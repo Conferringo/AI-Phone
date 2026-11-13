@@ -19,6 +19,7 @@ if (args.includes("--verify-programs")) {
   const phone = await prepareAndroid(
     result.file,
     option("--work") + "/installation",
+    result.receipt.archive_sha256,
     root,
   );
   Object.assign(result.receipt, {

@@ -1,10 +1,10 @@
 # Durable actions / 持久动作记录
 
-The phone runner persists every accepted action before executing it. Each action ID maps to a SHA256-sharded private record under `data/phone-runner/ledger.actions/`. The record retains its request fingerprint, completion/result and unknown-outcome state. `ledger.json` holds control metadata and at most 128 cached entries; evicting a cache entry never deletes the durable result. There is no 2000-action hard stop.
+The phone runner persists every accepted action before executing it. Each new action ID maps to a private record under `data/phone-runner/ledger.actions-v2/`. The record retains its request fingerprint, completion/result and unknown-outcome state. `ledger.json` holds control metadata and up to 128 cached entries. Evicted entries remain in the archive.
 
 Only one runner may own this directory, enforced by an OS file lock. Writes use private files, atomic rename and file/directory sync. A matching old request returns the recorded result even after its control epoch changes. A changed request with the same ID is rejected. Unfinished/unknown actions are returned as unknown and are not re-executed; observe before planning another action. Corrupt archived records fail closed.
 
-Legacy migration copies every old record, preserves a private `ledger.pre-archive.json` reference and only then writes the new metadata. New files use `cached_actions`; old binaries that require `actions` refuse to load them. This intentionally blocks an unsafe downgrade that would ignore the archive. The pre-migration copy is **not** a safe live rollback after new actions have happened.
+Legacy migration copies earlier inline records to `ledger.actions/` and keeps a private `ledger.pre-archive.json` reference before committing new metadata. The current runner reads both archive formats. Archive version 2 requires a runner that recognizes both.
 
 Back up the entire user data directory while services are stopped, including metadata and the complete action archive together. Do not delete archive files to free a cache. Storage is retained until an explicit future retention/migration policy preserves deduplication; cross-host restore and full update rollback remain release gates.
 

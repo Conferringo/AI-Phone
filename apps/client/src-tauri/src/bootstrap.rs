@@ -104,10 +104,11 @@ pub struct Check {
 }
 #[derive(Serialize)]
 pub struct Snapshot {
-    pub host: Capability,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub host: Option<Capability>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub checks: Vec<Check>,
     pub progress: Progress,
-    pub data_directory: String,
     pub previous_request: Option<Request>,
 }
 
@@ -237,14 +238,14 @@ fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 struct Components {
     #[cfg(unix)]
     source: String,
-    android: Option<String>,
     #[cfg(unix)]
-    images: bool,
+    image_digest: Option<String>,
+    android: Option<String>,
     wsl: Option<String>,
     qemu: bool,
 }
 
-fn verify_resources(folder: &Path) -> Result<Components, String> {
+fn verify_resources(folder: &Path, inspect_image_archive: bool) -> Result<Components, String> {
     let expected = INTEGRITY.as_ref().map_err(|e| e.to_string())?;
     if !expected.contains_key("source.payload") {
         return Err("invalid_payload".into());
@@ -253,6 +254,7 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
         match name.as_str() {
             // These files are authenticated where they are staged or installed.
             "source.payload" | "android.payload" | "windows/wsl.msi" => continue,
+            "images.payload" if !inspect_image_archive => continue,
             "images.payload"
             | "tools/manifest.json"
             | "wsl/manifest.json"
@@ -267,16 +269,16 @@ fn verify_resources(folder: &Path) -> Result<Components, String> {
     Ok(Components {
         #[cfg(unix)]
         source: expected["source.payload"].clone(),
-        android: expected.get("android.payload").cloned(),
         #[cfg(unix)]
-        images: expected.contains_key("images.payload"),
+        image_digest: expected.get("images.payload").cloned(),
+        android: expected.get("android.payload").cloned(),
         wsl: expected.get("wsl/manifest.json").cloned(),
         qemu: expected.contains_key("qemu/manifest.json"),
     })
 }
 
 pub(super) fn verify_bundled_host(folder: &Path) -> Result<(), String> {
-    verify_resources(folder).map(|_| ())
+    verify_resources(folder, true).map(|_| ())
 }
 
 fn checks(path: &Path) -> Vec<Check> {
@@ -308,16 +310,24 @@ pub fn snapshot(app: &tauri::AppHandle) -> Result<Snapshot, String> {
     let manager = app.state::<Bootstrap>();
     let path = home(app)?;
     manager.0.recover(&path)?;
+    let progress = manager
+        .0
+        .progress
+        .lock()
+        .map_err(|_| "installer_state")?
+        .clone();
+    let (host, checks) = if progress.state.is_empty() {
+        (
+            Some(capability(std::env::consts::OS, std::env::consts::ARCH)),
+            checks(&path),
+        )
+    } else {
+        (None, Vec::new())
+    };
     Ok(Snapshot {
-        host: capability(std::env::consts::OS, std::env::consts::ARCH),
-        checks: checks(&path),
-        progress: manager
-            .0
-            .progress
-            .lock()
-            .map_err(|_| "installer_state")?
-            .clone(),
-        data_directory: path.join("user").display().to_string(),
+        host,
+        checks,
+        progress,
         previous_request: fs::read(path.join("request.json"))
             .ok()
             .and_then(|v| serde_json::from_slice::<Request>(&v).ok())
@@ -347,7 +357,7 @@ fn run(
         .resource_dir()
         .map_err(|e| e.to_string())?
         .join("host");
-    let components = verify_resources(&resource)?;
+    let components = verify_resources(&resource, false)?;
     let request_path = folder.join("request.json");
     fs::write(
         &request_path,
@@ -492,9 +502,7 @@ fn run_native_installer(
     components: Components,
 ) -> Result<(), String> {
     let android = components.android.ok_or("android_runtime_missing")?;
-    if !components.images {
-        return Err("image_runtime_missing".into());
-    }
+    let image_digest = components.image_digest.ok_or("invalid_payload")?;
     let mut command =
         Command::new(std::env::current_exe().map_err(|_| "native_initializer_program")?);
     command
@@ -504,6 +512,7 @@ fn run_native_installer(
         .arg(request)
         .arg(components.source)
         .arg(android)
+        .arg(image_digest)
         .current_dir(folder);
     execute(manager, command, folder)
 }
@@ -700,7 +709,7 @@ mod tests {
     #[test]
     fn generated_host_payload_can_start_installation() {
         let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("gen/host");
-        verify_resources(&folder).unwrap();
+        verify_bundled_host(&folder).unwrap();
     }
     #[test]
     #[cfg(unix)]

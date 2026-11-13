@@ -202,7 +202,7 @@ async fn initial_context(
     if identity.get::<bool, _>("task_goal") {
         system.push_str("当前为任务与目标模式。把本轮用户内容作为持续目标，后续文字、语音和目标更新可以修订它。主动规划并执行，先用 device_list 找出可控制的设备，按需切换、同时使用或交接；无需请求用户替你选设备。用 task_wait 等待外部状态，保留进度。核实全部要求已经达到后才调用 task_finish(completed)，真实阻碍则记录并等待补充。");
     }
-    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
+    system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与校验值；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
     let rows=sqlx::query("SELECT recent.role,recent.text,recent.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
@@ -3590,13 +3590,7 @@ async fn tool(
         execution_policy::CommandAuthority::None
     };
     if command && authority == execution_policy::CommandAuthority::None {
-        let raw: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        let current: Vec<Value> = serde_json::from_value(raw).map_err(|e| e.to_string())?;
-        let next = if execution_policy::desktop_target(&current) {
+        let next = if execution_policy::desktop_target(context) {
             "computer_observe"
         } else {
             "phone_observe"
@@ -3641,13 +3635,7 @@ async fn tool(
     if name == "channel_notify" {
         let mut png = vec![];
         if arguments["screenshot"].as_bool().unwrap_or(false) {
-            let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-                .bind(run)
-                .fetch_one(&app.db)
-                .await
-                .map_err(|e| e.to_string())?;
-            let context: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-            if !phone_skill_read(&context) {
+            if !phone_skill_read(context) {
                 return Err("请先读取phone-use，再发送真实截图".into());
             }
             let observation: wire::DeviceObservation = phone(
@@ -3700,13 +3688,8 @@ async fn tool(
         );
     }
     if name == "task_wait" {
-        let stored: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1")
-            .bind(run)
-            .fetch_one(&app.db)
-            .await
-            .map_err(|e| e.to_string())?;
-        let current: Vec<Value> = serde_json::from_value(stored).map_err(|e| e.to_string())?;
-        if let Some(reason) = wait_reentry_rejection(&current, call, now_ms()) {
+        let now = now_ms();
+        if let Some(reason) = wait_reentry_rejection(context, call, now) {
             return Err(reason.into());
         }
         let seconds = arguments["seconds"].as_u64().ok_or("seconds必须是整数")?;
@@ -3714,7 +3697,7 @@ async fn tool(
         if reason.trim().is_empty() || reason.len() > 2000 {
             return Err("等待需要具体原因".into());
         }
-        let wake = crate::agent_loop::wake_at(now_ms(), seconds)?;
+        let wake = crate::agent_loop::wake_at(now, seconds)?;
         return Ok(
             json!([{"type":"input_text","text":json!({"success":true,"wake_at_ms":wake,"reason":reason,"seconds":seconds}).to_string()}]),
         );

@@ -2,7 +2,7 @@
 use crate::*;
 use axum::extract::{Path, State};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha512};
 use sqlx::Row;
 use std::collections::HashMap;
 
@@ -466,10 +466,9 @@ async fn ingest_desktops(
             };
         let posted_at_ms = feed.checked_at_ms;
         if let Some(application) = watch.observe(sample, posted_at_ms) {
-            let event_id = format!(
-                "{:x}",
-                Sha256::digest(format!("{}:{device}:{posted_at_ms}", screen_attention::KEY))
-            );
+            let identity =
+                Sha512::digest(format!("{}:{device}:{posted_at_ms}", screen_attention::KEY));
+            let event_id = format!("{:x}", identity)[..64].to_string();
             feed.notifications.push(wire::PhoneNotification {
                 event_id,
                 notification_key: screen_attention::KEY.into(),

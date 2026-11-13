@@ -21,7 +21,7 @@ With autonomous replies enabled, the Agent decides how to handle ordinary messag
 A delegated work request can follow this path:
 
 1. Inspect the source conversation and send one progress reply.
-2. Connect already-authorized devices, download the real attachment and transfer it with a SHA-256 receipt.
+2. Connect already-authorized devices, download the real attachment and transfer it with a file integrity receipt.
 3. Process it on Linux, keep the input and output in a task directory under `/home/ai/Files`, and verify the result through computer use.
 4. Transfer the result back and select it in the original application using phone use.
 5. Check the original app for its outgoing delivery status.

@@ -73,6 +73,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sqlx",
+ "subtle",
  "tar",
  "tempfile",
  "time",
@@ -81,6 +82,7 @@ dependencies = [
  "tokio-util",
  "uuid",
  "whatsapp-rust",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -123,6 +125,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "subtle",
  "tar",
  "tempfile",
  "tokio",

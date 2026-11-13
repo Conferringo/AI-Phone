@@ -1,7 +1,7 @@
 use crate::*;
 use argon2::{Argon2, PasswordHasher, password_hash::SaltString};
-use sha2::{Digest, Sha256};
 use std::{fs, io::Write, path::Path};
+use subtle::ConstantTimeEq;
 
 pub async fn initialize(db: &PgPool, root: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM admin_account)")
@@ -54,8 +54,7 @@ pub async fn route(
         if !(8..=128).contains(&request.password.len()) {return Err("新密码需为 8–128 个字节".into());}
         let path=app.root.join("data/assistant/setup-code");
         let saved=fs::read_to_string(&path).map_err(|_|"初始化已关闭或本机初始化码不可用")?;
-        let a=Sha256::digest(saved.trim().as_bytes());let b=Sha256::digest(request.setup_code.trim().as_bytes());
-        if a.iter().zip(b).fold(0u8,|n,(a,b)|n|(a^b))!=0{return Err("初始化码不正确".into());}
+        if !bool::from(saved.trim().as_bytes().ct_eq(request.setup_code.trim().as_bytes())) {return Err("初始化码不正确".into());}
         let hash=tokio::task::spawn_blocking(move||{
             let salt=SaltString::encode_b64(Uuid::new_v4().as_bytes()).map_err(|_|"无法生成密码盐")?;
             Argon2::default().hash_password(request.password.as_bytes(),&salt).map(|h|h.to_string()).map_err(|_|"无法保存密码")

@@ -26,6 +26,7 @@ tokio = { version = "1", features = ["process", "signal", "time", "macros", "rt"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+subtle = "=2.6.1"
 ring = "=0.17.14"
 flate2 = "=1.1.10"
 xz2 = { version = "=0.1.7", features = ["static"] }

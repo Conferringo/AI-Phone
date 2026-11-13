@@ -213,11 +213,7 @@ switch (operation) {
     break;
   case "package":
     console.log(
-      createSourcePackage(
-        ROOT,
-        option("--output") || join(ROOT, "dist"),
-        args.includes("--public"),
-      ),
+      createSourcePackage(ROOT, option("--output") || join(ROOT, "dist")),
     );
     break;
   case "stage":

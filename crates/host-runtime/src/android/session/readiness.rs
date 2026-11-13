@@ -1,11 +1,10 @@
 use super::adb::Adb;
 use crate::{Error, Result};
 use ai_phone_api::wire::NativeAndroidBooted;
-use sha2::{Digest, Sha256};
 use std::time::Duration;
 use tokio::{sync::watch, time::Instant};
 
-pub(super) fn frame(bytes: &[u8]) -> Result<(u32, u32, String)> {
+pub(super) fn frame(bytes: &[u8]) -> Result<(u32, u32)> {
     if bytes.len() < 33 || bytes.get(..16) != Some(b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR") {
         return Err(Error::Invalid("android_frame_unavailable"));
     }
@@ -25,7 +24,7 @@ pub(super) fn frame(bytes: &[u8]) -> Result<(u32, u32, String)> {
     {
         return Err(Error::Invalid("android_frame_unavailable"));
     }
-    Ok((width, height, format!("{:x}", Sha256::digest(bytes))))
+    Ok((width, height))
 }
 pub(super) fn cancelled(stop: &watch::Receiver<bool>) -> Result<()> {
     if *stop.borrow() {
@@ -47,14 +46,13 @@ pub(super) async fn observe(adb: &Adb, reused: bool) -> Result<NativeAndroidBoot
     snapshot(adb, reused).await
 }
 pub(super) async fn snapshot(adb: &Adb, reused: bool) -> Result<NativeAndroidBooted> {
-    let (width, height, frame_sha256) = frame(&adb.screenshot().await?)?;
+    let (width, height) = frame(&adb.screenshot().await?)?;
     Ok(NativeAndroidBooted {
         version: 1,
         serial: adb.serial.clone(),
         root_verified: true,
         width,
         height,
-        frame_sha256,
         reused_session: reused,
         backend_paired: false,
         backend_bridge_id: String::new(),

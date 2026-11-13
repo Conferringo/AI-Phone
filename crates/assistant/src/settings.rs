@@ -1,7 +1,6 @@
 use crate::private_file::atomic_private;
 use crate::*;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fs,
@@ -17,7 +16,7 @@ struct ProviderPreset {
 
 static PROVIDER_PRESETS: OnceLock<Vec<ProviderPreset>> = OnceLock::new();
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModelConfig {
     pub api_key: String,
     pub base_url: String,
@@ -96,13 +95,9 @@ impl ModelConfig {
             verified_at_ms: self.verified_at_ms,
         }
     }
-    fn fingerprint(&self) -> String {
-        let mut normalized = self.clone();
-        normalized.verified_at_ms = 0;
-        format!(
-            "{:x}",
-            Sha256::digest(serde_json::to_vec(&normalized).expect("config serializes"))
-        )
+    fn unverified(mut self) -> Self {
+        self.verified_at_ms = 0;
+        self
     }
 }
 fn client_for_proxy(proxy_url: &str) -> Result<reqwest::Client, String> {
@@ -118,7 +113,7 @@ fn client_for_proxy(proxy_url: &str) -> Result<reqwest::Client, String> {
 }
 struct Verification {
     scope: String,
-    fingerprint: String,
+    config: ModelConfig,
     revision: u64,
     at: Instant,
 }
@@ -399,7 +394,7 @@ impl SettingsStore {
             token.clone(),
             Verification {
                 scope: scope.into(),
-                fingerprint: config.fingerprint(),
+                config: config.clone().unverified(),
                 revision,
                 at: Instant::now(),
             },
@@ -407,13 +402,14 @@ impl SettingsStore {
         token
     }
     pub fn save(&self, expected: u64, token: &str, mut config: ModelConfig) -> Result<u64, String> {
+        config.verified_at_ms = 0;
         {
             let state = self.state.lock().expect("settings lock");
             let valid = state.verified.get(token).is_some_and(|v| {
                 v.scope.is_empty()
                     && v.revision == expected
                     && v.at.elapsed() < Duration::from_secs(600)
-                    && v.fingerprint == config.fingerprint()
+                    && v.config == config
             });
             if !valid {
                 return Err("请先测试当前配置；修改后需要重新测试".into());
@@ -434,12 +430,13 @@ impl SettingsStore {
         token: &str,
         mut config: ModelConfig,
     ) -> Result<u64, String> {
+        config.verified_at_ms = 0;
         let mut state = self.state.lock().expect("settings lock");
         let valid = state.verified.get(token).is_some_and(|v| {
             v.scope == scope
                 && v.revision == expected
                 && v.at.elapsed() < Duration::from_secs(600)
-                && v.fingerprint == config.fingerprint()
+                && v.config == config
         });
         if !valid {
             return Err("请先测试当前配置；修改后需要重新测试".into());

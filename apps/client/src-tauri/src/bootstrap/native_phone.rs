@@ -74,11 +74,6 @@ fn valid_boot(boot: &NativeAndroidBooted) -> bool {
         && [boot.width, boot.height]
             .into_iter()
             .all(|value| (1..=8192).contains(&value))
-        && boot.frame_sha256.len() == 64
-        && boot
-            .frame_sha256
-            .bytes()
-            .all(|value| value.is_ascii_hexdigit())
 }
 
 fn interpret(
@@ -155,7 +150,6 @@ mod tests {
                 root_verified: true,
                 width: 720,
                 height: 1440,
-                frame_sha256: "a".repeat(64),
                 reused_session: false,
                 backend_paired: false,
                 backend_bridge_id: String::new(),
@@ -193,7 +187,6 @@ mod tests {
             root_verified: true,
             width: 720,
             height: 1440,
-            frame_sha256: "a".repeat(64),
             ..Default::default()
         };
         let reply = |boot| NativeAndroidSessionReply {

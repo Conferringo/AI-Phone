@@ -4,7 +4,7 @@ use ring::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
+use sha2::{Digest, Sha256, Sha512};
 use std::{
     collections::BTreeMap,
     fs,
@@ -25,9 +25,17 @@ pub(super) fn now() -> u64 {
 }
 pub(super) fn event_id(provider: &str, app: &str, id: &str) -> String {
     let bytes = serde_json::to_vec(&[provider, app, id]).unwrap();
-    let hash = format!("{:x}", Sha256::digest(bytes));
+    event_uuid(&format!("{:x}", Sha512::digest(bytes)), '8')
+}
+
+pub(super) fn legacy_event_id(provider: &str, app: &str, id: &str) -> String {
+    let bytes = serde_json::to_vec(&[provider, app, id]).unwrap();
+    event_uuid(&format!("{:x}", Sha256::digest(bytes)), '5')
+}
+
+fn event_uuid(hash: &str, version: char) -> String {
     format!(
-        "{}-{}-5{}-a{}-{}",
+        "{}-{}-{version}{}-a{}-{}",
         &hash[..8],
         &hash[8..12],
         &hash[13..16],

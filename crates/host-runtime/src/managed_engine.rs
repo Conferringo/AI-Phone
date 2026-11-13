@@ -217,27 +217,29 @@ fn selection(root: &Path, user: &Path) -> Result<Option<Selection>> {
 }
 
 pub(crate) fn environment(root: &Path, user: &Path) -> Result<BTreeMap<String, String>> {
-    let mut environment = BTreeMap::new();
-    if let Some(value) = selection(root, user)? {
-        environment.insert(
-            "AI_PHONE_MANAGED_BIN".into(),
-            value
-                .home
-                .join("bin")
-                .to_str()
-                .ok_or(Error::Invalid("managed_engine_path"))?
-                .into(),
-        );
-        environment.insert(
-            "LIMA_HOME".into(),
-            value
-                .state
-                .to_str()
-                .ok_or(Error::Invalid("managed_engine_path"))?
-                .into(),
-        );
+    selection(root, user)?.map_or_else(|| Ok(BTreeMap::new()), |value| value.environment())
+}
+
+impl Selection {
+    fn environment(&self) -> Result<BTreeMap<String, String>> {
+        Ok(BTreeMap::from([
+            (
+                "AI_PHONE_MANAGED_BIN".into(),
+                self.home
+                    .join("bin")
+                    .to_str()
+                    .ok_or(Error::Invalid("managed_engine_path"))?
+                    .into(),
+            ),
+            (
+                "LIMA_HOME".into(),
+                self.state
+                    .to_str()
+                    .ok_or(Error::Invalid("managed_engine_path"))?
+                    .into(),
+            ),
+        ]))
     }
-    Ok(environment)
 }
 pub(crate) fn save(
     root: &Path,
@@ -246,7 +248,7 @@ pub(crate) fn save(
     state: &Path,
     command: &Path,
     wrapper: &Path,
-) -> Result<()> {
+) -> Result<BTreeMap<String, String>> {
     let home = home.canonicalize()?;
     let data = data_root(root)?;
     if home != installation_home(&data)?
@@ -265,7 +267,8 @@ pub(crate) fn save(
         wrapper_sha256: executable(&wrapper.join("docker"), &home)?,
         home,
     };
-    publish(&root.join(RECORD), &value)
+    publish(&root.join(RECORD), &value)?;
+    value.environment()
 }
 
 pub(crate) fn run(arguments: &[OsString]) -> Result<()> {

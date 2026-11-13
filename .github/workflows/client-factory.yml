@@ -86,7 +86,6 @@ jobs:
           path: |
             dist/AImanity-*-windows-x64-setup.exe
             dist/AImanity-*-windows-x64-setup.exe.manifest.json
-            dist/AImanity-*-windows-x64-setup.exe.sha256
             dist/windows-full-factory-report.json
           if-no-files-found: error
           compression-level: 0
@@ -208,14 +207,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Retain the complete installer for maintainer delivery
-        if: always() && hashFiles('dist/AImanity-*-macos-arm64.dmg') != ''
+        if: always() && hashFiles('dist/AImanity-*-macos-arm64.dmg.manifest.json') != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: complete-macos-installer
           path: |
             dist/AImanity-*-macos-arm64.dmg
             dist/AImanity-*-macos-arm64.dmg.manifest.json
-            dist/AImanity-*-macos-arm64.dmg.sha256
           if-no-files-found: error
           compression-level: 0
           retention-days: 2
