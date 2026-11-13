@@ -2665,8 +2665,8 @@
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/mod.rs",
-      "size": 8153,
-      "sha256": "6fac6c8d232441438b15f6ed6d8b7999c772a92fcd28a8890093b07303966ac8"
+      "size": 8349,
+      "sha256": "7d432abcb8dd76f745bc61745df2319b0ca554d13a6a2fe11b02ca408146a620"
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/phone.rs",
@@ -2905,8 +2905,8 @@
     },
     {
       "path": "crates/phone-runner/src/media/grpc.rs",
-      "size": 3422,
-      "sha256": "b7f6cbacfdb66eea2b01faee021cac1f3c8b2abbc83445533a12fc0cdb57a5c8"
+      "size": 3564,
+      "sha256": "0520a94b8ad1a5fea32027ce2bbe2b7f5db63418f3d66872b70162330488ce9b"
     },
     {
       "path": "crates/phone-runner/src/media/hub.rs",
@@ -3095,8 +3095,8 @@
     },
     {
       "path": "docs/public/engineering/android-distribution.md",
-      "size": 4144,
-      "sha256": "99201123944014d5ee996c4030aefef461ebdf2a3e8523588828e452f342923a"
+      "size": 4603,
+      "sha256": "c55a75d1131ead6f43d19b5f3a9b8970f0ff7e769ef7101016db7ec3ebbfd037"
     },
     {
       "path": "docs/public/engineering/android-runtime.md",

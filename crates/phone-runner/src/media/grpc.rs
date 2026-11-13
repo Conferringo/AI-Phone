@@ -32,7 +32,11 @@ impl Session {
 pub fn session(config: &Config, channel: &Channel) -> Result<Session> {
     let home = PathBuf::from(std::env::var_os("HOME").unwrap_or_default());
     let roots = if cfg!(target_os = "macos") {
-        vec![home.join("Library/Caches/TemporaryItems")]
+        vec![
+            std::env::var_os("AI_PHONE_ANDROID_GRPC_HOME")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| home.join("Library/Caches/TemporaryItems")),
+        ]
     } else {
         let mut roots = Vec::new();
         for name in [
