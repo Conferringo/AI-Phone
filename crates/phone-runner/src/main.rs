@@ -593,6 +593,13 @@ async fn take_control(
         );
     }
     let mut ledger = runner.ledger.lock().await;
+    if request.controller == "agent" && !runner.root_ready.load(Ordering::Acquire) {
+        return err(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "device_unavailable",
+            "手机尚未就绪，请稍后继续。",
+        );
+    }
     ledger.epoch += 1;
     ledger.controller = request.controller;
     if let Err(e) = save(&runner, &ledger) {
@@ -1187,6 +1194,43 @@ mod observation_tests {
             }
             let _ = std::fs::remove_dir_all(&self.0);
         }
+    }
+
+    #[tokio::test]
+    async fn agent_control_requires_root_but_manual_control_remains_available() {
+        let fixture = Fixture::new();
+        let runner = Arc::new(fixture.runner("#!/bin/sh\nexit 1\n"));
+        runner.root_ready.store(false, Ordering::Release);
+        let request = |controller: &str| {
+            let mut headers = HeaderMap::new();
+            headers.insert("authorization", "Bearer test-only".parse().unwrap());
+            headers.insert("content-type", MEDIA.parse().unwrap());
+            let body = wire::TakeControlRequest {
+                phone_id: runner.phone_id.clone(),
+                owner_id: OWNER.into(),
+                controller: controller.into(),
+            };
+            take_control(
+                State(runner.clone()),
+                headers,
+                Ok(Bytes::from(body.encode_to_vec())),
+            )
+        };
+        assert_eq!(
+            request("agent").await.status(),
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+        assert_eq!(runner.ledger.lock().await.epoch, 1);
+        assert_eq!(request("manual").await.status(), StatusCode::OK);
+        runner.root_ready.store(true, Ordering::Release);
+        let granted = request("agent").await;
+        assert_eq!(granted.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(granted.into_body(), 1024)
+            .await
+            .unwrap();
+        let control = wire::ControlState::decode(bytes).unwrap();
+        assert_eq!(control.control_epoch, 3);
+        assert_eq!(control.controller, "agent");
     }
 
     #[tokio::test]

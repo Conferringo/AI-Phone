@@ -1860,8 +1860,8 @@
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
-      "size": 36575,
-      "sha256": "23c8510da1581c3200fe7f917e7737e8379e489e64500e9420dbabd207eac1f6"
+      "size": 36751,
+      "sha256": "ce79e82aff8d7c6ad5e5644c867910b585aaf2d257591fb7f458cc7b7f077862"
     },
     {
       "path": "crates/assistant/src/exploration_policy.rs",
@@ -2115,8 +2115,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 247724,
-      "sha256": "d942d88e37990376f9b2ea9ad837ed773616f93c991c7ae7f6452e2e50c09730"
+      "size": 247093,
+      "sha256": "97749521566f413a042d41b84397ea452d554419eb9ff1b4a0e727eae1291c7f"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",
@@ -2665,8 +2665,8 @@
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/mod.rs",
-      "size": 8349,
-      "sha256": "7d432abcb8dd76f745bc61745df2319b0ca554d13a6a2fe11b02ca408146a620"
+      "size": 9309,
+      "sha256": "e0059f38484520795160d3976dc72fecd1967e1fa98c07cc6648f7a8d0ba3bd1"
     },
     {
       "path": "crates/host-runtime/src/unix_initializer/phone.rs",
@@ -2890,8 +2890,8 @@
     },
     {
       "path": "crates/phone-runner/src/main.rs",
-      "size": 62859,
-      "sha256": "810ac55744b61c45bb31181f9e06c11359da3a55a646e6e795a481facb0b1d7b"
+      "size": 64680,
+      "sha256": "9f27a9f906bbfc07ae9ff8f3a9bdf751072ccf6f8082b6e8ef8761a59043f236"
     },
     {
       "path": "crates/phone-runner/src/media/actions.rs",
