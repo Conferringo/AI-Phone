@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(item["title"].as_str().unwrap().chars().count(), 1000);
         assert_eq!(
             item["notification_key"].as_str().unwrap().chars().count(),
-            "desktop:".len() + 12 + 1 + 80
+            "desktop:v2:".len() + 12 + 1 + 80
         );
         let bytes = encode_events(vec![item; 50]).unwrap();
         assert!(bytes.len() <= MAX_BYTES);

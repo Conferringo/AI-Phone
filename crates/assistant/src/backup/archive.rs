@@ -176,20 +176,27 @@ pub(super) fn read_backup(archive: &Path, work: &Path) -> Result<(std::path::Pat
         }
         folder
     };
-    let manifest = super::read_json(&folder.join("manifest.json"))?;
+    let mut manifest = super::read_json(&folder.join("manifest.json"))?;
     let digest = BackupDigest::from_manifest(&manifest)?;
     let id = manifest["id"].as_str().ok_or("Backup identity missing")?;
     if id.len() != 32 || !id.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return Err("Unsupported backup format".into());
     }
     let files = manifest["files"]
-        .as_array()
+        .as_array_mut()
         .ok_or("Backup inventory missing")?;
     let mut expected = BTreeSet::from(["manifest.json".to_owned()]);
     for row in files {
-        let path = name(Path::new(
-            row["path"].as_str().ok_or("Payload path missing")?,
-        ))?;
+        let stored_path = row["path"]
+            .as_str()
+            .map(std::borrow::Cow::Borrowed)
+            .or_else(|| {
+                let bytes: Vec<u8> = serde_json::from_value(row["path"]["Unix"].clone()).ok()?;
+                String::from_utf8(bytes).ok().map(std::borrow::Cow::Owned)
+            })
+            .ok_or("Payload path missing")?;
+        let path = name(Path::new(stored_path.as_ref()))?;
+        row["path"] = json!(&path);
         if !expected.insert(path.clone()) {
             return Err("Backup inventory duplicated".into());
         }
@@ -315,7 +322,7 @@ mod tests {
         );
         let mut legacy = current.clone();
         legacy["format"] = json!(1);
-        legacy["files"][0] = json!({"path":"state.tar.gz","size":fs::metadata(&payload).unwrap().len(),
+        legacy["files"][0] = json!({"path":{"Unix":b"state.tar.gz"},"size":fs::metadata(&payload).unwrap().len(),
             "sha256":BackupDigest::Legacy.file(&payload).unwrap()});
         let entry = legacy["records"][".env"].as_object_mut().unwrap();
         entry.remove("sha512");

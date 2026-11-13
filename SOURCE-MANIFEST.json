@@ -1668,8 +1668,8 @@
     },
     {
       "path": "crates/assistant/src/backup/archive.rs",
-      "size": 12857,
-      "sha256": "7f74c2636c3333429f10a651bce7a028cb88b7ebb02693dbdbe50b07e73a07e6"
+      "size": 13219,
+      "sha256": "d07d76dce3f4e2622a23734345c44adb9773d58da89d27dc03804eb15624e18b"
     },
     {
       "path": "crates/assistant/src/backup/database.rs",
@@ -1678,8 +1678,8 @@
     },
     {
       "path": "crates/assistant/src/backup/mod.rs",
-      "size": 23977,
-      "sha256": "0d7031095916d1acd92c230ffa77f43b7cac08af7e0bb4395382e365d6cdf9d8"
+      "size": 24056,
+      "sha256": "45d80c9fb13eb75f0aac7e63eefb4ed4ebf88d238e4d3688360cdce23c16a3a8"
     },
     {
       "path": "crates/assistant/src/backup/phone.rs",
@@ -2218,8 +2218,8 @@
     },
     {
       "path": "crates/guest-runtime/src/notifications.rs",
-      "size": 15575,
-      "sha256": "0a25ca2dff2960ad2039051fa8aa7ebc42f04fae0c473dd5cbb66e7235395246"
+      "size": 15578,
+      "sha256": "7927fd58857b6cbd59935d105872b415e0727c524bc535c78c50010abd873a8a"
     },
     {
       "path": "crates/guest-runtime/src/paint.rs",

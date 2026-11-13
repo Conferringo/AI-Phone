@@ -136,8 +136,12 @@ impl Write for BackupHasher {
     }
 }
 fn receipt(path: &Path) -> Result<Value> {
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or("Payload name missing")?;
     Ok(
-        json!({"path":path.file_name().ok_or("Payload name missing")?,"size":fs::metadata(path)?.len(),"sha512":BackupDigest::Current.file(path)?}),
+        json!({"path":name,"size":fs::metadata(path)?.len(),"sha512":BackupDigest::Current.file(path)?}),
     )
 }
 fn environment(root: &Path) -> Result<BTreeMap<String, String>> {
