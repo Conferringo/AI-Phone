@@ -1093,8 +1093,8 @@
     },
     {
       "path": "apps/web/src/lib/session-server.ts",
-      "size": 1144,
-      "sha256": "84a78706cd6a69af2e71399735664854e00047e382d425d82a56a63e1dcd0118"
+      "size": 1153,
+      "sha256": "66d74d2afec351fd947816080d389e01888a28267d5f839d6c209f451d98d7fb"
     },
     {
       "path": "apps/web/src/lib/settings-client.ts",
