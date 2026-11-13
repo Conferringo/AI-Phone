@@ -2120,8 +2120,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 246790,
-      "sha256": "9c949ffc55358d3776e3b644a74b633c017f3ab97cdb8d5d8657a5705eca8b5e"
+      "size": 247724,
+      "sha256": "d942d88e37990376f9b2ea9ad837ed773616f93c991c7ae7f6452e2e50c09730"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",

@@ -1248,7 +1248,7 @@ fn coordinate_grounding(context: &[Value], name: &str, arguments: &Value) -> Res
 }
 fn queue_post_action_observation(
     call: &Value,
-    result: &Value,
+    receipt: Option<&Value>,
     context: &mut Vec<Value>,
     pending: &mut Vec<Value>,
 ) -> bool {
@@ -1268,7 +1268,7 @@ fn queue_post_action_observation(
                 | "phone_rotate"
         )
     );
-    let confirmed = tool_value(result).is_some_and(|value| {
+    let confirmed = receipt.is_some_and(|value| {
         value["success"] == true
             && value["not_executed"] != true
             && value["result_unknown"] != true
@@ -1322,13 +1322,12 @@ fn observation_retry_needed(call: &Value, value: &Value) -> bool {
 // Recovery only acquires new evidence; a rejected action is never replayed.
 fn recover_observation(
     call: &Value,
-    result: &Value,
+    receipt: Option<&Value>,
     context: &mut Vec<Value>,
     pending: &mut Vec<Value>,
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<bool> {
-    let value = tool_value(result)?;
-    if !observation_retry_needed(call, &value) {
+    if !observation_retry_needed(call, receipt?) {
         return None;
     }
     if state.observation_recoveries >= 4 {
@@ -2659,9 +2658,9 @@ async fn execute(
                 value.as_ref(),
                 outcome,
             );
-            context.push(
-                json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
-            );
+            let mut output = json!({"type":"function_call_output","call_id":call["call_id"]});
+            output["output"] = result;
+            context.push(output);
             pending.remove(0);
             if name == "computer_type"
                 && let Some(receipt) = value.as_ref()
@@ -2691,13 +2690,17 @@ async fn execute(
                 }
                 continue;
             }
-            queue_post_action_observation(&call, &result, &mut context, &mut pending);
+            queue_post_action_observation(&call, value.as_ref(), &mut context, &mut pending);
             if !failed && phone_mutation(&call) {
                 state.observation_recoveries = 0;
             }
-            if let Some(recovered) =
-                recover_observation(&call, &result, &mut context, &mut pending, &mut state)
-            {
+            if let Some(recovered) = recover_observation(
+                &call,
+                value.as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state,
+            ) {
                 if recovered {
                     progress_event(
                         app,
@@ -3503,7 +3506,7 @@ async fn recorded_tool(
     .bind(id)
     .bind(content)
     .bind(status)
-    .bind(result.as_ref().ok().cloned())
+    .bind(result.as_ref().ok())
     .bind(run)
     .execute(&app.db)
     .await
@@ -4478,7 +4481,7 @@ mod verification_tests {
             let mut pending = vec![];
             assert!(queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4501,7 +4504,7 @@ mod verification_tests {
             );
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4510,7 +4513,7 @@ mod verification_tests {
             assert!(phone_observation(&read, &context));
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4533,7 +4536,7 @@ mod verification_tests {
             let performed = action("other", name, json!({}));
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut vec![],
                 &mut vec![]
             ));
@@ -4549,7 +4552,7 @@ mod verification_tests {
             let result = json!([{"type":"input_text","text":value.to_string()}]);
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &result,
+                tool_value(&result).as_ref(),
                 &mut vec![],
                 &mut vec![]
             ));
@@ -4564,7 +4567,7 @@ mod verification_tests {
         let mut pending = vec![read.clone()];
         assert!(!queue_post_action_observation(
             &performed[0],
-            &performed[1]["output"],
+            tool_value(&performed[1]["output"]).as_ref(),
             &mut context,
             &mut pending
         ));
@@ -4583,7 +4586,7 @@ mod verification_tests {
         let mut pending = vec![second[0].clone()];
         assert!(queue_post_action_observation(
             &first[0],
-            &first[1]["output"],
+            tool_value(&first[1]["output"]).as_ref(),
             &mut context,
             &mut pending
         ));
@@ -4772,7 +4775,7 @@ mod verification_tests {
             let mut pending = vec![];
             assert!(!queue_post_action_observation(
                 &rejected[0],
-                &output,
+                tool_value(&output).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -5157,7 +5160,13 @@ mod loop_persistence_tests {
         let mut pending = vec![later];
         let mut state = crate::agent_loop::LoopState::default();
         assert_eq!(
-            recover_observation(&rejected, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(true)
         );
         assert_eq!(pending.len(), 1);
@@ -5166,13 +5175,22 @@ mod loop_persistence_tests {
         assert_eq!(saved.observation_recoveries, 1);
         state.observation_recoveries = 4;
         assert_eq!(
-            recover_observation(&rejected, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(false)
         );
         assert_eq!(
             recover_observation(
                 &rejected,
-                &json!([{"type":"input_text","text":"{\"success\":false,\"unknown\":true}"}]),
+                tool_value(
+                    &json!([{"type":"input_text","text":"{\"success\":false,\"unknown\":true}"}])
+                )
+                .as_ref(),
                 &mut context,
                 &mut pending,
                 &mut state
@@ -5191,13 +5209,25 @@ mod loop_persistence_tests {
         let mut state = crate::agent_loop::LoopState::default();
         let stale = json!([{"type":"input_text","text":json!({"success":false,"recoverable":true,"error":"stale_target:观察已过期"}).to_string()}]);
         assert_eq!(
-            recover_observation(&rejected, &stale, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&stale).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(true)
         );
         assert_eq!(pending[0]["name"], "phone_observe");
         let unknown = json!([{"type":"input_text","text":json!({"success":false,"recoverable":true,"error":"操作结果未知"}).to_string()}]);
         assert_eq!(
-            recover_observation(&rejected, &unknown, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&unknown).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             None
         );
         assert_eq!(state.observation_recoveries, 1);
@@ -5221,7 +5251,13 @@ mod loop_persistence_tests {
         let mut pending = vec![];
         let mut state = crate::agent_loop::LoopState::default();
         assert_eq!(
-            recover_observation(&call, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &call,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             None
         );
         assert!(pending.is_empty());
@@ -5368,14 +5404,14 @@ mod loop_persistence_tests {
             let performed_result=json!([{"type":"input_text","text":"{\"success\":true}"}]);
             let mut action_context=vec![input("手机检查"),performed.clone(),json!({"type":"function_call_output","call_id":performed["call_id"],"output":performed_result})];
             let mut action_pending=vec![];
-            assert!(queue_post_action_observation(&performed,&performed_result,&mut action_context,&mut action_pending));
+            assert!(queue_post_action_observation(&performed,tool_value(&performed_result).as_ref(),&mut action_context,&mut action_pending));
             checkpoint(&app,run,&mut action_context,&action_pending,"",0,&state).await.unwrap();
             let restored=sqlx::query("SELECT context,pending_tools FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
             let mut restored_context:Vec<Value>=serde_json::from_value(restored.get("context")).unwrap();
             let mut restored_pending:Vec<Value>=serde_json::from_value(restored.get("pending_tools")).unwrap();
             assert_eq!(restored_context,action_context);
             assert_eq!(restored_pending,action_pending);
-            assert!(!queue_post_action_observation(&performed,&performed_result,&mut restored_context,&mut restored_pending));
+            assert!(!queue_post_action_observation(&performed,tool_value(&performed_result).as_ref(),&mut restored_context,&mut restored_pending));
             assert_eq!(restored_pending.len(),1,"restart resumes the read; never the completed tap");
             checkpoint(&app,run,&mut context,&pending,&answer,0,&state).await.unwrap();
             let finish=call("task_finish",json!({"status":"completed","summary":"Skill已创建"}));
