@@ -29,7 +29,7 @@ export function modelDraft(model?: RegisteredModel): Config {
   return create(ModelDraftSchema, {provider, protocol, baseUrl, model: modelId, proxyUrl, useSavedKey: hasApiKey});
 }
 
-export function AgentLabel({agent, model}: {agent:Agent; model?:RegisteredModel}) {
+function AgentLabel({agent, model}: {agent:Agent; model?:RegisteredModel}) {
   const profile = model?.profile;
   const presetId = profile && modelPreset(profile);
   const provider = modelPresets.find(option => option.id !== 'custom' && option.id === presetId)?.label;
@@ -64,9 +64,12 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
     if (voiceAgentId) setEditing({id:voiceAgentId, section:'voice'});
   }, [voiceAgentId]);
 
-  if (editing) return <AgentForm key={editing.id + ':' + editing.section} id={editing.id} agent={selected?.agent} model={selected?.model}
-    initialSection={editing.section} busy={busy} error={error} open={open} onboarding={onboarding}
-    onSave={onSave} onClearError={onClearError} onClose={() => {setEditing(null); onClearError();}}/>;
+  const firstAgent = onboarding && configured.length === 0;
+  if (firstAgent || editing) return <AgentForm key={editing ? editing.id + ':' + editing.section : 'first-agent'} draftId={editing?.id}
+    agent={selected?.agent} model={selected?.model} initialSection={editing?.section ?? 'config'}
+    busy={busy} error={error} open={open} onboarding={onboarding}
+    onSave={onSave} onClearError={onClearError}
+    onClose={firstAgent ? undefined : () => {setEditing(null); onClearError();}}/>;
 
   return <section className="registry-setup-stage" aria-label="Agent">
     <div className="registry-pane-heading">
@@ -110,8 +113,8 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
   </section>;
 }
 
-function AgentForm({id, agent, model, initialSection, busy, error, open, onboarding, onSave, onClose, onClearError}: {
-  id: string;
+function AgentForm({draftId, agent, model, initialSection, busy, error, open, onboarding, onSave, onClose, onClearError}: {
+  draftId?: string;
   agent?: Agent;
   model?: RegisteredModel;
   initialSection: Section;
@@ -120,10 +123,11 @@ function AgentForm({id, agent, model, initialSection, busy, error, open, onboard
   open: boolean;
   onboarding: boolean;
   onSave: (draft: AgentEditor) => Promise<boolean>;
-  onClose: () => void;
+  onClose?: () => void;
   onClearError: () => void;
 }) {
   const {t} = useI18n();
+  const [id] = useState(() => draftId ?? clientId());
   const [section, setSection] = useState(initialSection);
   const [modelId] = useState(() => model?.id ?? clientId());
   const [name, setName] = useState(agent?.name ?? '');
@@ -168,7 +172,7 @@ function AgentForm({id, agent, model, initialSection, busy, error, open, onboard
     </nav>}
     <form className="registry-form registry-model-editor" hidden={section !== 'config'} onSubmit={async event => {
       event.preventDefault();
-      if (await onSave({id, agent, modelId, model, name, config})) onClose();
+      if (await onSave({id, agent, modelId, model, name, config})) onClose?.();
     }}>
       <div className="registry-scroll">
         {(error || keyError) && <p role="alert" className="registry-setup-error">{error || keyError}</p>}
@@ -206,7 +210,7 @@ function AgentForm({id, agent, model, initialSection, busy, error, open, onboard
         </fieldset>
       </div>
       <footer className="registry-save setup-footer">
-        <Button variant="ghost" type="button" disabled={!!busy || keyBusy} onClick={onClose}>{t('取消')}</Button>
+        {onClose && <Button variant="ghost" type="button" disabled={!!busy || keyBusy} onClick={onClose}>{t('取消')}</Button>}
         <Button type="submit" disabled={!!busy || keyBusy}>
           {busy && <LoadingOrb size={15} />}{t(busy === 'test' ? '验证连接…' : busy ? '保存中…' : '保存')}
         </Button>

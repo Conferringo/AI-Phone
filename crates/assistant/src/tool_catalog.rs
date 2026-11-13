@@ -237,6 +237,17 @@ pub(crate) fn tools() -> Value {
     if let Some(items) = catalog.as_array_mut() {
         items.extend(crate::desktop::catalog());
         for item in items.iter_mut() {
+            if matches!(
+                item["name"].as_str(),
+                Some("phone_tap_element" | "computer_type")
+            ) {
+                let description = item["description"].as_str().unwrap();
+                item["description"] = json!(format!(
+                    "{description} 单次系统设置页面跳转或电脑输入即可满足整个目标时，同时填写completion_summary，系统会在收到真实回执和动作后画面后独立核验并结束。仍有动作、待查事实或文件交付时省略。"
+                ));
+                item["parameters"]["properties"]["completion_summary"] = json!({"type":"string","maxLength":400,
+                    "description":"核验通过后发给用户的一句结果。"});
+            }
             if item["name"].as_str().is_some_and(|name| {
                 name.starts_with("phone_")
                     || name.starts_with("computer_")

@@ -102,7 +102,8 @@ async fn database_case(test: impl for<'a> FnOnce(&'a PgPool) -> BoxFuture<'a, ()
     .catch_unwind()
     .await;
     db.close().await;
-    sqlx::query(&format!("DROP DATABASE {name} WITH (FORCE)"))
+    drop(db);
+    sqlx::query(&format!("DROP DATABASE {name}"))
         .execute(&mut admin)
         .await
         .unwrap();

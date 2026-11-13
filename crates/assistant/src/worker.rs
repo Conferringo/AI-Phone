@@ -1027,16 +1027,21 @@ fn phone_observation(call: &Value, context: &[Value]) -> bool {
         && tool_output(context, call)
             .and_then(Value::as_array)
             .is_some_and(|parts| {
-                parts.iter().any(|p| {
-                    (p["type"] == "input_image"
-                        && p["image_url"].as_str().is_some_and(|image| {
-                            image.starts_with("data:image/png;base64,") && image.len() > 30
-                        }))
-                        || p["text"].as_str().is_some_and(|text| {
+                has_live_png(parts)
+                    || parts.iter().any(|p| {
+                        p["text"].as_str().is_some_and(|text| {
                             text.starts_with(crate::agent_loop::ARCHIVED_OBSERVATION)
                         })
-                })
+                    })
             })
+}
+fn has_live_png(parts: &[Value]) -> bool {
+    parts.iter().any(|part| {
+        part["type"] == "input_image"
+            && part["image_url"]
+                .as_str()
+                .is_some_and(|url| url.starts_with("data:image/png;base64,") && url.len() > 30)
+    })
 }
 #[cfg(test)]
 fn has_phone_observation(context: &[Value]) -> bool {
@@ -1061,6 +1066,34 @@ fn has_current_observation(context: &[Value]) -> bool {
         .iter()
         .skip(evidence_start(context).max(after_wait))
         .any(|call| phone_observation(call, context))
+}
+
+fn has_grounded_initial_desktop_frame(context: &[Value]) -> bool {
+    let mut grounded = false;
+    for call in context[evidence_start(context)..]
+        .iter()
+        .filter(|item| item["type"] == "function_call")
+    {
+        let Some(output) = tool_output(context, call) else {
+            return false;
+        };
+        let metadata = tool_value(output);
+        if tool_outcome(metadata.as_ref()) != ToolOutcome::Completed {
+            return false;
+        }
+        match call["name"].as_str() {
+            Some("skill_read" | "device_list") => {}
+            Some("computer_observe") => {
+                grounded = metadata.is_some_and(|value| {
+                    value["observation_id"]
+                        .as_str()
+                        .is_some_and(|id| !id.is_empty())
+                }) && output.as_array().is_some_and(|parts| has_live_png(parts));
+            }
+            _ => return false,
+        }
+    }
+    grounded
 }
 fn output_position(context: &[Value], call: &Value) -> Option<usize> {
     context.iter().position(|item| {
@@ -1215,7 +1248,7 @@ fn coordinate_grounding(context: &[Value], name: &str, arguments: &Value) -> Res
 }
 fn queue_post_action_observation(
     call: &Value,
-    result: &Value,
+    receipt: Option<&Value>,
     context: &mut Vec<Value>,
     pending: &mut Vec<Value>,
 ) -> bool {
@@ -1235,7 +1268,7 @@ fn queue_post_action_observation(
                 | "phone_rotate"
         )
     );
-    let confirmed = tool_value(result).is_some_and(|value| {
+    let confirmed = receipt.is_some_and(|value| {
         value["success"] == true
             && value["not_executed"] != true
             && value["result_unknown"] != true
@@ -1289,13 +1322,12 @@ fn observation_retry_needed(call: &Value, value: &Value) -> bool {
 // Recovery only acquires new evidence; a rejected action is never replayed.
 fn recover_observation(
     call: &Value,
-    result: &Value,
+    receipt: Option<&Value>,
     context: &mut Vec<Value>,
     pending: &mut Vec<Value>,
     state: &mut crate::agent_loop::LoopState,
 ) -> Option<bool> {
-    let value = tool_value(result)?;
-    if !observation_retry_needed(call, &value) {
+    if !observation_retry_needed(call, receipt?) {
         return None;
     }
     if state.observation_recoveries >= 4 {
@@ -1778,6 +1810,11 @@ fn phone_completion_proposal(context: &[Value], output: &[Value], summary: &str)
     {
         return None;
     }
+    completed_settings_tap(context)?;
+    Some(completion_proposal(summary))
+}
+
+fn completed_settings_tap(context: &[Value]) -> Option<&Value> {
     let recent = &context[evidence_start(context)..];
     let frame = recent.last()?;
     if frame["type"] != "function_call_output" {
@@ -1805,10 +1842,50 @@ fn phone_completion_proposal(context: &[Value], output: &[Value], summary: &str)
     {
         return None;
     }
-    Some(
-        json!({"type":"function_call","name":"task_finish","call_id":Uuid::now_v7().to_string(),
-        "arguments":json!({"status":"completed","summary":summary}).to_string()}),
-    )
+    Some(action)
+}
+
+fn completion_proposal(summary: &str) -> Value {
+    json!({"type":"function_call","name":"task_finish","call_id":Uuid::now_v7().to_string(),
+        "arguments":json!({"status":"completed","summary":summary}).to_string()})
+}
+
+fn hinted_device_completion(context: &[Value]) -> Option<Value> {
+    let recent = &context[evidence_start(context)..];
+    let receipt = recent
+        .last()
+        .filter(|item| item["type"] == "function_call_output")?;
+    let id = receipt["call_id"].as_str()?;
+    let call = recent
+        .iter()
+        .rev()
+        .find(|item| item["type"] == "function_call" && item["call_id"] == id)?;
+    let action = match call["name"].as_str()? {
+        "phone_observe" => completed_settings_tap(context)?,
+        "computer_type"
+            if tool_value(&receipt["output"]).is_some_and(|value| {
+                value["success"] == true && value["observation_id"].is_string()
+            }) && recent.iter().all(|item| {
+                item["type"] != "function_call"
+                    || matches!(
+                        item["name"].as_str(),
+                        Some("skill_read" | "device_list" | "computer_observe")
+                    )
+                    || item["call_id"] == id
+            }) =>
+        {
+            call
+        }
+        _ => return None,
+    };
+    let arguments: Value = serde_json::from_str(action["arguments"].as_str()?).ok()?;
+    let summary = arguments["completion_summary"].as_str()?.trim();
+    if summary.is_empty() || summary.chars().count() > 400 {
+        return None;
+    }
+    let mut proposal = completion_proposal(summary);
+    proposal["local_action_id"] = json!(Uuid::now_v7().to_string());
+    Some(proposal)
 }
 
 fn progress_is_verified(context: &[Value], text: &str) -> bool {
@@ -2332,10 +2409,9 @@ async fn execute(
         .map_err(|e| e.to_string())?;
     let conversation: Uuid = row.get("conversation_id");
     let mut message: Uuid = row.get("assistant_message_id");
-    let mut context: Vec<Value> =
-        serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
-    let mut pending: Vec<Value> =
-        serde_json::from_value(row.get("pending_tools")).map_err(|e| e.to_string())?;
+    let Json(mut context): Json<Vec<Value>> = row.try_get("context").map_err(|e| e.to_string())?;
+    let Json(mut pending): Json<Vec<Value>> =
+        row.try_get("pending_tools").map_err(|e| e.to_string())?;
     let mut answer: String = row.get("answer");
     let mut step: i32 = row.get("step");
     let mut handoffs_pending: bool = row.get("handoffs_pending");
@@ -2550,6 +2626,16 @@ async fn execute(
             pending.push(call);
             checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         }
+        if pending.is_empty()
+            && !background
+            && !task_goal
+            && !handoffs_pending
+            && let Some(finish) = hinted_device_completion(&context)
+        {
+            context.push(finish.clone());
+            pending.push(finish);
+            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
+        }
         if let Some(call) = pending.first().cloned() {
             if app.run_signals.speech.wait(conversation, cancel).await?
                 || (input_changed.now_or_never().is_some() && has_steering(app, id).await?)
@@ -2569,11 +2655,12 @@ async fn execute(
                 name,
                 call["arguments"].as_str().unwrap_or("{}"),
                 &result,
+                value.as_ref(),
                 outcome,
             );
-            context.push(
-                json!({"type":"function_call_output","call_id":call["call_id"],"output":result}),
-            );
+            let mut output = json!({"type":"function_call_output","call_id":call["call_id"]});
+            output["output"] = result;
+            context.push(output);
             pending.remove(0);
             if name == "computer_type"
                 && let Some(receipt) = value.as_ref()
@@ -2603,13 +2690,17 @@ async fn execute(
                 }
                 continue;
             }
-            queue_post_action_observation(&call, &result, &mut context, &mut pending);
+            queue_post_action_observation(&call, value.as_ref(), &mut context, &mut pending);
             if !failed && phone_mutation(&call) {
                 state.observation_recoveries = 0;
             }
-            if let Some(recovered) =
-                recover_observation(&call, &result, &mut context, &mut pending, &mut state)
-            {
+            if let Some(recovered) = recover_observation(
+                &call,
+                value.as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state,
+            ) {
                 if recovered {
                     progress_event(
                         app,
@@ -2795,18 +2886,26 @@ async fn execute(
             }
             continue;
         }
-        let effort = if screen_attention
+        let gui = gui_execution(&context);
+        let decision = if screen_attention
             || (!desktop_handoff(&context)
                 && verification_attempts(&context) > 0
                 && !has_current_observation(&context))
         {
-            "none"
-        } else if (phone_task(&context) || action_task(&context))
-            && (state.stalls > 0 || !gui_execution(&context))
+            ("none", true)
+        } else if (state.stalls > 0 || !gui) && (phone_task(&context) || action_task(&context)) {
+            ("high", false)
+        } else if step == 0
+            && !background
+            && !task_goal
+            && gui
+            && state.model_retries == 0
+            && execution_policy::desktop_target(&context)
+            && has_grounded_initial_desktop_frame(&context)
         {
-            "high"
+            ("none", false)
         } else {
-            "low"
+            ("low", false)
         };
         let response = respond_to_current_input(
             app,
@@ -2814,7 +2913,7 @@ async fn execute(
             message,
             &context,
             cancel,
-            effort,
+            decision,
             state.model_replay_boundary,
         )
         .await;
@@ -3110,7 +3209,7 @@ async fn respond_to_current_input(
     message: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    effort: &str,
+    decision: (&str, bool),
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
     // Subscribe before reading the queue, so an input committed during admission
@@ -3125,7 +3224,7 @@ async fn respond_to_current_input(
         biased;
         _=cancel.cancelled()=>Err("canceled".into()),
         changed=wait_for_steering(app,run,changed)=>changed.map(|()|None),
-        result=respond(app,run,context,cancel,effort,model_replay_boundary,&mut timing)=>result.map(Some),
+        result=respond(app,run,context,cancel,decision,model_replay_boundary,&mut timing)=>result.map(Some),
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.
     if result.is_ok() {
@@ -3150,11 +3249,14 @@ async fn respond(
     run: Uuid,
     context: &[Value],
     cancel: &CancellationToken,
-    effort: &str,
+    (effort, force_phone_observe): (&str, bool),
     model_replay_boundary: usize,
     timing: &mut crate::model_timing::Timing,
 ) -> Result<Vec<Value>, String> {
-    let config = crate::settings::for_run(app, run).await?;
+    let (config, authority) = tokio::try_join!(
+        crate::settings::for_run(app, run),
+        execution_policy::owner_command(&app.db, run),
+    )?;
     let projected = crate::model_context::after_model_switch(context, model_replay_boundary);
     let mut input =
         if config.protocol == "chat-completions" || config.protocol == "anthropic-messages" {
@@ -3162,7 +3264,6 @@ async fn respond(
         } else {
             crate::model_context::for_api(&projected)
         };
-    let authority = execution_policy::owner_command(&app.db, run).await?;
     if authority == execution_policy::CommandAuthority::None {
         input.push(json!({"role":"system","content":[{"type":"input_text","text":execution_policy::GUI_GUIDANCE}]}));
     }
@@ -3173,7 +3274,7 @@ async fn respond(
         ("reasoning".into(), json!({"effort":effort})),
         ("max_output_tokens".into(), Value::from(8192)),
     ]));
-    if effort == "none" {
+    if force_phone_observe {
         body["tool_choice"] = json!({"type":"function","name":"phone_observe"});
     }
     let client = app.settings.http_client(&config.proxy_url)?;
@@ -3405,7 +3506,7 @@ async fn recorded_tool(
     .bind(id)
     .bind(content)
     .bind(status)
-    .bind(result.as_ref().ok().cloned())
+    .bind(result.as_ref().ok())
     .bind(run)
     .execute(&app.db)
     .await
@@ -3641,8 +3742,7 @@ async fn tool(
         .fetch_one(&app.db)
         .await
         .map_err(|e| e.to_string())?;
-        let current: Vec<Value> =
-            serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
+        let Json(current): Json<Vec<Value>> = row.try_get("context").map_err(|e| e.to_string())?;
         let pending: Value = row.get("pending_tools");
         let screen_attention: bool = row.get("screen_attention");
         if row.get::<bool, _>("background_read_only")
@@ -4137,6 +4237,31 @@ mod verification_tests {
         ]
     }
     #[test]
+    fn fast_initial_decision_requires_live_desktop_observation_before_any_action() {
+        let mut context = request("在真实安卓手机的系统设置中点击进入电池页面。");
+        context.extend(read_skill());
+        let mut frame = observe("initial");
+        frame[1]["output"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"type":"input_text", "text":"{\"observation_id\":\"initial\"}"}));
+        context.extend(frame);
+        assert!(!has_grounded_initial_desktop_frame(&context));
+
+        let mut context = request("在电脑输入一行文字。");
+        context.extend([json!({"type":"function_call","name":"computer_observe","call_id":"desktop"}),
+            json!({"type":"function_call_output","call_id":"desktop","output":[{"type":"input_text","text":"{\"success\":true,\"observation_id\":\"desktop\"}"}]})]);
+        assert!(!has_grounded_initial_desktop_frame(&context));
+        context.last_mut().unwrap()["output"].as_array_mut().unwrap().push(json!({"type":"input_image","image_url":"data:image/png;base64,real-desktop-frame-test"}));
+        assert!(has_grounded_initial_desktop_frame(&context));
+        let mut executed = context.clone();
+        executed.extend(action("type", "computer_type", json!({})));
+        assert!(!has_grounded_initial_desktop_frame(&executed));
+        context.last_mut().unwrap()["output"][0]["text"] =
+            json!("{\"success\":false,\"observation_id\":\"desktop\"}");
+        assert!(!has_grounded_initial_desktop_frame(&context));
+    }
+    #[test]
     fn text_completion_after_a_settings_tap_queues_normal_finish_only_once() {
         let mut context = request("在真实安卓手机的系统设置中点击进入电池页面，再简短回复。");
         context.extend(read_skill());
@@ -4172,6 +4297,54 @@ mod verification_tests {
         assert!(phone_completion_proposal(&context, &[], summary).is_none());
         context.extend(request("改为打开显示页面"));
         assert!(phone_completion_proposal(&context, &[], summary).is_none());
+    }
+
+    #[test]
+    fn device_completion_hint_requires_the_current_action_receipt() {
+        let summary = "已进入电池页面。";
+        let mut context = request("在手机系统设置中点击进入电池页面。");
+        context.extend(read_skill());
+        context.extend(observe("before"));
+        context.extend(action(
+            "tap",
+            "phone_tap_element",
+            json!({
+                "element_id":"battery", "completion_summary":summary
+            }),
+        ));
+        let mut after = observe("after");
+        after[0]["local_after_action"] = json!("tap");
+        assert!(hinted_device_completion(&context).is_none());
+        after[1]["output"].as_array_mut().unwrap().push(json!({"type":"input_text",
+            "text":"{\"device_id\":\"phone\",\"observation_id\":\"battery\",\"foreground_app\":\"com.android.settings/.BatterySettings\"}"}));
+        context.extend(after);
+        let finish = hinted_device_completion(&context).unwrap();
+        assert_eq!(finish["name"], "task_finish");
+        assert!(finish["local_action_id"].is_string());
+        let args: Value = serde_json::from_str(finish["arguments"].as_str().unwrap()).unwrap();
+        assert_eq!(args, json!({"status":"completed","summary":summary}));
+        context.extend(action("notification", "phone_notifications", json!({})));
+        assert!(hinted_device_completion(&context).is_none());
+
+        let mut context = request("在电脑的当前输入框输入样本文字。");
+        let mut typed = action(
+            "type",
+            "computer_type",
+            json!({
+                "text":"样本文字", "completion_summary":"已输入样本文字。"
+            }),
+        );
+        context.push(typed.remove(0));
+        let mut receipt = typed.remove(0);
+        let unconfirmed = json!({"success":false,"result_unknown":true,"code":"input_unconfirmed"});
+        receipt["output"][0]["text"] = json!(unconfirmed.to_string());
+        context.push(receipt);
+        assert!(hinted_device_completion(&context).is_none());
+        let confirmed = json!({"success":true,"observation_id":"new-frame"});
+        context.last_mut().unwrap()["output"][0]["text"] = json!(confirmed.to_string());
+        assert!(hinted_device_completion(&context).is_some());
+        context.extend(action("another", "computer_click", json!({})));
+        assert!(hinted_device_completion(&context).is_none());
     }
     #[test]
     fn wechat_routing_uses_current_request_actual_app_or_notification_source() {
@@ -4308,7 +4481,7 @@ mod verification_tests {
             let mut pending = vec![];
             assert!(queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4331,7 +4504,7 @@ mod verification_tests {
             );
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4340,7 +4513,7 @@ mod verification_tests {
             assert!(phone_observation(&read, &context));
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4363,7 +4536,7 @@ mod verification_tests {
             let performed = action("other", name, json!({}));
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &performed[1]["output"],
+                tool_value(&performed[1]["output"]).as_ref(),
                 &mut vec![],
                 &mut vec![]
             ));
@@ -4379,7 +4552,7 @@ mod verification_tests {
             let result = json!([{"type":"input_text","text":value.to_string()}]);
             assert!(!queue_post_action_observation(
                 &performed[0],
-                &result,
+                tool_value(&result).as_ref(),
                 &mut vec![],
                 &mut vec![]
             ));
@@ -4394,7 +4567,7 @@ mod verification_tests {
         let mut pending = vec![read.clone()];
         assert!(!queue_post_action_observation(
             &performed[0],
-            &performed[1]["output"],
+            tool_value(&performed[1]["output"]).as_ref(),
             &mut context,
             &mut pending
         ));
@@ -4413,7 +4586,7 @@ mod verification_tests {
         let mut pending = vec![second[0].clone()];
         assert!(queue_post_action_observation(
             &first[0],
-            &first[1]["output"],
+            tool_value(&first[1]["output"]).as_ref(),
             &mut context,
             &mut pending
         ));
@@ -4602,7 +4775,7 @@ mod verification_tests {
             let mut pending = vec![];
             assert!(!queue_post_action_observation(
                 &rejected[0],
-                &output,
+                tool_value(&output).as_ref(),
                 &mut context,
                 &mut pending
             ));
@@ -4987,7 +5160,13 @@ mod loop_persistence_tests {
         let mut pending = vec![later];
         let mut state = crate::agent_loop::LoopState::default();
         assert_eq!(
-            recover_observation(&rejected, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(true)
         );
         assert_eq!(pending.len(), 1);
@@ -4996,13 +5175,22 @@ mod loop_persistence_tests {
         assert_eq!(saved.observation_recoveries, 1);
         state.observation_recoveries = 4;
         assert_eq!(
-            recover_observation(&rejected, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(false)
         );
         assert_eq!(
             recover_observation(
                 &rejected,
-                &json!([{"type":"input_text","text":"{\"success\":false,\"unknown\":true}"}]),
+                tool_value(
+                    &json!([{"type":"input_text","text":"{\"success\":false,\"unknown\":true}"}])
+                )
+                .as_ref(),
                 &mut context,
                 &mut pending,
                 &mut state
@@ -5021,13 +5209,25 @@ mod loop_persistence_tests {
         let mut state = crate::agent_loop::LoopState::default();
         let stale = json!([{"type":"input_text","text":json!({"success":false,"recoverable":true,"error":"stale_target:观察已过期"}).to_string()}]);
         assert_eq!(
-            recover_observation(&rejected, &stale, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&stale).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             Some(true)
         );
         assert_eq!(pending[0]["name"], "phone_observe");
         let unknown = json!([{"type":"input_text","text":json!({"success":false,"recoverable":true,"error":"操作结果未知"}).to_string()}]);
         assert_eq!(
-            recover_observation(&rejected, &unknown, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &rejected,
+                tool_value(&unknown).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             None
         );
         assert_eq!(state.observation_recoveries, 1);
@@ -5051,7 +5251,13 @@ mod loop_persistence_tests {
         let mut pending = vec![];
         let mut state = crate::agent_loop::LoopState::default();
         assert_eq!(
-            recover_observation(&call, &output, &mut context, &mut pending, &mut state),
+            recover_observation(
+                &call,
+                tool_value(&output).as_ref(),
+                &mut context,
+                &mut pending,
+                &mut state
+            ),
             None
         );
         assert!(pending.is_empty());
@@ -5071,6 +5277,7 @@ mod loop_persistence_tests {
                 "phone_observe",
                 "{}",
                 &output,
+                None,
                 tool_outcome(tool_value(&output).as_ref())
             ));
             assert_eq!(
@@ -5081,6 +5288,7 @@ mod loop_persistence_tests {
                 "task_wait",
                 "{}",
                 &json!({"wake_at_ms":1}),
+                None,
                 ToolOutcome::Completed
             ));
         }
@@ -5093,6 +5301,7 @@ mod loop_persistence_tests {
             "phone_observe",
             "{}",
             &json!({"success":true,"frame":"new"}),
+            None,
             ToolOutcome::Completed
         ));
         assert_eq!(state.stalls, 0);
@@ -5122,6 +5331,7 @@ mod loop_persistence_tests {
             "device_transfer_status",
             "{}",
             &output,
+            Some(&receipt),
             tool_outcome(Some(&receipt))
         ));
         assert_eq!(state.stalls, 0);
@@ -5140,7 +5350,7 @@ mod loop_persistence_tests {
             let mut state = crate::agent_loop::LoopState::default();
             for attempt in 1..=3 {
                 assert_eq!(
-                    state.tool_result(name, "{}", &output, outcome),
+                    state.tool_result(name, "{}", &output, None, outcome),
                     attempt == 3,
                     "failure threshold for {name}"
                 );
@@ -5194,14 +5404,14 @@ mod loop_persistence_tests {
             let performed_result=json!([{"type":"input_text","text":"{\"success\":true}"}]);
             let mut action_context=vec![input("手机检查"),performed.clone(),json!({"type":"function_call_output","call_id":performed["call_id"],"output":performed_result})];
             let mut action_pending=vec![];
-            assert!(queue_post_action_observation(&performed,&performed_result,&mut action_context,&mut action_pending));
+            assert!(queue_post_action_observation(&performed,tool_value(&performed_result).as_ref(),&mut action_context,&mut action_pending));
             checkpoint(&app,run,&mut action_context,&action_pending,"",0,&state).await.unwrap();
             let restored=sqlx::query("SELECT context,pending_tools FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
             let mut restored_context:Vec<Value>=serde_json::from_value(restored.get("context")).unwrap();
             let mut restored_pending:Vec<Value>=serde_json::from_value(restored.get("pending_tools")).unwrap();
             assert_eq!(restored_context,action_context);
             assert_eq!(restored_pending,action_pending);
-            assert!(!queue_post_action_observation(&performed,&performed_result,&mut restored_context,&mut restored_pending));
+            assert!(!queue_post_action_observation(&performed,tool_value(&performed_result).as_ref(),&mut restored_context,&mut restored_pending));
             assert_eq!(restored_pending.len(),1,"restart resumes the read; never the completed tap");
             checkpoint(&app,run,&mut context,&pending,&answer,0,&state).await.unwrap();
             let finish=call("task_finish",json!({"status":"completed","summary":"Skill已创建"}));

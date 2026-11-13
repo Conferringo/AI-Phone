@@ -18,10 +18,16 @@ import { ROOT, run, output, digest, hash, bunProgram } from "./process";
 import { json, save } from "./inventory";
 import { buildWindowsInstaller, unpackWindowsInstaller } from "./windows-installer";
 import {
+  macReleaseSigning,
+  notarizeMacImage,
+  releaseMacSignature,
+  releaseWindowsSignature,
   signMacArtifact,
   signWindowsInstaller,
+  signWindowsRelease,
   temporaryMacSignature,
   verifyMacArtifact,
+  windowsReleaseSigning,
   type InstallerSignature,
 } from "./installer-signing";
 import { resourceMap, fileReceipt, verifyCompiledInventory } from "./resources";
@@ -235,7 +241,11 @@ export function windowsCargo(operation: "build" | "test", root = ROOT) {
 function buildDmg(
   application: string,
   destination: string,
-  { developmentDmg, temporarySigning }: { developmentDmg: boolean; temporarySigning: boolean },
+  { developmentDmg, temporarySigning, releaseSigning }: {
+    developmentDmg: boolean;
+    temporarySigning: boolean;
+    releaseSigning?: ReturnType<typeof macReleaseSigning>;
+  },
 ) {
   const temporary = mkdtempSync(join(dirname(destination), ".dmg-"));
   try {
@@ -263,12 +273,13 @@ function buildDmg(
       ...(developmentDmg ? ["UDZO", "-imagekey", "zlib-level=1"] : ["ULMO"]),
       image,
     ]);
-    if (temporarySigning) {
-      signMacArtifact(image);
+    if (releaseSigning || temporarySigning) {
+      signMacArtifact(image, releaseSigning?.identity);
+      if (releaseSigning) notarizeMacImage(image, releaseSigning.profile);
       verifyMacArtifact(image);
     }
     run(["hdiutil", "verify", image]);
-    if (temporarySigning) {
+    if (releaseSigning || temporarySigning) {
       const mount = join(temporary, "readback");
       mkdirSync(mount);
       run([
@@ -334,7 +345,7 @@ export async function recordInstaller(
     payload: inspection,
     ...delivery,
     installer_delivery: installerMetadata(file, host),
-    ...(platform === "macos"
+    ...(platform === "macos" && signature.signing !== "developer-id"
       ? { developer_id_signed: false, notarized: false }
       : {}),
   };
@@ -345,8 +356,10 @@ export async function recordInstaller(
 export async function buildClient(
   platform: Platform,
   root = ROOT,
-  { packageOnly = false, developmentDmg = false, temporarySigning = false } = {},
+  { packageOnly = false, developmentDmg = false, temporarySigning = false, releaseSigning = false } = {},
 ) {
+  if (releaseSigning && (temporarySigning || developmentDmg))
+    throw Error("Select release signing or a local test build");
   const version = json(join(root, "config/release-policy.json")).version,
     native = join(root, "apps/client/src-tauri"),
     dist = join(root, "dist"),
@@ -365,15 +378,16 @@ export async function buildClient(
   if (platform === "macos") {
     if (process.platform !== "darwin" || process.arch !== "arm64")
       throw Error("macOS packaging requires Apple Silicon");
+    const credentials = releaseSigning ? macReleaseSigning() : undefined;
     run(
       [...command, "--bundles", "app", "--ci", "--no-sign", "--", "--locked"],
       { cwd: root, env },
     );
     source = join(native, "target/release/bundle/macos/AImanity.app");
-    if (temporarySigning) signMacArtifact(source);
+    if (credentials || temporarySigning) signMacArtifact(source, credentials?.identity);
     const inspection = await inspectMacBundle(source, root);
     destination = join(dist, `AImanity-${version}-macos-arm64.dmg`);
-    buildDmg(source, destination, { developmentDmg, temporarySigning });
+    buildDmg(source, destination, { developmentDmg, temporarySigning, releaseSigning: credentials });
     return {
       artifact: destination,
       ...(await recordInstaller(
@@ -382,12 +396,13 @@ export async function buildClient(
         "arm64",
         inspection,
         root,
-        temporarySigning ? temporaryMacSignature : undefined,
+        credentials ? releaseMacSignature : temporarySigning ? temporaryMacSignature : undefined,
       )),
     };
   }
   if (!packageOnly && process.platform !== "win32")
     throw Error("Build Windows clients on Windows");
+  const credentials = releaseSigning ? windowsReleaseSigning() : undefined;
   if (!packageOnly) windowsCargo("build", root);
   arch = "x64";
   source = join(
@@ -395,8 +410,12 @@ export async function buildClient(
     "target/x86_64-pc-windows-msvc/release/ai-phone-client.exe",
   );
   destination = join(dist, `AImanity-${version}-windows-x64-setup.exe`);
+  if (credentials) signWindowsRelease(source, credentials);
   await buildWindowsInstaller(root, source, destination);
-  const signature = temporarySigning ? signWindowsInstaller(destination) : undefined;
+  if (credentials) signWindowsRelease(destination, credentials);
+  const signature = credentials
+    ? releaseWindowsSignature
+    : temporarySigning ? signWindowsInstaller(destination) : undefined;
   return {
     artifact: destination,
     ...(await recordInstaller(

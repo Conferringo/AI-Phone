@@ -350,10 +350,6 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
                 kind: r.get("kind"),
                 system: r.get("system"),
                 runtime_state: r.get("runtime_state"),
-                default_agent_id: r
-                    .get::<Option<Uuid>, _>("default_agent_id")
-                    .map(|id| id.to_string())
-                    .unwrap_or_default(),
             })
             .collect(),
         agents: agents
@@ -366,13 +362,6 @@ async fn state(app: &App) -> Result<wire::RegistryState> {
                     name: r.get("name"),
                     model_connection_id: r.get::<Uuid, _>("model_connection_id").to_string(),
                     instructions: r.get("instructions"),
-                    device_ids: devices
-                        .iter()
-                        .filter(|device| {
-                            device.get::<Option<Uuid>, _>("default_agent_id") == Some(id)
-                        })
-                        .map(|device| device.get("id"))
-                        .collect(),
                 }
             })
             .collect(),
@@ -991,7 +980,8 @@ mod tests {
             assert_eq!(state(&app).await.unwrap().active_agent_id, AGENT.to_string());
             let selected:wire::RegistryState=response(call(&app,"agent-select",wire::AgentProfileRequest{id:agent.to_string(),expected_revision:1}).await).await;
             assert_eq!(selected.active_agent_id,agent.to_string());
-            assert!(selected.devices.iter().all(|d|d.default_agent_id==selected.active_agent_id));
+            let bindings: Vec<(String, Uuid)> = sqlx::query_as("SELECT id,default_agent_id FROM devices WHERE runtime_state<>'archived' ORDER BY kind,id").fetch_all(&db).await.unwrap();
+            assert_eq!(bindings, vec![(desktop.clone(),agent),(PHONE.into(),agent)]);
             let before=sqlx::query_scalar::<_,i64>("SELECT count(*) FROM messages").fetch_one(&db).await.unwrap();
             let run=send(&app,"first task").await;
             let pinned=sqlx::query("SELECT agent_id,agent_name,agent_instructions,device_id,model_revision FROM runs WHERE id=$1").bind(run).fetch_one(&db).await.unwrap();

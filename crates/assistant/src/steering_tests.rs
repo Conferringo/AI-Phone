@@ -921,7 +921,7 @@ async fn successive_inputs_interrupt_a_slow_model_without_canceling_the_run() {
                         run.message,
                         &run.context,
                         &cancel,
-                        "low",
+                        ("low", false),
                         0
                     ),
                     async {

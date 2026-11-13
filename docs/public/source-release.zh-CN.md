@@ -2,7 +2,7 @@
 
 [English](source-release.en.md) · [源码仓库](https://github.com/MrMilkDragon/AImanity)
 
-源码包含 Next.js 工作台、Rust 执行服务、Android 桥接、Linux 桌面配方、protobuf 契约、内置 Skill、安装与备份恢复工具、测试及 CI。默认一手机一电脑，可分别绑定 Agent；PostgreSQL 保存任务检查点，Redis 为可选缓存。
+源码包含 Next.js 工作台、Rust 执行服务、Android 桥接、Linux 桌面配方、protobuf 契约、内置 Skill、安装与备份恢复工具、测试及 CI。手机与电脑共用当前 Agent。PostgreSQL 保存任务检查点，Redis 提供缓存。
 
 原创代码采用 [Apache-2.0](../../LICENSE)，第三方依赖、素材与客体应用保留各自许可，见[第三方声明](../../THIRD_PARTY_NOTICES.md)。[下载 macOS 或 Windows 客户端](release-status.md)。
 

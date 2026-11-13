@@ -14,6 +14,7 @@ import { verifyWsl } from "./wsl-capsule";
 import { buildAndroid, prepareAndroid } from "./android-component";
 import { deliveryMetadata, installerMetadata } from "./client-payload";
 import { buildReleaseTools } from "./archive";
+import { windowsReleaseSigning } from "./installer-signing";
 import {
   windowsBackendComponents as components,
   windowsSourceIdentity as sourceIdentity,
@@ -110,9 +111,11 @@ export async function windowsFactory(
   input:
     | { runtime: "wsl"; folder: string; identity: string; backendSource: string }
     | { runtime: "qemu"; vm: WindowsVmInputs },
+  releaseSigning = false,
 ) {
   if (hostKey() !== "windows-x64")
     throw Error("Complete Windows assembly requires Windows x64");
+  if (releaseSigning) windowsReleaseSigning();
   checkSource(root, { repository: true, manifest: true });
   const source = await sourceIdentity(root),
     backend = input.runtime === "wsl"
@@ -156,7 +159,7 @@ export async function windowsFactory(
       root,
       "--platform",
       "windows",
-      "--sign-temporary",
+      releaseSigning ? "--sign-release" : "--sign-temporary",
       "--android-runtime",
       android.file,
       ...runtimeArgs,
@@ -169,7 +172,8 @@ export async function windowsFactory(
     delivery = deliveryMetadata(manifest.prebuilt_components, "windows-x64");
   if (
     !delivery.complete_device_bundle ||
-    manifest.signing !== "authenticode-self-signed" ||
+    manifest.signing !== (releaseSigning ? "authenticode-trusted" : "authenticode-self-signed") ||
+    (releaseSigning && !(manifest.authenticode?.cryptographically_verified && manifest.authenticode.timestamped)) ||
     manifest.complete_device_bundle !== true ||
     manifest.sha256 !== (await digest(file))
   )

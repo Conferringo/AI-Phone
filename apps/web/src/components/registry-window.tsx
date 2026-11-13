@@ -15,11 +15,12 @@ import {useI18n} from './locale-provider';
 import {FloatingWindow} from './floating-window';
 import {RegistryAdministration, type DeviceDraft} from './registry-administration';
 import {RegistryAgents, modelDraft, type AgentEditor} from './registry-agents';
-import {RegistrySteps, SetupReview, type RegistryScreen} from './registry-onboarding';
 import {Button} from './ui/button';
 import './registry-window.css';
 
 export type Registry = MessageShape<typeof RegistryStateSchema>;
+const settingsSections = [['agents','Agent'], ['devices','设备']] as const;
+type RegistryScreen = (typeof settingsSections)[number][0];
 const readRegistry = () => settingsRpc('state', RegistryRequestSchema, {}, RegistryStateSchema, 'registry');
 
 export function RegistryWindow({open, onClose, onNeedsSetup, onChange, activeDeviceId, voiceAgentId = ''}: {
@@ -147,7 +148,7 @@ export function RegistryWindow({open, onClose, onNeedsSetup, onChange, activeDev
         try {
           const frame = device.kind === 'phone'
             ? await settingsRpc('observe', DeviceRequestSchema,
-              {phoneId:id, ownerId:'local-user', includeElements:true}, DeviceObservationSchema, 'phone')
+              {phoneId:id, ownerId:'local-user'}, DeviceObservationSchema, 'phone')
             : await settingsRpc('observe', DesktopRequestSchema, {deviceId:id}, DesktopObservationSchema, 'desktop');
           if (!hasDeviceFrame(id, frame)) throw Error(t('未收到设备画面'));
         } catch (failure) {
@@ -163,7 +164,12 @@ export function RegistryWindow({open, onClose, onNeedsSetup, onChange, activeDev
   }
 
   const progress = state && setupProgress(state);
-  const footer = <RegistrySteps screen={screen} onboarding={onboarding} busy={!!busy} onScreen={go}/>;
+  const footer = !onboarding && <nav aria-label={t('配置中心')}><ol className="registry-steps">
+    {settingsSections.map(([value, label]) => <li key={value} aria-current={screen === value ? 'page' : undefined}>
+      {screen === value ? <span>{t(label)}</span>
+        : <button type="button" disabled={!!busy} onClick={() => go(value)}>{t(label)}</button>}
+    </li>)}
+  </ol></nav>;
   return <FloatingWindow id="configuration-center" title={t(onboarding ? '初次配置' : '配置中心')}
     open={open} onClose={onClose} centered={onboarding} focusPanel hideClose width={680} height={600}>
     <div className="registry-center" aria-busy={!!busy}>
@@ -173,12 +179,13 @@ export function RegistryWindow({open, onClose, onNeedsSetup, onChange, activeDev
         <div className="registry-content" ref={body}>
           {screen === 'agents' && <RegistryAgents registry={state} onboarding={onboarding} open={open}
             voiceAgentId={onboarding ? '' : voiceAgentId} busy={busy} error={error} footer={footer}
-            next={onboarding && <Button disabled={!progress?.ready || !!busy} onClick={() => go('review')}>{t('下一步')}</Button>}
+            next={onboarding && <Button autoFocus={progress?.ready} disabled={!progress?.ready || !!busy} onClick={() => void finish()}>
+              {busy === 'check' && <LoadingOrb size={15} />}{t(busy === 'check' ? '检查设备…' : '检查并进入')}
+            </Button>}
             onSave={saveAgent} onSelect={agent => profileAction('agent-select', agent)}
             onDelete={agent => profileAction('agent-delete', agent)} onClearError={() => setError('')}/>}
           {screen === 'devices' && <RegistryAdministration registry={state} busy={busy} error={error} footer={footer} open={open}
             activeDeviceId={activeDeviceId} onRefresh={() => void load()} onSave={saveDevice}/>}
-          {screen === 'review' && <SetupReview state={state} busy={!!busy} error={error} steps={footer} onFinish={() => void finish()}/>}
         </div>}
     </div>
   </FloatingWindow>;

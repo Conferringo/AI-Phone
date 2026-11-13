@@ -12,7 +12,7 @@ Get the source for the first AImanity release. [Releases](https://github.com/MrM
 
 - **Use a phone.** An Agent reads the Android screen, operates installed apps such as WeChat and handles notifications.
 - **Use a computer.** An Agent controls the Linux desktop and works in apps such as LibreOffice. Connect the devices to move files between them.
-- **Keep working.** Add instructions or interrupt a response in the same conversation. Each device keeps its conversation and activity while you switch views.
+- **Keep working.** Add instructions or interrupt a response in the shared conversation. Both devices keep working while you switch views.
 - **Reuse skills.** Agents share Skills, linked knowledge and work files. Model settings, memory and channel connections belong to each Agent.
 
 See [model and channel setup](docs/public/model-and-channel-setup.md), [notification workflows](docs/public/notification-workflows.md) and [Liberty](docs/public/autonomous-exploration.md).

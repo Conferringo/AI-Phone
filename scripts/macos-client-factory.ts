@@ -13,6 +13,7 @@ console.log(
       option("--compiler-sdk")!,
       option("--image-candidate"),
       option("--image-metadata-sha256"),
+      args.includes("--sign-release"),
     ),
   ),
 );
