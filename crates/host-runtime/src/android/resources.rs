@@ -50,26 +50,26 @@ fn inventory_entry(
     }
     Ok(())
 }
-fn existing(
-    root: &Path,
-    raw: &archive::RawInventory,
-    manifest: &Manifest,
-    control: &Control<'_>,
-) -> Result<()> {
+fn existing(root: &Path, raw: &[u8], manifest: &Manifest, control: &Control<'_>) -> Result<()> {
     filesystem::existing_directory(root)?;
     if !crate::manifest::same_manifest(
         &filesystem::bounded_file_with_limit(
             &root.join(manifest::NAME),
             manifest::LIMITS.metadata,
         )?,
-        &raw.raw,
+        raw,
     ) {
         return Err(Error::Invalid("android_resource_changed"));
     }
     let mut actual = BTreeSet::new();
     inventory(root, root, &mut actual, &mut 0, 0)?;
-    let expected: BTreeSet<_> = raw.headers.keys().cloned().collect();
-    if actual != expected {
+    let expected: BTreeSet<_> = manifest
+        .files
+        .iter()
+        .map(|row| row.path.as_str())
+        .chain([manifest::NAME])
+        .collect();
+    if !actual.iter().map(String::as_str).eq(expected) {
         return Err(Error::Invalid("android_resource_inventory"));
     }
     for row in &manifest.files {
@@ -81,7 +81,7 @@ fn existing(
 fn fill(
     file: &mut File,
     root: &Path,
-    raw: &archive::RawInventory,
+    raw: &[u8],
     manifest: &Manifest,
     control: &Control<'_>,
 ) -> Result<()> {
@@ -102,10 +102,10 @@ fn fill(
             }
             filesystem::copy_record(root, row, source, control, &mut written)
         })?;
-    if actual.headers != raw.headers || actual.raw != raw.raw {
+    if actual.headers.len() != index.len() + 1 || actual.raw != raw {
         return Err(Error::Invalid("android_resource_changed"));
     }
-    write_manifest(root, &raw.raw)?;
+    write_manifest(root, raw)?;
     filesystem::sync_tree(root, control)
 }
 fn write_manifest(root: &Path, bytes: &[u8]) -> Result<()> {
@@ -118,7 +118,7 @@ fn publish(
     file: &mut File,
     folder: &Path,
     destination: &Path,
-    raw: &archive::RawInventory,
+    raw: &[u8],
     manifest: &Manifest,
     control: &Control<'_>,
 ) -> Result<()> {
@@ -140,12 +140,10 @@ fn inspect(
     identity: &str,
     platform: Platform,
     control: &Control<'_>,
-) -> Result<(File, archive::RawInventory, Manifest)> {
+) -> Result<(File, Vec<u8>, Manifest)> {
     let mut file = filesystem::regular(payload)?;
     capsule::check_identity(&file, identity, manifest::LIMITS.total)?;
-    let raw = archive::visit_component(&mut file, control, &manifest::LIMITS, |_, _, reader| {
-        archive::drain(reader)
-    })?;
+    let raw = archive::first_manifest(&mut file, control, &manifest::LIMITS)?;
     let manifest = manifest::parse(&raw, platform)?;
     capsule::verify_bounded_identity(&mut file, identity, control, manifest::LIMITS.total)?;
     Ok((file, raw, manifest))

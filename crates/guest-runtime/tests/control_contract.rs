@@ -429,8 +429,10 @@ fn x11_pixel_formats_include_stride_endianness_and_rgb565() {
         blue: 0xff,
     };
     assert_eq!(
-        pixels(&[3, 2, 1, 0], 1, 1, format).unwrap().get_pixel(0, 0),
-        &Rgb([1, 2, 3])
+        pixels(&[3, 2, 1, 255, 9, 8, 7, 0], 1, 2, format)
+            .unwrap()
+            .into_raw(),
+        [1, 2, 3, 7, 8, 9]
     );
     assert_eq!(
         pixels(

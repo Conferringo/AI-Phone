@@ -20,7 +20,7 @@ Device actions retain their result identity across cancellation and recovery. Un
 
 ## Models and connections
 
-Keep model/API settings, application connections and memory within each Agent. Device bindings are explicit; skills, knowledge and work files are shared.
+Save model/API settings, application connections and memory per profile. Both devices use the selected profile. Skills, knowledge and work files are shared.
 
 Extend model discovery with manual-ID fallback, configuration-bound capability checks, provider-specific protocol tests, OAuth and local-model integration. Supported protocols and providers are listed in [model setup](model-and-channel-setup.md) and [compatibility](compatibility.md).
 

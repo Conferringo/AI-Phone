@@ -58,4 +58,4 @@ LAN地址见私有 `data/deployment.json`，只选私有网络接口。后端、
 
 ## Liberty（开发中运行时）
 
-在已配置设备的对话中开启 Liberty，Agent 可自己选择活动、形成和调整目标。原有回复与安装设置继续生效，已暂停的主人任务保留各自的记录。Agent 可以在核验后保存可复用的方法。见 [Liberty](autonomous-exploration.md) 和[通知工作流](notification-workflows.md)。
+在共享对话中开启 Liberty，Agent 可跨设备选择活动、形成和调整目标。右上角的「任务与目标」可设置、修订或关闭明确目标，运行时会暂停 Liberty。Agent 可以在核验后保存可复用的方法。见 [Liberty](autonomous-exploration.md) 和[通知工作流](notification-workflows.md)。

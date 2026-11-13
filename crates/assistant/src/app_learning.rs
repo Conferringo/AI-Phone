@@ -258,7 +258,7 @@ mod database_tests {
         });
         let result=AssertUnwindSafe(async{
  sqlx::migrate!("./migrations").run(&db).await.unwrap();registry::initialize(&db,&app.settings).await.unwrap();
- let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE device_id='phone-local-01'").fetch_one(&db).await.unwrap();
+ let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&db).await.unwrap();
  let mut runs=vec![];let mut message=Uuid::nil();
  for n in 0..3{
   let run=Uuid::now_v7();message=Uuid::now_v7();runs.push(run);

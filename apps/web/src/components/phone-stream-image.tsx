@@ -42,6 +42,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
       while (live) {
         abort = new AbortController();
         let active = true;
+        let online = false;
         let pending: Uint8Array<ArrayBuffer> | null = null;
         let decoding = false;
         let cancelDecode: (() => void) | undefined;
@@ -56,7 +57,7 @@ export function PhoneStreamImage({fallback, enabled, onConnectionState, endpoint
             return;
           }
           presentationStarted = null;
-          connection.current(true);
+          if(!online){online=true;connection.current(true);}
           for (const old of owned) if (old !== source && old !== decodingUrl) release(old);
           void pump();
         };

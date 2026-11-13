@@ -48,7 +48,7 @@ PostgreSQL owns committed Skill text. Each installation serializes its file proj
 
 ## Devices and exchange
 
-The default is one phone and one computer. Root and sudo apply inside the guests. A persistent device link gates file exchange, with device/direction/path/hash checks; disconnecting rejects new transfers. Removing an existing link checks its persisted ownership without requiring either runtime to be online. Reconnecting still requires ready runtimes. Conversations and drafts remain per device, even for a shared Agent.
+The default is one phone and one computer. Root and sudo apply inside the guests. A persistent device link gates file exchange, with device/direction/path/hash checks; disconnecting rejects new transfers. Removing an existing link checks its persisted ownership without requiring either runtime to be online. Reconnecting still requires ready runtimes. Both devices share one conversation, one draft and one selected Agent. Each run keeps its device identity.
 
 Development checks verified a phone-to-computer file round trip, durable action retention and isolated worker/database recovery. Real-account WeChat delivery, host sleep/reboot, prolonged multi-device use and notification/task contention remain open. See [task recovery](task-recovery.md) and [release status](release-status.md).
 

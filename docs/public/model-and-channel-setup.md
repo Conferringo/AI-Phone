@@ -1,6 +1,6 @@
 # Models and connected applications
 
-Configure a model and applications inside **Configuration → Agent**. Device bindings and memories belong to the Agent; model credentials can be shared without sharing channel ownership. Existing saved configurations are retained.
+Configure a model and applications inside **Configuration → Agent**. Save several profiles and choose one active Agent for both devices. Memory and channel settings stay with each profile.
 
 ## Models
 
@@ -42,7 +42,7 @@ The first 20 entries in the November 9, 2026 Intelligence Index contain nine mod
 - DeepSeek V4 Pro, GLM-5.3, and Ling 3.1 Flash take text input. Use `deepseek-flash`, Z.ai's visual Flash series, or `Ling-3.2-flash` for image input. [DeepSeek model capabilities](https://api-docs.deepseek.com/quick_start/pricing/), [Z.ai visual Flash](https://docs.z.ai/guides/vlm/glm-5.3-flash), [Ant Ling model catalog](https://developer.ant-ling.com/en/docs/faq/)
 - Thinking Machines exposes Inkling 2 Small through Tinker's token-sampling SDK. That interface is outside the three model protocols above. [Tinker Inkling guide](https://tinker-docs.thinkingmachines.ai/cookbook/inkling/)
 
-After correcting a model ID, API endpoint or key, test and save the configuration in the original Agent. Choose **Resume** on its paused task, or send a follow-up in that task’s conversation. Recovery uses that Agent’s latest saved configuration; changing the device’s default Agent does not reassign the task. Running tasks keep their existing model snapshot until they pause and you resume them. Conversation and execution records are retained. If the replacement configuration is unavailable or unverified, the task remains paused. [Task recovery](task-recovery.md) describes the execution contract.
+After correcting a model ID, API endpoint or key, test and save the configuration in the original Agent. Choose **Resume** on its paused task, or send a follow-up in that task’s conversation. Recovery uses that Agent’s latest saved configuration; finish or stop the current task before switching profiles. Running tasks keep their existing model snapshot until they pause and you resume them. Conversation and execution records are retained. If the replacement configuration is unavailable or unverified, the task remains paused. [Task recovery](task-recovery.md) describes the execution contract.
 
 Native Messages sends `x-api-key` and `anthropic-version`, converts tool results/images and requires a complete stream before returning proposed actions. Signed thinking blocks remain private, verbatim replay data. Chat Completions retains supported providers' reasoning fields and Gemini tool signatures. DeepSeek forced tools disable thinking for that call, preserving the forced tool choice. The shared engine still enforces real observations, execution ownership and post-action evidence.
 
@@ -76,11 +76,11 @@ The Rust assistant runs the WhatsApp, QQ, WeCom, Feishu and Telegram adapters. W
 
 # 模型与连接应用
 
-在「配置中心 → Agent」设置模型、设备、连接应用与记忆。上表列出服务商直连、网关和本地推理的地址、协议及模型 ID。选择预设，填写密钥，通过文字、图片识别和完整的函数调用往返检查后保存。已有账号、设备、配置和聊天保留。不同地区的端点使用各自的密钥。
+在「配置中心 → Agent」设置模型、连接应用与记忆。手机与电脑使用同一个当前 Agent。上表列出服务商直连、网关和本地推理的地址、协议及模型 ID。选择预设，填写密钥，通过文字、图片识别和完整的函数调用往返检查后保存。已有账号、设备、配置和聊天保留。不同地区的端点使用各自的密钥。
 
 AA 榜单核对以 2026 年 11 月 9 日为准。Gemini 4 Carbon 处于受邀开放阶段，Argon 可使用付费 Gemini API。Muse Wonder Full 属于 Muse Code，Meta API 提供 `muse-wonder-1.0`。DeepSeek V4 Pro、GLM-5.3 和 Ling 3.1 Flash 为纯文本；设备操作请分别选择 `deepseek-flash`（1017）、GLM 视觉系列或 `Ling-3.2-flash`。Inkling 2 Small 使用 Tinker 的采样接口。 [AA 榜单](https://artificialanalysis.ai/leaderboards/models)
 
-修正模型 ID、API 地址或密钥后，在原 Agent 中测试并保存配置，再点击暂停任务的「继续任务」，或在该任务的对话中补充指令。恢复时使用原 Agent 最新保存的配置；更改设备默认 Agent 不会替换任务所属的 Agent。正在运行的任务保持原模型快照，直到暂停后由你恢复。对话和执行记录保留；替换配置不可用或未通过验证时，任务继续保持暂停。执行契约见[任务恢复](task-recovery.md)。
+修正模型 ID、API 地址或密钥后，在原 Agent 中测试并保存配置，再点击暂停任务的「继续任务」，或在该任务的对话中补充指令。恢复时使用原 Agent 最新保存的配置；切换配置前先完成或停止当前任务。正在运行的任务保持原模型快照，直到暂停后由你恢复。对话和执行记录保留；替换配置不可用或未通过验证时，任务继续保持暂停。执行契约见[任务恢复](task-recovery.md)。
 
 WhatsApp 采用用户选择的本地扫码关联设备，无需公网回调。入口在 Agent → 连接应用 → WhatsApp。扫码后，从另一个私聊账号发送界面上的配对指令，再进行远程操作；不接收群聊、状态、自发消息或“发给自己”。文字和PNG回复进入原持久任务队列，未知送达不自动重发，入站附件暂未支持。高级项可选代理；用户浏览器资料不会被复用。解绑/重扫会清理当前本地会话；远端注销不确定时会明确提示。
 

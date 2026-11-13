@@ -24,15 +24,11 @@ export function modelIssue(draft:Draft):string {
  if(!['responses','chat-completions','anthropic-messages'].includes(draft.protocol))return '请选择 API 协议';
  return '';
 }
-export function verifiedModels(state:MessageShape<typeof RegistryStateSchema>) {
- return state.models.filter(model=>model.profile?.model&&model.profile.baseUrl&&model.profile.verifiedAtMs>0n);
-}
 export function setupProgress(state:MessageShape<typeof RegistryStateSchema>) {
- const models=new Set(verifiedModels(state).map(model=>model.id));
- const agents=state.agents.filter(a=>models.has(a.modelConnectionId));
- const managed=state.devices.filter(device=>device.runtimeState==='managed');
- const deviceIds=managed.filter(device=>agents.some(agent=>agent.id===device.defaultAgentId&&agent.deviceIds.includes(device.id))).map(device=>device.id);
- return {modelReady:models.size>0,ready:managed.length>0&&deviceIds.length===managed.length,deviceIds};
+ const agent = state.agents.find(row => row.id === state.activeAgentId);
+ const model = state.models.find(row => row.id === agent?.modelConnectionId);
+ const devices = state.devices.filter(device => device.runtimeState === 'managed');
+ return {agent, model, devices, ready:!!model?.profile?.verifiedAtMs && devices.length > 0};
 }
 type Frame={phoneId?:string;deviceId?:string;width:number;height:number;png:Uint8Array;observationId:string};
 export function hasDeviceFrame(id:string,frame:Frame):boolean {

@@ -1,4 +1,97 @@
 @property --exploration-reveal {syntax:'<percentage>';inherits:false;initial-value:110%;}
+.goal-trigger[data-active=true] button {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.task-goal-form {
+  display: grid;
+  gap: 14px;
+}
+.task-goal-form textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 16px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--glass-fill);
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.task-goal-form textarea::placeholder {
+  color: var(--muted-foreground);
+}
+.task-goal-form textarea:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.task-goal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.task-goal-status {
+  margin-inline-end: auto;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.task-goal-error {
+  color: var(--destructive);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.task-goal-gears {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  contain: layout paint;
+  pointer-events: none;
+  color: var(--foreground);
+}
+.task-goal-gears svg {
+  position: absolute;
+  width: var(--gear-size);
+  height: var(--gear-size);
+  stroke-width: .35;
+  opacity: .13;
+  transform-origin: center;
+  animation: task-goal-turn var(--gear-duration) linear infinite;
+}
+.task-goal-gears svg:nth-child(1) {
+  --gear-size: clamp(240px, 38vmin, 530px);
+  --gear-duration: 5s;
+  inset: 8% auto auto 1%;
+}
+.task-goal-gears svg:nth-child(2) {
+  --gear-size: clamp(170px, 29vmin, 380px);
+  --gear-duration: 3.4s;
+  inset: auto 6% 8% auto;
+  animation-direction: reverse;
+}
+.task-goal-gears svg:nth-child(3) {
+  --gear-size: clamp(105px, 19vmin, 240px);
+  --gear-duration: 2.4s;
+  inset: auto 34% 22% auto;
+}
+.task-goal-gears[data-paused=true] svg {
+  animation-play-state: paused;
+}
+@keyframes task-goal-turn {
+  to { transform: rotate(1turn); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-goal-gears svg { animation: none; }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .task-goal-form textarea { background: var(--background); }
+}
+@media (forced-colors: active) {
+  .task-goal-gears { display: none; }
+}
 .exploration-control{min-width:0;flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:4px}.proactive-dock{display:flex;align-items:center;gap:2px}
 .exploration-toggle{display:flex;align-items:center;gap:7px;height:40px;padding:0 10px;border:0;border-radius:var(--radius);background:transparent;font-size:12px;color:#656a78;cursor:pointer;transition:background 180ms,color 180ms}
 .exploration-toggle:hover{background:#77718a0b;color:#262337}

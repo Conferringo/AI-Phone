@@ -1,8 +1,9 @@
 "use client";
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useWorkbenchNotice} from './workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import {type CSSProperties, useEffect, useRef, useState} from 'react';
-import{ScanLine,LoaderCircle,Volume2,VolumeX,Smartphone}from'lucide-react';
+import{ScanLine,Volume2,VolumeX,Smartphone}from'lucide-react';
 import{Button}from'./ui/button';import type{DeviceAudioControls}from'./device-audio';
 import {bindSpringRange} from '../../../client/ui/range-motion.js';
 export type RotationMode='automatic'|'portrait'|'landscape';
@@ -25,7 +26,7 @@ export function PhoneToolbar({audio,rotate,capture,landscape,onInteract,kind="ph
  function changeVolume(value:number){onInteract();audio.setVolume(value/100);if(value>0&&!audio.enabled)void audio.toggle();}
  return <div className="phone-toolbar" role="group" aria-label={kind==="desktop"?t("电脑控制"):t("手机控制")}>
   <div className="phone-toolbar-volume">
-   <Button variant="ghost" size="icon" aria-label={volume>0?t("静音"):t("开启声音")} title={volume>0?t("静音"):t("开启声音")} aria-pressed={volume>0} disabled={audio.busy} onClick={()=>{onInteract();void audio.toggle();}}>{audio.busy?<LoaderCircle className="spinning" size={18}/>:volume>0?<Volume2 size={18}/>:<VolumeX size={18}/>}</Button>
+   <Button variant="ghost" size="icon" aria-label={volume>0?t("静音"):t("开启声音")} title={volume>0?t("静音"):t("开启声音")} aria-pressed={volume>0} disabled={audio.busy} onClick={()=>{onInteract();void audio.toggle();}}>{audio.busy?<LoadingOrb size={18} />:volume>0?<Volume2 size={18}/>:<VolumeX size={18}/>}</Button>
    <div className="spring-range" style={{"--range-progress": `${volume}%`} as CSSProperties}>
     <input
      ref={volumeInput}
@@ -43,7 +44,7 @@ export function PhoneToolbar({audio,rotate,capture,landscape,onInteract,kind="ph
     </span>
    </div>
   </div>
-  {kind==="phone"&&<Button variant="ghost" size="icon" aria-label={landscape?t("切换竖屏"):t("切换横屏")} title={landscape?t("切换竖屏"):t("切换横屏")} disabled={!!busy} onClick={()=>void action('rotate',()=>rotate(landscape?'portrait':'landscape'))}>{busy==='rotate'?<LoaderCircle className="spinning" size={18}/>:<Smartphone size={18} className={landscape?'phone-rotation-landscape':''}/>}</Button>}
-  <Button variant="ghost" size="icon" aria-label={t("截图")} title={t("截图")} disabled={!!busy} onClick={()=>void action('capture',capture)}>{busy==='capture'?<LoaderCircle className="spinning" size={18}/>:<ScanLine size={18}/>}</Button>
+  {kind==="phone"&&<Button variant="ghost" size="icon" aria-label={landscape?t("切换竖屏"):t("切换横屏")} title={landscape?t("切换竖屏"):t("切换横屏")} disabled={!!busy} onClick={()=>void action('rotate',()=>rotate(landscape?'portrait':'landscape'))}>{busy==='rotate'?<LoadingOrb size={18} />:<Smartphone size={18} className={landscape?'phone-rotation-landscape':''}/>}</Button>}
+  <Button variant="ghost" size="icon" aria-label={t("截图")} title={t("截图")} disabled={!!busy} onClick={()=>void action('capture',capture)}>{busy==='capture'?<LoadingOrb size={18} />:<ScanLine size={18}/>}</Button>
  </div>;
 }

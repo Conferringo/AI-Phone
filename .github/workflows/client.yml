@@ -46,23 +46,28 @@ jobs:
       - name: Qualify embedded ARM runtime and dependency advisories
         run: |
           set -euo pipefail
-          ./scripts/bun scripts/artifacts.ts native
-          # These tasks share no compiler output or runtime workspace. Join both
-          # results before exposing the component to packaging.
+          stock="$RUNNER_TEMP/aiphone-android-stock"
+          ./scripts/bun scripts/android-component.ts --work "$stock" --compression-preset 3 --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json" &
+          android_pid=$!
           (
-            cargo install cargo-audit --version 0.22.2 --locked
-            ./scripts/bun scripts/audit-dependencies.ts --target aarch64-apple-darwin --output audit.json
+            audit_dir="$RUNNER_TEMP/aiphone-cargo-audit"
+            archive=cargo-audit-aarch64-apple-darwin-v0.22.2.tgz
+            mkdir "$audit_dir"
+            curl -fsSL "https://github.com/RustSec/rustsec/releases/download/cargo-audit/v0.22.2/$archive" -o "$audit_dir/$archive"
+            printf '%s  %s\n' ec7ca4263769593df4d909be85b94a6b79efa2897be5d2bb8ebd516e823175af "$audit_dir/$archive" | shasum -a 256 -c -
+            tar -xzf "$audit_dir/$archive" -C "$audit_dir" --strip-components 1 "${archive%.tgz}/cargo-audit"
+            PATH="$audit_dir:$PATH" ./scripts/bun scripts/audit-dependencies.ts --target aarch64-apple-darwin --output audit.json
           ) > "$RUNNER_TEMP/aiphone-native-audit.log" 2>&1 &
           audit_pid=$!
-          stock="$RUNNER_TEMP/aiphone-android-stock"
+          native_result=0
+          ./scripts/bun scripts/artifacts.ts native || native_result=$?
           android_result=0
-          ./scripts/bun scripts/android-component.ts --work "$stock" --verify-programs --compression-preset 3 --receipt "$RUNNER_TEMP/android-stock-receipt.json" > "$RUNNER_TEMP/android-stock-diagnostic.json" || android_result=$?
+          wait "$android_pid" || android_result=$?
           audit_result=0
           wait "$audit_pid" || audit_result=$?
           cat "$RUNNER_TEMP/aiphone-native-audit.log"
-          if [ "$android_result" -ne 0 ] || [ "$audit_result" -ne 0 ]; then
-            exit 1
-          fi
+          test "$native_result" -eq 0 && test "$android_result" -eq 0 && test "$audit_result" -eq 0 || exit 1
+          ./scripts/bun -e 'import {prepareAndroid} from "./scripts/tooling/android-component"; const work = process.argv[1]; await prepareAndroid(work + "/android.payload", work + "/installation");' "$stock"
           # Retain the verified capsule and remove only this job's extraction scratch.
           rm -rf "$stock/installation"
           rm "$stock/emulator.zip" "$stock/platform-tools.zip" "$stock/system-image.zip"

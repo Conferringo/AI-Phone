@@ -275,7 +275,9 @@ async fn control(app: &App, device: &str, run: Option<Uuid>, take: bool) -> Resu
         }
     }
     if take && run.is_none() {
-        crate::desktop_explore::pause(app, device, "你已接管电脑，自主探索已暂停").await?;
+        crate::proactive::stop_exploration(app, "你已接管电脑，Liberty 已暂停")
+            .await
+            .map_err(|e| e.to_string())?;
     }
     let owner = run
         .map(|v| v.to_string())
@@ -1045,20 +1047,6 @@ pub async fn route(
                 Ok(pb(StatusCode::OK, cursor_read(&app, &r.device_id).await?))
             }
 
-            "explore-state" => {
-                let r = read!(wire::DesktopRequest);
-                Ok(pb(
-                    StatusCode::OK,
-                    crate::desktop_explore::state(&app, &r.device_id).await?,
-                ))
-            }
-            "explore-update" => {
-                let r = read!(wire::DesktopExploreUpdate);
-                Ok(pb(
-                    StatusCode::OK,
-                    crate::desktop_explore::update(&app, r).await?,
-                ))
-            }
             "message" => {
                 let r = read!(wire::DeviceMessageRequest);
                 Ok(pb(

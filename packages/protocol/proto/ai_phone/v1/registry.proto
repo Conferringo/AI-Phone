@@ -33,6 +33,11 @@ message RegistryState {
   string active_device_id = 4;
   uint32 phone_limit = 5;
   uint32 desktop_limit = 6;
+  string active_agent_id = 7;
+}
+message AgentProfileRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
 }
 // Client-generated UUID for creation; expected_revision=0. IDs remain stable on retries.
 message DeviceSaveRequest {
@@ -40,14 +45,14 @@ message DeviceSaveRequest {
   uint64 expected_revision = 2;
   string name = 3;
   string kind = 4;
-  string default_agent_id = 5;
+  reserved 5;
 }
 message AgentSaveRequest {
   string id = 1;
   uint64 expected_revision = 2;
   string name = 3;
   string model_connection_id = 4;
-  repeated string device_ids = 5;
+  reserved 5;
   string instructions = 6;
 }
 message ConnectionTestRequest {

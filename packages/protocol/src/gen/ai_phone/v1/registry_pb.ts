@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ai_phone/v1/registry.proto.
  */
 export const file_ai_phone_v1_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChphaV9waG9uZS92MS9yZWdpc3RyeS5wcm90bxILYWlfcGhvbmUudjEiEQoPUmVnaXN0cnlSZXF1ZXN0Io0BChBSZWdpc3RlcmVkRGV2aWNlEgoKAmlkGAEgASgJEhAKCHJldmlzaW9uGAIgASgEEgwKBG5hbWUYAyABKAkSDAoEa2luZBgEIAEoCRIOCgZzeXN0ZW0YBSABKAkSFQoNcnVudGltZV9zdGF0ZRgGIAEoCRIYChBkZWZhdWx0X2FnZW50X2lkGAcgASgJIoQBCg9SZWdpc3RlcmVkQWdlbnQSCgoCaWQYASABKAkSEAoIcmV2aXNpb24YAiABKAQSDAoEbmFtZRgDIAEoCRIbChNtb2RlbF9jb25uZWN0aW9uX2lkGAQgASgJEhIKCmRldmljZV9pZHMYBSADKAkSFAoMaW5zdHJ1Y3Rpb25zGAYgASgJImkKD1JlZ2lzdGVyZWRNb2RlbBIKCgJpZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoBBIMCgRuYW1lGAMgASgJEioKB3Byb2ZpbGUYBCABKAsyGS5haV9waG9uZS52MS5Nb2RlbFByb2ZpbGUi4QEKDVJlZ2lzdHJ5U3RhdGUSLgoHZGV2aWNlcxgBIAMoCzIdLmFpX3Bob25lLnYxLlJlZ2lzdGVyZWREZXZpY2USLAoGYWdlbnRzGAIgAygLMhwuYWlfcGhvbmUudjEuUmVnaXN0ZXJlZEFnZW50EiwKBm1vZGVscxgDIAMoCzIcLmFpX3Bob25lLnYxLlJlZ2lzdGVyZWRNb2RlbBIYChBhY3RpdmVfZGV2aWNlX2lkGAQgASgJEhMKC3Bob25lX2xpbWl0GAUgASgNEhUKDWRlc2t0b3BfbGltaXQYBiABKA0icAoRRGV2aWNlU2F2ZVJlcXVlc3QSCgoCaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSDAoEbmFtZRgDIAEoCRIMCgRraW5kGAQgASgJEhgKEGRlZmF1bHRfYWdlbnRfaWQYBSABKAkijgEKEEFnZW50U2F2ZVJlcXVlc3QSCgoCaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSDAoEbmFtZRgDIAEoCRIbChNtb2RlbF9jb25uZWN0aW9uX2lkGAQgASgJEhIKCmRldmljZV9pZHMYBSADKAkSFAoMaW5zdHJ1Y3Rpb25zGAYgASgJImYKFUNvbm5lY3Rpb25UZXN0UmVxdWVzdBIKCgJpZBgBIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgCIAEoBBImCgVkcmFmdBgDIAEoCzIXLmFpX3Bob25lLnYxLk1vZGVsRHJhZnQijQEKFUNvbm5lY3Rpb25TYXZlUmVxdWVzdBIKCgJpZBgBIAEoCRIZChFleHBlY3RlZF9yZXZpc2lvbhgCIAEoBBIMCgRuYW1lGAMgASgJEiYKBWRyYWZ0GAQgASgLMhcuYWlfcGhvbmUudjEuTW9kZWxEcmFmdBIXCg92ZXJpZmljYXRpb25faWQYBSABKAkiRAobQ29ubmVjdGlvbkNyZWRlbnRpYWxSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEIoUBCh1BZ2VudENvbmZpZ3VyYXRpb25TYXZlUmVxdWVzdBIsCgVhZ2VudBgBIAEoCzIdLmFpX3Bob25lLnYxLkFnZW50U2F2ZVJlcXVlc3QSNgoKY29ubmVjdGlvbhgCIAEoCzIiLmFpX3Bob25lLnYxLkNvbm5lY3Rpb25TYXZlUmVxdWVzdGIGcHJvdG8z", [file_ai_phone_v1_settings]);
+  fileDesc("ChphaV9waG9uZS92MS9yZWdpc3RyeS5wcm90bxILYWlfcGhvbmUudjEiEQoPUmVnaXN0cnlSZXF1ZXN0Io0BChBSZWdpc3RlcmVkRGV2aWNlEgoKAmlkGAEgASgJEhAKCHJldmlzaW9uGAIgASgEEgwKBG5hbWUYAyABKAkSDAoEa2luZBgEIAEoCRIOCgZzeXN0ZW0YBSABKAkSFQoNcnVudGltZV9zdGF0ZRgGIAEoCRIYChBkZWZhdWx0X2FnZW50X2lkGAcgASgJIoQBCg9SZWdpc3RlcmVkQWdlbnQSCgoCaWQYASABKAkSEAoIcmV2aXNpb24YAiABKAQSDAoEbmFtZRgDIAEoCRIbChNtb2RlbF9jb25uZWN0aW9uX2lkGAQgASgJEhIKCmRldmljZV9pZHMYBSADKAkSFAoMaW5zdHJ1Y3Rpb25zGAYgASgJImkKD1JlZ2lzdGVyZWRNb2RlbBIKCgJpZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoBBIMCgRuYW1lGAMgASgJEioKB3Byb2ZpbGUYBCABKAsyGS5haV9waG9uZS52MS5Nb2RlbFByb2ZpbGUi+gEKDVJlZ2lzdHJ5U3RhdGUSLgoHZGV2aWNlcxgBIAMoCzIdLmFpX3Bob25lLnYxLlJlZ2lzdGVyZWREZXZpY2USLAoGYWdlbnRzGAIgAygLMhwuYWlfcGhvbmUudjEuUmVnaXN0ZXJlZEFnZW50EiwKBm1vZGVscxgDIAMoCzIcLmFpX3Bob25lLnYxLlJlZ2lzdGVyZWRNb2RlbBIYChBhY3RpdmVfZGV2aWNlX2lkGAQgASgJEhMKC3Bob25lX2xpbWl0GAUgASgNEhUKDWRlc2t0b3BfbGltaXQYBiABKA0SFwoPYWN0aXZlX2FnZW50X2lkGAcgASgJIjwKE0FnZW50UHJvZmlsZVJlcXVlc3QSCgoCaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQiXAoRRGV2aWNlU2F2ZVJlcXVlc3QSCgoCaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQSDAoEbmFtZRgDIAEoCRIMCgRraW5kGAQgASgJSgQIBRAGIoABChBBZ2VudFNhdmVSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEgwKBG5hbWUYAyABKAkSGwoTbW9kZWxfY29ubmVjdGlvbl9pZBgEIAEoCRIUCgxpbnN0cnVjdGlvbnMYBiABKAlKBAgFEAYiZgoVQ29ubmVjdGlvblRlc3RSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEiYKBWRyYWZ0GAMgASgLMhcuYWlfcGhvbmUudjEuTW9kZWxEcmFmdCKNAQoVQ29ubmVjdGlvblNhdmVSZXF1ZXN0EgoKAmlkGAEgASgJEhkKEWV4cGVjdGVkX3JldmlzaW9uGAIgASgEEgwKBG5hbWUYAyABKAkSJgoFZHJhZnQYBCABKAsyFy5haV9waG9uZS52MS5Nb2RlbERyYWZ0EhcKD3ZlcmlmaWNhdGlvbl9pZBgFIAEoCSJEChtDb25uZWN0aW9uQ3JlZGVudGlhbFJlcXVlc3QSCgoCaWQYASABKAkSGQoRZXhwZWN0ZWRfcmV2aXNpb24YAiABKAQihQEKHUFnZW50Q29uZmlndXJhdGlvblNhdmVSZXF1ZXN0EiwKBWFnZW50GAEgASgLMh0uYWlfcGhvbmUudjEuQWdlbnRTYXZlUmVxdWVzdBI2Cgpjb25uZWN0aW9uGAIgASgLMiIuYWlfcGhvbmUudjEuQ29ubmVjdGlvblNhdmVSZXF1ZXN0YgZwcm90bzM", [file_ai_phone_v1_settings]);
 
 /**
  * @generated from message ai_phone.v1.RegistryRequest
@@ -181,6 +181,11 @@ export type RegistryState = Message<"ai_phone.v1.RegistryState"> & {
    * @generated from field: uint32 desktop_limit = 6;
    */
   desktopLimit: number;
+
+  /**
+   * @generated from field: string active_agent_id = 7;
+   */
+  activeAgentId: string;
 };
 
 /**
@@ -189,6 +194,28 @@ export type RegistryState = Message<"ai_phone.v1.RegistryState"> & {
  */
 export const RegistryStateSchema: GenMessage<RegistryState> = /*@__PURE__*/
   messageDesc(file_ai_phone_v1_registry, 4);
+
+/**
+ * @generated from message ai_phone.v1.AgentProfileRequest
+ */
+export type AgentProfileRequest = Message<"ai_phone.v1.AgentProfileRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: uint64 expected_revision = 2;
+   */
+  expectedRevision: bigint;
+};
+
+/**
+ * Describes the message ai_phone.v1.AgentProfileRequest.
+ * Use `create(AgentProfileRequestSchema)` to create a new message.
+ */
+export const AgentProfileRequestSchema: GenMessage<AgentProfileRequest> = /*@__PURE__*/
+  messageDesc(file_ai_phone_v1_registry, 5);
 
 /**
  * Client-generated UUID for creation; expected_revision=0. IDs remain stable on retries.
@@ -215,11 +242,6 @@ export type DeviceSaveRequest = Message<"ai_phone.v1.DeviceSaveRequest"> & {
    * @generated from field: string kind = 4;
    */
   kind: string;
-
-  /**
-   * @generated from field: string default_agent_id = 5;
-   */
-  defaultAgentId: string;
 };
 
 /**
@@ -227,7 +249,7 @@ export type DeviceSaveRequest = Message<"ai_phone.v1.DeviceSaveRequest"> & {
  * Use `create(DeviceSaveRequestSchema)` to create a new message.
  */
 export const DeviceSaveRequestSchema: GenMessage<DeviceSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 5);
+  messageDesc(file_ai_phone_v1_registry, 6);
 
 /**
  * @generated from message ai_phone.v1.AgentSaveRequest
@@ -254,11 +276,6 @@ export type AgentSaveRequest = Message<"ai_phone.v1.AgentSaveRequest"> & {
   modelConnectionId: string;
 
   /**
-   * @generated from field: repeated string device_ids = 5;
-   */
-  deviceIds: string[];
-
-  /**
    * @generated from field: string instructions = 6;
    */
   instructions: string;
@@ -269,7 +286,7 @@ export type AgentSaveRequest = Message<"ai_phone.v1.AgentSaveRequest"> & {
  * Use `create(AgentSaveRequestSchema)` to create a new message.
  */
 export const AgentSaveRequestSchema: GenMessage<AgentSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 6);
+  messageDesc(file_ai_phone_v1_registry, 7);
 
 /**
  * @generated from message ai_phone.v1.ConnectionTestRequest
@@ -296,7 +313,7 @@ export type ConnectionTestRequest = Message<"ai_phone.v1.ConnectionTestRequest">
  * Use `create(ConnectionTestRequestSchema)` to create a new message.
  */
 export const ConnectionTestRequestSchema: GenMessage<ConnectionTestRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 7);
+  messageDesc(file_ai_phone_v1_registry, 8);
 
 /**
  * @generated from message ai_phone.v1.ConnectionSaveRequest
@@ -335,7 +352,7 @@ export type ConnectionSaveRequest = Message<"ai_phone.v1.ConnectionSaveRequest">
  * Use `create(ConnectionSaveRequestSchema)` to create a new message.
  */
 export const ConnectionSaveRequestSchema: GenMessage<ConnectionSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 8);
+  messageDesc(file_ai_phone_v1_registry, 9);
 
 /**
  * @generated from message ai_phone.v1.ConnectionCredentialRequest
@@ -357,7 +374,7 @@ export type ConnectionCredentialRequest = Message<"ai_phone.v1.ConnectionCredent
  * Use `create(ConnectionCredentialRequestSchema)` to create a new message.
  */
 export const ConnectionCredentialRequestSchema: GenMessage<ConnectionCredentialRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 9);
+  messageDesc(file_ai_phone_v1_registry, 10);
 
 /**
  * Atomically stores the Agent and its inline model configuration.
@@ -381,5 +398,5 @@ export type AgentConfigurationSaveRequest = Message<"ai_phone.v1.AgentConfigurat
  * Use `create(AgentConfigurationSaveRequestSchema)` to create a new message.
  */
 export const AgentConfigurationSaveRequestSchema: GenMessage<AgentConfigurationSaveRequest> = /*@__PURE__*/
-  messageDesc(file_ai_phone_v1_registry, 10);
+  messageDesc(file_ai_phone_v1_registry, 11);
 

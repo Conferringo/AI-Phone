@@ -3,7 +3,7 @@ use crate::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures_util::FutureExt;
 use serde_json::{Value, json};
-use sqlx::Row;
+use sqlx::{Row, types::Json};
 
 mod execution_policy;
 use execution_policy::{execution_tools, gui_execution, initial_observation, lookup_evidence};
@@ -31,17 +31,23 @@ async fn finish_attempt(
     cancelled: bool,
 ) -> Result<(), sqlx::Error> {
     let mut tx = app.db.begin().await?;
-    let (status, conversation, handoff, queued_handoff): (String, Uuid, bool, bool) =
-        sqlx::query_as(
-            "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
+    let (status, conversation, handoff, queued_handoff, task_goal): (
+        String,
+        Uuid,
+        bool,
+        bool,
+        bool,
+    ) = sqlx::query_as(
+        "SELECT r.status,r.conversation_id,r.origin='device-handoff',EXISTS(
             SELECT 1 FROM device_messages m WHERE m.status='queued' AND (
                 m.target_device_id=r.device_id OR EXISTS(SELECT 1 FROM device_execution_leases l
-                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id)))
+                    WHERE l.run_id=r.id AND l.device_id=m.target_device_id))),
+            r.origin='user' AND r.trigger_input='task-goal'
          FROM runs r WHERE r.id=$1 FOR UPDATE",
-        )
-        .bind(id)
-        .fetch_one(&mut *tx)
-        .await?;
+    )
+    .bind(id)
+    .fetch_one(&mut *tx)
+    .await?;
     let mut trace = match result {
         Ok(RunDisposition::Completed) => "completed",
         Ok(RunDisposition::Queued | RunDisposition::Retrying) => "waiting",
@@ -77,6 +83,8 @@ async fn finish_attempt(
                     )
                 },
             )
+        } else if task_goal {
+            ("paused", error.clone())
         } else {
             ("failed", error.clone())
         };
@@ -153,13 +161,20 @@ async fn attempt(app: Shared, id: Uuid, message: Uuid, cancel: CancellationToken
     id
 }
 
+#[derive(serde::Deserialize)]
+struct HistoryAttachment {
+    name: String,
+    media_type: String,
+    storage_key: String,
+}
+
 async fn initial_context(
     app: &App,
     conversation: Uuid,
     message: Uuid,
 ) -> Result<Vec<Value>, String> {
     let identity = sqlx::query(
-        "SELECT r.agent_name,r.device_id,r.origin,d.kind,
+        "SELECT r.agent_name,r.device_id,r.origin,d.kind,r.origin='user' AND r.trigger_input='task-goal' task_goal,
             ARRAY(SELECT content FROM memories WHERE owner_id='local-user' AND agent_id=r.agent_id ORDER BY created_at DESC LIMIT 30) memories,
             ARRAY(SELECT name||': '||description FROM runtime_skills WHERE enabled=true AND deleted_at IS NULL ORDER BY builtin DESC,created_at) skills
          FROM runs r JOIN devices d ON d.id=r.device_id WHERE r.assistant_message_id=$1",
@@ -184,23 +199,28 @@ async fn initial_context(
         identity.get::<&str, _>("device_id"),
     ));
     let kind: &str = identity.get("kind");
+    if identity.get::<bool, _>("task_goal") {
+        system.push_str("当前为任务与目标模式。把本轮用户内容作为持续目标，后续文字、语音和目标更新可以修订它。主动规划并执行，先用 device_list 找出可控制的设备，按需切换、同时使用或交接；无需请求用户替你选设备。用 task_wait 等待外部状态，保留进度。核实全部要求已经达到后才调用 task_finish(completed)，真实阻碍则记录并等待补充。");
+    }
     system.push_str(&format!("[当前设备类型:{kind}]。通过device_list获取本任务授权设备ID。Linux桌面使用computer_observe/click/type/key/scroll/drag，命令处理用computer_run，工作目录/home/ai/Files。它提供真实Linux图形桌面；应用和系统版本以当前设备实际状态为准；workspace_run仍是另一台无界面工具容器。开始电脑任务先读取computer-use。每条GUI动作必须用最新observation_id，动作会返回新图；不要沿用其他设备的坐标或截图。数据线用device_link建立；device_file_list/device_file_manage管理绑定设备及工作文件，device_id为空表示工作文件，根路径为/。跨Agent用device_files查看共享目录、device_transfer复制文件。device_transfer返回completed时直接使用回执的实际目标路径、字节数与SHA-256；回执未确认时查询原request_id，不重传。主人明确要求独立核查时按要求执行。应用搜索、办公和消息发送仍使用对应设备GUI工具。文件传到手机不等于通过微信交付，须在手机用phone-use发送到用户指定会话并观察回执。"));
     let mut context =
         vec![json!({"role":"system","content":[{"type":"input_text","text":system}]})];
-    let rows=sqlx::query("SELECT recent.*,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
-        CASE WHEN recent.role='assistant' THEN ARRAY(SELECT a.name FROM unnest(recent.attachment_ids) WITH ORDINALITY f(id,position)
-          JOIN attachments a ON a.id=f.id AND a.owner_id='local-user' ORDER BY f.position) ELSE '{}'::text[] END output_names
+    let rows=sqlx::query("SELECT recent.role,recent.text,recent.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,
+        COALESCE((SELECT jsonb_agg(CASE WHEN a.id IS NOT NULL THEN
+          jsonb_build_object('name',a.name,'media_type',a.media_type,'storage_key',a.storage_key)
+          END ORDER BY f.position) FROM unnest(recent.attachment_ids) WITH ORDINALITY f(id,position)
+          LEFT JOIN attachments a ON a.id=f.id AND a.owner_id='local-user'), '[]'::jsonb) files
         FROM (SELECT id,role,text,attachment_ids,ordinal,request_id FROM messages WHERE conversation_id=$1 AND ordinal<(SELECT ordinal FROM messages WHERE id=$2) ORDER BY ordinal DESC LIMIT 60) recent
         LEFT JOIN chat_voice_inputs v ON v.message_id=recent.id ORDER BY ordinal")
         .bind(conversation).bind(message).fetch_all(&app.db).await.map_err(|e|e.to_string())?;
     let task_start = rows
         .iter()
-        .rposition(|row| row.get::<String, _>("role") == "user");
+        .rposition(|row| row.get::<&str, _>("role") == "user");
     for (index, row) in rows.into_iter().enumerate() {
         if Some(index) == task_start {
             context.push(json!({"role":"system","content":[{"type":"input_text","text":"AI_PHONE_CURRENT_TASK：以下为本次用户任务。后续连续补充均属于同一任务，保留原目标及仍适用的约束；明确的更正优先，已完成操作不重复。用户可能连续说多条，不需要每条都单独抢答，整合后自然回应。"}]}));
         }
-        let role: String = row.get("role");
+        let role: &str = row.get("role");
         let text: String = row.get("text");
         let request = row
             .get::<Option<Uuid>, _>("request_id")
@@ -217,31 +237,33 @@ async fn initial_context(
                 json!({"type":if role=="assistant"{"output_text"}else{"input_text"},"text":text}),
             );
         }
-        let ids: Vec<Uuid> = row.get("attachment_ids");
-        if role == "assistant" && !ids.is_empty() {
-            let names: Vec<String> = row.get("output_names");
-            content.push(
-                json!({"type":"output_text","text":format!("已交付文件：{}",names.join("、"))}),
-            );
-        }
-        for id in ids.into_iter().filter(|_| role != "assistant") {
-            let file=sqlx::query("SELECT name,media_type,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
-            let bytes = tokio::fs::read(
-                app.root
-                    .join("data/attachments")
-                    .join(file.get::<String, _>("storage_key")),
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-            let media: String = file.get("media_type");
-            if media.starts_with("image/") {
-                content.push(json!({"type":"input_image","image_url":format!("data:{media};base64,{}",STANDARD.encode(bytes))}));
-            } else {
-                let text = String::from_utf8_lossy(&bytes)
-                    .chars()
-                    .take(24000)
-                    .collect::<String>();
-                content.push(json!({"type":"input_text","text":format!("附件 {}：\n{}",file.get::<String,_>("name"),text)}));
+        let Json(files): Json<Vec<Option<HistoryAttachment>>> = row.get("files");
+        if role == "assistant" {
+            if !files.is_empty() {
+                let names: Vec<_> = files.into_iter().flatten().map(|file| file.name).collect();
+                content.push(
+                    json!({"type":"output_text","text":format!("已交付文件：{}",names.join("、"))}),
+                );
+            }
+        } else {
+            for file in files {
+                let file = file.ok_or_else(|| sqlx::Error::RowNotFound.to_string())?;
+                let bytes =
+                    tokio::fs::read(app.root.join("data/attachments").join(file.storage_key))
+                        .await
+                        .map_err(|e| e.to_string())?;
+                let media = file.media_type;
+                if media.starts_with("image/") {
+                    content.push(json!({"type":"input_image","image_url":format!("data:{media};base64,{}",STANDARD.encode(bytes))}));
+                } else {
+                    let text = String::from_utf8_lossy(&bytes)
+                        .chars()
+                        .take(24000)
+                        .collect::<String>();
+                    content.push(
+                        json!({"type":"input_text","text":format!("附件 {}：\n{text}",file.name)}),
+                    );
+                }
             }
         }
         if !content.is_empty() {
@@ -1921,7 +1943,7 @@ async fn checkpoint(
 ) -> Result<(), String> {
     crate::agent_loop::compact_observations(context);
     let result=sqlx::query("UPDATE runs SET context=$2,pending_tools=$3,answer=$4,step=$5,loop_state=$6,heartbeat_at=now() WHERE id=$1 AND status='running'")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(json!(state)).execute(&app.db).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(Json(&state)).execute(&app.db).await.map_err(|e|e.to_string())?;
     if result.rows_affected() == 0 {
         return Err("canceled".into());
     }
@@ -1994,7 +2016,7 @@ async fn consume_wait_completion(
     context.push(json!({"role":"system","content":[{"type":"input_text","text":format!("AI_PHONE_WAIT_COMPLETED：上一次持久等待已真实结束。等待截止Unix毫秒={deadline}，当前Unix毫秒={}。继续检查当前实际状态并执行未完成的后续步骤，不要把已结束的等待重新排队；如果状态仍未就绪，先取得新的检查结果再决定是否再次等待。",now_ms())}]}));
     crate::agent_loop::compact_observations(context);
     sqlx::query("UPDATE runs SET context=$2,pending_tools=$3,answer=$4,step=$5,loop_state=$6,heartbeat_at=now() WHERE id=$1")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(json!(state)).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(Json(&state)).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,'summary','等待结束','等待已结束，继续检查当前状态与后续步骤。','completed',now())")
         .bind(Uuid::now_v7()).bind(id).bind(message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
@@ -2093,7 +2115,7 @@ async fn consume_steering(
     sqlx::query("INSERT INTO messages(id,conversation_id,role,run_id) SELECT $2,conversation_id,'assistant',id FROM runs WHERE id=$1")
         .bind(id).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("UPDATE runs SET assistant_message_id=$6,steering='[]',context=$2,pending_tools=$3,answer='',step=$4,loop_state=$5,control_epoch=0,next_wake_at=NULL,heartbeat_at=now(),error='' WHERE id=$1")
-        .bind(id).bind(json!(context)).bind(json!(pending)).bind(step).bind(json!(state)).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(Json(context.as_slice())).bind(Json(&pending)).bind(step).bind(Json(&state)).bind(next_message).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     sqlx::query("INSERT INTO harness_events(id,run_id,message_id,kind,title,content,status,finished_at) VALUES($1,$2,$3,'summary','补充指令',$4,'completed',now())")
         .bind(Uuid::now_v7()).bind(id).bind(next_message).bind(format!("已收到 {} 条补充，继续处理。",entries.len())).execute(&mut *tx).await.map_err(|e|e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
@@ -2173,7 +2195,7 @@ async fn persist_with_outputs(
     };
     crate::agent_loop::compact_observations(context);
     sqlx::query("UPDATE runs SET status=$2,context=$3,pending_tools=$4,answer=CASE WHEN $10 THEN answer ELSE $5 END,step=$6,loop_state=$7,error=$8,next_wake_at=to_timestamp($9::double precision),heartbeat_at=now(),finished_at=CASE WHEN $2='succeeded' THEN now() ELSE NULL END WHERE id=$1")
-        .bind(id).bind(status).bind(json!(context)).bind(json!(pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        .bind(id).bind(status).bind(Json(context.as_slice())).bind(Json(&pending)).bind(answer).bind(step).bind(stored_state).bind(error).bind(wake).bind(notice_kind == "system_failure").execute(&mut *tx).await.map_err(|e|e.to_string())?;
     if dialogue {
         let attachments = crate::files::publish_outputs(app, &mut tx, outputs).await?;
         sqlx::query("UPDATE messages SET text=$2,attachment_ids=attachment_ids || $3 WHERE id=$1")
@@ -2280,9 +2302,9 @@ async fn resolve_pending_resume(
         WHERE id=$1 AND status='running'",
     )
     .bind(run)
-    .bind(json!(context))
-    .bind(json!(pending))
-    .bind(json!(state))
+    .bind(Json(context.as_slice()))
+    .bind(Json(&pending))
+    .bind(Json(&state))
     .execute(&mut *tx)
     .await
     .map_err(|error| error.to_string())?
@@ -2319,10 +2341,8 @@ async fn execute(
     let mut handoffs_pending: bool = row.get("handoffs_pending");
     let start_step = step;
     let background = row.get::<String, _>("origin") != "user";
-    let exploration = matches!(
-        row.get::<String, _>("origin").as_str(),
-        "exploration" | "desktop-exploration"
-    );
+    let task_goal = !background && row.get::<&str, _>("trigger_input") == "task-goal";
+    let exploration = row.get::<&str, _>("origin") == "exploration";
     let notification_run = row.get::<String, _>("origin") == "notification";
     let screen_attention: bool = row.get("screen_attention");
     let desktop = row.get::<Option<&str>, _>("device_kind") == Some("desktop");
@@ -2352,7 +2372,11 @@ async fn execute(
         let input_changed = app.run_signals.input.notified();
         app.run_signals.speech.wait(conversation, cancel).await?;
         if exploration && state.exploration_yield_due(now_ms(), step) {
-            let interval: i64 = sqlx::query_scalar("SELECT CASE WHEN r.origin='desktop-exploration' THEN (SELECT interval_seconds FROM desktop_exploration WHERE device_id=r.device_id) ELSE (SELECT interval_seconds FROM proactive_state) END::bigint FROM runs r WHERE r.id=$1").bind(id).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
+            let interval: i64 =
+                sqlx::query_scalar("SELECT interval_seconds::bigint FROM proactive_state")
+                    .fetch_one(&app.db)
+                    .await
+                    .map_err(|e| e.to_string())?;
             if persist_disposition(
                 app,
                 id,
@@ -2719,7 +2743,6 @@ async fn execute(
                 crate::files::discard_outputs(app, &outputs).await;
                 continue;
             }
-            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if stalled {
                 let reason = if state.observation_recoveries >= 4 {
                     format!(
@@ -2747,12 +2770,11 @@ async fn execute(
                 {
                     return Ok(RunDisposition::Paused);
                 }
-                continue;
             }
+            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             continue;
         }
         if crate::agent_loop::slice_due(start_step, step) {
-            checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
             if persist_disposition(
                 app,
                 id,
@@ -2911,6 +2933,7 @@ async fn execute(
             continue;
         }
         if !background
+            && !task_goal
             && !handoffs_pending
             && let Some(proposal) = phone_completion_proposal(&context, &output, &new_text)
         {
@@ -2924,7 +2947,7 @@ async fn execute(
             }
             context.push(item);
         }
-        if screen_attention || action_task(&context) || phone_task(&context) {
+        if task_goal || screen_attention || action_task(&context) || phone_task(&context) {
             answer.clear();
             if !new_text.trim().is_empty() {
                 if progress_is_verified(&context, &new_text) {
@@ -2988,7 +3011,6 @@ async fn execute(
             }
             answer.push_str(&new_text);
         }
-        checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
         if pending.is_empty() {
             if answer.trim().is_empty() {
                 let stalled = state.no_progress("模型未返回有效结果");
@@ -3012,17 +3034,12 @@ async fn execute(
                 {
                     return Ok(RunDisposition::Paused);
                 }
-                continue;
-            }
-            let claim = phone_claim(&context, &answer);
-            if !fresh_phone_evidence(&context, claim) {
+            } else if !fresh_phone_evidence(&context, phone_claim(&context, &answer)) {
                 context.push(
                     json!({"role":"system","content":[{"type":"input_text","text":VERIFY_PHONE}]}),
                 );
                 answer.clear();
-                continue;
-            }
-            if persist_disposition(
+            } else if persist_disposition(
                 app,
                 id,
                 message,
@@ -3041,6 +3058,7 @@ async fn execute(
                 return Ok(RunDisposition::Completed);
             }
         }
+        checkpoint(app, id, &mut context, &pending, &answer, step, &state).await?;
     }
 }
 
@@ -3052,19 +3070,24 @@ async fn has_steering(app: &App, run: Uuid) -> Result<bool, String> {
         .map_err(|e| e.to_string())
 }
 
-async fn wait_for_steering(app: &App, run: Uuid) -> Result<(), String> {
+async fn wait_for_steering(
+    app: &App,
+    run: Uuid,
+    mut changed: tokio::sync::futures::Notified<'_>,
+) -> Result<(), String> {
     loop {
-        let changed = app.run_signals.input.notified();
+        changed.await;
+        changed = app.run_signals.input.notified();
         if has_steering(app, run).await? {
             return Ok(());
         }
-        changed.await;
     }
 }
 
 // Text bursts settle briefly. Voice was already endpointed by the capture owner.
 async fn input_ready(app: &App, run: Uuid, cancel: &CancellationToken) -> Result<bool, String> {
     loop {
+        let changed = app.run_signals.input.notified();
         let (remaining, steering):(f64,bool)=sqlx::query_as("SELECT COALESCE(GREATEST(0,input_quiet_ms-extract(epoch FROM clock_timestamp()-input_at)*1000),0)::double precision,jsonb_array_length(steering)>0 FROM runs WHERE id=$1")
             .bind(run).fetch_one(&app.db).await.map_err(|e|e.to_string())?;
         if steering {
@@ -3075,7 +3098,7 @@ async fn input_ready(app: &App, run: Uuid, cancel: &CancellationToken) -> Result
         }
         tokio::select! {
             _=cancel.cancelled()=>return Err("canceled".into()),
-            changed=wait_for_steering(app,run)=>{changed?;return Ok(false);},
+            _=changed=>{},
             _=tokio::time::sleep(Duration::from_millis(remaining.ceil() as u64))=>{}
         }
     }
@@ -3090,6 +3113,9 @@ async fn respond_to_current_input(
     effort: &str,
     model_replay_boundary: usize,
 ) -> Result<Option<Vec<Value>>, String> {
+    // Subscribe before reading the queue, so an input committed during admission
+    // cannot be lost and an unchanged queue needs no second read.
+    let changed = app.run_signals.input.notified();
     if !input_ready(app, run, cancel).await? {
         return Ok(None);
     }
@@ -3098,7 +3124,7 @@ async fn respond_to_current_input(
     let mut result = tokio::select! {
         biased;
         _=cancel.cancelled()=>Err("canceled".into()),
-        changed=wait_for_steering(app,run)=>changed.map(|()|None),
+        changed=wait_for_steering(app,run,changed)=>changed.map(|()|None),
         result=respond(app,run,context,cancel,effort,model_replay_boundary,&mut timing)=>result.map(Some),
     };
     // A simultaneous receipt wins over stale text and any not-yet-launched tools.
@@ -5419,9 +5445,8 @@ mod learning_entry_tests {
     #[ignore = "real disposable PostgreSQL; recorded tool learning and receipt replay"]
     async fn completed_desktop_tool_receipts_enter_learning_without_repeating_actions() {
         steering_regressions::database_case(|app|async move{
-            let device="recorded-learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
+            let device="recorded-learning-desktop";let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&app.db).await.unwrap();let message=Uuid::now_v7();let run=Uuid::now_v7();
             sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
-            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')").bind(message).bind(conversation).execute(&app.db).await.unwrap();
             sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,device_id) VALUES($1,$2,$3,$1,'fixture','running',$4)").bind(run).bind(conversation).bind(message).bind(device).execute(&app.db).await.unwrap();
             let cancel=CancellationToken::new();let mut epoch=0;

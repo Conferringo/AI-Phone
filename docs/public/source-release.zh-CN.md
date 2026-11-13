@@ -15,7 +15,7 @@
 ./ai-phone install
 ```
 
-SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 Clash 应用，订阅由使用者提供。在「配置中心 → Agent」配置模型及设备绑定。程序不提供开发者密钥或账号，重复启动仅补缺失服务并保留现有状态。
+SDK 对实际请求的包提示许可确认。宿主默认直联，客体各有 Clash 应用，订阅由使用者提供。在「配置中心 → Agent」保存模型配置并选择两台设备共用的 Agent。程序不提供开发者密钥或账号，重复启动仅补缺失服务并保留现有状态。
 
 详见[安装](getting-started.zh-CN.md)、[运行组件](runtime-bundles.md)、[架构](architecture.zh-CN.md)、[备份恢复](backup-restore.zh-CN.md)和[发行状态](release-status.md)。
 

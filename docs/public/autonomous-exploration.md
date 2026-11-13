@@ -10,11 +10,11 @@ Normal execution yields in bounded slices. After 40 decision steps or ten minute
 
 Long runs compact older tool and assistant messages into excerpts for the model. The latest saved Liberty goal, owner and system constraints, each Skill's latest successful read and recent complete tool pairs stay in context. The Agent can observe again and decide whether its saved goal still fits.
 
-A paused owner task remains intact while explicitly enabled exploration gets its own scheduling lane. Re-enabling desktop exploration retires its old paused cycle while retaining all action receipts. Mode changes and scheduling lock the conversation, mode and runs in the same order. Stopping the mode cancels its active execution token while independently enabled notification work continues. Changing shared reply/install permissions revokes stale autonomous policy on both devices without switching off desktop exploration.
+One Liberty control applies to both devices. An active Task & Goal pauses Liberty. Stopping Liberty ends its active cycle and leaves notification handling enabled.
 
 ## Harness collaboration
 
-When a direction benefits from another device, the Agent can check its device bindings and connect the data cable. It operates devices it controls directly or hands work to the bound Agent over the cable. The receiving Agent can work with the transferred files. Its result wakes the original task, which checks the receipt and continues.
+When a direction benefits from another device, the Agent can check its device bindings and connect the data cable. The selected Agent can operate either device, transfer files and delegate a step to the other device. The returned result wakes the original task.
 
 The Agent can organize shared work files, search the knowledge base, and save reusable knowledge from its work. It can set a simulated point or route when the owner has enabled simulated location and the current task controls every affected guest.
 
@@ -36,4 +36,4 @@ Liberty 启动时没有预设应用或目标。Agent 可以先观察设备，自
 
 运行切片保存同一任务的上下文、待执行工具和进度。压缩历史时保留最近保存的目标，供 Agent 根据新观察判断是否继续。通知、主人明确指令和人工接管优先。
 
-探索需要另一台设备时，Agent 可以检查设备绑定、连接数据线、传输文件或交接任务。接收 Agent 完成后回传结果，原任务被唤醒并核对回执。Agent 可以整理工作文件并把可复用内容写入知识库。用户开启模拟位置后，当前任务获准控制所有受影响设备时，Agent 可以调整模拟点或路线。
+Liberty 在两台设备间共享。启动「任务与目标」时会暂停 Liberty。Agent 可操作两台设备、连接数据线、传输文件或委派子任务。结果回传后会唤醒原任务。Agent 可以整理工作文件并把可复用内容写入知识库。用户开启模拟位置后，当前任务获准控制所有受影响设备时，Agent 可以调整模拟点或路线。

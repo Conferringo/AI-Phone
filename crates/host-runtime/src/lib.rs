@@ -25,6 +25,7 @@ pub mod network_observation;
 pub mod network_paths;
 pub mod package;
 mod profile;
+pub use profile::desktop_host_memory_mib;
 #[cfg(windows)]
 #[path = "linux_vm/host.rs"]
 pub mod qemu_host;

@@ -57,8 +57,7 @@ impl Fixture {
         sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES($1,'docker-desktop','ai-phone-desktop')")
             .bind(COMPUTER).execute(&mut *tx).await.unwrap();
         let phone_conversation: Uuid =
-            sqlx::query_scalar("SELECT id FROM conversations WHERE device_id=$1")
-                .bind(registry::PHONE)
+            sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
                 .fetch_one(&mut *tx)
                 .await
                 .unwrap();
@@ -86,9 +85,17 @@ impl Fixture {
         )
         .await
         .unwrap();
-        crate::desktop_explore::tick(&app).await.unwrap();
-        let (exploration, conversation) = sqlx::query_as("SELECT id,conversation_id FROM runs WHERE device_id=$1 AND origin='desktop-exploration'")
-            .bind(COMPUTER).fetch_one(&app.db).await.unwrap();
+        let conversation = phone_conversation;
+        let exploration = Uuid::now_v7();
+        let message = Uuid::now_v7();
+        sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
+            .bind(message)
+            .bind(conversation)
+            .execute(&app.db)
+            .await
+            .unwrap();
+        sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,origin,device_id) VALUES($1,$2,$3,$1,'fixture','queued','exploration',$4)")
+            .bind(exploration).bind(conversation).bind(message).bind(COMPUTER).execute(&app.db).await.unwrap();
         Self {
             app,
             source_run,
@@ -255,7 +262,7 @@ async fn manual_desktop_pause_keeps_the_phone_worker_token_live() {
             .lock()
             .await
             .insert(fixture.exploration, desktop_token.clone());
-        crate::desktop_explore::pause(&fixture.app, COMPUTER, "manual takeover fixture")
+        crate::proactive::stop_exploration(&fixture.app, "manual takeover fixture")
             .await
             .unwrap();
         assert!(
@@ -301,15 +308,12 @@ async fn handoff_rechecks_after_waiting_for_foreground_admission() {
         let mut foreground = fixture.app.db.begin().await.unwrap();
         sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
             .bind(fixture.conversation).fetch_one(&mut *foreground).await.unwrap();
-        let owner = Uuid::now_v7();
+        let owner = fixture.source_run;
         let (scheduled, ()) = tokio::time::timeout(Duration::from_secs(10), async {
             tokio::join!(tick(&fixture.app), async {
-                wait_for_blocked_query(&fixture.app, "SELECT id FROM conversations WHERE device_id=$1 AND owner_id='local-user' FOR%").await;
-                let mid = Uuid::now_v7();
-                sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
-                    .bind(mid).bind(fixture.conversation).execute(&mut *foreground).await.unwrap();
-                sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,origin,device_id) VALUES($1,$2,$3,$1,'fixture','queued','user',$4)")
-                    .bind(owner).bind(fixture.conversation).bind(mid).bind(COMPUTER).execute(&mut *foreground).await.unwrap();
+                wait_for_blocked_query(&fixture.app, "SELECT id FROM conversations WHERE owner_id='local-user' FOR%").await;
+                sqlx::query("UPDATE runs SET device_id=$2 WHERE id=$1")
+                    .bind(owner).bind(COMPUTER).execute(&mut *foreground).await.unwrap();
                 foreground.commit().await.unwrap();
             })
         }).await.expect("handoff and foreground admission must settle without a deadlock");

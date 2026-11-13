@@ -118,13 +118,11 @@ async fn prepare(app: &App, socket: &mut WebSocket) -> Result<(Provider, Option<
     if draft.input_protocol != wire::VoiceInputProtocol::RealtimeTranscription as i32 {
         return Err("请选择实时转写协议".into());
     }
-    let conversation = sqlx::query_scalar(
-        "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
-    )
-    .bind(&start.device_id)
-    .fetch_optional(&app.db)
-    .await
-    .map_err(|_| "设备对话读取失败")?;
+    let conversation =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
+            .fetch_optional(&app.db)
+            .await
+            .map_err(|_| "设备对话读取失败")?;
     let client = app.settings.http_client(&draft.proxy_url)?;
     tokio::select! {
         result = connect(&client, &draft) => result.map(|provider| (provider, conversation, session)),

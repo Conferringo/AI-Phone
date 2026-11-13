@@ -152,10 +152,10 @@ async fn activate(
             return Err(Error::Invalid("image_capsule_changed"));
         }
         engine::load(&mut prepared, cancel.clone()).await?;
-    }
-    for image in prepared.manifest.images.values() {
-        if !engine::present(image, &architecture, cancel.clone()).await? {
-            return Err(Error::Invalid("image_import_unconfirmed"));
+        for image in prepared.manifest.images.values() {
+            if !engine::present(image, &architecture, cancel.clone()).await? {
+                return Err(Error::Invalid("image_import_unconfirmed"));
+            }
         }
     }
     let directory = root.join("data/deployment");

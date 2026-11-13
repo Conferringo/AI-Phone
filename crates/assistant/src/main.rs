@@ -28,7 +28,6 @@ mod chat_completions;
 mod completion_audit;
 mod database;
 mod desktop;
-mod desktop_explore;
 mod device_exchange;
 mod device_network;
 mod device_setup;
@@ -340,7 +339,6 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     tokio::spawn(worker::work(app.clone()));
     tokio::spawn(proactive::work(app.clone()));
     tokio::spawn(location::work(app.clone()));
-    tokio::spawn(desktop_explore::work(app.clone()));
     tokio::spawn(device_exchange::work(app.clone()));
     tokio::spawn(device_network::recover(app.clone()));
     let routes = Router::new()

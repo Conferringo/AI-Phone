@@ -74,7 +74,5 @@ message DeviceTransfer {
 message DeviceLinkState { repeated DeviceLink links = 1; repeated DeviceTransfer transfers = 2; repeated DesktopProvisionJob jobs = 3; repeated DeviceMessage messages = 4; }
 message DesktopProvisionRequest { string device_id = 1; string request_id = 2; uint32 cpus = 3; uint32 memory_mb = 4; string template_id = 5; }
 message DesktopProvisionJob { string id = 1; string device_id = 2; string status = 3; string stage = 4; string error = 5; uint32 cpus = 6; uint32 memory_mb = 7; string template_id = 8; }
-message DesktopExploreState { string device_id = 1; bool enabled = 2; uint32 interval_seconds = 3; string last_error = 4; uint64 next_wake_at_ms = 5; string run_id = 6; }
-message DesktopExploreUpdate { string device_id = 1; bool enabled = 2; uint32 interval_seconds = 3; }
 message DeviceMessageRequest { string request_id = 1; string source_device_id = 2; string target_device_id = 3; string text = 4; }
 message DeviceMessage { string id = 1; string source_device_id = 2; string target_device_id = 3; string text = 4; string status = 5; string run_id = 6; string error = 7; uint64 created_at_ms = 8; }

@@ -1,4 +1,5 @@
 "use client";
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import { useEffect, useState } from "react";
 import { create } from "@bufbuild/protobuf";
 import { GeoPointSchema } from "@ai-phone/protocol/ai_phone/v1/location_pb";
@@ -239,7 +240,9 @@ function LocationControls({
 function LocationContent({ control }: { control: LocationController }) {
   const { t } = useI18n(),
     { snapshot } = control.view;
-  if (!snapshot) return <div role="status">{t("加载中")}</div>;
+  if (!snapshot) return <div className="flex items-center gap-2" role="status">
+    <LoadingOrb />{t("加载中")}
+  </div>;
   if (snapshot.enabled)
     return <LocationControls control={control} state={snapshot} />;
   return (

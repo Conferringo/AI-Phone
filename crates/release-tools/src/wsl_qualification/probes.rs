@@ -215,10 +215,6 @@ pub(super) async fn desktop_registration(context: &Context) -> Result<String> {
         if state.devices.iter().any(|device| device.kind == "desktop") {
             return Err(Failure::invalid("qualification_desktop_exists"));
         }
-        let agent = state
-            .agents
-            .first()
-            .ok_or_else(|| Failure::invalid("qualification_agent_missing"))?;
         let device = uuid::Uuid::new_v4().to_string();
         let record = DeviceMarker {
             nonce: context.nonce.clone(),
@@ -241,7 +237,6 @@ pub(super) async fn desktop_registration(context: &Context) -> Result<String> {
                     id: device.clone(),
                     name: "Qualification desktop".into(),
                     kind: "desktop".into(),
-                    default_agent_id: agent.id.clone(),
                     ..Default::default()
                 },
             )
@@ -722,10 +717,6 @@ mod tests {
             match request.path() {
                 "/v1/registry/state" => {
                     let mut value = wire::RegistryState::default();
-                    value.agents.push(wire::RegisteredAgent {
-                        id: "fixture-agent".into(),
-                        ..Default::default()
-                    });
                     if !device.is_empty() {
                         value.devices.push(wire::RegisteredDevice {
                             id: device.clone(),
@@ -738,7 +729,6 @@ mod tests {
                 }
                 "/v1/registry/device-save" => {
                     let value = wire::DeviceSaveRequest::decode(request.body.as_slice()).unwrap();
-                    assert_eq!(value.default_agent_id, "fixture-agent");
                     assert_eq!(value.kind, "desktop");
                     assert!(uuid::Uuid::parse_str(&value.id).is_ok());
                     device = value.id;

@@ -3,15 +3,11 @@ use super::*;
 use crate::worker::steering_regressions::database_case;
 
 async fn queued(app: &App, device: &str, origin: &str) -> (Uuid, Uuid) {
-    let conversation: Uuid = sqlx::query_scalar(
-        "INSERT INTO conversations(id,device_id) VALUES($1,$2)
-         ON CONFLICT(owner_id,device_id) DO UPDATE SET device_id=excluded.device_id RETURNING id",
-    )
-    .bind(Uuid::now_v7())
-    .bind(device)
-    .fetch_one(&app.db)
-    .await
-    .unwrap();
+    let conversation: Uuid =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
     let message = Uuid::now_v7();
     let run = Uuid::now_v7();
     sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
@@ -61,7 +57,7 @@ async fn incoming_handoff_interrupts_exploration_and_wakes_on_lease_release() {
         sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Fixture desktop','desktop','Linux','managed'),($2,'Fixture phone','phone','Android','managed')")
             .bind(desktop).bind(phone).execute(&app.db).await.unwrap();
         sqlx::query("UPDATE proactive_state SET notifications_enabled=false").execute(&app.db).await.unwrap();
-        let target = queued(&app, desktop, "desktop-exploration").await;
+        let target = queued(&app, desktop, "exploration").await;
         assert_eq!(claim_due_run(&app).await.unwrap(), Some(target));
         assert!(!crate::proactive::should_yield(&app, target.0).await.unwrap());
         let link = Uuid::now_v7();
@@ -91,7 +87,7 @@ async fn incoming_handoff_interrupts_exploration_and_wakes_on_lease_release() {
 async fn distinct_devices_run_together_and_borrowed_devices_cannot_be_stolen() {
     database_case(|app| async move {
         let phone = queued(&app, "fixture-phone", "user").await;
-        let desktop = queued(&app, "fixture-desktop", "user").await;
+        let desktop = queued(&app, "fixture-desktop", "device-handoff").await;
         let (a, b) = tokio::join!(claim_due_run(&app), claim_due_run(&app));
         let mut claimed = [a.unwrap().unwrap().0, b.unwrap().unwrap().0];
         claimed.sort();
@@ -132,7 +128,7 @@ async fn distinct_devices_run_together_and_borrowed_devices_cannot_be_stolen() {
         crate::run_queue::reserve(&app.db, phone.0, "fixture-desktop")
             .await
             .unwrap();
-        let next = queued(&app, "fixture-desktop", "user").await;
+        let next = queued(&app, "fixture-desktop", "notification").await;
         assert!(claim_due_run(&app).await.unwrap().is_none());
         sqlx::query("UPDATE runs SET status='succeeded' WHERE id=$1")
             .bind(phone.0)
@@ -220,7 +216,7 @@ async fn stalled_phone_model_does_not_block_desktop_and_cancel_is_per_run() {
             verified_at_ms: 1,
         });
         let phone = queued(&app, "fixture-phone", "user").await;
-        let desktop = queued(&app, "fixture-desktop", "user").await;
+        let desktop = queued(&app, "fixture-desktop", "device-handoff").await;
         let worker = FixtureTask(tokio::spawn(work(app.clone())));
         let (first, second) = tokio::time::timeout(Duration::from_secs(10), async {
             (

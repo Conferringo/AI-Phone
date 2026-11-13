@@ -7,7 +7,7 @@ export async function settingsBridge(request:Request,operation:string,group:'set
     const session=await authenticated(request);
     if(session!==true)return assistantError(session===false?401:503,'unavailable',session===false?'请先登录':'服务正在恢复');
   }
-  const operations=group==='files'?['list','manage']:group==='voice'?['settings','credential','save','transcribe']:group==='location'?['state','update']:group==='desktop'?['state','observe','control','action','cursor','files','link','transfer','provision','explore-state','explore-update','message']:group==='registry'?['state','device-save','agent-save','agent-config-save','model-save','model-test','credential']:group==='proactive'?['state','update']:group==='settings'?['state','credential','test','save','rollback','runtime']:['status','owner'];
+  const operations=group==='files'?['list','manage']:group==='voice'?['settings','credential','save','transcribe']:group==='location'?['state','update']:group==='desktop'?['state','observe','control','action','cursor','files','link','transfer','provision','message']:group==='registry'?['state','device-save','agent-config-save','agent-select','agent-delete','model-test','credential']:group==='proactive'?['state','update','goal']:group==='settings'?['state','credential','test','save','rollback','runtime']:['status','owner'];
   if(!operations.includes(operation))return assistantError(404,'not_found','操作不存在');
   if(request.headers.get('content-type')!=='application/x-protobuf')return assistantError(415,'unsupported_media_type','请求格式错误');
   const limit=group==='voice'?2*1024*1024:32768;

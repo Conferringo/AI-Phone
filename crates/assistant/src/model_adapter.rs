@@ -276,6 +276,21 @@ fn configure_chat(body: &mut Value, config: &ModelConfig, effort: &str) {
         body["thinking"] = json!({"type":if fast||forced{"disabled"}else{"enabled"}});
         if !fast && !forced {
             body["reasoning_effort"] = json!(effort);
+            if let Some(messages) = body["messages"].as_array_mut() {
+                for message in messages
+                    .iter_mut()
+                    .rev()
+                    .take_while(|m| m["role"] != "user")
+                {
+                    if message["role"] == "assistant"
+                        && message.get("tool_calls").is_none()
+                        && message.get("reasoning_content").is_none()
+                        && let Some(text) = message["content"].as_str()
+                    {
+                        *message = json!({"role":"user","content":format!("Previous assistant draft (not execution evidence): {text}")});
+                    }
+                }
+            }
         }
     }
     if matches!(config.provider.as_str(), "glm" | "zai")

@@ -202,10 +202,7 @@
 }
 .message-delivery { display:block; margin-top:4px; color:var(--muted-foreground); font-size:12px; }
 .composer-progress { display:inline-flex; align-items:center; gap:6px; color:var(--muted-foreground); font-size:12px; white-space:nowrap; }
-.composer-pulse { width:5px; height:5px; border-radius:50%; background:currentColor; animation:composer-breathe 2s ease-in-out infinite; }
-@keyframes composer-breathe { 50% { opacity:.3; } }
 @media(max-width:480px){ .composer-progress { max-width:5em; overflow:hidden; } }
-@media(prefers-reduced-motion:reduce){ .composer-pulse { animation:none; } }
 .ai-workspace button[data-slot="button"] {
   cursor: pointer;
   min-width: 40px;
@@ -276,14 +273,6 @@
 }
 .logout-button { margin-left: 4px; }
 .workspace-header > button[aria-label="连接应用"] { margin-left:auto; }
-.spinning {
-  animation: ai-spin 1.2s linear infinite;
-}
-@keyframes ai-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 @media (max-width: 1000px) {
   .workspace-panes {
     gap: 24px;
@@ -331,11 +320,6 @@
   }
   .message-user {
     max-width: 92%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .spinning {
-    animation: none;
   }
 }
 @media (forced-colors: active) {

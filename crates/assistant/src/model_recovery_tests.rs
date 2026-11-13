@@ -215,15 +215,18 @@ async fn paused_send_uses_original_agent_and_preserves_snapshots_and_request_rec
         let model=Uuid::new_v4(); let replacement=Uuid::new_v4();
         sqlx::query("INSERT INTO model_connections(id,name,model_revision) VALUES($1,'other model',1)").bind(model).execute(&app.db).await.unwrap();
         sqlx::query("INSERT INTO agents(id,name,model_connection_id) VALUES($1,'new device default',$2)").bind(replacement).bind(model).execute(&app.db).await.unwrap();
-        sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,'phone-local-01')").bind(replacement).execute(&app.db).await.unwrap();
-        sqlx::query("UPDATE devices SET default_agent_id=$1 WHERE id='phone-local-01'").bind(replacement).execute(&app.db).await.unwrap();
+        let mut headers = HeaderMap::new();
+        headers.insert("authorization", "Bearer steering-fixture-token".parse().unwrap());
+        headers.insert("content-type", MEDIA.parse().unwrap());
+        let selected = crate::registry::route(State(app.clone()), axum::extract::Path("agent-select".into()),
+            headers, Ok(Bytes::from(wire::AgentProfileRequest { id: replacement.to_string(), expected_revision: 1 }.encode_to_vec()))).await;
+        assert_eq!(selected.status(), StatusCode::CONFLICT, "a paused task keeps its selected Agent");
         // The original identity now points at a different connection. Its latest
         // name and device bindings must not replace the run's frozen grants.
         let original_agent=Uuid::parse_str(frozen["id"].as_str().unwrap()).unwrap();
         let updated_model=Uuid::new_v4();
         sqlx::query("INSERT INTO model_connections(id,name,model_revision) VALUES($1,'original agent replacement',1)").bind(updated_model).execute(&app.db).await.unwrap();
         sqlx::query("UPDATE agents SET name='renamed original',instructions='later instructions',revision=revision+1,model_connection_id=$2 WHERE id=$1").bind(original_agent).bind(updated_model).execute(&app.db).await.unwrap();
-        sqlx::query("DELETE FROM agent_device_bindings WHERE agent_id=$1").bind(original_agent).execute(&app.db).await.unwrap();
         let revision=replace_model(&app,run.id,"new-model","new-original-agent-key").await;
         let next=request("按原目标继续，保留第一步");
         assert_eq!(accept(&app,&next).await.run_id,run.id.to_string());
@@ -257,7 +260,7 @@ async fn wait_for_run_waiters(app: &App, count: i64) {
 async fn wait_for_conversation_waiters(app: &App, count: i64) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
-            let waiting:i64=sqlx::query_scalar("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND query='SELECT id FROM conversations WHERE id=$1 FOR UPDATE'")
+            let waiting:i64=sqlx::query_scalar("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND wait_event_type='Lock' AND query='SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE'")
                 .fetch_one(&app.db).await.unwrap();
             if waiting>=count {return;}
             tokio::time::sleep(Duration::from_millis(10)).await;

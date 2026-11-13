@@ -129,13 +129,11 @@ async fn ready_conversation(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     device: &str,
 ) -> std::result::Result<Option<Uuid>, sqlx::Error> {
-    sqlx::query("INSERT INTO conversations(id,owner_id,device_id) VALUES($1,'local-user',$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(device).execute(&mut **tx).await?;
     // Serialize admission with user input and exploration configuration, while
     // allowing a run writer to finish its message's FK key-share before we lock runs.
     let conversation: Uuid = sqlx::query_scalar(
-        "SELECT id FROM conversations WHERE device_id=$1 AND owner_id='local-user' FOR NO KEY UPDATE",
+        "SELECT id FROM conversations WHERE owner_id='local-user' FOR NO KEY UPDATE",
     )
-    .bind(device)
     .fetch_one(&mut **tx)
     .await?;
     // The worker uses SKIP LOCKED. Keep a queued exploration from being claimed
@@ -147,7 +145,7 @@ async fn ready_conversation(
             SELECT 1 FROM runs r
             WHERE r.device_id=$1 AND r.status IN ('running','queued','paused')
               AND NOT (
-                r.status='queued' AND r.origin IN ('exploration','desktop-exploration')
+                r.status='queued' AND r.origin='exploration'
                 AND NOT EXISTS (
                     SELECT 1 FROM harness_events e
                     JOIN jsonb_array_elements(r.pending_tools) p ON e.id::text=p->>'local_action_id'
@@ -300,7 +298,7 @@ mod tests {
    sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state,default_agent_id) VALUES('desktop-test','电脑','desktop','Debian','managed',$1)").bind(a).execute(&mut *tx).await.unwrap();
    sqlx::query("INSERT INTO agent_device_bindings(agent_id,device_id) VALUES($1,'desktop-test')").bind(a).execute(&mut *tx).await.unwrap();
    sqlx::query("INSERT INTO device_runtimes(device_id,provider,instance_ref) VALUES('desktop-test','docker-desktop','ai-phone-desktop')").execute(&mut *tx).await.unwrap();
-   let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE device_id='phone-local-01'").fetch_one(&mut *tx).await.unwrap();let mid=Uuid::now_v7();let source_run=Uuid::now_v7();
+   let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&mut *tx).await.unwrap();let mid=Uuid::now_v7();let source_run=Uuid::now_v7();
    sqlx::query("INSERT INTO messages(id,conversation_id,role,text) VALUES($1,$2,'assistant','phone work')").bind(mid).bind(conversation).execute(&mut *tx).await.unwrap();
    sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status) VALUES($1,$2,$3,$1,'test','running')").bind(source_run).bind(conversation).bind(mid).execute(&mut *tx).await.unwrap();registry::pin_run(&mut tx,&app.settings,source_run).await.unwrap();tx.commit().await.unwrap();
    assert!(desktop::file_authorized(&app,source_run,"desktop-test").await.is_err());
@@ -315,9 +313,6 @@ mod tests {
    assert!(guard(&app,target_run,"computer_observe").await.is_ok());
    desktop::link(&app,wire::DeviceLinkRequest{source_device_id:registry::PHONE.into(),target_device_id:"desktop-test".into(),connected:false}).await.unwrap();assert!(desktop::file_authorized(&app,source_run,"desktop-test").await.is_err());assert!(guard(&app,target_run,"computer_observe").await.is_err());
    sqlx::query("UPDATE runs SET status='canceled' WHERE id=$1").bind(target_run).execute(&db).await.unwrap();
-   crate::desktop_explore::update(&app,wire::DesktopExploreUpdate{device_id:"desktop-test".into(),enabled:true,interval_seconds:60}).await.unwrap();crate::desktop_explore::tick(&app).await.unwrap();
-   let automatic=sqlx::query("SELECT id,agent_id FROM runs WHERE device_id='desktop-test' AND origin='desktop-exploration'").fetch_one(&db).await.unwrap();assert_eq!(automatic.get::<Uuid,_>("agent_id"),a);
-   crate::desktop_explore::pause(&app,"desktop-test","test complete").await.unwrap();assert_eq!(sqlx::query_scalar::<_,String>("SELECT status FROM runs WHERE id=$1").bind(source_run).fetch_one(&db).await.unwrap(),"running");
   }).catch_unwind().await;
         db.close().await;
         sqlx::query(&format!("DROP DATABASE {name} WITH (FORCE)"))

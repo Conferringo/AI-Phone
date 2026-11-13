@@ -4,68 +4,42 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::Row;
-use std::collections::HashMap;
 
-async fn resolve(app: &App, id: &str, device: &str) -> Result<Uuid, Response> {
-    let device = if device.is_empty() {
-        crate::registry::PHONE
-    } else {
-        device
-    };
-    if device != crate::registry::PHONE {
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM devices WHERE id=$1 AND owner_id='local-user')",
-        )
-        .bind(device)
-        .fetch_one(&app.db)
-        .await
-        .map_err(db_error)?;
-        if !exists {
-            return Err(error(
-                StatusCode::NOT_FOUND,
-                "device_not_found",
-                "设备不存在",
-            ));
-        }
-    }
-    let canonical: Uuid = match sqlx::query_scalar(
-        "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
-    )
-    .bind(device)
-    .fetch_optional(&app.db)
-    .await
-    .map_err(db_error)?
-    {
-        Some(id) => id,
-        None => {
-            sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2) ON CONFLICT(owner_id,device_id) DO NOTHING").bind(Uuid::now_v7()).bind(device).execute(&app.db).await.map_err(db_error)?;
-            sqlx::query_scalar(
-                "SELECT id FROM conversations WHERE owner_id='local-user' AND device_id=$1",
-            )
-            .bind(device)
+async fn resolve(app: &App, id: &str) -> Result<Uuid, Response> {
+    let canonical: Uuid =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
             .fetch_one(&app.db)
             .await
-            .map_err(db_error)?
-        }
-    };
+            .map_err(db_error)?;
     if !id.is_empty() && id != canonical.to_string() {
         return Err(error(
             StatusCode::CONFLICT,
             "conversation_scope",
-            "对话不属于此设备，请重新载入",
+            "对话已更新，请重新载入",
         ));
     }
     Ok(canonical)
 }
 pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
-    let mut tx = crate::history_window::transaction(&app.db).await?;
+    full_state(&app.db, id).await
+}
+
+pub(crate) async fn full_state(db: &PgPool, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
+    let mut tx = crate::history_window::transaction(db).await?;
     let run = current_run(&mut tx, id).await?;
-    let value = state_selected(&mut tx, id, None, None, run).await?;
+    let messages = chat_messages(&mut tx, id, MessageSelection::All).await?;
+    let value = chat_state(
+        id,
+        messages.last().map_or(0, |row| row.ordinal),
+        messages,
+        None,
+        run.as_ref(),
+    );
     tx.commit().await?;
     Ok(value)
 }
 
-enum MessageSelection<'a> {
+pub(crate) enum MessageSelection<'a> {
     All,
     Ids(&'a [Uuid]),
     Receipt(Uuid),
@@ -76,7 +50,11 @@ async fn message_rows(
     id: Uuid,
     selected: MessageSelection<'_>,
 ) -> Result<Vec<sqlx::postgres::PgRow>, sqlx::Error> {
-    const PROJECTION: &str = "SELECT m.id,m.role,m.text,m.attachment_ids,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1";
+    const PROJECTION: &str = "SELECT m.id,m.role,m.text,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity, CASE WHEN cardinality(m.attachment_ids)>0 THEN (
+    SELECT jsonb_agg(jsonb_build_object('id',a.id,'name',a.name,'media_type',a.media_type,'size_bytes',a.size_bytes) ORDER BY ref.ordinal)
+    FROM unnest(m.attachment_ids) WITH ORDINALITY ref(id,ordinal)
+    JOIN attachments a ON a.id=ref.id AND a.owner_id='local-user'
+) END files FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1";
     let statement = match selected {
         MessageSelection::All => format!("{PROJECTION} ORDER BY m.ordinal"),
         MessageSelection::Ids(_) => format!("{PROJECTION} AND m.id=ANY($2) ORDER BY m.ordinal"),
@@ -93,44 +71,23 @@ async fn message_rows(
     query.fetch_all(&mut **tx).await
 }
 
+pub(crate) const CURRENT_RUN: &str = "SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused') AND origin='user') DESC,(status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1";
 pub(crate) async fn current_run(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
 ) -> Result<Option<sqlx::postgres::PgRow>, sqlx::Error> {
-    sqlx::query("SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1")
-        .bind(id).fetch_optional(&mut **tx).await
+    sqlx::query(CURRENT_RUN)
+        .bind(id)
+        .fetch_optional(&mut **tx)
+        .await
 }
 
-async fn chat_messages(
+pub(crate) async fn chat_messages(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     id: Uuid,
     selected: MessageSelection<'_>,
 ) -> Result<Vec<wire::ChatMessage>, sqlx::Error> {
     let rows = message_rows(tx, id, selected).await?;
-    let ids: Vec<Uuid> = rows
-        .iter()
-        .flat_map(|row| row.get::<Vec<Uuid>, _>("attachment_ids"))
-        .collect();
-    let files = if ids.is_empty() {
-        Vec::new()
-    } else {
-        sqlx::query("SELECT id,name,media_type,size_bytes FROM attachments WHERE id=ANY($1) AND owner_id='local-user'").bind(&ids).fetch_all(&mut **tx).await?
-    };
-    let files: HashMap<Uuid, wire::ChatAttachment> = files
-        .iter()
-        .map(|r| {
-            let id: Uuid = r.get("id");
-            (
-                id,
-                wire::ChatAttachment {
-                    id: id.to_string(),
-                    name: r.get("name"),
-                    media_type: r.get("media_type"),
-                    size_bytes: r.get::<i64, _>("size_bytes") as u64,
-                },
-            )
-        })
-        .collect();
     Ok(rows
         .iter()
         .map(|r| {
@@ -166,59 +123,63 @@ async fn chat_messages(
                 text,
                 system_notice,
                 attachments: r
-                    .get::<Vec<Uuid>, _>("attachment_ids")
-                    .iter()
-                    .filter_map(|id| files.get(id).cloned())
-                    .collect(),
+                    .get::<Option<sqlx::types::Json<Vec<ChatAttachmentRow>>>, _>("files")
+                    .map_or_else(Vec::new, |rows| {
+                        rows.0.into_iter().map(Into::into).collect()
+                    }),
             }
         })
         .collect())
 }
 
-pub(crate) async fn state_selected(
-    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+#[derive(serde::Deserialize)]
+struct ChatAttachmentRow {
+    id: String,
+    name: String,
+    media_type: String,
+    size_bytes: i64,
+}
+
+impl From<ChatAttachmentRow> for wire::ChatAttachment {
+    fn from(file: ChatAttachmentRow) -> Self {
+        Self {
+            id: file.id,
+            name: file.name,
+            media_type: file.media_type,
+            size_bytes: file.size_bytes as u64,
+        }
+    }
+}
+
+pub(crate) fn chat_state(
     id: Uuid,
-    selected: Option<&[Uuid]>,
+    revision: u64,
+    messages: Vec<wire::ChatMessage>,
     window: Option<wire::ChatMessageWindow>,
-    run: Option<sqlx::postgres::PgRow>,
-) -> Result<wire::ChatState, sqlx::Error> {
-    let messages = chat_messages(
-        tx,
-        id,
-        selected.map_or(MessageSelection::All, MessageSelection::Ids),
-    )
-    .await?;
-    let (device_id, revision): (String, i64) = sqlx::query_as(
-        "SELECT c.device_id, COALESCE((
-            SELECT ordinal FROM messages WHERE conversation_id=c.id ORDER BY ordinal DESC LIMIT 1
-        ), 0) FROM conversations c WHERE c.id=$1",
-    )
-    .bind(id)
-    .fetch_one(&mut **tx)
-    .await?;
-    let value = wire::ChatState {
-        revision: revision as u64,
+    run: Option<&sqlx::postgres::PgRow>,
+) -> wire::ChatState {
+    let device_id = run
+        .map_or(crate::registry::PHONE, |row| {
+            row.get::<&str, _>("device_id")
+        })
+        .to_owned();
+    wire::ChatState {
+        revision,
         message_window: window,
         conversation_id: id.to_string(),
         device_id,
         agent_id: run
-            .as_ref()
             .and_then(|r| r.get::<Option<Uuid>, _>("agent_id"))
             .map(|v| v.to_string())
             .unwrap_or_default(),
-        agent_name: run
-            .as_ref()
-            .map(|r| r.get("agent_name"))
-            .unwrap_or_default(),
+        agent_name: run.map(|r| r.get("agent_name")).unwrap_or_default(),
         messages,
         run_id: run
-            .as_ref()
             .map(|r| r.get::<Uuid, _>("id").to_string())
             .unwrap_or_default(),
-        run_status: run.as_ref().map(|r| r.get("status")).unwrap_or_default(),
-        error: run.as_ref().map(|r| r.get("error")).unwrap_or_default(),
+        run_status: run.map(|r| r.get("status")).unwrap_or_default(),
+        error: run.map(|r| r.get("error")).unwrap_or_default(),
         notice_kind: run
-            .as_ref()
             .map(|r| {
                 crate::run_notice::kind(
                     r.get("status"),
@@ -227,10 +188,9 @@ pub(crate) async fn state_selected(
                 ) as i32
             })
             .unwrap_or_default(),
-        next_wake_at_ms: run.as_ref().map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
-        can_pause: run.as_ref().is_some_and(|r| r.get("can_pause")),
-    };
-    Ok(value)
+        next_wake_at_ms: run.map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
+        can_pause: run.is_some_and(|r| r.get("can_pause")),
+    }
 }
 fn history_response(result: Result<wire::ChatState, sqlx::Error>) -> Response {
     match result {
@@ -255,7 +215,7 @@ pub async fn history(
         Ok(value) => value,
         Err(code) => return error(StatusCode::BAD_REQUEST, code, "分页请求无效"),
     };
-    let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
+    let id = match resolve(&app, &request.conversation_id).await {
         Ok(v) => v,
         Err(e) => return e,
     };
@@ -271,10 +231,36 @@ pub async fn send(
     headers: HeaderMap,
     body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    let mut request: wire::ChatSendRequest = match decode(&app, &headers, body) {
+    let request: wire::ChatSendRequest = match decode(&app, &headers, body) {
         Ok(v) => v,
         Err(e) => return e.into(),
     };
+    send_input(app, request, None).await
+}
+
+pub(crate) async fn send_goal(app: Shared, input: wire::GoalUpdateRequest) -> Response {
+    let goal = input.goal.trim();
+    if goal.is_empty() || goal.len() > 12_000 {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_goal",
+            "目标为空或内容过长",
+        );
+    }
+    let request = wire::ChatSendRequest {
+        request_id: Uuid::now_v7().to_string(),
+        device_id: input.device_id,
+        text: goal.to_owned(),
+        ..Default::default()
+    };
+    send_input(app, request, Some(input.expected_revision)).await
+}
+
+async fn send_input(
+    app: Shared,
+    mut request: wire::ChatSendRequest,
+    goal_revision: Option<u64>,
+) -> Response {
     if request.text.len() > 48000
         || request.attachment_ids.len() > 8
         || (request.text.trim().is_empty() && request.attachment_ids.is_empty())
@@ -307,10 +293,19 @@ pub async fn send(
             "语音输入需要文字且不能混入附件",
         );
     }
-    let steering_quiet_ms: i16 = if voice.is_some() { 0 } else { 700 };
-    let id = match resolve(&app, &request.conversation_id, &request.device_id).await {
+    let steering_quiet_ms: i16 = if voice.is_some() || goal_revision.is_some() {
+        0
+    } else {
+        700
+    };
+    let id = match resolve(&app, &request.conversation_id).await {
         Ok(v) => v,
         Err(e) => return e,
+    };
+    let device = if request.device_id.is_empty() {
+        crate::registry::PHONE
+    } else {
+        &request.device_id
     };
     if !request.device_id.is_empty()
         && request.device_id != crate::registry::PHONE
@@ -342,8 +337,26 @@ pub async fn send(
         // A receipt is unique across both initial runs and subsequent inputs, including devices.
         sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
             .bind(request_id.to_string()).execute(&mut *tx).await?;
-        sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
+        sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
             .bind(id).fetch_one(&mut *tx).await?;
+        let goal_run = if let Some(revision) = goal_revision {
+            let (current_revision, stored_run): (i64, Option<Uuid>) =
+                sqlx::query_as("SELECT revision,goal_run_id FROM proactive_state
+                    WHERE owner_id='local-user' FOR UPDATE")
+                    .fetch_one(&mut *tx).await?;
+            if current_revision as u64 != revision {
+                return Err(sqlx::Error::Protocol("stale_goal".into()));
+            }
+            if let Some(stored_run) = stored_run {
+                sqlx::query_scalar::<_, Uuid>(
+                    "SELECT id FROM runs WHERE id=$1 AND status IN ('queued','running','paused')",
+                ).bind(stored_run).fetch_optional(&mut *tx).await?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         if let Some(old) = sqlx::query("SELECT id,conversation_id,request_fingerprint FROM runs WHERE request_id=$1")
             .bind(request_id).fetch_optional(&mut *tx).await? {
             if old.get::<Uuid,_>("conversation_id") != id || old.get::<String,_>("request_fingerprint") != fingerprint {
@@ -374,10 +387,15 @@ pub async fn send(
         if attachments.len() != files.len() || total > 12*1024*1024 || attachments.iter().any(|r|r.get::<i64,_>("size_bytes") < 0) {
             return Err(sqlx::Error::Protocol("invalid_attachments".into()));
         }
-        sqlx::query("UPDATE runs SET status='canceled',error='用户新指令优先',finished_at=now(),next_wake_at=NULL WHERE conversation_id=$1 AND origin<>'user' AND status IN ('queued','running','paused')").bind(id).execute(&mut *tx).await?;
+        sqlx::query("UPDATE runs SET status='canceled',error='用户新指令优先',finished_at=now(),next_wake_at=NULL WHERE conversation_id=$1 AND origin IN ('exploration','notification') AND status IN ('queued','running','paused')").bind(id).execute(&mut *tx).await?;
         sqlx::query("UPDATE phone_notifications SET status='pending-summary' WHERE status='assigned' AND run_id IN(SELECT id FROM runs WHERE conversation_id=$1 AND origin='notification' AND status='canceled' AND NOT background_finalized)").bind(id).execute(&mut *tx).await?;
-        let active = sqlx::query("SELECT id,status,agent_id FROM runs WHERE conversation_id=$1 AND status IN ('queued','running','paused') FOR UPDATE")
+        let active = sqlx::query("SELECT id,status,agent_id FROM runs WHERE conversation_id=$1 AND origin='user' AND status IN ('queued','running','paused') FOR UPDATE")
             .bind(id).fetch_optional(&mut *tx).await?;
+        if goal_revision.is_some()
+            && active.as_ref().is_some_and(|row| Some(row.get::<Uuid,_>("id")) != goal_run)
+        {
+            return Err(sqlx::Error::Protocol("goal_device_busy".into()));
+        }
         if !request.agent_id.is_empty() && active.as_ref().is_some_and(|r| r.get::<Option<Uuid>,_>("agent_id").map(|v|v.to_string()).as_deref()!=Some(request.agent_id.as_str())) {
             return Err(sqlx::Error::Protocol("agent_busy".into()));
         }
@@ -391,7 +409,7 @@ pub async fn send(
             if active.get::<String,_>("status") == "paused" {
                 crate::registry::refresh_paused_model(&mut tx, &app.settings, run, (id, active.get("agent_id"))).await?;
             }
-            let input = steering_input(&app, &request, &files, &attachments).await?;
+            let input = steering_input(&app, &request, &files, &attachments, goal_revision.is_some()).await?;
             let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, loop_state=CASE WHEN status='paused' THEN jsonb_set(loop_state,'{resume_requested}','true'::jsonb) ELSE loop_state END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
                 .bind(run).bind(request_id.to_string()).bind(input).bind(steering_quiet_ms).execute(&mut *tx).await?;
             if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
@@ -404,12 +422,17 @@ pub async fn send(
             let run = Uuid::now_v7();
             sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
                 .bind(assistant).bind(id).execute(&mut *tx).await?;
-            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0)")
-                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64).execute(&mut *tx).await?;
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms,trigger_input,device_id) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0,$7,$8)")
+                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64)
+                .bind(if goal_revision.is_some() { "task-goal" } else { "" }).bind(device).execute(&mut *tx).await?;
             sqlx::query("UPDATE messages SET run_id=$2 WHERE id=$1").bind(assistant).bind(run).execute(&mut *tx).await?;
             crate::registry::pin_run_for(&mut tx, &app.settings, run, &request.agent_id).await?;
             run
         };
+        if goal_revision.is_some() {
+            sqlx::query("UPDATE proactive_state SET goal=$1,goal_run_id=$2,exploring=false,revision=revision+1,last_error='' WHERE owner_id='local-user'")
+                .bind(&request.text).bind(run).execute(&mut *tx).await?;
+        }
         tx.commit().await?;
         app.run_signals.queue.notify_one();
         app.run_signals.input.notify_waiters();
@@ -423,6 +446,21 @@ pub async fn send(
         Ok(id) => id,
         Err(e) => {
             return match e.to_string().as_str() {
+                s if s.contains("stale_goal") => error(
+                    StatusCode::CONFLICT,
+                    "stale_goal",
+                    "目标已更新，请重新打开后再操作",
+                ),
+                s if s.contains("goal_device_busy") => error(
+                    StatusCode::CONFLICT,
+                    "goal_device_busy",
+                    "此设备有未结束的任务，请先结束后再激活目标",
+                ),
+                s if s.contains("agent_not_selected") => error(
+                    StatusCode::CONFLICT,
+                    "agent_not_selected",
+                    "Agent 已切换，请重新发送",
+                ),
                 s if s.contains("agent_busy") => error(
                     StatusCode::CONFLICT,
                     "agent_busy",
@@ -463,6 +501,12 @@ pub async fn send(
         }
     };
     crate::proactive::cancel_stopped(&app).await;
+    if goal_revision.is_some() {
+        return match crate::proactive::state(&app).await {
+            Ok(value) => pb(StatusCode::OK, value),
+            Err(e) => db_error(e),
+        };
+    }
     if receipt_only {
         return match send_receipt(&app, id, run_id, request_id, request.device_id).await {
             Ok(value) => pb(StatusCode::ACCEPTED, value),
@@ -523,9 +567,13 @@ async fn steering_input(
     request: &wire::ChatSendRequest,
     files: &[Uuid],
     attachments: &[sqlx::postgres::PgRow],
+    replaces_goal: bool,
 ) -> Result<Value, sqlx::Error> {
     let invalid = || sqlx::Error::Protocol("invalid_attachments".into());
     let mut content = Vec::new();
+    if replaces_goal {
+        content.push(json!({"type":"input_text","text":"以下是用户更新后的完整目标，替换原目标。保留已经核验且仍适用的执行成果。"}));
+    }
     if !request.text.is_empty() {
         content.push(json!({"type":"input_text","text":crate::voice_input::model_text(&request.text, &request.request_id, request.voice.as_ref())}));
     }
@@ -604,10 +652,24 @@ async fn run_command(
         Ok(v) => v,
         Err(_) => return error(StatusCode::BAD_REQUEST, "invalid_run", "任务不存在"),
     };
+    let pause = if !resume && !request.pause {
+        match sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM proactive_state WHERE goal_run_id=$1)",
+        )
+        .bind(id)
+        .fetch_one(&app.db)
+        .await
+        {
+            Ok(value) => value,
+            Err(e) => return db_error(e),
+        }
+    } else {
+        request.pause
+    };
     let result = if resume {
         resume_paused(&app, id).await
     } else {
-        stop_run(&app.db, id, request.pause).await
+        stop_run(&app.db, id, pause).await
     };
     let conversation: Option<Uuid> = match result {
         Ok(v) => v,
@@ -629,32 +691,15 @@ async fn run_command(
             "任务状态已改变，请刷新",
         );
     };
-    if !resume && !request.pause {
-        let background =
-            sqlx::query_scalar::<_, bool>("SELECT origin<>'user' FROM runs WHERE id=$1")
+    if !resume && !pause {
+        let exploration =
+            sqlx::query_scalar::<_, bool>("SELECT origin='exploration' FROM runs WHERE id=$1")
                 .bind(id)
                 .fetch_one(&app.db)
                 .await
                 .unwrap_or(false);
-        if background {
-            let info = sqlx::query("SELECT origin,device_id FROM runs WHERE id=$1")
-                .bind(id)
-                .fetch_one(&app.db)
-                .await;
-            if let Ok(info) = info {
-                if info.get::<String, _>("origin") == "desktop-exploration" {
-                    let _ = crate::desktop_explore::pause(
-                        &app,
-                        &info.get::<String, _>("device_id"),
-                        "已停止自主探索",
-                    )
-                    .await;
-                } else if ["notification", "exploration"]
-                    .contains(&info.get::<String, _>("origin").as_str())
-                {
-                    let _ = crate::proactive::stop_exploration(&app, "已停止自主探索").await;
-                }
-            }
+        if exploration {
+            let _ = crate::proactive::stop_exploration(&app, "已停止自主探索").await;
         }
         if let Err(e)=sqlx::query("UPDATE messages SET text='已停止。' WHERE id=(SELECT assistant_message_id FROM runs WHERE id=$1) AND text=''")
             .bind(id).execute(&app.db).await { return db_error(e); }
@@ -707,7 +752,7 @@ async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error>
     // Match send's conversation -> run -> registry order. Updating a run can
     // recheck its conversation FK, so holding only the run lock can deadlock
     // with a sender that already owns the conversation and is waiting on it.
-    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR UPDATE")
+    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
         .bind(expected.0)
         .execute(&mut *tx)
         .await?;

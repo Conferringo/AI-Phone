@@ -1,10 +1,10 @@
 'use client';
+import { LoadingOrb } from "@/components/ui/loading-orb";
 import {useEffect,useRef,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {fromBinary,toBinary,create} from '@bufbuild/protobuf';
 import {ApiErrorSchema} from '@ai-phone/protocol/ai_phone/v1/system_pb';
 import {LoginRequestSchema} from '@ai-phone/protocol/ai_phone/v1/auth_pb';
-import {LoaderCircle} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {useI18n,LanguageSelect} from './locale-provider';
 
@@ -42,7 +42,7 @@ export function SessionBootstrap(){
    <label className="entry-field" htmlFor="owner-password">{t('管理员密码')}
    <input id="owner-password" type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} disabled={pending} required autoFocus/></label>
    {error&&<p role="alert">{error}</p>}
-   <Button disabled={pending} type="submit">{pending?<LoaderCircle className="spinning" size={18}/>:t('登录')}</Button>
-  </form>:error?<div className="entry-card"><p role="alert">{error}</p><Button onClick={()=>void connect()}>{t('重试')}</Button></div>:<LoaderCircle className="startup-spinner" size={24} aria-label={t('正在连接…')} role="status"/>}
+   <Button aria-label={t('登录')} disabled={pending} type="submit">{pending?<LoadingOrb size={18} />:t('登录')}</Button>
+  </form>:error?<div className="entry-card"><p role="alert">{error}</p><Button onClick={()=>void connect()}>{t('重试')}</Button></div>:<LoadingOrb size={24} label={t('正在连接…')} />}
  </main>;
 }

@@ -9,7 +9,6 @@ import type {AcceptedInput} from '@/lib/chat-snapshot';
 import {historyRequest,receiptBatch} from '../lib/chat-window';
 
 type Chat=MessageShape<typeof ChatStateSchema>;
-type Binding=Pick<Chat,'conversationId'|'deviceId'>;
 type ChatProjection={
   accepted:(chat:Chat,order:number)=>void;
   beginHistory:()=>number;
@@ -17,9 +16,6 @@ type ChatProjection={
   changed:(entries:OutboxEntry[])=>void;
   error:(message:string)=>void;
 };
-function sameBinding(value:Binding|null|undefined,conversationId:string,deviceId:string){
-  return value?.conversationId===conversationId&&value.deviceId===deviceId;
-}
 function failureMessage(value:unknown,fallback:string){
   return value instanceof Error&&value.message?value.message:fallback;
 }
@@ -36,18 +32,17 @@ async function chatResponse(response:Response,status:number):Promise<Chat>{
 function inputReceipt(chat:Chat,item:OutboxInput):AcceptedInput{
   const messages=chat.messages.filter(message=>message.requestId===item.id&&message.role==='user');
   const message=messages[0];
-  if(!sameBinding(chat,item.conversationId,item.deviceId)||messages.length!==1||!message?.id||message.ordinal<=0n)throw Error('消息回执尚未确认，请重试');
-  return{conversationId:item.conversationId,deviceId:item.deviceId,message};
+  if(chat.conversationId!==item.conversationId||messages.length!==1||!message?.id||message.ordinal<=0n)throw Error('消息回执尚未确认，请重试');
+  return{conversationId:item.conversationId,message};
 }
 
-/** One committed device/conversation owns transport, cancellation and projection. */
-class BoundChatOutbox implements Binding{
+class BoundChatOutbox{
   readonly box:ChatOutbox<AcceptedInput>;
   private disposed=false;
   private projection:AbortController|null=null;
   private receiptOffset=0;
-  constructor(readonly conversationId:string,readonly deviceId:string,private callbacks:ChatProjection){
-    const key=`ai-phone:outbox:${deviceId}:${conversationId}`;
+  constructor(readonly conversationId:string,private callbacks:ChatProjection){
+    const key=`ai-phone:outbox:phone-local-01:${conversationId}`;
     this.box=new ChatOutbox({read:()=>localStorage.getItem(key),write:value=>localStorage.setItem(key,value)},this.send.bind(this),this.acknowledge.bind(this),this.changed.bind(this));
   }
   start(){
@@ -55,7 +50,7 @@ class BoundChatOutbox implements Binding{
     if(this.box.entries.some(item=>item.status==='accepted'))void this.refresh();
   }
   submit(item:OutboxInput){
-    if(!sameBinding(item,this.conversationId,this.deviceId))throw Error('待发送消息不属于当前对话');
+    if(item.conversationId!==this.conversationId)throw Error('待发送消息不属于当前对话');
     this.box.enqueue(item);
   }
   retry(){
@@ -68,7 +63,7 @@ class BoundChatOutbox implements Binding{
   private active(control?:AbortController){return !this.disposed&&!control?.signal.aborted;}
   private changed(entries:OutboxEntry[]){if(this.active())this.callbacks.changed(entries);}
   private async send(item:OutboxInput,signal:AbortSignal):Promise<AcceptedInput>{
-    if(!sameBinding(item,this.conversationId,this.deviceId))throw Error('待发送消息不属于当前对话');
+    if(item.conversationId!==this.conversationId)throw Error('待发送消息不属于当前对话');
     const response=await fetch('/api/assistant/send',{method:'POST',headers:{'content-type':'application/x-protobuf'},body:encodeChatSend(item),signal:AbortSignal.any([signal,AbortSignal.timeout(30000)])});
     // The POST confirms this durable receipt; its original run status is not a UI snapshot.
     return inputReceipt(await chatResponse(response,202),item);
@@ -80,12 +75,12 @@ class BoundChatOutbox implements Binding{
   private acceptedCount(){return this.box.entries.filter(item=>item.status==='accepted').length;}
   private async history(signal:AbortSignal){
     const batch=receiptBatch(this.box.entries,this.receiptOffset);this.receiptOffset=batch.next;
-    const body=toBinary(ChatHistoryRequestSchema,create(ChatHistoryRequestSchema,historyRequest(this.conversationId,this.deviceId,null,batch.ids)));
+    const body=toBinary(ChatHistoryRequestSchema,create(ChatHistoryRequestSchema,historyRequest(this.conversationId,null,batch.ids)));
     const response=await fetch('/api/assistant/history',{method:'POST',headers:{'content-type':'application/x-protobuf'},body,signal:AbortSignal.any([signal,AbortSignal.timeout(10000)])});
     return{chat:await chatResponse(response,200),count:batch.ids.length};
   }
   private projectHistory(chat:Chat,order:number){
-    if(!sameBinding(chat,this.conversationId,this.deviceId))throw Error('对话状态与当前设备不一致');
+    if(chat.conversationId!==this.conversationId)throw Error('读取对话失败');
     this.callbacks.accepted(chat,order);
     this.box.projected(new Set(chat.messages.filter(message=>message.role==='user'&&message.requestId&&message.id&&message.ordinal>0n).map(message=>message.requestId)));
     this.callbacks.error('');
@@ -117,33 +112,33 @@ class BoundChatOutbox implements Binding{
   }
 }
 
-export function useChatOutbox(conversationId:string,deviceId:string,accepted:(chat:Chat,order:number)=>void,beginHistory:()=>number,acknowledged:(receipt:AcceptedInput,order:number)=>void){
+export function useChatOutbox(conversationId:string,accepted:(chat:Chat,order:number)=>void,beginHistory:()=>number,acknowledged:(receipt:AcceptedInput,order:number)=>void){
   const owner=useRef<BoundChatOutbox|null>(null);
   const [entries,setEntries]=useState<OutboxEntry[]>([]),[error,setError]=useState(''),[ready,setReady]=useState(false);
   const disconnect=useCallback(()=>{
     const current=owner.current;
-    if(sameBinding(current,conversationId,deviceId)){current!.dispose();owner.current=null;}
-  },[conversationId,deviceId]);
+    if(current?.conversationId===conversationId){current.dispose();owner.current=null;}
+  },[conversationId]);
   // Fence the old binding at commit, before late passive responses can project it.
   useLayoutEffect(()=>disconnect,[disconnect]);
   useEffect(()=>{
     setEntries([]);setError('');setReady(false);
     if(!conversationId)return;
     try{
-      const current=new BoundChatOutbox(conversationId,deviceId,{accepted,beginHistory,acknowledged,changed:setEntries,error:setError});
+      const current=new BoundChatOutbox(conversationId,{accepted,beginHistory,acknowledged,changed:setEntries,error:setError});
       owner.current=current;setEntries(current.box.entries);setReady(true);current.start();
       return disconnect;
     }catch(value){setError(failureMessage(value,'待发送消息无法读取'));setReady(false);}
-  },[conversationId,deviceId,accepted,beginHistory,acknowledged,disconnect]);
+  },[conversationId,accepted,beginHistory,acknowledged,disconnect]);
   const submit=useCallback((item:OutboxInput)=>{
     const current=owner.current;
-    if(!sameBinding(current,conversationId,deviceId))throw Error('对话正在连接，请稍后重试');
-    current!.submit(item);
-  },[conversationId,deviceId]);
+    if(current?.conversationId!==conversationId)throw Error('对话正在连接，请稍后重试');
+    current.submit(item);
+  },[conversationId]);
   const retry=useCallback(()=>{
     const current=owner.current;
-    if(sameBinding(current,conversationId,deviceId))current!.retry();
-  },[conversationId,deviceId]);
-  const bound=sameBinding(owner.current,conversationId,deviceId);
+    if(current?.conversationId===conversationId)current.retry();
+  },[conversationId]);
+  const bound=owner.current?.conversationId===conversationId;
   return{entries:bound?entries:[],error,ready:bound&&ready,submit,retry};
 }

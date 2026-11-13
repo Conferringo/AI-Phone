@@ -7,9 +7,8 @@ async fn desktop_evidence_promotes_and_recalls_without_phone_or_title_fallback()
         crate::registry::initialize(&app.db,&app.settings).await.unwrap();
         crate::builtin_guides::test_files(&app.root);
         crate::workbench::initialize(&app.db,&app.root).await.unwrap();
-        let device="learning-desktop";let conversation=Uuid::now_v7();let message=Uuid::now_v7();let run=Uuid::now_v7();
+        let device="learning-desktop";let conversation:Uuid=sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'").fetch_one(&app.db).await.unwrap();let message=Uuid::now_v7();let run=Uuid::now_v7();
         sqlx::query("INSERT INTO devices(id,name,kind,system,runtime_state) VALUES($1,'Desktop','desktop','Linux','managed')").bind(device).execute(&app.db).await.unwrap();
-        sqlx::query("INSERT INTO conversations(id,device_id) VALUES($1,$2)").bind(conversation).bind(device).execute(&app.db).await.unwrap();
         sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')").bind(message).bind(conversation).execute(&app.db).await.unwrap();
         sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,device_id) VALUES($1,$2,$3,$1,'fixture','running',$4)").bind(run).bind(conversation).bind(message).bind(device).execute(&app.db).await.unwrap();
         let mut output=Value::Null;
