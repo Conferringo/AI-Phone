@@ -1,6 +1,6 @@
 # Android distribution review
 
-The 0.1.0 candidate factories use the stock inputs below.
+The 0.0.1 Aluminum private candidates use the stock inputs below.
 
 ## Stock inputs
 
@@ -10,7 +10,7 @@ The 0.1.0 candidate factories use the stock inputs below.
 | --- | --- | --- |
 | Linux x64 Emulator 37.2.13 | The exact 349,658,551-byte policy archive was checked. Its `source.properties` identifies build 16740729; `LICENSE`, `NOTICE.txt` and `NOTICE.csv` are present. The CSV maps 64 external-library rows to actual executables/libraries. | Bind this build to immutable full-project revisions, build settings, dependency sources and changes; preserve every applicable notice and source/relinking obligation. Inspect the separate Mac and Windows emulator archives. |
 | macOS platform tools 37.0.1 | The exact 16,110,554-byte policy archive was checked. Its `source.properties` identifies 37.0.1 and its `NOTICE.txt` contains 1,152,421 bytes of component notices. | Resolve the exact shipped tools and their dependency sources/terms. |
-| API 35 AOSP images, revision 2 | Both kernels and all 89 vendor kernel modules match Google's published build 11987101 byte for byte. The original kernel configurations were extracted and the source archive for `dd9c02ccfe27` was verified. | Resolve the exact module build graph and the system, vendor userspace and ramdisk sources for image build 12368160. |
+| API 35 default images, revision 2 | Both installer images identify `AE3A.240806.019/12368160:userdebug/test-keys` in their build properties. Both kernels and all 89 vendor kernel modules match Google's published build 11987101 byte for byte. The original kernel configurations were extracted and the source archive for `dd9c02ccfe27` was verified. | Resolve the exact module build graph and the system, vendor userspace and ramdisk sources for image build 12368160. |
 
 The inspected Linux emulator's notice map includes QEMU and e2fs GPL-2.0 components, FFmpeg/dtc GPL-family components, Qt LGPL-3.0 components, GLib LGPL-2.1, and permissive components. Preserve the package’s original component notices and terms.
 
@@ -18,7 +18,7 @@ One upstream CSV row labels libselinux `CC-PDDC OR UNKNOWN`. The linked upstream
 
 ## Source identity
 
-The stock emulator, platform tools and API 35 images still need build manifests that tie their exact versions to source revisions and build recipes.
+The stock emulator and API 35 images still need build manifests that tie their exact versions to source revisions and build recipes. The [Google source request form](https://source.android.com/opensourcerequest) handles requests for corresponding source when it is missing from the public Android repository. An independently built ADB 36.0.1 candidate has a source and relink kit, with a native macOS ARM64 startup check completed. The current installers still use the stock platform tools.
 
 AOSP's [emulator image build](https://source.android.com/docs/setup/test/avd) supports a source-built replacement. The [Android 15 r14 manifest](https://android.googlesource.com/platform/manifest/+/380eb7938773a2fc95a371e84e93436eaf4090c3) and [Goldfish products](https://android.googlesource.com/device/generic/goldfish/+/157a6de4150e70fb8031c89a76bd2335bdab8a35/AndroidProducts.mk) identify ARM64 and x64 image targets. Both targets use prebuilt 6.6 kernels and modules by default. A replacement needs corresponding kernel and module source, host-specific emulator and ADB builds, and verification of the project's device control and media interfaces.
 

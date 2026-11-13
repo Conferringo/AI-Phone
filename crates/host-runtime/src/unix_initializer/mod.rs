@@ -158,6 +158,11 @@ async fn initialize(
         "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin".into(),
     );
     environment.insert("NEXT_TELEMETRY_DISABLED".into(), "1".into());
+    #[cfg(target_os = "macos")]
+    environment.insert(
+        "AI_PHONE_ANDROID_GRPC_HOME".into(),
+        text(&root.join("data/android/native/profile/Library/Caches/TemporaryItems"))?,
+    );
     let mut backend = Backend {
         root: &root,
         program: program.as_os_str(),
