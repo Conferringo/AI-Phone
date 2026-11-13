@@ -70,7 +70,8 @@ pub(crate) async fn database_case(test: impl for<'a> FnOnce(&'a App) -> BoxFutur
         .await;
     drop(app);
     db.close().await;
-    sqlx::query(&format!("DROP DATABASE {name} WITH (FORCE)"))
+    drop(db);
+    sqlx::query(&format!("DROP DATABASE {name}"))
         .execute(&mut admin)
         .await
         .unwrap();

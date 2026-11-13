@@ -54,6 +54,7 @@ impl LoopState {
         name: &str,
         arguments: &str,
         result: &Value,
+        metadata: Option<&Value>,
         outcome: ToolOutcome,
     ) -> bool {
         if outcome == ToolOutcome::Blocked {
@@ -78,9 +79,21 @@ impl LoopState {
                 false
             };
         }
+        let identity = metadata
+            .filter(|_| crate::app_learning::observation_tool(name))
+            .and_then(|value| {
+                Some((
+                    value["device_id"].as_str()?,
+                    value["observation_id"].as_str()?,
+                ))
+            })
+            .map_or_else(
+                || result.to_string(),
+                |(device, observation)| format!("{device}\n{observation}"),
+            );
         let signature = format!(
             "{:x}",
-            Sha256::digest(format!("{name}\n{arguments}\n{result}").as_bytes())
+            Sha256::digest(format!("{name}\n{arguments}\n{identity}"))
         );
         if self.recent_results.contains(&signature) {
             self.no_progress("重复取得相同工具结果，没有观察到新进展")
@@ -95,6 +108,7 @@ impl LoopState {
         }
     }
 }
+
 pub fn slice_due(start_step: i32, step: i32) -> bool {
     step.saturating_sub(start_step) >= SLICE_TURNS
 }
@@ -166,11 +180,7 @@ pub fn compact_observations(context: &mut [Value]) {
         }
         for part in parts.iter_mut() {
             if part["type"] == "input_image" {
-                let digest = format!(
-                    "{:x}",
-                    Sha256::digest(part["image_url"].as_str().unwrap_or("").as_bytes())
-                );
-                *part = serde_json::json!({"type":"input_text","text":format!("{ARCHIVED_OBSERVATION}{digest}（本轮已验证观察；原图保存在执行记录）")});
+                *part = serde_json::json!({"type":"input_text","text":format!("{ARCHIVED_OBSERVATION}（本轮已验证观察；原图保存在执行记录）")});
             }
         }
     }
@@ -252,6 +262,41 @@ mod tests {
             serde_json::from_str(&serde_json::to_string(&state).unwrap()).unwrap();
         assert!(!restored.no_progress("same error"));
         assert!(restored.no_progress("same error"));
+    }
+    #[test]
+    fn repeated_device_receipt_counts_even_if_the_same_frame_was_reencoded() {
+        let mut state = LoopState::default();
+        let result = |metadata: &Value, image: &str| {
+            json!([{"type":"input_text","text":metadata.to_string()},
+                {"type":"input_image","image_url":image}])
+        };
+        let metadata = json!({"device_id":"desktop","observation_id":"same-observation"});
+        for (index, image) in ["frame", "frame-copy", "frame-copy-2", "frame-copy-3"]
+            .into_iter()
+            .enumerate()
+        {
+            let value = result(&metadata, image);
+            assert_eq!(
+                state.tool_result(
+                    "computer_type",
+                    "{}",
+                    &value,
+                    Some(&metadata),
+                    ToolOutcome::Completed
+                ),
+                index == 3
+            );
+            assert_eq!(state.stalls, index as u32);
+        }
+        let metadata = json!({"device_id":"desktop","observation_id":"next-observation"});
+        assert!(!state.tool_result(
+            "computer_type",
+            "{}",
+            &result(&metadata, "frame"),
+            Some(&metadata),
+            ToolOutcome::Completed
+        ));
+        assert_eq!(state.stalls, 0);
     }
     #[test]
     fn observation_compression_keeps_latest_two_and_validation_markers() {

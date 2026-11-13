@@ -4,7 +4,7 @@ import {LanguageWindow,LanguageTrigger} from '@/components/language-window';
 import {WorkbenchNoticeProvider,WorkbenchNotices,DeviceNoticeScope,useWorkbenchNotice} from '@/components/workbench-notices';
 import {useI18n} from '@/components/locale-provider';
 import {DeviceDefaultsProvider,creationDefaults,type DeviceDefaults} from '@/components/device-defaults';
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,type CSSProperties,type Dispatch,type Ref,type SetStateAction } from "react";
+import { memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,type CSSProperties,type Dispatch,type Ref,type SetStateAction } from "react";
 import {CopilotProvider,CopilotToggle,CopilotWave,useCopilotBinding} from '@/components/copilot';
 import {
   create,
@@ -79,6 +79,8 @@ import {ClientUpdate} from "@/components/client-update";
 
 type Chat = MessageShape<typeof ChatStateSchema>;
 type Attachment = MessageShape<typeof ChatAttachmentSchema>;
+const ChatMarkdown = memo(Markdown);
+const chatMarkdownPlugins = [remarkGfm];
 type PendingFile = {
   key: string;
   name: string;
@@ -717,7 +719,7 @@ function SharedConversation({actionsRef,registry,selectedDevice,copilotDeviceId,
                       )}
                     </div>
                   )}
-                  {message.text&&<Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>}
+                  {message.text&&<ChatMarkdown remarkPlugins={chatMarkdownPlugins}>{message.text}</ChatMarkdown>}
                   {pendingMessages.some(item=>item.id===message.requestId&&item.status!=='accepted')&&<span className="message-delivery" role="status">{t(pendingMessages.find(item=>item.id===message.requestId)?.status==='failed'?'未发送':'发送中')}</span>}
                 </article>
               ))}

@@ -363,8 +363,16 @@ fn observation_meta(o: &wire::DesktopObservation) -> Value {
 async fn stored_observation(
     connection: &mut sqlx::PgConnection,
     id: &str,
+    include_png: bool,
 ) -> Result<wire::DesktopObservation> {
     let r=sqlx::query("SELECT *, (extract(epoch FROM captured_at)*1000)::bigint ms FROM desktop_observations WHERE id=$1").bind(uuid(id)?).fetch_one(connection).await.map_err(|e|e.to_string())?;
+    let png = if include_png {
+        tokio::fs::read(r.get::<String, _>("png_path"))
+            .await
+            .map_err(|e| e.to_string())?
+    } else {
+        Vec::new()
+    };
     Ok(wire::DesktopObservation {
         device_id: r.get("device_id"),
         observation_id: id.into(),
@@ -376,9 +384,7 @@ async fn stored_observation(
         application_id: r.get("application_id"),
         window_id: r.get::<i64, _>("window_id") as u64,
         process_id: r.get::<i64, _>("process_id") as u32,
-        png: tokio::fs::read(r.get::<String, _>("png_path"))
-            .await
-            .map_err(|e| e.to_string())?,
+        png,
         ..Default::default()
     })
 }
@@ -476,6 +482,7 @@ async fn recorded_action(
     let mut observation = stored_observation(
         connection,
         value["observation_id"].as_str().ok_or("结果不完整")?,
+        true,
     )
     .await?;
     observation.frame_state = value["frame_state"]
@@ -1233,7 +1240,12 @@ pub async fn tool(app: &App, run: Uuid, call: &Value, args: &Value) -> Result<Va
         authorized(app, run, device).await?;
         let observation = {
             let mut connection = app.db.acquire().await.map_err(|e| e.to_string())?;
-            stored_observation(&mut connection, observation_id).await?
+            stored_observation(
+                &mut connection,
+                observation_id,
+                name != "computer_find_control",
+            )
+            .await?
         };
         return grounding::tool(app, name, device, &observation, args).await;
     }

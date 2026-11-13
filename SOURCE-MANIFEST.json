@@ -685,8 +685,8 @@
     },
     {
       "path": "apps/web/src/app/phone/phone-console.tsx",
-      "size": 47543,
-      "sha256": "81886ffd66da76859721adc21feeb7689a48ef217fc0ce61e9b0514ab0a8254d"
+      "size": 47643,
+      "sha256": "fd5685d3899697cbda627530b480b3cf9c3c3cf8521b392490eb888386ffc962"
     },
     {
       "path": "apps/web/src/app/phone/phone.css",
@@ -1645,8 +1645,8 @@
     },
     {
       "path": "crates/assistant/src/agent_loop.rs",
-      "size": 10262,
-      "sha256": "6b35a97a36561e9131be76998770861c01c76ffb4b961b352db08aef8d2925ba"
+      "size": 11864,
+      "sha256": "2e5c513902839ef46ad098c7cb85113bded67972632751b86a2342efbd595aa9"
     },
     {
       "path": "crates/assistant/src/anthropic_messages.rs",
@@ -1815,8 +1815,8 @@
     },
     {
       "path": "crates/assistant/src/desktop.rs",
-      "size": 84801,
-      "sha256": "9944aaa71ea2e96f27db37fd9b7a7b025b9b0234768a4619bfa21e3723b8cd31"
+      "size": 85024,
+      "sha256": "93fc822f0126a49616ca533b2f4dcbecd7a9fea33f06d3fffb08f96a5321d4fc"
     },
     {
       "path": "crates/assistant/src/device_exchange/kafka.rs",
@@ -1895,8 +1895,8 @@
     },
     {
       "path": "crates/assistant/src/history_window_tests.rs",
-      "size": 17646,
-      "sha256": "c88fae13d07c29e357fc42c73a76d7486502336a6712fd43e999951d5b0b878a"
+      "size": 17647,
+      "sha256": "688056cf834b772fc40ffb7dd4a35e3a512e06538798d2b4b2c87c5b84863106"
     },
     {
       "path": "crates/assistant/src/http.rs",
@@ -1935,8 +1935,8 @@
     },
     {
       "path": "crates/assistant/src/model_recovery_tests.rs",
-      "size": 37792,
-      "sha256": "40d940b1fe156b5f69dd433d29e563bdbc378d8876029104133b2d016c65aaf5"
+      "size": 37800,
+      "sha256": "198f336ee0179acb9c7e9e95a26761aaac060c27ae2c58ecc8879ea31a1a7109"
     },
     {
       "path": "crates/assistant/src/model_sse.rs",
@@ -1960,8 +1960,8 @@
     },
     {
       "path": "crates/assistant/src/persistence_tests.rs",
-      "size": 19568,
-      "sha256": "91b215cae55e0d99ff6ac61289f19fa67ad8b385adf4c118f8afbeaf084390bc"
+      "size": 19569,
+      "sha256": "02fe1d569084602ddb2c105f0b3a384f0314d2c2c0ac12939c2cf36ca0f07bb8"
     },
     {
       "path": "crates/assistant/src/phone_system.rs",
@@ -2120,8 +2120,8 @@
     },
     {
       "path": "crates/assistant/src/worker.rs",
-      "size": 246685,
-      "sha256": "4f8ef96f4cf103c8bfac5f16a0c1103672140179e46f56c5f1ca4ff56ec52595"
+      "size": 246790,
+      "sha256": "9c949ffc55358d3776e3b644a74b633c017f3ab97cdb8d5d8657a5705eca8b5e"
     },
     {
       "path": "crates/assistant/src/workspace_runtime.rs",

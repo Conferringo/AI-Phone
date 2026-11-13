@@ -2410,10 +2410,9 @@ async fn execute(
         .map_err(|e| e.to_string())?;
     let conversation: Uuid = row.get("conversation_id");
     let mut message: Uuid = row.get("assistant_message_id");
-    let mut context: Vec<Value> =
-        serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
-    let mut pending: Vec<Value> =
-        serde_json::from_value(row.get("pending_tools")).map_err(|e| e.to_string())?;
+    let Json(mut context): Json<Vec<Value>> = row.try_get("context").map_err(|e| e.to_string())?;
+    let Json(mut pending): Json<Vec<Value>> =
+        row.try_get("pending_tools").map_err(|e| e.to_string())?;
     let mut answer: String = row.get("answer");
     let mut step: i32 = row.get("step");
     let mut handoffs_pending: bool = row.get("handoffs_pending");
@@ -2657,6 +2656,7 @@ async fn execute(
                 name,
                 call["arguments"].as_str().unwrap_or("{}"),
                 &result,
+                value.as_ref(),
                 outcome,
             );
             context.push(
@@ -3250,7 +3250,10 @@ async fn respond(
     model_replay_boundary: usize,
     timing: &mut crate::model_timing::Timing,
 ) -> Result<Vec<Value>, String> {
-    let config = crate::settings::for_run(app, run).await?;
+    let (config, authority) = tokio::try_join!(
+        crate::settings::for_run(app, run),
+        execution_policy::owner_command(&app.db, run),
+    )?;
     let projected = crate::model_context::after_model_switch(context, model_replay_boundary);
     let mut input =
         if config.protocol == "chat-completions" || config.protocol == "anthropic-messages" {
@@ -3258,7 +3261,6 @@ async fn respond(
         } else {
             crate::model_context::for_api(&projected)
         };
-    let authority = execution_policy::owner_command(&app.db, run).await?;
     if authority == execution_policy::CommandAuthority::None {
         input.push(json!({"role":"system","content":[{"type":"input_text","text":execution_policy::GUI_GUIDANCE}]}));
     }
@@ -3737,8 +3739,7 @@ async fn tool(
         .fetch_one(&app.db)
         .await
         .map_err(|e| e.to_string())?;
-        let current: Vec<Value> =
-            serde_json::from_value(row.get("context")).map_err(|e| e.to_string())?;
+        let Json(current): Json<Vec<Value>> = row.try_get("context").map_err(|e| e.to_string())?;
         let pending: Value = row.get("pending_tools");
         let screen_attention: bool = row.get("screen_attention");
         if row.get::<bool, _>("background_read_only")
@@ -5240,6 +5241,7 @@ mod loop_persistence_tests {
                 "phone_observe",
                 "{}",
                 &output,
+                None,
                 tool_outcome(tool_value(&output).as_ref())
             ));
             assert_eq!(
@@ -5250,6 +5252,7 @@ mod loop_persistence_tests {
                 "task_wait",
                 "{}",
                 &json!({"wake_at_ms":1}),
+                None,
                 ToolOutcome::Completed
             ));
         }
@@ -5262,6 +5265,7 @@ mod loop_persistence_tests {
             "phone_observe",
             "{}",
             &json!({"success":true,"frame":"new"}),
+            None,
             ToolOutcome::Completed
         ));
         assert_eq!(state.stalls, 0);
@@ -5291,6 +5295,7 @@ mod loop_persistence_tests {
             "device_transfer_status",
             "{}",
             &output,
+            Some(&receipt),
             tool_outcome(Some(&receipt))
         ));
         assert_eq!(state.stalls, 0);
@@ -5309,7 +5314,7 @@ mod loop_persistence_tests {
             let mut state = crate::agent_loop::LoopState::default();
             for attempt in 1..=3 {
                 assert_eq!(
-                    state.tool_result(name, "{}", &output, outcome),
+                    state.tool_result(name, "{}", &output, None, outcome),
                     attempt == 3,
                     "failure threshold for {name}"
                 );
