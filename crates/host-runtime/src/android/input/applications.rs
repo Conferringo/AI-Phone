@@ -510,7 +510,7 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         resources(root.path());
         let state = State::lock(root.path(), "emulator-fixture").unwrap();
-        let mut phone = Phone::new(&state);
+        let phone = Phone::new(&state);
         let value = NativeAndroidApplicationIntent {
             version: 1,
             serial: "another".into(),

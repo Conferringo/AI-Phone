@@ -99,10 +99,11 @@ async fn download(app: &App, url: &str, limit: usize) -> Result<Vec<u8>, String>
     {
         return Err("请使用公开HTTPS网址".into());
     }
-    let client = if app.settings.harness_proxy.enabled() {
-        app.settings.http_client("")?
+    let proxy = &app.settings.harness_proxy;
+    let client = if proxy.enabled() {
+        &proxy.downloads
     } else {
-        app.remote.clone()
+        &app.remote
     };
     let response = client
         .get(parsed)

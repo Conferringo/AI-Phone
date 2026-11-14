@@ -28,15 +28,17 @@ pub struct HarnessProxy {
     directory: PathBuf,
     runtime: Mutex<Option<Child>>,
     enabled: std::sync::atomic::AtomicBool,
+    pub(crate) downloads: reqwest::Client,
 }
 
 impl HarnessProxy {
-    pub fn new(root: &std::path::Path) -> Self {
-        Self {
+    pub fn new(root: &std::path::Path) -> reqwest::Result<Self> {
+        Ok(Self {
             directory: root.join("data/harness-proxy"),
             runtime: Mutex::new(None),
             enabled: false.into(),
-        }
+            downloads: download_client(Some(ADDRESS))?,
+        })
     }
 
     pub fn enabled(&self) -> bool {
@@ -68,6 +70,17 @@ impl HarnessProxy {
         fs::set_permissions(&self.directory, fs::Permissions::from_mode(0o700))?;
         Ok(())
     }
+}
+
+pub(crate) fn download_client(proxy_url: Option<&str>) -> reqwest::Result<reqwest::Client> {
+    let mut builder = reqwest::Client::builder().no_proxy();
+    if let Some(url) = proxy_url.filter(|url| !url.is_empty()) {
+        builder = builder.proxy(reqwest::Proxy::all(url)?);
+    }
+    builder
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(180))
+        .build()
 }
 
 async fn controller(
