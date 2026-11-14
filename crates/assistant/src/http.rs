@@ -1,0 +1,1164 @@
+use crate::*;
+use axum::extract::{Multipart, Path, State};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use serde_json::{Value, json};
+use sqlx::Row;
+
+async fn resolve(app: &App, id: &str) -> Result<Uuid, Response> {
+    let canonical: Uuid =
+        sqlx::query_scalar("SELECT id FROM conversations WHERE owner_id='local-user'")
+            .fetch_one(&app.db)
+            .await
+            .map_err(db_error)?;
+    if !id.is_empty() && id != canonical.to_string() {
+        return Err(error(
+            StatusCode::CONFLICT,
+            "conversation_scope",
+            "对话已更新，请重新载入",
+        ));
+    }
+    Ok(canonical)
+}
+pub async fn state(app: &App, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
+    full_state(&app.db, id).await
+}
+
+pub(crate) async fn full_state(db: &PgPool, id: Uuid) -> Result<wire::ChatState, sqlx::Error> {
+    let mut tx = crate::history_window::transaction(db).await?;
+    let run = current_run(&mut tx, id).await?;
+    let messages = chat_messages(&mut tx, id, MessageSelection::All).await?;
+    let value = chat_state(
+        id,
+        messages.last().map_or(0, |row| row.ordinal),
+        messages,
+        None,
+        run.as_ref(),
+    );
+    tx.commit().await?;
+    Ok(value)
+}
+
+pub(crate) enum MessageSelection<'a> {
+    All,
+    Ids(&'a [Uuid]),
+    Receipt(Uuid),
+}
+
+async fn message_rows(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+    selected: MessageSelection<'_>,
+) -> Result<Vec<sqlx::postgres::PgRow>, sqlx::Error> {
+    const PROJECTION: &str = "SELECT m.id,m.role,m.text,m.ordinal,m.request_id,v.session_id,v.utterance_id,v.revision,v.literal,v.corrects_request_id,COALESCE(m.run_id,r.id) run_id,COALESCE(source.status,'') source_status,COALESCE(source.error,'') source_error,COALESCE(source.loop_state,'{}'::jsonb) source_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,COALESCE(r.status IN ('queued','running','paused'),false) active,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.kind NOT IN ('task','system_error') AND NOT(e.kind='summary' AND e.title='连接重试' AND e.status='failed')) has_activity, CASE WHEN cardinality(m.attachment_ids)>0 THEN (
+    SELECT jsonb_agg(jsonb_build_object('id',a.id,'name',a.name,'media_type',a.media_type,'size_bytes',a.size_bytes) ORDER BY ref.ordinal)
+    FROM unnest(m.attachment_ids) WITH ORDINALITY ref(id,ordinal)
+    JOIN attachments a ON a.id=ref.id AND a.owner_id='local-user'
+) END files FROM messages m LEFT JOIN chat_voice_inputs v ON v.message_id=m.id LEFT JOIN runs r ON r.assistant_message_id=m.id LEFT JOIN runs source ON source.id=COALESCE(m.run_id,r.id) WHERE m.conversation_id=$1";
+    let statement = match selected {
+        MessageSelection::All => format!("{PROJECTION} ORDER BY m.ordinal"),
+        MessageSelection::Ids(_) => format!("{PROJECTION} AND m.id=ANY($2) ORDER BY m.ordinal"),
+        MessageSelection::Receipt(_) => {
+            format!("{PROJECTION} AND m.request_id=$2 AND m.role='user'")
+        }
+    };
+    let query = sqlx::query(&statement).bind(id);
+    let query = match selected {
+        MessageSelection::All => query,
+        MessageSelection::Ids(ids) => query.bind(ids),
+        MessageSelection::Receipt(request) => query.bind(request),
+    };
+    query.fetch_all(&mut **tx).await
+}
+
+pub(crate) const CURRENT_RUN: &str = "SELECT id,assistant_message_id,status,error,loop_state,agent_id,agent_name,device_id,origin='user' AND status IN ('queued','running') can_pause,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE conversation_id=$1 ORDER BY (status IN ('queued','running','paused') AND origin='user') DESC,(status IN ('queued','running','paused')) DESC,GREATEST(input_at,finished_at,created_at) DESC,id DESC LIMIT 1";
+pub(crate) async fn current_run(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+) -> Result<Option<sqlx::postgres::PgRow>, sqlx::Error> {
+    sqlx::query(CURRENT_RUN)
+        .bind(id)
+        .fetch_optional(&mut **tx)
+        .await
+}
+
+pub(crate) async fn chat_messages(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    id: Uuid,
+    selected: MessageSelection<'_>,
+) -> Result<Vec<wire::ChatMessage>, sqlx::Error> {
+    let rows = message_rows(tx, id, selected).await?;
+    Ok(rows
+        .iter()
+        .map(|r| {
+            let role: String = r.get("role");
+            let original_text: &str = r.get("text");
+            let source_error: &str = r.get("source_error");
+            let source_state: Value = r.get("source_state");
+            let notice =
+                crate::run_notice::kind(r.get("source_status"), source_error, &source_state);
+            let (text, system_notice) = crate::run_notice::message(
+                &role,
+                original_text,
+                source_error,
+                notice,
+                r.get::<bool, _>("recorded_retry")
+                    || crate::run_notice::legacy_pause(original_text, &source_state),
+            );
+            wire::ChatMessage {
+                id: r.get::<Uuid, _>("id").to_string(),
+                run_id: r
+                    .get::<Option<Uuid>, _>("run_id")
+                    .map(|id| id.to_string())
+                    .unwrap_or_default(),
+                request_id: r
+                    .get::<Option<Uuid>, _>("request_id")
+                    .map(|v| v.to_string())
+                    .unwrap_or_default(),
+                ordinal: r.get::<i64, _>("ordinal") as u64,
+                active: r.get("active"),
+                has_activity: r.get("has_activity"),
+                voice: crate::voice_input::from_row(r),
+                role,
+                text,
+                system_notice,
+                attachments: r
+                    .get::<Option<sqlx::types::Json<Vec<ChatAttachmentRow>>>, _>("files")
+                    .map_or_else(Vec::new, |rows| {
+                        rows.0.into_iter().map(Into::into).collect()
+                    }),
+            }
+        })
+        .collect())
+}
+
+#[derive(serde::Deserialize)]
+struct ChatAttachmentRow {
+    id: String,
+    name: String,
+    media_type: String,
+    size_bytes: i64,
+}
+
+impl From<ChatAttachmentRow> for wire::ChatAttachment {
+    fn from(file: ChatAttachmentRow) -> Self {
+        Self {
+            id: file.id,
+            name: file.name,
+            media_type: file.media_type,
+            size_bytes: file.size_bytes as u64,
+        }
+    }
+}
+
+pub(crate) fn chat_state(
+    id: Uuid,
+    revision: u64,
+    messages: Vec<wire::ChatMessage>,
+    window: Option<wire::ChatMessageWindow>,
+    run: Option<&sqlx::postgres::PgRow>,
+) -> wire::ChatState {
+    let device_id = run
+        .map_or(crate::registry::PHONE, |row| {
+            row.get::<&str, _>("device_id")
+        })
+        .to_owned();
+    wire::ChatState {
+        revision,
+        message_window: window,
+        conversation_id: id.to_string(),
+        device_id,
+        agent_id: run
+            .and_then(|r| r.get::<Option<Uuid>, _>("agent_id"))
+            .map(|v| v.to_string())
+            .unwrap_or_default(),
+        agent_name: run.map(|r| r.get("agent_name")).unwrap_or_default(),
+        messages,
+        run_id: run
+            .map(|r| r.get::<Uuid, _>("id").to_string())
+            .unwrap_or_default(),
+        run_status: run.map(|r| r.get("status")).unwrap_or_default(),
+        error: run.map(|r| r.get("error")).unwrap_or_default(),
+        notice_kind: run
+            .map(|r| {
+                crate::run_notice::kind(
+                    r.get("status"),
+                    r.get("error"),
+                    &r.get::<Value, _>("loop_state"),
+                ) as i32
+            })
+            .unwrap_or_default(),
+        next_wake_at_ms: run.map(|r| r.get("next_wake_at_ms")).unwrap_or(0),
+        can_pause: run.is_some_and(|r| r.get("can_pause")),
+    }
+}
+fn history_response(result: Result<wire::ChatState, sqlx::Error>) -> Response {
+    match result {
+        Ok(v) => pb(StatusCode::OK, v),
+        Err(sqlx::Error::Protocol(code)) if code == "history_anchor_scope" => {
+            error(StatusCode::CONFLICT, &code, "分页位置已失效，请重新载入")
+        }
+        Err(e) => db_error(e),
+    }
+}
+
+pub async fn history(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let request: wire::ChatHistoryRequest = match decode(&app, &headers, body) {
+        Ok(v) => v,
+        Err(e) => return e.into(),
+    };
+    let window = match crate::history_window::Request::parse(&request) {
+        Ok(value) => value,
+        Err(code) => return error(StatusCode::BAD_REQUEST, code, "分页请求无效"),
+    };
+    let id = match resolve(&app, &request.conversation_id).await {
+        Ok(v) => v,
+        Err(e) => return e,
+    };
+    let result = match window {
+        Some(window) => crate::history_window::read(&app.db, id, window).await,
+        None => state(&app, id).await,
+    };
+    history_response(result)
+}
+
+pub async fn send(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let request: wire::ChatSendRequest = match decode(&app, &headers, body) {
+        Ok(v) => v,
+        Err(e) => return e.into(),
+    };
+    send_input(app, request, None).await
+}
+
+pub(crate) async fn send_goal(app: Shared, input: wire::GoalUpdateRequest) -> Response {
+    let goal = input.goal.trim();
+    if goal.is_empty() || goal.len() > 12_000 {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_goal",
+            "目标为空或内容过长",
+        );
+    }
+    let request = wire::ChatSendRequest {
+        request_id: Uuid::now_v7().to_string(),
+        device_id: input.device_id,
+        text: goal.to_owned(),
+        ..Default::default()
+    };
+    send_input(app, request, Some(input.expected_revision)).await
+}
+
+async fn send_input(
+    app: Shared,
+    mut request: wire::ChatSendRequest,
+    goal_revision: Option<u64>,
+) -> Response {
+    if request.text.len() > 48000
+        || request.attachment_ids.len() > 8
+        || (request.text.trim().is_empty() && request.attachment_ids.is_empty())
+    {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_message",
+            "消息为空或内容过大",
+        );
+    }
+    let voice = match request
+        .voice
+        .as_ref()
+        .map(crate::voice_input::VoiceInput::parse)
+        .transpose()
+    {
+        Ok(value) => value,
+        Err(_) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "invalid_voice",
+                "语音片段或修订信息无效",
+            );
+        }
+    };
+    if voice.is_some() && (request.text.trim().is_empty() || !request.attachment_ids.is_empty()) {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_voice",
+            "语音输入需要文字且不能混入附件",
+        );
+    }
+    let steering_quiet_ms: i16 = if voice.is_some() || goal_revision.is_some() {
+        0
+    } else {
+        700
+    };
+    let id = match resolve(&app, &request.conversation_id).await {
+        Ok(v) => v,
+        Err(e) => return e,
+    };
+    let device = if request.device_id.is_empty() {
+        crate::registry::PHONE
+    } else {
+        &request.device_id
+    };
+    if !request.device_id.is_empty()
+        && request.device_id != crate::registry::PHONE
+        && crate::desktop::device_kind(&app, &request.device_id)
+            .await
+            .is_err()
+    {
+        return error(
+            StatusCode::CONFLICT,
+            "device_unavailable",
+            "设备尚未安装，暂时不能执行任务",
+        );
+    }
+    let request_id = match Uuid::parse_str(&request.request_id) {
+        Ok(v) => v,
+        Err(_) => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "invalid_request_id",
+                "请求标识无效",
+            );
+        }
+    };
+    // Response shape does not participate in the durable input identity.
+    let receipt_only = std::mem::take(&mut request.receipt_only);
+    let request_bytes = request.encode_to_vec();
+    let fingerprint = crate::request_digest::encode(&request_bytes);
+    let result: Result<Uuid, sqlx::Error> = async {
+        let mut tx = app.db.begin().await?;
+        // A receipt is unique across both initial runs and subsequent inputs, including devices.
+        sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
+            .bind(request_id.to_string()).execute(&mut *tx).await?;
+        sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
+            .bind(id).fetch_one(&mut *tx).await?;
+        let goal_run = if let Some(revision) = goal_revision {
+            let (current_revision, stored_run): (i64, Option<Uuid>) =
+                sqlx::query_as("SELECT revision,goal_run_id FROM proactive_state
+                    WHERE owner_id='local-user' FOR UPDATE")
+                    .fetch_one(&mut *tx).await?;
+            if current_revision as u64 != revision {
+                return Err(sqlx::Error::Protocol("stale_goal".into()));
+            }
+            if let Some(stored_run) = stored_run {
+                sqlx::query_scalar::<_, Uuid>(
+                    "SELECT id FROM runs WHERE id=$1 AND status IN ('queued','running','paused')",
+                ).bind(stored_run).fetch_optional(&mut *tx).await?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        if let Some(old) = sqlx::query("SELECT id,conversation_id,request_fingerprint FROM runs WHERE request_id=$1")
+            .bind(request_id).fetch_optional(&mut *tx).await? {
+            if old.get::<Uuid,_>("conversation_id") != id || !crate::request_digest::matches(old.get("request_fingerprint"), &fingerprint, &request_bytes) {
+                return Err(sqlx::Error::Protocol("request_conflict".into()));
+            }
+            let run = old.get::<Uuid,_>("id");
+            tx.commit().await?;
+            return Ok(run);
+        }
+        if let Some(old) = sqlx::query("SELECT i.run_id,i.fingerprint,r.conversation_id FROM run_inputs i JOIN runs r ON r.id=i.run_id WHERE i.request_id=$1")
+            .bind(request_id).fetch_optional(&mut *tx).await? {
+            if old.get::<Uuid,_>("conversation_id") != id || !crate::request_digest::matches(old.get("fingerprint"), &fingerprint, &request_bytes) {
+                return Err(sqlx::Error::Protocol("request_conflict".into()));
+            }
+            let run = old.get::<Uuid,_>("run_id");
+            tx.commit().await?;
+            return Ok(run);
+        }
+        let files: Vec<Uuid> = request.attachment_ids.iter().map(|s|Uuid::parse_str(s))
+            .collect::<Result<_,_>>().map_err(|_|sqlx::Error::Protocol("invalid_attachments".into()))?;
+        let attachments = if files.is_empty() {
+            Vec::new()
+        } else {
+            sqlx::query("SELECT id,name,media_type,size_bytes,storage_key FROM attachments WHERE id=ANY($1) AND owner_id='local-user'")
+                .bind(&files).fetch_all(&mut *tx).await?
+        };
+        let total: i64 = attachments.iter().map(|r|r.get::<i64,_>("size_bytes")).sum();
+        if attachments.len() != files.len() || total > 12*1024*1024 || attachments.iter().any(|r|r.get::<i64,_>("size_bytes") < 0) {
+            return Err(sqlx::Error::Protocol("invalid_attachments".into()));
+        }
+        sqlx::query("UPDATE runs SET status='canceled',error='用户新指令优先',finished_at=now(),next_wake_at=NULL WHERE conversation_id=$1 AND origin IN ('exploration','notification') AND status IN ('queued','running','paused')").bind(id).execute(&mut *tx).await?;
+        sqlx::query("UPDATE phone_notifications SET status='pending-summary' WHERE status='assigned' AND run_id IN(SELECT id FROM runs WHERE conversation_id=$1 AND origin='notification' AND status='canceled' AND NOT background_finalized)").bind(id).execute(&mut *tx).await?;
+        let active = sqlx::query("SELECT id,status,agent_id FROM runs WHERE conversation_id=$1 AND origin='user' AND status IN ('queued','running','paused') FOR UPDATE")
+            .bind(id).fetch_optional(&mut *tx).await?;
+        if goal_revision.is_some()
+            && active.as_ref().is_some_and(|row| Some(row.get::<Uuid,_>("id")) != goal_run)
+        {
+            return Err(sqlx::Error::Protocol("goal_device_busy".into()));
+        }
+        if !request.agent_id.is_empty() && active.as_ref().is_some_and(|r| r.get::<Option<Uuid>,_>("agent_id").map(|v|v.to_string()).as_deref()!=Some(request.agent_id.as_str())) {
+            return Err(sqlx::Error::Protocol("agent_busy".into()));
+        }
+        let user = Uuid::now_v7();
+        sqlx::query("INSERT INTO messages(id,conversation_id,role,text,attachment_ids,request_id) VALUES($1,$2,'user',$3,$4,$5)")
+            .bind(user).bind(id).bind(&request.text).bind(&files).bind(request_id).execute(&mut *tx).await?;
+        if let Some(voice) = &voice {voice.persist(&mut tx, id, user, request_id).await?;}
+
+        let run = if let Some(active) = active {
+            let run = active.get::<Uuid,_>("id");
+            if active.get::<String,_>("status") == "paused" {
+                crate::registry::refresh_paused_model(&mut tx, &app.settings, run, (id, active.get("agent_id"))).await?;
+            }
+            let input = steering_input(&app, &request, &files, &attachments, goal_revision.is_some()).await?;
+            let updated = sqlx::query("UPDATE runs SET steering=steering||jsonb_build_array(jsonb_build_object('id',$2::text,'input',$3::jsonb,'created_at',clock_timestamp())), input_at=clock_timestamp(), input_quiet_ms=$4, next_wake_at=NULL, control_epoch=CASE WHEN status='paused' THEN 0 ELSE control_epoch END, loop_state=CASE WHEN status='paused' THEN jsonb_set(loop_state,'{resume_requested}','true'::jsonb) ELSE loop_state END, status=CASE WHEN status='paused' THEN 'queued' ELSE status END, error='' WHERE id=$1 AND jsonb_array_length(steering)<32 AND octet_length(steering::text)+octet_length($3::jsonb::text)<67108864")
+                .bind(run).bind(request_id.to_string()).bind(input).bind(steering_quiet_ms).execute(&mut *tx).await?;
+            if updated.rows_affected()!=1 { return Err(sqlx::Error::Protocol("steering_full".into())); }
+            sqlx::query("INSERT INTO run_inputs(request_id,run_id,message_id,fingerprint) VALUES($1,$2,$3,$4)")
+                .bind(request_id).bind(run).bind(user).bind(&fingerprint).execute(&mut *tx).await?;
+            run
+        } else {
+            let revision=app.settings.current();
+            let assistant = Uuid::now_v7();
+            let run = Uuid::now_v7();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role) VALUES($1,$2,'assistant')")
+                .bind(assistant).bind(id).execute(&mut *tx).await?;
+            sqlx::query("INSERT INTO runs(id,conversation_id,assistant_message_id,request_id,request_fingerprint,status,model_revision,input_at,input_quiet_ms,trigger_input,device_id) VALUES($1,$2,$3,$4,$5,'queued',$6,clock_timestamp(),0,$7,$8)")
+                .bind(run).bind(id).bind(assistant).bind(request_id).bind(&fingerprint).bind(revision as i64)
+                .bind(if goal_revision.is_some() { "task-goal" } else { "" }).bind(device).execute(&mut *tx).await?;
+            sqlx::query("UPDATE messages SET run_id=$2 WHERE id=$1").bind(assistant).bind(run).execute(&mut *tx).await?;
+            crate::registry::pin_run_for(&mut tx, &app.settings, run, &request.agent_id).await?;
+            run
+        };
+        if goal_revision.is_some() {
+            sqlx::query("UPDATE proactive_state SET goal=$1,goal_run_id=$2,exploring=false,revision=revision+1,last_error='' WHERE owner_id='local-user'")
+                .bind(&request.text).bind(run).execute(&mut *tx).await?;
+        }
+        tx.commit().await?;
+        app.run_signals.queue.notify_one();
+        app.run_signals.input.notify_waiters();
+        if let Some(voice) = &voice {
+            voice.release_activity(&app.run_signals.speech, id);
+        }
+        app.run_signals.chat_changed(id);
+        Ok(run)
+    }.await;
+    let run_id = match result {
+        Ok(id) => id,
+        Err(e) => {
+            return match e.to_string().as_str() {
+                s if s.contains("stale_goal") => error(
+                    StatusCode::CONFLICT,
+                    "stale_goal",
+                    "目标已更新，请重新打开后再操作",
+                ),
+                s if s.contains("goal_device_busy") => error(
+                    StatusCode::CONFLICT,
+                    "goal_device_busy",
+                    "此设备有未结束的任务，请先结束后再激活目标",
+                ),
+                s if s.contains("agent_not_selected") => error(
+                    StatusCode::CONFLICT,
+                    "agent_not_selected",
+                    "Agent 已切换，请重新发送",
+                ),
+                s if s.contains("agent_busy") => error(
+                    StatusCode::CONFLICT,
+                    "agent_busy",
+                    "此设备正由其他 Agent 执行任务，请稍后重试",
+                ),
+                s if s.contains("model_missing") => error(
+                    StatusCode::CONFLICT,
+                    "model_missing",
+                    "请先在设置中连接模型",
+                ),
+                s if s.contains("model_unverified") => error(
+                    StatusCode::CONFLICT,
+                    "model_unverified",
+                    "请先测试并保存此 Agent 的模型配置",
+                ),
+                s if s.contains("request_conflict") => error(
+                    StatusCode::CONFLICT,
+                    "request_conflict",
+                    "同一请求标识不能更换消息内容",
+                ),
+                s if s.contains("invalid_attachments") => error(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_attachments",
+                    "附件无效或总大小超过12MiB",
+                ),
+                s if s.contains("voice_conflict") => error(
+                    StatusCode::CONFLICT,
+                    "voice_conflict",
+                    "语音更正与已接受的片段不一致，请保留文本并重新发送",
+                ),
+                s if s.contains("steering_full") => error(
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "steering_full",
+                    "待处理指令过多，请等待助手读取后再发送",
+                ),
+                _ => db_error(e),
+            };
+        }
+    };
+    crate::proactive::cancel_stopped(&app).await;
+    if goal_revision.is_some() {
+        return match crate::proactive::state(&app).await {
+            Ok(value) => pb(StatusCode::OK, value),
+            Err(e) => db_error(e),
+        };
+    }
+    if receipt_only {
+        return match send_receipt(&app, id, run_id, request_id, request.device_id).await {
+            Ok(value) => pb(StatusCode::ACCEPTED, value),
+            Err(error) => db_error(error),
+        };
+    }
+    match state(&app, id).await {
+        Ok(mut value) => {
+            // A retry's receipt stays attached to the original run (including channel clients).
+            let run = match sqlx::query("SELECT status,error,loop_state,COALESCE((extract(epoch FROM next_wake_at)*1000)::bigint,0) next_wake_at_ms FROM runs WHERE id=$1 AND conversation_id=$2")
+                .bind(run_id).bind(id).fetch_one(&app.db).await {
+                    Ok(row) => row, Err(e) => return db_error(e),
+                };
+            value.run_id = run_id.to_string();
+            value.run_status = run.get("status");
+            value.error = run.get("error");
+            value.notice_kind = crate::run_notice::kind(
+                run.get("status"),
+                run.get("error"),
+                &run.get::<Value, _>("loop_state"),
+            ) as i32;
+            value.next_wake_at_ms = run.get("next_wake_at_ms");
+            pb(StatusCode::ACCEPTED, value)
+        }
+        Err(e) => db_error(e),
+    }
+}
+
+async fn send_receipt(
+    app: &App,
+    conversation: Uuid,
+    run: Uuid,
+    request: Uuid,
+    device_id: String,
+) -> Result<wire::ChatState, sqlx::Error> {
+    let mut tx = crate::history_window::transaction(&app.db).await?;
+    let messages = chat_messages(&mut tx, conversation, MessageSelection::Receipt(request)).await?;
+    if messages.is_empty() {
+        return Err(sqlx::Error::RowNotFound);
+    }
+    tx.commit().await?;
+    Ok(wire::ChatState {
+        conversation_id: conversation.to_string(),
+        run_id: run.to_string(),
+        device_id: if device_id.is_empty() {
+            crate::registry::PHONE.into()
+        } else {
+            device_id
+        },
+        messages,
+        ..Default::default()
+    })
+}
+
+/// Build the exact model input before accepting a steering request. Files remain owner-scoped.
+async fn steering_input(
+    app: &App,
+    request: &wire::ChatSendRequest,
+    files: &[Uuid],
+    attachments: &[sqlx::postgres::PgRow],
+    replaces_goal: bool,
+) -> Result<Value, sqlx::Error> {
+    let invalid = || sqlx::Error::Protocol("invalid_attachments".into());
+    let mut content = Vec::new();
+    if replaces_goal {
+        content.push(json!({"type":"input_text","text":"以下是用户更新后的完整目标，替换原目标。保留已经核验且仍适用的执行成果。"}));
+    }
+    if !request.text.is_empty() {
+        content.push(json!({"type":"input_text","text":crate::voice_input::model_text(&request.text, &request.request_id, request.voice.as_ref())}));
+    }
+    let base = app.root.join("data/attachments");
+    let mut actual_total = 0u64;
+    for attachment_id in files {
+        let row = attachments
+            .iter()
+            .find(|r| r.get::<Uuid, _>("id") == *attachment_id)
+            .ok_or_else(invalid)?;
+        let key: String = row.get("storage_key");
+        let relative = std::path::Path::new(&key);
+        if relative.is_absolute()
+            || relative
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+        {
+            return Err(invalid());
+        }
+        let root = tokio::fs::canonicalize(&base)
+            .await
+            .map_err(|_| invalid())?;
+        let file = tokio::fs::canonicalize(base.join(relative))
+            .await
+            .map_err(|_| invalid())?;
+        if !file.starts_with(&root) {
+            return Err(invalid());
+        }
+        let metadata = tokio::fs::metadata(&file).await.map_err(|_| invalid())?;
+        actual_total = actual_total
+            .checked_add(metadata.len())
+            .ok_or_else(invalid)?;
+        if !metadata.is_file() || actual_total > 12 * 1024 * 1024 {
+            return Err(invalid());
+        }
+        let bytes = tokio::fs::read(file).await.map_err(|_| invalid())?;
+        let media: String = row.get("media_type");
+        if media.starts_with("image/") {
+            content.push(json!({"type":"input_image","image_url":format!("data:{media};base64,{}",STANDARD.encode(bytes))}));
+        } else {
+            let text = String::from_utf8_lossy(&bytes)
+                .chars()
+                .take(24000)
+                .collect::<String>();
+            content.push(json!({"type":"input_text","text":format!("附件 {}：\n{}",row.get::<String,_>("name"),text)}));
+        }
+    }
+    Ok(json!({"role":"user","content":content}))
+}
+
+pub async fn cancel(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    run_command(app, headers, body, false).await
+}
+pub async fn resume(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    run_command(app, headers, body, true).await
+}
+async fn run_command(
+    app: Shared,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+    resume: bool,
+) -> Response {
+    let request: wire::ChatRunRequest = match decode(&app, &headers, body) {
+        Ok(v) => v,
+        Err(e) => return e.into(),
+    };
+    let id = match Uuid::parse_str(&request.run_id) {
+        Ok(v) => v,
+        Err(_) => return error(StatusCode::BAD_REQUEST, "invalid_run", "任务不存在"),
+    };
+    let pause = if !resume && !request.pause {
+        match sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM proactive_state WHERE goal_run_id=$1)",
+        )
+        .bind(id)
+        .fetch_one(&app.db)
+        .await
+        {
+            Ok(value) => value,
+            Err(e) => return db_error(e),
+        }
+    } else {
+        request.pause
+    };
+    let result = if resume {
+        resume_paused(&app, id).await
+    } else {
+        stop_run(&app.db, id, pause).await
+    };
+    let conversation: Option<Uuid> = match result {
+        Ok(v) => v,
+        Err(sqlx::Error::Protocol(code))
+            if code == "model_missing" || code == "model_unverified" =>
+        {
+            return error(
+                StatusCode::CONFLICT,
+                &code,
+                "请先测试并保存此 Agent 的模型配置",
+            );
+        }
+        Err(e) => return db_error(e),
+    };
+    let Some(conversation) = conversation else {
+        return error(
+            StatusCode::CONFLICT,
+            "run_not_active",
+            "任务状态已改变，请刷新",
+        );
+    };
+    if !resume && !pause {
+        let exploration =
+            sqlx::query_scalar::<_, bool>("SELECT origin='exploration' FROM runs WHERE id=$1")
+                .bind(id)
+                .fetch_one(&app.db)
+                .await
+                .unwrap_or(false);
+        if exploration {
+            let _ = crate::proactive::stop_exploration(&app, "已停止自主探索").await;
+        }
+        if let Err(e)=sqlx::query("UPDATE messages SET text='已停止。' WHERE id=(SELECT assistant_message_id FROM runs WHERE id=$1) AND text=''")
+            .bind(id).execute(&app.db).await { return db_error(e); }
+    }
+    if !resume {
+        if let Some(token) = app.active.lock().await.get(&id) {
+            token.cancel();
+        }
+        app.run_signals.chat_changed(conversation);
+        app.run_signals.channel_update.notify_one();
+    }
+    match state(&app, conversation).await {
+        Ok(v) => pb(StatusCode::OK, v),
+        Err(e) => db_error(e),
+    }
+}
+
+async fn stop_run(db: &PgPool, id: Uuid, pause: bool) -> Result<Option<Uuid>, sqlx::Error> {
+    sqlx::query_scalar(
+        "WITH stopped AS (
+        UPDATE runs SET status=CASE WHEN $2 THEN 'paused' ELSE 'canceled' END,
+            error=CASE WHEN $2 THEN '' ELSE error END,
+            finished_at=CASE WHEN $2 THEN NULL ELSE now() END,
+            next_wake_at=CASE WHEN $2 THEN next_wake_at ELSE NULL END
+        WHERE id=$1 AND status IN ('queued','running','paused')
+            AND (NOT $2 OR (origin='user' AND status<>'paused'))
+        RETURNING id,conversation_id,status,finished_at
+    ), trace AS (
+        UPDATE harness_events e SET status=s.status,finished_at=s.finished_at
+        FROM stopped s WHERE e.id=s.id
+    ) SELECT conversation_id FROM stopped",
+    )
+    .bind(id)
+    .bind(pause)
+    .fetch_optional(db)
+    .await
+}
+
+async fn resume_paused(app: &App, id: Uuid) -> Result<Option<Uuid>, sqlx::Error> {
+    let mut tx = app.db.begin().await?;
+    let Some(expected) = sqlx::query_as::<_, (Uuid, Option<Uuid>)>(
+        "SELECT conversation_id,agent_id FROM runs WHERE id=$1",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?
+    else {
+        return Ok(None);
+    };
+    // Match send's conversation -> run -> registry order. Updating a run can
+    // recheck its conversation FK, so holding only the run lock can deadlock
+    // with a sender that already owns the conversation and is waiting on it.
+    sqlx::query("SELECT id FROM conversations WHERE id=$1 FOR NO KEY UPDATE")
+        .bind(expected.0)
+        .execute(&mut *tx)
+        .await?;
+    let conversation =
+        crate::registry::refresh_paused_model(&mut tx, &app.settings, id, expected).await?;
+    if conversation.is_some() {
+        sqlx::query("UPDATE runs SET status='queued',control_epoch=0,error='',loop_state=jsonb_set(loop_state,'{resume_requested}','true'::jsonb) WHERE id=$1")
+            .bind(id).execute(&mut *tx).await?;
+    }
+    tx.commit().await?;
+    if let Some(conversation) = conversation {
+        app.run_signals.queue.notify_one();
+        app.run_signals.chat_changed(conversation);
+    }
+    Ok(conversation)
+}
+
+fn media_type(bytes: &[u8], name: &str) -> Option<&'static str> {
+    if let Some(media) = crate::files::image_type(bytes) {
+        Some(media)
+    } else if ["txt", "md", "csv", "json", "log"]
+        .iter()
+        .any(|ext| name.to_lowercase().ends_with(&format!(".{ext}")))
+        && bytes.len() <= 2 * 1024 * 1024
+        && std::str::from_utf8(bytes).is_ok()
+        && !bytes.contains(&0)
+    {
+        Some("text/plain; charset=utf-8")
+    } else {
+        None
+    }
+}
+pub async fn upload(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> Response {
+    if let Err(e) = auth(&app, &headers) {
+        return e.into();
+    }
+    let field = match multipart.next_field().await {
+        Ok(Some(v)) => v,
+        _ => return error(StatusCode::BAD_REQUEST, "invalid_upload", "请选择附件"),
+    };
+    let name = field
+        .file_name()
+        .unwrap_or("附件")
+        .chars()
+        .filter(|c| !c.is_control() && *c != '/' && *c != '\\')
+        .take(120)
+        .collect::<String>();
+    let bytes = match field.bytes().await {
+        Ok(v) if !v.is_empty() && v.len() <= 8 * 1024 * 1024 => v,
+        _ => {
+            return error(
+                StatusCode::BAD_REQUEST,
+                "file_limit",
+                "单个附件须为1字节到8MiB",
+            );
+        }
+    };
+    let Some(media) = media_type(&bytes, &name) else {
+        return error(
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "unsupported_file",
+            "支持PNG、JPEG、WebP、GIF及UTF-8文本文件",
+        );
+    };
+    let id = Uuid::now_v7();
+    let key = id.to_string();
+    let folder = app.root.join("data/attachments");
+    if tokio::fs::create_dir_all(&folder).await.is_err()
+        || tokio::fs::write(folder.join(&key), &bytes).await.is_err()
+    {
+        return db_error("write");
+    }
+    if let Err(e) = sqlx::query(
+        "INSERT INTO attachments(id,name,media_type,size_bytes,storage_key) VALUES($1,$2,$3,$4,$5)",
+    )
+    .bind(id)
+    .bind(&name)
+    .bind(media)
+    .bind(bytes.len() as i64)
+    .bind(&key)
+    .execute(&app.db)
+    .await
+    {
+        return db_error(e);
+    }
+    if let Err(e) = crate::files::archive_attachment(&app, id, &name, &bytes).await {
+        return db_error(e);
+    }
+    pb(
+        StatusCode::OK,
+        wire::ChatAttachment {
+            id: key,
+            name,
+            media_type: media.into(),
+            size_bytes: bytes.len() as u64,
+        },
+    )
+}
+pub async fn attachment(
+    State(app): State<Shared>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> Response {
+    if let Err(e) = auth(&app, &headers) {
+        return e.into();
+    }
+    let id = match Uuid::parse_str(&id) {
+        Ok(v) => v,
+        Err(_) => return error(StatusCode::NOT_FOUND, "not_found", "附件不存在"),
+    };
+    let row = match sqlx::query(
+        "SELECT media_type,size_bytes,storage_key FROM attachments WHERE id=$1 AND owner_id='local-user'",
+    )
+    .bind(id)
+    .fetch_optional(&app.db)
+    .await
+    {
+        Ok(Some(v)) => v,
+        _ => return error(StatusCode::NOT_FOUND, "not_found", "附件不存在"),
+    };
+    let file = match tokio::fs::File::open(
+        app.root
+            .join("data/attachments")
+            .join(row.get::<String, _>("storage_key")),
+    )
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => return db_error(e),
+    };
+    (
+        [
+            ("content-type", row.get::<String, _>("media_type")),
+            (
+                "content-length",
+                row.get::<i64, _>("size_bytes").to_string(),
+            ),
+            ("x-content-type-options", "nosniff".into()),
+            ("cross-origin-resource-policy", "same-origin".into()),
+            ("cache-control", "private, no-store".into()),
+        ],
+        axum::body::Body::from_stream(tokio_util::io::ReaderStream::new(file)),
+    )
+        .into_response()
+}
+
+/// Retrieve one durable run without mixing its result with later continuous-chat turns.
+pub async fn run_state(
+    State(app): State<Shared>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let request: wire::ChatRunRequest = match decode(&app, &headers, body) {
+        Ok(v) => v,
+        Err(e) => return e.into(),
+    };
+    let Ok(id) = Uuid::parse_str(&request.run_id) else {
+        return error(StatusCode::BAD_REQUEST, "invalid_run", "任务不存在");
+    };
+    let row=match sqlx::query("SELECT r.id,r.conversation_id,r.status,r.error,r.loop_state,EXISTS(SELECT 1 FROM harness_events e WHERE e.message_id=m.id AND e.content=m.text AND e.status='failed' AND (e.kind='system_error' OR (e.kind='summary' AND e.title='连接重试'))) recorded_retry,r.agent_id,r.agent_name,r.device_id,COALESCE((extract(epoch FROM r.next_wake_at)*1000)::bigint,0) next_wake_at_ms,m.id AS message_id,m.text FROM runs r JOIN messages m ON m.id=r.assistant_message_id JOIN conversations c ON c.id=r.conversation_id WHERE r.id=$1 AND c.owner_id='local-user'").bind(id).fetch_optional(&app.db).await { Ok(Some(r))=>r, Ok(None)=>return error(StatusCode::NOT_FOUND,"not_found","任务不存在"), Err(e)=>return db_error(e) };
+    let notice_kind = crate::run_notice::kind(
+        row.get("status"),
+        row.get("error"),
+        &row.get::<Value, _>("loop_state"),
+    );
+    let (text, system_notice) = crate::run_notice::message(
+        "assistant",
+        row.get("text"),
+        row.get("error"),
+        notice_kind,
+        row.get::<bool, _>("recorded_retry")
+            || crate::run_notice::legacy_pause(row.get("text"), &row.get::<Value, _>("loop_state")),
+    );
+    pb(
+        StatusCode::OK,
+        wire::ChatState {
+            notice_kind: notice_kind as i32,
+            conversation_id: row.get::<Uuid, _>("conversation_id").to_string(),
+            run_id: id.to_string(),
+            device_id: row.get("device_id"),
+            agent_id: row
+                .get::<Option<Uuid>, _>("agent_id")
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
+            agent_name: row.get("agent_name"),
+            run_status: row.get("status"),
+            error: row.get("error"),
+            next_wake_at_ms: row.get("next_wake_at_ms"),
+            messages: vec![wire::ChatMessage {
+                id: row.get::<Uuid, _>("message_id").to_string(),
+                run_id: id.to_string(),
+                role: "assistant".into(),
+                text,
+                system_notice,
+                attachments: vec![],
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
+    )
+}
+
+#[cfg(test)]
+mod steering_tests {
+    use super::*;
+    use futures_util::FutureExt;
+    use sqlx::Connection;
+    use std::{panic::AssertUnwindSafe, str::FromStr};
+
+    async fn submit(app: &Shared, request: &wire::ChatSendRequest) -> (StatusCode, Vec<u8>) {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "authorization",
+            "Bearer test-private-token".parse().unwrap(),
+        );
+        headers.insert("content-type", MEDIA.parse().unwrap());
+        let response = send(
+            State(app.clone()),
+            headers,
+            Ok(Bytes::from(request.encode_to_vec())),
+        )
+        .await;
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), 1_000_000)
+            .await
+            .unwrap();
+        (status, bytes.to_vec())
+    }
+
+    #[tokio::test]
+    #[ignore = "requires AI_PHONE_TEST_DATABASE_URL; creates and removes its own isolated database"]
+    async fn running_inputs_are_durable_scoped_and_idempotent() {
+        let url =
+            std::env::var("AI_PHONE_TEST_DATABASE_URL").expect("test database URL is required");
+        let name = format!("aiphone_steering_test_{}", Uuid::new_v4().simple());
+        let mut admin = sqlx::PgConnection::connect(&url).await.unwrap();
+        sqlx::query(&format!("CREATE DATABASE {name}"))
+            .execute(&mut admin)
+            .await
+            .unwrap();
+        let options = PgConnectOptions::from_str(&url).unwrap().database(&name);
+        let db = PgPoolOptions::new()
+            .max_connections(4)
+            .connect_with(options)
+            .await
+            .unwrap();
+        let root = std::env::temp_dir().join(&name);
+        let attachments = root.join("data/attachments");
+        tokio::fs::create_dir_all(&attachments).await.unwrap();
+        let test_db = db.clone();
+        let app = Arc::new(App {
+            db,
+            root: root.clone(),
+            token: "test-private-token".into(),
+            phone_token: "test-phone-token".into(),
+            settings: settings::SettingsStore::test_configured(&root),
+            local: reqwest::Client::new(),
+            remote: reqwest::Client::new(),
+            active: Mutex::new(Default::default()),
+            run_signals: Default::default(),
+            login_attempts: Mutex::new(Vec::new()),
+            workspace_init: Mutex::new(None),
+            location_mutation: Mutex::new(()),
+            network_mutation: Mutex::new(()),
+        });
+        let outcome = AssertUnwindSafe(async {
+            sqlx::migrate!("./migrations").run(&app.db).await.unwrap();
+            let original = wire::ChatSendRequest { text: "开始处理工作".into(), request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            let (status, bytes) = submit(&app, &original).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let original_state = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            let run = Uuid::parse_str(&original_state.run_id).unwrap();
+            assert_eq!(original_state.messages.len(), 2);
+            let receipt = wire::ChatSendRequest { receipt_only: true, ..original.clone() };
+            let (status, bytes) = submit(&app, &receipt).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let receipt = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.conversation_id, original_state.conversation_id);
+            assert_eq!(receipt.device_id, original_state.device_id);
+            assert_eq!(receipt.run_id, original_state.run_id);
+            assert_eq!(receipt.messages, [original_state.messages[0].clone()]);
+            sqlx::query("UPDATE runs SET status='running',control_epoch=8,next_wake_at=now()+interval '1 hour' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            assert!(state(&app, Uuid::parse_str(&original_state.conversation_id).unwrap()).await.unwrap().next_wake_at_ms > 0);
+
+            let text_id = Uuid::new_v4();
+            let image_id = Uuid::new_v4();
+            let text_key = text_id.to_string();
+            let image_key = image_id.to_string();
+            let image = STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6u8AAAAASUVORK5CYII=").unwrap();
+            tokio::fs::write(attachments.join(&text_key), "中文附件 ✅").await.unwrap();
+            tokio::fs::write(attachments.join(&image_key), &image).await.unwrap();
+            for (id, key, media, size) in [(text_id, &text_key, "text/plain", "中文附件 ✅".len()), (image_id, &image_key, "image/png", image.len())] {
+                sqlx::query("INSERT INTO attachments(id,name,media_type,size_bytes,storage_key) VALUES($1,$2,$3,$4,$5)").bind(id).bind(key).bind(media).bind(size as i64).bind(key).execute(&app.db).await.unwrap();
+            }
+            let steer = wire::ChatSendRequest { text: "改成新的处理顺序".into(), attachment_ids: vec![text_id.to_string(), image_id.to_string().to_uppercase()], request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            let (status, bytes) = submit(&app, &wire::ChatSendRequest { receipt_only: true, ..steer.clone() }).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let receipt = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.run_id, original_state.run_id);
+            assert_eq!(receipt.messages.len(), 1);
+            assert_eq!(receipt.messages[0].attachments.len(), 2);
+            let (status, bytes) = submit(&app, &steer).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let value = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(receipt.messages[0], *value.messages.iter().find(|message| message.request_id == steer.request_id).unwrap());
+            assert_eq!(value.run_id, original_state.run_id);
+            assert_eq!(value.messages.len(), 3);
+            assert_eq!(value.run_status, "running");
+            assert_eq!(value.next_wake_at_ms, 0);
+            let queue: Value = sqlx::query_scalar("SELECT steering FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            assert_eq!(queue.as_array().unwrap().len(), 1);
+            assert_eq!(queue[0]["id"], steer.request_id);
+            assert_eq!(queue[0]["input"]["role"], "user");
+            assert!(queue[0]["created_at"].as_str().unwrap().contains('T'));
+            let content = queue[0]["input"]["content"].as_array().unwrap();
+            assert_eq!(content.len(), 3);
+            assert!(content[1]["text"].as_str().unwrap().contains("中文附件 ✅"));
+            assert_eq!(content[2]["image_url"], format!("data:image/png;base64,{}", STANDARD.encode(&image)));
+            let (status, bytes) = submit(&app, &steer).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            assert_eq!(wire::ChatState::decode(bytes.as_slice()).unwrap().messages.len(), 3);
+            let count: i64 = sqlx::query_scalar("SELECT count(*) FROM run_inputs").fetch_one(&app.db).await.unwrap();
+            assert_eq!(count, 1);
+            let mut conflict = steer.clone(); conflict.text = "不能换参数重放".into();
+            assert_eq!(submit(&app, &conflict).await.0, StatusCode::CONFLICT);
+
+            let other = Uuid::new_v4();
+            sqlx::query("INSERT INTO attachments(id,owner_id,name,media_type,size_bytes,storage_key) VALUES($1,'someone-else','other','text/plain',1,'other')").bind(other).execute(&app.db).await.unwrap();
+            let mut invalid = wire::ChatSendRequest { text: "不应接受未授权附件".into(), attachment_ids: vec![other.to_string()], request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            assert_eq!(submit(&app, &invalid).await.0, StatusCode::BAD_REQUEST);
+            invalid.attachment_ids = vec![text_id.to_string()]; invalid.request_id = Uuid::new_v4().to_string();
+            sqlx::query("UPDATE attachments SET storage_key='../escape.txt' WHERE id=$1").bind(text_id).execute(&app.db).await.unwrap();
+            assert_eq!(submit(&app, &invalid).await.0, StatusCode::BAD_REQUEST);
+            sqlx::query("UPDATE attachments SET storage_key=$2 WHERE id=$1").bind(text_id).bind(&text_key).execute(&app.db).await.unwrap();
+
+            sqlx::query("UPDATE runs SET context=$2,pending_tools=$3 WHERE id=$1").bind(run)
+                .bind(json!([{"role":"user","content":"original goal"},{"type":"function_call_output","call_id":"verified-action","output":"verified result"}]))
+                .bind(json!([{"call_id":"unknown-action","name":"computer_click","arguments":"{}"}]))
+                .execute(&app.db).await.unwrap();
+            let context_before: Value = sqlx::query_scalar("SELECT context FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            let pending_before: Value = sqlx::query_scalar("SELECT pending_tools FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            let messages_before: i64 = sqlx::query_scalar("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET status='paused',loop_state=$2 WHERE id=$1").bind(run).bind(json!({"stalls":3,"recent_results":["verified-action"],"plan":{"goal":"current task"}})).execute(&app.db).await.unwrap();
+            assert_eq!(resume_paused(&app, run).await.unwrap(), Some(Uuid::parse_str(&original_state.conversation_id).unwrap()));
+            let resumed = sqlx::query("SELECT context,pending_tools,loop_state FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            assert_eq!(resumed.get::<Value,_>("context"), context_before);
+            assert_eq!(resumed.get::<Value,_>("pending_tools"), pending_before);
+            let loop_state: Value = resumed.get("loop_state");
+            assert_eq!(loop_state["resume_requested"], true);
+            assert_eq!(loop_state["stalls"], 0);
+            assert_eq!(loop_state["recent_results"], json!(["verified-action"]));
+            assert_eq!(loop_state["plan"], json!({"goal":"current task"}));
+            assert_eq!(sqlx::query_scalar::<_,i64>("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap(), messages_before);
+            assert_eq!(resume_paused(&app, run).await.unwrap(), None, "an already queued resume cannot enqueue another entry notice");
+
+            sqlx::query("UPDATE runs SET status='paused',next_wake_at=now()+interval '1 hour' WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            let resume = wire::ChatSendRequest { text: "按这条指令继续".into(), request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            let (status, bytes) = submit(&app, &resume).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let value = wire::ChatState::decode(bytes.as_slice()).unwrap();
+            assert_eq!(value.run_status, "queued"); assert_eq!(value.next_wake_at_ms, 0);
+            let epoch: i64 = sqlx::query_scalar("SELECT control_epoch FROM runs WHERE id=$1").bind(run).fetch_one(&app.db).await.unwrap();
+            assert_eq!(epoch, 0);
+
+            let before: i64 = sqlx::query_scalar("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap();
+            sqlx::query("UPDATE runs SET steering=(SELECT jsonb_agg(jsonb_build_object('id',n)) FROM generate_series(1,32)n) WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            let full = wire::ChatSendRequest { text: "超过队列上限".into(), request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            assert_eq!(submit(&app, &full).await.0, StatusCode::TOO_MANY_REQUESTS);
+            let after: i64 = sqlx::query_scalar("SELECT count(*) FROM messages").fetch_one(&app.db).await.unwrap();
+            assert_eq!(before, after);
+            sqlx::query("UPDATE runs SET status='succeeded',next_wake_at=NULL WHERE id=$1").bind(run).execute(&app.db).await.unwrap();
+            let later = wire::ChatSendRequest { text: "另一个任务".into(), request_id: Uuid::new_v4().to_string(), ..Default::default() };
+            let (_, bytes) = submit(&app, &later).await;
+            assert_ne!(wire::ChatState::decode(bytes.as_slice()).unwrap().run_id, original_state.run_id);
+            for request in [&original, &steer] {
+                let (status, bytes) = submit(&app, request).await;
+                assert_eq!(status, StatusCode::ACCEPTED);
+                let result = wire::ChatState::decode(bytes.as_slice()).unwrap();
+                assert_eq!(result.run_id, original_state.run_id);
+                assert_eq!(result.run_status, "succeeded");
+            }
+            let assistants: i64 = sqlx::query_scalar("SELECT count(*) FROM messages WHERE role='assistant'").fetch_one(&app.db).await.unwrap();
+            assert_eq!(assistants, 2);
+            let conversation = Uuid::parse_str(&original_state.conversation_id).unwrap();
+            sqlx::query("INSERT INTO messages(id,conversation_id,role,text) SELECT gen_random_uuid(),$1,'user',repeat('historical message ',20) FROM generate_series(1,100)").bind(conversation).execute(&app.db).await.unwrap();
+            let (status, full) = submit(&app, &original).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            let (status, compact) = submit(&app, &wire::ChatSendRequest { receipt_only: true, ..original }).await;
+            assert_eq!(status, StatusCode::ACCEPTED);
+            assert_eq!(wire::ChatState::decode(compact.as_slice()).unwrap().messages.len(), 1);
+            assert!(compact.len() < full.len());
+            println!("100 historical messages: full response {} bytes, receipt {} bytes", full.len(), compact.len());
+        }).catch_unwind().await;
+        drop(app);
+        test_db.close().await;
+        sqlx::query(&format!("DROP DATABASE {name} WITH (FORCE)"))
+            .execute(&mut admin)
+            .await
+            .unwrap();
+        tokio::fs::remove_dir_all(&root).await.unwrap();
+        if let Err(error) = outcome {
+            std::panic::resume_unwind(error);
+        }
+    }
+}

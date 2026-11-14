@@ -1,0 +1,10 @@
+#!/system/bin/sh
+# Root CLI follows the device-local Clash app while its default proxy is listening.
+if [ "$(id -u)" = 0 ]; then
+  if [ -f /data/local/ai-phone-network/app-managed ] && ss -ltn | grep -q ':7890 '; then
+    set -- --proxy http://127.0.0.1:7890 "$@"
+  elif [ -f /data/local/ai-phone-network/enabled ]; then
+    set -- --proxy http://127.0.0.1:17890 "$@"
+  fi
+fi
+exec /data/local/ai-phone/bin/curl -4 "$@"

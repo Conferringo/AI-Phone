@@ -1,0 +1,28 @@
+{
+  "version": "v1.19.33",
+  "source": "https://github.com/MetaCubeX/mihomo",
+  "license": "GPL-3.0-only",
+  "assets": {
+    "android-arm64": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-android-arm64-v8-v1.19.33.gz",
+      "sha256": "2ddbd3aaa884f52b4568f406876ec81dddeef9f1bb67b90d4004d356e2c6a708",
+      "binary_sha256": "cfa0be78846bfef7272fe5a73089f8cf0e1f15a6ffb601f5cc809f457f712f67"
+    },
+    "linux-arm64": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-arm64-v1.19.33.gz",
+      "sha256": "ba408b317080ee265c46cb923a50018c1b82cbd708551cdd46a1e3e307396187",
+      "binary_sha256": "8c73570d9a5f388bc2f58eee0b347ccfab84fb3cf1a0f8f2cf5eac7005fbcdc0"
+    }
+  },
+  "geoip": {
+    "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/f57214884b79e6e6770d753950b81242dd7f2541/country.mmdb",
+    "sha256": "ccec4d6fa69de3a79960a460c377ac9a23c1a90e5f9052dae3488921e56201df",
+    "source": "https://github.com/MetaCubeX/meta-rules-dat",
+    "commit": "f57214884b79e6e6770d753950b81242dd7f2541"
+  },
+  "verification_download": {
+    "url": "https://raw.githubusercontent.com/MetaCubeX/mihomo/v1.19.33/LICENSE",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "size_bytes": 35149
+  }
+}

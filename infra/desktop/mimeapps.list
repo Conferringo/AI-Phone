@@ -1,0 +1,4 @@
+[Default Applications]
+text/plain=org.xfce.mousepad.desktop;
+text/markdown=org.xfce.mousepad.desktop;
+text/x-markdown=org.xfce.mousepad.desktop;

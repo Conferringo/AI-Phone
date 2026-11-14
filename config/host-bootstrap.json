@@ -1,0 +1,43 @@
+{
+  "format": 1,
+  "minimum_ram_gb": 12,
+  "minimum_free_gb": 35,
+  "minimum_resume_free_gb": 2,
+  "hosts": {
+    "macos-arm64": {
+      "phone_abi": "arm64-v8a",
+      "phone_template": "android35-arm64",
+      "lima": "macos-arm64",
+      "sdk": "macos-arm64",
+      "image": "macos-arm64",
+      "vm_type": "vz",
+      "vm_arch": "aarch64"
+    }
+  },
+  "lima_hosts": {
+    "macos-arm64": {
+      "url": "https://github.com/lima-vm/lima/releases/download/v2.2.1/lima-2.2.1-Darwin-arm64.tar.gz",
+      "sha256": "9e9eacce88f37e185c346bad73aa6136f738d8cdf8c3bb23cd42b071824bc66e"
+    }
+  },
+  "sdk_hosts": {
+    "macos-arm64": {
+      "url": "https://dl.google.com/android/repository/commandlinetools-mac-13114758_latest.zip",
+      "sha256": "5673201e6f3869f418eeed3b5cb6c4be7401502bd0aae1b12a29d164d647a54e"
+    },
+    "linux-x64": {
+      "url": "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip",
+      "sha256": "7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee"
+    }
+  },
+  "container_hosts": {
+    "macos-arm64": {
+      "url": "https://cloud-images.ubuntu.com/releases/resolute/release-20260927/ubuntu-26.04-server-cloudimg-arm64.img",
+      "sha256": "63a93bd5a8d76e33b15ceb5daa3657bd79be804748051ab178e643b0f5da22e7"
+    },
+    "linux-x64": {
+      "url": "https://cloud-images.ubuntu.com/releases/resolute/release-20260927/ubuntu-26.04-server-cloudimg-amd64.img",
+      "sha256": "8800651811af9a85465ad1d552add729947bb16488dddb4a9b5305a3d97332b2"
+    }
+  }
+}

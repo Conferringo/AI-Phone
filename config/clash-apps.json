@@ -1,0 +1,40 @@
+{
+  "android": {
+    "version": "v2.11.36",
+    "source": "https://github.com/MetaCubeX/ClashMetaForAndroid",
+    "url": "https://github.com/MetaCubeX/ClashMetaForAndroid/releases/download/v2.11.36/cmfa-2.11.36-meta-arm64-v8a-release.apk",
+    "sha256": "7da3083c16af676f9a3e478e3f42098b91803cbd7cb637bff4117d4d50360f95",
+    "file": "cmfa-2.11.36-meta-arm64-v8a-release.apk",
+    "size_bytes": 47623688,
+    "signer_sha256": "5f5571af767fe0f611292aa088b445a05f725fb8262fb80a13b69e4d809ae1f1"
+  },
+  "linux": {
+    "version": "v2.4.2",
+    "source": "https://github.com/clash-verge-rev/clash-verge-rev",
+    "source_commit": "5dca724017278d441cad567da19bff9862a5b868",
+    "url": "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.2/Clash.Verge_2.4.2_arm64.deb",
+    "file": "Clash.Verge_2.4.2_arm64.deb",
+    "sha256": "fbeaf6bd7f3e02fbd4df51ca0fa22eca70893a3dab9731073b215d1b3a513ed7",
+    "size_bytes": 48451360
+  },
+  "alternatives": {
+    "android-x86_64": {
+      "version": "v2.11.36",
+      "source": "https://github.com/MetaCubeX/ClashMetaForAndroid",
+      "url": "https://github.com/MetaCubeX/ClashMetaForAndroid/releases/download/v2.11.36/cmfa-2.11.36-meta-x86_64-release.apk",
+      "sha256": "aa70600b1cdc4211b8fd314d44d32c830c2bd60ef1c4185457b9eb17a17ec83e",
+      "file": "cmfa-2.11.36-meta-x86_64-release.apk",
+      "size_bytes": 49543854,
+      "signer_sha256": "5f5571af767fe0f611292aa088b445a05f725fb8262fb80a13b69e4d809ae1f1"
+    },
+    "linux-amd64": {
+      "version": "v2.4.2",
+      "source": "https://github.com/clash-verge-rev/clash-verge-rev",
+      "source_commit": "5dca724017278d441cad567da19bff9862a5b868",
+      "url": "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.2/Clash.Verge_2.4.2_amd64.deb",
+      "file": "Clash.Verge_2.4.2_amd64.deb",
+      "sha256": "586ff5793ac363e98bbef975675a1d66dac1932dfb944fb564d6c0423a697690",
+      "size_bytes": 50223894
+    }
+  }
+}

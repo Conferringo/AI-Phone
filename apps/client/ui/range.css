@@ -1,0 +1,78 @@
+.spring-range {
+  --range-thumb-width: 12px;
+  --range-thumb-height: 16px;
+  position: relative;
+  min-inline-size: 0;
+}
+
+.spring-range > input {
+  display: block;
+  inline-size: 100%;
+  block-size: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.spring-range > input:active { cursor: grabbing; }
+.spring-range > input:focus-visible { outline: 2px solid #595959; outline-offset: 2px; }
+.spring-range > input:disabled { cursor: default; }
+.spring-range > input:disabled + .spring-range__rail { opacity: .5; }
+
+.spring-range > input::-webkit-slider-runnable-track {
+  block-size: var(--range-thumb-height);
+  background: transparent;
+}
+
+.spring-range > input::-webkit-slider-thumb {
+  inline-size: var(--range-thumb-width);
+  block-size: var(--range-thumb-height);
+  border: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.spring-range > input::-moz-range-track { background: transparent; }
+.spring-range > input::-moz-range-thumb {
+  inline-size: var(--range-thumb-width);
+  block-size: var(--range-thumb-height);
+  border: 0;
+  background: transparent;
+}
+
+.spring-range__rail {
+  position: absolute;
+  inset-inline: calc(var(--range-thumb-width) / 2);
+  inset-block-start: 50%;
+  block-size: 4px;
+  border-radius: 1px;
+  background: #dedede;
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+.spring-range__thumb {
+  position: absolute;
+  inset-inline-start: var(--range-progress, 0%);
+  inset-block-start: 50%;
+  inline-size: var(--range-thumb-width);
+  block-size: var(--range-thumb-height);
+  margin-inline-start: calc(var(--range-thumb-width) / -2);
+  border-radius: 4px;
+  background: #171717;
+  translate: 0 -50%;
+}
+
+@media (forced-colors: active) {
+  .spring-range > input:focus-visible { outline-color: Highlight; }
+  .spring-range__rail, .spring-range__thumb { forced-color-adjust: none; }
+  .spring-range__rail { background: GrayText; }
+  .spring-range__thumb { background: CanvasText; }
+}

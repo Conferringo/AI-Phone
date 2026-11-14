@@ -1,0 +1,132 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message NativeVoiceStart {
+  string language = 1;
+}
+message NativeVoiceAudio {
+  // Full utterance, mono PCM16 at 16 kHz. Decoded by the client host.
+  bytes pcm16 = 1;
+}
+message NativeVoiceRequest {
+  string session_id = 1;
+  oneof action {
+    NativeVoiceStart start = 2;
+    NativeVoiceAudio audio = 3;
+    bool stop = 4;
+  }
+}
+message NativeVoiceResponse {
+  string text = 1;
+  uint32 inference_ms = 2;
+}
+
+enum VoiceInputProtocol {
+  VOICE_INPUT_PROTOCOL_UNSPECIFIED = 0;
+  VOICE_INPUT_PROTOCOL_TRANSCRIPTION = 1;
+  // One audio-capable chat request returns literal speech and a semantic edit.
+  VOICE_INPUT_PROTOCOL_AUDIO_CHAT = 2;
+  // Persistent server-side transcription WebSocket; the chat Agent stays independent.
+  VOICE_INPUT_PROTOCOL_REALTIME_TRANSCRIPTION = 3;
+}
+message VoiceDraft {
+  string base_url = 1;
+  string api_key = 2;
+  string recognition_model = 3;
+  string speech_model = 4;
+  string voice = 5;
+  string proxy_url = 6;
+  VoiceInputProtocol input_protocol = 7;
+}
+message VoiceSettingsRequest { string agent_id = 1; }
+message VoiceSettings {
+  string agent_id = 1;
+  uint64 revision = 2;
+  bool configured = 3;
+  string base_url = 4;
+  string recognition_model = 5;
+  string speech_model = 6;
+  string voice = 7;
+  string proxy_url = 8;
+  VoiceInputProtocol input_protocol = 9;
+  bool has_api_key = 10;
+}
+message VoiceSettingsSaveRequest {
+  string agent_id = 1;
+  uint64 expected_revision = 2;
+  // An empty draft clears voice configuration without deleting its revision.
+  VoiceDraft draft = 3;
+}
+message VoiceCredentialRequest { string agent_id = 1; uint64 expected_revision = 2; }
+message VoiceCredential { string api_key = 1; }
+message VoiceContext {
+  string request_id = 1;
+  string literal = 2;
+  string text = 3;
+}
+message VoiceTranscribeRequest {
+  string device_id = 1;
+  string agent_id = 2;
+  uint64 configuration_revision = 3;
+  string session_id = 4;
+  string utterance_id = 5;
+  // 16 kHz mono PCM16 WAV, at most 30 seconds per chunk.
+  bytes wav = 6;
+  string previous_text = 7;
+  repeated VoiceContext context = 8;
+}
+message VoiceTranscript {
+  string literal = 1;
+  // For transcription this equals the literal; audio-chat may return an edit.
+  string text = 2;
+  // Only a receipt supplied in this same capture session's context is accepted.
+  string corrects_request_id = 3;
+}
+message VoiceSpeechRequest {
+  string device_id = 1;
+  string agent_id = 2;
+  uint64 configuration_revision = 3;
+  string text = 4;
+}
+// One synthesis request per WebSocket. Closing it cancels generation and playback.
+message VoiceSpeechStreamOutput {
+  oneof event {
+    bytes wav_chunk = 1;
+    bool done = 2;
+    VoiceStreamError error = 3;
+  }
+}
+
+message VoiceStreamStart {
+  string device_id = 1;
+  string agent_id = 2;
+  uint64 configuration_revision = 3;
+  string session_id = 4;
+}
+message VoiceStreamAudio {
+  string utterance_id = 1;
+  // Little-endian mono PCM16 at 16 kHz; no WAV header. Maximum 100 ms per frame.
+  bytes pcm16 = 2;
+}
+message VoiceStreamCommit { string utterance_id = 1; }
+message VoiceStreamInput {
+  oneof event {
+    VoiceStreamStart start = 1;
+    VoiceStreamAudio audio = 2;
+    VoiceStreamCommit commit = 3;
+  }
+}
+message VoiceStreamTranscript {
+  string utterance_id = 1;
+  uint32 revision = 2;
+  string text = 3;
+  bool final = 4;
+}
+message VoiceStreamError { string message = 1; }
+message VoiceStreamOutput {
+  oneof event {
+    bool ready = 1;
+    VoiceStreamTranscript transcript = 2;
+    VoiceStreamError error = 3;
+  }
+}

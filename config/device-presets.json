@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "limits": {"phone": 1, "desktop": 1},
+  "templates": [
+    {"id":"android35-arm64","kind":"phone","system":"Android 15","arch":"arm64","provider":"android-emulator","package":"system-images;android-35;default;arm64-v8a","available":true,"cpus":2,"memory_mb":2048,"storage_gb":16,"width":720,"height":1440,"density":320},
+    {"id":"debian13-openbox","kind":"desktop","system":"Debian 13 · Openbox","arch":"arm64","provider":"docker-desktop","available":true,"cpus":2,"memory_mb":2560,"storage_policy":"host-backed-quota-pending","width":1280,"height":800},
+    {"id":"fedora-xfce","kind":"desktop","system":"Fedora · Xfce","available":false,"reason":"image pinning, boot and input verification pending"}
+  ],
+  "identities": [
+    {"id":"aiphone","name":"AI Phone","brand":"AI Phone","manufacturer":"AI Phone","model":"Phone 2","device":"aiphone2","scope":"display-properties"},
+    {"id":"xiaomi8","name":"小米 8","brand":"Xiaomi","manufacturer":"Xiaomi","model":"MI 8","device":"dipper","scope":"display-properties"}
+  ]
+}

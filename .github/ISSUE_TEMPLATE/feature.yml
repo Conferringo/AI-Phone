@@ -1,0 +1,20 @@
+name: Feature
+description: Propose a change
+title: '[Feature] '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Affected devices and platforms
