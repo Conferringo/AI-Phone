@@ -1,0 +1,166 @@
+name: Windows Beryllium offline installer
+on:
+  push:
+    branches: [codex/beryllium-windows-build]
+    paths: [.github/workflows/windows-beryllium-build.yml]
+permissions:
+  contents: read
+  actions: read
+env:
+  BERYLLIUM_SOURCE: '914f402644eaa858a1af876c207eb359eda45327'
+  BERYLLIUM_INPUTS_RUN: '43591568188'
+jobs:
+  linux-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+      AI_PHONE_TEST_TESSERACT: /usr/bin/tesseract
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ env.BERYLLIUM_SOURCE }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Set up the Windows Linux guest toolchain
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$(uname -m)" = x86_64
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup "$ANDROID_HOME/ndk"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends e2fsprogs qemu-utils cpio \
+            build-essential pkg-config libssl-dev unzip tesseract-ocr tesseract-ocr-eng tesseract-ocr-chi-sim
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          rustup target add x86_64-unknown-linux-musl
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          ./scripts/bootstrap.sh
+          ./scripts/bun scripts/source.ts check --repository --manifest
+      - uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: aimanity-beryllium-ocr
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Build source-matched native services, web, Android helpers, and offline OCR
+        run: |
+          ./scripts/bun scripts/prepare-ocr-models.ts --destination "$RUNNER_TEMP/tessdata"
+          export AI_PHONE_TEST_TESSDATA="$RUNNER_TEMP/tessdata"
+          ./scripts/bun scripts/artifacts.ts native
+          ./scripts/bun scripts/artifacts.ts phone --build
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER="$(rustc --print sysroot)/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld"
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clinker-flavor=ld.lld --remap-path-prefix=$HOME=/build-user"
+          cargo build --locked --release -p ai-phone-guest-runtime --bin desktop-bridge --target x86_64-unknown-linux-musl
+          export AI_PHONE_RELEASE_DESKTOP_BRIDGE="$PWD/target/x86_64-unknown-linux-musl/release/desktop-bridge"
+          ./scripts/bun -e 'import {buildFactoryDependency} from "./scripts/tooling/factory-inputs"; await buildFactoryDependency(process.cwd(), process.env.RUNNER_TEMP + "/ocr-context", process.env.RUNNER_TEMP + "/ocr", "linux-ocr");'
+          ./scripts/bun run build
+          ./scripts/bun scripts/prepare-client.ts --with-web-runtime --with-service-runtime --with-phone-apps --linux-ocr "$RUNNER_TEMP/ocr"
+          mkdir "$RUNNER_TEMP/compiled"
+          cp apps/client/src-tauri/gen/host/source.payload "$RUNNER_TEMP/compiled/"
+          cp target/release/ai-phone-assistant "$RUNNER_TEMP/compiled/bootstrap.program"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          run-id: ${{ env.BERYLLIUM_INPUTS_RUN }}
+          github-token: ${{ github.token }}
+          name: beryllium-windows-linux-inputs
+          path: ${{ runner.temp }}/linux-inputs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          run-id: ${{ env.BERYLLIUM_INPUTS_RUN }}
+          github-token: ${{ github.token }}
+          name: beryllium-windows-immutable-inputs
+          path: ${{ runner.temp }}/immutable
+      - name: Assemble the Windows release partition
+        run: |
+          work="$RUNNER_TEMP"; qemu="$work/immutable/host/qemu"
+          (cd "$work/linux-inputs" && sha256sum -c guest.sha256 -c images.sha256)
+          read -r base _ < "$work/linux-inputs/guest.sha256"
+          printf '%s  %s\n' "$base" "$work/linux-inputs/guest.qcow2" | sha256sum -c -
+          mv "$work/linux-inputs/guest.qcow2" "$qemu/guest/guest.qcow2"
+          bash scripts/windows-release-layer.sh "$work/compiled" "$work/immutable" "$qemu/guest" "$work/linux-inputs/images.payload"
+          sha() { sha256sum "$1" | cut -d ' ' -f1; }
+          jq --arg source "$(git rev-parse HEAD)" --arg source_manifest "$(sha SOURCE-MANIFEST.json)" \
+            --arg release "$(sha "$work/compiled/source.payload")" --arg base "$base" \
+            --arg init "$(sha "$qemu/guest/release-init.cpio.gz")" --arg ext "$(sha "$qemu/guest/release.ext4")" \
+            --argjson basesize "$(stat -c %s "$qemu/guest/guest.qcow2")" \
+            --argjson initsize "$(stat -c %s "$qemu/guest/release-init.cpio.gz")" \
+            --argjson extsize "$(stat -c %s "$qemu/guest/release.ext4")" '
+            .source_commit=$source | .source_manifest_sha256=$source_manifest | .release_sha256=$release |
+            .guest.disk.sha256=$base | .guest.disk.size=$basesize |
+            .files |= map(if .path=="guest/guest.qcow2" then .sha256=$base|.size=$basesize
+                          elif .path=="guest/release-init.cpio.gz" then .sha256=$init|.size=$initsize
+                          elif .path=="guest/release.ext4" then .sha256=$ext|.size=$extsize else . end)' \
+            "$qemu/manifest.json" > "$qemu/manifest.new"
+          mv "$qemu/manifest.new" "$qemu/manifest.json"
+          rm "$work/immutable/host/android.payload"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: beryllium-assembled-windows-qemu
+          path: ${{ runner.temp }}/immutable/host/qemu/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
+  windows-exe:
+    needs: linux-release
+    runs-on: windows-2025
+    timeout-minutes: 85
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_HTTP_MULTIPLEXING: 'false'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          ref: ${{ env.BERYLLIUM_SOURCE }}
+      - name: Pin the native Build Tools
+        shell: bash
+        run: |
+          cmake --version
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+          cargo build --locked -p ai-phone-release-tools --bin release-tools
+          ./scripts/bun scripts/source.ts check --repository --manifest
+      - name: Prepare Authenticode tooling
+        shell: pwsh
+        run: |
+          & C:\msys64\usr\bin\bash.exe -lc 'pacman -Sy --needed --noconfirm mingw-w64-ucrt-x86_64-osslsigncode mingw-w64-ucrt-x86_64-openssl'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          'C:\msys64\ucrt64\bin' >> $env:GITHUB_PATH
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          run-id: ${{ env.BERYLLIUM_INPUTS_RUN }}
+          github-token: ${{ github.token }}
+          name: beryllium-windows-immutable-inputs
+          path: dist/immutable
+      - name: Prepare the Android component and launcher resources
+        run: ./.tools/bin/bun.exe scripts/prepare-client.ts --android-runtime dist/immutable/host/android.payload
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: beryllium-assembled-windows-qemu
+          path: apps/client/src-tauri/gen/host/qemu
+      - name: Build and temporarily sign the complete Windows EXE
+        shell: bash
+        run: |
+          ./scripts/bun -e 'import {join} from "node:path"; import {json,save} from "./scripts/tooling/inventory"; import {ROOT,digest} from "./scripts/tooling/process"; import {buildConfig} from "./scripts/tooling/resources"; const host=join(ROOT,"apps/client/src-tauri/gen/host"), file=join(host,"integrity.json"); const integrity=json(file); integrity["qemu/manifest.json"]=await digest(join(host,"qemu/manifest.json")); save(file,integrity); buildConfig(ROOT);'
+          ./scripts/bun -e 'import {windowsCargo, buildClient} from "./scripts/tooling/client-build"; windowsCargo("build"); console.log(JSON.stringify(await buildClient("windows",undefined,{packageOnly:true,temporarySigning:true})));'
+          test "$(stat -c %s dist/AImanity-*-windows-x64-setup.exe)" -lt 2147483648
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: beryllium-windows-signed-exe
+          path: |
+            dist/AImanity-*-windows-x64-setup.exe
+            dist/AImanity-*-windows-x64-setup.exe.manifest.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
