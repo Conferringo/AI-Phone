@@ -400,7 +400,7 @@ try {
     equal(fromBinary(FileManageResultSchema, new Uint8Array(await copy.arrayBuffer())).results[0]?.error, "", "wrote prior Linux overlay file through workbench");
     android("shell", `printf %s '${expectedName}' > /sdcard/Download/${expectedName}`);
     const updatePattern = "AImanity-0.0.2-windows-x64-setup.exe";
-    const updateFolder = join(appData, "dev.aiphone.client", "client-updates");
+    const updateFolder = process.env.AIMANITY_QA_UPDATE_CACHE!;
     mkdirSync(updateFolder, {recursive: true});
     const helperFile = join(updateFolder, "ai-phone-update-helper.exe");
     copyFileSync(program, helperFile);

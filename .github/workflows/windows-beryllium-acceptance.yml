@@ -64,10 +64,9 @@ jobs:
           [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true)]
           public static extern int SHSetKnownFolderPath(ref System.Guid folder, uint flags, System.IntPtr token, string path);
           '@
-          $local = [Guid]'F1B32785-6FBA-4FCF-9D55-7B8E7F157091'
-          $redirect = [Acceptance.ShellFolders]::SHSetKnownFolderPath([ref] $local, 0, [IntPtr]::Zero, $profile)
-          if ($redirect -ne 0) { throw "Cannot redirect the runner LocalAppData: $redirect" }
-          if ([Environment]::GetFolderPath('LocalApplicationData') -ne $profile) { throw "The isolated Windows profile did not become the LocalAppData known folder." }
+          $local = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'dev.aiphone.client/client-updates'
+          if (Test-Path $local) { throw 'The disposable runner already has an AImanity update cache.' }
+          "AIMANITY_QA_UPDATE_CACHE=$local" >> $env:GITHUB_ENV
           $roaming = [Guid]'3eb685db-65f9-4cf6-a03a-e3ef65729f3d'
           $redirect = [Acceptance.ShellFolders]::SHSetKnownFolderPath([ref] $roaming, 0, [IntPtr]::Zero, $profile)
           if ($redirect -ne 0) { throw "Cannot redirect the runner's RoamingAppData: $redirect" }
