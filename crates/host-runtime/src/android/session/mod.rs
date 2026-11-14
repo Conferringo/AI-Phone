@@ -12,6 +12,7 @@ mod windows_cuttlefish;
 #[cfg(target_os = "macos")]
 pub use avo::runtime as avo_runtime;
 pub use cli::run;
+use std::time::Duration;
 pub const CONTRACT: &str = "ai-phone-native-android-session-v1";
 pub(crate) async fn wait_serial(
     serial: String,
@@ -23,9 +24,9 @@ pub(crate) async fn wait_serial(
         serial,
     };
     if observe_only {
-        return readiness::existing(&adb, stop).await;
+        return readiness::existing(&adb, stop, Duration::from_secs(120)).await;
     }
-    let until = tokio::time::Instant::now() + std::time::Duration::from_secs(120);
+    let until = tokio::time::Instant::now() + Duration::from_secs(120);
     let mut root_requested = false;
     loop {
         readiness::cancelled(stop)?;
@@ -42,12 +43,14 @@ pub(crate) async fn wait_serial(
 pub(crate) async fn backend_observation(
     serial: &str,
 ) -> crate::Result<ai_phone_api::wire::NativeAndroidBooted> {
-    readiness::observe(
+    let (_owner, mut stop) = tokio::sync::watch::channel(false);
+    readiness::existing(
         &adb::Adb {
             port: 15037,
             serial: serial.into(),
         },
-        true,
+        &mut stop,
+        Duration::from_secs(10),
     )
     .await
 }

@@ -3,7 +3,7 @@ use super::{Error, Result, store};
 use ai_phone_api::wire::{
     NativeAndroidInputSetup, NativeWslDeviceSetupRequest, NativeWslDevicesReady,
 };
-use ai_phone_host_runtime::{android::input, device_bridge::paired_phone, native_ipc};
+use ai_phone_host_runtime::{android::input, device_bridge::paired_phone_serial, native_ipc};
 use std::path::{Path, PathBuf};
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
@@ -48,8 +48,7 @@ pub async fn run(cancelled: CancellationToken) -> Result<()> {
     if cancelled.is_cancelled() {
         return Err(Error("device_setup_cancelled_remote_may_continue"));
     }
-    let phone = paired_phone(&value.bridge_id)
-        .await
+    let serial = paired_phone_serial(&value.bridge_id)
         .map_err(|_| Error("wsl_device_setup_pair_unavailable"))?;
     let (end, stop) = watch::channel(false);
     let signal = cancelled.clone();
@@ -65,7 +64,7 @@ pub async fn run(cancelled: CancellationToken) -> Result<()> {
                 .ok_or(Error("wsl_device_setup_source"))?
                 .into(),
             adb_program: "/opt/aiphone/native-phone-bridge/platform-tools/adb".into(),
-            serial: phone.serial,
+            serial,
             apk_path: root
                 .join("runtime/phone-apps/input.apk")
                 .to_string_lossy()
@@ -82,12 +81,11 @@ pub async fn run(cancelled: CancellationToken) -> Result<()> {
     .await;
     watcher.abort();
     let _ = watcher.await;
-    initialized.map_err(|_| Error("wsl_device_setup_phone_unavailable"))?;
+    initialized.map_err(|error| Error(error.code()))?;
     let desktop = super::run(&root, cancelled.clone(), true).await?;
     // A lost/replaced bridge after provisioning cannot publish readiness. A retry
     // re-observes the durable provisioning request instead of recreating devices.
-    paired_phone(&value.bridge_id)
-        .await
+    paired_phone_serial(&value.bridge_id)
         .map_err(|_| Error("wsl_device_setup_pair_unavailable"))?;
     if cancelled.is_cancelled() {
         return Err(Error("device_setup_cancelled_remote_may_continue"));

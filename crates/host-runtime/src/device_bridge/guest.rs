@@ -50,7 +50,11 @@ async fn observe(
     if expected.version != 1 || expected != &actual {
         return Err(Error::Invalid("phone_peer_identity"));
     }
-    live(home, expected).await
+    let serial = advertised_serial(home, expected)?;
+    let mut value = crate::android::session::backend_observation(&serial).await?;
+    value.backend_paired = true;
+    value.backend_bridge_id = expected.bridge_id.clone();
+    Ok(value)
 }
 fn owner(home: &Path) -> Result<DeviceBridgePeerOwner> {
     DeviceBridgePeerOwner::decode(
@@ -58,22 +62,19 @@ fn owner(home: &Path) -> Result<DeviceBridgePeerOwner> {
     )
     .map_err(|_| Error::Invalid("phone_peer_identity"))
 }
-async fn live(
-    home: &Path,
-    expected: &DeviceBridgePeerOwner,
-) -> Result<ai_phone_api::wire::NativeAndroidBooted> {
+fn advertised_serial(home: &Path, expected: &DeviceBridgePeerOwner) -> Result<String> {
     let directory = home.join("avd/running");
     filesystem::existing_directory(&directory)?;
     let rows = super::discovery::values(filesystem::bounded_file_with_limit(
         &directory.join("pid_0.ini"),
         16384,
     )?)?;
-    let serial = match rows.get("aiphone.serial") {
+    match rows.get("aiphone.serial") {
         Some(serial)
             if serial == super::peer::WHPX_SERIAL
                 && rows.get("aiphone.bridge") == Some(&expected.bridge_id) =>
         {
-            serial
+            Ok(serial.clone())
         }
         None if super::discovery::advertised_token(
             &rows,
@@ -83,22 +84,18 @@ async fn live(
         )?
         .is_some() =>
         {
-            "emulator-5564"
+            Ok("emulator-5564".into())
         }
-        _ => return Err(Error::Invalid("phone_peer_unavailable")),
-    };
-    let mut value = crate::android::session::backend_observation(serial).await?;
-    value.backend_paired = true;
-    value.backend_bridge_id = expected.bridge_id.clone();
-    Ok(value)
+        _ => Err(Error::Invalid("phone_peer_unavailable")),
+    }
 }
 
-/// Installer-only observation of the expected pair in this owned Linux guest.
-pub async fn paired_phone(bridge_id: &str) -> Result<ai_phone_api::wire::NativeAndroidBooted> {
+/// Returns the serial advertised by the expected bridge owner.
+pub fn paired_phone_serial(bridge_id: &str) -> Result<String> {
     let home = Path::new(RUNTIME);
     let owner = owner(home)?;
     if owner.version != 1 || owner.bridge_id != bridge_id || owner.secret.len() != 32 {
         return Err(Error::Invalid("phone_peer_identity"));
     }
-    live(home, &owner).await
+    advertised_serial(home, &owner)
 }

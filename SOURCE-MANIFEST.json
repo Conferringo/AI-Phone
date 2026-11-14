@@ -1853,8 +1853,8 @@
     },
     {
       "path": "crates/assistant/src/device_setup/wsl.rs",
-      "size": 5295,
-      "sha256": "409671774d8f344f7a1fb2c3277a842dd27143813ca1e56e8773b67998e85e41"
+      "size": 5253,
+      "sha256": "5861f8d7377d4e03af4b11894ab517708e2bf52f36dd27bcb1adb6b5a2474d1d"
     },
     {
       "path": "crates/assistant/src/execution_tests.rs",
@@ -2398,8 +2398,8 @@
     },
     {
       "path": "crates/host-runtime/src/android/session/mod.rs",
-      "size": 1485,
-      "sha256": "c1e253f963ddaa36664055a9f8dbe73885ba85b056855135b620d011b87f3e1c"
+      "size": 1629,
+      "sha256": "e40b29822a93d98be9cc7856543db521938027dcd40332a3380cba881eaff1c5"
     },
     {
       "path": "crates/host-runtime/src/android/session/plan.rs",
@@ -2408,13 +2408,13 @@
     },
     {
       "path": "crates/host-runtime/src/android/session/process.rs",
-      "size": 13781,
-      "sha256": "552dc7c16a2fb48f9bb92716781b31029b386d2a2dcb1df68ff4c43b8d7b6b40"
+      "size": 13807,
+      "sha256": "2f4a7f3a397ed8e46e09449e1b8d5ae3ec28b2faa7de89b5d7ccb83f798df9bc"
     },
     {
       "path": "crates/host-runtime/src/android/session/readiness.rs",
-      "size": 2402,
-      "sha256": "17b4d3e7b94505908cdc76fda238d26210c636923ec13e863bbcfcf5c3a6f9d5"
+      "size": 2386,
+      "sha256": "3b57376988f8408db6090332e63c0c5df94fe0fef6b6aaeb0406265edeb391ce"
     },
     {
       "path": "crates/host-runtime/src/android/session/tests.rs",
@@ -2493,13 +2493,13 @@
     },
     {
       "path": "crates/host-runtime/src/device_bridge/guest.rs",
-      "size": 3581,
-      "sha256": "82295523ea763d9f73d56bf0c6f4b32ca17cb2bf17e974e0a1e9fa492a9f4e0f"
+      "size": 3529,
+      "sha256": "96bdc2994eb1728d8605e68ac6d6afea2df4e6dd3bd8ef5f01ddcdbc86baffdf"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/mod.rs",
-      "size": 3661,
-      "sha256": "526b4b21059b56d1b84158250816a644fb93f9580252831733c584b32c5f00a0"
+      "size": 3668,
+      "sha256": "73630f2cc6cb99e2cb191ca3dec1a2bb90c70523198ad1297ab51e40b59d6050"
     },
     {
       "path": "crates/host-runtime/src/device_bridge/peer.rs",
