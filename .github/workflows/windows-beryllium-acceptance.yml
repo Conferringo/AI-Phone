@@ -7,8 +7,8 @@ permissions:
   contents: read
   actions: read
 env:
-  BERYLLIUM_SOURCE: 8ce0b1026d960d8ab82b764940008c261e4f8209
-  BERYLLIUM_PACKAGE_RUN: '43593328418'
+  BERYLLIUM_SOURCE: 5286c12d07e1c1e7d9199713f7a5180dff81bad0
+  BERYLLIUM_PACKAGE_RUN: '43593499192'
 jobs:
   exact-exe:
     runs-on: windows-2025
