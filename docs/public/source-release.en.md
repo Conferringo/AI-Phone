@@ -1,0 +1,37 @@
+# Source builds and contribution
+
+[简体中文](source-release.zh-CN.md) · [Repository](https://github.com/MrMilkDragon/AImanity)
+
+The source contains the Next.js workbench, Rust execution services, Android bridges, Linux desktop recipe, protobuf contracts, built-in Skills, installation/backup/recovery tools, tests and CI workflows. The phone and computer share the selected Agent. PostgreSQL persists task checkpoints; Redis provides caching.
+
+Original code uses [Apache-2.0](../../LICENSE). Dependencies, assets and guest applications retain their own terms; see [third-party notices](../../THIRD_PARTY_NOTICES.md). [Download the macOS or Windows client](release-status.md).
+
+## Prerequisites and startup
+
+The locally exercised source host is macOS Apple Silicon: Node 22+, project-pinned Bun, Rust 1.96.0, Java 17, Android command-line tools, Xcode command-line tools and Docker Desktop. Reserve at least 35 GiB for a new full deployment; the default phone storage is 16 GB.
+
+```sh
+./ai-phone doctor
+./ai-phone install
+```
+
+The Android SDK presents the terms for the requested packages. The host defaults to direct networking; each guest has a Clash app for user-supplied subscriptions. Save model profiles and select the active Agent in Configuration → Agent. Repeated startup restores missing services while retaining existing state.
+
+See [setup](getting-started.en.md), [runtime components](runtime-bundles.md), [architecture](architecture.en.md), [backup and recovery](backup-restore.en.md) and [release status](release-status.md).
+
+## Source and user data
+
+Source export uses an allowlist with privacy and licence checks. [Contribution guide](../../CONTRIBUTING.md)
+
+```sh
+./scripts/bun scripts/source.ts check
+./scripts/bun scripts/source.ts export /path/to/new-review-directory --git
+```
+
+Export requires a new destination and produces a source manifest and local review repository without a remote. Review the exported diff against the public checkout before committing. Ongoing contributions preserve public history. Do not update a running user's state with a direct Git checkout; use versioned artifacts, backup, migration and recovery.
+
+## Automated checks
+
+Source CI checks protobuf, TypeScript, Rust, isolated UI/adapters, archive/installation contracts and a production web build. Prebuilt component verification stages and executes actual packaged files. Disposable PostgreSQL fixtures exercise migrations, role restrictions, backup/restore and worker recovery; restart tests run sequentially. CI does not use real devices, account credentials or paid model calls.
+
+Native CI builds macOS ARM64 and Windows x64 desktop clients, inspects package contents and verifies virtual-phone control applications on matching workers. See [runtime components](engineering/index.md), [release status](release-status.md) and [compatibility](compatibility.md).

@@ -1,0 +1,22 @@
+{
+  "package": "info.plateaukao.einkbro",
+  "version": "16.7.1",
+  "source": "https://github.com/plateaukao/einkbro",
+  "source_commit": "031095d018ec9c6e8de333885341496bcdacb5b0",
+  "release": "https://github.com/plateaukao/einkbro/releases/tag/v16.7.1",
+  "signer_sha256": "85ca929ba5b709f910b7513fd5be1045f0cebf1ad091ab7123ede3380905ba65",
+  "abis": {
+    "arm64-v8a": {
+      "file": "einkbro-arm64-v8a.apk",
+      "url": "https://github.com/plateaukao/einkbro/releases/download/v16.7.1/app-arm64-v8a-release.apk",
+      "size_bytes": 4109883,
+      "sha256": "95f75e7d77004ff63d1dc6d02fbd889a0fb4e5a3ccd5accdb19fb5138feda1fc"
+    },
+    "x86_64": {
+      "file": "einkbro-x86_64.apk",
+      "url": "https://github.com/plateaukao/einkbro/releases/download/v16.7.1/app-x86_64-release.apk",
+      "size_bytes": 4094157,
+      "sha256": "81ccbb0acaa547e40660cb942c52b555b8f54e6de4e361d2acce7915a4352475"
+    }
+  }
+}

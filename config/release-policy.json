@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "release_name": "Aluminum",
+  "release_notes": "Initial AImanity release with guided setup, runtime recovery, and lighter startup, chat, and device streams.",
+  "source_preview": {
+    "license": "Apache-2.0",
+    "remote_publication_authorized": true,
+    "remote_review_authorized": true
+  }
+}

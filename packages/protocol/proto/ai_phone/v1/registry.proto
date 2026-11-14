@@ -1,0 +1,82 @@
+syntax = "proto3";
+package ai_phone.v1;
+import "ai_phone/v1/settings.proto";
+
+message RegistryRequest {}
+message RegisteredDevice {
+  string id = 1;
+  uint64 revision = 2;
+  string name = 3;
+  string kind = 4;
+  string system = 5;
+  string runtime_state = 6;
+  reserved 7;
+  reserved "default_agent_id";
+}
+message RegisteredAgent {
+  string id = 1;
+  uint64 revision = 2;
+  string name = 3;
+  string model_connection_id = 4;
+  reserved 5;
+  reserved "device_ids";
+  string instructions = 6;
+}
+message RegisteredModel {
+  string id = 1;
+  uint64 revision = 2;
+  string name = 3;
+  ModelProfile profile = 4;
+}
+message RegistryState {
+  repeated RegisteredDevice devices = 1;
+  repeated RegisteredAgent agents = 2;
+  repeated RegisteredModel models = 3;
+  string active_device_id = 4;
+  uint32 phone_limit = 5;
+  uint32 desktop_limit = 6;
+  string active_agent_id = 7;
+}
+message AgentProfileRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+}
+// Client-generated UUID for creation; expected_revision=0. IDs remain stable on retries.
+message DeviceSaveRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+  string name = 3;
+  string kind = 4;
+  reserved 5;
+}
+message AgentSaveRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+  string name = 3;
+  string model_connection_id = 4;
+  reserved 5;
+  string instructions = 6;
+}
+message ConnectionTestRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+  ModelDraft draft = 3;
+}
+message ConnectionSaveRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+  string name = 3;
+  // Omit to rename without changing the immutable model configuration.
+  ModelDraft draft = 4;
+  string verification_id = 5;
+}
+message ConnectionCredentialRequest {
+  string id = 1;
+  uint64 expected_revision = 2;
+}
+
+// Atomically stores the Agent and its inline model configuration.
+message AgentConfigurationSaveRequest {
+  AgentSaveRequest agent = 1;
+  ConnectionSaveRequest connection = 2;
+}

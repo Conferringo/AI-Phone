@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-accept-deployment-license"
+description = "Enables the accept_deployment_license command without any pre-configured scope."
+commands.allow = ["accept_deployment_license"]
+
+[[permission]]
+identifier = "deny-accept-deployment-license"
+description = "Denies the accept_deployment_license command without any pre-configured scope."
+commands.deny = ["accept_deployment_license"]

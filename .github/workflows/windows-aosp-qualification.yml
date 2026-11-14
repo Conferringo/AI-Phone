@@ -1,0 +1,60 @@
+name: Offline Windows Android
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: windows-2025
+    timeout-minutes: 35
+    env:
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          update: true
+          install: mingw-w64-ucrt-x86_64-qemu unzip xz
+      - name: Stage pinned Android and compile the Rust session
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          ./scripts/bootstrap.sh
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          mkdir -p qualification/images qualification/sdk/platform-tools
+          ./scripts/bun scripts/tooling/fetch-windows-aosp.ts qualification/android.zip &
+          download=$!
+          cargo build --locked --release -p ai-phone-host-runtime --bin host-resources &
+          build=$!
+          adb_asset=android-tools-static-36.0.1-windows-nativelayout-x86_64.zip
+          curl -fsSL "https://github.com/meator/android-tools-static/releases/download/36.0.1/$adb_asset" -o "qualification/$adb_asset"
+          printf '%s  %s\n' f73b3f45832bbfd6f231567ec63a96c50694343df06323676726ac0c1c05332f "qualification/$adb_asset" | sha256sum -c -
+          mkdir qualification/adb
+          unzip -q "qualification/$adb_asset" -d qualification/adb
+          for program in adb.exe AdbWinApi.dll AdbWinUsbApi.dll; do
+            cp "$(find qualification/adb -type f -name "$program" -print -quit)" qualification/sdk/platform-tools/
+          done
+          rm -r qualification/adb
+          wait "$download"
+          unzip -q qualification/android.zip -d qualification/images
+          rm qualification/android.zip
+          ./scripts/bun scripts/windows-cuttlefish.ts "$(cygpath -am qualification/images)" "$(cygpath -am qualification/sdk/cuttlefish)" "$(cygpath -am /ucrt64/bin/qemu-img.exe)"
+          ./scripts/bun scripts/windows-android-audio.ts qualification/sdk/cuttlefish
+          rm -r qualification/images
+          sdk=qualification/sdk/cuttlefish
+          cp /ucrt64/bin/qemu-system-x86_64.exe /ucrt64/bin/qemu-img.exe "$sdk/"
+          mkdir -p "$sdk/share"
+          for firmware in bios-256k.bin kvmvapic.bin linuxboot_dma.bin; do cp "/ucrt64/share/qemu/$firmware" "$sdk/share/"; done
+          /ucrt64/bin/qemu-system-x86_64.exe -accel help | grep -w whpx
+          wait "$build"
+          cargo build --locked -p ai-phone-release-tools --bin release-tools
+          AIMANITY_FACTORY_XZ="$(cygpath -am /usr/bin/xz.exe)" ./scripts/bun scripts/android-component.ts --sdk-input qualification/sdk --work qualification/payload --compression-preset 3
+          rm -r qualification/sdk
+      - name: Boot the bundled Android under WHPX without fetching device assets
+        shell: msys2 {0}
+        run: ./scripts/bun scripts/qualify-windows-aosp.ts qualification/payload/android.payload qualification/install

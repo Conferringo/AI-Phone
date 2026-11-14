@@ -1,0 +1,110 @@
+name: Windows Beryllium inputs
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/beryllium-inputs]
+    paths:
+      - .github/workflows/windows-beryllium-inputs.yml
+      - infra/desktop/**
+      - infra/workspace/**
+      - scripts/tooling/factory.ts
+
+permissions:
+  contents: read
+
+jobs:
+  offline-inputs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare disposable native Linux tooling
+        run: |
+          test "$RUNNER_ENVIRONMENT" = github-hosted
+          test "$(uname -m)" = x86_64
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup "$ANDROID_HOME/ndk"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-utils e2fsprogs zerofree
+          rustup toolchain install 1.96.0 --profile minimal
+          rustup default 1.96.0
+          ./scripts/bootstrap.sh
+          mkdir -p "$RUNNER_TEMP/aimguest"
+      - name: Extract and thin the published Aluminum base
+        run: |
+          work="$RUNNER_TEMP/aimguest"
+          curl -fL --retry 3 -o "$work/aluminum.exe" \
+            https://github.com/MrMilkDragon/AImanity/releases/download/v0.0.1/AImanity-0.0.1-windows-x64-setup.exe
+          printf '%s  %s\n' ee631f27c3e82b2a3fac15545872f97c9eeb61297f8f3f0bcf4e66d96ab13a5c "$work/aluminum.exe" | sha256sum -c -
+          mkdir -p "$work/extract/src"
+          cat > "$work/extract/Cargo.toml" <<'RUST'
+          [package]
+          name = "extract-aluminum-base"
+          version = "0.1.0"
+          edition = "2024"
+
+          [dependencies]
+          inno = { version = "=0.7.3", features = ["extract"] }
+          RUST
+          cat > "$work/extract/src/main.rs" <<'RUST'
+          use std::{env, fs::File, io::{self, BufReader}};
+
+          fn main() -> Result<(), Box<dyn std::error::Error>> {
+              let mut args = env::args_os().skip(1);
+              let installer = File::open(args.next().ok_or("installer path")?)?;
+              let mut output = File::create_new(args.next().ok_or("base path")?)?;
+              let mut archive = inno::Inno::new(BufReader::new(installer))?;
+              let mut files = archive.streaming_files(|entry| {
+                  entry.file().destination() == Some(r"{app}\host\qemu\guest\guest.qcow2")
+              });
+              let (_, mut image) = files.next().ok_or("guest disk missing")??;
+              io::copy(&mut image, &mut output)?;
+              Ok(())
+          }
+          RUST
+          cargo run --release --manifest-path "$work/extract/Cargo.toml" -- "$work/aluminum.exe" "$work/old.qcow2"
+          printf '%s  %s\n' 348baa7207524397b74de603f08357b6d3b73947514eb9f662c6eb4e52a365a5 "$work/old.qcow2" | sha256sum -c -
+          rm "$work/aluminum.exe"
+          qemu-img convert -f qcow2 -O raw -S 4096 "$work/old.qcow2" "$work/guest.ext4"
+          rm "$work/old.qcow2"
+          for name in images.payload source.payload; do
+            file="/opt/aiphone/bundle/$name"
+            debugfs -R "stat $file" "$work/guest.ext4" 2>/dev/null | grep -E 'Type:[[:space:]]+regular'
+            debugfs -w -R "rm $file" "$work/guest.ext4"
+            debugfs -w -R "write /dev/null $file" "$work/guest.ext4"
+            debugfs -R "stat $file" "$work/guest.ext4" 2>/dev/null | grep -E 'Size:[[:space:]]+0$'
+          done
+          e2fsck -fn "$work/guest.ext4"
+          sudo zerofree "$work/guest.ext4"
+          qemu-img convert -f raw -O qcow2 -c -S 4096 "$work/guest.ext4" "$work/guest.qcow2"
+          qemu-img check "$work/guest.qcow2"
+          rm "$work/guest.ext4"
+          (cd "$work" && sha256sum guest.qcow2 > guest.sha256)
+          cat "$work/guest.sha256"
+      - uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
+        with:
+          version: v29.9.2
+          context: aimanity-beryllium-images
+          set-host: true
+          daemon-config: |
+            {"features":{"containerd-snapshotter":true}}
+      - name: Build and seal the Linux x64 service images
+        run: |
+          ./scripts/bun -e 'import { prepareImages } from "./scripts/tooling/factory"; import { digest, ROOT } from "./scripts/tooling/process"; const result = await prepareImages(ROOT, process.env.RUNNER_TEMP + "/aimguest", await digest("SOURCE-MANIFEST.json"), "amd64"); console.log(JSON.stringify(result.receipt));'
+          (cd "$RUNNER_TEMP/aimguest" && sha256sum images.payload > images.sha256)
+          cat "$RUNNER_TEMP/aimguest/images.sha256"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: beryllium-windows-linux-inputs
+          path: |
+            ${{ runner.temp }}/aimguest/guest.qcow2
+            ${{ runner.temp }}/aimguest/guest.sha256
+            ${{ runner.temp }}/aimguest/images.payload
+            ${{ runner.temp }}/aimguest/images.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2

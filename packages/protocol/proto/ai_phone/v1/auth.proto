@@ -1,0 +1,9 @@
+syntax = "proto3";
+package ai_phone.v1;
+message LoginRequest { string username = 1; string password = 2; }
+// Explicit single-owner local deployment mode; the server decides whether it is enabled.
+message LocalEntryRequest {}
+message SessionRequest { string token = 1; }
+message SessionState { bool authenticated = 1; string username = 2; }
+// Only the server-side web bridge receives this message; browser gets HttpOnly cookie.
+message LoginResult { string token = 1; string username = 2; }
