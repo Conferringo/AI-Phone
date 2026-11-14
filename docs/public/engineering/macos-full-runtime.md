@@ -13,7 +13,7 @@ The host requirement is an Apple Silicon Mac running macOS 15.0 or later, at lea
 | Phone integration | Prebuilt input/notification and launcher applications |
 | Container host | App-owned Lima 2.2.1, Alpine boot image and offline Docker/Compose packages |
 | Media and connections | Compiled services and their locked production dependencies |
-| Device networking | Clash Meta for Android and Clash Verge Rev for Linux |
+| Device networking | Direct by default, with an optional workbench proxy |
 | Android | AOSP Android 17 ARM64 (build 16644040), Avo 1.1.0 and ADB 36.0.1. [Sources and staging](android-runtime.md) |
 | Linux and data services | Clean desktop/workspace images, PostgreSQL and Redis |
 
@@ -42,7 +42,7 @@ Use a reviewed source checkout and architecture-matched factory resources. The d
 ```sh
 ./scripts/bun scripts/build-client.ts --platform macos \
   --with-web-runtime --with-service-runtime --with-phone-apps \
-  --with-container-host  --with-guest-apps \
+  --with-container-host \
   --android-runtime /factory/android.payload \
   --images-runtime /factory/images.payload
 ```

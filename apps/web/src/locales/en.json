@@ -1,4 +1,10 @@
 {
+  "工作台代理": "Workbench proxy",
+  "无法读取代理设置": "Could not load proxy settings",
+  "无法导入订阅": "Could not import subscription",
+  "无法更新订阅": "Could not refresh subscription",
+  "无法切换代理": "Could not change proxy state",
+  "无法切换节点": "Could not switch node",
   "目标与要求": "Goal and requirements",
   "填入你的目标与要求": "Enter your goal and requirements",
   "激活": "Activate",

@@ -53,7 +53,6 @@ pub fn job_state(value: &str) -> Result<JobState, &'static str> {
 pub fn provision_diagnostic(stage: &str, error: &str) -> (&'static str, Vec<&'static str>) {
     let stage = match stage {
         "检查资源" => "check_resources",
-        "准备Clash客户端" => "prepare_network_app",
         "准备基础镜像" => "prepare_base_image",
         "安装Linux桌面和办公软件" => "install_desktop",
         "启动桌面" => "start_desktop",
@@ -135,12 +134,6 @@ mod tests {
     #[test]
     fn diagnostics_are_fixed_labels_and_never_raw_error_text() {
         let cases = [
-            (
-                "准备Clash客户端",
-                "permission denied",
-                "prepare_network_app",
-                "permission",
-            ),
             (
                 "准备基础镜像",
                 "invalid mount config for type bind",

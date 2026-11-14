@@ -2,7 +2,6 @@ import { ROOT } from "./tooling/process";
 import { buildNative } from "./tooling/native-build";
 import {
   buildPhone,
-  buildGuestApps,
   installerApk,
   notificationHelper,
 } from "./tooling/phone-apps";
@@ -23,12 +22,9 @@ switch (operation) {
         installerApk(root, args[args.indexOf("--app") + 1] as "home" | "input"),
       );
     break;
-  case "guest":
-    console.log(JSON.stringify(await buildGuestApps(root)));
-    break;
   case "web":
     console.log(JSON.stringify(await webCommand(root)));
     break;
   default:
-    throw Error("Expected artifacts native|phone|guest|web");
+    throw Error("Expected artifacts native|phone|web");
 }

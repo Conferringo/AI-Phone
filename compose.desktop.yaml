@@ -6,8 +6,6 @@ services:
     build:
       context: .
       dockerfile: infra/desktop/Dockerfile
-      additional_contexts:
-        clash_apps: ./.tools/clash-apps/${AI_PHONE_CLASH_DESKTOP_DIR:-linux}
       args:
         HTTP_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
         HTTPS_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
@@ -18,11 +16,8 @@ services:
     mem_limit: ${AI_PHONE_DESKTOP_MEMORY:-2560m}
     cpus: ${AI_PHONE_DESKTOP_CPUS:-2}
     shm_size: 256m
-    cap_add: [NET_ADMIN]
     volumes:
       - ./data/desktop/home:/home/ai
-      - ./data/device-network/desktop:/etc/ai-phone-network
-      - ./.tools/mihomo/linux-arm64:/opt/ai-phone/network-core:ro
     environment:
       HTTP_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}
       HTTPS_PROXY: ${AI_PHONE_CONTAINER_PROXY:-}

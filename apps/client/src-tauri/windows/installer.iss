@@ -1,4 +1,5 @@
 #define HasReleaseLayer FileExists(AppSource + "\host\qemu\guest\release.ext4")
+#define AluminumBaseSHA256 "348baa7207524397b74de603f08357b6d3b73947514eb9f662c6eb4e52a365a5"
 
 [Setup]
 AppId=dev.aiphone.client
@@ -71,6 +72,7 @@ var
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Base: String;
+  BaseDigest: String;
   ResultCode: Integer;
 begin
   Result := '';
@@ -85,7 +87,9 @@ begin
       Result := ExpandConstant('{cm:HostSetupFailed}');
       Exit;
     end;
-    if CompareText(GetSHA256OfFile(Base), '{#BaseDiskSHA256}') <> 0 then
+    BaseDigest := GetSHA256OfFile(Base);
+    if (CompareText(BaseDigest, '{#BaseDiskSHA256}') <> 0) and
+       (CompareText(BaseDigest, '{#AluminumBaseSHA256}') <> 0) then
       Result := ExpandConstant('{cm:HostSetupFailed}');
   end;
 end;

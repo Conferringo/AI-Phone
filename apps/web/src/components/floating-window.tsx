@@ -23,7 +23,7 @@ export function WindowTrigger({onOpen,children,label,open=false,openOnFocus=fals
  return <Button variant="ghost" size="icon" aria-label={label} title={label} aria-expanded={open} onPointerEnter={e=>{if(e.pointerType!=='mouse'||e.buttons)return;const element=e.currentTarget;cancel();timer.current=setTimeout(()=>show(element,'mouse'),240);}} onPointerLeave={cancel} onPointerDown={cancel} onBlur={cancel} onFocus={openOnFocus?e=>{if(!open&&e.currentTarget.matches(':focus-visible'))show(e.currentTarget,'keyboard');}:undefined} onKeyDown={e=>{if(e.key==='ArrowDown'){e.preventDefault();cancel();show(e.currentTarget,'keyboard');}}} onClick={e=>{cancel();show(e.currentTarget,e.detail===0?'keyboard':'click');}}>{children}</Button>;
 }
 function related(id:string){const ids=new Set([id]);let changed=true;while(changed){changed=false;for(const [key,value] of surfaces)if(value.parent&&ids.has(value.parent)&&!ids.has(key)){ids.add(key);changed=true;}}return [...ids].map(key=>surfaces.get(key)).filter(surface=>surface!==undefined);}
-export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false,centered=false,focusPanel=false,hideClose=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean;centered?:boolean;focusPanel?:boolean;hideClose?:boolean}){const {t}=useI18n();
+export function FloatingWindow({id,title,open,onClose,children,width=760,height=570,actions,anchorKey,parentId,fitContent=false,centered=false,focusPanel=false,hideClose=false,belowAnchor=false}:{id:string;title:string;open:boolean;onClose:()=>void;children:ReactNode;width?:number;height?:number;actions?:ReactNode;anchorKey?:string;parentId?:string;fitContent?:boolean;centered?:boolean;focusPanel?:boolean;hideClose?:boolean;belowAnchor?:boolean}){const {t}=useI18n();
  const label=useId(),element=useRef<HTMLElement>(null),anchor=useRef<Anchor>({element:null,mode:'click'}),latest=useRef(onClose),motion=useRef<Animation|null>(null),composing=useRef(false);
  const interrupted=useRef<Keyframe|null>(null);
  const centeredOnOpen=useRef(centered);
@@ -41,7 +41,7 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
    const view=window.visualViewport;
    const w=view?.width||innerWidth,h=view?.height||innerHeight;
    const x=view?.offsetLeft||0,y=view?.offsetTop||0;
-   const r=trigger?.isConnected?trigger.getBoundingClientRect():null,child=!!parent;
+   const r=trigger?.isConnected?trigger.getBoundingClientRect():null,child=!!parent&&!belowAnchor;
    const pw=Math.min(width,w-32);
    const availableHeight=centered?h-32:Math.max(80,child||!r?h-88:h-(r.bottom+10-y)-16);
    const ph=Math.min(height,availableHeight);
@@ -63,7 +63,7 @@ export function FloatingWindow({id,title,open,onClose,children,width=760,height=
   const parentClosed=(e:WindowEventMap['phone:window-closed'])=>{if(e.detail===parent)latest.current();};
   document.addEventListener('pointermove',move);document.addEventListener('pointerdown',down);document.addEventListener('keydown',key);window.addEventListener('phone:window-closed',parentClosed);window.addEventListener('resize',place);window.visualViewport?.addEventListener('resize',place);
   return()=>{cancel();surfaces.delete(id);if(activeWindow===id){activeWindow=parent&&surfaces.has(parent)?parent:[...surfaces.keys()].at(-1)||"";window.dispatchEvent(new CustomEvent("phone:window-focus",{detail:activeWindow}));}window.removeEventListener("phone:window-source",source);window.removeEventListener('phone:window-focus',focus);document.removeEventListener('pointermove',move);document.removeEventListener('pointerdown',down);document.removeEventListener('keydown',key);window.removeEventListener('phone:window-closed',parentClosed);window.removeEventListener('resize',place);window.visualViewport?.removeEventListener('resize',place);};
- },[open,mounted,id,width,height,anchorKey,parentId,centered]);
+ },[open,mounted,id,width,height,anchorKey,parentId,centered,belowAnchor]);
  useLayoutEffect(()=>{
   const panel=element.current;if(!mounted||!panel)return;
   if(open)centeredOnOpen.current=centered;

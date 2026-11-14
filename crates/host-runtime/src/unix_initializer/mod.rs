@@ -14,12 +14,13 @@ use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
+    process::Output,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
 };
-use tokio::sync::watch;
+use tokio::{process::Command, sync::watch};
 
 pub(crate) const CONTRACT: &str = "ai-phone-unix-host-initializer-v1";
 fn text(path: &Path) -> Result<String> {
@@ -35,6 +36,61 @@ fn progress(phase: &str, state: &str, error: &str) -> Result<()> {
     )?;
     std::io::stdout().flush()?;
     Ok(())
+}
+
+fn activity(command: &str, state: &str) {
+    let _ = writeln!(
+        std::io::stdout(),
+        "AI_PHONE_ACTIVITY {}",
+        json!({"command":command,"state":state}),
+    );
+}
+
+fn command_label(command: &Command) -> Option<&'static str> {
+    let process = command.as_std();
+    let name = Path::new(process.get_program()).file_name()?.to_str()?;
+    let mut args = process
+        .get_args()
+        .map(|arg| arg.to_str().unwrap_or_default());
+    match (name, args.next()?) {
+        ("limactl", "list") => Some("limactl list"),
+        ("limactl", "start") => Some("limactl start --tty=false"),
+        ("docker", "compose") => Some("docker compose … up -d --wait"),
+        ("docker", "container") if args.next() == Some("ls") => Some("docker container ls"),
+        (_, "--activate-images") => Some("ai-phone-client --activate-images"),
+        (_, "--prepare-database") => Some("assistant --prepare-database"),
+        (_, "--migrate") => Some("assistant --migrate"),
+        (_, "--setup-devices") => Some("assistant --setup-devices"),
+        (_, "--service-control") => match (args.nth(1)?, args.next()?) {
+            ("web", "start") => Some("ai-phone-client --service-control … web start"),
+            ("assistant", "start") => Some("ai-phone-client --service-control … assistant start"),
+            ("runner", "start") => Some("ai-phone-client --service-control … runner start"),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+struct InstallProcess(Process);
+impl Execute for InstallProcess {
+    async fn run(&mut self, command: Command, input: Vec<u8>) -> Result<Output> {
+        let label = command_label(&command);
+        if let Some(label) = label {
+            activity(label, "running");
+        }
+        let result = self.0.run(command, input).await;
+        if let Some(label) = label {
+            activity(
+                label,
+                if result.as_ref().is_ok_and(|output| output.status.success()) {
+                    "completed"
+                } else {
+                    "failed"
+                },
+            );
+        }
+        result
+    }
 }
 struct Arguments {
     resource: PathBuf,
@@ -184,7 +240,7 @@ async fn initialize(
         root: &root,
         program: program.as_os_str(),
         env: environment,
-        execute: Process(stop.clone()),
+        execute: InstallProcess(Process(stop.clone())),
     };
     {
         let linux = async {

@@ -1,0 +1,16 @@
+.harness-proxy {display:grid;gap:12px;font-size:var(--text-body)}
+.harness-proxy p {margin:0;color:var(--destructive)}
+.harness-proxy form {display:grid;gap:5px}
+.harness-proxy label,.harness-proxy-group>span {color:var(--muted-foreground)}
+.harness-proxy-toggle,.harness-proxy-import,.harness-proxy-group {display:flex;align-items:center;gap:8px}
+.harness-proxy-toggle {justify-content:space-between}
+.harness-proxy-toggle input {width:17px;height:17px;margin:0;accent-color:var(--primary)}
+.harness-proxy-import input {
+ flex:1;min-width:0;height:var(--control-height);padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)
+}
+.harness-proxy-import button {height:var(--control-height)}
+.harness-proxy-import button[data-size=icon] {width:var(--control-height)}
+.harness-proxy-group>span {min-width:0;flex:1;overflow-wrap:anywhere}
+.harness-proxy-group .field-select {flex:2;min-width:0}
+.harness-proxy :is(input,button):focus-visible {outline:2px solid var(--ring);outline-offset:2px}
+@media(max-width:420px){.harness-proxy-import input{font-size:16px}.harness-proxy-group{align-items:stretch;flex-direction:column;gap:4px}}

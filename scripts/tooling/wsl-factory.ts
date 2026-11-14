@@ -91,7 +91,7 @@ export async function sourceInput(file: string, root: string) {
   }
   const components = [...manifest.components].sort(),
     base = ["native-services", "web"],
-    complete = ["guest-apps", "native-services", "phone-apps", "web"];
+    complete = ["native-services", "phone-apps", "web"];
   if (
     ![JSON.stringify(base), JSON.stringify(complete)].includes(
       JSON.stringify(components),

@@ -4,7 +4,7 @@ English · [简体中文](#简体中文) · [繁體中文](docs/public/readme.zh
 
 An agent that listens while it works, explores on its own, and learns from using your phone and computer.
 
-## 0.0.1 Aluminum
+## 0.0.2 Beryllium
 
 Apple Silicon macOS and Windows 11 x64. [Releases](https://github.com/MrMilkDragon/AImanity/releases) · [Installers and factory instructions](docs/public/release-status.md)
 
@@ -49,7 +49,7 @@ Original code is licensed under [Apache-2.0](LICENSE). Third-party components re
 
 [Back to English](#aimanity)
 
-## 0.0.1 Aluminum
+## 0.0.2 Beryllium
 
 适用于 Apple Silicon macOS 和 Windows 11 x64。[发行页](https://github.com/MrMilkDragon/AImanity/releases) · [安装包与构建说明](docs/public/release-status.md)
 

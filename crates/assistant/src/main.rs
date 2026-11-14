@@ -33,7 +33,10 @@ mod device_network;
 mod device_setup;
 mod exploration_policy;
 mod files;
+mod harness_proxy;
+mod harness_proxy_devices;
 mod history_window;
+
 mod http;
 mod location;
 mod location_devices;
@@ -342,9 +345,12 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     tokio::spawn(location::work(app.clone()));
     tokio::spawn(device_exchange::work(app.clone()));
     tokio::spawn(device_network::recover(app.clone()));
+    tokio::spawn(harness_proxy::resume(app.clone()));
+
     let routes = Router::new()
         .route("/v1/registry/{operation}", post(registry::route))
         .route("/v1/location/{operation}", post(location::route))
+        .route("/v1/proxy/{operation}", post(harness_proxy::route))
         .route(
             "/v1/device-network/{operation}",
             post(device_network::route),

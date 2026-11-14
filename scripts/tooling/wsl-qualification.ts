@@ -341,7 +341,6 @@ export async function buildWslBackend(
     web: true,
     nativeServices: true,
     phoneApps: deviceApps,
-    guestApps: deviceApps,
     linuxOcr: ocr,
   });
   const source = join(root, "apps/client/src-tauri/gen/host/source.payload"),

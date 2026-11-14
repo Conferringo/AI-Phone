@@ -1521,8 +1521,6 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
         if std::env::var("AI_PHONE_IMAGE_PULL_POLICY").as_deref() == Ok("never") {
             return Err("Bundled desktop image is missing; run client initialization again".into());
         }
-        install_step(app, id, "准备Clash客户端").await?;
-        crate::device_network::install_apps(app).await?;
         install_step(app, id, "准备基础镜像").await?;
         let mut base = docker();
         base.args(["image", "inspect", &workspace_image, "--format", "{{.Id}}"]);
@@ -1544,7 +1542,7 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
                 &workspace_image,
                 "-f",
                 "infra/workspace/Dockerfile",
-                "infra/workspace",
+                ".",
             ]);
             process(build, vec![], 2 * 1024 * 1024, 1800).await?;
         }
@@ -1562,7 +1560,6 @@ async fn install(app: &App, id: Uuid) -> Result<()> {
     install_step(app, id, "启动桌面").await?;
     desktop_directory(&app.root, "observations").await?;
     desktop_directory(&app.root, "home").await?;
-    crate::device_network::prepare(app, &device).await?;
     let mut start = docker();
     start
         .current_dir(&app.root)

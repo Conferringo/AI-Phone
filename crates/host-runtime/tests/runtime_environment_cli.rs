@@ -1,6 +1,5 @@
 #![cfg(unix)]
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use std::{
     fs,
     path::Path,
@@ -191,68 +190,6 @@ fn managed_engine_path_precedes_the_saved_launch_path() {
         )
     );
     assert!(!root.join("data/deployment/tool-runtime.json").exists());
-}
-
-#[test]
-fn guest_metadata_selects_both_abis_and_preserves_profile_without_reading_apk_payloads() {
-    let temp = tempfile::tempdir().unwrap();
-    let root = temp.path();
-    let project = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let mut sources = vec![];
-    for name in ["config/clash-apps.json", "scripts/tooling/phone-apps.ts"] {
-        let bytes = fs::read(project.join(name)).unwrap();
-        let path = root.join(name);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, &bytes).unwrap();
-        sources.push((name, format!("{:x}", Sha256::digest(&bytes))));
-    }
-    let pins: Value =
-        serde_json::from_slice(&fs::read(root.join("config/clash-apps.json")).unwrap()).unwrap();
-    let mut apps = serde_json::Map::new();
-    let mut files = vec![];
-    let folder = root.join("runtime/guest-apps");
-    fs::create_dir_all(&folder).unwrap();
-    for (abi, pin) in [
-        ("arm64-v8a", &pins["android"]),
-        ("x86_64", &pins["alternatives"]["android-x86_64"]),
-    ] {
-        apps.insert(abi.into(),json!({"package":"com.github.metacubex.clash.meta","version":pin["version"],"signer_sha256":pin["signer_sha256"]}));
-        let name = format!("clash-{abi}.apk");
-        fs::write(folder.join(&name), b"metadata fixture, never installed").unwrap();
-        files.push(json!({"path":format!("runtime/guest-apps/{name}"),"size":pin["size_bytes"],"sha256":pin["sha256"],"mode":420}));
-    }
-    let manifest = json!({"format":1,"source_sha256":format!("{:x}",Sha256::digest(serde_json::to_vec(&sources).unwrap())),"apps":apps,"files":files});
-    fs::write(
-        folder.join("manifest.json"),
-        serde_json::to_vec(&manifest).unwrap(),
-    )
-    .unwrap();
-    for (template, abi) in [
-        ("android35-arm64", "arm64-v8a"),
-        ("android35-x86_64", "x86_64"),
-    ] {
-        profile(root, json!({"phone":{"template":template}}));
-        let before = fs::read(root.join("data/deployment/profile.json")).unwrap();
-        let env = value(invoke(root, "/caller"));
-        assert!(
-            env["AI_PHONE_CLASH_ANDROID_APK"]
-                .as_str()
-                .unwrap()
-                .ends_with(&format!("clash-{abi}.apk"))
-        );
-        assert_eq!(
-            fs::read(root.join("data/deployment/profile.json")).unwrap(),
-            before
-        );
-    }
-    fs::write(
-        root.join("scripts/tooling/phone-apps.ts"),
-        b"changed source",
-    )
-    .unwrap();
-    let result = invoke(root, "/caller");
-    assert!(!result.status.success());
-    assert!(result.stdout.is_empty());
 }
 
 #[test]

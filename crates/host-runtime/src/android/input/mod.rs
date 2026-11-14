@@ -64,10 +64,10 @@ pub async fn setup(request: NativeAndroidInputSetup, stop: watch::Receiver<bool>
         stop,
     };
     let apps = if request.offline_apps {
-        Some(
-            applications::Applications::load(Path::new(&request.project_root), &state, &mut adb)
-                .await?,
-        )
+        Some(applications::Applications::load(
+            Path::new(&request.project_root),
+            &state,
+        )?)
     } else {
         None
     };

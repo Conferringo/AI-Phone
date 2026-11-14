@@ -590,8 +590,6 @@ fn recover_desktop(destination: &Path, name: &str) -> Result<Value> {
             "--init",
             "--network",
             "none",
-            "--cap-add",
-            "NET_ADMIN",
             "--env-file",
             text(&env_file)?,
         ]);
@@ -603,22 +601,14 @@ fn recover_desktop(destination: &Path, name: &str) -> Result<Value> {
         if let Some(cpus) = metadata["cpus"].as_u64().filter(|cpus| *cpus > 0) {
             create.args(["--cpus", &(cpus as f64 / 1_000_000_000.0).to_string()]);
         }
-        for (source, target) in [
-            (root.join("data/desktop/home"), "/home/ai"),
-            (
-                root.join("data/device-network/desktop"),
-                "/etc/ai-phone-network",
-            ),
-        ] {
-            let actual = source.canonicalize()?;
-            if !actual.starts_with(root.join("data")) || !actual.is_dir() {
-                return Err("Recovery mount leaves restored state".into());
-            }
-            create.args([
-                "--mount",
-                &format!("type=bind,source={},target={target}", actual.display()),
-            ]);
+        let home = root.join("data/desktop/home").canonicalize()?;
+        if !home.starts_with(root.join("data")) || !home.is_dir() {
+            return Err("Recovery mount leaves restored state".into());
         }
+        create.args([
+            "--mount",
+            &format!("type=bind,source={},target=/home/ai", home.display()),
+        ]);
         if !create
             .arg(&image)
             .stdout(Stdio::null())

@@ -99,8 +99,12 @@ async fn download(app: &App, url: &str, limit: usize) -> Result<Vec<u8>, String>
     {
         return Err("请使用公开HTTPS网址".into());
     }
-    let response = app
-        .remote
+    let client = if app.settings.harness_proxy.enabled() {
+        app.settings.http_client("")?
+    } else {
+        app.remote.clone()
+    };
+    let response = client
         .get(parsed)
         .header("User-Agent", "AI-Phone/0.2")
         .send()

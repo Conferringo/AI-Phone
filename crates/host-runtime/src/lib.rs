@@ -9,9 +9,7 @@ mod control;
 pub mod desktop_bridge;
 pub mod device_bridge;
 mod filesystem;
-pub mod guest_app_resources;
 #[cfg(unix)]
-mod guest_apps;
 #[cfg(unix)]
 mod images;
 mod links;

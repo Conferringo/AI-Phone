@@ -31,7 +31,7 @@ This is guided source setup with prerequisites. After resolving a reported downl
 
 `configure` saves a private 0600 host profile in `data/deployment/profile.json`. Creation presets do not resize existing devices. Desktop CPU/memory is separately configured in its creation form; its host-backed directory has no enforced independent disk quota.
 
-New deployments default to direct networking. Existing installations without a profile retain legacy `.env` proxies. The installer downloads and verifies pinned native Clash apps. Import subscriptions and enable VPN/TUN inside each guest’s own app. No nodes are bundled; see [network configuration and verification](network.md).
+New deployments connect directly. Import and enable a subscription in the [workbench proxy](network.md) to route supported device traffic.
 
 Use `start`, `open` and `stop` for normal operation. Repeated start preserves existing services; partial-service recovery still needs diagnostics. LAN address discovery uses private interfaces; the address is saved in private `data/deployment.json`. LAN HTTP is unencrypted: use trusted TLS or a user-managed VPN on untrusted networks. No public tunnel is created.
 
@@ -50,7 +50,7 @@ The source archive includes a file manifest and SHA-256 checksum. Staging verifi
 
 The default local single-owner profile opens the workbench directly and preserves existing credentials/sessions. Clients able to reach this trusted-LAN deployment can enter as its owner. This is not multi-user authentication. Set `local_entry` to false in the private deployment profile to disable this entry endpoint; existing authentication APIs remain available. Configure the first Agent model in Configuration.
 
-Both guest creation flows install native Clash apps. Import subscriptions and manage nodes, VPN/TUN and startup inside each guest. The web configuration center does not manage guest networks. No developer subscription is distributed.
+The Android home screen starts with the browser, Settings and Files. Apps you install are added to the home screen.
 
 Installation stores private durable per-phase checkpoints and uses a process lock. On retry, install verifies source inputs and artifacts before reusing completed work; start resumes missing owned services and preserves running tasks. See [task recovery and retry behavior](task-recovery.md).
 

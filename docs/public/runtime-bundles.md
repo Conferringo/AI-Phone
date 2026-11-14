@@ -4,7 +4,7 @@ AI Phone separates versioned application code, clean device baselines and persis
 
 ## Package format
 
-`scripts/prepare-client.ts` creates a deterministic `source.payload` archive and an integrity record. The client runs its native Rust initializer. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`, `guest-apps`. Source-only resources remain readable for contributors and stored-format compatibility.
+`scripts/prepare-client.ts` creates a deterministic `source.payload` archive and an integrity record. The client runs its native Rust initializer. Format 1 contains reviewed source. Format 2 declares a nonempty subset in this order: `web`, `native-services`, `phone-apps`, `container-host`. Source-only resources remain readable for contributors and stored-format compatibility.
 
 | Component | Contents | Launch requirement |
 |---|---|---|
@@ -12,10 +12,9 @@ AI Phone separates versioned application code, clean device baselines and persis
 | Native services | Release Rust assistant and phone runner, matched Rust PNG/OCR helper and generated fixture | Host, hashes, inventory and executable permissions must match; CPU Tesseract runs in the managed OCR service or the verified [Linux offline closure](engineering/linux-offline-ocr.md) |
 | Phone applications | Unicode input/notification service and no-drawer launcher APKs | Source fingerprint, complete inventory and APK hashes must match; factory signatures/package IDs are verified |
 | Container host | App-owned Lima, clean Alpine ISO and offline Docker/Compose packages; Linux also includes QEMU/SSH/firmware | Matching host runtime, ownership and persisted selection must match; [host component contract](container-host-runtime.md) |
-| Guest applications | Pinned Clash Meta APK matching the guest ABI; existing dual-ABI components remain readable | Source pins, inventory and APK hashes must match; maintainer SDK inspection verifies signature, package/version and ABI |
 | Android runtime | Matched emulator, platform tools and clean Android factory image | Host/guest ABI, complete file inventory and archive integrity must match; redistribution qualification is separate |
 | Windows Linux guest | QEMU, WHPX, Linux kernel and QCOW2 base disk | Setup enables Windows Hypervisor Platform and creates a persistent overlay |
-| Container images | Clean Linux desktop/workspace, PostgreSQL and Redis images, including desktop browser and Clash Verge Rev | Role, architecture, image identities and capsule integrity must match before import |
+| Container images | Clean Linux desktop/workspace, PostgreSQL and Redis images, including the desktop browser | Role, architecture, image identities and capsule integrity must match before import |
 
 
 Each component manifest records file sizes, SHA-256 hashes and permissions. Native builds also record source fingerprints and compiler provenance. The packager accepts only matching builds. macOS helpers cannot require a newer OS than the client.

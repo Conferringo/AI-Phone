@@ -25,7 +25,7 @@ export type WindowsVmInputs = {
 };
 type FileReceipt = { path: string; size: number; sha256: string };
 export const windowsBackendComponents = [
-  "guest-apps", "native-services", "phone-apps", "web",
+  "native-services", "phone-apps", "web",
 ];
 const guestManifest = "WINDOWS-VM-DISK-MANIFEST.json";
 const guestFiles = ["bzImage", "guest.qcow2", "kernel.config", "KERNEL-LICENSE.txt"];

@@ -81,14 +81,7 @@ export function prepareApps(root: string, env: NodeJS.ProcessEnv) {
     [bunProgram(root), join(root, "scripts/artifacts.ts"), "phone", "--build"],
     { cwd: root, env },
   );
-  run([bunProgram(root), join(root, "scripts/artifacts.ts"), "guest"], {
-    cwd: root,
-    env,
-  });
-  return {
-    phone: json(join(root, ".tools/phone-apps/manifest.json")),
-    guest: json(join(root, ".tools/guest-apps/manifest.json")),
-  };
+  return json(join(root, ".tools/phone-apps/manifest.json"));
 }
 export async function prepareImages(
   root: string,
@@ -99,13 +92,6 @@ export async function prepareImages(
 ) {
   if (!/^[0-9a-f]{64}$/.test(identity))
     throw Error("Factory source identity missing");
-  const policy = json(join(root, "config/clash-apps.json"));
-  const pin =
-    architecture === "arm64"
-      ? policy.linux
-      : policy.alternatives["linux-amd64"];
-  const clash = join(cache, "clash");
-  await fetchPin(clash, pin.file, pin);
   const prefix =
     "ai-phone-factory/" +
     identity.slice(0, 12) +
@@ -155,12 +141,7 @@ export async function prepareImages(
       reference,
     ];
     if (role === "desktop")
-      args.push(
-        "--build-arg",
-        "WORKSPACE_IMAGE=" + sources.workspace,
-        "--build-context",
-        "clash_apps=" + resolve(clash),
-      );
+      args.push("--build-arg", "WORKSPACE_IMAGE=" + sources.workspace);
     if (guest)
       args.push(
         "--build-arg",

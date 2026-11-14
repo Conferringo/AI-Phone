@@ -5,6 +5,8 @@ import { ROOT, run, output, hash, hostKey } from "./process";
 import { sourceFiles, type SourceFile } from "./source";
 import { json, save, records, verifyFiles, publicBytes } from "./inventory";
 import { prepareDependency } from "./linux-dependencies";
+import { fetchPin } from "./factory";
+import { gunzipSync } from "node:zlib";
 
 export const roles = {
   assistant: "assistant",
@@ -20,7 +22,6 @@ export const contracts = {
   managed_engine: "ai-phone-managed-engine-v1",
   image_activation: "ai-phone-image-activation-v1",
   runtime_environment: "ai-phone-runtime-environment-v1",
-  guest_app_resources: "ai-phone-guest-app-resources-v1",
 };
 export const fixture = "crates/phone-runner/fixtures/ocr-probe.png";
 export function sourceFingerprint(root = ROOT) {
@@ -186,6 +187,21 @@ export async function prepareServices(root = ROOT, linuxOcr?: string) {
       data: publicBytes(readFileSync(join(root, path)), role),
       mode: 0o755,
     });
+  }
+  const mihomo = json(join(root, "config/mihomo-release.json"));
+  const core = mihomo.assets[hostKey()];
+  if (core) {
+    const folder = join(root, ".tools/mihomo-harness");
+    const archive = await fetchPin(
+      folder,
+      core.url.split("/").at(-1)!,
+      core,
+    );
+    const license = await fetchPin(folder, "LICENSE", mihomo.verification_download);
+    const data = gunzipSync(readFileSync(archive));
+    if (hash(data) !== core.binary_sha256) throw Error("Mihomo build differs from its pin");
+    files.push({path: "runtime/services/bin/mihomo", data, mode: 0o755});
+    files.push({path: "runtime/services/licenses/mihomo-LICENSE.txt", data: readFileSync(license), mode: 0o644});
   }
   const bridge = process.env.AI_PHONE_RELEASE_DESKTOP_BRIDGE;
   if (bridge) {

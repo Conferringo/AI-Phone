@@ -6,6 +6,7 @@ use prost::Message;
 use std::path::{Path, PathBuf};
 
 const HOME: &str = "dev.aiphone.home/.HomeActivity";
+const BROWSER: &str = "info.plateaukao.einkbro";
 pub(super) struct Application {
     package: &'static str,
     journal: &'static str,
@@ -73,17 +74,14 @@ impl Application {
     }
     async fn configure(&self, state: &State, adb: &mut impl Device, observe: bool) -> Result<bool> {
         let present = self.present(adb).await?;
-        if !present && self.pending {
-            return Err(Error::Invalid("phone_application_install_unknown"));
-        }
-        if !present && observe {
-            return Err(Error::Invalid("phone_application_not_ready"));
-        }
         if present && !self.pending {
             return Ok(false);
         }
         if observe {
             return Err(Error::Invalid("phone_application_not_ready"));
+        }
+        if !present && self.pending {
+            return Err(Error::Invalid("phone_application_install_unknown"));
         }
         if !present {
             let intent = NativeAndroidApplicationIntent {
@@ -107,10 +105,94 @@ impl Application {
         let mut changed = !present;
         if self.package == "dev.aiphone.home" {
             changed |= select_home(adb).await?;
+        } else {
+            adb.execute(
+                &[
+                    "shell",
+                    "cmd",
+                    "role",
+                    "add-role-holder",
+                    "--user",
+                    "0",
+                    "android.app.role.BROWSER",
+                    BROWSER,
+                ],
+                10,
+            )
+            .await?;
         }
         state.clear(self.journal)?;
         Ok(changed)
     }
+}
+
+async fn slim_system_apps(adb: &mut impl Device) -> Result<bool> {
+    let installed = adb
+        .execute(
+            &["shell", "pm", "list", "packages", "-s", "--user", "0"],
+            10,
+        )
+        .await?;
+    let mut changed = false;
+    for package in super::super::OPTIONAL_SYSTEM_APPS {
+        if installed
+            .lines()
+            .any(|line| line.strip_prefix("package:") == Some(*package))
+        {
+            if adb
+                .execute(
+                    &["shell", "pm", "uninstall", "-k", "--user", "0", package],
+                    10,
+                )
+                .await?
+                != "Success"
+            {
+                return Err(Error::Invalid("phone_cleanup_failed"));
+            }
+            changed = true;
+        }
+    }
+    const LEGACY_CLASH: &str = "com.github.metacubex.clash.meta";
+    let clash = adb
+        .execute(
+            &[
+                "shell",
+                "pm",
+                "list",
+                "packages",
+                "--show-versioncode",
+                "--user",
+                "0",
+                LEGACY_CLASH,
+            ],
+            10,
+        )
+        .await?;
+    if clash
+        .lines()
+        .any(|line| line == "package:com.github.metacubex.clash.meta versionCode:211036")
+    {
+        if adb
+            .execute(
+                &[
+                    "shell",
+                    "pm",
+                    "uninstall",
+                    "-k",
+                    "--user",
+                    "0",
+                    LEGACY_CLASH,
+                ],
+                10,
+            )
+            .await?
+            != "Success"
+        {
+            return Err(Error::Invalid("phone_cleanup_failed"));
+        }
+        changed = true;
+    }
+    Ok(changed)
 }
 async fn select_home(adb: &mut impl Device) -> Result<bool> {
     async fn selected(adb: &mut impl Device) -> Result<bool> {
@@ -163,37 +245,23 @@ async fn select_home(adb: &mut impl Device) -> Result<bool> {
     Ok(true)
 }
 
-pub(super) struct Applications(Vec<Application>);
+pub(super) struct Applications([Application; 2]);
 impl Applications {
-    pub async fn load(root: &Path, state: &State, adb: &mut impl Device) -> Result<Self> {
-        let abi = adb
-            .execute(&["shell", "getprop", "ro.product.cpu.abi"], 10)
-            .await?;
-        if !["arm64-v8a", "x86_64"].contains(&abi.as_str()) {
-            return Err(Error::Invalid("phone_application_abi"));
-        }
-        // Resources and pending intents are admitted before configuring input.
-        Ok(Self(vec![
+    pub fn load(root: &Path, state: &State) -> Result<Self> {
+        Ok(Self([
+            Application::admit(
+                state,
+                BROWSER,
+                "application-browser.pending.pb",
+                root.join("runtime/phone-apps/browser.apk"),
+                16 * 1024 * 1024,
+            )?,
             Application::admit(
                 state,
                 "dev.aiphone.home",
                 "application-home.pending.pb",
                 root.join("runtime/phone-apps/home.apk"),
                 16 * 1024 * 1024,
-            )?,
-            Application::admit(
-                state,
-                "com.github.metacubex.clash.meta",
-                "application-clash.pending.pb",
-                root.join(format!("runtime/guest-apps/clash-{abi}.apk")),
-                64 * 1024 * 1024,
-            )?,
-            Application::admit(
-                state,
-                "info.plateaukao.einkbro",
-                "application-browser.pending.pb",
-                root.join("runtime/phone-apps/browser.apk"),
-                crate::manifest::MAX_FILE,
             )?,
         ]))
     }
@@ -206,6 +274,9 @@ impl Applications {
         let mut changed = false;
         for app in &self.0 {
             changed |= app.configure(state, adb, observe).await?;
+        }
+        if !observe {
+            changed |= slim_system_apps(adb).await?;
         }
         Ok(changed)
     }
@@ -223,7 +294,8 @@ mod tests {
         visible: bool,
         install_unknown: bool,
         home_unknown: bool,
-        abi: String,
+        installed_system: BTreeSet<String>,
+        clash_version: Option<u32>,
     }
     impl Phone {
         fn new(state: &State) -> Self {
@@ -235,7 +307,8 @@ mod tests {
                 visible: true,
                 install_unknown: false,
                 home_unknown: false,
-                abi: "arm64-v8a".into(),
+                installed_system: BTreeSet::new(),
+                clash_version: None,
             }
         }
         fn count(&self, verb: &str) -> usize {
@@ -252,8 +325,40 @@ mod tests {
         async fn execute(&mut self, args: &[&str], _: u64) -> Result<String> {
             self.calls
                 .push(args.iter().map(|s| s.to_string()).collect());
-            if args == ["shell", "getprop", "ro.product.cpu.abi"] {
-                return Ok(self.abi.clone());
+            if args == ["shell", "pm", "list", "packages", "-s", "--user", "0"] {
+                return Ok(self
+                    .installed_system
+                    .iter()
+                    .map(|name| format!("package:{name}\n"))
+                    .collect());
+            }
+            if args.starts_with(&["shell", "pm", "uninstall", "-k", "--user", "0"]) {
+                let package = *args.last().unwrap();
+                if package == "com.github.metacubex.clash.meta" {
+                    assert_eq!(self.clash_version.take(), Some(211036));
+                } else {
+                    assert!(self.installed_system.remove(package));
+                }
+                return Ok("Success".into());
+            }
+            if args.starts_with(&["shell", "pm", "list", "packages", "--show-versioncode"]) {
+                return Ok(self.clash_version.map_or_else(String::new, |version| {
+                    format!("package:com.github.metacubex.clash.meta versionCode:{version}")
+                }));
+            }
+            if args
+                == [
+                    "shell",
+                    "cmd",
+                    "role",
+                    "add-role-holder",
+                    "--user",
+                    "0",
+                    "android.app.role.BROWSER",
+                    BROWSER,
+                ]
+            {
+                return Ok(String::new());
             }
             if args.starts_with(&["shell", "pm", "list", "packages"]) {
                 let package = args.last().unwrap();
@@ -272,11 +377,8 @@ mod tests {
                     .unwrap()
                 {
                     "home.apk" => ("application-home.pending.pb", "dev.aiphone.home"),
-                    "browser.apk" => ("application-browser.pending.pb", "info.plateaukao.einkbro"),
-                    _ => (
-                        "application-clash.pending.pb",
-                        "com.github.metacubex.clash.meta",
-                    ),
+                    "browser.apk" => ("application-browser.pending.pb", BROWSER),
+                    name => panic!("unexpected APK: {name}"),
                 };
                 let path = self.directory.join(journal);
                 let intent = NativeAndroidApplicationIntent::decode(
@@ -322,8 +424,6 @@ mod tests {
         for name in [
             "runtime/phone-apps/home.apk",
             "runtime/phone-apps/browser.apk",
-            "runtime/guest-apps/clash-arm64-v8a.apk",
-            "runtime/guest-apps/clash-x86_64.apk",
         ] {
             let path = root.join(name);
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -337,40 +437,22 @@ mod tests {
         let state = State::lock(root.path(), "emulator-fixture").unwrap();
         let mut phone = Phone::new(&state);
         phone.packages.insert("user.application".into());
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        phone.installed_system.extend([
+            "com.android.dialer".into(),
+            "com.android.documentsui".into(),
+        ]);
+        let apps = Applications::load(root.path(), &state).unwrap();
         assert!(apps.configure(&state, &mut phone, false).await.unwrap());
-        assert_eq!(phone.count("install"), 3);
+        assert_eq!(phone.count("install"), 2);
         assert_eq!(phone.home, HOME);
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        let apps = Applications::load(root.path(), &state).unwrap();
         assert!(!apps.configure(&state, &mut phone, false).await.unwrap());
-        assert_eq!(phone.count("install"), 3);
+        assert_eq!(phone.count("install"), 2);
         assert!(phone.packages.contains("user.application"));
-    }
-    #[tokio::test]
-    async fn native_only_bundle_installs_matching_apps_without_an_unused_abi() {
-        for (abi, other) in [("arm64-v8a", "x86_64"), ("x86_64", "arm64-v8a")] {
-            let root = tempfile::tempdir().unwrap();
-            resources(root.path());
-            std::fs::remove_file(
-                root.path()
-                    .join(format!("runtime/guest-apps/clash-{other}.apk")),
-            )
-            .unwrap();
-            let state = State::lock(root.path(), "emulator-fixture").unwrap();
-            let mut phone = Phone::new(&state);
-            phone.abi = abi.into();
-            phone.packages.insert("user.application".into());
-            let apps = Applications::load(root.path(), &state, &mut phone)
-                .await
-                .unwrap();
-            assert!(apps.configure(&state, &mut phone, false).await.unwrap());
-            assert_eq!(phone.count("install"), 3);
-            assert!(phone.packages.contains("user.application"));
-        }
+        assert_eq!(
+            phone.installed_system.into_iter().collect::<Vec<_>>(),
+            ["com.android.documentsui"]
+        );
     }
     #[tokio::test]
     async fn existing_apps_keep_the_users_home_and_are_not_reinstalled() {
@@ -378,15 +460,16 @@ mod tests {
         resources(root.path());
         let state = State::lock(root.path(), "emulator-fixture").unwrap();
         let mut phone = Phone::new(&state);
-        phone.packages.extend([
-            "dev.aiphone.home".into(),
-            "com.github.metacubex.clash.meta".into(),
-            "info.plateaukao.einkbro".into(),
-        ]);
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        phone
+            .packages
+            .extend(["dev.aiphone.home".into(), "info.plateaukao.einkbro".into()]);
+        phone.clash_version = Some(211036);
+        let apps = Applications::load(root.path(), &state).unwrap();
+        assert!(apps.configure(&state, &mut phone, false).await.unwrap());
+        assert_eq!(phone.clash_version, None);
+        phone.clash_version = Some(211037);
         assert!(!apps.configure(&state, &mut phone, false).await.unwrap());
+        assert_eq!(phone.clash_version, Some(211037));
         assert_eq!(phone.home, "other/.Home");
         assert_eq!(phone.count("install"), 0);
     }
@@ -399,17 +482,13 @@ mod tests {
             let mut phone = Phone::new(&state);
             phone.visible = visible;
             phone.install_unknown = true;
-            let apps = Applications::load(root.path(), &state, &mut phone)
-                .await
-                .unwrap();
+            let apps = Applications::load(root.path(), &state).unwrap();
             let first = apps.configure(&state, &mut phone, false).await;
             assert_eq!(first.is_ok(), visible);
-            let apps = Applications::load(root.path(), &state, &mut phone)
-                .await
-                .unwrap();
+            let apps = Applications::load(root.path(), &state).unwrap();
             let second = apps.configure(&state, &mut phone, false).await;
             assert_eq!(second.is_ok(), visible);
-            assert_eq!(phone.count("install"), if visible { 3 } else { 1 });
+            assert_eq!(phone.count("install"), if visible { 2 } else { 1 });
         }
     }
     #[tokio::test]
@@ -419,16 +498,12 @@ mod tests {
         let state = State::lock(root.path(), "emulator-fixture").unwrap();
         let mut phone = Phone::new(&state);
         phone.home_unknown = true;
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        let apps = Applications::load(root.path(), &state).unwrap();
         assert!(apps.configure(&state, &mut phone, false).await.is_err());
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        let apps = Applications::load(root.path(), &state).unwrap();
         assert!(apps.configure(&state, &mut phone, false).await.is_ok());
         assert_eq!(phone.count("set-home-activity"), 1);
-        assert_eq!(phone.count("install"), 3);
+        assert_eq!(phone.count("install"), 2);
     }
     #[tokio::test]
     async fn foreign_intent_or_missing_resource_fails_before_device_writes() {
@@ -444,37 +519,20 @@ mod tests {
         state
             .persist("application-home.pending.pb", &value.encode_to_vec())
             .unwrap();
-        assert!(
-            Applications::load(root.path(), &state, &mut phone)
-                .await
-                .is_err()
-        );
+        assert!(Applications::load(root.path(), &state).is_err());
         state.clear("application-home.pending.pb").unwrap();
-        std::fs::remove_file(root.path().join("runtime/guest-apps/clash-arm64-v8a.apk")).unwrap();
-        assert!(
-            Applications::load(root.path(), &state, &mut phone)
-                .await
-                .is_err()
-        );
+        std::fs::remove_file(root.path().join("runtime/phone-apps/browser.apk")).unwrap();
+        assert!(Applications::load(root.path(), &state).is_err());
         assert_eq!(phone.count("install"), 0);
         assert_eq!(phone.count("set-home-activity"), 0);
     }
     #[tokio::test]
-    async fn unsupported_abi_and_read_only_absence_never_install() {
+    async fn read_only_absence_never_installs() {
         let root = tempfile::tempdir().unwrap();
         resources(root.path());
         let state = State::lock(root.path(), "emulator-fixture").unwrap();
         let mut phone = Phone::new(&state);
-        phone.abi = "unsupported".into();
-        assert!(
-            Applications::load(root.path(), &state, &mut phone)
-                .await
-                .is_err()
-        );
-        phone.abi = "x86_64".into();
-        let apps = Applications::load(root.path(), &state, &mut phone)
-            .await
-            .unwrap();
+        let apps = Applications::load(root.path(), &state).unwrap();
         assert!(apps.configure(&state, &mut phone, true).await.is_err());
         assert_eq!(phone.count("install"), 0);
     }

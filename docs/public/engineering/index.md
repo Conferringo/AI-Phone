@@ -19,7 +19,6 @@ Component formats, ownership and maintainer build interfaces are listed below. A
 - [Evidence-backed application experience](app-learning.md)
 - [Offline Linux OCR](linux-offline-ocr.md)
 - [Phone control applications](phone-apps.md)
-- [Guest networking applications](guest-apps.md)
 - [Device network observation](network-observation.md)
 
 ## Persistent installation

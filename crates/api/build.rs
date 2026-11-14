@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         format!("{root}/ai_phone/v1/desktop.proto"),
         format!("{root}/ai_phone/v1/proactive.proto"),
         format!("{root}/ai_phone/v1/device_network.proto"),
+        format!("{root}/ai_phone/v1/harness_proxy.proto"),
         format!("{root}/ai_phone/v1/voice.proto"),
     ];
     for file in &files {

@@ -1,5 +1,5 @@
 //! Child-process supervision and installation progress receipts.
-use super::{ManagerState, Progress};
+use super::{Activity, ActivityState, ManagerState, Progress};
 use std::{
     fs,
     io::{BufRead, BufReader, Read, Write},
@@ -39,7 +39,11 @@ fn read_events(
     let mut ready = None;
     for line in BufReader::new(output).lines() {
         let line = line.map_err(|_| "process_output_unavailable")?;
-        if let Some(event) = line
+        if let Some(event) = line.strip_prefix("AI_PHONE_ACTIVITY ") {
+            if let Ok(activity) = serde_json::from_str(event) {
+                manager.record(activity);
+            }
+        } else if let Some(event) = line
             .strip_prefix("AI_PHONE_SETUP ")
             .filter(|value| value.len() <= 150000)
         {
@@ -115,6 +119,11 @@ pub(super) fn execute(
 ) -> Result<(), String> {
     let log = folder.join("install.log");
     let (mut child, output) = spawn(manager, command, &log)?;
+    let installer = "ai-phone-client --initialize-unix-host";
+    manager.record(Activity {
+        command: installer.into(),
+        state: ActivityState::Running,
+    });
     let state = manager.clone();
     let reader_folder = folder.to_owned();
     let log = log.to_owned();
@@ -141,5 +150,9 @@ pub(super) fn execute(
     if let Some(progress) = completed?? {
         manager.publish(folder, progress)?;
     }
+    manager.record(Activity {
+        command: installer.into(),
+        state: ActivityState::Completed,
+    });
     Ok(())
 }

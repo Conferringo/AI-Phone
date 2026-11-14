@@ -4,9 +4,6 @@ import {
   mkdirSync,
   copyFileSync,
   linkSync,
-  chmodSync,
-  mkdtempSync,
-  rmSync,
 } from "node:fs";
 import { join, basename } from "node:path";
 import { ROOT, output, run, hash, download } from "./process";
@@ -17,7 +14,6 @@ import {
   verifyFiles,
   records,
   collect,
-  publicBytes,
 } from "./inventory";
 import { buildApk } from "./android-apk";
 
@@ -165,85 +161,4 @@ export function installerApk(root: string, role: keyof typeof packages) {
 export function notificationHelper(root = ROOT) {
   const bundled = join(root, "runtime/phone-apps/notification-access.jar");
   return existsSync(bundled) ? bundled : compileProbe(root);
-}
-export function guestPins(root = ROOT) {
-  const value = json(join(root, "config/clash-apps.json"));
-  return {
-    "arm64-v8a": value.android,
-    x86_64: value.alternatives["android-x86_64"],
-  };
-}
-export function guestFingerprint(root = ROOT) {
-  return hash(
-    JSON.stringify(
-      ["config/clash-apps.json", "scripts/tooling/phone-apps.ts"].map(
-        (name) => [name, hash(readFileSync(join(root, name)))],
-      ),
-    ),
-  );
-}
-export async function buildGuestApps(root = ROOT) {
-  const destination = join(root, ".tools/guest-apps");
-  mkdirSync(destination, { recursive: true });
-  const apps: Record<string, unknown> = {},
-    files: SourceFile[] = [];
-  for (const [abi, pin] of Object.entries(guestPins(root))) {
-    const file = join(root, ".tools/clash-apps/android", pin.file);
-    if (!existsSync(file)) await download(pin.url, file);
-    const bytes = readFileSync(file);
-    if (bytes.length !== pin.size_bytes || hash(bytes) !== pin.sha256)
-      throw Error("Clash APK pin mismatch");
-    apps[abi] = {
-      package: "com.github.metacubex.clash.meta",
-      version: pin.version,
-      signer_sha256: pin.signer_sha256,
-    };
-    checkApk(file, "com.github.metacubex.clash.meta", pin.signer_sha256);
-    const name = "clash-" + abi + ".apk";
-    copyFileSync(file, join(destination, name));
-    files.push({
-      path: "runtime/guest-apps/" + name,
-      data: bytes,
-      mode: 0o644,
-    });
-  }
-  const value = {
-    format: 1,
-    source_sha256: guestFingerprint(root),
-    apps,
-    files: records(files),
-  };
-  save(join(destination, "manifest.json"), value);
-  return value;
-}
-export async function prepareGuestApps(root = ROOT) {
-  const folder = join(root, ".tools/guest-apps"),
-    value = json(join(folder, "manifest.json"));
-  if (value.source_sha256 !== guestFingerprint(root))
-    throw Error("Guest app source changed");
-  await verifyFiles(
-    folder,
-    value.files.map((row: any) => ({ ...row, path: basename(row.path) })),
-  );
-  const abi = process.arch === "arm64" ? "arm64-v8a" : "x86_64";
-  const selected = value.files.filter((row: any) =>
-    row.path.endsWith("clash-" + abi + ".apk"),
-  );
-  const manifest = {
-    ...value,
-    apps: { [abi]: value.apps[abi] },
-    files: selected,
-  };
-  return [
-    ...selected.map((row: any) => ({
-      path: row.path,
-      data: readFileSync(join(folder, basename(row.path))),
-      mode: row.mode,
-    })),
-    {
-      path: "runtime/guest-apps/manifest.json",
-      data: Buffer.from(JSON.stringify(manifest)),
-      mode: 0o644,
-    },
-  ];
 }

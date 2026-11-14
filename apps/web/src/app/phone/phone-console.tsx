@@ -59,6 +59,7 @@ import { SkillsWindow } from "@/components/skills-window";
 import {MapPin} from "lucide-react";
 import {LocationWindow} from "@/components/location-window";
 import { KnowledgeWindow } from "@/components/knowledge-window";
+import { HarnessProxy } from "@/components/harness-proxy";
 import { WorkspaceWindow } from "@/components/workspace-window";
 import { ExecutionTrace } from "@/components/execution-trace";
 import {ProactiveProvider,ExplorationToggle,TaskGoal,TaskGoalBackdrop} from "@/components/proactive-controls";
@@ -147,6 +148,7 @@ function DeviceWorkbench(){
     <LanguageTrigger open={feature==='language'} onOpen={()=>setFeature('language')}/>
     <WindowTrigger label={t("Skill管理")} open={feature==='skills'} onOpen={()=>setFeature('skills')}><Wrench size={18}/></WindowTrigger>
     <WindowTrigger label={t("模拟位置")} open={feature==='location'} onOpen={()=>setFeature('location')}><MapPin size={18} fill={locationEnabled?'currentColor':'none'} fillOpacity={.16}/></WindowTrigger>
+    <HarnessProxy open={feature==='proxy'} onOpen={()=>setFeature('proxy')} onClose={()=>close('proxy')}/>
     <WindowTrigger label={t("知识库")} open={feature==='knowledge'} onOpen={()=>setFeature('knowledge')}><BookOpen size={18}/></WindowTrigger>
     <WindowTrigger label={t("文件管理")} open={feature==='files'} onOpen={()=>setFeature('files')}><FolderOpen size={18}/></WindowTrigger>
     <TaskGoal open={feature==='goal'} deviceId={selectedDevice?.id??current} onOpen={()=>setFeature('goal')} onClose={()=>close('goal')}/>

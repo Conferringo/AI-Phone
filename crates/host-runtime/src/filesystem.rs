@@ -185,72 +185,29 @@ pub(crate) fn copy_record(
     control: &Control<'_>,
     written: &mut u64,
 ) -> Result<()> {
-    let (path, mut output) = record_file(root, row)?;
-    copy_content(root, row, source, &mut output, control, written)?;
-    output.sync_all()?;
-    mode(&path, row.mode)
+    if stage_record(root, &row.path, row.size, source, control, written)? != row.sha256 {
+        return Err(Error::Invalid("source_resource_changed"));
+    }
+    mode(&root.join(&row.path), row.mode)
 }
 
-fn record_file(root: &Path, row: &Record) -> Result<(PathBuf, File)> {
-    let path = root.join(&row.path);
+pub(crate) fn stage_record(
+    root: &Path,
+    name: &str,
+    size: u64,
+    source: &mut dyn Read,
+    control: &Control<'_>,
+    written: &mut u64,
+) -> Result<String> {
+    let path = root.join(name);
     let parent = path
         .parent()
         .ok_or(Error::Invalid("source_resource_path"))?;
     directory(parent, true)?;
     checked_parents(root, parent)?;
-    let output = File::create_new(&path)?;
-    Ok((path, output))
-}
-
-struct RecordWriter<'a> {
-    output: &'a mut File,
-    row: &'a Record,
-    digest: Sha256,
-    actual: u64,
-}
-
-impl RecordWriter<'_> {
-    fn append(
-        &mut self,
-        bytes: &[u8],
-        root: &Path,
-        control: &Control<'_>,
-        written: &mut u64,
-    ) -> Result<()> {
-        self.actual += bytes.len() as u64;
-        if self.actual > self.row.size {
-            return Err(Error::Invalid("source_resource_changed"));
-        }
-        check_written(root, control, written, bytes.len() as u64)?;
-        self.output.write_all(bytes)?;
-        self.digest.update(bytes);
-        Ok(())
-    }
-
-    fn verify(self) -> Result<()> {
-        if self.actual != self.row.size
-            || format!("{:x}", self.digest.finalize()) != self.row.sha256
-        {
-            return Err(Error::Invalid("source_resource_changed"));
-        }
-        Ok(())
-    }
-}
-
-fn copy_content(
-    root: &Path,
-    row: &Record,
-    source: &mut dyn Read,
-    output: &mut File,
-    control: &Control<'_>,
-    written: &mut u64,
-) -> Result<()> {
-    let mut writer = RecordWriter {
-        output,
-        row,
-        digest: Sha256::new(),
-        actual: 0,
-    };
+    let mut output = File::create_new(path)?;
+    let mut digest = Sha256::new();
+    let mut actual = 0;
     let mut buffer = [0; CHUNK];
     loop {
         control.check()?;
@@ -258,9 +215,19 @@ fn copy_content(
         if length == 0 {
             break;
         }
-        writer.append(&buffer[..length], root, control, written)?;
+        actual += length as u64;
+        if actual > size {
+            return Err(Error::Invalid("source_resource_changed"));
+        }
+        check_written(root, control, written, length as u64)?;
+        output.write_all(&buffer[..length])?;
+        digest.update(&buffer[..length]);
     }
-    writer.verify()
+    if actual != size {
+        return Err(Error::Invalid("source_resource_changed"));
+    }
+    output.sync_all()?;
+    Ok(format!("{:x}", digest.finalize()))
 }
 
 fn check_written(path: &Path, control: &Control<'_>, written: &mut u64, size: u64) -> Result<()> {
@@ -302,11 +269,11 @@ pub(crate) fn publish_private(home: &Path, name: &str, bytes: &[u8], initial: bo
     sync_directory(home)
 }
 
-pub(crate) fn finish_temporary(result: Result<()>, temporary: tempfile::TempDir) -> Result<()> {
+pub(crate) fn finish_temporary<T>(result: Result<T>, temporary: tempfile::TempDir) -> Result<T> {
     match (result, temporary.close()) {
-        (Ok(()), Ok(())) => Ok(()),
+        (Ok(value), Ok(())) => Ok(value),
         (Err(error), Ok(())) => Err(error),
-        (Ok(()), Err(error)) => Err(error.into()),
+        (Ok(_), Err(error)) => Err(error.into()),
         (Err(primary), Err(cleanup)) => Err(Error::Cleanup {
             primary: Box::new(primary),
             cleanup,

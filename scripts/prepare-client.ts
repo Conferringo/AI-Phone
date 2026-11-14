@@ -16,7 +16,6 @@ console.log(
       nativeServices: args.includes("--with-service-runtime"),
       phoneApps: args.includes("--with-phone-apps"),
       containerHost: args.includes("--with-container-host"),
-      guestApps: args.includes("--with-guest-apps"),
       androidRuntime: option("--android-runtime"),
       imageRuntime: option("--images-runtime"),
       linuxOcr: option("--linux-ocr"),

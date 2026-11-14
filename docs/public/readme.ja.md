@@ -4,7 +4,7 @@
 
 ## ダウンロードと現状
 
-[0.0.1 Aluminum をダウンロード](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.1)
+[0.0.2 Beryllium をダウンロード](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.2)
 
 Apple Silicon 搭載の macOS 15.0 以降、または Windows 11 x64 に対応します。各インストーラーに Android、Linux、エミュレーター、ローカルサービスが含まれます。
 

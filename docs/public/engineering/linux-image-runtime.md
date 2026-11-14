@@ -2,7 +2,7 @@
 
 The native installer can carry a host-architecture-matched `images.payload` alongside Android and source components. It contains four clean image roles: the Agent work environment, Linux GUI desktop, PostgreSQL and Redis. User homes, database volumes, browser profiles, phone disks, credentials and chats remain separate installation state. A running user's container is never an input.
 
-The desktop contains Openbox, Chromium, LibreOffice, Chinese fonts/input support, audio and notification helpers, and the pinned Clash application. The container host supplies the VM, kernel and engine.
+The desktop contains Openbox, Chromium, LibreOffice, Chinese fonts/input support, and audio and notification helpers. The container host supplies the VM, kernel and engine.
 
 ## Validation and activation
 
@@ -20,7 +20,7 @@ These JSON records describe local artifacts and installation state. Browser busi
 
 ## Maintainer workflow
 
-Use a clean source export and a dedicated builder engine. Build the workspace and desktop Dockerfiles with `infra/workspace` and `infra/desktop` as their contexts, never a user's installation root. The desktop's `clash_apps` named context must contain the matching verified package from `config/clash-apps.json`. Its installer is mounted during the build step rather than retained in an image layer.
+Use a clean source export and a dedicated builder engine. Build the workspace and desktop Dockerfiles with that source export as the context.
 
 Review the built images and digest-pinned PostgreSQL/Redis defaults in `compose.yaml`. Record their references in a local JSON object with keys `workspace`, `desktop`, `postgres`, `redis`, then run:
 

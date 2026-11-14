@@ -61,27 +61,6 @@ impl Phone {
             .map_err(|_| Error::Invalid("android_maintenance_encoding"))
     }
 }
-const OPTIONAL: &[&str] = &[
-    "dev.aiphone.bridge",
-    "com.android.camera2",
-    "com.android.calendar",
-    "com.android.deskclock",
-    "com.android.gallery3d",
-    "com.android.music",
-    "com.android.musicfx",
-    "com.android.contacts",
-    "com.android.dialer",
-    "com.android.messaging",
-    "com.android.quicksearchbox",
-    "com.android.stk",
-    "org.chromium.webview_shell",
-    "com.android.devicediagnostics",
-    "com.android.traceur",
-    "com.android.egg",
-    "com.android.dreams.basic",
-    "com.android.dreams.phototable",
-    "com.android.emulator.multidisplay",
-];
 async fn cleanup(phone: &Phone) -> Result<Value> {
     if phone
         .text(&["shell", "settings", "get", "secure", "default_input_method"])
@@ -100,7 +79,10 @@ async fn cleanup(phone: &Phone) -> Result<Value> {
         return Err(Error::Invalid("phone_cleanup_browser_required"));
     }
     let mut removed = Vec::new();
-    for package in OPTIONAL {
+    for package in super::OPTIONAL_SYSTEM_APPS
+        .iter()
+        .chain([&"dev.aiphone.bridge"])
+    {
         if installed
             .lines()
             .any(|line| line.strip_prefix("package:") == Some(*package))
