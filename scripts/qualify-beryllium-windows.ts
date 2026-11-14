@@ -207,6 +207,19 @@ try {
   if (desktopSetupExit !== 0) {
     ok(existsSync(checkpoint), "Windows setup stopped before creating its checkpoint");
     const state = JSON.parse(readFileSync(checkpoint, "utf8")).progress.state;
+    if (state === "failed" && process.env.AIMANITY_QA_BERYLLIUM_FRESH === "1") {
+      const directory = join(home, "components", "android");
+      const [identity] = readdirSync(directory);
+      const adb = join(directory, identity!, "sdk", "platform-tools", "adb.exe");
+      const guest = (command: string) => {
+        const output = Bun.spawnSync([adb, "-P", "15037", "-s", "127.0.0.1:5565", "shell", command], {env, timeout: 12_000});
+        console.log(`Window setup diagnostic ${command}: code=${output.exitCode} ${output.stdout.toString().trim()} ${output.stderr.toString().trim()}`);
+      };
+      guest("getprop sys.boot_completed; id -u; pm list packages --user 0; cmd package resolve-activity --brief --user 0 -a android.intent.action.MAIN -c android.intent.category.HOME; settings get secure default_input_method; ls -l /data/local/tmp/ai-phone-input-notification-probe.jar");
+      guest("cmd role get-role-holders --user 0 android.app.role.BROWSER");
+      guest("cmd role add-role-holder --user 0 android.app.role.BROWSER info.plateaukao.einkbro");
+      guest("logcat -d -t 600 -s PackageManager PackageInstaller PermissionController RoleControllerService AndroidRuntime | tail -60");
+    }
     equal(state, "ready", "Windows setup must reach actual dual-device readiness before checking the workbench");
     console.error("Workbench UI failed. Checking the independently served workbench and real devices.");
   }
