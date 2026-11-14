@@ -28,7 +28,7 @@ Setup verifies user 0, registered and selected Unicode input, hardware-keyboard 
 
 Existing `input-setup.pending.json` records remain readable. An installation intent is synced before the only install attempt; an unknown result is observed before recovery, and an absent package with an unresolved intent is not reinstalled. Existing APKs and application data are preserved. No model request, per-action reflection or database query participates in this bootstrap. These checks establish input/notification capabilities, not successful delivery of a real notification to an Agent or a complete host installation.
 
-Offline setup activates the bundled launcher, the guest-ABI-specific Clash APK and EinkBro browser under the same serial lease. Source admission verifies the component inventory. Before installing an app, setup saves its package and serial in a protobuf intent. It observes the installed package and, for a new launcher, the selected home before clearing the intent. An unresolved attempt with no installed package requires manual resolution. Installs preserve existing applications and their selected home.
+Offline setup installs the paged home screen and EinkBro browser. New phones show the browser, Settings and Files on the home screen. Apps installed later join the same screen. Input and notification services use the same serial lease. Existing apps, their data and the selected home are preserved.
 
 EinkBro binaries, exact hashes, signer and source revision are pinned in [the browser policy](../../../config/phone-browser.json). Only the guest ABI is packaged. The new baseline uses Android’s system WebView. The previous development phone keeps its installed browser; the new baseline has not been installed there. Fresh-device setup installs a missing browser and preserves an existing one. New installers still require complete runtime and redistribution qualification.
 
@@ -44,7 +44,7 @@ Current platform support, installer availability and distribution requirements a
 
 输入初始化的锁、安装意图、输入法与通知授权核验由 Rust 负责。已安装输入应用也要核验必要能力，补齐时保留其他输入法和无障碍服务；只读核验不会改设置。通知权限以系统通知服务的实际返回为准，相同探针不重复传输。旧安装意图继续兼容，结果未知先观察，不直接重装。
 
-完整离线初始化还可在同一串行锁内安装随包桌面、对应 ABI 的 Clash 和 EinkBro 浏览器，安装意图使用 protobuf。现有应用和桌面选择保留，新桌面选中后须核验；未知安装结果不重放。仅在创建新安装意图时读取 APK 摘要，恢复已有应用不重复读取整个 APK。其他平台的旧源码开发入口仍有迁移工作。
+首装在同一串行锁内安装分页桌面和 EinkBro 浏览器。新手机在桌面直接显示浏览器、设置和文件管理，后来安装的应用自动加入桌面。已有应用、数据及桌面选择继续保留。
 
 组件同时绑定源指纹、包名、签名摘要和文件摘要，损坏时明确停止，不回退编译。只有模拟器和两个 APK 都齐备才跳过 Java；仅有模拟器会在创建设备前停止。启动流程继续只安装缺失应用，保留已安装应用与数据。
 

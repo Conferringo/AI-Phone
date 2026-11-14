@@ -1,7 +1,7 @@
 {
-  "version": "0.0.1",
-  "release_name": "Aluminum",
-  "release_notes": "Initial AImanity release with guided setup, runtime recovery, and lighter startup, chat, and device streams.",
+  "version": "0.0.2",
+  "release_name": "Beryllium",
+  "release_notes": "Install progress, a simpler Android home screen, and workbench proxy subscriptions.",
   "source_preview": {
     "license": "Apache-2.0",
     "remote_publication_authorized": true,

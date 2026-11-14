@@ -32,17 +32,6 @@ fn state(v: Value) -> wire::DeviceNetworkState {
             .collect(),
     }
 }
-pub async fn prepare(app: &App, device: &str) -> Result<(), String> {
-    ai_phone_host_runtime::network_paths::prepare(&app.root, "desktop", device)
-        .map_err(|error| error.to_string())
-}
-pub async fn install_apps(app: &App) -> Result<(), String> {
-    ai_phone_host_runtime::guest_app_resources::prepare(&app.root)
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
 pub async fn recover(app: Shared) {
     loop {
         if let Ok(_guard) = app.network_mutation.try_lock() {

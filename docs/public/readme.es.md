@@ -4,7 +4,7 @@
 
 ## Descargas y estado
 
-[Descargar 0.0.1 Aluminum](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.1)
+[Descargar 0.0.2 Beryllium](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.2)
 
 Requiere macOS 15.0 o posterior con Apple Silicon, o Windows 11 x64. Cada instalador incluye Android, Linux, el emulador y los servicios locales.
 

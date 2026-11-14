@@ -103,11 +103,14 @@
 }
 .registry-content>.registry-layout {flex:1
 }
-.floating-window[data-window-id=configuration-center] {
+.floating-window:is([data-window-id=configuration-center],[data-window-id=agent-create]) {
  --control-height:var(--setup-control);
  --radius:var(--setup-radius);
  color:var(--setup-ink);font-family:var(--setup-font)
 }
+.floating-window[data-window-id=agent-create] {--setup-top:16px;--setup-bottom:16px;--setup-inset:18px;--setup-title-gap:16px}
+.floating-window[data-window-id=agent-create] .floating-body {display:flex;padding:0}
+.floating-window[data-window-id=agent-create] .registry-setup-heading {font-size:18px}
 .registry-steps {
  display:flex;flex-wrap:wrap;gap:0 clamp(12px,3.5vw,22px);margin:0;padding:0;list-style:none
 }

@@ -4,7 +4,7 @@
 
 ## 下載與現況
 
-[下載 0.0.1 Aluminum](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.1)
+[下載 0.0.2 Beryllium](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.2)
 
 支援 Apple Silicon macOS 15.0 以上與 Windows 11 x64。安裝包內建 Android、Linux、模擬器及本機服務。
 

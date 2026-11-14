@@ -26,6 +26,8 @@ struct DeploymentStatus {
     #[serde(flatten)]
     deployment: Option<bootstrap::Snapshot>,
     startup: StartupProgress,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    activity: Vec<bootstrap::Activity>,
 }
 
 fn is_setup_url(url: &Url) -> bool {
@@ -261,6 +263,7 @@ fn deployment_status(
     Ok(DeploymentStatus {
         deployment,
         startup,
+        activity: bootstrap::activity(&app),
     })
 }
 #[tauri::command]
@@ -513,6 +516,7 @@ mod tests {
     fn startup_status_omits_setup_data() {
         let status = DeploymentStatus {
             deployment: None,
+            activity: Vec::new(),
             startup: StartupProgress {
                 phase: "checking",
                 error: String::new(),

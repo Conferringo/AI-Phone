@@ -7,6 +7,7 @@ struct Fixture {
     calls: Vec<(String, Vec<String>, Vec<u8>)>,
     container: Option<(String, bool)>,
     assistant_running: bool,
+    desktop_image: Option<String>,
     fail_images: bool,
     trace: Rc<RefCell<Vec<String>>>,
     fail: Option<String>,
@@ -74,13 +75,17 @@ impl Execute for Fixture {
                     });
                 }
                 let (root, running) = self.container.as_ref().unwrap();
-                serde_json::to_vec(&json!({"id":"a".repeat(64),"name":"/ai-phone-desktop","running":running,"labels":{"com.docker.compose.project":"ai-phone","com.docker.compose.project.working_dir":root}})).unwrap()
+                serde_json::to_vec(&json!({"id":"a".repeat(64),"name":"/ai-phone-desktop","image":"ai-phone-desktop:aluminum","running":running,"labels":{"com.docker.compose.project":"ai-phone","com.docker.compose.project.working_dir":root}})).unwrap()
             }
             Some("--activate-images") => {
                 if self.fail_images {
                     return Err(Error::Invalid("image_import_unconfirmed"));
                 }
-                br#"{"AI_PHONE_IMAGE_PULL_POLICY":"never"}"#.to_vec()
+                let mut selected = BTreeMap::from([("AI_PHONE_IMAGE_PULL_POLICY", "never")]);
+                if let Some(image) = self.desktop_image.as_deref() {
+                    selected.insert("AI_PHONE_DESKTOP_IMAGE", image);
+                }
+                serde_json::to_vec(&selected).unwrap()
             }
             Some("--service-control") if args[3] == "status" => {
                 if self.assistant_running {
@@ -485,14 +490,25 @@ async fn fresh_backend_uses_native_services_and_never_creates_desktop_or_starts_
 
 #[tokio::test]
 async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_desktop() {
-    for (running, staged) in [(false, false), (false, true), (true, true)] {
+    for (running, staged, refresh) in [
+        (false, false, false),
+        (false, true, false),
+        (true, true, false),
+        (true, true, true),
+    ] {
         let folder = tempfile::tempdir().unwrap();
         let root = folder.path().canonicalize().unwrap();
+        let desktop_image = if refresh {
+            "ai-phone-desktop:beryllium"
+        } else {
+            "ai-phone-desktop:aluminum"
+        };
         let mut backend = fixture(
             &root,
             Fixture {
                 container: Some((root.to_str().unwrap().into(), running)),
                 assistant_running: true,
+                desktop_image: Some(desktop_image.into()),
                 ..Fixture::default()
             },
         );
@@ -538,12 +554,35 @@ async fn resume_keeps_tokens_skips_live_database_and_only_starts_exact_stopped_d
             assert_eq!(starts[0].1, ["start".into(), "a".repeat(64)]);
         }
         let calls = &backend.execute.calls;
+        assert_eq!(
+            calls.iter().any(|(_, args, _)| args
+                == &[
+                    "compose",
+                    "-f",
+                    "compose.desktop.yaml",
+                    "up",
+                    "-d",
+                    "--wait",
+                    "--no-build",
+                    "--pull",
+                    "never",
+                    "desktop",
+                ]),
+            refresh
+        );
         let update = calls
             .iter()
             .position(|(_, args, _)| args.first().map(String::as_str) == Some("exec"));
         assert_eq!(update.is_some(), staged);
         if let Some(index) = update {
-            assert_eq!(calls[index].1[4], "a".repeat(64));
+            assert_eq!(
+                calls[index].1[4],
+                if refresh {
+                    "ai-phone-desktop".into()
+                } else {
+                    "a".repeat(64)
+                }
+            );
             assert_eq!(calls[index].2, b"guest bridge");
             let first_service = calls
                 .iter()

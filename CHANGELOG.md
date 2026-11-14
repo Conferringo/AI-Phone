@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.2 Beryllium
+
+- Show live installation commands and prepare the local runtime in one extraction pass.
+- Open the Agent form next to its add button.
+- Simplify fresh Android home screens and manage proxy subscriptions from the workbench.
+
+
 ## 0.0.1 Aluminum
 
 - Set up the interface language, device resources and model in order.

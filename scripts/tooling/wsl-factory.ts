@@ -21,7 +21,6 @@ import { Readable } from "node:stream";
 import { digest, run, output } from "./process";
 import { json, save, collect, records } from "./inventory";
 import { tarEntries, entryBytes } from "./archive";
-import { Zip } from "./zip";
 import { fetchPin } from "./factory";
 import { packageInputs } from "./container-host";
 import { imageManifest } from "./image-capsule";
@@ -91,7 +90,7 @@ export async function sourceInput(file: string, root: string) {
   }
   const components = [...manifest.components].sort(),
     base = ["native-services", "web"],
-    complete = ["guest-apps", "native-services", "phone-apps", "web"];
+    complete = ["native-services", "phone-apps", "web"];
   if (
     ![JSON.stringify(base), JSON.stringify(complete)].includes(
       JSON.stringify(components),
@@ -118,33 +117,43 @@ export async function sourceInput(file: string, root: string) {
 }
 export async function preparePhoneTools(root: string, work: string) {
   const pin = {
-      url: "https://github.com/meator/android-tools-static/releases/download/36.0.1/adb-36.0.1-linux-x64.zip",
-      sha256: "1808ce1db6ae78ca6e11a52ec2d57d0dcff6e35157cdde2831c5d5973082f62a",
-      size_bytes: 13_007_124,
+      url: "https://github.com/meator/android-tools-static/releases/download/36.0.1/android-tools-static-linux-standardlayout-x86_64.tar.gz",
+      sha256: "a49e62b843b4520ad0e10cff3ef0e211b23ecaa27fdcff56f2faafef1e04c317",
+      size_bytes: 18_854_175,
       version: "36.0.1",
     },
-    archive = await fetchPin(work, "platform-tools.zip", pin),
-    folder = join(work, "sdk");
-  mkdirSync(folder);
-  mkdirSync(join(folder, "platform-tools"));
-  const zip = new Zip(archive);
-  for (const name of phoneRequired.filter((name) => name.startsWith("platform-tools/"))) {
-    const entry = zip.entries.find((entry) => entry.name === name);
-    if (!entry) throw Error(`Missing native phone bridge file: ${name}`);
-    writeFileSync(join(folder, name), await zip.bytes(entry), {
-      flag: "wx",
-      mode: entry.mode & 0o111 ? 0o755 : 0o644,
-    });
+    [archive, notice] = await Promise.all([
+      fetchPin(work, "platform-tools.tar.gz", pin),
+      fetchPin(work, "adb-notice.b64", {
+        url: "https://android.googlesource.com/platform/packages/modules/adb/+/78f769e0904c21771cccf6e4e7b239b21800e189/NOTICE?format=TEXT",
+        sha256: "58698510c6f56f9ba8064e80bb8d449aa47e0a1bcef33bb91752aca4da114783",
+        size_bytes: 14_260,
+      }),
+    ]),
+    folder = join(work, "sdk"),
+    platformTools = join(folder, "platform-tools"),
+    adb = join(platformTools, "adb");
+  mkdirSync(platformTools, { recursive: true });
+  for await (const entry of tarEntries(archive, "gzip")) {
+    if (entry.name !== "android-tools-static/adb" || entry.type !== "0") continue;
+    await pipeline(Readable.from(entry.body), createWriteStream(adb, {
+      flags: "wx",
+      mode: 0o755,
+    }));
+    break;
   }
-  const revision = readFileSync(
-    join(folder, "platform-tools/source.properties"),
-    "utf8",
-  )
-    .match(/^Pkg.Revision\s*=\s*(.+)$/m)?.[1]
-    ?.trim();
-  if (revision !== pin.version) throw Error("Linux ADB revision differs");
+  writeFileSync(
+    join(platformTools, "NOTICE.txt"),
+    Buffer.from(readFileSync(notice, "utf8"), "base64"),
+    { flag: "wx" },
+  );
+  writeFileSync(
+    join(platformTools, "source.properties"),
+    `Pkg.Desc=android-tools-static\nPkg.Revision=${pin.version}\n`,
+    { flag: "wx" },
+  );
   const header = Buffer.alloc(20),
-    fd = openSync(join(folder, "platform-tools/adb"), "r");
+    fd = openSync(adb, "r");
   try {
     readSync(fd, header);
   } finally {

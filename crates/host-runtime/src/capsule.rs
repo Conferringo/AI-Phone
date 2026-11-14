@@ -18,9 +18,24 @@ thread_local! {
     pub(crate) static HASHED_BYTES: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
 }
 
+struct Compressed<'a> {
+    file: &'a mut File,
+    digest: Option<&'a mut Sha256>,
+}
+
+impl Read for Compressed<'_> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let length = self.file.read(buffer)?;
+        if let Some(digest) = self.digest.as_deref_mut() {
+            hash_chunk(digest, &buffer[..length]);
+        }
+        Ok(length)
+    }
+}
+
 enum Decoder<'a> {
-    Gzip(GzDecoder<BufReader<&'a mut File>>),
-    Xz(XzDecoder<BufReader<&'a mut File>>),
+    Gzip(GzDecoder<BufReader<Compressed<'a>>>),
+    Xz(XzDecoder<BufReader<Compressed<'a>>>),
 }
 
 pub(crate) struct Reader<'a, 'b> {
@@ -31,12 +46,17 @@ pub(crate) struct Reader<'a, 'b> {
 }
 
 impl<'a, 'b> Reader<'a, 'b> {
-    pub fn with_limit(file: &'a mut File, control: &'b Control<'b>, maximum: u64) -> Result<Self> {
+    pub fn with_limit(
+        file: &'a mut File,
+        control: &'b Control<'b>,
+        maximum: u64,
+        digest: Option<&'a mut Sha256>,
+    ) -> Result<Self> {
         file.rewind()?;
         let mut magic = [0; 6];
         file.read_exact(&mut magic)?;
         file.rewind()?;
-        let input = BufReader::with_capacity(CHUNK, file);
+        let input = BufReader::with_capacity(CHUNK, Compressed { file, digest });
         let decoder = match magic {
             [0x1f, 0x8b, ..] => Decoder::Gzip(GzDecoder::new(input)),
             [0xfd, b'7', b'z', b'X', b'Z', 0] => {
@@ -134,9 +154,13 @@ pub(crate) fn hash(file: &mut File, control: &Control<'_>) -> Result<String> {
         if length == 0 {
             break;
         }
-        hash.update(&buffer[..length]);
-        #[cfg(test)]
-        HASHED_BYTES.with(|bytes| bytes.set(bytes.get() + length as u64));
+        hash_chunk(&mut hash, &buffer[..length]);
     }
     Ok(format!("{:x}", hash.finalize()))
+}
+
+fn hash_chunk(hash: &mut Sha256, bytes: &[u8]) {
+    hash.update(bytes);
+    #[cfg(test)]
+    HASHED_BYTES.with(|count| count.set(count.get() + bytes.len() as u64));
 }

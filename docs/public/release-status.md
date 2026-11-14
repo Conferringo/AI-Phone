@@ -1,13 +1,13 @@
 # Install AImanity / 安装 AImanity
 
-[0.0.1 Aluminum](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.1) includes Android, the Linux desktop and local services.
+[0.0.2 Beryllium](https://github.com/MrMilkDragon/AImanity/releases/tag/v0.0.2) includes Android, the Linux desktop and local services.
 
 | Platform | Requirements | Installer | Factory |
 | --- | --- | --- | --- |
-| macOS | Apple Silicon, macOS 15+ | [DMG](https://github.com/MrMilkDragon/AImanity/releases/download/v0.0.1/AImanity-0.0.1-macos-arm64.dmg) | [macOS](engineering/macos-full-runtime.md) |
-| Windows | Windows 11 x64, hardware virtualization | [EXE](https://github.com/MrMilkDragon/AImanity/releases/download/v0.0.1/AImanity-0.0.1-windows-x64-setup.exe) | [Windows](windows-client-factory.md) |
+| macOS | Apple Silicon, macOS 15+ | [DMG](https://github.com/MrMilkDragon/AImanity/releases/download/v0.0.2/AImanity-0.0.2-macos-arm64.dmg) | [macOS](engineering/macos-full-runtime.md) |
+| Windows | Windows 11 x64, hardware virtualization | [EXE](https://github.com/MrMilkDragon/AImanity/releases/download/v0.0.2/AImanity-0.0.2-windows-x64-setup.exe) | [Windows](windows-client-factory.md) |
 
-Open the app, choose your device settings, then add a model in Configuration. Aluminum uses ad hoc signing on macOS and self-signed Authenticode on Windows.
+Open the app, choose your device settings, then add a model in Configuration. Beryllium uses ad hoc signing on macOS and self-signed Authenticode on Windows.
 
 - **macOS.** If macOS reports an unidentified developer, open **System Settings → Privacy & Security → Open Anyway** after trying to launch AImanity. [Apple first-launch help](https://support.apple.com/en-us/102445)
 - **Windows.** If SmartScreen shows **Windows protected your PC**, choose **Run anyway** when offered for the EXE downloaded from the Releases link above. [Microsoft SmartScreen help](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation#certificate-options-and-their-smartscreen-implications)

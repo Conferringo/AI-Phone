@@ -161,7 +161,7 @@ impl<E: Execute> Backend<'_, E> {
             "container",
             "inspect",
             "--format",
-            r#"{"id":{{json .Id}},"name":{{json .Name}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}"#,
+            r#"{"id":{{json .Id}},"name":{{json .Name}},"image":{{json .Config.Image}},"running":{{json .State.Running}},"labels":{{json .Config.Labels}}}"#,
         ];
         command.extend(ids.iter().copied());
         let inspected = self.docker(&command).await?;
@@ -291,11 +291,33 @@ impl<E: Execute> Backend<'_, E> {
             }
         }
         if let Some(desktop) = existing.get("ai-phone-desktop") {
-            if !desktop.running {
-                self.docker(&["start", &desktop.id]).await?;
-            }
+            let target = if self
+                .env
+                .get("AI_PHONE_DESKTOP_IMAGE")
+                .is_some_and(|image| image != &desktop.image)
+            {
+                self.docker(&[
+                    "compose",
+                    "-f",
+                    "compose.desktop.yaml",
+                    "up",
+                    "-d",
+                    "--wait",
+                    "--no-build",
+                    "--pull",
+                    "never",
+                    "desktop",
+                ])
+                .await?;
+                "ai-phone-desktop"
+            } else {
+                if !desktop.running {
+                    self.docker(&["start", &desktop.id]).await?;
+                }
+                &desktop.id
+            };
             if let Some(bridge) = crate::desktop_bridge::DesktopBridge::staged(self.root).await? {
-                let command = self.command("docker", bridge.install_args(&desktop.id));
+                let command = self.command("docker", bridge.install_args(target));
                 self.checked(command, bridge.bytes).await?;
             }
         }
@@ -351,6 +373,7 @@ fn identity(id: &str) -> bool {
 pub(crate) struct Container {
     id: String,
     name: String,
+    image: String,
     running: bool,
     labels: BTreeMap<String, String>,
 }

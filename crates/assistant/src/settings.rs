@@ -127,9 +127,15 @@ pub struct SettingsStore {
     dir: PathBuf,
     state: SyncMutex<State>,
     model_clients: SyncMutex<BTreeMap<String, reqwest::Client>>,
+    pub(crate) harness_proxy: crate::harness_proxy::HarnessProxy,
 }
 impl SettingsStore {
     pub(crate) fn http_client(&self, proxy_url: &str) -> Result<reqwest::Client, String> {
+        let proxy_url = if proxy_url.is_empty() && self.harness_proxy.enabled() {
+            crate::harness_proxy::ADDRESS
+        } else {
+            proxy_url
+        };
         let mut clients = self.model_clients.lock().map_err(|_| "模型连接池不可用")?;
         if let Some(client) = clients.get(proxy_url) {
             return Ok(client.clone());
@@ -178,6 +184,8 @@ impl SettingsStore {
         }
         let store = Self {
             dir,
+            harness_proxy: crate::harness_proxy::HarnessProxy::new(root)
+                .map_err(|_| "无法创建代理下载连接")?,
             model_clients: SyncMutex::new(BTreeMap::new()),
             state: SyncMutex::new(State {
                 current,

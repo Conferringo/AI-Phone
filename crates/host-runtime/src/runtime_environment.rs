@@ -186,10 +186,6 @@ impl Profile {
             ),
             ("AI_PHONE_SDK_ROOT".into(), sdk),
             ("AI_PHONE_ANDROID_ABI".into(), abi.into()),
-            (
-                "AI_PHONE_CLASH_DESKTOP_DIR".into(),
-                if x64 { "linux-amd64" } else { "linux" }.into(),
-            ),
             ("JAVA_HOME".into(), java.clone()),
             ("AI_PHONE_JAVA_HOME".into(), java),
             ("AI_PHONE_HOST_PROXY".into(), host.clone()),
@@ -229,7 +225,6 @@ impl Profile {
         ] {
             env.insert(key.into(), number(section, field, default)? + suffix);
         }
-        env.extend(super::guest_apps::environment(root, abi)?);
         Ok(env)
     }
 }

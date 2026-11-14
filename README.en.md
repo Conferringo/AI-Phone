@@ -4,7 +4,7 @@ English · [简体中文](README.md#简体中文) · [繁體中文](docs/public/
 
 An agent that listens while it works, explores on its own, and learns across Android and Linux.
 
-## 0.0.1 Aluminum
+## 0.0.2 Beryllium
 
 Apple Silicon macOS and Windows 11 x64. [Download DMG or EXE](docs/public/release-status.md) · [GitHub Releases](https://github.com/MrMilkDragon/AImanity/releases)
 

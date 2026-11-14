@@ -12,6 +12,7 @@ import {settingsRpc} from '@/lib/settings-client';
 import {AgentConnections} from './connections-dialog';
 import {AgentMemory} from './memory-window';
 import {AgentVoice} from './agent-voice';
+import {FloatingWindow, rememberAnchor} from './floating-window';
 import {useI18n} from './locale-provider';
 import {Button} from './ui/button';
 import {SelectField} from './ui/select';
@@ -53,7 +54,10 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
 }) {
   const {t} = useI18n();
   const [editing, setEditing] = useState<{id:string; section:Section} | null>(null);
+  const [addition, setAddition] = useState<{id:string; open:boolean} | null>(null);
   const [deleting, setDeleting] = useState('');
+  const addButton = useRef<HTMLButtonElement>(null);
+  const adding = open && !!addition?.open;
   const configured = registry.agents.flatMap(agent => {
     const model = registry.models.find(row => row.id === agent.modelConnectionId);
     return model?.profile ? [{agent, model}] : [];
@@ -61,7 +65,10 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
   const selected = configured.find(({agent}) => agent.id === editing?.id);
 
   useEffect(() => {
-    if (voiceAgentId) setEditing({id:voiceAgentId, section:'voice'});
+    if (voiceAgentId) {
+      setAddition(null);
+      setEditing({id:voiceAgentId, section:'voice'});
+    }
   }, [voiceAgentId]);
 
   const firstAgent = onboarding && configured.length === 0;
@@ -71,16 +78,26 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
     onSave={onSave} onClearError={onClearError}
     onClose={firstAgent ? undefined : () => {setEditing(null); onClearError();}}/>;
 
+  function closeAdd() {
+    setAddition(current => current && {...current, open:false});
+    onClearError();
+  }
+
   return <section className="registry-setup-stage" aria-label="Agent">
     <div className="registry-pane-heading">
       <h3 className="setup-title" data-setup-heading tabIndex={-1}>Agent</h3>
-      <Button type="button" variant="outline" size="icon" className="registry-model-add" aria-label={t('添加 Agent')}
-        title={t('添加 Agent')} disabled={!!busy} onClick={() => {onClearError(); setEditing({id:clientId(), section:'config'});}}>
+      <Button ref={addButton} type="button" variant="outline" size="icon" className="registry-model-add" aria-label={t('添加 Agent')}
+        aria-haspopup="dialog" aria-expanded={!!adding} title={t('添加 Agent')} disabled={!!busy} onClick={event => {
+          if (adding) { closeAdd(); return; }
+          rememberAnchor(event.currentTarget, event.detail === 0 ? 'keyboard' : 'click');
+          onClearError();
+          setAddition({id:clientId(), open:true});
+        }}>
         <Plus size={19}/>
       </Button>
     </div>
     <div className="registry-setup-scroll">
-      {error && <p role="alert" className="registry-setup-error">{error}</p>}
+      {error && !adding && <p role="alert" className="registry-setup-error">{error}</p>}
       {configured.length ? <ul className="registry-setup-rows registry-profile-list">
         {configured.map(({agent, model}) => {
           const active = registry.activeAgentId === agent.id;
@@ -110,6 +127,16 @@ export function RegistryAgents({registry, onboarding, open, voiceAgentId, busy, 
       </ul> : <p className="registry-setup-empty">{t('暂无 Agent')}</p>}
     </div>
     <footer className="registry-save setup-footer">{footer}{next}</footer>
+    <FloatingWindow id="agent-create" parentId="configuration-center" title={t('添加 Agent')}
+      open={adding} onClose={closeAdd} width={480} height={505} fitContent hideClose belowAnchor>
+      {addition && <div className="registry-center">
+        <AgentForm key={addition.id} draftId={addition.id} initialSection="config" busy={busy} error={error} open={adding}
+          onboarding={onboarding} onSave={onSave} onClearError={onClearError} onClose={() => {
+            closeAdd();
+            requestAnimationFrame(() => addButton.current?.focus({preventScroll:true}));
+          }}/>
+      </div>}
+    </FloatingWindow>
   </section>;
 }
 

@@ -12,6 +12,27 @@ pub mod session;
 pub use session::avo_runtime;
 
 pub const AVD_NAME: &str = "ai_phone_p2";
+const OPTIONAL_SYSTEM_APPS: &[&str] = &[
+    "com.android.browser",
+    "com.android.calendar",
+    "com.android.camera2",
+    "com.android.contacts",
+    "com.android.deskclock",
+    "com.android.devicediagnostics",
+    "com.android.dialer",
+    "com.android.dreams.basic",
+    "com.android.dreams.phototable",
+    "com.android.egg",
+    "com.android.emulator.multidisplay",
+    "com.android.gallery3d",
+    "com.android.messaging",
+    "com.android.music",
+    "com.android.musicfx",
+    "com.android.quicksearchbox",
+    "com.android.stk",
+    "com.android.traceur",
+    "org.chromium.webview_shell",
+];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]

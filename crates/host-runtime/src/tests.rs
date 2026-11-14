@@ -77,7 +77,7 @@ fn empty_releases(home: &Path) -> bool {
 }
 
 #[test]
-fn source_payload_is_hashed_once_after_inventory_scan() {
+fn source_payload_is_hashed_once_while_extracting() {
     for xz in [false, true] {
         let temporary = tempfile::tempdir().unwrap();
         let (path, identity) = minimal(temporary.path(), b"verified file copy", xz);
@@ -98,12 +98,12 @@ fn source_payload_is_hashed_once_after_inventory_scan() {
 }
 
 #[test]
-fn file_copy_still_rejects_payload_changes_after_inspection() {
+fn file_copy_rejects_an_archive_with_a_self_consistent_replacement_manifest() {
     for xz in [false, true] {
         let temporary = tempfile::tempdir().unwrap();
         let root = temporary.path();
         let (path, identity) = minimal(root, b"original", xz);
-        let manifest = json!({"format":1,"files":[record("scripts/main.rs",b"original",0o755)]});
+        let manifest = json!({"format":1,"files":[record("scripts/main.rs",b"modified",0o755)]});
         let changed = encoded(
             &tar_bytes(&[("scripts/main.rs", b"modified")], &manifest, false),
             xz,

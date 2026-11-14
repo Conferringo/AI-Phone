@@ -16,7 +16,7 @@ import { json, save, records, canonical } from "./inventory";
 import { writeTar, tarEntries, entryBytes, type ArchiveFile } from "./archive";
 import { prepareWeb } from "./web-runtime";
 import { prepareServices } from "./native-build";
-import { preparePhone, prepareGuestApps } from "./phone-apps";
+import { preparePhone } from "./phone-apps";
 import { prepareContainerHost } from "./container-host";
 import { buildConfig } from "./resources";
 import { fetchPin } from "./factory";
@@ -28,14 +28,12 @@ export const componentManifests = {
   "native-services": "runtime/services/manifest.json",
   "phone-apps": "runtime/phone-apps/manifest.json",
   "container-host": "runtime/container-host/manifest.json",
-  "guest-apps": "runtime/guest-apps/manifest.json",
 };
 export type PayloadOptions = {
   web?: boolean;
   nativeServices?: boolean;
   phoneApps?: boolean;
   containerHost?: boolean;
-  guestApps?: boolean;
   androidRuntime?: string;
   imageRuntime?: string;
   linuxOcr?: string;
@@ -66,7 +64,6 @@ export async function preparePayload(
     ],
     ["phoneApps", "phone-apps", () => preparePhone(root)],
     ["containerHost", "container-host", () => prepareContainerHost(root)],
-    ["guestApps", "guest-apps", () => prepareGuestApps(root)],
   ];
   for (const [key, name, produce] of producers)
     if (options[key]) {

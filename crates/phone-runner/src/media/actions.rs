@@ -11,7 +11,7 @@ use wire::device_action_request::Action;
 type Contact = (u32, u32, u32);
 
 enum Input {
-    Grpc(Session),
+    Grpc(Box<Session>),
     #[cfg(target_os = "macos")]
     Avo(super::avo::Control),
     Adb,
@@ -26,7 +26,7 @@ impl Input {
         if media.adb_media {
             return Ok(Self::Adb);
         }
-        Ok(Self::Grpc(media.session()?))
+        Ok(Self::Grpc(Box::new(media.session()?)))
     }
 
     async fn touch(&mut self, contacts: &[Contact], pressure: i32, rotation: u32) -> Result<()> {

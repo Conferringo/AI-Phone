@@ -133,7 +133,6 @@ export async function macosFactory(
       "--with-service-runtime",
       "--with-phone-apps",
       "--with-container-host",
-      "--with-guest-apps",
       "--android-runtime",
       android.file,
       "--images-runtime",
@@ -181,7 +180,7 @@ export async function macosFactory(
       guest_boot: "not-executed",
     },
     image_capsule_bytes: lstatSync(images).size,
-    phone_apps_source_sha256: apps.phone.source_sha256,
+    phone_apps_source_sha256: apps.source_sha256,
     physical_installation: "not-tested",
     binary_publication: false,
   };

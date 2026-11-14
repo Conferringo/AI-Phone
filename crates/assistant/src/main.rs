@@ -33,7 +33,10 @@ mod device_network;
 mod device_setup;
 mod exploration_policy;
 mod files;
+mod harness_proxy;
+mod harness_proxy_devices;
 mod history_window;
+
 mod http;
 mod location;
 mod location_devices;
@@ -297,12 +300,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
         .await?;
     registry::initialize(&db, &settings).await?;
     setup::initialize(&db, &root).await?;
-    let mut remote = reqwest::Client::builder().no_proxy();
-    if let Ok(proxy) = std::env::var("AI_PHONE_HOST_PROXY")
-        && !proxy.is_empty()
-    {
-        remote = remote.proxy(reqwest::Proxy::all(&proxy)?);
-    }
+    let host_proxy = std::env::var("AI_PHONE_HOST_PROXY").ok();
     let app = Arc::new(App {
         db,
         token: std::fs::read_to_string(root.join("data/assistant/token"))?
@@ -317,10 +315,7 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
             .no_proxy()
             .timeout(Duration::from_secs(30))
             .build()?,
-        remote: remote
-            .connect_timeout(Duration::from_secs(15))
-            .timeout(Duration::from_secs(180))
-            .build()?,
+        remote: harness_proxy::download_client(host_proxy.as_deref())?,
         active: Mutex::new(Default::default()),
         run_signals: Default::default(),
         login_attempts: Mutex::new(Vec::new()),
@@ -342,9 +337,12 @@ async fn serve(arguments: Vec<std::ffi::OsString>) -> Result<(), Box<dyn std::er
     tokio::spawn(location::work(app.clone()));
     tokio::spawn(device_exchange::work(app.clone()));
     tokio::spawn(device_network::recover(app.clone()));
+    tokio::spawn(harness_proxy::resume(app.clone()));
+
     let routes = Router::new()
         .route("/v1/registry/{operation}", post(registry::route))
         .route("/v1/location/{operation}", post(location::route))
+        .route("/v1/proxy/{operation}", post(harness_proxy::route))
         .route(
             "/v1/device-network/{operation}",
             post(device_network::route),

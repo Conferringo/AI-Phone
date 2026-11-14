@@ -4,9 +4,11 @@ use crate::{
     filesystem, links,
     manifest::{self, Inventory},
 };
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fs::{self, File},
+    io::Read,
     path::Path,
 };
 
@@ -116,8 +118,8 @@ fn recover_existing(
     let result = (|| {
         let mut written = 0;
         if !damaged.is_empty() {
-            let repeated =
-                archive::visit(file, control, |name, _, source| match damaged.get(name) {
+            let repeated = archive::visit(file, control, None, |name, _, source| {
+                match damaged.get(name) {
                     Some(row) => filesystem::copy_record(
                         temporary.path(),
                         row,
@@ -126,7 +128,8 @@ fn recover_existing(
                         &mut written,
                     ),
                     None => archive::drain(source),
-                })?;
+                }
+            })?;
             if repeated.headers != index.headers
                 || !manifest::same_manifest(&repeated.raw, &index.raw)
             {
@@ -154,31 +157,30 @@ fn recover_existing(
 fn write_source(
     file: &mut File,
     work: &Path,
-    index: &Inventory,
+    expected: &str,
     control: &Control<'_>,
-) -> Result<()> {
-    let records: BTreeMap<_, _> = index
-        .manifest
-        .files
-        .iter()
-        .map(|row| (row.path.as_str(), row))
-        .collect();
+) -> Result<Inventory> {
+    let mut records = BTreeMap::new();
     let mut written = 0;
-    let mut count = 0usize;
-    let repeated = archive::visit(file, control, |name, _size, source| {
-        if count.is_multiple_of(32) {
+    let index = verified_inventory(file, expected, control, |name, size, source| {
+        if records.len().is_multiple_of(32) {
             control.space(work, 0)?;
         }
-        count += 1;
-        let row = records
-            .get(name)
-            .ok_or(Error::Invalid("source_resource_inventory"))?;
-        filesystem::copy_record(work, row, source, control, &mut written)
+        manifest::source_name(name, true)?;
+        let digest = filesystem::stage_record(work, name, size, source, control, &mut written)?;
+        records.insert(name.to_owned(), digest);
+        Ok(())
     })?;
-    if repeated.headers != index.headers || !manifest::same_manifest(&repeated.raw, &index.raw) {
-        return Err(Error::Invalid("source_resource_changed"));
+    control.space(work, 0)?;
+    for row in &index.manifest.files {
+        control.check()?;
+        if records.get(&row.path) != Some(&row.sha256) {
+            return Err(Error::Invalid("source_resource_changed"));
+        }
+        filesystem::mode(&work.join(&row.path), row.mode)?;
     }
-    filesystem::write_manifest(work, &index.raw)
+    filesystem::write_manifest(work, &index.raw)?;
+    Ok(index)
 }
 
 fn publish(
@@ -204,38 +206,38 @@ fn new_source(
     file: &mut File,
     home: &Path,
     destination: &Path,
-    index: &Inventory,
+    expected: &str,
     control: &Control<'_>,
-) -> Result<()> {
-    let total = index.manifest.files.iter().map(|row| row.size).sum();
-    control.space(&home.join("releases"), total)?;
+) -> Result<Inventory> {
+    control.space(&home.join("releases"), 0)?;
     let temporary = tempfile::Builder::new()
         .prefix(".source-stage-")
         .tempdir_in(home.join("releases"))?;
     let work = temporary.path().join("source");
     let result = (|| {
         filesystem::directory(&work, false)?;
-        write_source(file, &work, index, control)?;
+        let index = write_source(file, &work, expected, control)?;
         links::runtime(&work, &index.manifest.components, true)?;
         links::persistent(&work, home, true)?;
         filesystem::sync_tree(&work, control)?;
-        publish(&work, destination, index, home, control)
+        publish(&work, destination, &index, home, control)?;
+        Ok(index)
     })();
     filesystem::finish_temporary(result, temporary)
 }
 
-fn inspect_payload(
-    payload: &Path,
+fn verified_inventory(
+    file: &mut File,
     expected: &str,
     control: &Control<'_>,
-) -> Result<(File, Inventory)> {
-    let mut file = filesystem::regular(payload)?;
-    capsule::check_identity(&file, expected, MAX_COMPRESSED)?;
-    let index = archive::visit(&mut file, control, |_name, _size, source| {
-        archive::drain(source)
-    })?;
-    capsule::verify_bounded_identity(&mut file, expected, control, MAX_COMPRESSED)?;
-    Ok((file, index))
+    body: impl FnMut(&str, u64, &mut dyn Read) -> Result<()>,
+) -> Result<Inventory> {
+    let mut digest = Sha256::new();
+    let index = archive::visit(file, control, Some(&mut digest), body)?;
+    if format!("{:x}", digest.finalize()) != expected {
+        return Err(Error::Invalid("source_resource_changed"));
+    }
+    Ok(index)
 }
 
 pub(crate) fn stage(
@@ -246,17 +248,24 @@ pub(crate) fn stage(
     repair: bool,
 ) -> Result<StagedSource> {
     control.check()?;
-    let (mut file, index) = inspect_payload(payload, expected, control)?;
+    let mut file = filesystem::regular(payload)?;
+    capsule::check_identity(&file, expected, MAX_COMPRESSED)?;
     layout(home)?;
     let destination = home.join("releases").join(expected);
     let reused = fs::symlink_metadata(&destination).is_ok();
-    if !reused {
-        new_source(&mut file, home, &destination, &index, control)?;
-    } else if repair {
-        recover_existing(&mut file, &destination, &index, home, control)?;
+    let index = if reused {
+        let index = verified_inventory(&mut file, expected, control, |_, _, source| {
+            archive::drain(source)
+        })?;
+        if repair {
+            recover_existing(&mut file, &destination, &index, home, control)?;
+        } else {
+            verify_existing(&destination, &index, home, control)?;
+        }
+        index
     } else {
-        verify_existing(&destination, &index, home, control)?;
-    }
+        new_source(&mut file, home, &destination, expected, control)?
+    };
     Ok(StagedSource {
         directory: destination,
         data: home.join("user/data"),

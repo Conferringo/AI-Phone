@@ -29,18 +29,6 @@ DESKTOP_STYLE
   fi
   rm -f "$home/.config/libreoffice/4/.lock"
   mkdir -p "$home/Templates"
-  clash_home="$home/.local/share/io.github.clash-verge-rev.clash-verge-rev"
-  if [ ! -f "$clash_home/verge.yaml" ]; then
-    mkdir -p "$clash_home"
-    cat > "$clash_home/verge.yaml" <<'CLASH'
-service_state:
-  last_install_time: 0
-  install_count: 0
-  last_check_time: 0
-  last_error: null
-  prefer_sidecar: true
-CLASH
-  fi
   ;;
 desktop)
   cat > "$home/Desktop/Files.desktop" <<'DESKTOP'
@@ -91,15 +79,8 @@ Exec=/usr/local/bin/ai-phone-browser
 Icon=chromium
 Terminal=false
 DESKTOP
-  cat > "$home/Desktop/Clash.desktop" <<'DESKTOP'
-[Desktop Entry]
-Type=Application
-Name=Clash
-Exec=/usr/local/bin/ai-phone-clash
-Icon=clash-verge
-Terminal=false
-DESKTOP
-  chmod +x "$home/Desktop/Files.desktop" "$home/Desktop/Calc.desktop" "$home/Desktop/Writer.desktop" "$home/Desktop/Impress.desktop" "$home/Desktop/Draw.desktop" "$home/Desktop/Browser.desktop" "$home/Desktop/Clash.desktop"
+  rm -f "$home/Desktop/Clash.desktop"
+  chmod +x "$home/Desktop/Files.desktop" "$home/Desktop/Calc.desktop" "$home/Desktop/Writer.desktop" "$home/Desktop/Impress.desktop" "$home/Desktop/Draw.desktop" "$home/Desktop/Browser.desktop"
   ;;
 *) echo 'Unknown desktop home initialization stage' >&2; exit 1 ;;
 esac

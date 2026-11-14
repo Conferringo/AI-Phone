@@ -91,6 +91,32 @@
 #progress[data-startup=true] > h1 { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 #progress[data-startup=true] .progress-actions:not(:has(button:not([hidden]))) { display: none; }
 #license { justify-self: stretch; text-align: start; }
+.install-activity {
+  display: grid;
+  gap: 3px;
+  margin: 12px 0 0;
+  padding: 0;
+  color: var(--setup-muted);
+  font-size: var(--caption-size);
+  list-style: none;
+}
+.install-activity li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  text-align: left;
+}
+.install-activity code {
+  overflow: hidden;
+  font: inherit;
+  font-family: ui-monospace, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.install-activity [data-current] { color: var(--setup-ink); font-weight: 650; }
+.install-activity [data-current] code { overflow-wrap: anywhere; white-space: normal; }
+.install-activity [data-state=failed] span { color: var(--error); }
 @media (max-height: 460px) {
   :root { --setup-top: 32px; --setup-bottom: 14px; --setup-title-gap: 18px; }
 }

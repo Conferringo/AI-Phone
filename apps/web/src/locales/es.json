@@ -1,4 +1,10 @@
 {
+  "工作台代理": "Proxy del espacio de trabajo",
+  "无法读取代理设置": "No se pudo cargar la configuración del proxy",
+  "无法导入订阅": "No se pudo importar la suscripción",
+  "无法更新订阅": "No se pudo actualizar la suscripción",
+  "无法切换代理": "No se pudo cambiar el estado del proxy",
+  "无法切换节点": "No se pudo cambiar de nodo",
   "目标与要求": "Objetivo y requisitos",
   "填入你的目标与要求": "Escribe tu objetivo y requisitos",
   "激活": "Activar",

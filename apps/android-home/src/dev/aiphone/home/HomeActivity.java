@@ -13,6 +13,9 @@ import java.util.*;
 
 /** One canonical icon per installed package, directly on paged home screens. */
 public final class HomeActivity extends Activity {
+    private static final String SETTINGS = "com.android.settings";
+    private static final String FILES = "com.android.documentsui";
+    private static final String INPUT = "dev.aiphone.input";
     private final ArrayList<App> apps=new ArrayList<>();
     private LinearLayout root,pages;
     private HorizontalScrollView scroller;
@@ -45,7 +48,14 @@ public final class HomeActivity extends Activity {
         PackageManager pm=getPackageManager();Intent main=new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
         LinkedHashMap<String,App> unique=new LinkedHashMap<>();
         List<ResolveInfo> found=pm.queryIntentActivities(main,0);found.sort((a,b)->a.activityInfo.name.compareTo(b.activityInfo.name));
-        for(ResolveInfo info:found){String pkg=info.activityInfo.packageName;if(!pkg.equals(getPackageName())&&info.activityInfo.enabled)unique.putIfAbsent(pkg,new App(info,pm));}
+        for (ResolveInfo info : found) {
+            ActivityInfo activity = info.activityInfo;
+            String pkg = activity.packageName;
+            if (pkg.equals(getPackageName()) || pkg.equals(INPUT)) continue;
+            boolean system = (activity.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            if (system && !pkg.equals(SETTINGS) && !pkg.equals(FILES)) continue;
+            if (!unique.containsKey(pkg)) unique.put(pkg, new App(info, pm));
+        }
         ArrayList<String> order=new ArrayList<>(Arrays.asList(getPreferences(0).getString("order","").split("\\|")));
         apps.clear();for(String key:order){App app=unique.remove(key);if(app!=null)apps.add(app);}
         ArrayList<App> added=new ArrayList<>(unique.values());added.sort((a,b)->a.label.compareToIgnoreCase(b.label));apps.addAll(added);saveOrder();render();
@@ -93,5 +103,5 @@ public final class HomeActivity extends Activity {
         });return box;
     }
     private void open(App app){try{startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setComponent(app.component).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));}catch(ActivityNotFoundException e){reload();}}
-    private void menu(App app,View anchor){PopupMenu menu=new PopupMenu(this,anchor);menu.getMenu().add("打开").setOnMenuItemClickListener(item->{open(app);return true;});menu.getMenu().add("应用信息").setOnMenuItemClickListener(item->{startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.key)));return true;});if(!app.key.equals("com.android.settings")&&!app.key.equals("com.android.documentsui"))menu.getMenu().add("卸载").setOnMenuItemClickListener(item->{startActivity(new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+app.key)));return true;});menu.show();}
+    private void menu(App app,View anchor){PopupMenu menu=new PopupMenu(this,anchor);menu.getMenu().add("打开").setOnMenuItemClickListener(item->{open(app);return true;});menu.getMenu().add("应用信息").setOnMenuItemClickListener(item->{startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+app.key)));return true;});if(!app.key.equals(SETTINGS)&&!app.key.equals(FILES))menu.getMenu().add("卸载").setOnMenuItemClickListener(item->{startActivity(new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+app.key)));return true;});menu.show();}
 }

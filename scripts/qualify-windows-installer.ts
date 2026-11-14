@@ -360,6 +360,7 @@ try {
     } finally {
       await pcm.cancel();
       android("shell", "am", "force-stop", "com.android.music");
+      if (music !== "package:com.android.music") android("shell", "pm", "uninstall", "-k", "--user", "0", "com.android.music");
     }
     ok(min < 0 && max > 0, "installed Android audio emitted nonzero stereo PCM");
     console.log(JSON.stringify({ androidAudio: true, rate: 48000, channels: 2, samples, min, max }));

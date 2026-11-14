@@ -37,8 +37,12 @@ pub(crate) struct Request {
     locale: String,
     phone: Phone,
     desktop: Desktop,
+    #[cfg(unix)]
     #[serde(default)]
     pub(crate) android_qemu: bool,
+    #[cfg(windows)]
+    #[serde(default, rename = "android_qemu")]
+    _android_qemu: bool,
 }
 
 #[cfg(unix)]

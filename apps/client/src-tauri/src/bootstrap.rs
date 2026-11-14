@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use std::process::Command;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -88,6 +88,18 @@ pub struct Progress {
     #[serde(default)]
     pub license: String,
 }
+#[derive(Clone, Deserialize, Serialize)]
+pub struct Activity {
+    command: String,
+    state: ActivityState,
+}
+#[derive(Clone, Copy, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+enum ActivityState {
+    Running,
+    Completed,
+    Failed,
+}
 #[derive(Serialize)]
 pub struct Capability {
     pub platform: String,
@@ -159,12 +171,49 @@ pub struct ManagerState {
     running: AtomicBool,
     cancelled: AtomicBool,
     progress: Mutex<Progress>,
+    activity: Mutex<VecDeque<Activity>>,
     input: Mutex<Option<ChildStdin>>,
 }
 #[derive(Default)]
 pub struct Bootstrap(pub Arc<ManagerState>);
 
 impl ManagerState {
+    fn record(&self, entry: Activity) {
+        let mut entries = self.activity.lock().unwrap();
+        if entry.state != ActivityState::Running
+            && let Some(previous) = entries.iter_mut().rev().find(|previous| {
+                previous.command == entry.command && previous.state == ActivityState::Running
+            })
+        {
+            previous.state = entry.state;
+            return;
+        }
+        if entries.len() == 12 {
+            entries.pop_front();
+        }
+        entries.push_back(entry);
+    }
+    #[cfg(windows)]
+    fn track<T>(
+        &self,
+        command: &str,
+        run: impl FnOnce() -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.record(Activity {
+            command: command.into(),
+            state: ActivityState::Running,
+        });
+        let result = run();
+        self.record(Activity {
+            command: command.into(),
+            state: if result.is_ok() {
+                ActivityState::Completed
+            } else {
+                ActivityState::Failed
+            },
+        });
+        result
+    }
     fn publish(&self, folder: &Path, next: Progress) -> Result<(), String> {
         checkpoint::save(folder, &next)?;
         *self.progress.lock().map_err(|_| "installer_state")? = next;
@@ -189,6 +238,11 @@ impl ManagerState {
         Ok(())
     }
     fn failed(&self, folder: &Path, error: &str) {
+        for entry in self.activity.lock().unwrap().iter_mut() {
+            if entry.state == ActivityState::Running {
+                entry.state = ActivityState::Failed;
+            }
+        }
         let state = if error == "installation_cancelled" {
             "cancelled"
         } else {
@@ -226,6 +280,17 @@ impl ManagerState {
             .map(|progress| progress.error.clone())
             .unwrap_or_else(|| "installation_failed".into())
     }
+}
+
+pub fn activity(app: &tauri::AppHandle) -> Vec<Activity> {
+    app.state::<Bootstrap>()
+        .0
+        .activity
+        .lock()
+        .unwrap()
+        .iter()
+        .cloned()
+        .collect()
 }
 
 fn home(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -437,19 +502,31 @@ fn start_windows_backend(
             ai_phone_host_runtime::desktop_host_memory_mib(request.desktop.memory_mb),
             &profile,
             &cancelled,
+            |running| {
+                manager.record(Activity {
+                    command: "ai-phone-client --qemu-backend-owner".into(),
+                    state: if running {
+                        ActivityState::Running
+                    } else {
+                        ActivityState::Completed
+                    },
+                })
+            },
         ))
         .map_err(|error| error.code().to_string())?;
         let key = qemu_host::key_path(&home);
         manager.set(folder, "android", "running", "")?;
-        let boot = native_phone::start(
-            &phone,
-            "",
-            Some(NativeAndroidVmEndpoint {
-                port: control.into(),
-                key_file: key.to_str().ok_or("vm_control_key_path")?.into(),
-            }),
-            &cancelled,
-        )?;
+        let boot = manager.track("ai-phone-client --android-session", || {
+            native_phone::start(
+                &phone,
+                "",
+                Some(NativeAndroidVmEndpoint {
+                    port: control.into(),
+                    key_file: key.to_str().ok_or("vm_control_key_path")?.into(),
+                }),
+                &cancelled,
+            )
+        })?;
         manager.set(folder, "devices", "running", "")?;
         tauri::async_runtime::block_on(async {
             tokio::select! { biased;
@@ -481,7 +558,9 @@ fn start_windows_backend(
     manager.set(folder, "android", "running", "")?;
     // The detached worker owns the phone and bridge. Completion observes the
     // same pair and durable device setup; registration alone is never ready.
-    let boot = native_phone::start(&phone, &registered.distribution, None, &cancelled)?;
+    let boot = manager.track("ai-phone-client --android-session", || {
+        native_phone::start(&phone, &registered.distribution, None, &cancelled)
+    })?;
     manager.set(folder, "devices", "running", "")?;
     native
         .complete_devices(&registered.distribution, &boot.backend_bridge_id)
@@ -528,6 +607,7 @@ pub fn start(app: tauri::AppHandle, request: Request) -> Result<(), String> {
         return Err("installation_running".into());
     }
     manager.cancelled.store(false, Ordering::SeqCst);
+    manager.activity.lock().unwrap().clear();
     if let Err(error) = manager.set(&path, "checking", "running", "") {
         manager.running.store(false, Ordering::SeqCst);
         return Err(error);

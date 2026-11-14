@@ -12,9 +12,11 @@ let locale = choosingLanguage ? localeFor(navigator.language) : savedLanguage;
 let startup = { phase: window.__AIMANITY_STARTUP__ === true ? 'checking' : '', error: '' };
 let polling = false;
 let snapshot, actionError = '', statusError = '', pending = false, pollTimer, previousView, stopped = false;
+let activity = [], visibleActivityKey = '';
 const resources = { phone: { cpus: 2, memory_mb: 2048, storage_gb: 16 }, desktop: { cpus: 2, memory_mb: 2560 } };
 const sliders = [];
 const startupLabels = { checking: 'startupChecking', repairing: 'startupRepairing', opening: 'startupOpening', failed: 'startupFailed' };
+const activityLabels = { running: 'activityRunning', completed: 'activityCompleted', failed: 'activityFailed' };
 const errorLabels = {
   host_resources: 'hostResources', host_backend_pending: 'hostPending', installation_cancelled: 'cancelled',
   command_line_tools: 'commandLineTools', payload_unreadable: 'payloadUnreadable', invalid_payload: 'invalidPayload', download_failed: 'downloadFailed',
@@ -34,6 +36,30 @@ function translate() {
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = label(node.dataset.i18n);
 }
 
+function renderActivity(entries) {
+  const list = $('install-activity');
+  list.hidden = entries.length === 0;
+  const running = entries.findLast(entry => entry.state === 'running');
+  const recent = entries.slice(-3);
+  const rows = running && !recent.includes(running) ? [running, ...recent.slice(-2)] : recent;
+  const key = JSON.stringify([locale, rows]);
+  if (key === visibleActivityKey) return;
+  visibleActivityKey = key;
+  const current = running || rows.at(-1);
+  list.replaceChildren(...rows.map(entry => {
+    const row = document.createElement('li');
+    row.dataset.state = entry.state;
+    row.toggleAttribute('data-current', entry === current);
+    const command = document.createElement('code');
+    command.textContent = entry.command;
+    const result = document.createElement('span');
+    result.dir = 'auto';
+    result.textContent = label(activityLabels[entry.state]);
+    row.append(command, result);
+    return row;
+  }));
+}
+
 function render() {
   const startupPhase = startup.phase && statusError ? 'failed' : startup.phase;
   const selectingLanguage = choosingLanguage && !startupPhase;
@@ -51,6 +77,7 @@ function render() {
   $('local-panel').hidden = showingProgress;
   $('progress').hidden = !showingProgress;
   $('progress').dataset.startup = String(!!startupPhase);
+  renderActivity(!selectingLanguage && showingProgress && !ready && state !== 'license' ? activity : []);
   if (startupPhase) {
     $('progress-detail').dataset.state = starting ? 'running' : 'startup-failed';
     $('progress-title').textContent = label('start');
@@ -176,6 +203,7 @@ async function refresh() {
   try {
     const next = await invoke('deployment_status');
     startup = next.startup;
+    activity = next.activity ?? [];
     if (!startup.phase) {
       if (!snapshot && next.previous_request) {
         for (const { update, device, key } of sliders) {

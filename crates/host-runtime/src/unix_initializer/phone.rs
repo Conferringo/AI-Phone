@@ -20,6 +20,7 @@ pub(super) async fn start(
         .ok_or(Error::Invalid("android_session_phone"))?;
     let serial =
         crate::android::Engine::installed(std::path::Path::new(&phone.sdk_root)).serial(5564);
+    super::activity("ai-phone-client --android-session", "running");
     let mut child = Command::new(std::env::current_exe()?)
         .arg("--android-session")
         .process_group(0)
@@ -46,7 +47,7 @@ pub(super) async fn start(
     tokio::spawn(async move {
         let _ = child.wait().await;
     });
-    match receipt.result {
+    let boot = match receipt.result {
         Some(Reply::Booted(value))
             if value.version == 1
                 && value.root_verified
@@ -62,5 +63,10 @@ pub(super) async fn start(
         }
         Some(Reply::Failure(_)) => Err(Error::Invalid("android_session_start_failed")),
         _ => Err(Error::Invalid("android_session_outcome_unknown")),
-    }
+    };
+    super::activity(
+        "ai-phone-client --android-session",
+        if boot.is_ok() { "completed" } else { "failed" },
+    );
+    boot
 }

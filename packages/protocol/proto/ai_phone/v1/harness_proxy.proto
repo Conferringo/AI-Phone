@@ -1,0 +1,19 @@
+syntax = "proto3";
+package ai_phone.v1;
+
+message HarnessProxyRequest {
+  string subscription_url = 1;
+  string group = 2;
+  string node = 3;
+  bool enabled = 4;
+}
+message HarnessProxyGroup {
+  string name = 1;
+  string selected = 2;
+  repeated string nodes = 3;
+}
+message HarnessProxyState {
+  bool enabled = 1;
+  bool has_subscription = 2;
+  repeated HarnessProxyGroup groups = 3;
+}

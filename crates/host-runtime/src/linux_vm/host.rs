@@ -23,6 +23,8 @@ const STOP_LIMIT: Duration = Duration::from_secs(30);
 const PROFILE_FRAME: usize = 8192 + 8;
 const HIDDEN: u32 = 0x08000000;
 const GUEST_WEB_PORT: u16 = 17860;
+const ALUMINUM_BASE: &str = "348baa7207524397b74de603f08357b6d3b73947514eb9f662c6eb4e52a365a5";
+const ALUMINUM_BASE_SIZE: u64 = 1_101_660_160;
 
 struct QemuVmConfig<'a> {
     runtime: &'a Path,
@@ -240,7 +242,7 @@ impl<'a> QemuVm<'a> {
             }
         });
         let network = format!(
-            "user,id=network,hostfwd=tcp:127.0.0.1:{}-10.0.2.15:{},hostfwd=tcp:127.0.0.1:{}-10.0.2.15:{}",
+            "user,id=network,hostfwd=tcp:127.0.0.1:{}-10.0.2.15:{},hostfwd=tcp:127.0.0.1:{}-10.0.2.15:{},hostfwd=tcp:127.0.0.1:17906-10.0.2.15:17906",
             config.web_port,
             GUEST_WEB_PORT,
             config.control_port,
@@ -255,7 +257,6 @@ impl<'a> QemuVm<'a> {
                 "q35,accel=whpx",
                 "-cpu",
                 "Nehalem",
-
                 "-nodefaults",
                 "-display",
                 "none",
@@ -410,6 +411,7 @@ pub async fn ensure(
     memory_mib: u32,
     profile: &[u8],
     cancel: &dyn Fn() -> bool,
+    activity: impl Fn(bool),
 ) -> Result<()> {
     let manifest: VmManifest = serde_json::from_reader(File::open(bundle.join("manifest.json"))?)
         .map_err(|_| Error::Invalid("vm_bundle_invalid"))?;
@@ -428,7 +430,19 @@ pub async fn ensure(
         }
         Ok((path, &record.sha256))
     };
-    let (_, base_sha256) = file("guest/guest.qcow2")?;
+    let base_record = manifest
+        .files
+        .iter()
+        .find(|value| value.path == "guest/guest.qcow2")
+        .ok_or(Error::Invalid("vm_bundle_invalid"))?;
+    let base_size = filesystem::regular(&bundle.join("guest/guest.qcow2"))?
+        .metadata()?
+        .len();
+    let base_sha256 = match base_size {
+        size if size == base_record.size => base_record.sha256.as_str(),
+        ALUMINUM_BASE_SIZE => ALUMINUM_BASE,
+        _ => return Err(Error::Invalid("vm_bundle_changed")),
+    };
     let config = QemuVmConfig {
         runtime: &bundle.join("runtime"),
         guest: &bundle.join("guest"),
@@ -481,6 +495,7 @@ pub async fn ensure(
         stop_running(config.home, config.control_port).await?;
     }
     let mut child = config.worker_command()?.spawn()?;
+    activity(true);
     let mut input = child.stdin.take().ok_or(Error::Invalid("vm_owner_pipe"))?;
     let mut output = child.stdout.take().ok_or(Error::Invalid("vm_owner_pipe"))?;
     native_ipc::write_bounded(
@@ -513,6 +528,7 @@ pub async fn ensure(
         eprintln!("QEMU backend startup: {}", reply.error);
         return Err(Error::Invalid("vm_owner_start_failed"));
     }
+    activity(false);
     Ok(())
 }
 

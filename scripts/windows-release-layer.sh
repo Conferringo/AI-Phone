@@ -4,6 +4,7 @@ set -euo pipefail
 compiled=$(realpath "$1")
 baseline=$(realpath "$2")
 out=$(realpath "$3")
+images=${4:+$(realpath "$4")}
 temp=$(mktemp -d "$out/.release-layer.XXXXXXXX")
 trap 'rm -rf "$temp"' EXIT
 
@@ -18,6 +19,10 @@ done
 for path in /usr/local/libexec/aiphone-bootstrap /opt/aiphone/bundle/source.{payload,sha256}; do
   debugfs -R "stat $path" "$temp/base.ext4" | grep -E 'Type:[[:space:]]+regular'
 done
+if [ -n "$images" ]; then
+  test -s "$images"
+  debugfs -R 'stat /opt/aiphone/bundle/images.payload' "$temp/base.ext4" | grep -E 'Type:[[:space:]]+regular'
+fi
 debugfs -R "dump /opt/aiphone/engine/bin/busybox $temp/init/bin/busybox" "$temp/base.ext4"
 debugfs -R "dump /opt/aiphone/engine/lib/ld-musl-x86_64.so.1 $temp/init/lib/ld-musl-x86_64.so.1" "$temp/base.ext4"
 rm "$temp/base.ext4"
@@ -36,6 +41,9 @@ set -eu
 /bin/busybox mount -o bind /newroot/mnt/bootstrap.program /newroot/usr/local/libexec/aiphone-bootstrap
 /bin/busybox mount -o bind /newroot/mnt/source.payload /newroot/opt/aiphone/bundle/source.payload
 /bin/busybox mount -o bind /newroot/mnt/source.sha256 /newroot/opt/aiphone/bundle/source.sha256
+if [ -f /newroot/mnt/images.payload ]; then
+  /bin/busybox mount -o bind /newroot/mnt/images.payload /newroot/opt/aiphone/bundle/images.payload
+fi
 /bin/busybox mount -o move /dev /newroot/dev
 read -r release < /newroot/opt/aiphone/bundle/source.sha256
 printf 'AI_PHONE_RELEASE_LAYER %s\n' "$release"
@@ -50,11 +58,16 @@ chmod 0755 "$temp/init/init"
 install -m 0755 "$compiled/bootstrap.program" "$temp/layer/bootstrap.program"
 install -m 0644 "$compiled/source.payload" "$temp/layer/source.payload"
 sha256sum "$compiled/source.payload" | cut -d ' ' -f 1 > "$temp/layer/source.sha256"
+payloads=(bootstrap.program source.payload source.sha256)
+if [ -n "$images" ]; then
+  install -m 0644 "$images" "$temp/layer/images.payload"
+  payloads+=(images.payload)
+fi
 size=$(du -sb "$temp/layer" | cut -f 1)
 block_count=$(((size + 16 * 1024 * 1024 + 4095) / 4096))
 mke2fs -q -F -t ext4 -b 4096 -m 0 -O ^has_journal -d "$temp/layer" "$temp/release.ext4" "$block_count"
 e2fsck -fn "$temp/release.ext4"
-for name in bootstrap.program source.payload source.sha256; do
+for name in "${payloads[@]}"; do
   debugfs -R "dump /$name $temp/readback" "$temp/release.ext4"
   cmp "$temp/layer/$name" "$temp/readback"
   rm "$temp/readback"

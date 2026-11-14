@@ -34,7 +34,6 @@ fn definition(home: &Path, folder: &Path, policy: &Value, memory_mb: u32) -> Res
 
 fn wrapper(root: &Path, command: &Path, state: &Path) -> Result<String> {
     let defaults = [
-        ("AI_PHONE_CLASH_DESKTOP_DIR", "linux"),
         ("AI_PHONE_DESKTOP_CPUS", "2"),
         ("AI_PHONE_DESKTOP_MEMORY", "2560m"),
         ("AI_PHONE_CONTAINER_PROXY", ""),
