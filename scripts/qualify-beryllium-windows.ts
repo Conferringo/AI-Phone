@@ -207,19 +207,6 @@ try {
   if (desktopSetupExit !== 0) {
     ok(existsSync(checkpoint), "Windows setup stopped before creating its checkpoint");
     const state = JSON.parse(readFileSync(checkpoint, "utf8")).progress.state;
-    if (state === "failed" && process.env.AIMANITY_QA_BERYLLIUM_FRESH === "1") {
-      const directory = join(home, "components", "android");
-      const [identity] = readdirSync(directory);
-      const adb = join(directory, identity!, "sdk", "platform-tools", "adb.exe");
-      const guest = (command: string) => {
-        const output = Bun.spawnSync([adb, "-P", "15037", "-s", "127.0.0.1:5565", "shell", command], {env, timeout: 12_000});
-        console.log(`Window setup diagnostic ${command}: code=${output.exitCode} ${output.stdout.toString().trim()} ${output.stderr.toString().trim()}`);
-      };
-      guest("getprop sys.boot_completed; id -u; pm list packages --user 0; cmd package resolve-activity --brief --user 0 -a android.intent.action.MAIN -c android.intent.category.HOME; settings get secure default_input_method; ls -l /data/local/tmp/ai-phone-input-notification-probe.jar");
-      guest("cmd role get-role-holders --user 0 android.app.role.BROWSER");
-      guest("cmd role add-role-holder --user 0 android.app.role.BROWSER info.plateaukao.einkbro");
-      guest("logcat -d -t 600 -s PackageManager PackageInstaller PermissionController RoleControllerService AndroidRuntime | tail -60");
-    }
     equal(state, "ready", "Windows setup must reach actual dual-device readiness before checking the workbench");
     console.error("Workbench UI failed. Checking the independently served workbench and real devices.");
   }
@@ -255,15 +242,27 @@ try {
         const offset = frames.indexOf(start);
         if (offset >= 0 && frames.indexOf(end, offset + 3) > offset) {
           console.log(`${device} sent a complete JPEG through the workbench`);
-          return;
+          return true;
         }
       }
     } finally { await reader.cancel(); }
-    throw Error(`${device} did not send a complete JPEG`);
+    return false;
+  }
+  async function verifyAndroidFrame(endpoint: string) {
+    const deadline = performance.now() + 12_000;
+    for (let attempt = 1; ; attempt++) {
+      if (await verifyFrame(endpoint, "Android")) {
+        console.log(JSON.stringify({ androidJpegAttempts: attempt }));
+        return;
+      }
+      if (performance.now() >= deadline) throw Error("Android did not send a complete JPEG");
+      console.log(`Android screen subscription ${attempt} closed during startup without a JPEG`);
+      await Bun.sleep(750);
+    }
   }
   await Promise.all([
-    verifyFrame(`/api/desktop/media?device_id=${encodeURIComponent(desktop.id)}`, "Linux"),
-    verifyFrame(`/api/phone/media/screen?device=${encodeURIComponent(phone.id)}`, "Android"),
+    verifyFrame(`/api/desktop/media?device_id=${encodeURIComponent(desktop.id)}`, "Linux").then(passed => ok(passed, "Linux JPEG stream")),
+    verifyAndroidFrame(`/api/phone/media/screen?device=${encodeURIComponent(phone.id)}`),
   ]);
   const scope = { phoneId: phone.id, ownerId: "local-user", controller: "manual" };
   async function phoneRequest(operation: string, body: Uint8Array) {
@@ -406,6 +405,7 @@ try {
     const uploaded = await fetch(`${origin}/api/files/upload`, {method: "POST", headers: {cookie, origin}, body: staged, signal: AbortSignal.timeout(10000)});
     equal(uploaded.status, 200, "saved prior workspace file");
     const location = fromBinary(FileLocationSchema, new Uint8Array(await uploaded.arrayBuffer()));
+    const uploadedName = location.path.split("/").at(-1);
     const copy = await fetch(`${origin}/api/files/manage`, {method: "POST", headers: {cookie, origin, "content-type": protocol},
       body: toBinary(FileManageRequestSchema, create(FileManageRequestSchema, {operation: FileOperation.COPY, sources: [location], target: {path: guestFolder, deviceId: desktop.id}})),
       signal: AbortSignal.timeout(15000)});
@@ -433,8 +433,12 @@ try {
     const deadline = performance.now() + 600_000;
     let upgradedCookie = "";
     do {
-      const response = await fetch(`${origin}/api/auth/enter`, {method: "POST", headers: {origin, "content-type": protocol}, body: new Uint8Array(), signal: AbortSignal.timeout(2000)}).catch(() => undefined);
-      if (response?.ok) upgradedCookie = response.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+      const progress = JSON.parse(readFileSync(checkpoint, "utf8")).progress;
+      if (progress.state === "failed") throw Error(`Updated device setup failed: ${progress.error}`);
+      if (progress.state === "ready") {
+        const response = await fetch(`${origin}/api/auth/enter`, {method: "POST", headers: {origin, "content-type": protocol}, body: new Uint8Array(), signal: AbortSignal.timeout(2000)}).catch(() => undefined);
+        if (response?.ok) upgradedCookie = response.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+      }
       if (upgradedCookie) break;
       await Bun.sleep(750);
     } while (performance.now() < deadline);
@@ -444,7 +448,7 @@ try {
         body: toBinary(FileLocationSchema, create(FileLocationSchema, {deviceId:id,path})), signal: AbortSignal.timeout(20000)});
       equal(listing.status, 200, `new workbench lists prior ${path}`);
       const {entries} = fromBinary(FileListingSchema, new Uint8Array(await listing.arrayBuffer()));
-      ok(entries.some(entry => entry.name === expectedName && entry.sizeBytes === BigInt(expectedName.length)), `prior ${path} retained exact file length and name`);
+      ok(entries.some(entry => entry.name === uploadedName && entry.sizeBytes === BigInt(expectedName.length)), `prior ${path} retained exact file length and uploaded name`);
     }
     await checkRetained("", "/");
     await checkRetained(desktop.id, guestFolder);
@@ -454,6 +458,18 @@ try {
   }
 
 } catch (error) {
+  const directory = join(home, "components", "android");
+  if (existsSync(directory)) {
+    const [identity] = readdirSync(directory);
+    const adb = join(directory, identity!, "sdk", "platform-tools", "adb.exe");
+    const guest = (command: string) => {
+      const output = Bun.spawnSync([adb, "-P", "15037", "-s", "127.0.0.1:5565", "shell", command], {env, timeout: 12_000});
+      console.log(`Windows setup diagnostic ${command}: code=${output.exitCode} ${output.stdout.toString().trim()} ${output.stderr.toString().trim()}`);
+    };
+    guest("getprop sys.boot_completed; id -u; pm list packages --show-versioncode --user 0; cmd package resolve-activity --brief --user 0 -a android.intent.action.MAIN -c android.intent.category.HOME; settings get secure default_input_method; ls -l /data/local/tmp/ai-phone-input-notification-probe.jar");
+    guest("cmd role get-role-holders --user 0 android.app.role.BROWSER");
+    guest("logcat -d -t 600 -s PackageManager PackageInstaller PermissionController RoleControllerService AndroidRuntime | tail -60");
+  }
   for (const log of logPaths) {
     const file = join(home, log);
     if (existsSync(file)) {
