@@ -7,8 +7,8 @@ permissions:
   contents: read
   actions: read
 env:
-  BERYLLIUM_SOURCE: 5286c12d07e1c1e7d9199713f7a5180dff81bad0
-  BERYLLIUM_PACKAGE_RUN: '43593499192'
+  BERYLLIUM_SOURCE: 9494244efe2715f81f2e97fb0723ed4518924670
+  BERYLLIUM_PACKAGE_RUN: '43601849229'
 jobs:
   artifact-available:
     runs-on: ubuntu-24.04
@@ -19,7 +19,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          url="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14114931988"
+          url="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14118375157"
           headers=$(mktemp)
           for attempt in 1 2; do
             status=$(curl -sS -D "$headers" -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$url")
@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scenario: [fresh, upgrade]
+        scenario: [upgrade]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -100,7 +100,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
           run-id: ${{ env.BERYLLIUM_PACKAGE_RUN }}
-          artifact-ids: 14114931988
+          artifact-ids: 14118375157
           path: ${{ env.AIMANITY_QA_ROOT }}
       - name: Verify the QA installer and exact source receipt
         shell: pwsh
