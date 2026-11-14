@@ -6,7 +6,7 @@ mod connection;
 mod connection_owner_tests;
 pub(crate) mod discovery;
 pub(crate) mod guest;
-pub use guest::paired_phone;
+pub use guest::paired_phone_serial;
 mod peer;
 mod relay;
 #[cfg(test)]

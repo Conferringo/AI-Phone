@@ -2,7 +2,7 @@ use super::adb::Adb;
 use crate::{Error, Result};
 use ai_phone_api::wire::NativeAndroidBooted;
 use std::time::Duration;
-use tokio::{sync::watch, time::Instant};
+use tokio::sync::watch;
 
 pub(super) fn frame(bytes: &[u8]) -> Result<(u32, u32)> {
     if bytes.len() < 33 || bytes.get(..16) != Some(b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR") {
@@ -61,16 +61,17 @@ pub(super) async fn snapshot(adb: &Adb, reused: bool) -> Result<NativeAndroidBoo
 pub(super) async fn existing(
     adb: &Adb,
     stop: &mut watch::Receiver<bool>,
+    duration: Duration,
 ) -> Result<NativeAndroidBooted> {
-    let until = Instant::now() + Duration::from_secs(120);
-    loop {
-        cancelled(stop)?;
-        if let Ok(value) = observe(adb, true).await {
-            return Ok(value);
+    tokio::time::timeout(duration, async {
+        loop {
+            cancelled(stop)?;
+            if let Ok(value) = observe(adb, true).await {
+                return Ok(value);
+            }
+            pause(stop).await?;
         }
-        if Instant::now() >= until {
-            return Err(Error::Invalid("android_session_unavailable"));
-        }
-        pause(stop).await?;
-    }
+    })
+    .await
+    .map_err(|_| Error::Invalid("android_session_unavailable"))?
 }

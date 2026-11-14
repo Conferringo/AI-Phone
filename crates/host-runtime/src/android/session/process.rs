@@ -106,7 +106,7 @@ pub(super) async fn start(plan: Plan, stop: &mut watch::Receiver<bool>) -> Resul
     let Some(lease) = lease else {
         owner.ok_or(Error::Invalid("android_session_starting"))?;
         let receipt = if plan.backend.is_none() {
-            readiness::existing(&client(&plan), stop).await?
+            readiness::existing(&client(&plan), stop, Duration::from_secs(120)).await?
         } else {
             super::link::observe(&plan, stop).await?
         };
