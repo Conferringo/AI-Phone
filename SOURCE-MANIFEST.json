@@ -2603,8 +2603,8 @@
     },
     {
       "path": "crates/host-runtime/src/profile.rs",
-      "size": 12591,
-      "sha256": "2c73654cf5f4760f5e6ad2fe05333007f33808a55ac9af7b77330e0ee2f4b88d"
+      "size": 12559,
+      "sha256": "c64d6d3c3b31316f125637de544a56874e3ae9829edcc26963fcda2192e495d1"
     },
     {
       "path": "crates/host-runtime/src/runtime_environment.rs",
