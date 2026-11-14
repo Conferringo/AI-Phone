@@ -48,25 +48,35 @@ jobs:
           edition = "2024"
 
           [dependencies]
-          inno = { version = "=0.7.3", features = ["extract"] }
+          inno = { git = "https://github.com/russellbanks/inno", rev = "affae726bbda60af79dcffa2e61958a4a2edb748", features = ["extract"] }
           RUST
           cat > "$work/extract/src/main.rs" <<'RUST'
-          use std::{env, fs::File, io::{self, BufReader}};
+          use std::{env, fs::{self, File}, io::{self, BufReader}, path::{Path, PathBuf}};
 
           fn main() -> Result<(), Box<dyn std::error::Error>> {
               let mut args = env::args_os().skip(1);
               let installer = File::open(args.next().ok_or("installer path")?)?;
-              let mut output = File::create_new(args.next().ok_or("base path")?)?;
+              let output = PathBuf::from(args.next().ok_or("output directory")?);
               let mut archive = inno::Inno::new(BufReader::new(installer))?;
               let mut files = archive.streaming_files(|entry| {
-                  entry.file().destination() == Some(r"{app}\host\qemu\guest\guest.qcow2")
+                  entry.file().normalized_destination().is_some_and(|path|
+                      path == "host/android.payload" || path.starts_with("host/qemu/") &&
+                      !path.starts_with("host/qemu/guest/release." ) &&
+                      path != "host/qemu/guest/release-init.cpio.gz")
               });
-              let (_, mut image) = files.next().ok_or("guest disk missing")??;
-              io::copy(&mut image, &mut output)?;
+              while let Some(file) = files.next() {
+                  let (entry, mut content) = file?;
+                  let path = entry.file().normalized_destination().ok_or("installer path")?;
+                  let target = output.join(Path::new(&path));
+                  fs::create_dir_all(target.parent().ok_or("installer parent")?)?;
+                  io::copy(&mut content, &mut File::create_new(target)?)?;
+              }
               Ok(())
           }
           RUST
-          cargo run --release --manifest-path "$work/extract/Cargo.toml" -- "$work/aluminum.exe" "$work/old.qcow2"
+          cargo run --release --manifest-path "$work/extract/Cargo.toml" -- "$work/aluminum.exe" "$work/immutable"
+          mv "$work/immutable/host/qemu/guest/guest.qcow2" "$work/old.qcow2"
+          printf '%s  %s\n' 23a97514fdbdbcfaa511549b6e016923023de28ce2de0ad71a2815192b9568ce "$work/immutable/host/android.payload" | sha256sum -c -
           printf '%s  %s\n' 348baa7207524397b74de603f08357b6d3b73947514eb9f662c6eb4e52a365a5 "$work/old.qcow2" | sha256sum -c -
           rm "$work/aluminum.exe"
           qemu-img convert -f qcow2 -O raw -S 4096 "$work/old.qcow2" "$work/guest.ext4"
@@ -105,6 +115,13 @@ jobs:
             ${{ runner.temp }}/aimguest/guest.sha256
             ${{ runner.temp }}/aimguest/images.payload
             ${{ runner.temp }}/aimguest/images.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: beryllium-windows-immutable-inputs
+          path: ${{ runner.temp }}/aimguest/immutable/
           if-no-files-found: error
           compression-level: 0
           retention-days: 2
