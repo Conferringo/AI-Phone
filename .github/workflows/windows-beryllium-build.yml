@@ -7,8 +7,8 @@ permissions:
   contents: read
   actions: read
 env:
-  BERYLLIUM_SOURCE: 'a6bc37affa6731edffbbf189ed2eecab1c12c67c'
-  BERYLLIUM_INPUTS_RUN: '43591568188'
+  BERYLLIUM_SOURCE: '8ce0b1026d960d8ab82b764940008c261e4f8209'
+  BERYLLIUM_INPUTS_RUN: '43593156255'
 jobs:
   linux-release:
     runs-on: ubuntu-24.04
@@ -43,6 +43,7 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
           ./scripts/bootstrap.sh
           ./scripts/bun scripts/source.ts check --repository --manifest
+          cargo build --locked -p ai-phone-release-tools --bin release-tools
       - uses: docker/setup-docker-action@7ec28a010822b4626af4874f9448a4b05ac6f3e5
         with:
           version: v29.9.2
@@ -66,6 +67,8 @@ jobs:
           mkdir "$RUNNER_TEMP/compiled"
           cp apps/client/src-tauri/gen/host/source.payload "$RUNNER_TEMP/compiled/"
           cp target/release/ai-phone-assistant "$RUNNER_TEMP/compiled/bootstrap.program"
+      - name: Wait for the immutable guest and images handoff
+        run: gh run watch "$BERYLLIUM_INPUTS_RUN" --exit-status
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           run-id: ${{ env.BERYLLIUM_INPUTS_RUN }}
