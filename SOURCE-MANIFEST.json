@@ -68,8 +68,8 @@
     },
     {
       "path": ".github/workflows/windows-beryllium-inputs.yml",
-      "size": 6248,
-      "sha256": "1cffb9b15888384585d43026882770039a6f836565f2b10f1d47b4e0019c18a9"
+      "size": 6325,
+      "sha256": "6eb6af244e6953cb9ce6d817dd6b63b5c4c931c33fe568d31f907b93f055c0c7"
     },
     {
       "path": ".github/workflows/windows-guest.yml",

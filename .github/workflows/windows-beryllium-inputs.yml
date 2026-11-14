@@ -33,6 +33,7 @@ jobs:
           rustup toolchain install 1.96.0 --profile minimal
           rustup default 1.96.0
           ./scripts/bootstrap.sh
+          cargo build --locked -p ai-phone-release-tools --bin release-tools
           mkdir -p "$RUNNER_TEMP/aimguest"
       - name: Extract and thin the published Aluminum base
         run: |
