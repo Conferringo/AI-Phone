@@ -7,7 +7,7 @@ permissions:
   contents: read
   actions: read
 env:
-  BERYLLIUM_SOURCE: '8ce0b1026d960d8ab82b764940008c261e4f8209'
+  BERYLLIUM_SOURCE: '5286c12d07e1c1e7d9199713f7a5180dff81bad0'
   BERYLLIUM_INPUTS_RUN: '43593156255'
 jobs:
   linux-release:
