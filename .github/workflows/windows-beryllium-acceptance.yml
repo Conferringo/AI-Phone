@@ -10,7 +10,29 @@ env:
   BERYLLIUM_SOURCE: 5286c12d07e1c1e7d9199713f7a5180dff81bad0
   BERYLLIUM_PACKAGE_RUN: '43593499192'
 jobs:
+  artifact-available:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Admit exact artifact after the confirmed installation quota reset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          url="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/14114931988"
+          headers=$(mktemp)
+          for attempt in 1 2; do
+            status=$(curl -sS -D "$headers" -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $GH_TOKEN" "$url")
+            if [ "$status" = 200 ]; then exit 0; fi
+            if [ "$status" != 403 ] || [ "$attempt" = 2 ]; then echo "Artifact metadata HTTP $status"; exit 1; fi
+            reset=$(awk 'tolower($1)=="x-ratelimit-reset:"{gsub(/\r/, "", $2);print $2}' "$headers")
+            left=$(( reset - $(date +%s) + 5 ))
+            if [ "$left" -le 0 ] || [ "$left" -ge 1200 ]; then echo "GitHub API quota reset delay ${left}s"; exit 1; fi
+            echo "GitHub API quota will reset in ${left}s"
+            sleep "$left"
+          done
   exact-exe:
+    needs: artifact-available
     runs-on: windows-2025
     timeout-minutes: 42
     strategy:
